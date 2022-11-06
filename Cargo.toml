@@ -1,0 +1,15 @@
+[package]
+name = "causal-hub"
+version = "0.0.0"
+edition = "2021"
+authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
+description = "A hub for Causal Data Science."
+readme = "README.md"
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/AlessioZanga/causal-hub"
+repository = "https://github.com/AlessioZanga/causal-hub"
+documentation = "https://docs.rs/causal-hub"
+keywords = ["causality", "causal-inference", "causal-discovery"]
+categories = ["algorithms", "data-structures", "mathematics", "science"]
+
+[dependencies]
