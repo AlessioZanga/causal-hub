@@ -7,8 +7,8 @@ pub use default::DefaultGraph;
 mod partial_ord;
 pub use partial_ord::PartialOrdGraph;
 
-mod graph_default;
-pub use graph_default::GraphDefault;
+mod undirected;
+pub use undirected::UndirectedGraph;
 
 mod graph_partial_ord;
 pub use graph_partial_ord::GraphPartialOrd;
