@@ -5,3 +5,6 @@
 
 /// Graphs algorithms and structures.
 pub mod graphs;
+
+/// Crate-wide types.
+pub mod types;
