@@ -4,7 +4,7 @@ use std::{
 };
 
 /// Base graph trait.
-pub trait GraphBase: Clone + Debug + Display {
+pub trait BaseGraph: Clone + Debug + Display {
     /// Vertex type.
     type Vertex: Clone + Debug + Eq + Ord + Hash;
 

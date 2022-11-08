@@ -1,7 +1,7 @@
-use super::GraphBase;
+use super::BaseGraph;
 
 /// Default graph trait.
-pub trait GraphDefault: GraphBase + Default {
+pub trait DefaultGraph: BaseGraph + Default {
     /// Null graph constructor.
     #[inline]
     fn null() -> Self {
