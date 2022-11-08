@@ -15,3 +15,4 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 [dependencies]
 bimap = "^0.6"
 fnv = "^1.0"
+ndarray = "^0.15"
