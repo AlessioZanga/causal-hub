@@ -8,8 +8,8 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// Vertex type.
     type Vertex: Clone + Debug + Eq + Ord + Hash;
 
-    /// Vertex iterator type.
-    type VertexIter<'a>: ExactSizeIterator<Item = &'a Self::Vertex>
+    /// Vertices iterator type.
+    type VerticesIter<'a>: ExactSizeIterator<Item = &'a Self::Vertex>
     where
         Self: 'a,
         Self::Vertex: 'a;
@@ -24,8 +24,8 @@ pub trait BaseGraph: Clone + Debug + Display {
     where
         Self: 'a;
 
-    /// Edge iterator type.
-    type EdgeIter<'a>: ExactSizeIterator<Item = Self::Edge<'a>>
+    /// Edges iterator type.
+    type EdgesIter<'a>: ExactSizeIterator<Item = Self::Edge<'a>>
     where
         Self: 'a;
 
@@ -33,7 +33,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn order(&self) -> usize;
 
     /// Iterator over the vertices set.
-    fn vertices<'a>(&'a self) -> Self::VertexIter<'a>;
+    fn vertices<'a>(&'a self) -> Self::VerticesIter<'a>;
 
     /// Checks if a vertex is in the graph.
     fn has_vertex(&self, x: &Self::Vertex) -> bool;
@@ -48,7 +48,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn size(&self) -> usize;
 
     /// Iterator over the edges set.
-    fn edges<'a>(&'a self) -> Self::EdgeIter<'a>;
+    fn edges<'a>(&'a self) -> Self::EdgesIter<'a>;
 
     /// Checks if an edge is in the graph.
     fn has_edge(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
