@@ -60,5 +60,5 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn del_edge<'a>(&'a mut self, x: &Self::Vertex, y: &Self::Vertex) -> Self::Edge<'a>;
 
     /// Checks if a vertex is adjacent to another vertex.
-    fn is_adjacent_of(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    fn is_adjacent(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
 }
