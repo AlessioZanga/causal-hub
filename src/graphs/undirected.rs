@@ -7,7 +7,7 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph {
     where
         Self: 'a,
         Self::Vertex: 'a;
-    
+
     /// Iterator over the neighbors set.
     fn neighbors<'a>(&'a self, x: &Self::Vertex) -> Self::NeighborsIter<'a>;
 

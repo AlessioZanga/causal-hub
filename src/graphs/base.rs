@@ -5,6 +5,9 @@ use std::{
 
 /// Base graph trait.
 pub trait BaseGraph: Clone + Debug + Display {
+    /// Data type.
+    type Data;
+
     /// Vertex type.
     type Vertex: Clone + Debug + Eq + Ord + Hash;
 
@@ -29,8 +32,14 @@ pub trait BaseGraph: Clone + Debug + Display {
     where
         Self: 'a;
 
+    /// Reference to the underlying data.
+    fn data<'a>(&'a self) -> &'a Self::Data;
+
     /// Order of the graph, i.e. |V|.
-    fn order(&self) -> usize;
+    #[inline]
+    fn order(&self) -> usize {
+        self.vertices().len()
+    }
 
     /// Iterator over the vertices set.
     fn vertices<'a>(&'a self) -> Self::VerticesIter<'a>;
@@ -45,7 +54,10 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn del_vertex(&mut self, x: &Self::Vertex) -> Self::Vertex;
 
     /// Size of the graph, i.e. |E|.
-    fn size(&self) -> usize;
+    #[inline]
+    fn size(&self) -> usize {
+        self.edges().len()
+    }
 
     /// Iterator over the edges set.
     fn edges<'a>(&'a self) -> Self::EdgesIter<'a>;
