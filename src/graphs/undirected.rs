@@ -12,14 +12,8 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph {
     fn neighbors<'a>(&'a self, x: &Self::Vertex) -> Self::NeighborsIter<'a>;
 
     /// Checks if a vertex is neighbor of another vertex.
-    #[inline]
-    fn is_neighbor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
-        self.is_adjacent(x, y)
-    }
+    fn is_neighbor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
 
     /// Computes the degree of a vertex.
-    #[inline]
-    fn degree(&self, x: &Self::Vertex) -> usize {
-        self.neighbors(x).len()
-    }
+    fn degree(&self, x: &Self::Vertex) -> usize;
 }

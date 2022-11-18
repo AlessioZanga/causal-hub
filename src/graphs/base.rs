@@ -1,10 +1,10 @@
 use std::{
     fmt::{Debug, Display},
-    hash::Hash,
+    hash::Hash, ops::Deref,
 };
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display {
+pub trait BaseGraph: Clone + Debug + Display + Deref<Target = Self::Data> {
     /// Data type.
     type Data;
 
@@ -32,9 +32,6 @@ pub trait BaseGraph: Clone + Debug + Display {
     where
         Self: 'a;
 
-    /// Reference to the underlying data.
-    fn data<'a>(&'a self) -> &'a Self::Data;
-
     /// Order of the graph, i.e. |V|.
     #[inline]
     fn order(&self) -> usize {
@@ -48,10 +45,12 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn has_vertex(&self, x: &Self::Vertex) -> bool;
 
     /// Adds a vertex to the graph given its label, if not present.
-    fn add_vertex(&mut self, x: String) -> Self::Vertex;
+    fn add_vertex<V>(&mut self, x: V) -> Self::Vertex
+    where
+        V: Into<Self::Vertex>;
 
     /// Removes a vertex from the graph, if present.
-    fn del_vertex(&mut self, x: &Self::Vertex) -> Self::Vertex;
+    fn del_vertex(&mut self, x: &Self::Vertex);
 
     /// Size of the graph, i.e. |E|.
     #[inline]
@@ -66,10 +65,10 @@ pub trait BaseGraph: Clone + Debug + Display {
     fn has_edge(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
 
     /// Adds an edge to the graph, if not present.
-    fn add_edge<'a>(&'a mut self, x: &Self::Vertex, y: &Self::Vertex) -> Self::Edge<'a>;
+    fn add_edge<'a>(&'a mut self, x: &Self::Vertex, y: &Self::Vertex);
 
     /// Removes an edge from the graph, if present.
-    fn del_edge<'a>(&'a mut self, x: &Self::Vertex, y: &Self::Vertex) -> Self::Edge<'a>;
+    fn del_edge<'a>(&'a mut self, x: &Self::Vertex, y: &Self::Vertex);
 
     /// Checks if a vertex is adjacent to another vertex.
     fn is_adjacent(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;

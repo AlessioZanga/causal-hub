@@ -1,4 +1,5 @@
-use super::BaseGraph;
+use super::{BaseGraph, ErrorGraph as E};
+use crate::types::AdjacencyMatrix;
 
 /// Default graph trait.
 pub trait DefaultGraph: BaseGraph + Default {
@@ -9,12 +10,20 @@ pub trait DefaultGraph: BaseGraph + Default {
     }
 
     /// Empty graph constructor given vertices set.
-    fn empty<I>(vertices: I) -> Self
+    fn empty<I, V>(vertices: I) -> Result<Self, E>
     where
-        I: IntoIterator<Item = String>;
+        I: IntoIterator<Item = V>,
+        V: Into<Self::Vertex>;
 
     /// Complete graph constructor given vertices set.
-    fn complete<I>(vertices: I) -> Self
+    fn complete<I, V>(vertices: I) -> Result<Self, E>
     where
-        I: IntoIterator<Item = String>;
+        I: IntoIterator<Item = V>,
+        V: Into<Self::Vertex>;
+
+    /// Adjacency matrix constructor.
+    fn with_adjacency_matrix<I, V>(vertices: I, adjacency_matrix: AdjacencyMatrix) -> Result<Self, E>
+    where
+        I: IntoIterator<Item = V>,
+        V: Into<Self::Vertex>;
 }
