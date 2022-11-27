@@ -1,8 +1,8 @@
 use std::{
     cmp::Ordering,
-    collections::{btree_set::Iter, BTreeSet},
+    collections::{btree_set, BTreeSet},
     fmt::Display,
-    iter::FilterMap,
+    iter::{Enumerate, FilterMap},
     ops::Deref,
 };
 
@@ -10,52 +10,44 @@ use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
 
 use crate::{
-    graphs::{BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph},
+    graphs::{BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, UndirectedGraph},
     types::{AdjacencyMatrix, FnvBiHashMap},
 };
 
 /// Undirected graph struct based on dense adjacent matrix data structure.
 #[derive(Clone, Debug)]
-pub struct DenseMatrixUndirectedGraph {
+pub struct UndirectedDenseMatrixGraph {
     vertices: BTreeSet<String>,
     vertices_indexes: FnvBiHashMap<String, usize>,
     adjacency_matrix: AdjacencyMatrix,
     size: usize,
 }
 
-impl DenseMatrixUndirectedGraph {
-    /// Gets vertex label given its index.
-    pub fn label<'a>(&'a self, x: usize) -> &'a String {
-        self.vertices_indexes
-            .get_by_right(&x)
-            .expect("Array index out of bounds")
-    }
-}
-
 /* Implement BaseGraph trait. */
 
-impl Deref for DenseMatrixUndirectedGraph {
+impl Deref for UndirectedDenseMatrixGraph {
     type Target = AdjacencyMatrix;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.adjacency_matrix
     }
 }
 
 pub struct EdgesIterator<'a> {
-    graph: &'a DenseMatrixUndirectedGraph,
+    graph: &'a UndirectedDenseMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
     size: usize,
 }
 
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
-    pub fn new(graph: &'a DenseMatrixUndirectedGraph) -> Self {
+    pub fn new(graph: &'a UndirectedDenseMatrixGraph) -> Self {
         Self {
             graph,
             iter: (*graph)
                 .indexed_iter()
-                .filter_map(|((i, j), flag)| match *flag && i <= j {
+                .filter_map(|((i, j), &flag)| match flag && i <= j {
                     true => Some((i, j)),
                     false => None,
                 }),
@@ -65,13 +57,16 @@ impl<'a> EdgesIterator<'a> {
 }
 
 impl<'a> Iterator for EdgesIterator<'a> {
-    type Item = <DenseMatrixUndirectedGraph as BaseGraph>::Edge<'a>;
+    type Item = <UndirectedDenseMatrixGraph as BaseGraph>::Edge<'a>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|(i, j)| (self.graph.label(i), self.graph.label(j)))
+        self.iter.next().map(|(i, j)| {
+            (
+                self.graph.vertices_indexes.get_by_right(&i).unwrap(),
+                self.graph.vertices_indexes.get_by_right(&j).unwrap(),
+            )
+        })
     }
 
     #[inline]
@@ -82,7 +77,43 @@ impl<'a> Iterator for EdgesIterator<'a> {
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
-impl Display for DenseMatrixUndirectedGraph {
+pub struct AdjacentsIterator<'a> {
+    graph: &'a UndirectedDenseMatrixGraph,
+    iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
+}
+
+impl<'a> AdjacentsIterator<'a> {
+    /// Constructor.
+    pub fn new(
+        graph: &'a UndirectedDenseMatrixGraph,
+        x: &'a <UndirectedDenseMatrixGraph as BaseGraph>::Vertex,
+    ) -> Self {
+        Self {
+            graph,
+            iter: (*graph)
+                .row(*graph.vertices_indexes.get_by_left(x).unwrap())
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, flag)| match flag {
+                    true => Some(i),
+                    false => None,
+                }),
+        }
+    }
+}
+
+impl<'a> Iterator for AdjacentsIterator<'a> {
+    type Item = &'a <UndirectedDenseMatrixGraph as BaseGraph>::Vertex;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next()
+            .and_then(|i| Some(self.graph.vertices_indexes.get_by_right(&i).unwrap()))
+    }
+}
+
+impl Display for UndirectedDenseMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "UndirectedGraph {{ ")?;
@@ -103,16 +134,18 @@ impl Display for DenseMatrixUndirectedGraph {
     }
 }
 
-impl BaseGraph for DenseMatrixUndirectedGraph {
+impl BaseGraph for UndirectedDenseMatrixGraph {
     type Data = AdjacencyMatrix;
 
     type Vertex = String;
 
-    type VerticesIter<'a> = Iter<'a, Self::Vertex>;
+    type VerticesIter<'a> = btree_set::Iter<'a, Self::Vertex>;
 
     type Edge<'a> = (&'a Self::Vertex, &'a Self::Vertex);
 
     type EdgesIter<'a> = EdgesIterator<'a>;
+
+    type AdjacentsIter<'a> = AdjacentsIterator<'a>;
 
     #[inline]
     fn order(&self) -> usize {
@@ -200,7 +233,9 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
         x
     }
 
-    fn del_vertex(&mut self, x: &Self::Vertex) {
+    fn del_vertex(&mut self, x: &Self::Vertex) -> bool {
+        // Set flag.
+        let mut flag = false;
         // If label is present ...
         if self.vertices.remove(x) {
             // ... then compute index.
@@ -226,6 +261,8 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
             }
             // Replace old with new adjacency matrix.
             self.adjacency_matrix = adjacency_matrix;
+            // Set flag.
+            flag = true;
         }
 
         // Assert vertex has been removed.
@@ -247,6 +284,8 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
         debug_assert!(self.adjacency_matrix.is_square());
         // Assert adjacency matrix is still symmetric.
         debug_assert_eq!(self.adjacency_matrix, self.adjacency_matrix.t());
+
+        flag
     }
 
     #[inline]
@@ -254,10 +293,12 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
         self.size
     }
 
+    #[inline]
     fn edges<'a>(&'a self) -> Self::EdgesIter<'a> {
-        EdgesIterator::new(&self)
+        Self::EdgesIter::new(self)
     }
 
+    #[inline]
     fn has_edge(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
         // Get associated vertices indices.
         let (i, j) = (
@@ -268,13 +309,15 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
         self.adjacency_matrix[[i, j]]
     }
 
-    fn add_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) {
+    fn add_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
         // Get associated vertices indices.
         let (i, j) = (
             *self.vertices_indexes.get_by_left(x).unwrap(),
             *self.vertices_indexes.get_by_left(y).unwrap(),
         );
 
+        // Set flag.
+        let mut flag = false;
         // Check if edge not exists.
         if !self.adjacency_matrix[[i, j]] {
             // Add edge.
@@ -282,6 +325,8 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
             self.adjacency_matrix[[j, i]] = true;
             // Increment size.
             self.size += 1;
+            // Set flag.
+            flag = true;
         }
 
         // Assert adjacency matrix is still consistent.
@@ -291,21 +336,25 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
             self.size,
             self.adjacency_matrix
                 .indexed_iter()
-                .filter_map(|((i, j), x)| match i <= j {
-                    true => Some(*x as usize),
+                .filter_map(|((i, j), &flag)| match i <= j {
+                    true => Some(flag as usize),
                     false => None,
                 })
                 .sum()
-        )
+        );
+
+        flag
     }
 
-    fn del_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) {
+    fn del_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
         // Get associated vertices indices.
         let (i, j) = (
             *self.vertices_indexes.get_by_left(x).unwrap(),
             *self.vertices_indexes.get_by_left(y).unwrap(),
         );
 
+        // Set flag.
+        let mut flag = false;
         // Check if edge exists.
         if self.adjacency_matrix[[i, j]] {
             // Remove edge.
@@ -313,6 +362,8 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
             self.adjacency_matrix[[j, i]] = false;
             // Decrement size.
             self.size -= 1;
+            // Set flag.
+            flag = true;
         }
 
         // Assert adjacency matrix is still consistent.
@@ -322,12 +373,19 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
             self.size,
             self.adjacency_matrix
                 .indexed_iter()
-                .filter_map(|((i, j), x)| match i <= j {
-                    true => Some(*x as usize),
+                .filter_map(|((i, j), &flag)| match i <= j {
+                    true => Some(flag as usize),
                     false => None,
                 })
                 .sum()
-        )
+        );
+
+        flag
+    }
+
+    #[inline]
+    fn adjacents<'a>(&'a self, x: &'a Self::Vertex) -> Self::AdjacentsIter<'a> {
+        Self::AdjacentsIter::new(self, x)
     }
 
     #[inline]
@@ -338,7 +396,8 @@ impl BaseGraph for DenseMatrixUndirectedGraph {
 
 /* Implement DefaultGraph trait. */
 
-impl Default for DenseMatrixUndirectedGraph {
+impl Default for UndirectedDenseMatrixGraph {
+    #[inline]
     fn default() -> Self {
         Self {
             vertices: Default::default(),
@@ -349,7 +408,7 @@ impl Default for DenseMatrixUndirectedGraph {
     }
 }
 
-impl DefaultGraph for DenseMatrixUndirectedGraph {
+impl DefaultGraph for UndirectedDenseMatrixGraph {
     fn empty<I, V>(vertices: I) -> Result<Self, E>
     where
         I: IntoIterator<Item = V>,
@@ -402,16 +461,13 @@ impl DefaultGraph for DenseMatrixUndirectedGraph {
         // Remove self loops.
         adjacency_matrix.diag_mut().map_inplace(|i| *i = false);
         // Compute size.
-        let size = adjacency_matrix
-            .indexed_iter()
-            .filter(|((i, j), flag)| **flag && i <= j)
-            .count();
+        let size = (order * (order.saturating_sub(1))) / 2;
 
         Ok(Self {
             vertices,
             vertices_indexes,
             adjacency_matrix,
-            size: size,
+            size,
         })
     }
 
@@ -448,58 +504,79 @@ impl DefaultGraph for DenseMatrixUndirectedGraph {
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
 
         // Compute size.
-        let size = adjacency_matrix
-            .indexed_iter()
-            .filter(|((i, j), flag)| **flag && i <= j)
-            .count();
+        let size = adjacency_matrix.mapv(|flag| flag as usize).sum();
+        let size = size + adjacency_matrix.diag().mapv(|flag| flag as usize).sum();
+        let size = size / 2;
 
         Ok(Self {
             vertices,
             vertices_indexes,
             adjacency_matrix,
-            size: size,
+            size,
         })
     }
 }
 
 /* Implement PartialOrdGraph trait. */
 
-impl PartialEq for DenseMatrixUndirectedGraph {
+impl PartialEq for UndirectedDenseMatrixGraph {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         // Check that V(G) == V(H) && E(G) == E(H).
         self.vertices.eq(&other.vertices) && self.adjacency_matrix.eq(&other.adjacency_matrix)
     }
 }
 
-impl Eq for DenseMatrixUndirectedGraph {}
+impl Eq for UndirectedDenseMatrixGraph {}
 
-impl PartialOrd for DenseMatrixUndirectedGraph {
+impl PartialOrd for UndirectedDenseMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let vertices = self.vertices.partial_cmp(&other.vertices);
-        // Match vertices ordering.
-        match vertices {
-            // If the vertices sets are comparable ...
-            Some(vertices) => {
-                // ... compare edges sets.
-                let edges = self.edges().into_iter().partial_cmp(other.edges().into_iter());
-                // Match edges ordering.
-                match edges {
-                    // If the edges sets are comparable ...
-                    Some(edges) => match vertices == edges {
-                        // ... and vertices and edges are consistent, then return ordering.
-                        true => Some(vertices),
-                        // ... else return none.
-                        false => None,
-                    },
-                    // ... else return none.
-                    None => None,
+        let vertices = crate::utils::partial_cmp_sets(&self.vertices, &other.vertices);
+        // If the vertices sets are comparable ...
+        vertices.and_then(|vertices| {
+            // ... compare edges sets.
+            // TODO: Check if allocation is avoidable.
+            let self_edges = self.edges().collect::<BTreeSet<_>>();
+            let other_edges = other.edges().collect::<BTreeSet<_>>();
+            let edges = crate::utils::partial_cmp_sets(&self_edges, &other_edges);
+            // If the edges sets are comparable ...
+            edges.and_then(|edges| {
+                // ... then return ordering.
+                match (vertices, edges) {
+                    // If vertices and edges are the same, then ordering is determined.
+                    (Ordering::Greater, Ordering::Greater) => Some(Ordering::Greater),
+                    (Ordering::Less, Ordering::Less) => Some(Ordering::Less),
+                    // If either vertices or edges are equal, the rest determines the order.
+                    (_, Ordering::Equal) => Some(vertices),
+                    (Ordering::Equal, _) => Some(edges),
+                    // Every other combination does not determine an order.
+                    _ => None,
                 }
-            }
-            // ... else return none.
-            None => None,
-        }
+            })
+        })
     }
 }
 
-impl PartialOrdGraph for DenseMatrixUndirectedGraph {}
+impl PartialOrdGraph for UndirectedDenseMatrixGraph {}
+
+impl UndirectedGraph for UndirectedDenseMatrixGraph {
+    type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
+
+    #[inline]
+    fn neighbors<'a>(&'a self, x: &'a Self::Vertex) -> Self::NeighborsIter<'a> {
+        Self::NeighborsIter::new(self, x)
+    }
+
+    #[inline]
+    fn is_neighbor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
+        self.is_adjacent(x, y)
+    }
+
+    fn degree(&self, x: &Self::Vertex) -> usize {
+        // Get associated vertex index.
+        let i = *self.vertices_indexes.get_by_left(x).unwrap();
+
+        self.adjacency_matrix.row(i).mapv(|flag| flag as usize).sum()
+    }
+}

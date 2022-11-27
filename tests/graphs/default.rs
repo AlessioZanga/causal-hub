@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        graphs::{BaseGraph, DefaultGraph, DenseMatrixUndirectedGraph, ErrorGraph as E},
+        graphs::{BaseGraph, DefaultGraph, ErrorGraph as E, UndirectedDenseMatrixGraph},
         types::AdjacencyMatrix,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn default() {
-        let g = DenseMatrixUndirectedGraph::default();
+        let g = UndirectedDenseMatrixGraph::default();
 
         assert_eq!(g.order(), 0);
         assert_eq!(g.size(), 0);
@@ -16,7 +16,7 @@ mod tests {
 
     #[test]
     fn null() {
-        let g = DenseMatrixUndirectedGraph::null();
+        let g = UndirectedDenseMatrixGraph::null();
 
         assert_eq!(g.order(), 0);
         assert_eq!(g.size(), 0);
@@ -25,22 +25,42 @@ mod tests {
     #[test]
     fn empty() {
         // Test database as (input, output) pairs.
-        let data: [(Vec<&str>, Option<E>); 2] = [
+        #[rustfmt::skip]
+        let data: [(Vec<&str>, Option<E>); 5] = [
             // Empty vertices set.
             (vec![], None),
             // Invalid vertex label.
             (vec![""], Some(E::EmptyVertexLabel)),
-            // FIXME:
+            // Non-empty vertices set.
+            (vec!["A"], None),
+            // Non-empty vertices set.
+            (vec!["A", "B"], None),
+            // Large vertices set.
+            (
+                vec![
+                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
+                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+                ],
+                None,
+            ),
         ];
 
         // For each test case in the test database ...
-        for (vertices, error) in data.into_iter() {
+        for (vertices, error) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::empty(vertices.clone());
+            let g = UndirectedDenseMatrixGraph::empty(vertices.clone());
             // ... assert result.
             match g {
                 Ok(g) => {
-                    assert!(g.vertices().eq(vertices.clone().into_iter()));
+                    assert!(g.vertices().eq(vertices.clone()));
                     assert_eq!(g.order(), vertices.len());
                     assert_eq!(g.size(), 0);
                 }
@@ -52,9 +72,54 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn complete() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [(Vec<&str>, Option<E>); 5] = [
+            // Empty vertices set.
+            (vec![], None),
+            // Invalid vertex label.
+            (vec![""], Some(E::EmptyVertexLabel)),
+            // Non-empty vertices set.
+            (vec!["A"], None),
+            // Non-empty vertices set.
+            (vec!["A", "B"], None),
+            // Large vertices set.
+            (
+                vec![
+                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
+                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+                ],
+                None,
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for (vertices, error) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::complete(vertices.clone());
+            // ... assert result.
+            match g {
+                Ok(g) => {
+                    let order = vertices.len();
+
+                    assert!(g.vertices().eq(vertices.clone()));
+                    assert_eq!(g.order(), order);
+                    assert_eq!(g.size(), (order * (order.saturating_sub(1))) / 2);
+                }
+                Err(e) => {
+                    assert_eq!(Some(e), error);
+                }
+            }
+        }
     }
 
     #[test]
@@ -101,9 +166,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), error) in data.into_iter() {
+        for ((vertices, adjacency_matrix), error) in data {
             // ... assert result.
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix);
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix);
 
             assert_eq!(g.err(), error);
         }

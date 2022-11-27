@@ -8,3 +8,6 @@ pub mod graphs;
 
 /// Crate-wide types.
 pub mod types;
+
+/// Crate-wide utils.
+pub mod utils;

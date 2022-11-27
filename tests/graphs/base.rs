@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        graphs::{BaseGraph, DefaultGraph, DenseMatrixUndirectedGraph},
+        graphs::{BaseGraph, DefaultGraph, UndirectedDenseMatrixGraph},
         types::AdjacencyMatrix,
     };
     use ndarray::prelude::*;
@@ -21,9 +21,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for (vertices, adjacency_matrix) in data.into_iter() {
+        for (vertices, adjacency_matrix) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(g, g.clone());
         }
@@ -36,29 +36,29 @@ mod tests {
             // Empty vertices set and adjacency matrix.
             (
                 (vec![], Default::default()),
-                "DenseMatrixUndirectedGraph { vertices: {}, vertices_indexes: {}, adjacency_matrix: [[]], shape=[0, 0], strides=[0, 0], layout=CFcf (0xf), const ndim=2, size: 0 }"
+                "UndirectedDenseMatrixGraph { vertices: {}, vertices_indexes: {}, adjacency_matrix: [[]], shape=[0, 0], strides=[0, 0], layout=CFcf (0xf), const ndim=2, size: 0 }"
             ),
             // Non-empty vertices set and non-empty adjacency matrix.
             (
                 (vec!["A"], array![[false]]),
-                "DenseMatrixUndirectedGraph { vertices: {\"A\"}, vertices_indexes: {\"A\" <> 0}, adjacency_matrix: [[false]], shape=[1, 1], strides=[1, 1], layout=CFcf (0xf), const ndim=2, size: 0 }"
+                "UndirectedDenseMatrixGraph { vertices: {\"A\"}, vertices_indexes: {\"A\" <> 0}, adjacency_matrix: [[false]], shape=[1, 1], strides=[1, 1], layout=CFcf (0xf), const ndim=2, size: 0 }"
             ),
             // Non-empty vertices set and non-empty adjacency matrix.
             (
                 (vec!["A", "B"], array![[false, false], [false, false]]),
-                "DenseMatrixUndirectedGraph { vertices: {\"A\", \"B\"}, vertices_indexes: {\"A\" <> 0, \"B\" <> 1}, adjacency_matrix: [[false, false],\n [false, false]], shape=[2, 2], strides=[2, 1], layout=Cc (0x5), const ndim=2, size: 0 }"
+                "UndirectedDenseMatrixGraph { vertices: {\"A\", \"B\"}, vertices_indexes: {\"A\" <> 0, \"B\" <> 1}, adjacency_matrix: [[false, false],\n [false, false]], shape=[2, 2], strides=[2, 1], layout=Cc (0x5), const ndim=2, size: 0 }"
             ),
             // Non-empty vertices set and non-empty adjacency matrix.
             (
                 (vec!["A", "B"], array![[false, true ], [true , false]]),
-                "DenseMatrixUndirectedGraph { vertices: {\"A\", \"B\"}, vertices_indexes: {\"A\" <> 0, \"B\" <> 1}, adjacency_matrix: [[false, true],\n [true, false]], shape=[2, 2], strides=[2, 1], layout=Cc (0x5), const ndim=2, size: 1 }"
+                "UndirectedDenseMatrixGraph { vertices: {\"A\", \"B\"}, vertices_indexes: {\"A\" <> 0, \"B\" <> 1}, adjacency_matrix: [[false, true],\n [true, false]], shape=[2, 2], strides=[2, 1], layout=Cc (0x5), const ndim=2, size: 1 }"
             )
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), debug) in data.into_iter() {
+        for ((vertices, adjacency_matrix), debug) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(format!("{:?}", g), debug);
         }
@@ -85,9 +85,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), display) in data.into_iter() {
+        for ((vertices, adjacency_matrix), display) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(format!("{}", g), display);
         }
@@ -126,9 +126,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), order) in data.into_iter() {
+        for ((vertices, adjacency_matrix), order) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(g.order(), order);
             assert_eq!(g.vertices().len(), order);
@@ -181,18 +181,66 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), test_vertices) in data.into_iter() {
+        for ((vertices, adjacency_matrix), test_vertices) in data {
             // ... construct the graph ...
-            let g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             assert!(g.vertices().eq(test_vertices));
         }
     }
 
     #[test]
-    #[ignore]
     fn has_vertex() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), Vec<&str>); 5] = [
+            // Empty vertices set and adjacency matrix.
+            ((vec![], Default::default()), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), vec!["A"]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, false], [false, false]]), vec!["A", "B"]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["B", "A"], array![[false, false], [false, false]]), vec!["A", "B"]),
+            // Large vertices set.
+            (
+                (
+                    vec![
+                        "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
+                        "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+                        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+                        "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                        "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+                        "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+                        "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+                        "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+                        "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+                        "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+                    ],
+                    AdjacencyMatrix::default((100, 100)),
+                ),
+                vec![
+                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
+                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+                ],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), test_vertices) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert!(test_vertices.into_iter().all(|x| g.has_vertex(&x.to_string())));
+        }
     }
 
     #[test]
@@ -288,9 +336,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix, x), (test_vertices, test_adjacency_matrix)) in data.into_iter() {
+        for ((vertices, adjacency_matrix, x), (test_vertices, test_adjacency_matrix)) in data {
             // ... construct the graph ...
-            let mut g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let mut g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             let x = g.add_vertex(x);
 
@@ -395,9 +443,9 @@ mod tests {
         ];
 
         // For each test case in the test database ...
-        for ((vertices, adjacency_matrix, x), (test_vertices, test_adjacency_matrix)) in data.into_iter() {
+        for ((vertices, adjacency_matrix, x), (test_vertices, test_adjacency_matrix)) in data {
             // ... construct the graph ...
-            let mut g = DenseMatrixUndirectedGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let mut g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
             // ... assert result.
             let x: String = x.into();
 
@@ -410,38 +458,318 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn size() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), usize); 4] = [
+            // Empty vertices set and adjacency matrix.
+            ((vec![], Default::default()), 0),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), 0),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, false], [false, false]]), 0),
+            // Large vertices set.
+            (
+                (
+                    vec![
+                        "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
+                        "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+                        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+                        "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                        "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+                        "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+                        "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
+                        "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
+                        "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
+                        "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+                    ],
+                    AdjacencyMatrix::default((100, 100)),
+                ),
+                0,
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), size) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert_eq!(g.size(), size);
+            assert_eq!(g.edges().len(), size);
+        }
     }
 
     #[test]
-    #[ignore]
     fn edges() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), Vec<(&str, &str)>); 6] = [
+            // Empty vertices set and adjacency matrix.
+            ((vec![], Default::default()), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]]), vec![("A", "A")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["B", "A"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    ].mapv(|x| x != 0)
+                ),
+                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G"), ("I", "J")],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), test_edges) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert!(g.edges().zip(test_edges).all(|((x, y), (s, t))| x == s && y == t));
+        }
     }
 
     #[test]
-    #[ignore]
     fn has_edge() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), Vec<(&str, &str)>); 6] = [
+            // Empty vertices set and adjacency matrix.
+            ((vec![], Default::default()), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]]), vec![("A", "A")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["B", "A"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    ].mapv(|x| x != 0)
+                ),
+                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G"), ("I", "J")],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), test_edges) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert!(test_edges
+                .into_iter()
+                .all(|(x, y)| g.has_edge(&x.to_string(), &y.to_string())));
+        }
     }
 
     #[test]
-    #[ignore]
     fn add_edge() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix, (&str, &str)), Vec<(&str, &str)>); 5] = [
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]], ("A", "A")), vec![("A", "A")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]], ("A", "A")), vec![("A", "A")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, false], [false, false]], ("A", "B")), vec![("A", "B")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, false], [false, false]], ("B", "A")), vec![("A", "B")]),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    ].mapv(|x| x != 0),
+                    ("I", "J")
+                ),
+                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G")],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix, (x, y)), test_edges) in data {
+            // ... construct the graph ...
+            let mut g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            g.add_edge(&x.to_string(), &y.to_string());
+
+            assert!(g.edges().zip(test_edges).all(|((x, y), (s, t))| x == s && y == t));
+        }
     }
 
     #[test]
-    #[ignore]
     fn del_edge() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix, (&str, &str)), Vec<(&str, &str)>); 5] = [
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]], ("A", "A")), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]], ("A", "A")), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]], ("A", "B")), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]], ("B", "A")), vec![]),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    ].mapv(|x| x != 0),
+                    ("I", "J")
+                ),
+                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G")],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix, (x, y)), test_edges) in data {
+            // ... construct the graph ...
+            let mut g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            g.del_edge(&x.to_string(), &y.to_string());
+
+            assert!(g.edges().zip(test_edges).all(|((x, y), (s, t))| x == s && y == t));
+        }
     }
 
     #[test]
-    #[ignore]
+    fn adjacents() {
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), (&str, Vec<&str>)); 5] = [
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), ("A", vec![])),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]]), ("A", vec!["A"])),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]]), ("A", vec!["B"])),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["B", "A"], array![[false, true], [true, false]]), ("B", vec!["A"])),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    ].mapv(|x| x != 0)
+                ),
+                ("A", vec!["A", "C"]),
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), (test_x, test_adjacents)) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert!(g.adjacents(&test_x.to_string()).eq(test_adjacents.into_iter()));
+        }
+    }
+
+    #[test]
     fn is_adjacent() {
-        todo!() // TODO:
+        // Test database as (input, output) pairs.
+        #[rustfmt::skip]
+        let data: [((Vec<&str>, AdjacencyMatrix), Vec<(&str, &str)>); 6] = [
+            // Empty vertices set and adjacency matrix.
+            ((vec![], Default::default()), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[false]]), vec![]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A"], array![[true]]), vec![("A", "A")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["A", "B"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Non-empty vertices set and non-empty adjacency matrix.
+            ((vec!["B", "A"], array![[false, true], [true, false]]), vec![("A", "B")]),
+            // Large vertices set.
+            (
+                (
+                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    array![
+                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                    ].mapv(|x| x != 0)
+                ),
+                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G"), ("I", "J")],
+            ),
+        ];
+
+        // For each test case in the test database ...
+        for ((vertices, adjacency_matrix), test_edges) in data {
+            // ... construct the graph ...
+            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            // ... assert result.
+            assert!(test_edges
+                .into_iter()
+                .all(|(x, y)| g.is_adjacent(&x.to_string(), &y.to_string())));
+        }
     }
 }

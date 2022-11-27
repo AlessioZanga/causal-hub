@@ -13,5 +13,5 @@ pub use partial_ord::PartialOrdGraph;
 mod undirected;
 pub use undirected::UndirectedGraph;
 
-mod impls;
-pub use impls::DenseMatrixUndirectedGraph;
+mod structs;
+pub use structs::UndirectedDenseMatrixGraph;

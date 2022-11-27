@@ -1,0 +1,2 @@
+mod undirected_dense_matrix;
+pub use undirected_dense_matrix::UndirectedDenseMatrixGraph;
