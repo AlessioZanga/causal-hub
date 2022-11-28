@@ -43,7 +43,7 @@ pub trait BaseGraph: Clone + Debug + Display + Deref<Target = Self::Data> {
     fn order(&self) -> usize;
 
     /// Iterator over the vertices set.
-    fn vertices<'a>(&'a self) -> Self::VerticesIter<'a>;
+    fn vertices(&self) -> Self::VerticesIter<'_>;
 
     /// Checks if a vertex is in the graph.
     fn has_vertex(&self, x: &Self::Vertex) -> bool;
@@ -60,7 +60,7 @@ pub trait BaseGraph: Clone + Debug + Display + Deref<Target = Self::Data> {
     fn size(&self) -> usize;
 
     /// Iterator over the edges set.
-    fn edges<'a>(&'a self) -> Self::EdgesIter<'a>;
+    fn edges(&self) -> Self::EdgesIter<'_>;
 
     /// Checks if an edge is in the graph.
     fn has_edge(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;

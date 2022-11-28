@@ -34,6 +34,7 @@ impl Deref for UndirectedDenseMatrixGraph {
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     graph: &'a UndirectedDenseMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
@@ -77,6 +78,7 @@ impl<'a> Iterator for EdgesIterator<'a> {
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
+#[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     graph: &'a UndirectedDenseMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
@@ -109,7 +111,7 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .and_then(|i| Some(self.graph.vertices_indexes.get_by_right(&i).unwrap()))
+            .map(|i| self.graph.vertices_indexes.get_by_right(&i).unwrap())
     }
 }
 
@@ -160,7 +162,7 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
     }
 
     #[inline]
-    fn vertices<'a>(&'a self) -> Self::VerticesIter<'a> {
+    fn vertices(&self) -> Self::VerticesIter<'_> {
         // Assert vertices set and vertices map are consistent.
         debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
 
@@ -294,7 +296,7 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
     }
 
     #[inline]
-    fn edges<'a>(&'a self) -> Self::EdgesIter<'a> {
+    fn edges(&self) -> Self::EdgesIter<'_> {
         Self::EdgesIter::new(self)
     }
 
