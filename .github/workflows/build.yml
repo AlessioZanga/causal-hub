@@ -1,0 +1,69 @@
+on: [push]
+
+name: build
+
+jobs:
+  build:
+    name: causal-hub
+    runs-on: '${{ matrix.os }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        env: ["stable", "beta", "nightly"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-dependencies
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.env }}
+          components: rustfmt, clippy
+      - name: Check
+        run: cargo check --all -v
+      - name: Build
+        run: cargo build -v
+      - name: Test
+        run: cargo test --tests -v
+      - name: Doctest
+        run: cargo test --doc -v
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features --no-deps -- -D warnings -v
+      - name: Format
+        if: ${{ runner.os == 'Linux' && matrix.env == 'nightly' }}
+        run: cargo +nightly fmt --all --check -v
+      - name: Coverage
+        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
+        run: |
+          cargo install cargo-llvm-cov
+          cargo llvm-cov --lcov --output-path lcov.info -v
+      - name: CodeCov
+        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./lcov.info
+          flags: unittests
+          fail_ci_if_error: true
+      - name: Publish
+        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' && github.ref == 'refs/heads/main' }}
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          cargo login "$CARGO_REGISTRY_TOKEN"
+          cargo publish --allow-dirty
+      - name: 'Artifacts'
+        uses: actions/upload-artifact@v2
+        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' && github.ref == 'refs/heads/main' }}
+        with:
+          name: ${{ env.PROJECT_NAME_UNDERSCORE }}
+          path: target/release/${{ env.PROJECT_NAME_UNDERSCORE }}
