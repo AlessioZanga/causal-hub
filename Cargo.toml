@@ -1,6 +1,6 @@
 [package]
 name = "causal-hub"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 description = "A hub for Causal Data Science."
@@ -13,3 +13,8 @@ keywords = ["causality", "causal-inference", "causal-discovery"]
 categories = ["algorithms", "data-structures", "mathematics", "science"]
 
 [dependencies]
+bimap = "^0.6"
+fnv = "^1.0"
+itertools = "^0.10"
+ndarray = "^0.15"
+thiserror = "^1.0"
