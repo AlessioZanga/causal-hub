@@ -1,11 +1,10 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
-    ops::Deref,
 };
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display + Deref<Target = Self::Data> {
+pub trait BaseGraph: Clone + Debug + Display {
     /// Data type.
     type Data;
 
