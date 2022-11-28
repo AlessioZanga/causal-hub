@@ -1,7 +1,7 @@
-use super::{BaseGraph, DefaultGraph, PartialOrdGraph};
+use super::BaseGraph;
 
 /// Undirected graph trait.
-pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph {
+pub trait UndirectedGraph: BaseGraph {
     /// Neighbors iterator type.
     type NeighborsIter<'a>: Iterator<Item = &'a Self::Vertex>
     where
