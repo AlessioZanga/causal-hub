@@ -1,15 +1,18 @@
-#[cfg(test)]
+#[generic_tests::define]
 mod tests {
     use std::cmp::Ordering;
 
     use causal_hub::{
-        graphs::{DefaultGraph, UndirectedDenseMatrixGraph},
+        graphs::{BaseGraph, DefaultGraph, DirectedDenseMatrixGraph, PartialOrdGraph, UndirectedDenseMatrixGraph},
         types::AdjacencyMatrix,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn eq() {
+    fn eq<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph + PartialOrdGraph,
+    {
         // Test database as (input, output) pairs.
         let data: [((Vec<&str>, AdjacencyMatrix), (Vec<&str>, AdjacencyMatrix, bool)); 6] = [
             // Empty vertices set and adjacency matrix.
@@ -35,15 +38,18 @@ mod tests {
         // For each test case in the test database ...
         for ((vertices, adjacency_matrix), (test_vertices, test_adjacency_matrix, flag)) in data {
             // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            let h = UndirectedDenseMatrixGraph::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
+            let g = T::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let h = T::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(g.eq(&h), flag);
         }
     }
 
     #[test]
-    fn partial_cmp() {
+    fn partial_cmp<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph + PartialOrdGraph,
+    {
         // Test database as (input, output) pairs.
         let data: [(
             (Vec<&str>, AdjacencyMatrix),
@@ -97,10 +103,16 @@ mod tests {
         // For each test case in the test database ...
         for ((vertices, adjacency_matrix), (test_vertices, test_adjacency_matrix, ordering)) in data {
             // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            let h = UndirectedDenseMatrixGraph::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
+            let g = T::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
+            let h = T::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
             // ... assert result.
             assert_eq!(g.partial_cmp(&h), ordering);
         }
     }
+
+    #[instantiate_tests(<UndirectedDenseMatrixGraph>)]
+    mod undirected_dense_matrix_graph {}
+
+    #[instantiate_tests(<DirectedDenseMatrixGraph>)]
+    mod directed_dense_matrix_graph {}
 }

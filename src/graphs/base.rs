@@ -3,10 +3,21 @@ use std::{
     hash::Hash,
 };
 
+/// Directions pseudo-enumerator for generics algorithms.
+pub mod directions {
+    /// Undirected pseudo-enumerator for generics algorithms.
+    pub struct Undirected;
+    /// Directed pseudo-enumerator for generics algorithms.
+    pub struct Directed;
+}
+
 /// Base graph trait.
 pub trait BaseGraph: Clone + Debug + Display {
     /// Data type.
     type Data;
+
+    /// Directional type.
+    type Direction;
 
     /// Vertex type.
     type Vertex: Clone + Debug + Eq + Ord + Hash;

@@ -1,29 +1,38 @@
-#[cfg(test)]
+#[generic_tests::define]
 mod tests {
     use causal_hub::{
-        graphs::{BaseGraph, DefaultGraph, ErrorGraph as E, UndirectedDenseMatrixGraph},
+        graphs::{BaseGraph, DefaultGraph, DirectedDenseMatrixGraph, ErrorGraph as E, UndirectedDenseMatrixGraph},
         types::AdjacencyMatrix,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn default() {
-        let g = UndirectedDenseMatrixGraph::default();
+    fn default<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph,
+    {
+        let g = T::default();
 
         assert_eq!(g.order(), 0);
         assert_eq!(g.size(), 0);
     }
 
     #[test]
-    fn null() {
-        let g = UndirectedDenseMatrixGraph::null();
+    fn null<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph,
+    {
+        let g = T::null();
 
         assert_eq!(g.order(), 0);
         assert_eq!(g.size(), 0);
     }
 
     #[test]
-    fn empty() {
+    fn empty<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph,
+    {
         // Test database as (input, output) pairs.
         #[rustfmt::skip]
         let data: [(Vec<&str>, Option<E>); 5] = [
@@ -56,7 +65,7 @@ mod tests {
         // For each test case in the test database ...
         for (vertices, error) in data {
             // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::empty(vertices.clone());
+            let g = T::empty(vertices.clone());
             // ... assert result.
             match g {
                 Ok(g) => {
@@ -72,7 +81,10 @@ mod tests {
     }
 
     #[test]
-    fn complete() {
+    fn complete<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph,
+    {
         // Test database as (input, output) pairs.
         #[rustfmt::skip]
         let data: [(Vec<&str>, Option<E>); 5] = [
@@ -105,7 +117,7 @@ mod tests {
         // For each test case in the test database ...
         for (vertices, error) in data {
             // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::complete(vertices.clone());
+            let g = T::complete(vertices.clone());
             // ... assert result.
             match g {
                 Ok(g) => {
@@ -123,7 +135,10 @@ mod tests {
     }
 
     #[test]
-    fn with_adjacency_matrix() {
+    fn with_adjacency_matrix<T>()
+    where
+        T: BaseGraph<Vertex = String> + DefaultGraph,
+    {
         // Test database as (input, output) pairs.
         #[rustfmt::skip]
         let data: [((Vec<&str>, AdjacencyMatrix), Option<E>); 8] = [
@@ -168,9 +183,15 @@ mod tests {
         // For each test case in the test database ...
         for ((vertices, adjacency_matrix), error) in data {
             // ... assert result.
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix);
+            let g = T::with_adjacency_matrix(vertices, adjacency_matrix);
 
             assert_eq!(g.err(), error);
         }
     }
+
+    #[instantiate_tests(<UndirectedDenseMatrixGraph>)]
+    mod undirected_dense_matrix_graph {}
+
+    #[instantiate_tests(<DirectedDenseMatrixGraph>)]
+    mod directed_dense_matrix_graph {}
 }

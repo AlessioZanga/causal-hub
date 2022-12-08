@@ -1,5 +1,5 @@
 mod base;
-pub use base::BaseGraph;
+pub use base::{directions, BaseGraph};
 
 mod default;
 pub use default::DefaultGraph;
@@ -17,4 +17,4 @@ mod undirected;
 pub use undirected::UndirectedGraph;
 
 mod structs;
-pub use structs::UndirectedDenseMatrixGraph;
+pub use structs::{DirectedDenseMatrixGraph, UndirectedDenseMatrixGraph};

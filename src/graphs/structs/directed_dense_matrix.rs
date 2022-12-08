@@ -10,13 +10,13 @@ use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
 
 use crate::{
-    graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, PartialOrdGraph},
     types::{AdjacencyMatrix, FnvBiHashMap},
 };
 
-/// Undirected graph struct based on dense adjacent matrix data structure.
+/// Directed graph struct based on dense adjacent matrix data structure.
 #[derive(Clone, Debug)]
-pub struct UndirectedDenseMatrixGraph {
+pub struct DirectedDenseMatrixGraph {
     vertices: BTreeSet<String>,
     vertices_indexes: FnvBiHashMap<String, usize>,
     adjacency_matrix: AdjacencyMatrix,
@@ -25,7 +25,7 @@ pub struct UndirectedDenseMatrixGraph {
 
 /* Implement BaseGraph trait. */
 
-impl Deref for UndirectedDenseMatrixGraph {
+impl Deref for DirectedDenseMatrixGraph {
     type Target = AdjacencyMatrix;
 
     #[inline]
@@ -36,29 +36,27 @@ impl Deref for UndirectedDenseMatrixGraph {
 
 #[allow(clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
-    graph: &'a UndirectedDenseMatrixGraph,
+    graph: &'a DirectedDenseMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
     size: usize,
 }
 
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
-    pub fn new(graph: &'a UndirectedDenseMatrixGraph) -> Self {
+    pub fn new(graph: &'a DirectedDenseMatrixGraph) -> Self {
         Self {
             graph,
-            iter: (*graph)
-                .indexed_iter()
-                .filter_map(|((i, j), &flag)| match flag && i <= j {
-                    true => Some((i, j)),
-                    false => None,
-                }),
+            iter: (*graph).indexed_iter().filter_map(|((i, j), &flag)| match flag {
+                true => Some((i, j)),
+                false => None,
+            }),
             size: graph.size(),
         }
     }
 }
 
 impl<'a> Iterator for EdgesIterator<'a> {
-    type Item = <UndirectedDenseMatrixGraph as BaseGraph>::Edge<'a>;
+    type Item = <DirectedDenseMatrixGraph as BaseGraph>::Edge<'a>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -80,18 +78,16 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
-    graph: &'a UndirectedDenseMatrixGraph,
+    graph: &'a DirectedDenseMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
 }
 
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
-    pub fn new(
-        graph: &'a UndirectedDenseMatrixGraph,
-        x: &'a <UndirectedDenseMatrixGraph as BaseGraph>::Vertex,
-    ) -> Self {
+    pub fn new(graph: &'a DirectedDenseMatrixGraph, x: &'a <DirectedDenseMatrixGraph as BaseGraph>::Vertex) -> Self {
         Self {
             graph,
+            // FIXME:
             iter: (*graph)
                 .row(*graph.vertices_indexes.get_by_left(x).unwrap())
                 .into_iter()
@@ -105,7 +101,7 @@ impl<'a> AdjacentsIterator<'a> {
 }
 
 impl<'a> Iterator for AdjacentsIterator<'a> {
-    type Item = &'a <UndirectedDenseMatrixGraph as BaseGraph>::Vertex;
+    type Item = &'a <DirectedDenseMatrixGraph as BaseGraph>::Vertex;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -115,10 +111,10 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
     }
 }
 
-impl Display for UndirectedDenseMatrixGraph {
+impl Display for DirectedDenseMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
-        write!(f, "UndirectedGraph {{ ")?;
+        write!(f, "DirectedGraph {{ ")?;
         // Write vertices set.
         write!(
             f,
@@ -136,10 +132,10 @@ impl Display for UndirectedDenseMatrixGraph {
     }
 }
 
-impl BaseGraph for UndirectedDenseMatrixGraph {
+impl BaseGraph for DirectedDenseMatrixGraph {
     type Data = AdjacencyMatrix;
 
-    type Direction = directions::Undirected;
+    type Direction = directions::Directed;
 
     type Vertex = String;
 
@@ -230,8 +226,6 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
         debug_assert_eq!(self.vertices_indexes.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
-        // Assert adjacency matrix is still symmetric.
-        debug_assert_eq!(self.adjacency_matrix, self.adjacency_matrix.t());
 
         // Return new vertex.
         x
@@ -286,8 +280,6 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
         debug_assert_eq!(self.vertices_indexes.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
-        // Assert adjacency matrix is still symmetric.
-        debug_assert_eq!(self.adjacency_matrix, self.adjacency_matrix.t());
 
         flag
     }
@@ -326,7 +318,6 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
         if !self.adjacency_matrix[[i, j]] {
             // Add edge.
             self.adjacency_matrix[[i, j]] = true;
-            self.adjacency_matrix[[j, i]] = true;
             // Increment size.
             self.size += 1;
             // Set flag.
@@ -336,16 +327,7 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
         // Assert adjacency matrix is still consistent.
         debug_assert_eq!(self.adjacency_matrix[[i, j]], self.adjacency_matrix[[j, i]]);
         // Assert size counter and adjacency matrix are still consistent.
-        debug_assert_eq!(
-            self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &flag)| match i <= j {
-                    true => Some(flag as usize),
-                    false => None,
-                })
-                .sum()
-        );
+        debug_assert_eq!(self.size, self.adjacency_matrix.mapv(|flag| flag as usize).sum());
 
         flag
     }
@@ -363,26 +345,14 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
         if self.adjacency_matrix[[i, j]] {
             // Remove edge.
             self.adjacency_matrix[[i, j]] = false;
-            self.adjacency_matrix[[j, i]] = false;
             // Decrement size.
             self.size -= 1;
             // Set flag.
             flag = true;
         }
 
-        // Assert adjacency matrix is still consistent.
-        debug_assert_eq!(self.adjacency_matrix[[i, j]], self.adjacency_matrix[[j, i]]);
         // Assert size counter and adjacency matrix are still consistent.
-        debug_assert_eq!(
-            self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &flag)| match i <= j {
-                    true => Some(flag as usize),
-                    false => None,
-                })
-                .sum()
-        );
+        debug_assert_eq!(self.size, self.adjacency_matrix.mapv(|flag| flag as usize).sum());
 
         flag
     }
@@ -400,7 +370,7 @@ impl BaseGraph for UndirectedDenseMatrixGraph {
 
 /* Implement DefaultGraph trait. */
 
-impl Default for UndirectedDenseMatrixGraph {
+impl Default for DirectedDenseMatrixGraph {
     #[inline]
     fn default() -> Self {
         Self {
@@ -412,7 +382,7 @@ impl Default for UndirectedDenseMatrixGraph {
     }
 }
 
-impl DefaultGraph for UndirectedDenseMatrixGraph {
+impl DefaultGraph for DirectedDenseMatrixGraph {
     fn empty<I, V>(vertices: I) -> Result<Self, E>
     where
         I: IntoIterator<Item = V>,
@@ -465,7 +435,7 @@ impl DefaultGraph for UndirectedDenseMatrixGraph {
         // Remove self loops.
         adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
         // Compute size.
-        let size = (order * (order.saturating_sub(1))) / 2;
+        let size = adjacency_matrix.mapv(|flag| flag as usize).sum();
 
         Ok(Self {
             vertices,
@@ -495,10 +465,6 @@ impl DefaultGraph for UndirectedDenseMatrixGraph {
         if !adjacency_matrix.is_square() {
             return Err(E::NonSquareMatrix);
         }
-        // Check if adjacency matrix is not symmetric.
-        if adjacency_matrix != adjacency_matrix.t() {
-            return Err(E::NonSymmetricMatrix);
-        }
 
         // Map vertices labels to vertices indices.
         let vertices_indexes: FnvBiHashMap<Self::Vertex, usize> =
@@ -509,8 +475,6 @@ impl DefaultGraph for UndirectedDenseMatrixGraph {
 
         // Compute size.
         let size = adjacency_matrix.mapv(|flag| flag as usize).sum();
-        let size = size + adjacency_matrix.diag().mapv(|flag| flag as usize).sum();
-        let size = size / 2;
 
         Ok(Self {
             vertices,
@@ -523,7 +487,7 @@ impl DefaultGraph for UndirectedDenseMatrixGraph {
 
 /* Implement PartialOrdGraph trait. */
 
-impl PartialEq for UndirectedDenseMatrixGraph {
+impl PartialEq for DirectedDenseMatrixGraph {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         // Check that V(G) == V(H) && E(G) == E(H).
@@ -531,9 +495,9 @@ impl PartialEq for UndirectedDenseMatrixGraph {
     }
 }
 
-impl Eq for UndirectedDenseMatrixGraph {}
+impl Eq for DirectedDenseMatrixGraph {}
 
-impl PartialOrd for UndirectedDenseMatrixGraph {
+impl PartialOrd for DirectedDenseMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
         let vertices = crate::utils::partial_cmp_sets(&self.vertices, &other.vertices);
@@ -562,27 +526,72 @@ impl PartialOrd for UndirectedDenseMatrixGraph {
     }
 }
 
-impl PartialOrdGraph for UndirectedDenseMatrixGraph {}
+impl PartialOrdGraph for DirectedDenseMatrixGraph {}
 
-/* Implement UndirectedGraph trait. */
+/* Implement DirectedGraph trait. */
 
-impl UndirectedGraph for UndirectedDenseMatrixGraph {
-    type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
+/*
 
-    #[inline]
-    fn neighbors<'a>(&'a self, x: &'a Self::Vertex) -> Self::NeighborsIter<'a> {
-        Self::NeighborsIter::new(self, x)
+impl DirectedGraph for DirectedDenseMatrixGraph {
+    type AncestorsIter<'a>
+    where
+        Self: 'a,
+        Self::Vertex: 'a;
+
+    type ParentsIter<'a>
+    where
+        Self: 'a,
+        Self::Vertex: 'a;
+
+    type ChildrenIter<'a>
+    where
+        Self: 'a,
+        Self::Vertex: 'a;
+
+    type DescendantsIter<'a>
+    where
+        Self: 'a,
+        Self::Vertex: 'a;
+
+    fn ancestors<'a>(&'a self, x: &'a Self::Vertex) -> Self::AncestorsIter<'a> {
+        todo!()
     }
 
-    #[inline]
-    fn is_neighbor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
-        self.is_adjacent(x, y)
+    fn is_ancestor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
+        todo!()
     }
 
-    fn degree(&self, x: &Self::Vertex) -> usize {
-        // Get associated vertex index.
-        let i = *self.vertices_indexes.get_by_left(x).unwrap();
+    fn parents<'a>(&'a self, x: &'a Self::Vertex) -> Self::ParentsIter<'a> {
+        todo!()
+    }
 
-        self.adjacency_matrix.row(i).mapv(|flag| flag as usize).sum()
+    fn is_parent(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
+        todo!()
+    }
+
+    fn children<'a>(&'a self, x: &'a Self::Vertex) -> Self::ChildrenIter<'a> {
+        todo!()
+    }
+
+    fn is_child(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
+        todo!()
+    }
+
+    fn descendants<'a>(&'a self, x: &'a Self::Vertex) -> Self::DescendantsIter<'a> {
+        todo!()
+    }
+
+    fn is_descendant(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool {
+        todo!()
+    }
+
+    fn in_degree(&self, x: &Self::Vertex) -> usize {
+        todo!()
+    }
+
+    fn out_degree(&self, x: &Self::Vertex) -> usize {
+        todo!()
     }
 }
+
+*/
