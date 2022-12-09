@@ -18,3 +18,9 @@ pub use undirected::UndirectedGraph;
 
 mod structs;
 pub use structs::{DirectedDenseMatrixGraph, UndirectedDenseMatrixGraph};
+
+/// Default undirected graph implementation based on dense adjacency matrix.
+pub type Graph = UndirectedDenseMatrixGraph;
+
+/// Default directed graph implementation based on dense adjacency matrix.
+pub type DiGraph = DirectedDenseMatrixGraph;

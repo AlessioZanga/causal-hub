@@ -2,7 +2,7 @@ use std::{
     cmp::Ordering,
     collections::{btree_set, BTreeSet},
     fmt::Display,
-    iter::{Enumerate, FilterMap},
+    iter::{repeat, Enumerate, FilterMap, FusedIterator},
     ops::Deref,
 };
 
@@ -11,7 +11,9 @@ use ndarray::{iter::IndexedIter, prelude::*};
 
 use crate::{
     graphs::{directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, PartialOrdGraph},
-    types::{AdjacencyMatrix, FnvBiHashMap},
+    prelude::{AdjacencyList, EdgeList, SparseAdjacencyMatrix},
+    types::{DenseAdjacencyMatrix, FnvBiHashMap},
+    Adj, E, V,
 };
 
 /// Directed graph struct based on dense adjacent matrix data structure.
@@ -19,14 +21,14 @@ use crate::{
 pub struct DirectedDenseMatrixGraph {
     vertices: BTreeSet<String>,
     vertices_indexes: FnvBiHashMap<String, usize>,
-    adjacency_matrix: AdjacencyMatrix,
+    adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
 
 /* Implement BaseGraph trait. */
 
 impl Deref for DirectedDenseMatrixGraph {
-    type Target = AdjacencyMatrix;
+    type Target = DenseAdjacencyMatrix;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -61,6 +63,9 @@ impl<'a> Iterator for EdgesIterator<'a> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(i, j)| {
+            // Decrement inner counter.
+            self.size -= 1;
+
             (
                 self.graph.vertices_indexes.get_by_right(&i).unwrap(),
                 self.graph.vertices_indexes.get_by_right(&j).unwrap(),
@@ -75,6 +80,8 @@ impl<'a> Iterator for EdgesIterator<'a> {
 }
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
+
+impl<'a> FusedIterator for EdgesIterator<'a> {}
 
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
@@ -115,17 +122,13 @@ impl Display for DirectedDenseMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "DirectedGraph {{ ")?;
-        // Write vertices set.
-        write!(
-            f,
-            "V = {{{}}}, ",
-            self.vertices().map(|x| format!("\"{}\"", x)).join(", ")
-        )?;
-        // Write edges set.
+        // Write vertex set.
+        write!(f, "V = {{{}}}, ", V!(self).map(|x| format!("\"{}\"", x)).join(", "))?;
+        // Write edge set.
         write!(
             f,
             "E = {{{}}}",
-            self.edges().map(|(x, y)| format!("(\"{}\", \"{}\")", x, y)).join(", ")
+            E!(self).map(|(x, y)| format!("(\"{}\", \"{}\")", x, y)).join(", ")
         )?;
         // Write ending character.
         write!(f, " }}")
@@ -133,7 +136,7 @@ impl Display for DirectedDenseMatrixGraph {
 }
 
 impl BaseGraph for DirectedDenseMatrixGraph {
-    type Data = AdjacencyMatrix;
+    type Data = DenseAdjacencyMatrix;
 
     type Direction = directions::Directed;
 
@@ -147,11 +150,30 @@ impl BaseGraph for DirectedDenseMatrixGraph {
 
     type AdjacentsIter<'a> = AdjacentsIterator<'a>;
 
+    fn new<I, J>(vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = Self::Vertex>,
+        J: IntoIterator<Item = (Self::Vertex, Self::Vertex)>,
+    {
+        todo!() // FIXME:
+    }
+
+    fn clear(&mut self) {
+        // Clear the vertices.
+        self.vertices.clear();
+        // Clear the vertices map.
+        self.vertices_indexes.clear();
+        // Clear the adjacency matrix.
+        self.adjacency_matrix = Default::default();
+        // Clear the size.
+        self.size = 0;
+    }
+
     #[inline]
     fn order(&self) -> usize {
-        // Assert vertices set and vertices map are consistent.
+        // Assert vertex set and vertices map are consistent.
         debug_assert_eq!(self.vertices.len(), self.vertices_indexes.len());
-        // Assert vertices set is consistent with adjacency matrix shape.
+        // Assert vertex set is consistent with adjacency matrix shape.
         debug_assert_eq!(self.vertices_indexes.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is square.
         debug_assert!(self.adjacency_matrix.is_square());
@@ -161,7 +183,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
 
     #[inline]
     fn vertices(&self) -> Self::VerticesIter<'_> {
-        // Assert vertices set and vertices map are consistent.
+        // Assert vertex set and vertices map are consistent.
         debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
 
         self.vertices.iter()
@@ -169,7 +191,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
 
     #[inline]
     fn has_vertex(&self, x: &Self::Vertex) -> bool {
-        // Assert vertices set and vertices map are consistent.
+        // Assert vertex set and vertices map are consistent.
         debug_assert_eq!(self.vertices.contains(x), self.vertices_indexes.contains_left(x));
 
         self.vertices_indexes.contains_left(x)
@@ -195,7 +217,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
             // Compute the new size of adjacency matrix.
             let n = self.adjacency_matrix.nrows();
             // Allocate new adjacency matrix.
-            let mut adjacency_matrix = AdjacencyMatrix::from_elem((n + 1, n + 1), false);
+            let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((n + 1, n + 1), false);
             // Compute blocks.
             let (p, q) = ([0..i, (i + 1)..(n + 1)], [0..i, i..n]);
             let (p, q) = (iproduct!(p.clone(), p), iproduct!(q.clone(), q));
@@ -212,7 +234,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
         // Assert vertex has been added.
         debug_assert!(self.vertices.contains(&x));
         debug_assert!(self.vertices_indexes.contains_left(&x));
-        // Assert vertices set is still consistent with vertices map.
+        // Assert vertex set is still consistent with vertices map.
         debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
         // Assert vertices labels are still associated to an ordered and
         // contiguous sequence of integers starting from zero, i.e in [0, n).
@@ -222,7 +244,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
             .cloned()
             .sorted()
             .eq(0..self.vertices_indexes.len()));
-        // Assert vertices set is still consistent with adjacency matrix shape.
+        // Assert vertex set is still consistent with adjacency matrix shape.
         debug_assert_eq!(self.vertices_indexes.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
@@ -247,7 +269,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
             // Compute the new size of adjacency matrix.
             let n = self.adjacency_matrix.nrows();
             // Allocate new adjacency matrix.
-            let mut adjacency_matrix = AdjacencyMatrix::from_elem((n - 1, n - 1), false);
+            let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((n - 1, n - 1), false);
             // Compute blocks.
             let (p, q) = ([0..i, i..(n - 1)], [0..i, (i + 1)..n]);
             let (p, q) = (iproduct!(p.clone(), p), iproduct!(q.clone(), q));
@@ -266,7 +288,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
         // Assert vertex has been removed.
         debug_assert!(!self.vertices.contains(x));
         debug_assert!(!self.vertices_indexes.contains_left(x));
-        // Assert vertices set is still consistent with vertices map.
+        // Assert vertex set is still consistent with vertices map.
         debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
         // Assert vertices labels are still associated to an ordered and
         // contiguous sequence of integers starting from zero, i.e in [0, n).
@@ -276,7 +298,7 @@ impl BaseGraph for DirectedDenseMatrixGraph {
             .cloned()
             .sorted()
             .eq(0..self.vertices_indexes.len()));
-        // Assert vertices set is still consistent with adjacency matrix shape.
+        // Assert vertex set is still consistent with adjacency matrix shape.
         debug_assert_eq!(self.vertices_indexes.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
@@ -376,7 +398,7 @@ impl Default for DirectedDenseMatrixGraph {
         Self {
             vertices: Default::default(),
             vertices_indexes: Default::default(),
-            adjacency_matrix: AdjacencyMatrix::from_elem((0, 0), false),
+            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
             size: 0,
         }
     }
@@ -391,18 +413,12 @@ impl DefaultGraph for DirectedDenseMatrixGraph {
         // Remove duplicated vertices labels.
         let vertices: BTreeSet<Self::Vertex> = vertices.into_iter().map(|x| x.into()).collect();
 
-        // Check if vertices labels are non empty.
-        if vertices.contains("") {
-            return Err(E::EmptyVertexLabel);
-        }
-
         // Map vertices labels to vertices indices.
-        let vertices_indexes: FnvBiHashMap<Self::Vertex, usize> =
-            vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
         // Compute new graph order.
         let order = vertices.len();
         // Initialize adjacency matrix given graph order.
-        let adjacency_matrix = AdjacencyMatrix::from_elem((order, order), false);
+        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
         Ok(Self {
             vertices,
@@ -420,18 +436,12 @@ impl DefaultGraph for DirectedDenseMatrixGraph {
         // Remove duplicated vertices labels.
         let vertices: BTreeSet<Self::Vertex> = vertices.into_iter().map(|x| x.into()).collect();
 
-        // Check if vertices labels are non empty.
-        if vertices.contains("") {
-            return Err(E::EmptyVertexLabel);
-        }
-
         // Map vertices labels to vertices indices.
-        let vertices_indexes: FnvBiHashMap<Self::Vertex, usize> =
-            vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
         // Compute new graph order.
         let order = vertices.len();
         // Initialize adjacency matrix given graph order.
-        let mut adjacency_matrix = AdjacencyMatrix::from_elem((order, order), true);
+        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
         // Remove self loops.
         adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
         // Compute size.
@@ -444,20 +454,55 @@ impl DefaultGraph for DirectedDenseMatrixGraph {
             size,
         })
     }
+}
 
-    fn with_adjacency_matrix<I, V>(vertices: I, adjacency_matrix: AdjacencyMatrix) -> Result<Self, E>
-    where
-        I: IntoIterator<Item = V>,
-        V: Into<Self::Vertex>,
-    {
-        // Remove duplicated vertices labels.
-        let vertices: BTreeSet<Self::Vertex> = vertices.into_iter().map(|x| x.into()).collect();
+/* Implement TryFrom traits. */
 
-        // Check if vertices labels are non empty.
-        if vertices.contains("") {
-            return Err(E::EmptyVertexLabel);
+impl<V> TryFrom<EdgeList<V>> for DirectedDenseMatrixGraph
+where
+    V: Into<<Self as BaseGraph>::Vertex>,
+{
+    type Error = E;
+
+    fn try_from(edges: EdgeList<V>) -> Result<Self, Self::Error> {
+        // Map vertices from edge list.
+        let edges: Vec<_> = edges.into_iter().map(|(x, y)| (x.into(), y.into())).collect();
+        // Get vertices from edge list.
+        let vertices: BTreeSet<&<Self as BaseGraph>::Vertex> = edges.iter().flat_map(|(x, y)| [x, y]).collect();
+        // Build empty graph.
+        let mut g = Self::empty(vertices)?;
+        // Fill empty graph.
+        for (x, y) in edges {
+            g.add_edge(&x, &y);
         }
-        // Check if vertices set is not consistent with given adjacency matrix.
+
+        Ok(g)
+    }
+}
+
+impl<V> TryFrom<AdjacencyList<V>> for DirectedDenseMatrixGraph
+where
+    V: Into<<Self as BaseGraph>::Vertex>,
+{
+    type Error = E;
+
+    fn try_from(value: AdjacencyList<V>) -> Result<Self, Self::Error> {
+        todo!() // FIXME:
+    }
+}
+
+impl<I, V> TryFrom<(I, DenseAdjacencyMatrix)> for DirectedDenseMatrixGraph
+where
+    I: IntoIterator<Item = V>,
+    V: Into<<Self as BaseGraph>::Vertex>,
+{
+    type Error = E;
+
+    fn try_from((vertices, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Result<Self, Self::Error> {
+        // Remove duplicated vertices labels.
+        let vertices: BTreeSet<<Self as BaseGraph>::Vertex> = vertices.into_iter().map(|x| x.into()).collect();
+
+        // Check if vertex set is not consistent with given adjacency matrix.
         if vertices.len() != adjacency_matrix.nrows() {
             return Err(E::InconsistentMatrix);
         }
@@ -467,8 +512,7 @@ impl DefaultGraph for DirectedDenseMatrixGraph {
         }
 
         // Map vertices labels to vertices indices.
-        let vertices_indexes: FnvBiHashMap<Self::Vertex, usize> =
-            vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
 
         // Cast to standard memory layout (i.e. C layout), if not already.
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
@@ -482,6 +526,79 @@ impl DefaultGraph for DirectedDenseMatrixGraph {
             adjacency_matrix,
             size,
         })
+    }
+}
+
+impl<I, V> TryFrom<(I, SparseAdjacencyMatrix)> for DirectedDenseMatrixGraph
+where
+    I: IntoIterator<Item = V>,
+    V: Into<<Self as BaseGraph>::Vertex>,
+{
+    type Error = E;
+
+    fn try_from((vertices, adjacency_matrix): (I, SparseAdjacencyMatrix)) -> Result<Self, Self::Error> {
+        // Allocate dense adjacency matrix.
+        let mut dense_adjacency_matrix = DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
+        // Fill dense adjacency matrix from sparse triplets.
+        for (&x, (i, j)) in adjacency_matrix.triplet_iter() {
+            dense_adjacency_matrix[[i, j]] = x;
+        }
+        // Delegate constructor to dense adjacency matrix constructor.
+        Self::try_from((vertices, dense_adjacency_matrix))
+    }
+}
+
+/* Implement Into traits. */
+
+#[allow(clippy::from_over_into)]
+impl Into<EdgeList<<Self as BaseGraph>::Vertex>> for DirectedDenseMatrixGraph {
+    fn into(self) -> EdgeList<<Self as BaseGraph>::Vertex> {
+        E!(self).map(|(x, y)| (x.into(), y.into())).collect()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<AdjacencyList<<Self as BaseGraph>::Vertex>> for DirectedDenseMatrixGraph {
+    fn into(self) -> AdjacencyList<<Self as BaseGraph>::Vertex> {
+        V!(self)
+            .map(|x| (x.into(), Adj!(self, x).map(|y| y.into()).collect()))
+            .collect()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(BTreeSet<<Self as BaseGraph>::Vertex>, DenseAdjacencyMatrix)> for DirectedDenseMatrixGraph {
+    fn into(self) -> (BTreeSet<<Self as BaseGraph>::Vertex>, DenseAdjacencyMatrix) {
+        (self.vertices, self.adjacency_matrix)
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(BTreeSet<<Self as BaseGraph>::Vertex>, SparseAdjacencyMatrix)> for DirectedDenseMatrixGraph {
+    fn into(self) -> (BTreeSet<<Self as BaseGraph>::Vertex>, SparseAdjacencyMatrix) {
+        // Get upper bound capacity.
+        let size = self.size() * 2;
+        // Get currente dense adjacency matrix shape.
+        let shape = self.adjacency_matrix.shape();
+        let shape = (shape[0], shape[1]);
+        // Allocate triplets indices.
+        let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
+        // Build triplets indices.
+        for ((i, j), &flag) in self.adjacency_matrix.indexed_iter() {
+            if flag {
+                rows.push(i);
+                cols.push(j);
+            }
+        }
+        // Shrink triplets indices to actual capacity.
+        rows.shrink_to_fit();
+        cols.shrink_to_fit();
+        // Build data vector.
+        let data: Vec<_> = repeat(true).take(rows.len()).collect();
+        // Construct sparse adjacency matrix.
+        let sparse_adajcency_matrix = SparseAdjacencyMatrix::from_triplets(shape, rows, cols, data);
+
+        (self.vertices, sparse_adajcency_matrix)
     }
 }
 
