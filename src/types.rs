@@ -1,8 +1,11 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    hash::BuildHasherDefault,
+};
 
 use bimap::BiHashMap;
-use fnv::FnvBuildHasher;
 use ndarray::prelude::*;
+use rustc_hash::FxHasher;
 use sprs::TriMat;
 
 /// Edge list type.
@@ -18,5 +21,5 @@ pub type DenseAdjacencyMatrix = Array2<bool>;
 pub type SparseAdjacencyMatrix = TriMat<bool>;
 
 /// [Bidirectional map](https://docs.rs/bimap/latest) with
-/// [Fowler-Noll-Vo hash function](https://docs.rs/fnv/latest) type.
-pub type FnvBiHashMap<L, R> = BiHashMap<L, R, FnvBuildHasher>;
+/// [FxHasher](https://docs.rs/rustc_hash/latest) type.
+pub type FxBiHashMap<L, R> = BiHashMap<L, R, BuildHasherDefault<FxHasher>>;

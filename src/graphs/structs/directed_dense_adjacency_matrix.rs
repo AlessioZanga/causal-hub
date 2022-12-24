@@ -11,7 +11,7 @@ use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
 
 use crate::{
     graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph},
-    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FnvBiHashMap, SparseAdjacencyMatrix},
+    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxBiHashMap, SparseAdjacencyMatrix},
     Adj, E, V,
 };
 
@@ -19,7 +19,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct DirectedDenseAdjacencyMatrixGraph {
     vertices: BTreeSet<String>,
-    vertices_indexes: FnvBiHashMap<String, usize>,
+    vertices_indexes: FxBiHashMap<String, usize>,
     adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
@@ -169,7 +169,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         // Compute new graph order.
         let order = vertices.len();
         // Map vertices labels to vertices indices.
-        let vertices_indexes: FnvBiHashMap<_, _> = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes: FxBiHashMap<_, _> = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
         // Initialize adjacency matrix given graph order.
         let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
