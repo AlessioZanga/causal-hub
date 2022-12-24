@@ -17,10 +17,10 @@ mod undirected;
 pub use undirected::UndirectedGraph;
 
 mod structs;
-pub use structs::{DirectedDenseMatrixGraph, UndirectedDenseMatrixGraph};
+pub use structs::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph};
 
 /// Default undirected graph implementation based on dense adjacency matrix.
-pub type Graph = UndirectedDenseMatrixGraph;
+pub type Graph = UndirectedDenseAdjacencyMatrixGraph;
 
 /// Default directed graph implementation based on dense adjacency matrix.
-pub type DiGraph = DirectedDenseMatrixGraph;
+pub type DiGraph = DirectedDenseAdjacencyMatrixGraph;

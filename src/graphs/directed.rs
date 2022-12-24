@@ -1,58 +1,66 @@
+use std::iter::FusedIterator;
+
 use super::BaseGraph;
 
 /// Directed graph trait.
 pub trait DirectedGraph: BaseGraph {
     /// Ancestors iterator type.
-    type AncestorsIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type AncestorsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// Parents iterator type.
-    type ParentsIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type ParentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// Children iterator type.
-    type ChildrenIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type ChildrenIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// Descendants iterator type.
-    type DescendantsIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type DescendantsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// Iterator over the ancestors set.
-    fn ancestors<'a>(&'a self, x: &'a Self::Vertex) -> Self::AncestorsIter<'a>;
+    // FIXME: Add docs.
+    fn ancestors<'a>(self, x: usize) -> Self::AncestorsIter<'a>;
 
     /// Checks if a vertex is ancestor of another vertex.
-    fn is_ancestor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    // FIXME: Add docs.
+    fn is_ancestor(&self, x: usize, y: usize) -> bool;
 
     /// Iterator over the parents set.
-    fn parents<'a>(&'a self, x: &'a Self::Vertex) -> Self::ParentsIter<'a>;
+    // FIXME: Add docs.
+    fn parents<'a>(self, x: usize) -> Self::ParentsIter<'a>;
 
     /// Checks if a vertex is parent of another vertex.
-    fn is_parent(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    // FIXME: Add docs.
+    fn is_parent(&self, x: usize, y: usize) -> bool;
 
     /// Iterator over the children set.
-    fn children<'a>(&'a self, x: &'a Self::Vertex) -> Self::ChildrenIter<'a>;
+    // FIXME: Add docs.
+    fn children<'a>(self, x: usize) -> Self::ChildrenIter<'a>;
 
     /// Checks if a vertex is child of another vertex.
-    fn is_child(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    // FIXME: Add docs.
+    fn is_child(&self, x: usize, y: usize) -> bool;
 
     /// Iterator over the descendants set.
-    fn descendants<'a>(&'a self, x: &'a Self::Vertex) -> Self::DescendantsIter<'a>;
+    // FIXME: Add docs.
+    fn descendants<'a>(self, x: usize) -> Self::DescendantsIter<'a>;
 
     /// Checks if a vertex is descendant of another vertex.
-    fn is_descendant(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    // FIXME: Add docs.
+    fn is_descendant(&self, x: usize, y: usize) -> bool;
 
     /// In-degree of a vertex.
-    fn in_degree(&self, x: &Self::Vertex) -> usize;
+    // FIXME: Add docs.
+    fn in_degree(&self, x: usize) -> usize;
 
     /// Out-degree of a vertex.
-    fn out_degree(&self, x: &Self::Vertex) -> usize;
+    // FIXME: Add docs.
+    fn out_degree(&self, x: usize) -> usize;
 }

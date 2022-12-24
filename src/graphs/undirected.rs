@@ -1,19 +1,17 @@
+use std::iter::FusedIterator;
+
 use super::BaseGraph;
 
 /// Undirected graph trait.
 pub trait UndirectedGraph: BaseGraph {
     /// Neighbors iterator type.
-    type NeighborsIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type NeighborsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// Iterator over the neighbors set.
-    fn neighbors<'a>(&'a self, x: &'a Self::Vertex) -> Self::NeighborsIter<'a>;
+    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_>;
 
     /// Checks if a vertex is neighbor of another vertex.
-    fn is_neighbor(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
-
-    /// Computes the degree of a vertex.
-    fn degree(&self, x: &Self::Vertex) -> usize;
+    fn is_neighbor(&self, x: usize, y: usize) -> bool;
 }

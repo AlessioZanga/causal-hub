@@ -1,192 +1,353 @@
-#[generic_tests::define]
+#[cfg(test)]
 mod tests {
-    use causal_hub::{
-        graphs::{BaseGraph, DefaultGraph, DirectedDenseMatrixGraph, ErrorGraph as E, UndirectedDenseMatrixGraph},
-        types::DenseAdjacencyMatrix,
-        V,
-    };
-    use ndarray::prelude::*;
+    mod undirected {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use causal_hub::prelude::*;
 
-    #[test]
-    fn default<T>()
-    where
-        T: BaseGraph<Vertex = String> + DefaultGraph,
-    {
-        let g = T::default();
+                #[test]
+                fn default() {
+                    let g = $G::default();
 
-        assert_eq!(g.order(), 0);
-        assert_eq!(g.size(), 0);
-    }
-
-    #[test]
-    fn null<T>()
-    where
-        T: BaseGraph<Vertex = String> + DefaultGraph,
-    {
-        let g = T::null();
-
-        assert_eq!(g.order(), 0);
-        assert_eq!(g.size(), 0);
-    }
-
-    #[test]
-    fn empty<T>()
-    where
-        T: BaseGraph<Vertex = String> + DefaultGraph,
-    {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [(Vec<&str>, Option<E>); 4] = [
-            // Empty vertex set.
-            (vec![], None),
-            // Non-empty vertex set.
-            (vec!["A"], None),
-            // Non-empty vertex set.
-            (vec!["A", "B"], None),
-            // Large vertex set.
-            (
-                vec![
-                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                ],
-                None,
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for (vertices, error) in data {
-            // ... construct the graph ...
-            let g = T::empty(vertices.clone());
-            // ... assert result.
-            match g {
-                Ok(g) => {
-                    assert!(V!(g).eq(vertices.clone()));
-                    assert_eq!(g.order(), vertices.len());
+                    assert_eq!(g.order(), 0);
                     assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-                Err(e) => {
-                    assert_eq!(Some(e), error);
+
+                #[test]
+                fn null() {
+                    let g = $G::null();
+
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-            }
+
+                #[test]
+                fn empty() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"])),
+                        // ... multiple vertices,
+                        (vec!["0", "1", "2", "3"], (4, vec!["0", "1", "2", "3"])),
+                        // ... random vertices,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (5, vec!["1", "3", "58", "71", "75"]),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v)) in data {
+                        let g = $G::empty(i);
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), 0);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).next().is_none());
+                    }
+                }
+
+                #[test]
+                fn complete() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![], vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"], vec![])),
+                        // ... multiple vertices,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            (
+                                4,
+                                vec!["0", "1", "2", "3"],
+                                vec![
+                                    ("0", "1"),
+                                    ("0", "2"),
+                                    ("0", "3"),
+                                    ("1", "2"),
+                                    ("1", "3"),
+                                    ("2", "3"),
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (
+                                5,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![
+                                    ("1", "3"),
+                                    ("1", "58"),
+                                    ("1", "71"),
+                                    ("1", "75"),
+                                    ("3", "58"),
+                                    ("3", "71"),
+                                    ("3", "75"),
+                                    ("58", "71"),
+                                    ("58", "75"),
+                                    ("71", "75"),
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v, e)) in data {
+                        let g = $G::complete(i);
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), (o * (o + 1)) / 2);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                fn from_edge_list() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], vec![], vec![]),
+                        // ... one vertex and one edge,
+                        (vec!["0"], vec![("0", "0")], vec![("0", "0")]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], vec![("0", "1")], vec![("0", "1")]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let k: EdgeList<_> = k.into_iter().collect();
+                        let g = $G::from(k);
+                        assert!(V!(g).eq(i.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                #[ignore]
+                fn from_adjacency_list() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[ignore]
+                fn try_from_dense_adjacency_matrix() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[should_panic]
+                #[ignore]
+                fn try_from_dense_adjacency_matrix_should_panic() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[ignore]
+                fn try_from_sparse_adjacency_matrix() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[should_panic]
+                #[ignore]
+                fn try_from_sparse_adjacency_matrix_should_panic() {
+                    todo!() // FIXME:
+                }
+            };
+        }
+
+        mod undirected_dense_matrix {
+            use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
         }
     }
 
-    #[test]
-    fn complete<T>()
-    where
-        T: BaseGraph<Vertex = String> + DefaultGraph,
-    {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [(Vec<&str>, Option<E>); 4] = [
-            // Empty vertex set.
-            (vec![], None),
-            // Non-empty vertex set.
-            (vec!["A"], None),
-            // Non-empty vertex set.
-            (vec!["A", "B"], None),
-            // Large vertex set.
-            (
-                vec![
-                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                ],
-                None,
-            ),
-        ];
+    mod directed {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use causal_hub::prelude::*;
 
-        // For each test case in the test database ...
-        for (vertices, error) in data {
-            // ... construct the graph ...
-            let g = T::complete(vertices.clone());
-            // ... assert result.
-            match g {
-                Ok(g) => {
-                    let order = vertices.len();
+                #[test]
+                fn default() {
+                    let g = $G::default();
 
-                    assert!(V!(g).eq(vertices.clone()));
-                    assert_eq!(g.order(), order);
-                    assert_eq!(g.size(), (order * (order.saturating_sub(1))) / 2);
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-                Err(e) => {
-                    assert_eq!(Some(e), error);
+
+                #[test]
+                fn null() {
+                    let g = $G::null();
+
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-            }
+
+                #[test]
+                fn empty() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"])),
+                        // ... multiple vertices,
+                        (vec!["0", "1", "2", "3"], (4, vec!["0", "1", "2", "3"])),
+                        // ... random vertices,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (5, vec!["1", "3", "58", "71", "75"]),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v)) in data {
+                        let g = $G::empty(i);
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), 0);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).next().is_none());
+                    }
+                }
+
+                #[test]
+                fn complete() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![], vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"], vec![])),
+                        // ... multiple vertices,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            (
+                                4,
+                                vec!["0", "1", "2", "3"],
+                                vec![
+                                    ("0", "1"),
+                                    ("0", "2"),
+                                    ("0", "3"),
+                                    ("1", "0"),
+                                    ("1", "2"),
+                                    ("1", "3"),
+                                    ("2", "0"),
+                                    ("2", "1"),
+                                    ("2", "3"),
+                                    ("3", "0"),
+                                    ("3", "1"),
+                                    ("3", "2"),
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (
+                                5,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![
+                                    ("1", "3"),
+                                    ("1", "58"),
+                                    ("1", "71"),
+                                    ("1", "75"),
+                                    ("3", "1"),
+                                    ("3", "58"),
+                                    ("3", "71"),
+                                    ("3", "75"),
+                                    ("58", "1"),
+                                    ("58", "3"),
+                                    ("58", "71"),
+                                    ("58", "75"),
+                                    ("71", "1"),
+                                    ("71", "3"),
+                                    ("71", "58"),
+                                    ("71", "75"),
+                                    ("75", "1"),
+                                    ("75", "3"),
+                                    ("75", "58"),
+                                    ("75", "71"),
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v, e)) in data {
+                        let g = $G::complete(i);
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), o * (o.saturating_sub(1)));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                #[ignore]
+                fn from_edge_list() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[ignore]
+                fn from_adjacency_list() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[ignore]
+                fn try_from_dense_adjacency_matrix() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[should_panic]
+                #[ignore]
+                fn try_from_dense_adjacency_matrix_should_panic() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[ignore]
+                fn try_from_sparse_adjacency_matrix() {
+                    todo!() // FIXME:
+                }
+
+                #[test]
+                #[should_panic]
+                #[ignore]
+                fn try_from_sparse_adjacency_matrix_should_panic() {
+                    todo!() // FIXME:
+                }
+            };
+        }
+
+        mod directed_dense_matrix {
+            use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(DirectedDenseAdjacencyMatrixGraph);
         }
     }
-
-    #[test]
-    fn with_adjacency_matrix<T>()
-    where
-        T: BaseGraph<Vertex = String> + DefaultGraph + TryFrom<(Vec<&'static str>, DenseAdjacencyMatrix), Error = E>,
-    {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [((Vec<&str>, DenseAdjacencyMatrix), Option<E>); 7] = [
-            // Empty vertex set and adjacency matrix.
-            ((vec![], Default::default()), None),
-            // Non-empty vertex set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), None),
-            // Empty vertex set but non-empty adjacency matrix.
-            ((vec![], array![[false]]), Some(E::InconsistentMatrix)),
-            // Non-empty vertex set but empty adjacency matrix.
-            ((vec!["A"], Default::default()), Some(E::InconsistentMatrix)),
-            // Non-square adjacency matrix.
-            ((vec!["A"], array![[false, false]]), Some(E::NonSquareMatrix)),
-            // Non-symmetric adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, true], [false, false]]),
-                Some(E::NonSymmetricMatrix),
-            ),
-            // Large vertex set.
-            (
-                (
-                    vec![
-                        "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                        "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                        "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                        "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                        "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                        "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                        "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                        "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                        "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                    ],
-                    DenseAdjacencyMatrix::default((100, 100)),
-                ),
-                None,
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), error) in data {
-            // ... assert result.
-            let g = T::try_from((vertices, adjacency_matrix));
-
-            assert_eq!(g.err(), error);
-        }
-    }
-
-    #[instantiate_tests(<UndirectedDenseMatrixGraph>)]
-    mod undirected_dense_matrix_graph {}
-
-    #[instantiate_tests(<DirectedDenseMatrixGraph>)]
-    mod directed_dense_matrix_graph {}
 }

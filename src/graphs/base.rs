@@ -1,6 +1,5 @@
 use std::{
     fmt::{Debug, Display},
-    hash::Hash,
     iter::FusedIterator,
 };
 
@@ -20,48 +19,36 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// Directional type.
     type Direction;
 
-    /// Vertex type.
-    type Vertex: Clone + Debug + Eq + Ord + Hash;
-
     /// Vertices iterator type.
-    type VerticesIter<'a>: ExactSizeIterator<Item = &'a Self::Vertex> + FusedIterator
-    where
-        Self: 'a,
-        Self::Vertex: 'a;
-
-    /// Edge type.
-    // TODO: Replace with "associated type defaults" once stabilized.
-    type Edge<'a>: From<(&'a Self::Vertex, &'a Self::Vertex)>
-        + Into<(&'a Self::Vertex, &'a Self::Vertex)>
-        + Eq
-        + Ord
-        + Hash
+    type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Edges iterator type.
-    type EdgesIter<'a>: ExactSizeIterator<Item = Self::Edge<'a>> + FusedIterator
+    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Adjacents vertices iterator type.
-    type AdjacentsIter<'a>: Iterator<Item = &'a Self::Vertex>
+    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
-        Self: 'a,
-        Self::Vertex: 'a;
+        Self: 'a;
 
     /// New constructor.
     ///
     /// Let be $\mathcal{G}$ a graph type. The new constructor of $\mathcal{G}$
     /// returns a graph $G$ based on $V$ and $E$.
     ///
-    /// # FIXME: Examples
+    /// # Examples
     ///
     /// ```
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new graph.
-    /// let g = Graph::new((0..3), [(0, 1), (1, 2)]);
+    /// let g = Graph::new(
+    ///     ["0", "1", "2"],
+    ///     [("0", "1"), ("1", "2")]
+    /// );
     ///
     /// // The vertex set is not empty.
     /// assert_eq!(g.order(), 3);
@@ -70,10 +57,11 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// assert_eq!(g.size(), 2);
     /// ```
     ///
-    fn new<I, J>(vertices: I, edges: J) -> Self
+    fn new<V, I, J>(vertices: I, edges: J) -> Self
     where
-        I: IntoIterator<Item = Self::Vertex>,
-        J: IntoIterator<Item = (Self::Vertex, Self::Vertex)>;
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, V)>;
 
     /// Clears the graph.
     ///
@@ -84,12 +72,11 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
     /// // Define edge set.
     /// let e = EdgeList::from([("A", "B"), ("C", "D")]);
     ///
     /// // Build a new graph.
-    /// let mut g = Graph::try_from(e)?;
+    /// let mut g = Graph::from(e);
     ///
     /// // The graph *is not* null.
     /// assert_ne!(g.order(), 0);
@@ -101,30 +88,15 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// // The graph *is* null.
     /// assert_eq!(g.order(), 0);
     /// assert_eq!(g.size(), 0);
-    /// # Ok(())
-    /// # }
     /// ```
     ///
     fn clear(&mut self);
 
-    /// Order of the graph.
-    ///
-    /// Return the graph order (aka. $|V|$).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// # fn main() -> Result<(), ErrorGraph> {
-    /// // Build a 5th order graph.
-    /// let g = Graph::empty(["A", "B", "C", "D", "E"])?;
-    /// assert_eq!(g.order(), 5);
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    fn order(&self) -> usize;
+    /// FIXME: Add docs.
+    fn index(&self, x: &str) -> usize;
+
+    /// FIXME: Add docs.
+    fn vertex(&self, x: usize) -> &str;
 
     /// Vertex iterator.
     ///
@@ -135,12 +107,11 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
     /// // Build a 3rd order graph.
-    /// let g = Graph::empty(["A", "B", "C"])?;
+    /// let g = Graph::empty(["A", "B", "C"]);
     ///
     /// // Use the vertex set iterator.
-    /// assert!(g.vertices().eq(&["A", "B", "C"]));
+    /// assert!(g.vertices().eq(0..g.order()));
     ///
     /// // Use the associated macro 'V!'.
     /// assert!(g.vertices().eq(V!(g)));
@@ -149,11 +120,25 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// for x in V!(g) {
     ///     assert!(g.has_vertex(x));
     /// }
-    /// # Ok(())
-    /// # }
     /// ```
     ///
     fn vertices(&self) -> Self::VerticesIter<'_>;
+
+    /// Order of the graph.
+    ///
+    /// Return the graph order (aka. $|V|$).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a 5th order graph.
+    /// let g = Graph::empty(["A", "B", "C", "D", "E"]);
+    /// assert_eq!(g.order(), 5);
+    /// ```
+    ///
+    fn order(&self) -> usize;
 
     /// Checks vertex in the graph.
     ///
@@ -164,25 +149,22 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
     /// // Define vertex set.
     /// let v = ["A", "B"];
     ///
     /// // Build a 2nd order graph.
-    /// let g = Graph::empty(v)?;
+    /// let g = Graph::empty(v);
     ///
     /// // Choose vertices.
-    /// let (x, y, z) = ("A".into(), "B".into(), "C".into());
+    /// let (x, y, z) = (g.index("A"), g.index("B"), g.order() + 1);
     ///
     /// // Check vertices.
-    /// assert!(g.has_vertex(&x));
-    /// assert!(g.has_vertex(&y));
-    /// assert!(!g.has_vertex(&z));
-    /// # Ok(())
-    /// # }
+    /// assert!(g.has_vertex(x));
+    /// assert!(g.has_vertex(y));
+    /// assert!(!g.has_vertex(z));
     /// ```
     ///
-    fn has_vertex(&self, x: &Self::Vertex) -> bool;
+    fn has_vertex(&self, x: usize) -> bool;
 
     /// Adds vertex to the graph.
     ///
@@ -198,18 +180,18 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// // Add a new vertex.
     /// let x = g.add_vertex("A");
-    /// assert!(g.has_vertex(&x));
+    /// assert!(g.has_vertex(x));
     /// ```
     ///
-    fn add_vertex<V>(&mut self, x: V) -> Self::Vertex
+    fn add_vertex<V>(&mut self, x: V) -> usize
     where
-        V: Into<Self::Vertex>;
+        V: Into<String>;
 
     /// Deletes vertex from the graph.
     ///
     /// Remove given vertex identifier from the graph.
     ///
-    /// # FIXME: Errors
+    /// # Panics
     ///
     /// The vertex identifier does not exist in the graph.
     ///
@@ -223,41 +205,17 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// // Add a new vertex.
     /// let x = g.add_vertex("A");
-    /// assert!(g.has_vertex(&x));
+    /// assert!(g.has_vertex(x));
     ///
     /// // Delete the newly added vertex.
-    /// assert!(g.del_vertex(&x));
-    /// assert!(!g.has_vertex(&x));
+    /// assert!(g.del_vertex(x));
+    /// assert!(!g.has_vertex(x));
     ///
     /// // Deleting a non-existing vertex return false.
-    /// assert!(!g.del_vertex(&x));
+    /// assert!(!g.del_vertex(x));
     /// ```
     ///
-    fn del_vertex(&mut self, x: &Self::Vertex) -> bool;
-
-    /// Size of the graph.
-    ///
-    /// Return the graph size (aka. $|E|$).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// # fn main() -> Result<(), ErrorGraph> {
-    /// // Define edge set.
-    /// let e = EdgeList::from([
-    ///     ("A", "B"), ("C", "A"), ("D", "C"), ("B", "C"), ("A", "A")
-    /// ]);
-    ///
-    /// // Build a new graph.
-    /// let mut g = Graph::try_from(e)?;
-    /// assert_eq!(g.size(), 5);
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    fn size(&self) -> usize;
+    fn del_vertex(&mut self, x: usize) -> bool;
 
     /// Edge iterator.
     ///
@@ -268,66 +226,52 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
     /// // Define edge set.
     /// let e = EdgeList::from([("A", "B"), ("D", "C")]);
     ///
     /// // Build a 4th order graph.
-    /// let g = Graph::try_from(e)?;
+    /// let g = Graph::from(e);
     ///
     /// // Use the vertex set iterator.
-    /// let e = [(&"A".into(), &"B".into()), (&"C".into(), &"D".into())];
-    /// assert!(g.edges().eq(e));
+    /// assert!(g.edges().eq([(0, 1), (2, 3)]));
     ///
     /// // Use the associated macro 'E!'.
     /// assert!(g.edges().eq(E!(g)));
     ///
     /// // Iterate over the vertex set.
     /// for (x, y) in E!(g) {
-    ///     assert!(g.has_edge(&x, &y));
+    ///     assert!(g.has_edge(x, y));
     /// }
-    /// # Ok(())
-    /// # }
     /// ```
     ///
     fn edges(&self) -> Self::EdgesIter<'_>;
 
-    /// Checks edge in the graph.
+    /// Size of the graph.
     ///
-    /// Checks whether the graph has a given edge or not.
-    ///
-    /// # FIXME: Panics
-    ///
-    /// Panics if at least one of the vertex identifiers does not exist in the graph.
+    /// Return the graph size (aka. $|E|$).
     ///
     /// # Examples
     ///
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
     /// // Define edge set.
-    /// let e = EdgeList::from([("A", "B"), ("D", "C")]);
+    /// let e = EdgeList::from([
+    ///     ("A", "B"), ("C", "A"), ("D", "C"), ("B", "C"), ("A", "A")
+    /// ]);
     ///
-    /// // Build a graph.
-    /// let g = Graph::try_from(e)?;
-    ///
-    /// // Choose an edge.
-    /// let (x, y) = ("A".into(), "B".into());
-    ///
-    /// // Check edge.
-    /// assert!(g.has_edge(&x, &y));
-    /// # Ok(())
-    /// # }
+    /// // Build a new graph.
+    /// let mut g = Graph::from(e);
+    /// assert_eq!(g.size(), 5);
     /// ```
     ///
-    fn has_edge(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    fn size(&self) -> usize;
 
-    /// Adds edge to the graph.
+    /// Checks edge in the graph.
     ///
-    /// Add new edge identifier into the graph.
+    /// Checks whether the graph has a given edge or not.
     ///
-    /// # FIXME: Panics
+    /// # Panics
     ///
     /// At least one of the vertex identifiers does not exist in the graph.
     ///
@@ -336,96 +280,152 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
-    /// // Define vertex set.
-    /// let v = ["A", "B"];
+    /// // Define edge set.
+    /// let e = EdgeList::from([("A", "B"), ("D", "C")]);
     ///
-    /// // Build a 2nd order graph.
-    /// let mut g = Graph::empty(v)?;
+    /// // Build a graph.
+    /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = ("A".into(), "B".into());
+    /// let (x, y) = (g.index("A"), g.index("B"));
     ///
-    /// // Add a new edge from vertex.
-    /// assert!(g.add_edge(&x, &y));
-    /// assert!(g.has_edge(&x, &y));
-    ///
-    /// // Adding an existing edge return false.
-    /// assert!(!g.add_edge(&x, &y));
-    /// # Ok(())
-    /// # }
+    /// // Check edge.
+    /// assert!(g.has_edge(x, y));
     /// ```
     ///
-    fn add_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    fn has_edge(&self, x: usize, y: usize) -> bool;
 
-    /// Deletes edge from the graph.
+    /// Adds edge to the graph.
     ///
-    /// Remove given edge identifier from the graph.
+    /// Add new edge identifier into the graph.
     ///
-    /// # FIXME: Panics
+    /// # Panics
     ///
-    /// Panics if at least one of the vertex identifiers does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// # fn main() -> Result<(), ErrorGraph> {
+    /// // Define vertex set.
+    /// let v = ["A", "B"];
+    ///
+    /// // Build a 2nd order graph.
+    /// let mut g = Graph::empty(v);
+    ///
+    /// // Choose an edge.
+    /// let (x, y) = (g.index("A"), g.index("B"));
+    ///
+    /// // Add a new edge from vertex.
+    /// assert!(g.add_edge(x, y));
+    /// assert!(g.has_edge(x, y));
+    ///
+    /// // Adding an existing edge return false.
+    /// assert!(!g.add_edge(x, y));
+    /// ```
+    ///
+    fn add_edge(&mut self, x: usize, y: usize) -> bool;
+
+    /// Deletes edge from the graph.
+    ///
+    /// Remove given edge identifier from the graph.
+    ///
+    /// # Panics
+    ///
+    /// At least one of the vertex identifiers does not exist in the graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
     /// // Define edge set.
     /// let e = EdgeList::from([("A", "B"), ("D", "C")]);
     ///
     /// // Build a graph.
-    /// let mut g = Graph::try_from(e)?;
+    /// let mut g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = ("A".into(), "B".into());
+    /// let (x, y) = (g.index("A"), g.index("B"));
     ///
     /// // Delete an edge.
-    /// assert!(g.del_edge(&x, &y));
-    /// assert!(!g.has_edge(&x, &y));
+    /// assert!(g.del_edge(x, y));
+    /// assert!(!g.has_edge(x, y));
     ///
     /// // Deleting a non-existing edge return false.
-    /// assert!(!g.del_edge(&x, &y));
-    /// # Ok(())
-    /// # }
+    /// assert!(!g.del_edge(x, y));
     /// ```
     ///
-    fn del_edge(&mut self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    fn del_edge(&mut self, x: usize, y: usize) -> bool;
 
     /// Adjacent iterator.
     ///
     /// Iterates over the vertex set $Adj(G, X)$ of a given vertex $X$.
     ///
-    /// # FIXME: Panics
+    /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex identifier does not exist in the graph.
     ///
-    /// # FIXME: Examples
+    /// # Examples
     ///
     /// ```
     /// use causal_hub::prelude::*;
     ///
-    /// // Build a graph from edges.
-    /// let g = Graph::from_edges([(0, 1), (2, 0), (0, 0)]);
+    /// // Define edge set.
+    /// let e = EdgeList::from([("A", "B"), ("C", "A"), ("A", "A")]);
+    ///
+    /// // Build a graph.
+    /// let mut g = Graph::from(e);
+    ///
+    /// // Choose vertex.
+    /// let x = g.index("A");
     ///
     /// // Use the adjacent iterator.
-    /// assert!(g.adjacents_iter(&0).eq(&[0, 1, 2]));
+    /// assert!(g.adjacents(x).eq([0, 1, 2]));
     ///
     /// // Use the associated macro 'Adj!'.
-    /// assert!(g.adjacents_iter(&0).eq(Adj!(g, &0)));
+    /// assert!(g.adjacents(x).eq(Adj!(g, x)));
     ///
     /// // Iterate over the adjacent set.
-    /// for &x in Adj!(g, &0) {
-    ///     assert!(g.has_edge(&0, &x));
+    /// for y in Adj!(g, x) {
+    ///     assert!(g.has_edge(x, y));
     /// }
     /// ```
     ///
-    fn adjacents<'a>(&'a self, x: &'a Self::Vertex) -> Self::AdjacentsIter<'a>;
+    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_>;
 
-    /// Checks if a vertex is adjacent to another vertex.
+    /// Checks adjacent vertices in the graph.
+    ///
+    /// Checks whether the graph has two adjacent vertices or not.
+    ///
+    /// # Panics
+    ///
+    /// At least one of the vertex identifiers does not exist in the graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Define edge set.
+    /// let e = EdgeList::from([("A", "B"), ("C", "A"), ("A", "A")]);
+    ///
+    /// // Build a graph.
+    /// let mut g = Graph::from(e);
+    ///
+    /// // Choose an edge.
+    /// let (x, y) = (g.index("A"), g.index("B"));
+    ///
+    /// // Check edge.
+    /// assert!(g.is_adjacent(x, y));
+    /// ```
+    ///
+    fn is_adjacent(&self, x: usize, y: usize) -> bool;
+
+    /// Computes the degree of a vertex.
     // FIXME: Add docs.
-    fn is_adjacent(&self, x: &Self::Vertex, y: &Self::Vertex) -> bool;
+    fn degree(&self, x: usize) -> usize;
 }
 
 /// Vertex iterator.
