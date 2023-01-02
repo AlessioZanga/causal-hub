@@ -123,8 +123,6 @@ mod tests {
                 }
 
                 #[test]
-                #[ignore]
-                // FIXME:
                 fn partial_cmp() {
                     // Test for ...
                     let data = [
@@ -373,8 +371,6 @@ mod tests {
                 }
 
                 #[test]
-                #[ignore]
-                // FIXME:
                 fn partial_cmp() {
                     // Test for ...
                     let data = [

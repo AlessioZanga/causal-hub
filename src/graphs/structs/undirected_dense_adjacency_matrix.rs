@@ -8,10 +8,12 @@ use std::{
 
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
+use rustc_hash::FxHashSet;
 
 use crate::{
     graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, UndirectedGraph},
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxBiHashMap, SparseAdjacencyMatrix},
+    utils::partial_cmp_sets,
     Adj, E, V,
 };
 
@@ -35,7 +37,7 @@ impl Deref for UndirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     graph: &'a UndirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
@@ -51,7 +53,7 @@ impl<'a> EdgesIterator<'a> {
                 true => Some((i, j)),
                 false => None,
             }),
-            size: g.size(),
+            size: g.size,
         }
     }
 }
@@ -79,7 +81,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
 impl<'a> FusedIterator for EdgesIterator<'a> {}
 
-#[allow(clippy::type_complexity)]
+#[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     graph: &'a UndirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
@@ -229,6 +231,8 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn order(&self) -> usize {
+        // Check iterator consistency.
+        debug_assert_eq!(V!(self).len(), self.vertices.len());
         // Assert vertex set and vertices map are consistent.
         debug_assert_eq!(self.vertices.len(), self.vertices_indexes.len());
         // Assert vertex set is consistent with adjacency matrix shape.
@@ -241,10 +245,15 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn has_vertex(&self, x: usize) -> bool {
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(self.vertices_indexes.contains_right(&x), x < self.order());
+        // Check vertex existence.
+        let f = self.vertices_indexes.contains_right(&x);
 
-        self.vertices_indexes.contains_right(&x)
+        // Check iterator consistency.
+        debug_assert_eq!(V!(self).any(|y| y == x), f);
+        // Assert vertex set and vertices map are consistent.
+        debug_assert_eq!(x < self.order(), f);
+
+        f
     }
 
     fn add_vertex<V>(&mut self, x: V) -> usize
@@ -377,6 +386,9 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn size(&self) -> usize {
+        // Check iterator consistency.
+        debug_assert_eq!(E!(self).len(), self.size);
+
         self.size
     }
 
@@ -452,12 +464,13 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn is_adjacent(&self, x: usize, y: usize) -> bool {
-        self.has_edge(x, y)
-    }
+        // Check using has_edge.
+        let f = self.has_edge(x, y);
 
-    #[inline]
-    fn degree(&self, x: usize) -> usize {
-        self.adjacency_matrix.row(x).mapv(|f| f as usize).sum()
+        // Check iterator consistency.
+        debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
+
+        f
     }
 }
 
@@ -654,7 +667,7 @@ impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for UndirectedDenseAdjacency
 impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
     fn into(self) -> (BTreeSet<String>, SparseAdjacencyMatrix) {
         // Get upper bound capacity.
-        let size = self.size() * 2;
+        let size = self.size * 2;
         // Allocate triplets indices.
         let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
         // Build triplets indices.
@@ -692,16 +705,15 @@ impl Eq for UndirectedDenseAdjacencyMatrixGraph {}
 impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let vertices = crate::utils::partial_cmp_sets(&self.vertices, &other.vertices);
+        let lhs: FxHashSet<_> = V!(self).map(|x| self.vertex(x)).collect();
+        let rhs: FxHashSet<_> = V!(other).map(|x| other.vertex(x)).collect();
         // If the vertices sets are comparable ...
-        vertices.and_then(|vertices| {
+        partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
             // ... compare edges sets.
-            // TODO: Check if allocation is avoidable.
-            let self_edges = self.edges().collect::<BTreeSet<_>>();
-            let other_edges = other.edges().collect::<BTreeSet<_>>();
-            let edges = crate::utils::partial_cmp_sets(&self_edges, &other_edges);
+            let lhs: FxHashSet<_> = E!(self).map(|(x, y)| (self.vertex(x), self.vertex(y))).collect();
+            let rhs: FxHashSet<_> = E!(other).map(|(x, y)| (other.vertex(x), other.vertex(y))).collect();
             // If the edges sets are comparable ...
-            edges.and_then(|edges| {
+            partial_cmp_sets!(lhs, rhs).and_then(|edges| {
                 // ... then return ordering.
                 match (vertices, edges) {
                     // If vertices and edges are the same, then ordering is determined.
@@ -732,6 +744,17 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn is_neighbor(&self, x: usize, y: usize) -> bool {
-        self.is_adjacent(x, y)
+        self.adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
+    fn degree(&self, x: usize) -> usize {
+        // Compute degree.
+        let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Adj!(self, x).count(), d);
+
+        d
     }
 }

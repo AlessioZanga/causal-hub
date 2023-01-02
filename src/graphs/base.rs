@@ -3,6 +3,39 @@ use std::{
     iter::FusedIterator,
 };
 
+/// Vertex iterator.
+///
+/// Return the vertex iterator representing $V(G)$.
+///
+#[macro_export]
+macro_rules! V {
+    ($g:expr) => {
+        $g.vertices()
+    };
+}
+
+/// Edge iterator.
+///
+/// Return the edges iterator representing $E(G)$.
+///
+#[macro_export]
+macro_rules! E {
+    ($g:expr) => {
+        $g.edges()
+    };
+}
+
+/// Adjacency iterator.
+///
+/// Return the vertex iterator representing $Adj(G, X)$.
+///
+#[macro_export]
+macro_rules! Adj {
+    ($g:expr, $x:expr) => {
+        $g.adjacents($x)
+    };
+}
+
 /// Directions pseudo-enumerator for generics algorithms.
 pub mod directions {
     /// Undirected pseudo-enumerator for generics algorithms.
@@ -92,15 +125,59 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     fn clear(&mut self);
 
-    /// FIXME: Add docs.
+    /// Gets the vertex index.
+    ///
+    /// Returns the vertex index given its label.
+    ///
+    /// # Panics
+    ///
+    /// The vertex label does not exist in the graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a 3rd order graph.
+    /// let g = Graph::empty(["A", "B", "C"]);
+    ///
+    /// // Get vertex index.
+    /// let x = g.index("A");
+    ///
+    /// // Check vertex index.
+    /// assert_eq!(x, 0);
+    /// ```
+    ///
     fn index(&self, x: &str) -> usize;
 
-    /// FIXME: Add docs.
+    /// Gets the vertex label.
+    ///
+    /// Returns the vertex label given its index.
+    ///
+    /// # Panics
+    ///
+    /// The vertex index does not exist in the graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a 3rd order graph.
+    /// let g = Graph::empty(["A", "B", "C"]);
+    ///
+    /// // Get vertex label.
+    /// let x = g.vertex(0);
+    ///
+    /// // Check vertex label.
+    /// assert_eq!(x, "A");
+    /// ```
+    ///
     fn vertex(&self, x: usize) -> &str;
 
     /// Vertex iterator.
     ///
-    /// Iterates over the vertex set $V$ ordered by identifier value.
+    /// Iterates over the vertex set $V$ ordered by index value.
     ///
     /// # Examples
     ///
@@ -135,10 +212,14 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// // Build a 5th order graph.
     /// let g = Graph::empty(["A", "B", "C", "D", "E"]);
+    ///
+    /// // Check order.
     /// assert_eq!(g.order(), 5);
     /// ```
     ///
-    fn order(&self) -> usize;
+    fn order(&self) -> usize {
+        V!(self).len()
+    }
 
     /// Checks vertex in the graph.
     ///
@@ -164,11 +245,13 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// assert!(!g.has_vertex(z));
     /// ```
     ///
-    fn has_vertex(&self, x: usize) -> bool;
+    fn has_vertex(&self, x: usize) -> bool {
+        V!(self).any(|y| y == x)
+    }
 
     /// Adds vertex to the graph.
     ///
-    /// Insert a new vertex identifier into the graph.
+    /// Insert a new vertex index into the graph.
     ///
     /// # Examples
     ///
@@ -189,11 +272,11 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Deletes vertex from the graph.
     ///
-    /// Remove given vertex identifier from the graph.
+    /// Remove given vertex index from the graph.
     ///
     /// # Panics
     ///
-    /// The vertex identifier does not exist in the graph.
+    /// The vertex index does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -219,7 +302,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Edge iterator.
     ///
-    /// Iterates over the edge set $E$ order by identifier values.
+    /// Iterates over the edge set $E$ order by index values.
     ///
     /// # Examples
     ///
@@ -265,7 +348,9 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// assert_eq!(g.size(), 5);
     /// ```
     ///
-    fn size(&self) -> usize;
+    fn size(&self) -> usize {
+        E!(self).len()
+    }
 
     /// Checks edge in the graph.
     ///
@@ -273,7 +358,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex identifiers does not exist in the graph.
+    /// At least one of the vertex indexes does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -293,15 +378,17 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// assert!(g.has_edge(x, y));
     /// ```
     ///
-    fn has_edge(&self, x: usize, y: usize) -> bool;
+    fn has_edge(&self, x: usize, y: usize) -> bool {
+        E!(self).any(|z| z == (x, y))
+    }
 
     /// Adds edge to the graph.
     ///
-    /// Add new edge identifier into the graph.
+    /// Add new edge index into the graph.
     ///
     /// # Panics
     ///
-    /// At least one of the vertex identifiers does not exist in the graph.
+    /// At least one of the vertex indexes does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -329,11 +416,11 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Deletes edge from the graph.
     ///
-    /// Remove given edge identifier from the graph.
+    /// Remove given edge index from the graph.
     ///
     /// # Panics
     ///
-    /// At least one of the vertex identifiers does not exist in the graph.
+    /// At least one of the vertex indexes does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -365,7 +452,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// # Panics
     ///
-    /// The vertex identifier does not exist in the graph.
+    /// The vertex index does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -401,7 +488,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex identifiers does not exist in the graph.
+    /// At least one of the vertex indexes does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -419,44 +506,10 @@ pub trait BaseGraph: Clone + Debug + Display {
     ///
     /// // Check edge.
     /// assert!(g.is_adjacent(x, y));
+    /// assert!(Adj!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_adjacent(&self, x: usize, y: usize) -> bool;
-
-    /// Computes the degree of a vertex.
-    // FIXME: Add docs.
-    fn degree(&self, x: usize) -> usize;
-}
-
-/// Vertex iterator.
-///
-/// Return the vertex iterator representing $V(G)$.
-///
-#[macro_export]
-macro_rules! V {
-    ($g:expr) => {
-        $g.vertices()
-    };
-}
-
-/// Edge iterator.
-///
-/// Return the edges iterator representing $E(G)$.
-///
-#[macro_export]
-macro_rules! E {
-    ($g:expr) => {
-        $g.edges()
-    };
-}
-
-/// Adjacency iterator.
-///
-/// Return the vertex iterator representing $Adj(G, X)$.
-///
-#[macro_export]
-macro_rules! Adj {
-    ($g:expr, $x:expr) => {
-        $g.adjacents($x)
-    };
+    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+        Adj!(self, x).any(|z| z == y)
+    }
 }

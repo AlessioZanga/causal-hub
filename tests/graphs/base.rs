@@ -639,19 +639,6 @@ mod tests {
                     let g = $G::null();
                     g.is_adjacent(0, 0);
                 }
-
-                #[test]
-                #[ignore]
-                fn degree() {
-                    todo!() // FIXME:
-                }
-
-                #[test]
-                #[should_panic]
-                #[ignore]
-                fn degree_should_panic() {
-                    // FIXME:
-                }
             };
         }
 
@@ -1264,7 +1251,11 @@ mod tests {
                         // ... multiple edges,
                         (
                             vec![("0", "1"), ("1", "2"), ("2", "3")],
-                            vec![(("0", "1"), true), (("1", "0"), false), (("1", "3"), false)],
+                            vec![
+                                (("0", "1"), true),
+                                (("1", "0"), true),
+                                (("1", "3"), false)
+                            ],
                         ),
                         // ... random edges,
                         (
@@ -1272,7 +1263,7 @@ mod tests {
                             vec![
                                 (("71", "1"), true),
                                 (("1", "58"), true),
-                                (("58", "1"), false),
+                                (("58", "1"), true),
                                 (("71", "71"), false),
                             ],
                         ),
@@ -1292,20 +1283,8 @@ mod tests {
                 #[should_panic]
                 fn is_adjacent_should_panic() {
                     let g = $G::null();
-                    g.has_edge(0, 0);
-                }
 
-                #[test]
-                #[ignore]
-                fn degree() {
-                    todo!() // FIXME:
-                }
-
-                #[test]
-                #[should_panic]
-                #[ignore]
-                fn degree_should_panic() {
-                    // FIXME:
+                    g.is_adjacent(0, 0);
                 }
             };
         }

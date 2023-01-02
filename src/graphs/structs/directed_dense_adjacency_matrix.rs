@@ -8,11 +8,13 @@ use std::{
 
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
+use rustc_hash::FxHashSet;
 
 use crate::{
-    graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph},
+    graphs::{directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, PartialOrdGraph},
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxBiHashMap, SparseAdjacencyMatrix},
-    Adj, E, V,
+    utils::partial_cmp_sets,
+    Adj, Ch, Pa, E, V,
 };
 
 /// Directed graph struct based on dense adjacency matrix data structure.
@@ -35,7 +37,7 @@ impl Deref for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     graph: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
@@ -51,7 +53,7 @@ impl<'a> EdgesIterator<'a> {
                 true => Some((x, y)),
                 false => None,
             }),
-            size: g.size(),
+            size: g.size,
         }
     }
 }
@@ -79,7 +81,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
 impl<'a> FusedIterator for EdgesIterator<'a> {}
 
-#[allow(clippy::type_complexity)]
+#[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     graph: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<
@@ -232,6 +234,8 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn order(&self) -> usize {
+        // Check iterator consistency.
+        debug_assert_eq!(V!(self).len(), self.vertices.len());
         // Assert vertex set and vertices map are consistent.
         debug_assert_eq!(self.vertices.len(), self.vertices_indexes.len());
         // Assert vertex set is consistent with adjacency matrix shape.
@@ -244,10 +248,15 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn has_vertex(&self, x: usize) -> bool {
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(self.vertices_indexes.contains_right(&x), x < self.order());
+        // Check vertex existence.
+        let f = self.vertices_indexes.contains_right(&x);
 
-        self.vertices_indexes.contains_right(&x)
+        // Check iterator consistency.
+        debug_assert_eq!(V!(self).any(|y| y == x), f);
+        // Assert vertex set and vertices map are consistent.
+        debug_assert_eq!(x < self.order(), f);
+
+        f
     }
 
     fn add_vertex<V>(&mut self, x: V) -> usize
@@ -376,6 +385,9 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn size(&self) -> usize {
+        // Check iterator consistency.
+        debug_assert_eq!(E!(self).len(), self.size);
+
         self.size
     }
 
@@ -427,12 +439,13 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn is_adjacent(&self, x: usize, y: usize) -> bool {
-        self.has_edge(x, y)
-    }
+        // Check using has_edge.
+        let f = self.has_edge(x, y) || self.has_edge(y, x);
 
-    #[inline]
-    fn degree(&self, x: usize) -> usize {
-        self.adjacency_matrix.row(x).mapv(|f| f as usize).sum()
+        // Check iterator consistency.
+        debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
+
+        f
     }
 }
 
@@ -623,7 +636,7 @@ impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for DirectedDenseAdjacencyMa
 impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph {
     fn into(self) -> (BTreeSet<String>, SparseAdjacencyMatrix) {
         // Get upper bound capacity.
-        let size = self.size() * 2;
+        let size = self.size * 2;
         // Allocate triplets indices.
         let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
         // Build triplets indices.
@@ -661,16 +674,15 @@ impl Eq for DirectedDenseAdjacencyMatrixGraph {}
 impl PartialOrd for DirectedDenseAdjacencyMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let vertices = crate::utils::partial_cmp_sets(&self.vertices, &other.vertices);
+        let lhs: FxHashSet<_> = V!(self).map(|x| self.vertex(x)).collect();
+        let rhs: FxHashSet<_> = V!(other).map(|x| other.vertex(x)).collect();
         // If the vertices sets are comparable ...
-        vertices.and_then(|vertices| {
+        partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
             // ... compare edges sets.
-            // TODO: Check if allocation is avoidable.
-            let self_edges = self.edges().collect::<BTreeSet<_>>();
-            let other_edges = other.edges().collect::<BTreeSet<_>>();
-            let edges = crate::utils::partial_cmp_sets(&self_edges, &other_edges);
+            let lhs: FxHashSet<_> = E!(self).map(|(x, y)| (self.vertex(x), self.vertex(y))).collect();
+            let rhs: FxHashSet<_> = E!(other).map(|(x, y)| (other.vertex(x), other.vertex(y))).collect();
             // If the edges sets are comparable ...
-            edges.and_then(|edges| {
+            partial_cmp_sets!(lhs, rhs).and_then(|edges| {
                 // ... then return ordering.
                 match (vertices, edges) {
                     // If vertices and edges are the same, then ordering is determined.
@@ -691,62 +703,224 @@ impl PartialOrdGraph for DirectedDenseAdjacencyMatrixGraph {}
 
 /* Implement DirectedGraph trait. */
 
-/* FIXME:
+#[allow(dead_code, clippy::type_complexity)]
+pub struct AncestorsIterator<'a> {
+    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
+        fn((usize, bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> AncestorsIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            graph: g,
+            iter: {
+                // Get underlying adjacency matrix.
+                let adjacency_matrix = g.deref();
+                // Initialize previous solution.
+                let mut prev = Array1::from_elem((adjacency_matrix.ncols(),), false);
+                // Get current ancestors set, i.e. parents set.
+                let mut curr = adjacency_matrix.column(x).to_owned();
+
+                // Check stopping criterion.
+                while curr != prev {
+                    // Update previous.
+                    prev.assign(&curr);
+                    // Select current parents.
+                    let next = adjacency_matrix & &curr;
+                    // Collapse new parents.
+                    let next = next.fold_axis(Axis(1), false, |acc, x| acc | x);
+                    // Accumulate new parents.
+                    curr = curr | next;
+                }
+
+                curr.into_iter().enumerate().filter_map(|(x, f)| match f {
+                    true => Some(x),
+                    false => None,
+                })
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for AncestorsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for AncestorsIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct ParentsIterator<'a> {
+    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
+}
+
+impl<'a> ParentsIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            graph: g,
+            iter: g.column(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
+                true => Some(i),
+                false => None,
+            }),
+        }
+    }
+}
+
+impl<'a> Iterator for ParentsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for ParentsIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct ChildrenIterator<'a> {
+    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
+}
+
+impl<'a> ChildrenIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            graph: g,
+            iter: g.row(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
+                true => Some(i),
+                false => None,
+            }),
+        }
+    }
+}
+
+impl<'a> Iterator for ChildrenIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for ChildrenIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct DescendantsIterator<'a> {
+    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
+        fn((usize, bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> DescendantsIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            graph: g,
+            iter: {
+                // Get underlying adjacency matrix.
+                let adjacency_matrix = g.deref();
+                // Initialize previous solution.
+                let mut prev = Array1::from_elem((adjacency_matrix.ncols(),), false);
+                // Get current ancestors set, i.e. parents set.
+                let mut curr = adjacency_matrix.row(x).to_owned();
+
+                // Check stopping criterion.
+                while curr != prev {
+                    // Update previous.
+                    prev.assign(&curr);
+                    // Select current parents.
+                    let next = &adjacency_matrix.t() & &curr;
+                    // Collapse new parents.
+                    let next = next.fold_axis(Axis(1), false, |acc, x| acc | x);
+                    // Accumulate new parents.
+                    curr = curr | next;
+                }
+
+                curr.into_iter().enumerate().filter_map(|(x, f)| match f {
+                    true => Some(x),
+                    false => None,
+                })
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for DescendantsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for DescendantsIterator<'a> {}
+
 impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
-    type AncestorsIter<'a>
-    where
-        Self: 'a;
+    type AncestorsIter<'a> = AncestorsIterator<'a>;
 
-    type ParentsIter<'a>
-    where
-        Self: 'a;
+    type ParentsIter<'a> = ParentsIterator<'a>;
 
-    type ChildrenIter<'a>
-    where
-        Self: 'a;
+    type ChildrenIter<'a> = ChildrenIterator<'a>;
 
-    type DescendantsIter<'a>
-    where
-        Self: 'a;
+    type DescendantsIter<'a> = DescendantsIterator<'a>;
 
-    fn ancestors<'a>(self, x: usize) -> Self::AncestorsIter<'a> {
-        todo!()
+    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_> {
+        Self::AncestorsIter::new(self, x)
     }
 
-    fn is_ancestor(&self, x: usize, y: usize) -> bool {
-        todo!()
-    }
-
-    fn parents<'a>(self, x: usize) -> Self::ParentsIter<'a> {
-        todo!()
+    fn parents(&self, x: usize) -> Self::ParentsIter<'_> {
+        Self::ParentsIter::new(self, x)
     }
 
     fn is_parent(&self, x: usize, y: usize) -> bool {
-        todo!()
+        self.adjacency_matrix[[y, x]]
     }
 
-    fn children<'a>(self, x: usize) -> Self::ChildrenIter<'a> {
-        todo!()
+    fn children(&self, x: usize) -> Self::ChildrenIter<'_> {
+        Self::ChildrenIter::new(self, x)
     }
 
     fn is_child(&self, x: usize, y: usize) -> bool {
-        todo!()
+        self.adjacency_matrix[[x, y]]
     }
 
-    fn descendants<'a>(self, x: usize) -> Self::DescendantsIter<'a> {
-        todo!()
-    }
-
-    fn is_descendant(&self, x: usize, y: usize) -> bool {
-        todo!()
+    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_> {
+        Self::DescendantsIter::new(self, x)
     }
 
     fn in_degree(&self, x: usize) -> usize {
-        todo!()
+        // Compute in-degree.
+        let d = self.adjacency_matrix.column(x).mapv(|f| f as usize).sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Pa!(self, x).count(), d);
+
+        d
     }
 
     fn out_degree(&self, x: usize) -> usize {
-        todo!()
+        // Compute out-degree.
+        let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Ch!(self, x).count(), d);
+
+        d
     }
 }
-*/

@@ -1,5 +1,3 @@
-use std::{cmp::Ordering, collections::BTreeSet};
-
 /// Checks if iterator is sorted.
 pub fn is_sorted<I>(data: I) -> bool
 where
@@ -20,14 +18,18 @@ where
 }
 
 /// Partial compares sets.
-pub(crate) fn partial_cmp_sets<T: Ord>(a: &BTreeSet<T>, b: &BTreeSet<T>) -> Option<Ordering> {
-    if a.eq(b) {
-        Some(Ordering::Equal)
-    } else if a.is_subset(b) {
-        Some(Ordering::Less)
-    } else if a.is_superset(b) {
-        Some(Ordering::Greater)
-    } else {
-        None
-    }
+macro_rules! partial_cmp_sets {
+    ($a:ident, $b:ident) => {
+        if $a.eq(&$b) {
+            Some(Ordering::Equal)
+        } else if $a.is_subset(&$b) {
+            Some(Ordering::Less)
+        } else if $a.is_superset(&$b) {
+            Some(Ordering::Greater)
+        } else {
+            None
+        }
+    };
 }
+
+pub(crate) use partial_cmp_sets;
