@@ -242,7 +242,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(i, []);
                         assert!(is_sorted(V!(g)));
-                        assert!(V!(g).eq(j.into_iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(j.iter().map(|x| g.index(x))));
                     }
                 }
 
@@ -354,7 +354,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
                         assert!(is_sorted(E!(g)));
-                        assert!(E!(g).eq(j.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
                     }
                 }
 
@@ -884,7 +884,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::empty(i);
                         assert!(is_sorted(V!(g)));
-                        assert!(V!(g).eq(j.into_iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(j.iter().map(|x| g.index(x))));
                     }
                 }
 
@@ -996,7 +996,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
                         assert!(is_sorted(E!(g)));
-                        assert!(E!(g).eq(j.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
                     }
                 }
 
