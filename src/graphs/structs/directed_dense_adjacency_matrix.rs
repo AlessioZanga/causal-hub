@@ -2,7 +2,7 @@ use std::{
     cmp::Ordering,
     collections::BTreeSet,
     fmt::Display,
-    iter::{Enumerate, FilterMap, FusedIterator},
+    iter::{Enumerate, FilterMap},
     ops::{Deref, Range},
 };
 
@@ -79,8 +79,6 @@ impl<'a> Iterator for EdgesIterator<'a> {
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
-impl<'a> FusedIterator for EdgesIterator<'a> {}
-
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     graph: &'a DirectedDenseAdjacencyMatrixGraph,
@@ -115,8 +113,6 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
         self.iter.next()
     }
 }
-
-impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
 impl Display for DirectedDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -163,10 +159,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         // Map edges iterator into edge list.
         let edges: EdgeList<_> = edges.into_iter().map(|(x, y)| (x.into(), y.into())).collect();
         // Add missing vertices from the edges.
-        for (x, y) in &edges {
-            vertices.insert(x.clone());
-            vertices.insert(y.clone());
-        }
+        vertices.extend(edges.iter().cloned().flat_map(|(x, y)| [x, y]));
 
         // Compute new graph order.
         let order = vertices.len();
@@ -606,7 +599,7 @@ where
 impl Into<EdgeList<String>> for DirectedDenseAdjacencyMatrixGraph {
     fn into(self) -> EdgeList<String> {
         E!(self)
-            .map(|(x, y)| (self.vertex(x).to_string(), self.vertex(y).to_string()))
+            .map(|(x, y)| (self.vertex(x).into(), self.vertex(y).into()))
             .collect()
     }
 }
@@ -617,8 +610,8 @@ impl Into<AdjacencyList<String>> for DirectedDenseAdjacencyMatrixGraph {
         V!(self)
             .map(|x| {
                 (
-                    self.vertex(x).to_string(),
-                    Adj!(self, x).map(|y| self.vertex(y).to_string()).collect(),
+                    self.vertex(x).into(),
+                    Adj!(self, x).map(|y| self.vertex(y).into()).collect(),
                 )
             })
             .collect()
@@ -755,8 +748,6 @@ impl<'a> Iterator for AncestorsIterator<'a> {
     }
 }
 
-impl<'a> FusedIterator for AncestorsIterator<'a> {}
-
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ParentsIterator<'a> {
     graph: &'a DirectedDenseAdjacencyMatrixGraph,
@@ -785,8 +776,6 @@ impl<'a> Iterator for ParentsIterator<'a> {
     }
 }
 
-impl<'a> FusedIterator for ParentsIterator<'a> {}
-
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ChildrenIterator<'a> {
     graph: &'a DirectedDenseAdjacencyMatrixGraph,
@@ -814,8 +803,6 @@ impl<'a> Iterator for ChildrenIterator<'a> {
         self.iter.next()
     }
 }
-
-impl<'a> FusedIterator for ChildrenIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct DescendantsIterator<'a> {
@@ -868,8 +855,6 @@ impl<'a> Iterator for DescendantsIterator<'a> {
         self.iter.next()
     }
 }
-
-impl<'a> FusedIterator for DescendantsIterator<'a> {}
 
 impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     type AncestorsIter<'a> = AncestorsIterator<'a>;

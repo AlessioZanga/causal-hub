@@ -1,5 +1,3 @@
-use std::iter::FusedIterator;
-
 use super::BaseGraph;
 
 /// Neighbors iterator.
@@ -16,7 +14,7 @@ macro_rules! Ne {
 /// Undirected graph trait.
 pub trait UndirectedGraph: BaseGraph {
     /// Neighbors iterator type.
-    type NeighborsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type NeighborsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 

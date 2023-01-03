@@ -1,7 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-    iter::FusedIterator,
-};
+use std::fmt::{Debug, Display};
 
 /// Vertex iterator.
 ///
@@ -53,17 +50,17 @@ pub trait BaseGraph: Clone + Debug + Display {
     type Direction;
 
     /// Vertices iterator type.
-    type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator + FusedIterator
+    type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator
     where
         Self: 'a;
 
     /// Edges iterator type.
-    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator
     where
         Self: 'a;
 
     /// Adjacents vertices iterator type.
-    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type AdjacentsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 

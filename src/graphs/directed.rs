@@ -1,5 +1,3 @@
-use std::iter::FusedIterator;
-
 use super::BaseGraph;
 
 /// Ancestors iterator.
@@ -49,22 +47,22 @@ macro_rules! De {
 /// Directed graph trait.
 pub trait DirectedGraph: BaseGraph {
     /// Ancestors iterator type.
-    type AncestorsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type AncestorsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 
     /// Parents iterator type.
-    type ParentsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type ParentsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 
     /// Children iterator type.
-    type ChildrenIter<'a>: Iterator<Item = usize> + FusedIterator
+    type ChildrenIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 
     /// Descendants iterator type.
-    type DescendantsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type DescendantsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
 
