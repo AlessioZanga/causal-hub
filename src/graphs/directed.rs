@@ -4,7 +4,7 @@ use super::BaseGraph;
 
 /// Ancestors iterator.
 ///
-/// Return the vertex iterator representing $An(G, X)$.
+/// Return the vertex iterator representing $An(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! An {
@@ -15,7 +15,7 @@ macro_rules! An {
 
 /// Parents iterator.
 ///
-/// Return the vertex iterator representing $Pa(G, X)$.
+/// Return the vertex iterator representing $Pa(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! Pa {
@@ -26,7 +26,7 @@ macro_rules! Pa {
 
 /// Children iterator.
 ///
-/// Return the vertex iterator representing $Ch(G, X)$.
+/// Return the vertex iterator representing $Ch(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! Ch {
@@ -37,7 +37,7 @@ macro_rules! Ch {
 
 /// Descendants iterator.
 ///
-/// Return the vertex iterator representing $De(G, X)$.
+/// Return the vertex iterator representing $De(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! De {

@@ -22,5 +22,5 @@ pub type DenseAdjacencyMatrix = Array2<bool>;
 pub type SparseAdjacencyMatrix = TriMat<bool>;
 
 /// [Bidirectional map](https://docs.rs/bimap/latest) with
-/// [FxHasher](https://docs.rs/rustc_hash/latest) type.
+/// [`FxHasher`](https://docs.rs/rustc_hash/latest) type.
 pub type FxBiHashMap<L, R> = BiHashMap<L, R, BuildHasherDefault<FxHasher>, BuildNoHashHasher<R>>;

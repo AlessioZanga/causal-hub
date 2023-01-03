@@ -5,7 +5,7 @@ use std::{
 
 /// Vertex iterator.
 ///
-/// Return the vertex iterator representing $V(G)$.
+/// Return the vertex iterator representing $V(\mathcal{G})$.
 ///
 #[macro_export]
 macro_rules! V {
@@ -16,7 +16,7 @@ macro_rules! V {
 
 /// Edge iterator.
 ///
-/// Return the edges iterator representing $E(G)$.
+/// Return the edges iterator representing $E(\mathcal{G})$.
 ///
 #[macro_export]
 macro_rules! E {
@@ -27,7 +27,7 @@ macro_rules! E {
 
 /// Adjacency iterator.
 ///
-/// Return the vertex iterator representing $Adj(G, X)$.
+/// Return the vertex iterator representing $Adj(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! Adj {
@@ -448,7 +448,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Adjacent iterator.
     ///
-    /// Iterates over the vertex set $Adj(G, X)$ of a given vertex $X$.
+    /// Iterates over the vertex set $Adj(\mathcal{G}, X)$ of a given vertex $X$.
     ///
     /// # Panics
     ///

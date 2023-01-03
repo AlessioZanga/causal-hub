@@ -4,7 +4,7 @@ use super::BaseGraph;
 
 /// Neighbors iterator.
 ///
-/// Return the vertex iterator representing $Ne(G, X)$.
+/// Return the vertex iterator representing $Ne(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! Ne {

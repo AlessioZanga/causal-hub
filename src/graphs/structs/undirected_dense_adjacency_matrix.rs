@@ -695,7 +695,7 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for UndirectedDenseAdjacenc
 impl PartialEq for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        // Check that V(G) == V(H) && E(G) == E(H).
+        // Check that V(\mathcal{G}) == V(\mathcal{H}) && E(\mathcal{G}) == E(\mathcal{H}).
         self.vertices.eq(&other.vertices) && self.adjacency_matrix.eq(&other.adjacency_matrix)
     }
 }
