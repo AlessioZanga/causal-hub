@@ -1,176 +1,747 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{
-        graphs::{BaseGraph, DefaultGraph, ErrorGraph as E, UndirectedDenseMatrixGraph},
-        types::AdjacencyMatrix,
-    };
-    use ndarray::prelude::*;
+    mod undirected {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use std::ops::Deref;
 
-    #[test]
-    fn default() {
-        let g = UndirectedDenseMatrixGraph::default();
+                use causal_hub::prelude::*;
+                use ndarray::prelude::*;
 
-        assert_eq!(g.order(), 0);
-        assert_eq!(g.size(), 0);
-    }
+                #[test]
+                fn default() {
+                    let g = $G::default();
 
-    #[test]
-    fn null() {
-        let g = UndirectedDenseMatrixGraph::null();
-
-        assert_eq!(g.order(), 0);
-        assert_eq!(g.size(), 0);
-    }
-
-    #[test]
-    fn empty() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [(Vec<&str>, Option<E>); 5] = [
-            // Empty vertices set.
-            (vec![], None),
-            // Invalid vertex label.
-            (vec![""], Some(E::EmptyVertexLabel)),
-            // Non-empty vertices set.
-            (vec!["A"], None),
-            // Non-empty vertices set.
-            (vec!["A", "B"], None),
-            // Large vertices set.
-            (
-                vec![
-                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                ],
-                None,
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for (vertices, error) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::empty(vertices.clone());
-            // ... assert result.
-            match g {
-                Ok(g) => {
-                    assert!(g.vertices().eq(vertices.clone()));
-                    assert_eq!(g.order(), vertices.len());
+                    assert_eq!(g.order(), 0);
                     assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-                Err(e) => {
-                    assert_eq!(Some(e), error);
+
+                #[test]
+                fn null() {
+                    let g = $G::null();
+
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-            }
+
+                #[test]
+                fn empty() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"])),
+                        // ... multiple vertices,
+                        (vec!["0", "1", "2", "3"], (4, vec!["0", "1", "2", "3"])),
+                        // ... random vertices,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (5, vec!["1", "3", "58", "71", "75"]),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v)) in data {
+                        let g = $G::empty(i);
+
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), 0);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).next().is_none());
+                    }
+                }
+
+                #[test]
+                fn complete() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![], vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"], vec![])),
+                        // ... multiple vertices,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            (
+                                4,
+                                vec!["0", "1", "2", "3"],
+                                vec![
+                                    ("0", "1"),
+                                    ("0", "2"),
+                                    ("0", "3"),
+                                    ("1", "2"),
+                                    ("1", "3"),
+                                    ("2", "3"),
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (
+                                5,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![
+                                    ("1", "3"),
+                                    ("1", "58"),
+                                    ("1", "71"),
+                                    ("1", "75"),
+                                    ("3", "58"),
+                                    ("3", "71"),
+                                    ("3", "75"),
+                                    ("58", "71"),
+                                    ("58", "75"),
+                                    ("71", "75"),
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v, e)) in data {
+                        let g = $G::complete(i);
+
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), (o * (o + 1)) / 2);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                fn from_edge_list() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], vec![], vec![]),
+                        // ... one vertex and one edge,
+                        (vec!["0"], vec![("0", "0")], vec![("0", "0")]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], vec![("0", "1")], vec![("0", "1")]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let k: EdgeList<_> = k.into_iter().collect();
+                        let g = $G::from(k.clone());
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let e: EdgeList<_> = g.into();
+
+                        assert!(e
+                            .into_iter()
+                            .eq(j.iter().map(|&(x, y)| (x.into(), y.into()))));
+                    }
+                }
+
+                #[test]
+                fn from_adjacency_list() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], vec![], vec![]),
+                        // ... one vertex and one edge,
+                        (vec!["0"], vec![("0", "0")], vec![("0", vec!["0"])]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], vec![("0", "1")], vec![("0", vec!["1"])]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", vec!["1"]), ("1", vec!["2"]), ("2", vec!["3"])],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            vec![
+                                ("71", vec!["1"]),
+                                ("1", vec!["58"]),
+                                ("58", vec!["3"]),
+                                ("3", vec!["75"]),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let k: AdjacencyList<_> = k
+                            .into_iter()
+                            .map(|(x, ys)| (x, ys.into_iter().collect()))
+                            .collect();
+                        let g = $G::from(k);
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                fn try_from_dense_adjacency_matrix() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        ((vec![], vec![]), (vec![], Default::default())),
+                        // ... one vertex and one edge,
+                        ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
+                        // ... multiple vertices and one edge,
+                        (
+                            (vec!["0", "1"], vec![("0", "1")]),
+                            (vec!["0", "1"], array![[false, true], [true, false]]),
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            (
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                            (
+                                vec!["0", "1", "2", "3"],
+                                array![
+                                    [false, true, false, false],
+                                    [true, false, true, false],
+                                    [false, true, false, true],
+                                    [false, false, true, false]
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                array![
+                                    [false, false, true, true, false],
+                                    [false, false, true, false, true],
+                                    [true, true, false, false, false],
+                                    [true, false, false, false, false],
+                                    [false, true, false, false, false]
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for ((i, j), (v, a)) in data {
+                        let g = $G::try_from((v.clone(), a.clone())).unwrap();
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let (u, b): (_, DenseAdjacencyMatrix) = g.into();
+
+                        assert!(u.into_iter().eq(v.into_iter()));
+                        assert_eq!(b, a);
+                    }
+                }
+
+                #[test]
+                #[should_panic]
+                fn try_from_dense_adjacency_matrix_should_panic() {
+                    $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
+                }
+
+                #[test]
+                fn try_from_sparse_adjacency_matrix() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        ((vec![], vec![]), (vec![], Default::default())),
+                        // ... one vertex and one edge,
+                        ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
+                        // ... multiple vertices and one edge,
+                        (
+                            (vec!["0", "1"], vec![("0", "1")]),
+                            (vec!["0", "1"], array![[false, true], [true, false]]),
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            (
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                            (
+                                vec!["0", "1", "2", "3"],
+                                array![
+                                    [false, true, false, false],
+                                    [true, false, true, false],
+                                    [false, true, false, true],
+                                    [false, false, true, false]
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                array![
+                                    [false, false, true, true, false],
+                                    [false, false, true, false, true],
+                                    [true, true, false, false, false],
+                                    [true, false, false, false, false],
+                                    [false, true, false, false, false]
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for ((i, j), (v, a)) in data {
+                        let a = {
+                            let (mut rows, mut cols) = (vec![], vec![]);
+                            for ((i, j), &f) in a.indexed_iter() {
+                                if f {
+                                    rows.push(i);
+                                    cols.push(j);
+                                }
+                            }
+                            let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
+                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                        };
+                        let g = $G::try_from((v.clone(), a)).unwrap();
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let a = g.deref();
+                        let a = {
+                            let (mut rows, mut cols) = (vec![], vec![]);
+                            for ((i, j), &f) in a.indexed_iter() {
+                                if f {
+                                    rows.push(i);
+                                    cols.push(j);
+                                }
+                            }
+                            let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
+                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                        };
+
+                        let (u, b): (_, SparseAdjacencyMatrix) = g.into();
+
+                        assert!(u.into_iter().eq(v.into_iter()));
+                        assert_eq!(b, a);
+                    }
+                }
+
+                #[test]
+                #[should_panic]
+                fn try_from_sparse_adjacency_matrix_should_panic() {
+                    $G::try_from((
+                        vec!["0", "1"],
+                        SparseAdjacencyMatrix::from_triplets((1, 1), vec![0], vec![0], vec![true]),
+                    ))
+                    .unwrap();
+                }
+            };
+        }
+
+        mod undirected_dense_matrix {
+            use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
         }
     }
 
-    #[test]
-    fn complete() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [(Vec<&str>, Option<E>); 5] = [
-            // Empty vertices set.
-            (vec![], None),
-            // Invalid vertex label.
-            (vec![""], Some(E::EmptyVertexLabel)),
-            // Non-empty vertices set.
-            (vec!["A"], None),
-            // Non-empty vertices set.
-            (vec!["A", "B"], None),
-            // Large vertices set.
-            (
-                vec![
-                    "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                    "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                    "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                    "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                    "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                    "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                    "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                ],
-                None,
-            ),
-        ];
+    mod directed {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use std::ops::Deref;
 
-        // For each test case in the test database ...
-        for (vertices, error) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::complete(vertices.clone());
-            // ... assert result.
-            match g {
-                Ok(g) => {
-                    let order = vertices.len();
+                use causal_hub::prelude::*;
+                use ndarray::prelude::*;
 
-                    assert!(g.vertices().eq(vertices.clone()));
-                    assert_eq!(g.order(), order);
-                    assert_eq!(g.size(), (order * (order.saturating_sub(1))) / 2);
+                #[test]
+                fn default() {
+                    let g = $G::default();
+
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-                Err(e) => {
-                    assert_eq!(Some(e), error);
+
+                #[test]
+                fn null() {
+                    let g = $G::null();
+
+                    assert_eq!(g.order(), 0);
+                    assert_eq!(g.size(), 0);
+                    assert!(V!(g).next().is_none());
+                    assert!(E!(g).next().is_none());
                 }
-            }
+
+                #[test]
+                fn empty() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"])),
+                        // ... multiple vertices,
+                        (vec!["0", "1", "2", "3"], (4, vec!["0", "1", "2", "3"])),
+                        // ... random vertices,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (5, vec!["1", "3", "58", "71", "75"]),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v)) in data {
+                        let g = $G::empty(i);
+
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), 0);
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).next().is_none());
+                    }
+                }
+
+                #[test]
+                fn complete() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices,
+                        (vec![], (0, vec![], vec![])),
+                        // ... one vertex,
+                        (vec!["0"], (1, vec!["0"], vec![])),
+                        // ... multiple vertices,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            (
+                                4,
+                                vec!["0", "1", "2", "3"],
+                                vec![
+                                    ("0", "1"),
+                                    ("0", "2"),
+                                    ("0", "3"),
+                                    ("1", "0"),
+                                    ("1", "2"),
+                                    ("1", "3"),
+                                    ("2", "0"),
+                                    ("2", "1"),
+                                    ("2", "3"),
+                                    ("3", "0"),
+                                    ("3", "1"),
+                                    ("3", "2"),
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            (
+                                5,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![
+                                    ("1", "3"),
+                                    ("1", "58"),
+                                    ("1", "71"),
+                                    ("1", "75"),
+                                    ("3", "1"),
+                                    ("3", "58"),
+                                    ("3", "71"),
+                                    ("3", "75"),
+                                    ("58", "1"),
+                                    ("58", "3"),
+                                    ("58", "71"),
+                                    ("58", "75"),
+                                    ("71", "1"),
+                                    ("71", "3"),
+                                    ("71", "58"),
+                                    ("71", "75"),
+                                    ("75", "1"),
+                                    ("75", "3"),
+                                    ("75", "58"),
+                                    ("75", "71"),
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, (o, v, e)) in data {
+                        let g = $G::complete(i);
+
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), o * (o.saturating_sub(1)));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                fn from_edge_list() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], vec![], vec![]),
+                        // ... one vertex and one edge,
+                        (vec!["0"], vec![("0", "0")], vec![("0", "0")]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], vec![("0", "1")], vec![("0", "1")]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let k: EdgeList<_> = k.into_iter().collect();
+                        let g = $G::from(k);
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let e: EdgeList<_> = g.into();
+
+                        assert!(e
+                            .into_iter()
+                            .eq(j.iter().map(|&(x, y)| (x.into(), y.into()))));
+                    }
+                }
+
+                #[test]
+                fn from_adjacency_list() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], vec![], vec![]),
+                        // ... one vertex and one edge,
+                        (vec!["0"], vec![("0", "0")], vec![("0", vec!["0"])]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], vec![("0", "1")], vec![("0", vec!["1"])]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", vec!["1"]), ("1", vec!["2"]), ("2", vec!["3"])],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            vec![("1", vec!["58", "71"]), ("3", vec!["58", "75"])],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let k: AdjacencyList<_> = k
+                            .into_iter()
+                            .map(|(x, ys)| (x, ys.into_iter().collect()))
+                            .collect();
+                        let g = $G::from(k);
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                    }
+                }
+
+                #[test]
+                fn try_from_dense_adjacency_matrix() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        ((vec![], vec![]), (vec![], Default::default())),
+                        // ... one vertex and one edge,
+                        ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
+                        // ... multiple vertices and one edge,
+                        (
+                            (vec!["0", "1"], vec![("0", "1")]),
+                            (vec!["0", "1"], array![[false, true], [false, false]]),
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            (
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                            (
+                                vec!["0", "1", "2", "3"],
+                                array![
+                                    [false, true, false, false],
+                                    [false, false, true, false],
+                                    [false, false, false, true],
+                                    [false, false, false, false]
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                array![
+                                    [false, false, true, true, false],
+                                    [false, false, true, false, true],
+                                    [false, false, false, false, false],
+                                    [false, false, false, false, false],
+                                    [false, false, false, false, false]
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for ((i, j), (v, a)) in data {
+                        let g = $G::try_from((v.clone(), a.clone())).unwrap();
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let (u, b): (_, DenseAdjacencyMatrix) = g.into();
+
+                        assert!(u.into_iter().eq(v.into_iter()));
+                        assert_eq!(b, a);
+                    }
+                }
+
+                #[test]
+                #[should_panic]
+                fn try_from_dense_adjacency_matrix_should_panic() {
+                    $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
+                }
+
+                #[test]
+                fn try_from_sparse_adjacency_matrix() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        ((vec![], vec![]), (vec![], Default::default())),
+                        // ... one vertex and one edge,
+                        ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
+                        // ... multiple vertices and one edge,
+                        (
+                            (vec!["0", "1"], vec![("0", "1")]),
+                            (vec!["0", "1"], array![[false, true], [false, false]]),
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            (
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                            (
+                                vec!["0", "1", "2", "3"],
+                                array![
+                                    [false, true, false, false],
+                                    [false, false, true, false],
+                                    [false, false, false, true],
+                                    [false, false, false, false]
+                                ],
+                            ),
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                            (
+                                vec!["1", "3", "58", "71", "75"],
+                                array![
+                                    [false, false, true, true, false],
+                                    [false, false, true, false, true],
+                                    [false, false, false, false, false],
+                                    [false, false, false, false, false],
+                                    [false, false, false, false, false]
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for ((i, j), (v, a)) in data {
+                        let a = {
+                            let (mut rows, mut cols) = (vec![], vec![]);
+                            for ((i, j), &f) in a.indexed_iter() {
+                                if f {
+                                    rows.push(i);
+                                    cols.push(j);
+                                }
+                            }
+                            let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
+                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                        };
+                        let g = $G::try_from((v.clone(), a)).unwrap();
+
+                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+
+                        let a = g.deref();
+                        let a = {
+                            let (mut rows, mut cols) = (vec![], vec![]);
+                            for ((i, j), &f) in a.indexed_iter() {
+                                if f {
+                                    rows.push(i);
+                                    cols.push(j);
+                                }
+                            }
+                            let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
+                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                        };
+
+                        let (u, b): (_, SparseAdjacencyMatrix) = g.into();
+
+                        assert!(u.into_iter().eq(v.into_iter()));
+                        assert_eq!(b, a);
+                    }
+                }
+
+                #[test]
+                #[should_panic]
+                fn try_from_sparse_adjacency_matrix_should_panic() {
+                    $G::try_from((
+                        vec!["0", "1"],
+                        SparseAdjacencyMatrix::from_triplets((1, 1), vec![0], vec![0], vec![true]),
+                    ))
+                    .unwrap();
+                }
+            };
         }
-    }
 
-    #[test]
-    fn with_adjacency_matrix() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [((Vec<&str>, AdjacencyMatrix), Option<E>); 8] = [
-            // Empty vertices set and adjacency matrix.
-            ((vec![], Default::default()), None),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), None),
-            // Empty vertices set but non-empty adjacency matrix.
-            ((vec![], array![[false]]), Some(E::InconsistentMatrix)),
-            // Invalid vertex label and adjacency matrix.
-            ((vec![""], array![[false]]), Some(E::EmptyVertexLabel)),
-            // Non-empty vertices set but empty adjacency matrix.
-            ((vec!["A"], Default::default()), Some(E::InconsistentMatrix)),
-            // Non-square adjacency matrix.
-            ((vec!["A"], array![[false, false]]), Some(E::NonSquareMatrix)),
-            // Non-symmetric adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, true], [false, false]]),
-                Some(E::NonSymmetricMatrix),
-            ),
-            // Large vertices set.
-            (
-                (
-                    vec![
-                        "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-                        "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-                        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                        "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                        "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-                        "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-                        "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-                        "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-                        "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-                        "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-                    ],
-                    AdjacencyMatrix::default((100, 100)),
-                ),
-                None,
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), error) in data {
-            // ... assert result.
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix);
-
-            assert_eq!(g.err(), error);
+        mod directed_dense_matrix {
+            use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(DirectedDenseAdjacencyMatrixGraph);
         }
     }
 }
