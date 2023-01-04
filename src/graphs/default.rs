@@ -5,7 +5,7 @@ pub trait DefaultGraph: BaseGraph + Default {
     /// Null constructor.
     ///
     /// Let be $\mathcal{G}$ a graph type. The null constructor of $\mathcal{G}$
-    /// returns a null graph $G$ (i.e. both $V$ and $E$ are empty).
+    /// returns a null graph $\mathcal{G}$ (i.e. both $\mathbf{V}$ and $\mathbf{E}$ are empty).
     ///
     /// # Examples
     ///
@@ -30,7 +30,7 @@ pub trait DefaultGraph: BaseGraph + Default {
     /// Empty constructor.
     ///
     /// Let be $\mathcal{G}$ a graph type. The empty constructor of $\mathcal{G}$
-    /// returns an empty graph $G$ (i.e. $E$ is empty).
+    /// returns an empty graph $\mathcal{G}$ (i.e. $\mathbf{E}$ is empty).
     ///
     /// # Examples
     ///
@@ -55,7 +55,7 @@ pub trait DefaultGraph: BaseGraph + Default {
     /// Complete constructor.
     ///
     /// Let be $\mathcal{G}$ a graph type. The complete constructor of $\mathcal{G}$
-    /// returns an complete graph $G$ (i.e. $E$ is $V \times V$).
+    /// returns an complete graph $\mathcal{G}$ (i.e. $\mathbf{E}$ is $V \times V$).
     ///
     /// # Examples
     ///

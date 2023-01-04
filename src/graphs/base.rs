@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    hash::Hash,
+};
 
 /// Vertex iterator.
 ///
@@ -42,7 +45,7 @@ pub mod directions {
 }
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display {
+pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// Data type.
     type Data;
 
@@ -67,7 +70,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// New constructor.
     ///
     /// Let be $\mathcal{G}$ a graph type. The new constructor of $\mathcal{G}$
-    /// returns a graph $G$ based on $V$ and $E$.
+    /// returns a graph $\mathcal{G}$ based on $\mathbf{V}$ and $\mathbf{E}$.
     ///
     /// # Examples
     ///
@@ -174,7 +177,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Vertex iterator.
     ///
-    /// Iterates over the vertex set $V$ ordered by index value.
+    /// Iterates over the vertex set $\mathbf{V}$ ordered by index value.
     ///
     /// # Examples
     ///
@@ -200,7 +203,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Order of the graph.
     ///
-    /// Return the graph order (aka. $|V|$).
+    /// Return the graph order (aka. $|\mathbf{V}|$).
     ///
     /// # Examples
     ///
@@ -299,7 +302,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Edge iterator.
     ///
-    /// Iterates over the edge set $E$ order by index values.
+    /// Iterates over the edge set $\mathbf{E}$ order by index values.
     ///
     /// # Examples
     ///
@@ -328,7 +331,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Size of the graph.
     ///
-    /// Return the graph size (aka. $|E|$).
+    /// Return the graph size (aka. $|\mathbf{E}|$).
     ///
     /// # Examples
     ///
@@ -341,7 +344,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// ]);
     ///
     /// // Build a new graph.
-    /// let mut g = Graph::from(e);
+    /// let g = Graph::from(e);
     /// assert_eq!(g.size(), 5);
     /// ```
     ///
@@ -460,7 +463,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// let e = EdgeList::from([("A", "B"), ("C", "A"), ("A", "A")]);
     ///
     /// // Build a graph.
-    /// let mut g = Graph::from(e);
+    /// let g = Graph::from(e);
     ///
     /// // Choose vertex.
     /// let x = g.index("A");
@@ -481,7 +484,7 @@ pub trait BaseGraph: Clone + Debug + Display {
 
     /// Checks adjacent vertices in the graph.
     ///
-    /// Checks whether the graph has two adjacent vertices or not.
+    /// Checks whether a vertex $Y$ is adjacent to another vertex $X$ or not.
     ///
     /// # Panics
     ///
@@ -496,7 +499,7 @@ pub trait BaseGraph: Clone + Debug + Display {
     /// let e = EdgeList::from([("A", "B"), ("C", "A"), ("A", "A")]);
     ///
     /// // Build a graph.
-    /// let mut g = Graph::from(e);
+    /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
     /// let (x, y) = (g.index("A"), g.index("B"));

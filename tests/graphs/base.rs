@@ -6,6 +6,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
+                use rustc_hash::FxHashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -90,6 +91,20 @@ mod tests {
                         // ... assert result.
                         assert!(Regex::new(test_display).unwrap().is_match(&*format!("{}", g)));
                     }
+                }
+
+                #[test]
+                fn hash() {
+                    let g = $G::new(
+                        vec!["0", "1", "2", "3"],
+                        vec![("0", "1")]
+                    );
+                    let h = g.clone();
+
+                    let mut map = FxHashSet::default();
+                    map.insert(g);
+
+                    assert!(map.contains(&h));
                 }
 
                 #[test]
@@ -654,6 +669,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
+                use rustc_hash::FxHashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -738,6 +754,20 @@ mod tests {
                         // ... assert result.
                         assert!(Regex::new(test_display).unwrap().is_match(&*format!("{}", g)));
                     }
+                }
+
+                #[test]
+                fn hash() {
+                    let g = $G::new(
+                        vec!["0", "1", "2", "3"],
+                        vec![("0", "1")]
+                    );
+                    let h = g.clone();
+
+                    let mut map = FxHashSet::default();
+                    map.insert(g);
+
+                    assert!(map.contains(&h));
                 }
 
                 #[test]

@@ -2,6 +2,7 @@ use std::{
     cmp::Ordering,
     collections::BTreeSet,
     fmt::Display,
+    hash::{Hash, Hasher},
     iter::{Enumerate, FilterMap},
     ops::{Deref, Range},
 };
@@ -134,6 +135,13 @@ impl Display for DirectedDenseAdjacencyMatrixGraph {
         )?;
         // Write ending character.
         write!(f, " }}")
+    }
+}
+
+impl Hash for DirectedDenseAdjacencyMatrixGraph {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.vertices.hash(state);
+        self.adjacency_matrix.hash(state);
     }
 }
 
