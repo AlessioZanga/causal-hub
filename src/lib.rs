@@ -6,6 +6,9 @@
 /// Graphs algorithms and structures.
 pub mod graphs;
 
+/// Frequently used items.
+pub mod prelude;
+
 /// Crate-wide types.
 pub mod types;
 

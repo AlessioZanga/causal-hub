@@ -1,106 +1,498 @@
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
+    mod undirected {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use std::cmp::Ordering;
 
-    use causal_hub::{
-        graphs::{DefaultGraph, UndirectedDenseMatrixGraph},
-        types::AdjacencyMatrix,
-    };
-    use ndarray::prelude::*;
+                use causal_hub::prelude::*;
 
-    #[test]
-    fn eq() {
-        // Test database as (input, output) pairs.
-        let data: [((Vec<&str>, AdjacencyMatrix), (Vec<&str>, AdjacencyMatrix, bool)); 6] = [
-            // Empty vertices set and adjacency matrix.
-            ((vec![], Default::default()), (vec![], Default::default(), true)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec![], Default::default()), (vec!["A"], array![[false]], false)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), (vec![], Default::default(), false)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), (vec!["A"], array![[false]], true)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, false], [false, false]]),
-                (vec!["A", "B"], array![[false, false], [false, false]], true),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, true], [true, false]]),
-                (vec!["A", "B"], array![[false, true], [true, false]], true),
-            ),
-        ];
+                #[test]
+                fn eq() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![
+                                (vec![], vec![], true),
+                                (vec!["0"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                            ],
+                        ),
+                        // ... one vertex and zero edges,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], true),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... one vertex and one edge,
+                        (
+                            vec!["0"],
+                            vec![("0", "0")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], true),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and zero edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], true),
+                                (vec![], vec![("0", "0")], false),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and one edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], true),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], true),
+                            ],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                                (
+                                    vec!["71", "1", "58", "3", "75"],
+                                    vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                                    true,
+                                ),
+                            ],
+                        ),
+                    ];
 
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), (test_vertices, test_adjacency_matrix, flag)) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            let h = UndirectedDenseMatrixGraph::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
-            // ... assert result.
-            assert_eq!(g.eq(&h), flag);
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let g = $G::new(i, j);
+                        for (i, j, f) in k {
+                            let h = $G::new(i, j);
+                            assert_eq!(g.eq(&h), f);
+                        }
+                    }
+                }
+
+                #[test]
+                fn partial_cmp() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Equal)),
+                                (vec!["0"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], Some(Ordering::Less)),
+                            ],
+                        ),
+                        // ... one vertex and zero edges,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Equal)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], Some(Ordering::Less)),
+                                (vec![], vec![("0", "1")], Some(Ordering::Less)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... one vertex and one edge,
+                        (
+                            vec!["0"],
+                            vec![("0", "0")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], None),
+                                (vec![], vec![("0", "0")], Some(Ordering::Equal)),
+                                (vec![], vec![("0", "1")], None),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and zero edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Equal)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], None),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and one edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["71"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["71", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["71", "1", "58", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["71", "1", "58", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("71", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("71", "71")], None),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let g = $G::new(i, j);
+                        for (i, j, f) in k {
+                            let h = $G::new(i, j);
+                            assert!(g.partial_cmp(&h).eq(&f));
+                        }
+                    }
+                }
+            };
+        }
+
+        mod undirected_dense_matrix {
+            use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
         }
     }
 
-    #[test]
-    fn partial_cmp() {
-        // Test database as (input, output) pairs.
-        let data: [(
-            (Vec<&str>, AdjacencyMatrix),
-            (Vec<&str>, AdjacencyMatrix, Option<Ordering>),
-        ); 7] = [
-            // Empty vertices set and adjacency matrix.
-            (
-                (vec![], Default::default()),
-                (vec![], Default::default(), Some(Ordering::Equal)),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec![], Default::default()),
-                (vec!["A"], array![[false]], Some(Ordering::Less)),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A"], array![[false]]),
-                (vec![], Default::default(), Some(Ordering::Greater)),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A"], array![[false]]),
-                (vec!["A"], array![[false]], Some(Ordering::Equal)),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, false], [false, false]]),
-                (
-                    vec!["A", "B"],
-                    array![[false, false], [false, false]],
-                    Some(Ordering::Equal),
-                ),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, true], [true, false]]),
-                (
-                    vec!["A", "B"],
-                    array![[false, true], [true, false]],
-                    Some(Ordering::Equal),
-                ),
-            ),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            (
-                (vec!["A", "B"], array![[false, true], [true, false]]),
-                (vec!["A", "C"], array![[false, true], [true, false]], None),
-            ),
-        ];
+    mod directed {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use std::cmp::Ordering;
 
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), (test_vertices, test_adjacency_matrix, ordering)) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            let h = UndirectedDenseMatrixGraph::with_adjacency_matrix(test_vertices, test_adjacency_matrix).unwrap();
-            // ... assert result.
-            assert_eq!(g.partial_cmp(&h), ordering);
+                use causal_hub::prelude::*;
+
+                #[test]
+                fn eq() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![
+                                (vec![], vec![], true),
+                                (vec!["0"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                            ],
+                        ),
+                        // ... one vertex and zero edges,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], true),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... one vertex and one edge,
+                        (
+                            vec!["0"],
+                            vec![("0", "0")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], true),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and zero edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], true),
+                                (vec![], vec![("0", "0")], false),
+                                (vec![], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and one edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], true),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                            ],
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], true),
+                            ],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (vec![], vec![], false),
+                                (vec!["0"], vec![], false),
+                                (vec!["0", "1"], vec![], false),
+                                (vec!["0", "1", "2", "3"], vec![], false),
+                                (vec![], vec![("0", "0")], false),
+                                (vec!["0", "1", "2", "3"], vec![("0", "1")], false),
+                                (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], false),
+                                (
+                                    vec!["71", "1", "58", "3", "75"],
+                                    vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                                    true,
+                                ),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let g = $G::new(i, j);
+                        for (i, j, f) in k {
+                            let h = $G::new(i, j);
+                            assert_eq!(g.eq(&h), f);
+                        }
+                    }
+                }
+
+                #[test]
+                fn partial_cmp() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Equal)),
+                                (vec!["0"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], Some(Ordering::Less)),
+                            ],
+                        ),
+                        // ... one vertex and zero edges,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Equal)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], Some(Ordering::Less)),
+                                (vec![], vec![("0", "1")], Some(Ordering::Less)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... one vertex and one edge,
+                        (
+                            vec!["0"],
+                            vec![("0", "0")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], None),
+                                (vec![], vec![("0", "0")], Some(Ordering::Equal)),
+                                (vec![], vec![("0", "1")], None),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and zero edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Equal)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], Some(Ordering::Less)),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], None),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and one edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["0"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["0", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["0", "1", "2", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("0", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("1", "1")], None),
+                            ],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (vec![], vec![], Some(Ordering::Greater)),
+                                (vec!["71"], vec![], Some(Ordering::Greater)),
+                                (vec!["4"], vec![], None),
+                                (vec!["71", "1"], vec![], Some(Ordering::Greater)),
+                                (vec!["71", "1", "58", "3"], vec![], Some(Ordering::Greater)),
+                                (vec!["71", "1", "58", "3", "4"], vec![], None),
+                                (vec![], vec![("0", "0")], None),
+                                (vec![], vec![("71", "1")], Some(Ordering::Greater)),
+                                (vec![], vec![("71", "71")], None),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k) in data {
+                        let g = $G::new(i, j);
+                        for (i, j, f) in k {
+                            let h = $G::new(i, j);
+                            assert!(g.partial_cmp(&h).eq(&f));
+                        }
+                    }
+                }
+            };
+        }
+
+        mod directed_dense_matrix {
+            use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
+            generic_tests!(DirectedDenseAdjacencyMatrixGraph);
         }
     }
 }

@@ -1,141 +1,128 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{
-        graphs::{DefaultGraph, UndirectedDenseMatrixGraph, UndirectedGraph},
-        types::AdjacencyMatrix,
-    };
-    use ndarray::prelude::*;
+    macro_rules! generic_tests {
+        ($G: ident) => {
+            use causal_hub::prelude::*;
 
-    #[test]
-    fn neighbors() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [((Vec<&str>, AdjacencyMatrix), (&str, Vec<&str>)); 5] = [
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), ("A", vec![])),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[true]]), ("A", vec!["A"])),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A", "B"], array![[false, true], [true, false]]), ("A", vec!["B"])),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["B", "A"], array![[false, true], [true, false]]), ("B", vec!["A"])),
-            // Large vertices set.
-            (
-                (
-                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
-                    array![
-                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                    ].mapv(|x| x != 0)
-                ),
-                ("A", vec!["A", "C"]),
-            ),
-        ];
+            #[test]
+            fn neighbors() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero vertices,
+                    // (vec![], vec![], (0, vec![])),
+                    // ... zero edges,
+                    (vec!["0"], vec![], (0, vec![])),
+                    // ... one edge,
+                    (vec![], vec![("0", "0")], (0, vec![0])),
+                    // ... multiple edges,
+                    (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], (1, vec![0, 2])),
+                    // ... random vertices and edges,
+                    (
+                        vec!["71", "1", "58", "3", "75"],
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        (2, vec![0, 1]),
+                    ),
+                    // ... random non-overlapping vertices and edges,
+                    (
+                        vec!["35", "62", "99", "29", "100", "18"],
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        (3, vec![]),
+                    ),
+                ];
 
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), (test_x, test_neighbors)) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            // ... assert result.
-            assert!(g.neighbors(&test_x.to_string()).eq(test_neighbors.into_iter()));
-        }
+                // Test for each scenario.
+                for (i, j, (x, f)) in data {
+                    let g = $G::new(i, j);
+
+                    assert!(Ne!(g, x).eq(f));
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn neighbors_should_panic() {
+                let g = $G::null();
+
+                Ne!(g, 0);
+            }
+
+            #[test]
+            fn is_neighbor() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero vertices,
+                    // (vec![], vec![], (0, vec![])),
+                    // ... zero edges,
+                    (vec!["0"], vec![], (0, vec![])),
+                    // ... one edge,
+                    (vec![], vec![("0", "0")], (0, vec![0])),
+                    // ... multiple edges,
+                    (vec![], vec![("0", "1"), ("1", "2"), ("2", "3")], (1, vec![0, 2])),
+                    // ... random vertices and edges,
+                    (
+                        vec!["71", "1", "58", "3", "75"],
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        (2, vec![0, 1]),
+                    ),
+                    // ... random non-overlapping vertices and edges,
+                    (
+                        vec!["35", "62", "99", "29", "100", "18"],
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        (3, vec![]),
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j, (x, f)) in data {
+                    let g = $G::new(i, j);
+
+                    assert!(f.iter().all(|&y| g.is_neighbor(x, y)));
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn is_neighbor_should_panic() {
+                let g = $G::null();
+
+                g.is_neighbor(0, 0);
+            }
+
+            #[test]
+            fn degree() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero edges,
+                    // (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], (0, 1)),
+                    // ... multiple edges,
+                    (vec![("0", "1"), ("1", "2"), ("2", "3")], (1, 2)),
+                    // ... random edges,
+                    (vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")], (2, 2)),
+                ];
+
+                // Test for each scenario.
+                for (i, (x, f)) in data {
+                    let g = $G::new([], i);
+                    assert_eq!(g.degree(x), f);
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn degree_should_panic() {
+                let g = $G::null();
+                g.degree(0);
+            }
+        };
     }
 
-    #[test]
-    fn is_neighbor() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [((Vec<&str>, AdjacencyMatrix), Vec<(&str, &str)>); 6] = [
-            // Empty vertices set and adjacency matrix.
-            ((vec![], Default::default()), vec![]),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), vec![]),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[true]]), vec![("A", "A")]),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A", "B"], array![[false, true], [true, false]]), vec![("A", "B")]),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["B", "A"], array![[false, true], [true, false]]), vec![("A", "B")]),
-            // Large vertices set.
-            (
-                (
-                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
-                    array![
-                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                    ].mapv(|x| x != 0)
-                ),
-                vec![("A", "A"), ("A", "C"), ("B", "D"), ("D", "G"), ("I", "J")],
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), test_edges) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            // ... assert result.
-            assert!(test_edges
-                .into_iter()
-                .all(|(x, y)| g.is_neighbor(&x.to_string(), &y.to_string())));
-        }
-    }
-
-    #[test]
-    fn degree() {
-        // Test database as (input, output) pairs.
-        #[rustfmt::skip]
-        let data: [((Vec<&str>, AdjacencyMatrix), (&str, usize)); 5] = [
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[false]]), ("A", 0)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A"], array![[true]]), ("A", 1)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["A", "B"], array![[false, true], [true, false]]), ("A", 1)),
-            // Non-empty vertices set and non-empty adjacency matrix.
-            ((vec!["B", "A"], array![[false, true], [true, false]]), ("B", 1)),
-            // Large vertices set.
-            (
-                (
-                    vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
-                    array![
-                        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                    ].mapv(|x| x != 0)
-                ),
-                ("A", 2),
-            ),
-        ];
-
-        // For each test case in the test database ...
-        for ((vertices, adjacency_matrix), (test_x, test_degree)) in data {
-            // ... construct the graph ...
-            let g = UndirectedDenseMatrixGraph::with_adjacency_matrix(vertices, adjacency_matrix).unwrap();
-            // ... assert result.
-            assert_eq!(g.degree(&test_x.to_string()), test_degree);
-        }
+    mod directed_dense_matrix {
+        use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+        generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
     }
 }
