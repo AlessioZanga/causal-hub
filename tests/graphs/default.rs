@@ -51,7 +51,7 @@ mod tests {
 
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), 0);
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
                         assert!(E!(g).next().is_none());
                     }
                 }
@@ -108,8 +108,8 @@ mod tests {
 
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), (o * (o + 1)) / 2);
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -142,8 +142,8 @@ mod tests {
                         let k: EdgeList<_> = k.into_iter().collect();
                         let g = $G::from(k.clone());
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let e: EdgeList<_> = g.into();
 
@@ -190,8 +190,8 @@ mod tests {
                             .collect();
                         let g = $G::from(k);
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -247,8 +247,8 @@ mod tests {
                     for ((i, j), (v, a)) in data {
                         let g = $G::try_from((v.clone(), a.clone())).unwrap();
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let (u, b): (_, DenseAdjacencyMatrix) = g.into();
 
@@ -326,8 +326,8 @@ mod tests {
                         };
                         let g = $G::try_from((v.clone(), a)).unwrap();
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let a = g.deref();
                         let a = {
@@ -418,7 +418,7 @@ mod tests {
 
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), 0);
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
                         assert!(E!(g).next().is_none());
                     }
                 }
@@ -491,8 +491,8 @@ mod tests {
 
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), o * (o.saturating_sub(1)));
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -525,8 +525,8 @@ mod tests {
                         let k: EdgeList<_> = k.into_iter().collect();
                         let g = $G::from(k);
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let e: EdgeList<_> = g.into();
 
@@ -568,8 +568,8 @@ mod tests {
                             .collect();
                         let g = $G::from(k);
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -625,8 +625,8 @@ mod tests {
                     for ((i, j), (v, a)) in data {
                         let g = $G::try_from((v.clone(), a.clone())).unwrap();
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let (u, b): (_, DenseAdjacencyMatrix) = g.into();
 
@@ -704,8 +704,8 @@ mod tests {
                         };
                         let g = $G::try_from((v.clone(), a)).unwrap();
 
-                        assert!(V!(g).eq(i.iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(i.iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
 
                         let a = g.deref();
                         let a = {

@@ -38,7 +38,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let g = Graph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Use the neighbors iterator.
     /// assert!(g.neighbors(x).eq([0, 1, 2]));
@@ -55,7 +55,7 @@ pub trait UndirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -69,7 +69,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Check edge.
     /// assert!(g.is_neighbor(x, y));
@@ -86,7 +86,7 @@ pub trait UndirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// The vertex index does not exist in the graph.
+    /// The vertex identifier does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -100,7 +100,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let mut g = Graph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Check degree.
     /// assert_eq!(g.degree(x), 3);
