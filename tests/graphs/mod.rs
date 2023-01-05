@@ -1,3 +1,4 @@
+mod algorithms;
 mod base;
 mod default;
 mod directed;

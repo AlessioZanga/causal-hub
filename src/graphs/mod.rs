@@ -1,3 +1,6 @@
+/// Algorithms on graphs.
+pub mod algorithms;
+
 mod base;
 pub use base::{directions, BaseGraph};
 
