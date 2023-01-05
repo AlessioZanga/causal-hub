@@ -1,19 +1,19 @@
 use std::{
     cmp::Ordering,
-    collections::BTreeSet,
+    collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
     iter::{Enumerate, FilterMap},
     ops::{Deref, Range},
 };
 
+use bimap::BiHashMap;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
-use rustc_hash::FxHashSet;
 
 use crate::{
-    graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, UndirectedGraph},
-    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxBiHashMap, SparseAdjacencyMatrix},
+    graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, SubGraph, UndirectedGraph},
+    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, E, V,
 };
@@ -22,13 +22,12 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct UndirectedDenseAdjacencyMatrixGraph {
     vertices: BTreeSet<String>,
-    vertices_indexes: FxBiHashMap<String, usize>,
+    vertices_indexes: BiHashMap<String, usize>,
     adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
 
 /* Implement BaseGraph trait. */
-
 impl Deref for UndirectedDenseAdjacencyMatrixGraph {
     type Target = DenseAdjacencyMatrix;
 
@@ -198,7 +197,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Compute new graph order.
         let order = vertices.len();
         // Map vertices labels to vertices indices.
-        let vertices_indexes: FxBiHashMap<_, _> = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes: BiHashMap<_, _> = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
         // Initialize adjacency matrix given graph order.
         let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
@@ -514,7 +513,6 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 }
 
 /* Implement DefaultGraph trait. */
-
 impl Default for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn default() -> Self {
@@ -581,7 +579,6 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
 }
 
 /* Implement TryFrom traits. */
-
 impl<V> From<EdgeList<V>> for UndirectedDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
@@ -730,7 +727,6 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for UndirectedDenseAdjacenc
 }
 
 /* Implement PartialOrdGraph trait. */
-
 impl PartialEq for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
@@ -744,13 +740,13 @@ impl Eq for UndirectedDenseAdjacencyMatrixGraph {}
 impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let lhs: FxHashSet<_> = V!(self).map(|x| self.label(x)).collect();
-        let rhs: FxHashSet<_> = V!(other).map(|x| other.label(x)).collect();
+        let lhs: HashSet<_> = V!(self).map(|x| self.label(x)).collect();
+        let rhs: HashSet<_> = V!(other).map(|x| other.label(x)).collect();
         // If the vertices sets are comparable ...
         partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
             // ... compare edges sets.
-            let lhs: FxHashSet<_> = E!(self).map(|(x, y)| (self.label(x), self.label(y))).collect();
-            let rhs: FxHashSet<_> = E!(other).map(|(x, y)| (other.label(x), other.label(y))).collect();
+            let lhs: HashSet<_> = E!(self).map(|(x, y)| (self.label(x), self.label(y))).collect();
+            let rhs: HashSet<_> = E!(other).map(|(x, y)| (other.label(x), other.label(y))).collect();
             // If the edges sets are comparable ...
             partial_cmp_sets!(lhs, rhs).and_then(|edges| {
                 // ... then return ordering.
@@ -771,8 +767,47 @@ impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
 
 impl PartialOrdGraph for UndirectedDenseAdjacencyMatrixGraph {}
 
-/* Implement UndirectedGraph trait. */
+/* Implement SubGraph trait. */
+impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
+    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        todo!() // FIXME:
+    }
 
+    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        // Remove duplicated vertices identifiers.
+        let indices: BTreeSet<_> = vertices.into_iter().collect();
+        // Cast to vector of indices.
+        let indices: Vec<_> = indices.into_iter().collect();
+
+        // Get minor of matrix.
+        let adjacency_matrix = self
+            .adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, adjacency_matrix)).unwrap()
+    }
+
+    fn subgraph_by_edges<J>(&self, edges: J) -> Self
+    where
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        todo!() // FIXME:
+    }
+}
+
+/* Implement UndirectedGraph trait. */
 impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
     type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
 
