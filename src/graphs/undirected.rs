@@ -24,7 +24,7 @@ pub trait UndirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///

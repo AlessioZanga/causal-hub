@@ -16,8 +16,6 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 bimap = "^0.6"
 itertools = "^0.10"
 ndarray = "^0.15"
-nohash-hasher = "^0.2"
-rustc-hash = "^1.1"
 sprs = "^0.11"
 thiserror = "^1.0"
 

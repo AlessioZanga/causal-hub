@@ -6,7 +6,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
-                use rustc_hash::FxHashSet;
+                use std::collections::HashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -101,10 +101,10 @@ mod tests {
                     );
                     let h = g.clone();
 
-                    let mut map = FxHashSet::default();
-                    map.insert(g);
+                    let mut set = HashSet::new();
+                    set.insert(g);
 
-                    assert!(map.contains(&h));
+                    assert!(set.contains(&h));
                 }
 
                 #[test]
@@ -669,7 +669,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
-                use rustc_hash::FxHashSet;
+                use std::collections::HashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -764,10 +764,10 @@ mod tests {
                     );
                     let h = g.clone();
 
-                    let mut map = FxHashSet::default();
-                    map.insert(g);
+                    let mut set = HashSet::new();
+                    set.insert(g);
 
-                    assert!(map.contains(&h));
+                    assert!(set.contains(&h));
                 }
 
                 #[test]

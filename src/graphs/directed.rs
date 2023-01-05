@@ -72,7 +72,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -134,7 +134,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -196,7 +196,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -258,7 +258,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -320,7 +320,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -351,7 +351,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
