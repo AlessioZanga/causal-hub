@@ -72,7 +72,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -86,7 +86,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("B");
+    /// let x = g.vertex("B");
     ///
     /// // Use the ancestors iterator.
     /// assert!(g.ancestors(x).eq([0, 2]));
@@ -103,7 +103,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -117,7 +117,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("C"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("C"));
     ///
     /// // Check edge.
     /// assert!(g.is_ancestor(x, y));
@@ -134,7 +134,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -148,7 +148,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Use the parents iterator.
     /// assert!(g.parents(x).eq([0, 2]));
@@ -165,7 +165,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -179,7 +179,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("C"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("C"));
     ///
     /// // Check edge.
     /// assert!(g.is_parent(x, y));
@@ -196,7 +196,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -210,7 +210,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Use the children iterator.
     /// assert!(g.children(x).eq([0, 1]));
@@ -227,7 +227,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -241,7 +241,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("C"), g.index("A"));
+    /// let (x, y) = (g.vertex("C"), g.vertex("A"));
     ///
     /// // Check edge.
     /// assert!(g.is_child(x, y));
@@ -258,7 +258,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -272,7 +272,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("C");
+    /// let x = g.vertex("C");
     ///
     /// // Use the descendants iterator.
     /// assert!(g.descendants(x).eq([0, 1]));
@@ -289,7 +289,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -303,7 +303,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("C"), g.index("A"));
+    /// let (x, y) = (g.vertex("C"), g.vertex("A"));
     ///
     /// // Check edge.
     /// assert!(g.is_descendant(x, y));
@@ -320,7 +320,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -334,7 +334,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let mut g = DiGraph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Check degree.
     /// assert_eq!(g.in_degree(x), 2);
@@ -351,7 +351,7 @@ pub trait DirectedGraph: BaseGraph {
     ///
     /// # Panics
     ///
-    /// Panics if the vertex identifier does not exist in the graph.
+    /// The vertex label does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -365,7 +365,7 @@ pub trait DirectedGraph: BaseGraph {
     /// let mut g = DiGraph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Check degree.
     /// assert_eq!(g.out_degree(x), 2);

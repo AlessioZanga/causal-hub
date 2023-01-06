@@ -52,6 +52,11 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// Directional type.
     type Direction;
 
+    /// Labels iterator type.
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator
+    where
+        Self: 'a;
+
     /// Vertices iterator type.
     type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator
     where
@@ -125,9 +130,57 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     ///
     fn clear(&mut self);
 
-    /// Gets the vertex index.
+    /// Gets the vertex label.
     ///
-    /// Returns the vertex index given its label.
+    /// Returns the vertex label given its identifier.
+    ///
+    /// # Panics
+    ///
+    /// The vertex identifier does not exist in the graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a 3rd order graph.
+    /// let g = Graph::empty(["A", "B", "C"]);
+    ///
+    /// // Get vertex label.
+    /// let x = g.label(0);
+    ///
+    /// // Check vertex label.
+    /// assert_eq!(x, "A");
+    /// ```
+    ///
+    fn label(&self, x: usize) -> &str;
+
+    /// Labels iterator.
+    ///
+    /// Iterates over the vertex labels set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a 3rd order graph.
+    /// let g = Graph::empty(["A", "B", "C"]);
+    ///
+    /// // Use the vertex set iterator.
+    /// assert!(g.labels().eq(["A", "B", "C"]));
+    ///
+    /// // Iterate over the vertex set.
+    /// for x in g.labels() {
+    ///     assert!(g.has_vertex(g.vertex(x)));
+    /// }
+    /// ```
+    ///
+    fn labels(&self) -> Self::LabelsIter<'_>;
+
+    /// Gets the vertex identifier.
+    ///
+    /// Returns the vertex identifier given its label.
     ///
     /// # Panics
     ///
@@ -141,43 +194,18 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// // Build a 3rd order graph.
     /// let g = Graph::empty(["A", "B", "C"]);
     ///
-    /// // Get vertex index.
-    /// let x = g.index("A");
+    /// // Get vertex identifier.
+    /// let x = g.vertex("A");
     ///
-    /// // Check vertex index.
+    /// // Check vertex identifier.
     /// assert_eq!(x, 0);
     /// ```
     ///
-    fn index(&self, x: &str) -> usize;
-
-    /// Gets the vertex label.
-    ///
-    /// Returns the vertex label given its index.
-    ///
-    /// # Panics
-    ///
-    /// The vertex index does not exist in the graph.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// // Build a 3rd order graph.
-    /// let g = Graph::empty(["A", "B", "C"]);
-    ///
-    /// // Get vertex label.
-    /// let x = g.vertex(0);
-    ///
-    /// // Check vertex label.
-    /// assert_eq!(x, "A");
-    /// ```
-    ///
-    fn vertex(&self, x: usize) -> &str;
+    fn vertex(&self, x: &str) -> usize;
 
     /// Vertex iterator.
     ///
-    /// Iterates over the vertex set $\mathbf{V}$ ordered by index value.
+    /// Iterates over the vertex set $\mathbf{V}$ ordered by identifier value.
     ///
     /// # Examples
     ///
@@ -237,7 +265,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let g = Graph::empty(v);
     ///
     /// // Choose vertices.
-    /// let (x, y, z) = (g.index("A"), g.index("B"), g.order() + 1);
+    /// let (x, y, z) = (g.vertex("A"), g.vertex("B"), g.order() + 1);
     ///
     /// // Check vertices.
     /// assert!(g.has_vertex(x));
@@ -251,7 +279,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
 
     /// Adds vertex to the graph.
     ///
-    /// Insert a new vertex index into the graph.
+    /// Insert a new vertex identifier into the graph.
     ///
     /// # Examples
     ///
@@ -272,11 +300,11 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
 
     /// Deletes vertex from the graph.
     ///
-    /// Remove given vertex index from the graph.
+    /// Remove given vertex identifier from the graph.
     ///
     /// # Panics
     ///
-    /// The vertex index does not exist in the graph.
+    /// The vertex identifier does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -302,7 +330,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
 
     /// Edge iterator.
     ///
-    /// Iterates over the edge set $\mathbf{E}$ order by index values.
+    /// Iterates over the edge set $\mathbf{E}$ order by identifier values.
     ///
     /// # Examples
     ///
@@ -358,7 +386,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -372,7 +400,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Check edge.
     /// assert!(g.has_edge(x, y));
@@ -384,11 +412,11 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
 
     /// Adds edge to the graph.
     ///
-    /// Add new edge index into the graph.
+    /// Add new edge identifier into the graph.
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -402,7 +430,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let mut g = Graph::empty(v);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Add a new edge from vertex.
     /// assert!(g.add_edge(x, y));
@@ -416,11 +444,11 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
 
     /// Deletes edge from the graph.
     ///
-    /// Remove given edge index from the graph.
+    /// Remove given edge identifier from the graph.
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -434,7 +462,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let mut g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Delete an edge.
     /// assert!(g.del_edge(x, y));
@@ -452,7 +480,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     ///
     /// # Panics
     ///
-    /// The vertex index does not exist in the graph.
+    /// The vertex identifier does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -466,7 +494,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let g = Graph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Use the adjacent iterator.
     /// assert!(g.adjacents(x).eq([0, 1, 2]));
@@ -488,7 +516,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     ///
     /// # Panics
     ///
-    /// At least one of the vertex indexes does not exist in the graph.
+    /// At least one of the vertex identifiers does not exist in the graph.
     ///
     /// # Examples
     ///
@@ -502,7 +530,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Check edge.
     /// assert!(g.is_adjacent(x, y));
