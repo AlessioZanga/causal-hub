@@ -50,7 +50,7 @@ mod tests {
                         // Non-empty vertex set and non-empty adjacency matrix.
                         (
                             (vec!["A", "B"], array![[false, false], [false, false]]),
-                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{"A" <> 0, "B" <> 1\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
+                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{("A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0)\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
                         ),
                     ];
 
@@ -713,7 +713,7 @@ mod tests {
                         // Non-empty vertex set and non-empty adjacency matrix.
                         (
                             (vec!["A", "B"], array![[false, false], [false, false]]),
-                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{"A" <> 0, "B" <> 1\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
+                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{("A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0)\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
                         ),
                     ];
 

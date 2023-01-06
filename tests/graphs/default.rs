@@ -322,7 +322,7 @@ mod tests {
                                 }
                             }
                             let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                            SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
                         };
                         let g = $G::try_from((v.clone(), a)).unwrap();
 
@@ -339,7 +339,7 @@ mod tests {
                                 }
                             }
                             let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                            SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
                         };
 
                         let (u, b): (_, SparseAdjacencyMatrix) = g.into();
@@ -700,7 +700,7 @@ mod tests {
                                 }
                             }
                             let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                            SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
                         };
                         let g = $G::try_from((v.clone(), a)).unwrap();
 
@@ -717,7 +717,7 @@ mod tests {
                                 }
                             }
                             let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                            SparseAdjacencyMatrix::from_triplets((a.shape()[0], a.shape()[1]), rows, cols, data)
+                            SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
                         };
 
                         let (u, b): (_, SparseAdjacencyMatrix) = g.into();

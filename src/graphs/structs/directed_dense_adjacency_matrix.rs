@@ -688,8 +688,8 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for DirectedDenseAdjacencyM
         // Build data vector.
         let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
         // Construct sparse adjacency matrix.
-        let shape = self.adjacency_matrix.shape();
-        let sparse_adjacency_matrix = SparseAdjacencyMatrix::from_triplets((shape[0], shape[1]), rows, cols, data);
+        let sparse_adjacency_matrix =
+            SparseAdjacencyMatrix::from_triplets(self.adjacency_matrix.dim(), rows, cols, data);
 
         (self.vertices, sparse_adjacency_matrix)
     }
@@ -743,7 +743,47 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = (usize, usize)>,
     {
-        todo!() // FIXME:
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+        // Add the required vertices.
+        for x in vertices {
+            indices[x] = true;
+        }
+
+        // Initialize a new adjacency matrix.
+        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix.
+        for (x, y) in edges {
+            // Add the edge.
+            adjacency_matrix[[x, y]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices: Vec<_> = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect();
+
+        // Get minor of matrix.
+        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(vertices.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, adjacency_matrix)).unwrap()
     }
 
     fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
@@ -764,6 +804,11 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
         // Get vertices labels.
         let vertices = indices.into_iter().map(|x| self.label(x));
 
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(vertices.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
     }
@@ -772,7 +817,43 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
     where
         J: IntoIterator<Item = (usize, usize)>,
     {
-        todo!() // FIXME:
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+
+        // Initialize a new adjacency matrix.
+        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix.
+        for (x, y) in edges {
+            // Add the edge.
+            adjacency_matrix[[x, y]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices: Vec<_> = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect();
+
+        // Get minor of matrix.
+        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(vertices.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, adjacency_matrix)).unwrap()
     }
 }
 
@@ -807,7 +888,7 @@ impl<'a> AncestorsIterator<'a> {
                     // Select current parents.
                     let next = adjacency_matrix & &curr;
                     // Collapse new parents.
-                    let next = next.fold_axis(Axis(1), false, |acc, x| acc | x);
+                    let next = next.fold_axis(Axis(1), false, |acc, f| acc | f);
                     // Accumulate new parents.
                     curr = curr | next;
                 }
@@ -915,7 +996,7 @@ impl<'a> DescendantsIterator<'a> {
                     // Select current parents.
                     let next = &adjacency_matrix.t() & &curr;
                     // Collapse new parents.
-                    let next = next.fold_axis(Axis(1), false, |acc, x| acc | x);
+                    let next = next.fold_axis(Axis(1), false, |acc, f| acc | f);
                     // Accumulate new parents.
                     curr = curr | next;
                 }

@@ -719,8 +719,8 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for UndirectedDenseAdjacenc
         // Build data vector.
         let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
         // Construct sparse adjacency matrix.
-        let shape = self.adjacency_matrix.shape();
-        let sparse_adjacency_matrix = SparseAdjacencyMatrix::from_triplets((shape[0], shape[1]), rows, cols, data);
+        let sparse_adjacency_matrix =
+            SparseAdjacencyMatrix::from_triplets(self.adjacency_matrix.dim(), rows, cols, data);
 
         (self.vertices, sparse_adjacency_matrix)
     }
@@ -774,7 +774,43 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = (usize, usize)>,
     {
-        todo!() // FIXME:
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+        // Add the required vertices.
+        for x in vertices {
+            indices[x] = true;
+        }
+
+        // Initialize a new adjacency matrix.
+        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix, symmetrically.
+        for (x, y) in edges {
+            // Add the edge.
+            adjacency_matrix[[x, y]] = true;
+            adjacency_matrix[[y, x]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices: Vec<_> = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect();
+
+        // Get minor of matrix.
+        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, adjacency_matrix)).unwrap()
     }
 
     fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
@@ -803,7 +839,39 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
     where
         J: IntoIterator<Item = (usize, usize)>,
     {
-        todo!() // FIXME:
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+
+        // Initialize a new adjacency matrix.
+        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix, symmetrically.
+        for (x, y) in edges {
+            // Add the edge.
+            adjacency_matrix[[x, y]] = true;
+            adjacency_matrix[[y, x]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices: Vec<_> = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect();
+
+        // Get minor of matrix.
+        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, adjacency_matrix)).unwrap()
     }
 }
 
