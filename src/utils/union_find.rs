@@ -186,9 +186,7 @@ impl UnionFind {
         // If first item rank is lower ...
         if rank_x < rank_y {
             // ... then, swaps the items.
-            let z = x;
-            x = y;
-            y = z;
+            std::mem::swap(&mut x, &mut y);
         }
 
         // Merge two sets together by setting the root.
