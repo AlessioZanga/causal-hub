@@ -1081,11 +1081,11 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
 impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
 
-    fn into_undirected(self) -> Self::UndirectedGraph {
+    fn to_undirected(&self) -> Self::UndirectedGraph {
         // Make the adjacent matrix symmetric.
         let adjacency_matrix = &self.adjacency_matrix | &self.adjacency_matrix.t();
 
-        Self::UndirectedGraph::try_from((self.vertices, adjacency_matrix)).unwrap()
+        Self::UndirectedGraph::try_from((self.vertices.clone(), adjacency_matrix)).unwrap()
     }
 }
 
@@ -1094,7 +1094,7 @@ impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
 
     fn moral(&self) -> Self::MoralGraph {
         // Make an undirected copy of the current graph.
-        let mut h = self.clone().into_undirected();
+        let mut h = self.to_undirected();
         // For each vertex ...
         for x in V!(self) {
             // ... for each pair of parents ...

@@ -502,7 +502,7 @@ pub trait IntoUndirectedGraph {
     /// Associated undirected graph type.
     type UndirectedGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
 
-    /// Make the graph into its undirected associated type.
+    /// Make an undirected copy of the graph.
     ///
     /// # Examples
     ///
@@ -510,5 +510,5 @@ pub trait IntoUndirectedGraph {
     /// // FIXME: Add doc examples.
     /// ```
     ///
-    fn into_undirected(self) -> Self::UndirectedGraph;
+    fn to_undirected(&self) -> Self::UndirectedGraph;
 }
