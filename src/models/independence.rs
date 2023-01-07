@@ -7,7 +7,10 @@ use crate::{
     An, V,
 };
 
+/// Independence trait.
 pub trait Independence {
+    /// Checks for (conditional) independence as
+    /// $\mathbf{X} \mathrlap{\thinspace\perp}{\perp} \mathbf{Y} \thinspace | \thinspace \mathbf{Z}$.
     fn is_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
@@ -15,6 +18,7 @@ pub trait Independence {
         K: IntoIterator<Item = usize>;
 }
 
+/// Graphical independence struct
 pub struct GraphicalIndependence<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
@@ -26,6 +30,19 @@ impl<'a, G, D> GraphicalIndependence<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    /// Build a new graphical independence struct.
+    ///
+    /// # Panics
+    ///
+    /// If $\mathbf{X}$, $\mathbf{Y}$ and $\mathbf{Z}$
+    /// are not disjoint subsets of $\mathbf{V}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // FIXME: Add doc examples.
+    /// ```
+    ///s
     pub fn new(g: &'a G) -> Self {
         Self { g }
     }
@@ -71,7 +88,7 @@ where
         );
 
         // Remove vertices in Z from the graph.
-        let h = self.g.subgraph_by_vertices(&x | &y);
+        let h = self.g.subgraph_by_vertices(&v - &z);
         // Re-map vertices identifiers.
         let x = x.into_iter().map(|x| h.vertex(self.g.label(x))).collect();
         let y = y.into_iter().map(|y| h.vertex(self.g.label(y))).collect();
@@ -79,9 +96,9 @@ where
         // Compute the connected components of the modified graph.
         let mut cc = CC::from(&h);
 
-        // Check if there exists at least one connected component C s.t.
+        // Check if there exists no connected component C s.t.
         //          |C \cap X| > 0 && |C \cap Y| > 0 .
-        cc.any(|c| !(&c & &x).is_empty() && !(&c & &y).is_empty())
+        cc.all(|c| (&c & &x).is_empty() || (&c & &y).is_empty())
     }
 }
 

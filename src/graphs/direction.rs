@@ -497,8 +497,18 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     }
 }
 
+/// Convert to undirected graph trait.
 pub trait IntoUndirectedGraph {
+    /// Associated undirected graph type.
     type UndirectedGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
 
+    /// Make the graph into its undirected associated type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // FIXME: Add doc examples.
+    /// ```
+    ///
     fn into_undirected(self) -> Self::UndirectedGraph;
 }

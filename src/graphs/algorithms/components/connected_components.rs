@@ -24,7 +24,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// // FIXME: Add doc examples.
     /// ```
     ///
     pub fn new(g: &'a G) -> Self {

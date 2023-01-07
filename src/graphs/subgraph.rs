@@ -13,7 +13,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// // FIXME: Add doc examples.
     /// ```
     ///
     fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
@@ -32,7 +32,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// // FIXME: Add doc examples.
     /// ```
     ///
     fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
@@ -50,7 +50,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// // FIXME: Add doc examples.
     /// ```
     ///
     fn subgraph_by_edges<J>(&self, edges: J) -> Self
