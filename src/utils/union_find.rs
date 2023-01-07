@@ -1,7 +1,5 @@
-use itertools::Itertools;
-
 /// Union-Find structure.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct UnionFind {
     parents: Vec<usize>,
     ranks: Vec<usize>,
@@ -17,7 +15,13 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// assert!(!union_find.contains(0, 1));
     /// ```
     ///
     #[inline]
@@ -36,7 +40,13 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// assert_eq!(union_find.len(), 5);
     /// ```
     ///
     #[allow(clippy::len_without_is_empty)]
@@ -54,7 +64,13 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// assert!(!union_find.contains(0, 1));
     /// ```
     ///
     #[inline]
@@ -72,13 +88,23 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// for x in 0..union_find.len() {
+    ///     assert_eq!(union_find.find(x), x);
+    /// }
     /// ```
     ///
     pub fn find(&self, x: usize) -> usize {
+        // Make item mutable.
         let mut x = x;
-
+        // While root is not found.
         while self.parents[x] != x {
+            // Traverse the path backward.
             x = self.parents[x];
         }
 
@@ -94,14 +120,25 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let mut union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// for x in 0..union_find.len() {
+    ///     assert_eq!(union_find.find_mut(x), x);
+    /// }
     /// ```
     ///
     pub fn find_mut(&mut self, x: usize) -> usize {
+        // Make item mutable.
         let mut x = x;
-
+        // While root is not found.
         while self.parents[x] != x {
+            // Compress the path backward.
             self.parents[x] = self.parents[self.parents[x]];
+            // Update current root.
             x = self.parents[x];
         }
 
@@ -117,27 +154,49 @@ impl UnionFind {
     /// # Examples
     ///
     /// ```
-    /// // FIXME:
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let mut union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// for x in 0..union_find.len() {
+    ///     assert_eq!(union_find.find(x), x);
+    /// }
+    ///
+    /// // Merge item set 0 and 3.
+    /// assert!(union_find.union(0, 3));
+    ///
+    /// // Now, items 0 and 3 are in the same set.
+    /// assert!(union_find.contains(0, 3));
     /// ```
     ///
     pub fn union(&mut self, x: usize, y: usize) -> bool {
+        // Get root of items.
         let (mut x, mut y) = (self.find_mut(x), self.find_mut(y));
 
+        // If both items has the same root ...
         if x == y {
+            // ... then, they are already in the same set.
             return false;
         }
 
+        // Get items ranks.
         let (rank_x, rank_y) = (self.ranks[x], self.ranks[y]);
-
+        // If first item rank is lower ...
         if rank_x < rank_y {
+            // ... then, swaps the items.
             let z = x;
-            y = x;
-            x = z;
+            x = y;
+            y = z;
         }
 
+        // Merge two sets together by setting the root.
         self.parents[y] = x;
 
+        // If both items has the same rank ...
         if rank_x == rank_y {
+            // ... then, increment the rank of the root.
             self.ranks[x] += 1;
         }
 
@@ -152,11 +211,44 @@ impl Extend<usize> for UnionFind {
     ///
     /// At least one of the items does not exist in the structure.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::utils::UnionFind;
+    ///
+    /// // Initialize a new union-find.
+    /// let mut union_find = UnionFind::new(5);
+    ///
+    /// // The new union-find contains only disjoint sets.
+    /// for x in 0..union_find.len() {
+    ///     assert_eq!(union_find.find(x), x);
+    /// }
+    ///
+    /// // Merge items from 0 to 3.
+    /// union_find.extend(0..4);
+    ///
+    /// // Now, items from 0 to 3 are in the same set.
+    /// assert!(union_find.contains(0, 1));
+    /// assert!(union_find.contains(0, 2));
+    /// assert!(union_find.contains(0, 3));
+    ///
+    /// // Item 4 is is not in the same set
+    /// assert!(!union_find.contains(0, 4));
+    /// assert!(!union_find.contains(1, 4));
+    /// assert!(!union_find.contains(2, 4));
+    /// assert!(!union_find.contains(3, 4));
+    /// ```
+    ///
     fn extend<I: IntoIterator<Item = usize>>(&mut self, iter: I) {
-        // For each consecutive pair of items ...
-        for (x, y) in iter.into_iter().tuple_windows() {
-            // ... apply union algorithm.
-            self.union(x, y);
+        // Get iterator.
+        let mut iter = iter.into_iter();
+        // Get first item as root.
+        if let Some(x) = iter.next() {
+            // For each consecutive pair of items ...
+            for y in iter {
+                // ... apply union algorithm.
+                self.union(x, y);
+            }
         }
     }
 }
