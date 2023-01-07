@@ -6,6 +6,8 @@ pub use crate::graphs::{
     },
     BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, UndirectedGraph,
 };
+/// Re-export models.
+pub use crate::models::Independence;
 /// Re-export types.
 pub use crate::types::*;
 /// Re-export macros.

@@ -2,9 +2,9 @@
 mod undirected {
     macro_rules! generic_tests {
         ($G: ident) => {
-            use causal_hub::prelude::*;
-
             use std::collections::BTreeSet;
+
+            use causal_hub::prelude::*;
 
             #[test]
             fn connected_components() {

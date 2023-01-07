@@ -40,7 +40,7 @@ impl Deref for UndirectedDenseAdjacencyMatrixGraph {
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
-    graph: &'a UndirectedDenseAdjacencyMatrixGraph,
+    g: &'a UndirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
     size: usize,
 }
@@ -49,7 +49,7 @@ impl<'a> EdgesIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
-            graph: g,
+            g,
             iter: g.indexed_iter().filter_map(|((i, j), &f)| match f && i <= j {
                 true => Some((i, j)),
                 false => None,
@@ -82,7 +82,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
-    graph: &'a UndirectedDenseAdjacencyMatrixGraph,
+    g: &'a UndirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
 }
 
@@ -90,7 +90,7 @@ impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: g.row(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
                 true => Some(i),
                 false => None,

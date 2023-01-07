@@ -11,8 +11,12 @@ use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
 use rustc_hash::FxHashSet;
 
+use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
-    graphs::{directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, PartialOrdGraph},
+    graphs::{
+        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph, PartialOrdGraph,
+    },
+    models::IntoMoralGraph,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxBiHashMap, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
@@ -40,7 +44,7 @@ impl Deref for DirectedDenseAdjacencyMatrixGraph {
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
     size: usize,
 }
@@ -49,7 +53,7 @@ impl<'a> EdgesIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
-            graph: g,
+            g,
             iter: g.indexed_iter().filter_map(|((x, y), &f)| match f {
                 true => Some((x, y)),
                 false => None,
@@ -82,7 +86,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
         fn((usize, bool)) -> Option<usize>,
@@ -93,7 +97,7 @@ impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: {
                 let (row, col) = (g.row(x), g.column(x));
 
@@ -706,7 +710,7 @@ impl PartialOrdGraph for DirectedDenseAdjacencyMatrixGraph {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AncestorsIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
         fn((usize, bool)) -> Option<usize>,
@@ -717,7 +721,7 @@ impl<'a> AncestorsIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: {
                 // Get underlying adjacency matrix.
                 let adjacency_matrix = g.deref();
@@ -758,7 +762,7 @@ impl<'a> Iterator for AncestorsIterator<'a> {
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ParentsIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
 }
 
@@ -766,7 +770,7 @@ impl<'a> ParentsIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: g.column(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
                 true => Some(i),
                 false => None,
@@ -786,7 +790,7 @@ impl<'a> Iterator for ParentsIterator<'a> {
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ChildrenIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
 }
 
@@ -794,7 +798,7 @@ impl<'a> ChildrenIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: g.row(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
                 true => Some(i),
                 false => None,
@@ -814,7 +818,7 @@ impl<'a> Iterator for ChildrenIterator<'a> {
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct DescendantsIterator<'a> {
-    graph: &'a DirectedDenseAdjacencyMatrixGraph,
+    g: &'a DirectedDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
         fn((usize, bool)) -> Option<usize>,
@@ -825,7 +829,7 @@ impl<'a> DescendantsIterator<'a> {
     /// Constructor.
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
-            graph: g,
+            g,
             iter: {
                 // Get underlying adjacency matrix.
                 let adjacency_matrix = g.deref();
@@ -915,5 +919,35 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Ch!(self, x).count(), d);
 
         d
+    }
+}
+
+impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
+    type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
+
+    fn into_undirected(self) -> Self::UndirectedGraph {
+        // Make the adjacent matrix symmetric.
+        let adjacency_matrix = &self.adjacency_matrix | &self.adjacency_matrix.t();
+
+        Self::UndirectedGraph::try_from((self.vertices, adjacency_matrix)).unwrap()
+    }
+}
+
+impl IntoMoralGraph for DirectedDenseAdjacencyMatrixGraph {
+    type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
+
+    fn into_moral(self) -> Self::MoralGraph {
+        // Make an undirected copy of the current graph.
+        let mut h = self.clone().into_undirected();
+        // For each vertex ...
+        for x in V!(self) {
+            // ... for each pair of parents ...
+            for e in Pa!(self, x).combinations(2) {
+                // ... add an edge between them.
+                h.add_edge(e[0], e[1]);
+            }
+        }
+
+        h
     }
 }

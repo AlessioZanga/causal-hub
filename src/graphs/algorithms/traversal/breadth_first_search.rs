@@ -113,6 +113,24 @@ where
     }
 }
 
+impl<'a, G, D> From<&'a G> for BreadthFirstSearch<'a, G, D>
+where
+    G: BaseGraph<Direction = D>,
+{
+    fn from(g: &'a G) -> Self {
+        Self::new(g, None, Traversal::Tree)
+    }
+}
+
+impl<'a, G, D> From<(&'a G, usize)> for BreadthFirstSearch<'a, G, D>
+where
+    G: BaseGraph<Direction = D>,
+{
+    fn from((g, x): (&'a G, usize)) -> Self {
+        Self::new(g, Some(x), Traversal::Tree)
+    }
+}
+
 impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::Undirected>
 where
     G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
@@ -200,23 +218,5 @@ where
 
             x
         })
-    }
-}
-
-impl<'a, G, D> From<&'a G> for BreadthFirstSearch<'a, G, D>
-where
-    G: BaseGraph<Direction = D>,
-{
-    fn from(g: &'a G) -> Self {
-        Self::new(g, None, Traversal::Tree)
-    }
-}
-
-impl<'a, G, D> From<(&'a G, usize)> for BreadthFirstSearch<'a, G, D>
-where
-    G: BaseGraph<Direction = D>,
-{
-    fn from((g, x): (&'a G, usize)) -> Self {
-        Self::new(g, Some(x), Traversal::Tree)
     }
 }
