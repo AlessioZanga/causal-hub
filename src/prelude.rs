@@ -4,7 +4,7 @@ pub use crate::graphs::{
         components::CC,
         traversal::{BFS, DFS},
     },
-    BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, SubGraph, UndirectedGraph,
+    BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, PartialOrdGraph, SubGraph, UndirectedGraph,
 };
 /// Re-export models.
 pub use crate::models::Independence;

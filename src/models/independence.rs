@@ -70,12 +70,11 @@ where
             "X, Y and Z must be subsets of V"
         );
 
-        // FIXME: Remove vertices in Z from the graph.
-        let h = self.g.clone();
-
+        // Remove vertices in Z from the graph.
+        let h = self.g.subgraph_by_vertices(&x | &y);
         // Re-map vertices identifiers.
-        let x = x.into_iter().map(|x| h.index(self.g.vertex(x))).collect();
-        let y = y.into_iter().map(|y| h.index(self.g.vertex(y))).collect();
+        let x = x.into_iter().map(|x| h.vertex(self.g.label(x))).collect();
+        let y = y.into_iter().map(|y| h.vertex(self.g.label(y))).collect();
 
         // Compute the connected components of the modified graph.
         let mut cc = CC::from(&h);
@@ -108,15 +107,15 @@ where
         let an_s = s.iter().flat_map(|&s| An!(self.g, s)).collect();
         // Compute the ancestral set of S.
         let an_s = &s | &an_s;
-        // FIXME: Compute the upward closure w.r.t. the ancestral set of S.
-        let g_s = self.g.clone();
+
+        // Compute the upward closure w.r.t. the ancestral set of S.
+        let g_s = self.g.subgraph_by_vertices(an_s);
         // Compute the moralized upward closure.
         let h = g_s.into_moral();
-
         // Re-map vertices identifiers.
-        let x = x.into_iter().map(|x| h.index(self.g.vertex(x)));
-        let y = y.into_iter().map(|y| h.index(self.g.vertex(y)));
-        let z = z.into_iter().map(|z| h.index(self.g.vertex(z)));
+        let x = x.into_iter().map(|x| h.vertex(self.g.label(x)));
+        let y = y.into_iter().map(|y| h.vertex(self.g.label(y)));
+        let z = z.into_iter().map(|z| h.vertex(self.g.label(z)));
 
         // Then D-SEP_G(X, Y, Z) iff U-SEP_H(X, Y, Z).
         GraphicalIndependence::from(&h).is_independent(x, y, z)

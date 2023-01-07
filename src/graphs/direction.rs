@@ -1,4 +1,4 @@
-use super::BaseGraph;
+use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 
 /// Directions pseudo-enumerator for generics algorithms.
 pub mod directions {
@@ -20,7 +20,7 @@ macro_rules! Ne {
 }
 
 /// Undirected graph trait.
-pub trait UndirectedGraph: BaseGraph {
+pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// Neighbors iterator type.
     type NeighborsIter<'a>: Iterator<Item = usize>
     where
@@ -46,7 +46,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let g = Graph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Use the neighbors iterator.
     /// assert!(g.neighbors(x).eq([0, 1, 2]));
@@ -77,7 +77,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.index("A"), g.index("B"));
+    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
     ///
     /// // Check edge.
     /// assert!(g.is_neighbor(x, y));
@@ -108,7 +108,7 @@ pub trait UndirectedGraph: BaseGraph {
     /// let mut g = Graph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.index("A");
+    /// let x = g.vertex("A");
     ///
     /// // Check degree.
     /// assert_eq!(g.degree(x), 3);
@@ -165,7 +165,7 @@ macro_rules! De {
 }
 
 /// Directed graph trait.
-pub trait DirectedGraph: BaseGraph {
+pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// Ancestors iterator type.
     type AncestorsIter<'a>: Iterator<Item = usize>
     where

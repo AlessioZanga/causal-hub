@@ -1,7 +1,7 @@
-use super::BaseGraph;
+use super::{BaseGraph, PartialOrdGraph};
 
 /// Subgraph trait.
-pub trait SubGraph: BaseGraph {
+pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// Constructs the generic subgraph.
     ///
     /// Constructs a generic subgraph given a subset of vertices and edges.
