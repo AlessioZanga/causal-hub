@@ -79,7 +79,7 @@ where
         // Get graph order.
         let order = g.order();
         // Initialize the [`Forest`] to-be-visited queue.
-        let mut vertices = VecDeque::with_capacity(order);
+        let mut vertices = VecDeque::default();
         // Initialize the to-be-visited queue with the source vertex.
         let mut queue = VecDeque::with_capacity(order);
         // Initialize the distance map.
@@ -94,7 +94,7 @@ where
         }
 
         // If no source vertex is given, choose the first in the vertex set.
-        if let Some(x) = x.or(V!(g).next()) {
+        if let Some(x) = x.or_else(|| V!(g).next()) {
             // ... assert that source vertex is in graph.
             assert!(g.has_vertex(x));
             // Push the source vertex into the queue.
@@ -138,7 +138,7 @@ where
         }
         // If there are still vertices to be visited.
         self.queue.pop_front().map(|x| {
-            // Get previous distance.
+            // Get predecessor distance.
             let distance_x = self.distance[x];
             // Iterate over the reachable vertices of the popped vertex.
             for y in Ne!(self.g, x) {
@@ -183,7 +183,7 @@ where
         }
         // If there are still vertices to be visited.
         self.queue.pop_front().map(|x| {
-            // Get previous distance.
+            // Get predecessor distance.
             let distance_x = self.distance[x];
             // Iterate over the reachable vertices of the popped vertex.
             for y in Ch!(self.g, x) {

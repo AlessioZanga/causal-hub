@@ -1,6 +1,9 @@
 /// Re-export graphs.
 pub use crate::graphs::{
-    algorithms::traversal::{BFS, DFS},
+    algorithms::{
+        components::CC,
+        traversal::{BFS, DFS},
+    },
     BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, UndirectedGraph,
 };
 /// Re-export types.
