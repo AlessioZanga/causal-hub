@@ -4,7 +4,8 @@ use super::MoralGraph;
 use crate::{
     graphs::directions,
     prelude::{BaseGraph, DirectedGraph, UndirectedGraph, CC},
-    An, V,
+    utils::UnionFind,
+    An, Ne, V,
 };
 
 /// Independence trait.
@@ -87,18 +88,35 @@ where
             "X, Y and Z must be subsets of V"
         );
 
-        // Remove vertices in Z from the graph.
-        let h = self.g.subgraph_by_vertices(&v - &z);
-        // Re-map vertices identifiers.
-        let x = x.into_iter().map(|x| h.vertex(self.g.label(x))).collect();
-        let y = y.into_iter().map(|y| h.vertex(self.g.label(y))).collect();
+        // Clone current graph.
+        let mut h = self.g.clone();
+        // Compute the set of out-going edges of Z.
+        let e_z = z.into_iter().flat_map(|z| Ne!(self.g, z).map(move |w| (z, w)));
+        // Disconnect vertices in Z from the rest of the graph.
+        for (z, w) in e_z {
+            h.del_edge(z, w);
+        }
+
+        // Initialize union-find.
+        let mut union_find = UnionFind::new(h.order());
+        // Add X to union-find.
+        let parent_x = *x.first().unwrap();
+        union_find.extend(x);
+        // Add X to union-find.
+        let parent_y = *y.first().unwrap();
+        union_find.extend(y);
 
         // Compute the connected components of the modified graph.
         let mut cc = CC::from(&h);
 
         // Check if there exists no connected component C s.t.
         //          |C \cap X| > 0 && |C \cap Y| > 0 .
-        cc.all(|c| (&c & &x).is_empty() || (&c & &y).is_empty())
+        !cc.any(|c| {
+            // Add current connected component to union-find.
+            union_find.extend(c);
+            // Check if X and Y are in the same set.
+            union_find.contains(parent_x, parent_y)
+        })
     }
 }
 
