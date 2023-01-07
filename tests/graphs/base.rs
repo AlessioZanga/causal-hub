@@ -6,7 +6,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
-                use rustc_hash::FxHashSet;
+                use std::collections::HashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -50,7 +50,7 @@ mod tests {
                         // Non-empty vertex set and non-empty adjacency matrix.
                         (
                             (vec!["A", "B"], array![[false, false], [false, false]]),
-                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{"A" <> 0, "B" <> 1\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
+                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{("A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0)\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
                         ),
                     ];
 
@@ -101,10 +101,10 @@ mod tests {
                     );
                     let h = g.clone();
 
-                    let mut map = FxHashSet::default();
-                    map.insert(g);
+                    let mut set = HashSet::new();
+                    set.insert(g);
 
-                    assert!(map.contains(&h));
+                    assert!(set.contains(&h));
                 }
 
                 #[test]
@@ -194,8 +194,8 @@ mod tests {
                         assert_eq!(g.size(), s);
                         assert!(is_sorted(V!(g)));
                         assert!(is_sorted(E!(g)));
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -257,7 +257,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(i, []);
                         assert!(is_sorted(V!(g)));
-                        assert!(V!(g).eq(j.iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
                     }
                 }
 
@@ -369,7 +369,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
                         assert!(is_sorted(E!(g)));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -424,7 +424,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.has_edge(x, y), f);
                         }
                     }
@@ -467,7 +467,7 @@ mod tests {
                     for (i, j) in data {
                         let mut g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.add_edge(x, y), f);
                         }
                     }
@@ -510,7 +510,7 @@ mod tests {
                     for (i, j) in data {
                         let mut g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.del_edge(x, y), f);
                         }
                     }
@@ -598,9 +598,9 @@ mod tests {
                     for (i, j, k) in data {
                         let g = $G::new(i, j);
                         for (x, ys) in k {
-                            let x = g.index(x);
+                            let x = g.vertex(x);
                             assert!(is_sorted(Adj!(g, x)));
-                            assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.index(y))));
+                            assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
                         }
                     }
                 }
@@ -642,7 +642,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.is_adjacent(x, y), f);
                         }
                     }
@@ -669,7 +669,7 @@ mod tests {
                 use causal_hub::prelude::*;
                 use causal_hub::utils::is_sorted;
 
-                use rustc_hash::FxHashSet;
+                use std::collections::HashSet;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -713,7 +713,7 @@ mod tests {
                         // Non-empty vertex set and non-empty adjacency matrix.
                         (
                             (vec!["A", "B"], array![[false, false], [false, false]]),
-                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{"A" <> 0, "B" <> 1\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
+                            r#"[a-zA-Z]+Graph \{ vertices: \{"A", "B"\}, vertices_indexes: \{("A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0)\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
                         ),
                     ];
 
@@ -764,10 +764,10 @@ mod tests {
                     );
                     let h = g.clone();
 
-                    let mut map = FxHashSet::default();
-                    map.insert(g);
+                    let mut set = HashSet::new();
+                    set.insert(g);
 
-                    assert!(map.contains(&h));
+                    assert!(set.contains(&h));
                 }
 
                 #[test]
@@ -851,8 +851,8 @@ mod tests {
                         assert_eq!(g.size(), s);
                         assert!(is_sorted(V!(g)));
                         assert!(is_sorted(E!(g)));
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.index(x))));
-                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -914,7 +914,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::empty(i);
                         assert!(is_sorted(V!(g)));
-                        assert!(V!(g).eq(j.iter().map(|x| g.index(x))));
+                        assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
                     }
                 }
 
@@ -1026,7 +1026,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
                         assert!(is_sorted(E!(g)));
-                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.index(x), g.index(y)))));
+                        assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
 
@@ -1081,7 +1081,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.has_edge(x, y), f);
                         }
                     }
@@ -1124,7 +1124,7 @@ mod tests {
                     for (i, j) in data {
                         let mut g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.add_edge(x, y), f);
                         }
                     }
@@ -1167,7 +1167,7 @@ mod tests {
                     for (i, j) in data {
                         let mut g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.del_edge(x, y), f);
                         }
                     }
@@ -1255,9 +1255,9 @@ mod tests {
                     for (i, j, k) in data {
                         let g = $G::new(i, j);
                         for (x, ys) in k {
-                            let x = g.index(x);
+                            let x = g.vertex(x);
                             assert!(is_sorted(Adj!(g, x)));
-                            assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.index(y))));
+                            assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
                         }
                     }
                 }
@@ -1303,7 +1303,7 @@ mod tests {
                     for (i, j) in data {
                         let g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.index(x), g.index(y));
+                            let (x, y) = (g.vertex(x), g.vertex(y));
                             assert_eq!(g.is_adjacent(x, y), f);
                         }
                     }

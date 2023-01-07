@@ -5,19 +5,22 @@ mod base;
 pub use base::BaseGraph;
 
 mod default;
-pub use default::DefaultGraph;
+pub use default::*;
 
 mod direction;
 pub use direction::*;
 
 mod error;
-pub use error::ErrorGraph;
+pub use error::*;
 
 mod partial_ord;
-pub use partial_ord::PartialOrdGraph;
+pub use partial_ord::*;
+
+mod subgraph;
+pub use subgraph::*;
 
 mod structs;
-pub use structs::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph};
+pub use structs::*;
 
 /// Default undirected graph implementation based on dense adjacency matrix.
 pub type Graph = UndirectedDenseAdjacencyMatrixGraph;
