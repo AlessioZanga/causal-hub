@@ -17,7 +17,7 @@ use crate::{
         directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph, PartialOrdGraph,
         SubGraph,
     },
-    models::IntoMoralGraph,
+    models::MoralGraph,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
@@ -1089,10 +1089,10 @@ impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl IntoMoralGraph for DirectedDenseAdjacencyMatrixGraph {
+impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
     type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
 
-    fn into_moral(self) -> Self::MoralGraph {
+    fn moral(&self) -> Self::MoralGraph {
         // Make an undirected copy of the current graph.
         let mut h = self.clone().into_undirected();
         // For each vertex ...

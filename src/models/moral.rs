@@ -3,8 +3,8 @@ use crate::{
     prelude::{BaseGraph, UndirectedGraph},
 };
 
-pub trait IntoMoralGraph: IntoUndirectedGraph {
+pub trait MoralGraph: IntoUndirectedGraph {
     type MoralGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
 
-    fn into_moral(self) -> Self::MoralGraph;
+    fn moral(&self) -> Self::MoralGraph;
 }

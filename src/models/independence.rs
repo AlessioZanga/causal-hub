@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use super::IntoMoralGraph;
+use super::MoralGraph;
 use crate::{
     graphs::directions,
     prelude::{BaseGraph, DirectedGraph, UndirectedGraph, CC},
@@ -88,7 +88,7 @@ where
 /* Implement d-separation */
 impl<'a, G> Independence for GraphicalIndependence<'a, G, directions::Directed>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph + IntoMoralGraph,
+    G: BaseGraph<Direction = directions::Directed> + DirectedGraph + MoralGraph,
 {
     fn is_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
@@ -111,7 +111,7 @@ where
         // Compute the upward closure w.r.t. the ancestral set of S.
         let g_s = self.g.subgraph_by_vertices(an_s);
         // Compute the moralized upward closure.
-        let h = g_s.into_moral();
+        let h = g_s.moral();
         // Re-map vertices identifiers.
         let x = x.into_iter().map(|x| h.vertex(self.g.label(x)));
         let y = y.into_iter().map(|y| h.vertex(self.g.label(y)));
