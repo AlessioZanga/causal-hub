@@ -24,7 +24,31 @@ where
     /// # Examples
     ///
     /// ```
-    /// // FIXME: Add doc examples.
+    /// use std::collections::BTreeSet;
+    ///
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a new undirected graph.
+    /// let g = Graph::new(
+    ///     ["A", "B", "C", "D", "E", "F"],
+    ///     [
+    ///         ("A", "B"),
+    ///         ("B", "C"),
+    ///         ("D", "E"),
+    ///     ]
+    /// );
+    ///
+    /// // Build a connected component iterator.
+    /// let mut cc = CC::from(&g);
+    ///
+    /// // Assert connected components.
+    /// assert!(
+    ///     cc.eq([
+    ///         BTreeSet::from([0, 1, 2]),
+    ///         BTreeSet::from([3, 4]),
+    ///         BTreeSet::from([5]),
+    ///     ])
+    /// );
     /// ```
     ///
     pub fn new(g: &'a G) -> Self {

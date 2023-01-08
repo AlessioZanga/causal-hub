@@ -13,7 +13,26 @@ pub trait MoralGraph: IntoUndirectedGraph {
     /// # Examples
     ///
     /// ```
-    /// // FIXME: Add doc examples.
+    /// use itertools::Itertools;
+    ///
+    /// use causal_hub::prelude::*;
+    /// use causal_hub::models::MoralGraph;
+    ///
+    /// // Build a new directed graph.
+    /// let g = DiGraph::new(
+    ///     ["A", "B", "C", "D", "E"],
+    ///     [("A", "C"), ("B", "C")]
+    /// );
+    ///
+    /// // Build the associated moral graph.
+    /// let h = g.moral();
+    ///
+    /// // Assert previous parents are connected.
+    /// for x in V!(g) {
+    ///     for (y, z) in Pa!(g, x).tuple_windows() {
+    ///         assert!(h.has_edge(y, z));
+    ///     }
+    /// }
     /// ```
     ///
     fn moral(&self) -> Self::MoralGraph;

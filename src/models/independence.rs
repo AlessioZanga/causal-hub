@@ -41,7 +41,32 @@ where
     /// # Examples
     ///
     /// ```
-    /// // FIXME: Add doc examples.
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a new directed graph.
+    /// let g = DiGraph::new(
+    ///     ["A", "B", "C", "D", "E", "F"],
+    ///     [
+    ///         ("A", "C"),
+    ///         ("B", "C"),
+    ///         ("C", "D"),
+    ///         ("C", "E"),
+    ///     ]
+    /// );
+    ///
+    /// // Build d-separation query struct.
+    /// let q = GIndependence::from(&g);
+    ///
+    /// // Assert A _||_ B | { } .
+    /// assert!(q.is_independent([0], [1], []));
+    /// // Assert A _||_ B | { C } .
+    /// assert!(!q.is_independent([0], [1], [2]));
+    /// // Assert A _||_ D | { } .
+    /// assert!(!q.is_independent([0], [3], []));
+    /// // Assert A _||_ D | { C } .
+    /// assert!(q.is_independent([0], [3], [2]));
+    /// // Assert { A, B } _||_ { D, E } | { C } .
+    /// assert!(q.is_independent([0, 1], [3, 4], [2]));
     /// ```
     ///s
     pub fn new(g: &'a G) -> Self {
@@ -101,10 +126,10 @@ where
         // Initialize union-find.
         let mut union_find = UnionFind::new(h.order());
         // Add X to union-find.
-        let parent_x = *x.first().unwrap();
+        let root_x = *x.first().unwrap();
         union_find.extend(x);
         // Add X to union-find.
-        let parent_y = *y.first().unwrap();
+        let root_y = *y.first().unwrap();
         union_find.extend(y);
 
         // Compute the connected components of the modified graph.
@@ -116,7 +141,7 @@ where
             // Add current connected component to union-find.
             union_find.extend(c);
             // Check if X and Y are in the same set.
-            union_find.contains(parent_x, parent_y)
+            union_find.contains(root_x, root_y)
         })
     }
 }
@@ -178,10 +203,10 @@ where
         // Initialize union-find.
         let mut union_find = UnionFind::new(h.order());
         // Add X to union-find.
-        let parent_x = *x.first().unwrap();
+        let root_x = *x.first().unwrap();
         union_find.extend(x);
         // Add X to union-find.
-        let parent_y = *y.first().unwrap();
+        let root_y = *y.first().unwrap();
         union_find.extend(y);
 
         // Compute the connected components of the modified graph.
@@ -193,7 +218,7 @@ where
             // Add current connected component to union-find.
             union_find.extend(c);
             // Check if X and Y are in the same set.
-            union_find.contains(parent_x, parent_y)
+            union_find.contains(root_x, root_y)
         })
     }
 }

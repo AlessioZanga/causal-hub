@@ -507,7 +507,23 @@ pub trait IntoUndirectedGraph {
     /// # Examples
     ///
     /// ```
-    /// // FIXME: Add doc examples.
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a directed graph.
+    /// let g = DiGraph::new(
+    ///     ["A", "B", "C"],
+    ///     [("A", "B")]
+    /// );
+    ///
+    /// // Get an undirected copy.
+    /// let h = g.to_undirected();
+    ///
+    /// // The undirected copy has the same vertex set.
+    /// assert_eq!(V!(g), V!(h));
+    ///
+    /// // The vertices are still connected.
+    /// assert!(h.has_edge(0, 1));
+    ///
     /// ```
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph;
