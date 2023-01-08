@@ -36,14 +36,6 @@ macro_rules! Adj {
     };
 }
 
-/// Directions pseudo-enumerator for generics algorithms.
-pub mod directions {
-    /// Undirected pseudo-enumerator for generics algorithms.
-    pub struct Undirected;
-    /// Directed pseudo-enumerator for generics algorithms.
-    pub struct Directed;
-}
-
 /// Base graph trait.
 pub trait BaseGraph: Clone + Debug + Display + Hash {
     /// Data type.

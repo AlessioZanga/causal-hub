@@ -6,6 +6,9 @@
 /// Graphs algorithms and structures.
 pub mod graphs;
 
+/// Models algorithms and structures.
+pub mod models;
+
 /// Frequently used items.
 pub mod prelude;
 

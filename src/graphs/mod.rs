@@ -2,10 +2,13 @@
 pub mod algorithms;
 
 mod base;
-pub use base::*;
+pub use base::BaseGraph;
 
 mod default;
 pub use default::*;
+
+mod direction;
+pub use direction::*;
 
 mod error;
 pub use error::*;
@@ -15,12 +18,6 @@ pub use partial_ord::*;
 
 mod subgraph;
 pub use subgraph::*;
-
-mod directed;
-pub use directed::*;
-
-mod undirected;
-pub use undirected::*;
 
 mod structs;
 pub use structs::*;
