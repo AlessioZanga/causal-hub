@@ -29,16 +29,16 @@ jobs:
           toolchain: ${{ matrix.env }}
           components: rustfmt, clippy
       - name: Check
-        run: cargo check --all -v
+        run: cargo +${{ matrix.env }} check --all -v
       - name: Build
-        run: cargo build -v
+        run: cargo +${{ matrix.env }} build -v
       - name: Test
-        run: cargo test --tests -v
+        run: cargo +${{ matrix.env }} test --tests -v
       - name: Doctest
-        run: cargo test --doc -v
+        run: cargo +${{ matrix.env }} test --doc -v
       - name: Clippy
         if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
-        run: cargo clippy --all-targets --all-features --no-deps -- -D warnings -v
+        run: cargo +${{ matrix.env }} clippy --all-targets --all-features --no-deps -- -D warnings -v
       - name: Format
         if: ${{ runner.os == 'Linux' && matrix.env == 'nightly' }}
         run: cargo +nightly fmt --all --check -v
