@@ -4,6 +4,7 @@ mod tests {
         use std::collections::BTreeMap;
 
         use causal_hub::data::DiscreteDataMatrix;
+
         use itertools::Itertools;
         use ndarray::prelude::*;
         use polars::prelude::*;
@@ -11,7 +12,7 @@ mod tests {
         #[test]
         fn from() {
             // Set in-memory sample data file.
-            let file = "X,Y,Z\nA,A,A,\nA,B,B\nA,A,C\n";
+            let file = "X,Y,Z\nA,A,A\nA,B,B\nA,A,C\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
             // Parse the CSV file into a dataframe.
@@ -37,13 +38,14 @@ mod tests {
 
     mod continuous {
         use causal_hub::data::ContinuousDataMatrix;
+
         use ndarray::prelude::*;
         use polars::prelude::*;
 
         #[test]
         fn from() {
             // Set in-memory sample data file.
-            let file = "X,Y,Z\n1.0,1.0,1.0,\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
             // Parse the CSV file into a dataframe.
