@@ -1,1 +1,1 @@
-pub mod independence;
+mod independence;

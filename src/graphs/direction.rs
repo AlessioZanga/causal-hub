@@ -4,6 +4,7 @@ use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 pub mod directions {
     /// Undirected pseudo-enumerator for generics algorithms.
     pub struct Undirected;
+
     /// Directed pseudo-enumerator for generics algorithms.
     pub struct Directed;
 }

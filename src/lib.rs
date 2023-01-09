@@ -3,6 +3,10 @@
 
 //! A hub for Causal Data Science.
 
+/// Data algorithms and structures.
+#[cfg(not(doctest))]
+pub mod data;
+
 /// Graphs algorithms and structures.
 pub mod graphs;
 

@@ -1,2 +1,5 @@
 [build]
 rustdocflags = [ "--html-in-header", "./katex.html" ]
+
+[env]
+RUST_TEST_THREADS = "4"
