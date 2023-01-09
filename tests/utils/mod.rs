@@ -1,1 +1,1 @@
-pub mod union_find;
+mod union_find;
