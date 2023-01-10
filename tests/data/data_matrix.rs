@@ -4,7 +4,6 @@ mod tests {
         use std::collections::BTreeMap;
 
         use causal_hub::data::DiscreteDataMatrix;
-
         use itertools::Itertools;
         use ndarray::prelude::*;
         use polars::prelude::*;
@@ -38,7 +37,6 @@ mod tests {
 
     mod continuous {
         use causal_hub::data::ContinuousDataMatrix;
-
         use ndarray::prelude::*;
         use polars::prelude::*;
 

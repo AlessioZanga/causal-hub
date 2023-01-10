@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::data::{DiscreteDataMatrix, MarginalCountMatrix, ConditionalCountMatrix, JointCountMatrix};
-
+    use causal_hub::data::{ConditionalCountMatrix, DiscreteDataMatrix, JointCountMatrix, MarginalCountMatrix};
     use ndarray::prelude::*;
     use polars::prelude::*;
 

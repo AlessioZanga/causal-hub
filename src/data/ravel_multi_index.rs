@@ -37,6 +37,7 @@ impl RavelMultiIndex {
     }
 
     /// Gets the maximum len of the associated one-dimensional axis.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.size
     }
