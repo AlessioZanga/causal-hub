@@ -15,7 +15,7 @@ jobs:
             ~/.cargo
             target
           key: Linux-rust-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/coverage.yml') }}
-      - name: Setup Rust
+      - name: Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal

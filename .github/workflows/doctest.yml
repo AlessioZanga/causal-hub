@@ -9,7 +9,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # NOTE: rustdoc link each doctest separately. On GitHub,
+        # MacOS runners have three cores, while Ubuntu and Windows
+        # have two cores. To decrease workflow times (due to `polars`),
+        # we run doctests on MacOS only, while unit/integration test
+        # run on every platform and every compiler channel.
+        os: [macos-latest] # [ubuntu-latest, macos-latest, windows-latest]
         env: ["stable", "beta", "nightly"]
     steps:
       - uses: actions/checkout@v3
@@ -20,7 +25,7 @@ jobs:
             ~/.cargo
             target
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/doctest.yml') }}
-      - name: Setup Rust
+      - name: Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
