@@ -14,7 +14,7 @@ jobs:
           path: |
             ~/.cargo
             target
-          key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
+          key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/format.yml') }}
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:

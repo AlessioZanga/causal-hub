@@ -19,7 +19,7 @@ jobs:
           path: |
             ~/.cargo
             target
-          key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
+          key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/doctest.yml') }}
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
