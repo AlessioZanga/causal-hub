@@ -25,9 +25,6 @@ jobs:
         with:
           profile: minimal
           toolchain: ${{ matrix.env }}
-          components: rustfmt, clippy
-      - name: Check
-        run: cargo +${{ matrix.env }} check --all -v
       - name: Build
         run: cargo +${{ matrix.env }} build -v
       - name: Test

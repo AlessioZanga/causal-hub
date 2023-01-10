@@ -22,4 +22,4 @@ jobs:
           toolchain: stable
           components: clippy
       - name: Clippy
-        run: cargo stable clippy --all-targets --all-features --no-deps -- -D warnings -v
+        run: cargo clippy --all-targets --all-features --no-deps -- -D warnings -v
