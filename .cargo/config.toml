@@ -1,4 +1,4 @@
-[build]
+[build.causal-hub]
 rustdocflags = [ "--html-in-header", "./katex.html" ]
 
 [env]

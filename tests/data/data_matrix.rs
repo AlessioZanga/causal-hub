@@ -11,7 +11,7 @@ mod tests {
         #[test]
         fn from() {
             // Set in-memory sample data file.
-            let file = "X,Y,Z\nA,A,A,\nA,B,B\nA,A,C\n";
+            let file = "X,Y,Z\nA,A,A\nA,B,B\nA,A,C\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
             // Parse the CSV file into a dataframe.
@@ -43,7 +43,7 @@ mod tests {
         #[test]
         fn from() {
             // Set in-memory sample data file.
-            let file = "X,Y,Z\n1.0,1.0,1.0,\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
             // Parse the CSV file into a dataframe.
