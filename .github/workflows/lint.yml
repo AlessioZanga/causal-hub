@@ -1,0 +1,25 @@
+on: [push]
+
+name: lint
+
+jobs:
+  build:
+    name: causal-hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: Linux-rust-stable-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+      - name: Clippy
+        run: cargo stable clippy --all-targets --all-features --no-deps -- -D warnings -v

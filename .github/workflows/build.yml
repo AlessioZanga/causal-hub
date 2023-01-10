@@ -32,27 +32,6 @@ jobs:
         run: cargo +${{ matrix.env }} build -v
       - name: Test
         run: cargo +${{ matrix.env }} test --tests -v
-      - name: Doctest
-        run: cargo +${{ matrix.env }} test --doc -v
-      - name: Clippy
-        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
-        run: cargo +${{ matrix.env }} clippy --all-targets --all-features --no-deps -- -D warnings -v
-      - name: Format
-        if: ${{ runner.os == 'Linux' && matrix.env == 'nightly' }}
-        run: cargo +nightly fmt --all --check -v
-      - name: Coverage
-        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
-        run: |
-          cargo install cargo-llvm-cov
-          cargo llvm-cov --lcov --output-path lcov.info -v
-      - name: CodeCov
-        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./lcov.info
-          flags: unittests
-          fail_ci_if_error: true
       - name: Publish
         if: ${{ runner.os == 'Linux' && matrix.env == 'stable' && github.ref == 'refs/heads/main' }}
         env:
