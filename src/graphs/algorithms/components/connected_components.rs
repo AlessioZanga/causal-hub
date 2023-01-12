@@ -86,3 +86,6 @@ where
         Self::new(g)
     }
 }
+
+/// Alias for connected components.
+pub type CC<'a, G> = ConnectedComponents<'a, G>;

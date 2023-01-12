@@ -173,3 +173,6 @@ where
         Self::new(g, Some(x))
     }
 }
+
+/// Alias for lexicographic breadth-first search.
+pub type LexBFS<'a, G> = LexicographicBreadthFirstSearch<'a, G>;

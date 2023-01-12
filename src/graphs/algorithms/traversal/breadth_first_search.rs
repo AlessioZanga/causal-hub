@@ -220,3 +220,6 @@ where
         })
     }
 }
+
+/// Alias for breadth-first search.
+pub type BFS<'a, G, D> = BreadthFirstSearch<'a, G, D>;

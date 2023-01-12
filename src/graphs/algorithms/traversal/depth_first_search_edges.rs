@@ -260,3 +260,6 @@ where
         Self::new(g, Some(x), Traversal::Tree)
     }
 }
+
+/// Alias for depth-first search.
+pub type DFSEdges<'a, G, D> = DepthFirstSearchEdges<'a, G, D>;
