@@ -1,0 +1,33 @@
+on: [push]
+
+name: coverage
+
+jobs:
+  build:
+    name: causal-hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: Linux-rust-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/coverage.yml') }}
+      - name: Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Coverage
+        run: |
+          cargo install cargo-llvm-cov
+          cargo llvm-cov --lcov --output-path lcov.info -v
+      - name: CodeCov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./lcov.info
+          flags: unittests
+          fail_ci_if_error: true

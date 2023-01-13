@@ -1,0 +1,25 @@
+on: [push]
+
+name: format
+
+jobs:
+  build:
+    name: causal-hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/format.yml') }}
+      - name: Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+      - name: Format
+        run: cargo +nightly fmt --all --check -v
