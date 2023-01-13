@@ -22,6 +22,7 @@ jobs:
           toolchain: stable
       - name: Coverage
         run: |
+          unzip -o ./tests/assets -d ./tests
           cargo install cargo-llvm-cov
           cargo llvm-cov --lcov --output-path lcov.info -v
       - name: CodeCov
