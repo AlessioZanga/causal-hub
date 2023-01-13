@@ -1,3 +1,5 @@
+/// Re-export data.
+pub use crate::data::*;
 /// Re-export graphs.
 pub use crate::graphs::{
     algorithms::{
