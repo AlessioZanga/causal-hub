@@ -26,4 +26,5 @@ pub mod prelude;
 pub mod types;
 
 /// Crate-wide utils.
+#[allow(unused_imports)]
 pub mod utils;
