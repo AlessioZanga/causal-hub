@@ -43,9 +43,11 @@ impl MarginalLogLikelihood {
 }
 
 /// Conditional log-likelihood functor.
-pub struct ConditionalLogLikelihood<const ENABLE_PARALLEL: bool> {}
+pub struct ConditionalLogLikelihood<const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool> {}
 
-impl<const ENABLE_PARALLEL: bool> ConditionalLogLikelihood<ENABLE_PARALLEL> {
+impl<const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool>
+    ConditionalLogLikelihood<ENABLE_PARALLEL_CCM, ENABLE_PARALLEL_CLL>
+{
     /// Constructor for conditional log-likelihood functor.
     pub const fn new() -> Self {
         Self {}
@@ -68,13 +70,13 @@ impl<const ENABLE_PARALLEL: bool> ConditionalLogLikelihood<ENABLE_PARALLEL> {
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> f64 {
         // Compute marginal contingency table.
-        let n_ij = ConditionalCountMatrix::new(d, x, z);
+        let n_ij = ConditionalCountMatrix::<ENABLE_PARALLEL_CCM>::new(d, x, z);
 
         // Iterate over chunks.
         let n_ij = n_ij.axis_chunks_iter(Axis(0), axis_chunks_size(&n_ij));
 
         // Check if parallelization is enabled.
-        match ENABLE_PARALLEL {
+        match ENABLE_PARALLEL_CLL {
             // Map each chunk and sum over in parallel.
             true => n_ij.into_par_iter().map(Self::eval).sum(),
             // Map each chunk and sum over.
@@ -84,9 +86,11 @@ impl<const ENABLE_PARALLEL: bool> ConditionalLogLikelihood<ENABLE_PARALLEL> {
 }
 
 /// Constructor for log-likelihood functor.
-pub struct LogLikelihood<const ENABLE_PARALLEL_CLL: bool> {}
+pub struct LogLikelihood<const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool> {}
 
-impl<const ENABLE_PARALLEL_CLL: bool> LogLikelihood<ENABLE_PARALLEL_CLL> {
+impl<const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool>
+    LogLikelihood<ENABLE_PARALLEL_CCM, ENABLE_PARALLEL_CLL>
+{
     /// Constructor for log-likelihood functor.
     pub const fn new() -> Self {
         Self {}
@@ -96,12 +100,13 @@ impl<const ENABLE_PARALLEL_CLL: bool> LogLikelihood<ENABLE_PARALLEL_CLL> {
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> f64 {
         match z.is_empty() {
             true => MarginalLogLikelihood::new().call(d, x),
-            false => ConditionalLogLikelihood::<ENABLE_PARALLEL_CLL>::new().call(d, x, z),
+            false => ConditionalLogLikelihood::<ENABLE_PARALLEL_CCM, ENABLE_PARALLEL_CLL>::new().call(d, x, z),
         }
     }
 }
 
-impl<G, const ENABLE_PARALLEL_CLL: bool> ScoringCriterion<DiscreteDataMatrix, G> for LogLikelihood<ENABLE_PARALLEL_CLL>
+impl<G, const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool> ScoringCriterion<DiscreteDataMatrix, G>
+    for LogLikelihood<ENABLE_PARALLEL_CCM, ENABLE_PARALLEL_CLL>
 where
     G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
 {
@@ -112,8 +117,8 @@ where
     }
 }
 
-impl<G, const ENABLE_PARALLEL_CLL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<ENABLE_PARALLEL_CLL>
+impl<G, const ENABLE_PARALLEL_CCM: bool, const ENABLE_PARALLEL_CLL: bool>
+    DecomposableScoringCriterion<DiscreteDataMatrix, G> for LogLikelihood<ENABLE_PARALLEL_CCM, ENABLE_PARALLEL_CLL>
 where
     G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
 {
@@ -123,4 +128,4 @@ where
 }
 
 /// Alias for log-likelihood functor.
-pub type LL = LogLikelihood<false>;
+pub type LL = LogLikelihood<false, false>;

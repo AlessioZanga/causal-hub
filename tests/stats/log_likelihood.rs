@@ -21,7 +21,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = LogLikelihood::<false>::new();
+        let score = LogLikelihood::<false, false>::new();
 
         // Compute global score.
         assert_relative_eq!(
@@ -61,7 +61,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = LogLikelihood::<true>::new();
+        let score = LogLikelihood::<true, true>::new();
 
         // Compute global score.
         assert_relative_eq!(
