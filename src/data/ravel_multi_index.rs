@@ -14,25 +14,21 @@ impl RavelMultiIndex {
 
         // Compute max size.
         let size = cardinality.product();
+
         // Make ravel mutable.
-        let mut ravel = cardinality;
+        let mut ravel = Array1::<usize>::ones(cardinality.dim());
 
-        // Compute the cumulative product.
-        ravel.accumulate_axis_inplace(Axis(0), |&prev, curr| *curr *= prev);
-
-        // Shift left by one ...
-        ravel.accumulate_axis_inplace(Axis(0), |&prev, curr| *curr = prev);
-        // ... and set first element to one.
-        ravel[0] = 1;
-
-        // Reverse axis.
-        ravel.invert_axis(Axis(0));
+        // From the end to the beginning of ravel ...
+        for i in (1..ravel.len()).rev() {
+            // ... compute the cumulative product.
+            ravel[i - 1] = ravel[i] * cardinality[i];
+        }
 
         Self { ravel, size }
     }
 
     /// Maps multi-index to one-dimensional index.
-    pub fn call(&self, multi_index: &Array1<usize>) -> usize {
+    pub fn call(&self, multi_index: Array1<usize>) -> usize {
         (&self.ravel * multi_index).sum()
     }
 

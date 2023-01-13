@@ -657,6 +657,7 @@ mod tests {
             };
         }
 
+        #[allow(unstable_name_collisions)]
         mod undirected_dense_matrix {
             use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
             generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
@@ -1320,6 +1321,7 @@ mod tests {
             };
         }
 
+        #[allow(unstable_name_collisions)]
         mod directed_dense_matrix {
             use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
             generic_tests!(DirectedDenseAdjacencyMatrixGraph);

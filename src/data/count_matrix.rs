@@ -14,8 +14,10 @@ impl MarginalCountMatrix {
     pub fn new(data_matrix: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = data_matrix.cardinality();
+
         // Set count matrix shape.
         let shape = (cards[x],);
+
         // Allocate count matrix.
         let mut data: Array1<usize> = ArrayBase::zeros(shape);
         // Fill count matrix.
@@ -46,10 +48,13 @@ impl ConditionalCountMatrix {
     pub fn new(data_matrix: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> Self {
         // Get cardinalities.
         let cards = data_matrix.cardinality();
+
         // Get cardinalities of conditional set.
         let ravel_multi_index = RavelMultiIndex::new(cards.select(Axis(0), &z));
+
         // Set count matrix shape.
         let shape = (ravel_multi_index.len(), cards[x]);
+
         // Allocate count matrix.
         let mut data: Array2<usize> = ArrayBase::zeros(shape);
         // Fill count matrix.
@@ -57,7 +62,7 @@ impl ConditionalCountMatrix {
             // Get multi index.
             let row_z = row.select(Axis(0), &z);
             // Ravel multi index.
-            let row_z = ravel_multi_index.call(&row_z);
+            let row_z = ravel_multi_index.call(row_z);
             // Increment at given index.
             data[[row_z, row[x]]] += 1;
         }
@@ -84,10 +89,13 @@ impl JointCountMatrix {
     pub fn new(data_matrix: &DiscreteDataMatrix, x: usize, y: usize, z: Vec<usize>) -> Self {
         // Get cardinalities.
         let cards = data_matrix.cardinality();
+
         // Get cardinalities of conditional set.
         let ravel_multi_index = RavelMultiIndex::new(cards.select(Axis(0), &z));
+
         // Set count matrix shape.
         let shape = (ravel_multi_index.len(), cards[x], cards[y]);
+
         // Allocate count matrix.
         let mut data: Array3<usize> = ArrayBase::zeros(shape);
         // Fill count matrix.
@@ -95,7 +103,7 @@ impl JointCountMatrix {
             // Get multi index.
             let row_z = row.select(Axis(0), &z);
             // Ravel multi index.
-            let row_z = ravel_multi_index.call(&row_z);
+            let row_z = ravel_multi_index.call(row_z);
             // Increment at given index.
             data[[row_z, row[x], row[y]]] += 1;
         }
