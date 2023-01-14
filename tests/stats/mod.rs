@@ -1,1 +1,3 @@
+mod akaike_information_criterion;
+mod bayesian_information_criterion;
 mod log_likelihood;

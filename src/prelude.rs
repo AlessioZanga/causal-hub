@@ -8,8 +8,8 @@ pub use crate::graphs::{
         components::CC,
         traversal::{BFS, DFS},
     },
-    BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, IntoUndirectedGraph, PartialOrdGraph, SubGraph,
-    UndirectedGraph,
+    BaseGraph, DefaultGraph, DiGraph, DirectedGraph, ErrorGraph, Graph, IntoUndirectedGraph,
+    PartialOrdGraph, SubGraph, UndirectedGraph,
 };
 /// Re-export models.
 pub use crate::models::*;

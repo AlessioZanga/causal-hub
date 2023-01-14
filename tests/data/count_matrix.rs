@@ -2,7 +2,9 @@
 mod tests {
     use std::collections::HashMap;
 
-    use causal_hub::data::{ConditionalCountMatrix, DiscreteDataMatrix, JointCountMatrix, MarginalCountMatrix};
+    use causal_hub::data::{
+        ConditionalCountMatrix, DiscreteDataMatrix, JointCountMatrix, MarginalCountMatrix,
+    };
     use ndarray::prelude::*;
     use polars::prelude::*;
 
@@ -13,7 +15,9 @@ mod tests {
         // Initialize an file cursor over the string.
         let file = std::io::Cursor::new(&file);
         // Parse the CSV file into a dataframe.
-        let d = CsvReader::new(file).finish().expect("Failed to read from CSV file");
+        let d = CsvReader::new(file)
+            .finish()
+            .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
         let d = DiscreteDataMatrix::from(d);
 
@@ -37,7 +41,9 @@ mod tests {
         // Initialize an file cursor over the string.
         let file = std::io::Cursor::new(&file);
         // Parse the CSV file into a dataframe.
-        let d = CsvReader::new(file).finish().expect("Failed to read from CSV file");
+        let d = CsvReader::new(file)
+            .finish()
+            .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
         let d = DiscreteDataMatrix::from(d);
 
@@ -56,7 +62,14 @@ mod tests {
         let n = ConditionalCountMatrix::<false>::new(&d, 0, vec![1, 2, 3]);
         assert_eq!(
             *n,
-            array![[1, 0, 0], [0, 0, 0], [0, 0, 1], [0, 0, 0], [0, 1, 0], [0, 0, 0]]
+            array![
+                [1, 0, 0],
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 0, 0],
+                [0, 1, 0],
+                [0, 0, 0]
+            ]
         );
     }
 
@@ -74,7 +87,13 @@ mod tests {
             .expect("Failed to read from CSV file");
         let d = DiscreteDataMatrix::from(d);
 
-        let m: HashMap<_, _> = d.labels().iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let m: HashMap<_, _> = d
+            .labels()
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
 
         for (x, z, c) in data {
             let x = m[&x];
@@ -91,7 +110,9 @@ mod tests {
         // Initialize an file cursor over the string.
         let file = std::io::Cursor::new(&file);
         // Parse the CSV file into a dataframe.
-        let d = CsvReader::new(file).finish().expect("Failed to read from CSV file");
+        let d = CsvReader::new(file)
+            .finish()
+            .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
         let d = DiscreteDataMatrix::from(d);
 

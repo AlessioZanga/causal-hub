@@ -11,7 +11,10 @@ impl RavelMultiIndex {
     /// Build the new multi-index map.
     pub fn new(cardinality: Array1<usize>) -> Self {
         // Assert non-empty.
-        assert!(!cardinality.is_empty(), "Ravel multi index must not be empty");
+        assert!(
+            !cardinality.is_empty(),
+            "Ravel multi index must not be empty"
+        );
         // Assert all strictly positive.
         assert!(
             cardinality.iter().all(|&x| x > 0),

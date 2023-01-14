@@ -41,11 +41,11 @@ impl Deref for MarginalCountMatrix {
 }
 
 /// Two-dimensional conditional contingency table.
-pub struct ConditionalCountMatrix<const ENABLE_PARALLEL: bool> {
+pub struct ConditionalCountMatrix<const PARALLEL: bool> {
     n: Array2<usize>,
 }
 
-impl<const ENABLE_PARALLEL: bool> ConditionalCountMatrix<ENABLE_PARALLEL> {
+impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     pub(crate) fn eval(
         shape: (usize, usize),
         rmi: &RavelMultiIndex,
@@ -78,7 +78,7 @@ impl<const ENABLE_PARALLEL: bool> ConditionalCountMatrix<ENABLE_PARALLEL> {
         let shape = (rmi.len(), cards[x]);
 
         // Check if parallelization is enabled.
-        let n = match ENABLE_PARALLEL {
+        let n = match PARALLEL {
             // Count the given observations in parallel.
             true => d
                 .axis_chunks_iter(Axis(0), axis_chunks_size(d))
@@ -93,7 +93,7 @@ impl<const ENABLE_PARALLEL: bool> ConditionalCountMatrix<ENABLE_PARALLEL> {
     }
 }
 
-impl<const ENABLE_PARALLEL: bool> Deref for ConditionalCountMatrix<ENABLE_PARALLEL> {
+impl<const PARALLEL: bool> Deref for ConditionalCountMatrix<PARALLEL> {
     type Target = Array2<usize>;
 
     fn deref(&self) -> &Self::Target {

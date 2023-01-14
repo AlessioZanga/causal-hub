@@ -16,7 +16,9 @@ pub trait ScoringCriterion<D, G> {
 }
 
 /// Decomposable scoring criterion trait.
-pub trait DecomposableScoringCriterion<D, G>: ScoringCriterion<D, G, ScoreType = score_types::Decomposable> {
+pub trait DecomposableScoringCriterion<D, G>:
+    ScoringCriterion<D, G, ScoreType = score_types::Decomposable>
+{
     /// Computes the score value for the given data set $\mathbf{D}$, vertex $X$ and parents $\mathbf{Z}$.
     fn call(&self, d: &D, x: usize, z: Vec<usize>) -> f64;
 }

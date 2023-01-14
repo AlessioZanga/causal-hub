@@ -12,7 +12,10 @@ use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
 
 use crate::{
-    graphs::{directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, SubGraph, UndirectedGraph},
+    graphs::{
+        directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, SubGraph,
+        UndirectedGraph,
+    },
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, E, V,
@@ -71,7 +74,10 @@ impl<'a> ExactSizeIterator for LabelsIterator<'a> {}
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     g: &'a UndirectedDenseAdjacencyMatrixGraph,
-    iter: FilterMap<IndexedIter<'a, bool, Ix2>, fn(((usize, usize), &bool)) -> Option<(usize, usize)>>,
+    iter: FilterMap<
+        IndexedIter<'a, bool, Ix2>,
+        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
+    >,
     size: usize,
 }
 
@@ -80,10 +86,12 @@ impl<'a> EdgesIterator<'a> {
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
-            iter: g.indexed_iter().filter_map(|((i, j), &f)| match f && i <= j {
-                true => Some((i, j)),
-                false => None,
-            }),
+            iter: g
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match f && i <= j {
+                    true => Some((i, j)),
+                    false => None,
+                }),
             size: g.size,
         }
     }
@@ -113,7 +121,10 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     g: &'a UndirectedDenseAdjacencyMatrixGraph,
-    iter: FilterMap<Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>, fn((usize, &bool)) -> Option<usize>>,
+    iter: FilterMap<
+        Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
+        fn((usize, &bool)) -> Option<usize>,
+    >,
 }
 
 impl<'a> AdjacentsIterator<'a> {
@@ -121,10 +132,14 @@ impl<'a> AdjacentsIterator<'a> {
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
-            iter: g.row(x).into_iter().enumerate().filter_map(|(i, &f)| match f {
-                true => Some(i),
-                false => None,
-            }),
+            iter: g
+                .row(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, &f)| match f {
+                    true => Some(i),
+                    false => None,
+                }),
         }
     }
 }
@@ -146,7 +161,9 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
         write!(
             f,
             "V = {{{}}}, ",
-            V!(self).map(|x| format!("\"{}\"", self.label(x))).join(", ")
+            V!(self)
+                .map(|x| format!("\"{}\"", self.label(x)))
+                .join(", ")
         )?;
         // Write edge set.
         write!(
@@ -190,14 +207,22 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Remove duplicated vertices labels.
         let mut vertices: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
         // Map edges iterator into edge list.
-        let edges: EdgeList<_> = edges.into_iter().map(|(x, y)| (x.into(), y.into())).collect();
+        let edges: EdgeList<_> = edges
+            .into_iter()
+            .map(|(x, y)| (x.into(), y.into()))
+            .collect();
         // Add missing vertices from the edges.
         vertices.extend(edges.iter().cloned().flat_map(|(x, y)| [x, y]));
 
         // Compute new graph order.
         let order = vertices.len();
         // Map vertices labels to vertices indices.
-        let vertices_indexes: BiHashMap<_, _> = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes: BiHashMap<_, _> = vertices
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
         // Initialize adjacency matrix given graph order.
         let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
@@ -336,7 +361,10 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         debug_assert!(self.vertices.contains(&x));
         debug_assert!(self.vertices_indexes.contains_left(&x));
         // Assert vertex set is still consistent with vertices map.
-        debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
+        debug_assert!(self
+            .vertices
+            .iter()
+            .eq(self.vertices_indexes.left_values().sorted()));
         // Assert vertices labels are still associated to an ordered and
         // contiguous sequence of integers starting from zero, i.e in [0, n).
         debug_assert!(self
@@ -398,7 +426,10 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         debug_assert!(!self.vertices.contains(&x));
         debug_assert!(!self.vertices_indexes.contains_left(&x));
         // Assert vertex set is still consistent with vertices map.
-        debug_assert!(self.vertices.iter().eq(self.vertices_indexes.left_values().sorted()));
+        debug_assert!(self
+            .vertices
+            .iter()
+            .eq(self.vertices_indexes.left_values().sorted()));
         // Assert vertices labels are still associated to an ordered and
         // contiguous sequence of integers starting from zero, i.e in [0, n).
         debug_assert!(self
@@ -537,7 +568,12 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Compute new graph order.
         let order = vertices.len();
         // Map vertices labels to vertices indices.
-        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
         // Initialize adjacency matrix given graph order.
         let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
@@ -560,7 +596,12 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Compute new graph order.
         let order = vertices.len();
         // Map vertices labels to vertices indices.
-        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
         // Initialize adjacency matrix given graph order.
         let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
         // Remove self loops.
@@ -611,7 +652,9 @@ where
 {
     type Error = E;
 
-    fn try_from((vertices, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (vertices, adjacency_matrix): (I, DenseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
         // Remove duplicated vertices labels.
         let vertices: BTreeSet<String> = vertices.into_iter().map(|x| x.into()).collect();
 
@@ -629,7 +672,12 @@ where
         }
 
         // Map vertices labels to vertices indices.
-        let vertices_indexes = vertices.iter().cloned().enumerate().map(|(i, x)| (x, i)).collect();
+        let vertices_indexes = vertices
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
 
         // Cast to standard memory layout (i.e. C layout), if not already.
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
@@ -655,9 +703,12 @@ where
 {
     type Error = E;
 
-    fn try_from((vertices, adjacency_matrix): (I, SparseAdjacencyMatrix)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (vertices, adjacency_matrix): (I, SparseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
         // Allocate dense adjacency matrix.
-        let mut dense_adjacency_matrix = DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
+        let mut dense_adjacency_matrix =
+            DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
         // Fill dense adjacency matrix from sparse triplets.
         for (&f, (i, j)) in adjacency_matrix.triplet_iter() {
             dense_adjacency_matrix[[i, j]] = f;
@@ -745,8 +796,12 @@ impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
         // If the vertices sets are comparable ...
         partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
             // ... compare edges sets.
-            let lhs: HashSet<_> = E!(self).map(|(x, y)| (self.label(x), self.label(y))).collect();
-            let rhs: HashSet<_> = E!(other).map(|(x, y)| (other.label(x), other.label(y))).collect();
+            let lhs: HashSet<_> = E!(self)
+                .map(|(x, y)| (self.label(x), self.label(y)))
+                .collect();
+            let rhs: HashSet<_> = E!(other)
+                .map(|(x, y)| (other.label(x), other.label(y)))
+                .collect();
             // If the edges sets are comparable ...
             partial_cmp_sets!(lhs, rhs).and_then(|edges| {
                 // ... then return ordering.
@@ -804,7 +859,9 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .collect();
 
         // Get minor of matrix.
-        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+        let adjacency_matrix = adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
 
         // Get vertices labels.
         let vertices = indices.into_iter().map(|x| self.label(x));
@@ -865,7 +922,9 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .collect();
 
         // Get minor of matrix.
-        let adjacency_matrix = adjacency_matrix.select(Axis(0), &indices).select(Axis(1), &indices);
+        let adjacency_matrix = adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
 
         // Get vertices labels.
         let vertices = indices.into_iter().map(|x| self.label(x));

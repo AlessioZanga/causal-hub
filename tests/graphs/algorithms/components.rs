@@ -28,7 +28,10 @@ mod undirected {
                     ),
                     // ... multiple vertices and multiple edges,
                     (
-                        (vec!["0", "1", "2", "3"], vec![("0", "1"), ("1", "2"), ("2", "3")]),
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
                         vec![vec![0, 1, 2, 3]],
                     ),
                     // ... random vertices and edges,
@@ -47,7 +50,9 @@ mod undirected {
 
                     let cc = CC::from(&g);
 
-                    assert!(cc.eq(ccs.into_iter().map(|c| c.into_iter().collect::<BTreeSet<_>>())));
+                    assert!(cc.eq(ccs
+                        .into_iter()
+                        .map(|c| c.into_iter().collect::<BTreeSet<_>>())));
                 }
             }
         };

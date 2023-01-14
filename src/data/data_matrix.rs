@@ -19,6 +19,14 @@ pub struct DiscreteDataMatrix {
     cardinality: Array1<usize>,
 }
 
+impl Deref for DiscreteDataMatrix {
+    type Target = Array2<usize>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
 impl From<DataFrame> for DiscreteDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
@@ -68,8 +76,14 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .map(|(label, levels)| match levels {
                 RevMapping::Global(map, levels, _) => {
                     // Reorder to vector of levels.
-                    let map: BTreeMap<_, _> = map.into_iter().map(|(&i, &j)| (i as usize, j as usize)).collect();
-                    let levels: Vec<_> = map.into_values().map(|i| levels.get(i).unwrap().into()).collect();
+                    let map: BTreeMap<_, _> = map
+                        .into_iter()
+                        .map(|(&i, &j)| (i as usize, j as usize))
+                        .collect();
+                    let levels: Vec<_> = map
+                        .into_values()
+                        .map(|i| levels.get(i).unwrap().into())
+                        .collect();
 
                     (label, levels)
                 }
@@ -112,14 +126,6 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
-impl Deref for DiscreteDataMatrix {
-    type Target = Array2<usize>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
 impl DiscreteDataMatrix {
     /// Gets the set of variables labels.
     pub fn labels(&self) -> &BTreeSet<String> {
@@ -146,6 +152,14 @@ pub struct ContinuousDataMatrix {
     labels: BTreeSet<String>,
 }
 
+impl Deref for ContinuousDataMatrix {
+    type Target = Array2<f64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
 impl From<DataFrame> for ContinuousDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
@@ -158,23 +172,21 @@ impl From<DataFrame> for ContinuousDataMatrix {
         );
 
         // Sort columns by name.
-        let df: DataFrame = df.iter().sorted_by(|a, b| a.name().cmp(b.name())).cloned().collect();
+        let df: DataFrame = df
+            .iter()
+            .sorted_by(|a, b| a.name().cmp(b.name()))
+            .cloned()
+            .collect();
 
         // Get underlying data matrix.
-        let data = df.to_ndarray::<Float64Type>().expect("Fail to cast to ndarray matrix");
+        let data = df
+            .to_ndarray::<Float64Type>()
+            .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().collect();
 
         Self { data, labels }
-    }
-}
-
-impl Deref for ContinuousDataMatrix {
-    type Target = Array2<f64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
     }
 }
 
