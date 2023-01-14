@@ -27,17 +27,17 @@ mod tests {
         assert_relative_eq!(
             ScoringCriterion::call(&score, &d, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, vec![]))
+                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, s) in data {
             let x = g.vertex(&x);
-            let z = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, z),
+                DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),
                 s,
                 max_relative = 1e-8
             );
@@ -67,17 +67,17 @@ mod tests {
         assert_relative_eq!(
             ScoringCriterion::call(&score, &d, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, vec![]))
+                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, s) in data {
             let x = g.vertex(&x);
-            let z = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, z),
+                DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),
                 s,
                 max_relative = 1e-8
             );

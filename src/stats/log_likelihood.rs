@@ -79,7 +79,7 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> f64 {
+    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
         let n_ij = ConditionalCountMatrix::<PARALLEL_CCM>::new(d, x, z);
 
@@ -113,7 +113,7 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> LogLikelihood<PARALLEL_
     }
 
     /// Computes LL given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> f64 {
+    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
             true => MarginalLogLikelihood::new().call(d, x),
             false => ConditionalLogLikelihood::<PARALLEL_CCM, PARALLEL_CLL>::new().call(d, x, z),
@@ -129,7 +129,10 @@ where
     type ScoreType = score_types::Decomposable;
 
     fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
-        V!(g).map(|x| self.call(d, x, Pa!(g, x).collect())).sum()
+        V!(g)
+            .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
+            .map(|(x, z)| self.call(d, x, &z))
+            .sum()
     }
 }
 
@@ -139,7 +142,7 @@ impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
 where
     G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
 {
-    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> f64 {
+    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }
 }
