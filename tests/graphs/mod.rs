@@ -1,3 +1,4 @@
+mod acyclic;
 mod algorithms;
 mod base;
 mod default;

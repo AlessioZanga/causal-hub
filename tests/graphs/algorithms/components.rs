@@ -59,7 +59,7 @@ mod undirected {
     }
 
     mod undirected_dense_matrix {
-        use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
         generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
     }
 }

@@ -13,8 +13,9 @@ use ndarray::{iter::IndexedIter, prelude::*};
 
 use crate::{
     graphs::{
-        directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, SubGraph,
-        UndirectedGraph,
+        algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
+        directions, AcyclicGraph, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph,
+        SubGraph, UndirectedGraph,
     },
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
@@ -957,5 +958,12 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Adj!(self, x).count(), d);
 
         d
+    }
+}
+
+/* Implement AcyclicGraph */
+impl AcyclicGraph for UndirectedDenseAdjacencyMatrixGraph {
+    fn is_acyclic(&self) -> bool {
+        !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
     }
 }
