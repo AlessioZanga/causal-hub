@@ -69,11 +69,11 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 
     /// Build new count matrix with given data matrix and indices.
-    pub fn new(d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(cards.select(Axis(0), &z));
+        let rmi = RavelMultiIndex::new(cards.select(Axis(0), z));
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x]);
 
@@ -83,10 +83,10 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
             true => d
                 .axis_chunks_iter(Axis(0), axis_chunks_size(d))
                 .into_par_iter()
-                .map(|d| Self::eval(shape, &rmi, d, x, &z))
+                .map(|d| Self::eval(shape, &rmi, d, x, z))
                 .reduce(|| Array2::zeros(shape), |acc, x| acc + x),
             // Count the given observations.
-            false => Self::eval(shape, &rmi, d.view(), x, &z),
+            false => Self::eval(shape, &rmi, d.view(), x, z),
         };
 
         Self { n }

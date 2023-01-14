@@ -15,10 +15,11 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, PathGraph, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E,
-        IntoUndirectedGraph, PartialOrdGraph, SubGraph,
+        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
+        PartialOrdGraph, PathGraph, SubGraph,
     },
     models::MoralGraph,
+    prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
@@ -1145,6 +1146,10 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
 
 /* Implement PathGraph */
 impl PathGraph for DirectedDenseAdjacencyMatrixGraph {
+    fn has_path(&self, x: usize, y: usize) -> bool {
+        self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
+    }
+
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
     }

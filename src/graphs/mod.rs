@@ -4,9 +4,6 @@ pub mod algorithms;
 /// Structures on graphs.
 pub mod structs;
 
-mod path;
-pub use path::*;
-
 mod base;
 pub use base::*;
 
@@ -21,6 +18,9 @@ pub use error::*;
 
 mod partial_ord;
 pub use partial_ord::*;
+
+mod path;
+pub use path::*;
 
 mod subgraph;
 pub use subgraph::*;
