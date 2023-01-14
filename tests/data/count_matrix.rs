@@ -2,9 +2,7 @@
 mod tests {
     use std::collections::HashMap;
 
-    use causal_hub::data::{
-        ConditionalCountMatrix, DiscreteDataMatrix, JointCountMatrix, MarginalCountMatrix,
-    };
+    use causal_hub::prelude::*;
     use ndarray::prelude::*;
     use polars::prelude::*;
 

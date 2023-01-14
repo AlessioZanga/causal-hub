@@ -8,6 +8,8 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
 
+use super::DataSet;
+
 /* Implement DiscreteDataMatrix */
 
 /// Data matrix for discrete data.
@@ -126,12 +128,15 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
-impl DiscreteDataMatrix {
-    /// Gets the set of variables labels.
-    pub fn labels(&self) -> &BTreeSet<String> {
+impl DataSet for DiscreteDataMatrix {
+    type Data = Array2<usize>;
+
+    fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
+}
 
+impl DiscreteDataMatrix {
     /// Gets the map of variables to their levels.
     pub fn levels(&self) -> &HashMap<String, Vec<String>> {
         &self.levels
@@ -190,9 +195,10 @@ impl From<DataFrame> for ContinuousDataMatrix {
     }
 }
 
-impl ContinuousDataMatrix {
-    /// Gets the set of variables labels.
-    pub fn labels(&self) -> &BTreeSet<String> {
+impl DataSet for ContinuousDataMatrix {
+    type Data = Array2<f64>;
+
+    fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
 }
