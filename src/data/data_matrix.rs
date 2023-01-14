@@ -3,6 +3,7 @@ use std::{
     ops::Deref,
 };
 
+use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
@@ -18,6 +19,14 @@ pub struct DiscreteDataMatrix {
     cardinality: Array1<usize>,
 }
 
+impl Deref for DiscreteDataMatrix {
+    type Target = Array2<usize>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
 impl From<DataFrame> for DiscreteDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
@@ -31,7 +40,9 @@ impl From<DataFrame> for DiscreteDataMatrix {
 
         // Cast to categorical datatype.
         let df = df.iter().map(|s| {
-            s.cast(&DataType::Categorical(None))
+            s.cast(&DataType::Utf8)
+                .expect("Failed to cast to intermediate UTF-8 datatype")
+                .cast(&DataType::Categorical(None))
                 .expect("Failed to cast to categorical datatype")
         });
 
@@ -39,7 +50,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
         let df: DataFrame = df.sorted_by(|a, b| a.name().cmp(b.name())).collect();
 
         // Get underlying data matrix.
-        let data = df
+        let mut data = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as usize);
@@ -65,17 +76,40 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .map(|(label, levels)| match levels {
                 RevMapping::Global(map, levels, _) => {
                     // Reorder to vector of levels.
-                    let map: BTreeMap<_, _> = map.into_iter().map(|(&i, &j)| (i as usize, j as usize)).collect();
-                    let levels = map.into_values().map(|i| levels.get(i).unwrap().into()).collect();
+                    let map: BTreeMap<_, _> = map
+                        .into_iter()
+                        .map(|(&i, &j)| (i as usize, j as usize))
+                        .collect();
+                    let levels: Vec<_> = map
+                        .into_values()
+                        .map(|i| levels.get(i).unwrap().into())
+                        .collect();
 
                     (label, levels)
                 }
                 RevMapping::Local(levels) => {
                     // Cast to vector of levels.
-                    let levels = levels.values_iter().map(|s| s.into()).collect();
+                    let levels: Vec<_> = levels.values_iter().map(|s| s.into()).collect();
 
                     (label, levels)
                 }
+            })
+            // Get series index.
+            .enumerate()
+            // Check that levels are sorted.
+            .map(|(i, (label, mut levels))| {
+                // Check if levels are ordered.
+                if !levels.iter().is_sorted() {
+                    // If not, build a map of the sorted indices.
+                    let mut indices: Vec<_> = (0..levels.len()).collect();
+                    indices.sort_by_key(|&i| &levels[i]);
+                    // Sort the data.
+                    data.column_mut(i).mapv_inplace(|x| indices[x]);
+                    // Sort the labels.
+                    levels.sort();
+                }
+
+                (label, levels)
             })
             // Collect variables levels.
             .collect();
@@ -89,14 +123,6 @@ impl From<DataFrame> for DiscreteDataMatrix {
             levels,
             cardinality,
         }
-    }
-}
-
-impl Deref for DiscreteDataMatrix {
-    type Target = Array2<usize>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
     }
 }
 
@@ -126,6 +152,14 @@ pub struct ContinuousDataMatrix {
     labels: BTreeSet<String>,
 }
 
+impl Deref for ContinuousDataMatrix {
+    type Target = Array2<f64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
 impl From<DataFrame> for ContinuousDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
@@ -137,21 +171,22 @@ impl From<DataFrame> for ContinuousDataMatrix {
             )
         );
 
+        // Sort columns by name.
+        let df: DataFrame = df
+            .iter()
+            .sorted_by(|a, b| a.name().cmp(b.name()))
+            .cloned()
+            .collect();
+
         // Get underlying data matrix.
-        let data = df.to_ndarray::<Float64Type>().expect("Fail to cast to ndarray matrix");
+        let data = df
+            .to_ndarray::<Float64Type>()
+            .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().collect();
 
         Self { data, labels }
-    }
-}
-
-impl Deref for ContinuousDataMatrix {
-    type Target = Array2<f64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
     }
 }
 

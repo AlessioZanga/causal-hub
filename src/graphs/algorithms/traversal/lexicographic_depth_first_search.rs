@@ -185,3 +185,6 @@ where
         Self::new(g, Some(x))
     }
 }
+
+/// Alias for lexicographic depth-first search.
+pub type LexDFS<'a, G> = LexicographicDepthFirstSearch<'a, G>;

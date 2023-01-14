@@ -717,7 +717,9 @@ mod directed {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::{
-                graphs::algorithms::traversal::{DFSEdge, DFSEdges, TopologicalSort, Traversal, BFS, DFS},
+                graphs::algorithms::traversal::{
+                    DFSEdge, DFSEdges, TopologicalSort, Traversal, BFS, DFS,
+                },
                 prelude::*,
             };
 

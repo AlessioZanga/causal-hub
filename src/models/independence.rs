@@ -117,7 +117,9 @@ where
         let mut h = self.g.clone();
 
         // Compute the set of out-going edges of Z.
-        let e_z = z.into_iter().flat_map(|z| Ne!(self.g, z).map(move |w| (z, w)));
+        let e_z = z
+            .into_iter()
+            .flat_map(|z| Ne!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph.
         for (z, w) in e_z {
             h.del_edge(z, w);
@@ -194,7 +196,9 @@ where
         }
 
         // Compute the set of out-going edges of Z.
-        let e_z = z.into_iter().flat_map(|z| Ch!(self.g, z).map(move |w| (z, w)));
+        let e_z = z
+            .into_iter()
+            .flat_map(|z| Ch!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph, i.e. compute the moral graph.
         for (z, w) in e_z {
             h.del_edge(z, w);

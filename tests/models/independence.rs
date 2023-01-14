@@ -45,7 +45,8 @@ mod directed {
 
             #[test]
             fn is_independent() {
-                let e = EdgeList::from([("A", "E"), ("A", "C"), ("B", "C"), ("B", "F"), ("C", "D")]);
+                let e =
+                    EdgeList::from([("A", "E"), ("A", "C"), ("B", "C"), ("B", "F"), ("C", "D")]);
 
                 let g = $G::from(e);
 

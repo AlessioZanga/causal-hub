@@ -1,3 +1,4 @@
 /target
+/tests/assets
 /Cargo.lock
 lcov.info

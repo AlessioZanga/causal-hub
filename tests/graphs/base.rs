@@ -4,9 +4,9 @@ mod tests {
         macro_rules! generic_tests {
             ($G: ident) => {
                 use causal_hub::prelude::*;
-                use causal_hub::utils::is_sorted;
 
                 use std::collections::HashSet;
+                use is_sorted::IsSorted;
                 use ndarray::prelude::*;
                 use regex::Regex;
 
@@ -192,8 +192,8 @@ mod tests {
                         let g = $G::new(i, j);
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
-                        assert!(is_sorted(V!(g)));
-                        assert!(is_sorted(E!(g)));
+                        assert!(V!(g).is_sorted());
+                        assert!(E!(g).is_sorted());
                         assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
                         assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
@@ -256,7 +256,7 @@ mod tests {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new(i, []);
-                        assert!(is_sorted(V!(g)));
+                        assert!(V!(g).is_sorted());
                         assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
                     }
                 }
@@ -368,7 +368,7 @@ mod tests {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
-                        assert!(is_sorted(E!(g)));
+                        assert!(E!(g).is_sorted());
                         assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
@@ -599,7 +599,7 @@ mod tests {
                         let g = $G::new(i, j);
                         for (x, ys) in k {
                             let x = g.vertex(x);
-                            assert!(is_sorted(Adj!(g, x)));
+                            assert!(Adj!(g, x).is_sorted());
                             assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
                         }
                     }
@@ -657,6 +657,7 @@ mod tests {
             };
         }
 
+        #[allow(unstable_name_collisions)]
         mod undirected_dense_matrix {
             use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
             generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
@@ -667,7 +668,8 @@ mod tests {
         macro_rules! generic_tests {
             ($G: ident) => {
                 use causal_hub::prelude::*;
-                use causal_hub::utils::is_sorted;
+
+                use is_sorted::IsSorted;
 
                 use std::collections::HashSet;
                 use ndarray::prelude::*;
@@ -849,8 +851,8 @@ mod tests {
                         let g = $G::new(i, j);
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
-                        assert!(is_sorted(V!(g)));
-                        assert!(is_sorted(E!(g)));
+                        assert!(V!(g).is_sorted());
+                        assert!(E!(g).is_sorted());
                         assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
                         assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
@@ -913,7 +915,7 @@ mod tests {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::empty(i);
-                        assert!(is_sorted(V!(g)));
+                        assert!(V!(g).is_sorted());
                         assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
                     }
                 }
@@ -1025,7 +1027,7 @@ mod tests {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
-                        assert!(is_sorted(E!(g)));
+                        assert!(E!(g).is_sorted());
                         assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                     }
                 }
@@ -1256,7 +1258,7 @@ mod tests {
                         let g = $G::new(i, j);
                         for (x, ys) in k {
                             let x = g.vertex(x);
-                            assert!(is_sorted(Adj!(g, x)));
+                            assert!(Adj!(g, x).is_sorted());
                             assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
                         }
                     }
@@ -1319,6 +1321,7 @@ mod tests {
             };
         }
 
+        #[allow(unstable_name_collisions)]
         mod directed_dense_matrix {
             use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
             generic_tests!(DirectedDenseAdjacencyMatrixGraph);

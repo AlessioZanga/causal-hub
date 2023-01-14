@@ -246,3 +246,6 @@ where
         Self::new(g, Some(x), Traversal::Tree)
     }
 }
+
+/// Alias for depth-first search.
+pub type DFS<'a, G, D> = DepthFirstSearch<'a, G, D>;

@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 
 /// Ravel multi-index to one-dimensional index.
 pub struct RavelMultiIndex {
+    cardinality: Array1<usize>,
     ravel: Array1<usize>,
     size: usize,
 }
@@ -10,30 +11,43 @@ impl RavelMultiIndex {
     /// Build the new multi-index map.
     pub fn new(cardinality: Array1<usize>) -> Self {
         // Assert non-empty.
-        assert!(!cardinality.is_empty(), "Ravel multi index must not be empty");
+        assert!(
+            !cardinality.is_empty(),
+            "Ravel multi index must not be empty"
+        );
+        // Assert all strictly positive.
+        assert!(
+            cardinality.iter().all(|&x| x > 0),
+            "Ravel multi index must not be empty"
+        );
 
         // Compute max size.
         let size = cardinality.product();
+
         // Make ravel mutable.
-        let mut ravel = cardinality;
+        let mut ravel = Array1::<usize>::ones(cardinality.dim());
 
-        // Compute the cumulative product.
-        ravel.accumulate_axis_inplace(Axis(0), |&prev, curr| *curr *= prev);
+        // From the end to the beginning of ravel ...
+        for i in (1..ravel.len()).rev() {
+            // ... compute the cumulative product.
+            ravel[i - 1] = ravel[i] * cardinality[i];
+        }
 
-        // Shift left by one ...
-        ravel.accumulate_axis_inplace(Axis(0), |&prev, curr| *curr = prev);
-        // ... and set first element to one.
-        ravel[0] = 1;
-
-        // Reverse axis.
-        ravel.invert_axis(Axis(0));
-
-        Self { ravel, size }
+        Self {
+            cardinality,
+            ravel,
+            size,
+        }
     }
 
     /// Maps multi-index to one-dimensional index.
-    pub fn call(&self, multi_index: &Array1<usize>) -> usize {
+    pub fn call(&self, multi_index: Array1<usize>) -> usize {
         (&self.ravel * multi_index).sum()
+    }
+
+    /// Gets the vector of variables cardinalities.
+    pub fn cardinality(&self) -> &Array1<usize> {
+        &self.cardinality
     }
 
     /// Gets the maximum len of the associated one-dimensional axis.
