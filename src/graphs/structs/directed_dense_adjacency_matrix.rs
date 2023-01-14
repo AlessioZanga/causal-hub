@@ -15,7 +15,7 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, AcyclicGraph, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E,
+        directions, PathGraph, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E,
         IntoUndirectedGraph, PartialOrdGraph, SubGraph,
     },
     models::MoralGraph,
@@ -1143,8 +1143,8 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-/* Implement AcyclicGraph */
-impl AcyclicGraph for DirectedDenseAdjacencyMatrixGraph {
+/* Implement PathGraph */
+impl PathGraph for DirectedDenseAdjacencyMatrixGraph {
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
     }

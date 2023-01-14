@@ -4,8 +4,8 @@ pub mod algorithms;
 /// Structures on graphs.
 pub mod structs;
 
-mod acyclic;
-pub use acyclic::*;
+mod path;
+pub use path::*;
 
 mod base;
 pub use base::*;

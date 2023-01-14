@@ -50,7 +50,7 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
         Self: 'a;
 
     /// Vertices iterator type.
-    type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator
+    type VerticesIter<'a>: Clone + Iterator<Item = usize> + ExactSizeIterator
     where
         Self: 'a;
 
