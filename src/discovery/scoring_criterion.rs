@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 /// Score-types pseudo-enumerator for generics algorithms.
 pub mod score_types {
     /// Decomposable score-type pseudo-enumerator for generics algorithms.
@@ -7,7 +9,7 @@ pub mod score_types {
 }
 
 /// Scoring criterion trait.
-pub trait ScoringCriterion<D, G> {
+pub trait ScoringCriterion<D, G>: Clone + Debug {
     /// Score-types pseudo-enumerator for generics algorithms.
     type ScoreType;
 
