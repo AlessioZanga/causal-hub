@@ -4,6 +4,7 @@ use std::{
 };
 
 use itertools::iproduct;
+use log::debug;
 
 use super::{score_types, DecomposableScoringCriterion, ScoringCriterion};
 use crate::{
@@ -141,26 +142,26 @@ where
                 let i = pa_y.binary_search(&x).unwrap_err();
                 pa_y.insert(i, x);
                 // Compute delta score.
-                s_y - self.cache(c, d, y, &pa_y)
+                self.cache(c, d, y, &pa_y) - s_y
             }
             Op::Del => {
                 // Remove X in-place leveraging sorted Pa(G, Y).
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
                 // Compute delta score.
-                s_y - self.cache(c, d, y, &pa_y)
+                self.cache(c, d, y, &pa_y) - s_y
             }
             Op::Rev => {
                 // Get X parents.
                 let mut pa_x: Vec<_> = Pa!(g, x).collect();
                 // Get current X score.
-                let s_x = self.cache(c, d, y, &pa_x);
+                let s_x = self.cache(c, d, x, &pa_x);
 
                 // Add Y in-place leveraging sorted Pa(G, X).
                 let i = pa_x.binary_search(&y).unwrap_err();
                 pa_x.insert(i, y);
                 // Compute Y score.
-                let s_star_x = self.cache(c, d, y, &pa_x);
+                let s_star_x = self.cache(c, d, x, &pa_x);
 
                 // Remove X in-place leveraging sorted Pa(G, Y).
                 let i = pa_y.binary_search(&x).unwrap();
@@ -169,7 +170,7 @@ where
                 let s_star_y = self.cache(c, d, y, &pa_y);
 
                 // Compute delta score.
-                s_y - s_star_y + s_x - s_star_x
+                (s_star_x - s_x) + (s_star_y - s_y)
             }
         }
     }
@@ -209,7 +210,7 @@ where
         // Get number of variables.
         let n = d.labels().len();
         // Initialize delta scores cache.
-        let mut c = C::new();
+        let mut c = C::default();
 
         // Initialize graph from D and K.
         let mut g_max = self.init(d, k);
@@ -241,28 +242,69 @@ where
             // Initialize current solution.
             let (mut g, mut s_g) = (g_max.clone(), s_g_max);
 
+            // Log current iteration.
+            debug!(
+                "i: {}, max_iter: {}, s_g_max: {}",
+                i, self.max_iter, s_g_max
+            );
+
+            // Initialize current best operation.
+            let mut best_op = None;
+            let mut best_delta = 0.;
+
             // For each possible edge addition, deletion or reversal ...
             for (a, x, y) in iproduct!([Op::Add, Op::Del, Op::Rev], 0..n, 0..n) {
                 // Check if operation is valid.
                 if !Self::is_valid(&g, x, y, a, k) {
+                    // Log invalid.
+                    debug!("op: {:?}({}, {}), invalid", a, g.label(x), g.label(y),);
+                    // Skip to the next one.
                     continue;
                 }
 
                 // Compute current operation delta score.
                 let delta = self.eval(&mut c, d, &g, x, y, a);
 
+                // Log current operation delta.
+                debug!(
+                    "op: {:?}({}, {}), delta: {}",
+                    a,
+                    g.label(x),
+                    g.label(y),
+                    delta
+                );
+
                 // Check if operation improves current solution.
-                if delta > 0. && (s_g + delta) > s_g_max {
-                    // Apply operation to current solution.
-                    g = Self::apply(g, x, y, a);
-                    // Update current solution score.
-                    s_g += delta;
+                if delta > best_delta && (s_g + delta) > s_g_max {
+                    // Set best operation.
+                    best_op = Some((a, x, y));
+                    best_delta = delta;
+                    // Log operation apply.
+                    debug!(
+                        "best op: {:?}({}, {}), best delta: {}",
+                        a,
+                        g.label(x),
+                        g.label(y),
+                        best_delta
+                    );
                 }
             }
 
-            // If the score of the modified graph improves current solution.
-            if s_g > s_g_max {
-                // Update current solution.
+            // If there exists a best operation.
+            if let Some((a, x, y)) = best_op {
+                // Apply operation to current solution.
+                g = Self::apply(g, x, y, a);
+                // Update current solution score.
+                s_g += best_delta;
+                // Log apply operation.
+                debug!(
+                    "apply op: {:?}({}, {}), apply delta: {}",
+                    a,
+                    g.label(x),
+                    g.label(y),
+                    best_delta
+                );
+                // Update best solution.
                 (g_max, s_g_max) = (g, s_g);
                 // Set flag.
                 flag = true;
