@@ -18,21 +18,31 @@ use crate::{
 /// Local cache type.
 type C = FxHashMap<(usize, Vec<usize>), f64>;
 
+/// Local edge set type
+type E = BTreeSet<(usize, usize)>;
+
 /// Local edge space type.
-type E = (
-    BTreeSet<(usize, usize)>, // To-be-added space,
-    BTreeSet<(usize, usize)>, // To-be-deleted space,
-    BTreeSet<(usize, usize)>, // To-be-reversed space.
+type ES = (
+    E, // To-be-added space,
+    E, // To-be-deleted space,
+    E, // To-be-reversed space.
 );
 
 #[derive(Clone, Copy, Debug)]
+/// Local edge pseudo-enumerator for generics.
 struct Op;
 
 impl Op {
+    /// Add edge operation.
     const ADD: usize = 0;
+    /// Delete edge operation.
     const DEL: usize = 1;
+    /// Reverse edge operation.
     const REV: usize = 2;
 }
+
+/// Local action (operation, edge) type.
+type A = Option<(usize, usize, usize)>;
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
@@ -111,7 +121,7 @@ where
     }
 
     /// Update edge space for each edge operation.
-    fn update((mut add, mut del, mut rev): E, x: usize, y: usize, a: usize) -> E {
+    fn update((mut add, mut del, mut rev): ES, x: usize, y: usize, a: usize) -> ES {
         // Apply operation.
         match a {
             Op::ADD => {
@@ -171,9 +181,9 @@ where
     }
 
     /// Check if edge operation is consistent with prior knowledge and acyclicity.
-    fn is_valid<const A: usize>(_k: &K, g: &G, x: usize, y: usize) -> bool {
+    fn is_valid<const OP: usize>(_k: &K, g: &G, x: usize, y: usize) -> bool {
         // Check validity depending on operation. TODO: Check prior knowledge.
-        let is_valid = match A {
+        let is_valid = match OP {
             // (X, Y) not in E, pi(Y, X) not in G.
             Op::ADD => !g.has_path(y, x),
             // (X, Y) in E.
@@ -191,7 +201,7 @@ where
             // Log invalid.
             debug!(
                 "op: {}({}, {}), invalid",
-                match A {
+                match OP {
                     Op::ADD => "Add",
                     Op::DEL => "Del",
                     Op::REV => "Rev",
@@ -231,12 +241,12 @@ where
     }
 
     /// Evaluate delta score of edge operation on given graph.
-    fn eval<const A: usize>(&self, c: &mut C, d: &D, g: &G, x: usize, y: usize) -> f64 {
+    fn eval<const OP: usize>(&self, c: &mut C, d: &D, g: &G, x: usize, y: usize) -> f64 {
         // Get current Y score.
         let mut pa_y: Vec<_> = Pa!(g, y).collect();
         let s_y = self.cache(c, d, y, &pa_y);
         // Compute delta score depending on operation.
-        let delta = match A {
+        let delta = match OP {
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap_err();
@@ -272,7 +282,7 @@ where
         // Log current operation delta.
         debug!(
             "op: {}({}, {}), delta: {}",
-            match A {
+            match OP {
                 Op::ADD => "Add",
                 Op::DEL => "Del",
                 Op::REV => "Rev",
@@ -284,6 +294,34 @@ where
         );
 
         delta
+    }
+
+    /// Search for best operation given current graph and edges space.
+    fn search<const OP: usize>(
+        &self,
+        (mut op, mut delta): (A, f64),
+        c: &mut C,
+        d: &D,
+        k: &K,
+        g: &G,
+        edges: &E,
+    ) -> (A, f64) {
+        // For each possible edge operation ...
+        for &(x, y) in edges {
+            // Check if operation is valid.
+            if !Self::is_valid::<OP>(k, g, x, y) {
+                continue;
+            }
+            // Compute current operation delta score.
+            let delta_star = self.eval::<OP>(c, d, g, x, y);
+            // Check if operation improves current solution.
+            if delta_star > delta {
+                // Set best operation.
+                (op, delta) = (Some((x, y, OP)), delta_star);
+            }
+        }
+
+        (op, delta)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -337,49 +375,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            for &(x, y) in &add {
-                // Check if operation is valid.
-                if !Self::is_valid::<{ Op::ADD }>(k, &g, x, y) {
-                    continue;
-                }
-                // Compute current operation delta score.
-                let delta_star = self.eval::<{ Op::ADD }>(&mut c, d, &g, x, y);
-                // Check if operation improves current solution.
-                if delta_star > delta {
-                    // Set best operation.
-                    (op, delta) = (Some((x, y, Op::ADD)), delta_star);
-                }
-            }
-
+            (op, delta) = self.search::<{ Op::ADD }>((op, delta), &mut c, d, k, &g, &add);
             // For each possible edge deletion ...
-            for &(x, y) in &del {
-                // Check if operation is valid.
-                if !Self::is_valid::<{ Op::DEL }>(k, &g, x, y) {
-                    continue;
-                }
-                // Compute current operation delta score.
-                let delta_star = self.eval::<{ Op::DEL }>(&mut c, d, &g, x, y);
-                // Check if operation improves current solution.
-                if delta_star > delta {
-                    // Set best operation.
-                    (op, delta) = (Some((x, y, Op::DEL)), delta_star);
-                }
-            }
-
+            (op, delta) = self.search::<{ Op::DEL }>((op, delta), &mut c, d, k, &g, &del);
             // For each possible edge reversal ...
-            for &(x, y) in &rev {
-                // Check if operation is valid.
-                if !Self::is_valid::<{ Op::REV }>(k, &g, x, y) {
-                    continue;
-                }
-                // Compute current operation delta score.
-                let delta_star = self.eval::<{ Op::REV }>(&mut c, d, &g, x, y);
-                // Check if operation improves current solution.
-                if delta_star > delta {
-                    // Set best operation.
-                    (op, delta) = (Some((x, y, Op::REV)), delta_star);
-                }
-            }
+            (op, delta) = self.search::<{ Op::REV }>((op, delta), &mut c, d, k, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {
