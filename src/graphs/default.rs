@@ -47,7 +47,7 @@ pub trait DefaultGraph: BaseGraph + Default {
     /// assert_eq!(g.size(), 0);
     /// ```
     ///
-    fn empty<V, I>(vertices: I) -> Self
+    fn empty<V, I>(labels: I) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>;
@@ -72,7 +72,7 @@ pub trait DefaultGraph: BaseGraph + Default {
     /// assert_eq!(g.size(), 6);
     /// ```
     ///
-    fn complete<V, I>(vertices: I) -> Self
+    fn complete<V, I>(labels: I) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>;
