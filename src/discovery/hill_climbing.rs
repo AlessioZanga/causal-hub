@@ -299,7 +299,7 @@ where
     /// Search for best operation given current graph and edges space.
     fn search<const OP: usize>(
         &self,
-        (mut op, mut delta): (A, f64),
+        (op, delta): (A, f64),
         c: &mut C,
         d: &D,
         k: &K,
@@ -307,21 +307,20 @@ where
         edges: &E,
     ) -> (A, f64) {
         // For each possible edge operation ...
-        for &(x, y) in edges {
+        edges
+            .iter()
             // Check if operation is valid.
-            if !Self::is_valid::<OP>(k, g, x, y) {
-                continue;
-            }
+            .filter(|(x, y)| Self::is_valid::<OP>(k, g, *x, *y))
             // Compute current operation delta score.
-            let delta_star = self.eval::<OP>(c, d, g, x, y);
+            .map(|&(x, y)| (Some((x, y, OP)), self.eval::<OP>(c, d, g, x, y)))
             // Check if operation improves current solution.
-            if delta_star > delta {
-                // Set best operation.
-                (op, delta) = (Some((x, y, OP)), delta_star);
-            }
-        }
-
-        (op, delta)
+            .fold((op, delta), |(op, delta), (op_star, delta_star)| {
+                // Return best operation.
+                match delta_star > delta {
+                    true => (op_star, delta_star),
+                    false => (op, delta),
+                }
+            })
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
