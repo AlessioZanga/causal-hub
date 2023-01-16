@@ -1,15 +1,19 @@
-use ndarray::prelude::*;
-
 /// Ravel multi-index to one-dimensional index.
 pub struct RavelMultiIndex {
-    cardinality: Array1<usize>,
-    ravel: Array1<usize>,
+    cardinality: Vec<usize>,
+    ravel: Vec<usize>,
     size: usize,
 }
 
 impl RavelMultiIndex {
     /// Build the new multi-index map.
-    pub fn new(cardinality: Array1<usize>) -> Self {
+    pub fn new<I>(cardinality: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        // Collect items into array.
+        let cardinality = Vec::from_iter(cardinality);
+
         // Assert non-empty.
         assert!(
             !cardinality.is_empty(),
@@ -22,10 +26,10 @@ impl RavelMultiIndex {
         );
 
         // Compute max size.
-        let size = cardinality.product();
+        let size = cardinality.iter().product();
 
         // Make ravel mutable.
-        let mut ravel = Array1::<usize>::ones(cardinality.dim());
+        let mut ravel = vec![1; cardinality.len()];
 
         // From the end to the beginning of ravel ...
         for i in (1..ravel.len()).rev() {
@@ -41,12 +45,15 @@ impl RavelMultiIndex {
     }
 
     /// Maps multi-index to one-dimensional index.
-    pub fn call(&self, multi_index: Array1<usize>) -> usize {
-        (&self.ravel * multi_index).sum()
+    pub fn call<I>(&self, multi_index: I) -> usize
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        self.ravel.iter().zip(multi_index).map(|(i, j)| i * j).sum()
     }
 
     /// Gets the vector of variables cardinalities.
-    pub fn cardinality(&self) -> &Array1<usize> {
+    pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
 

@@ -114,10 +114,10 @@ mod tests {
         // Cast dataframe to datamatrix.
         let d = DiscreteDataMatrix::from(d);
 
-        let n = JointCountMatrix::new(&d, 1, 2, vec![3]);
+        let n = JointCountMatrix::new(&d, 1, 2, &[3]);
         assert_eq!(*n, array![[[1, 0]], [[0, 1]], [[1, 0]]]);
 
-        let n = JointCountMatrix::new(&d, 1, 3, vec![2]);
+        let n = JointCountMatrix::new(&d, 1, 3, &[2]);
         assert_eq!(*n, array![[[1, 0, 1]], [[0, 1, 0]]]);
     }
 }

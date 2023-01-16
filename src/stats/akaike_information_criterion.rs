@@ -1,5 +1,3 @@
-use ndarray::prelude::*;
-
 use crate::{
     data::DiscreteDataMatrix,
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
@@ -47,7 +45,7 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
         let cards = d.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
-        let (card_x, card_z) = (cards[x], cards.select(Axis(0), z).product());
+        let (card_x, card_z) = (cards[x], z.iter().map(|&z| cards[z]).product::<usize>());
         // Compute the number of parameters.
         let theta = ((card_x - 1) * card_z) as f64;
 

@@ -21,6 +21,7 @@ ndarray = { version = "^0.15", features = [ "rayon", "serde" ] }
 page_size = "^0.5"
 polars = { version = "^0.26", default-features = false, features = [ "csv-file", "dtype-categorical", "ndarray", "performant" ] }
 rayon = "^1.6"
+rustc-hash = "^1.1"
 serde = "^1.0"
 serde_json = "^1.0"
 sprs = "^0.11"

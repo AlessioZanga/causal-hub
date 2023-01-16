@@ -18,7 +18,7 @@ pub struct DiscreteDataMatrix {
     data: Array2<usize>,
     labels: BTreeSet<String>,
     levels: HashMap<String, Vec<String>>,
-    cardinality: Array1<usize>,
+    cardinality: Vec<usize>,
 }
 
 impl Deref for DiscreteDataMatrix {
@@ -143,7 +143,7 @@ impl DiscreteDataMatrix {
     }
 
     /// Gets the vector of variables cardinalities.
-    pub fn cardinality(&self) -> &Array1<usize> {
+    pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
 }

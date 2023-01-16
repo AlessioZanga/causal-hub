@@ -44,7 +44,7 @@ mod tests {
                 .sorted_by(|a, b| a.0.cmp(b.0))
                 .eq(&levels));
 
-            assert_eq!(data.cardinality(), array![3, 1, 2, 3]);
+            assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
         }
     }
 

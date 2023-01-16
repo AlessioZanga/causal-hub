@@ -58,7 +58,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Fill count matrix.
         for row in d.rows() {
             // Get multi index.
-            let row_z = row.select(Axis(0), z);
+            let row_z = z.iter().map(|&z| row[z]);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
@@ -73,7 +73,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(cards.select(Axis(0), z));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x]);
 
@@ -108,12 +108,12 @@ pub struct JointCountMatrix {
 
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
-    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: Vec<usize>) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(cards.select(Axis(0), &z));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
 
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x], cards[y]);
@@ -123,7 +123,7 @@ impl JointCountMatrix {
         // Fill count matrix.
         for row in d.rows() {
             // Get multi index.
-            let row_z = row.select(Axis(0), &z);
+            let row_z = z.iter().map(|&z| row[z]);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
