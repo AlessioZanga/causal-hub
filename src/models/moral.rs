@@ -1,12 +1,12 @@
 use crate::{
     graphs::{directions, IntoUndirectedGraph},
-    prelude::{BaseGraph, UndirectedGraph},
+    prelude::UndirectedGraph,
 };
 
 /// Moral graph trait.
 pub trait MoralGraph: IntoUndirectedGraph {
     /// Associated moral graph type.
-    type MoralGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
+    type MoralGraph: UndirectedGraph<Direction = directions::Undirected>;
 
     /// Build a moral graph.
     ///

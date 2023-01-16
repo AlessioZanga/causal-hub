@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use crate::{
     data::{ConditionalCountMatrix, DiscreteDataMatrix, MarginalCountMatrix},
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
-    graphs::{directions, BaseGraph, DirectedGraph},
+    graphs::{directions, DirectedGraph},
     utils::axis_chunks_size,
     Pa, V,
 };
@@ -124,7 +124,7 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> LogLikelihood<PARALLEL_
 impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> ScoringCriterion<DiscreteDataMatrix, G>
     for LogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     type ScoreType = score_types::Decomposable;
 
@@ -140,7 +140,7 @@ impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     DecomposableScoringCriterion<DiscreteDataMatrix, G>
     for LogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)

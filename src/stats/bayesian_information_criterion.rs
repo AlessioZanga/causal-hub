@@ -1,7 +1,7 @@
 use crate::{
     data::DiscreteDataMatrix,
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
-    graphs::{directions, BaseGraph, DirectedGraph},
+    graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
     Pa, V,
 };
@@ -79,7 +79,7 @@ impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool
     ScoringCriterion<DiscreteDataMatrix, G>
     for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     type ScoreType = score_types::Decomposable;
 
@@ -95,7 +95,7 @@ impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool
     DecomposableScoringCriterion<DiscreteDataMatrix, G>
     for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)

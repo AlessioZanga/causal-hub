@@ -97,7 +97,7 @@ where
 
 impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Undirected>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     type Item = DFSEdge;
 
@@ -172,7 +172,7 @@ where
 
 impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Directed>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     type Item = DFSEdge;
 

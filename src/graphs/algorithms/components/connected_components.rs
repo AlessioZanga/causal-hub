@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    graphs::{directions, BaseGraph, UndirectedGraph},
+    graphs::{directions, UndirectedGraph},
     prelude::BFS,
     V,
 };
@@ -9,7 +9,7 @@ use crate::{
 /// Connected components structure.
 pub struct ConnectedComponents<'a, G>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     g: &'a G,
     queue: BTreeSet<usize>,
@@ -17,7 +17,7 @@ where
 
 impl<'a, G> ConnectedComponents<'a, G>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     /// Build a CC iterator.
     ///
@@ -61,7 +61,7 @@ where
 
 impl<'a, G> Iterator for ConnectedComponents<'a, G>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     type Item = BTreeSet<usize>;
 
@@ -80,7 +80,7 @@ where
 
 impl<'a, G> From<&'a G> for ConnectedComponents<'a, G>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     fn from(g: &'a G) -> Self {
         Self::new(g)

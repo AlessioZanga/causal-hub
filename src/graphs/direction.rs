@@ -501,7 +501,7 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
 /// Convert to undirected graph trait.
 pub trait IntoUndirectedGraph {
     /// Associated undirected graph type.
-    type UndirectedGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
+    type UndirectedGraph: UndirectedGraph<Direction = directions::Undirected>;
 
     /// Make an undirected copy of the graph.
     ///
