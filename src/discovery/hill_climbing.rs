@@ -1,13 +1,11 @@
-use std::{
-    collections::{hash_map::Entry, BTreeSet},
-    marker::PhantomData,
-};
+use std::{collections::BTreeSet, marker::PhantomData};
 
 use itertools::iproduct;
 use log::debug;
+use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 
-use super::{score_types, DecomposableScoringCriterion, ScoringCriterion};
+use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
 use crate::{
     data::DataSet,
     graphs::PathGraph,
@@ -17,11 +15,12 @@ use crate::{
 
 /// Local cache type.
 type C = FxHashMap<(usize, Vec<usize>), f64>;
+/// Local cache update type.
+type U = Vec<((usize, Vec<usize>), f64)>;
 
-/// Local edge set type
+/// Local edge space type
 type E = BTreeSet<(usize, usize)>;
-
-/// Local edge space type.
+/// Local operations edge space type.
 type ES = (
     E, // To-be-added space,
     E, // To-be-deleted space,
@@ -31,7 +30,7 @@ type ES = (
 #[derive(Clone, Copy, Debug)]
 /// Local edge pseudo-enumerator for generics.
 struct Op;
-
+/// Set value of constants.
 impl Op {
     /// Add edge operation.
     const ADD: usize = 0;
@@ -40,13 +39,12 @@ impl Op {
     /// Reverse edge operation.
     const REV: usize = 2;
 }
-
 /// Local action (operation, edge) type.
 type A = Option<(usize, usize, usize)>;
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
-pub struct HillClimbing<D, K, G, S, ST>
+pub struct HillClimbing<D, K, G, S, ST, const PARALLEL: bool>
 where
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
@@ -57,7 +55,7 @@ where
     s: S,
 }
 
-impl<D, K, G, S, ST> HillClimbing<D, K, G, S, ST>
+impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
 where
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
@@ -89,7 +87,7 @@ where
     }
 }
 
-impl<D, K, G, S, ST> HillClimbing<D, K, G, S, ST>
+impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
 where
     G: BaseGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
@@ -149,9 +147,10 @@ where
     }
 }
 
-impl<D, K, G, S, ST> HillClimbing<D, K, G, S, ST>
+impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
 where
     D: DataSet,
+    K: PriorKnowledge,
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
@@ -216,65 +215,73 @@ where
     }
 }
 
-impl<D, K, G, S> HillClimbing<D, K, G, S, score_types::Decomposable>
+impl<D, K, G, S, const PARALLEL: bool> HillClimbing<D, K, G, S, score_types::Decomposable, PARALLEL>
 where
     D: DataSet,
+    K: PriorKnowledge,
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: DecomposableScoringCriterion<D, G>,
 {
     /// Compute delta score, if not already in cache.
-    fn cache(&self, c: &mut C, d: &D, x: usize, z: &[usize]) -> f64 {
+    fn cache(&self, c: &C, d: &D, x: usize, z: &[usize]) -> (f64, U) {
         // Check if score is already in cache.
-        match c.entry((x, z.to_vec())) {
+        match c.get(&(x, z.to_vec())) {
             // If so, return cached values.
-            Entry::Occupied(e) => *e.get(),
+            Some(s) => (*s, U::default()),
             // If not, then ...
-            Entry::Vacant(e) => {
+            None => {
                 // Compute vertex score.
                 let s = DecomposableScoringCriterion::call(&self.s, d, x, z);
-                // Insert into the cache.
-                e.insert(s);
 
-                s
+                (s, U::from_iter([((x, z.to_vec()), s)]))
             }
         }
     }
 
     /// Evaluate delta score of edge operation on given graph.
-    fn eval<const OP: usize>(&self, c: &mut C, d: &D, g: &G, x: usize, y: usize) -> f64 {
+    fn eval<const OP: usize>(&self, c: &C, d: &D, g: &G, x: usize, y: usize) -> (f64, U) {
         // Get current Y score.
         let mut pa_y: Vec<_> = Pa!(g, y).collect();
-        let s_y = self.cache(c, d, y, &pa_y);
+        let (s_y, mut c_y) = self.cache(c, d, y, &pa_y);
         // Compute delta score depending on operation.
-        let delta = match OP {
+        let (delta_star, c_star) = match OP {
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap_err();
                 pa_y.insert(i, x);
-                // Compute delta score.
-                self.cache(c, d, y, &pa_y) - s_y
+                // Compute delta score and merge cache.
+                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                c_y.extend(c_y_star.into_iter());
+
+                (s_y_star - s_y, c_y)
             }
             Op::DEL => {
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
-                // Compute delta score.
-                self.cache(c, d, y, &pa_y) - s_y
+                // Compute delta score and merge cache.
+                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                c_y.extend(c_y_star.into_iter());
+
+                (s_y_star - s_y, c_y)
             }
             Op::REV => {
                 // Get current X score.
                 let mut pa_x: Vec<_> = Pa!(g, x).collect();
-                let s_x = self.cache(c, d, x, &pa_x);
+                let (s_x, c_x) = self.cache(c, d, x, &pa_x);
+                c_y.extend(c_x.into_iter());
                 // Add Y in-place by leveraging Pa(G, X) order.
                 let i = pa_x.binary_search(&y).unwrap_err();
                 pa_x.insert(i, y);
-                let s_star_x = self.cache(c, d, x, &pa_x);
+                let (s_x_star, c_x_star) = self.cache(c, d, x, &pa_x);
+                c_y.extend(c_x_star.into_iter());
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
-                let s_star_y = self.cache(c, d, y, &pa_y);
-                // Compute delta score.
-                (s_star_x - s_x) + (s_star_y - s_y)
+                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                c_y.extend(c_y_star.into_iter());
+
+                ((s_x_star - s_x) + (s_y_star - s_y), c_y)
             }
             _ => panic!("Unknown operation code"),
         };
@@ -290,37 +297,57 @@ where
             },
             g.label(x),
             g.label(y),
-            delta
+            delta_star
         );
 
-        delta
+        (delta_star, c_star)
     }
 
     /// Search for best operation given current graph and edges space.
     fn search<const OP: usize>(
         &self,
         (op, delta): (A, f64),
-        c: &mut C,
+        mut c: C,
         d: &D,
         k: &K,
         g: &G,
         edges: &E,
-    ) -> (A, f64) {
+    ) -> (A, f64, C) {
+        // Select operation with best delta score, while merging cache updates.
+        let best_merge = |(op, (delta, mut u_star)): (A, (f64, U)),
+                          (op_star, (delta_star, c_star)): (A, (f64, U))| {
+            // Merge cache updates.
+            u_star.extend(c_star.into_iter());
+            // Return best operation.
+            match delta_star > delta {
+                true => (op_star, (delta_star, u_star)),
+                false => (op, (delta, u_star)),
+            }
+        };
+
         // For each possible edge operation ...
-        edges
-            .iter()
-            // Check if operation is valid.
-            .filter(|(x, y)| Self::is_valid::<OP>(k, g, *x, *y))
-            // Compute current operation delta score.
-            .map(|&(x, y)| (Some((x, y, OP)), self.eval::<OP>(c, d, g, x, y)))
-            // Check if operation improves current solution.
-            .fold((op, delta), |(op, delta), (op_star, delta_star)| {
-                // Return best operation.
-                match delta_star > delta {
-                    true => (op_star, delta_star),
-                    false => (op, delta),
-                }
-            })
+        let (op, (delta, u)) = match PARALLEL {
+            // Search in parallel.
+            true => edges
+                .par_iter()
+                // Check if operation is valid.
+                .filter(|(x, y)| Self::is_valid::<OP>(k, g, *x, *y))
+                // Compute current operation delta score and cache updates.
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                // Check if operation improves current solution.
+                .reduce(|| (op, (delta, U::default())), best_merge),
+            // Same as before but sequentially.
+            false => edges
+                .iter()
+                .filter(|(x, y)| Self::is_valid::<OP>(k, g, *x, *y))
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                .fold((op, (delta, U::default())), best_merge),
+        };
+
+        // Merge cache updates.
+        c.extend(u.into_iter());
+
+        (op, delta, c)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -374,11 +401,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            (op, delta) = self.search::<{ Op::ADD }>((op, delta), &mut c, d, k, &g, &add);
+            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, d, k, &g, &add);
             // For each possible edge deletion ...
-            (op, delta) = self.search::<{ Op::DEL }>((op, delta), &mut c, d, k, &g, &del);
+            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, d, k, &g, &del);
             // For each possible edge reversal ...
-            (op, delta) = self.search::<{ Op::REV }>((op, delta), &mut c, d, k, &g, &rev);
+            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, d, k, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {
@@ -398,9 +425,11 @@ where
     }
 }
 
-impl<D, K, G, S> HillClimbing<D, K, G, S, score_types::NonDecomposable>
+impl<D, K, G, S, const PARALLEL: bool>
+    HillClimbing<D, K, G, S, score_types::NonDecomposable, PARALLEL>
 where
     D: DataSet,
+    K: PriorKnowledge,
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: ScoringCriterion<D, G, ScoreType = score_types::NonDecomposable>,
 {
@@ -410,5 +439,7 @@ where
     }
 }
 
-/// Alias for the Hill-Climbing algorithm.
-pub type HC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST>;
+/// Alias for the single-thread Hill-Climbing algorithm.
+pub type HC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, false>;
+/// Alias for the multi-thread Hill-Climbing algorithm.
+pub type ParallelHC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, true>;

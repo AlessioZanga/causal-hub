@@ -9,7 +9,7 @@ pub mod score_types {
 }
 
 /// Scoring criterion trait.
-pub trait ScoringCriterion<D, G>: Clone + Debug {
+pub trait ScoringCriterion<D, G>: Clone + Debug + Sync {
     /// Score-types pseudo-enumerator for generics algorithms.
     type ScoreType;
 
