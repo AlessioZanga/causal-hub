@@ -26,12 +26,17 @@ mod tests {
             .finish()
             .unwrap();
         let d = DiscreteDataMatrix::from(d);
+
+        // Initialize empty prior knowledge.
+        let k = FR::new(d.labels(), [], []);
+
         // Initialize score functor.
         let s = BIC::new();
+
         // Initialize discovery functor.
         let hc = HC::new(s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &());
+        let pred_g: DiGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -59,12 +64,17 @@ mod tests {
             .finish()
             .unwrap();
         let d = DiscreteDataMatrix::from(d);
+
+        // Initialize empty prior knowledge.
+        let k = FR::new(d.labels(), [], []);
+
         // Initialize score functor.
         let s = BIC::new();
+
         // Initialize discovery functor.
         let hc = ParallelHC::new(s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &());
+        let pred_g: DiGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
