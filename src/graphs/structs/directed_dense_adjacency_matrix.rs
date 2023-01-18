@@ -51,10 +51,14 @@ pub struct LabelsIterator<'a> {
 
 impl<'a> LabelsIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
             graph: g,
-            iter: 0..g.labels.len(),
+            iter: Range {
+                start: 0,
+                end: g.labels.len(),
+            },
         }
     }
 }
@@ -87,6 +91,7 @@ pub struct EdgesIterator<'a> {
 
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
@@ -131,6 +136,7 @@ pub struct AdjacentsIterator<'a> {
 
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
@@ -184,6 +190,7 @@ impl Display for DirectedDenseAdjacencyMatrixGraph {
 }
 
 impl Hash for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.labels.hash(state);
         self.adjacency_matrix.hash(state);
@@ -254,6 +261,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         }
     }
 
+    #[inline]
     fn clear(&mut self) {
         // Clear the vertices.
         self.labels.clear();
@@ -463,6 +471,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         self.adjacency_matrix[[x, y]]
     }
 
+    #[inline]
     fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // If edge already exists ...
         if self.adjacency_matrix[[x, y]] {
@@ -481,6 +490,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         true
     }
 
+    #[inline]
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // If edge does not exists ...
         if !self.adjacency_matrix[[x, y]] {
@@ -597,6 +607,7 @@ impl<V> From<EdgeList<V>> for DirectedDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
 {
+    #[inline]
     fn from(edge_list: EdgeList<V>) -> Self {
         Self::new([], edge_list)
     }
@@ -712,6 +723,7 @@ impl Into<AdjacencyList<String>> for DirectedDenseAdjacencyMatrixGraph {
 
 #[allow(clippy::from_over_into)]
 impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix) {
         (self.labels, self.adjacency_matrix)
     }
@@ -979,6 +991,7 @@ pub struct ParentsIterator<'a> {
 
 impl<'a> ParentsIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
@@ -1014,6 +1027,7 @@ pub struct ChildrenIterator<'a> {
 
 impl<'a> ChildrenIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a DirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
@@ -1099,30 +1113,37 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
 
     type DescendantsIter<'a> = DescendantsIterator<'a>;
 
+    #[inline]
     fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_> {
         Self::AncestorsIter::new(self, x)
     }
 
+    #[inline]
     fn parents(&self, x: usize) -> Self::ParentsIter<'_> {
         Self::ParentsIter::new(self, x)
     }
 
+    #[inline]
     fn is_parent(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[y, x]]
     }
 
+    #[inline]
     fn children(&self, x: usize) -> Self::ChildrenIter<'_> {
         Self::ChildrenIter::new(self, x)
     }
 
+    #[inline]
     fn is_child(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[x, y]]
     }
 
+    #[inline]
     fn descendants(&self, x: usize) -> Self::DescendantsIter<'_> {
         Self::DescendantsIter::new(self, x)
     }
 
+    #[inline]
     fn in_degree(&self, x: usize) -> usize {
         // Compute in-degree.
         let d = self.adjacency_matrix.column(x).mapv(|f| f as usize).sum();
@@ -1133,6 +1154,7 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
         d
     }
 
+    #[inline]
     fn out_degree(&self, x: usize) -> usize {
         // Compute out-degree.
         let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
@@ -1146,10 +1168,12 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
 
 /* Implement PathGraph */
 impl PathGraph for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn has_path(&self, x: usize, y: usize) -> bool {
         self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
+    #[inline]
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
     }
@@ -1158,6 +1182,7 @@ impl PathGraph for DirectedDenseAdjacencyMatrixGraph {
 impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
 
+    #[inline]
     fn to_undirected(&self) -> Self::UndirectedGraph {
         // Make the adjacent matrix symmetric.
         let adjacency_matrix = &self.adjacency_matrix | &self.adjacency_matrix.t();
@@ -1169,6 +1194,7 @@ impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
 impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
     type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
 
+    #[inline]
     fn moral(&self) -> Self::MoralGraph {
         // Make an undirected copy of the current graph.
         let mut h = self.to_undirected();

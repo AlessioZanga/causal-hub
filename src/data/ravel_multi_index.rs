@@ -7,6 +7,7 @@ pub struct RavelMultiIndex {
 
 impl RavelMultiIndex {
     /// Build the new multi-index map.
+    #[inline]
     pub fn new<I>(cardinality: I) -> Self
     where
         I: IntoIterator<Item = usize>,
@@ -45,6 +46,7 @@ impl RavelMultiIndex {
     }
 
     /// Maps multi-index to one-dimensional index.
+    #[inline]
     pub fn call<I>(&self, multi_index: I) -> usize
     where
         I: IntoIterator<Item = usize>,
@@ -53,12 +55,14 @@ impl RavelMultiIndex {
     }
 
     /// Gets the vector of variables cardinalities.
+    #[inline]
     pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
 
     /// Gets the maximum len of the associated one-dimensional axis.
     #[allow(clippy::len_without_is_empty)]
+    #[inline]
     pub fn len(&self) -> usize {
         self.size
     }

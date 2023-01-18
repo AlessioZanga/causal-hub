@@ -24,6 +24,7 @@ pub struct DiscreteDataMatrix {
 impl Deref for DiscreteDataMatrix {
     type Target = Array2<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.data
     }
@@ -131,6 +132,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
 impl DataSet for DiscreteDataMatrix {
     type Data = Array2<usize>;
 
+    #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
@@ -138,11 +140,13 @@ impl DataSet for DiscreteDataMatrix {
 
 impl DiscreteDataMatrix {
     /// Gets the map of variables to their levels.
+    #[inline]
     pub fn levels(&self) -> &HashMap<String, Vec<String>> {
         &self.levels
     }
 
     /// Gets the vector of variables cardinalities.
+    #[inline]
     pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
@@ -160,6 +164,7 @@ pub struct ContinuousDataMatrix {
 impl Deref for ContinuousDataMatrix {
     type Target = Array2<f64>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.data
     }
@@ -198,6 +203,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
 impl DataSet for ContinuousDataMatrix {
     type Data = Array2<f64>;
 
+    #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }

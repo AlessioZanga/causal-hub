@@ -26,6 +26,7 @@ pub struct AkaikeInformationCriterion<
 impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> Default
     for AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -35,11 +36,13 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 {
     /// Constructor for AIC functor.
-    pub fn new() -> Self {
+    #[inline]
+    pub const fn new() -> Self {
         Self { k: 1. }
     }
 
     /// Computes AIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the cardinality.
         let cards = d.cardinality();
@@ -64,6 +67,7 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 
     /// Sets penalty coefficient.
+    #[inline]
     pub fn with_penalty_coeff(mut self, k: f64) -> Self {
         // Set penalty coefficient.
         self.k = k;
@@ -80,6 +84,7 @@ where
 {
     type ScoreType = score_types::Decomposable;
 
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
         V!(g)
             .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
@@ -94,6 +99,7 @@ impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }

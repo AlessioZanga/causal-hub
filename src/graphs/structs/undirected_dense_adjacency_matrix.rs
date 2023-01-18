@@ -49,10 +49,14 @@ pub struct LabelsIterator<'a> {
 
 impl<'a> LabelsIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
             graph: g,
-            iter: 0..g.labels.len(),
+            iter: Range {
+                start: 0,
+                end: g.labels.len(),
+            },
         }
     }
 }
@@ -85,6 +89,7 @@ pub struct EdgesIterator<'a> {
 
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
@@ -131,6 +136,7 @@ pub struct AdjacentsIterator<'a> {
 
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
+    #[inline]
     pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
@@ -181,6 +187,7 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
 }
 
 impl Hash for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.labels.hash(state);
         self.adjacency_matrix.hash(state);
@@ -255,6 +262,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         }
     }
 
+    #[inline]
     fn clear(&mut self) {
         // Clear the vertices.
         self.labels.clear();
@@ -468,6 +476,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         self.adjacency_matrix[[x, y]]
     }
 
+    #[inline]
     fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // If edge already exists ...
         if self.adjacency_matrix[[x, y]] {
@@ -498,6 +507,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         true
     }
 
+    #[inline]
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // If edge does not exists ...
         if !self.adjacency_matrix[[x, y]] {
@@ -626,6 +636,7 @@ impl<V> From<EdgeList<V>> for UndirectedDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
 {
+    #[inline]
     fn from(edge_list: EdgeList<V>) -> Self {
         Self::new([], edge_list)
     }
@@ -724,6 +735,7 @@ where
 
 #[allow(clippy::from_over_into)]
 impl Into<EdgeList<String>> for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn into(self) -> EdgeList<String> {
         E!(self)
             .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
@@ -747,6 +759,7 @@ impl Into<AdjacencyList<String>> for UndirectedDenseAdjacencyMatrixGraph {
 
 #[allow(clippy::from_over_into)]
 impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix) {
         (self.labels, self.adjacency_matrix)
     }
@@ -964,10 +977,12 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
 
 /* Implement PathGraph */
 impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
     fn has_path(&self, x: usize, y: usize) -> bool {
         self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
+    #[inline]
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
     }

@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Edge classification performed by the [depth first search edges](`DepthFirstSearchEdges`) algorithm.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum DFSEdge {
     /// From a vertex to an ancestor.
     Back(usize, usize),
@@ -54,6 +54,7 @@ where
     ///
     /// Panics if the (optional) source vertex is not in the graph.
     ///
+    #[inline]
     pub fn new(g: &'a G, x: Option<usize>, m: Traversal) -> Self {
         // Get graph order.
         let order = g.order();
@@ -147,6 +148,8 @@ where
                 }
             }
 
+            /* TODO: Refactor after this line. */
+
             // Filter the base case.
             if x == usize::MAX {
                 continue;
@@ -219,6 +222,8 @@ where
                 }
             }
 
+            /* TODO: Refactor after this line. */
+
             // Filter the base case.
             if x == usize::MAX {
                 continue;
@@ -252,6 +257,7 @@ impl<'a, G, D> From<&'a G> for DepthFirstSearchEdges<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from(g: &'a G) -> Self {
         Self::new(g, None, Traversal::Tree)
     }
@@ -261,6 +267,7 @@ impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearchEdges<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x), Traversal::Tree)
     }

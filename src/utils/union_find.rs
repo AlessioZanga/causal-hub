@@ -99,6 +99,7 @@ impl UnionFind {
     /// }
     /// ```
     ///
+    #[inline]
     pub fn find(&self, x: usize) -> usize {
         // Make item mutable.
         let mut x = x;
@@ -131,6 +132,7 @@ impl UnionFind {
     /// }
     /// ```
     ///
+    #[inline]
     pub fn find_mut(&mut self, x: usize) -> usize {
         // Make item mutable.
         let mut x = x;
@@ -171,6 +173,7 @@ impl UnionFind {
     /// assert!(union_find.contains(0, 3));
     /// ```
     ///
+    #[inline]
     pub fn union(&mut self, x: usize, y: usize) -> bool {
         // Get root of items.
         let (mut x, mut y) = (self.find_mut(x), self.find_mut(y));
@@ -237,6 +240,7 @@ impl Extend<usize> for UnionFind {
     /// assert!(!union_find.contains(3, 4));
     /// ```
     ///
+    #[inline]
     fn extend<I: IntoIterator<Item = usize>>(&mut self, iter: I) {
         // Get iterator.
         let mut iter = iter.into_iter();

@@ -63,17 +63,19 @@ where
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
-    pub fn new(s: S) -> Self {
+    #[inline]
+    pub const fn new(s: S) -> Self {
         Self {
             max_iter: usize::MAX,
-            _d: Default::default(),
-            _k: Default::default(),
+            _d: PhantomData,
+            _k: PhantomData,
             g: None,
             s,
         }
     }
 
     /// Set initial graph $\mathcal{G}$.
+    #[inline]
     pub fn with_initial_graph(mut self, g: G) -> Self {
         // Set initial graph.
         self.g = Some(g);
@@ -82,6 +84,7 @@ where
     }
 
     /// Set max iterations.
+    #[inline]
     pub fn with_max_iter(mut self, max_iter: usize) -> Self {
         // Set hyper parameter.
         self.max_iter = max_iter;
@@ -96,6 +99,7 @@ where
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     /// Apply edge operation to given graph.
+    #[inline]
     fn apply(mut g: G, x: usize, y: usize, a: usize) -> G {
         // Apply operation.
         match a {
@@ -122,6 +126,7 @@ where
     }
 
     /// Update edge space for each edge operation.
+    #[inline]
     fn update((mut add, mut del, mut rev): ES, x: usize, y: usize, a: usize) -> ES {
         // Apply operation.
         match a {
@@ -157,33 +162,27 @@ where
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
+    #[inline]
     fn init(&self, d: &D, k: &K) -> (G, ES) {
-        // Get number of variables.
-        let n = d.labels().len();
-
         // Check if initial graph has been provided.
-        let mut g = match self.g.clone() {
+        let mut g = match self.g.as_ref() {
             // If initial graph is provided ...
-            Some(g) => {
-                // ... check coherence with data set ...
-                assert!(
-                    g.labels().eq(d.labels()),
-                    "Graph labels must be equal to data set labels"
-                );
-                // ... and acyclicity.
-                assert!(g.is_acyclic(), "Graph must be acyclic");
-
-                g
-            }
+            Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.
             None => G::empty(d.labels()),
         };
 
+        // Check coherence with data set ...
+        assert!(
+            g.labels().eq(d.labels()),
+            "Graph labels must be equal to data set labels"
+        );
         // Check coherence of graph and prior knowledge.
         assert!(
             g.labels().eq(k.labels()),
             "Graph labels must be equal to prior knowledge labels"
         );
+
         // Check that every edge in the graph is not in forbidden.
         assert!(
             !E!(g).any(|(x, y)| k.has_forbidden(x, y)),
@@ -194,9 +193,12 @@ where
             .required()
             .iter()
             .all(|&(x, y)| g.has_edge(x, y) || g.add_edge(x, y)));
+
         // Check acyclicity.
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
+        // Get number of variables.
+        let n = d.labels().len();
         // Get current edge set.
         let e: HashSet<_> = E!(g).collect();
 
@@ -226,6 +228,7 @@ where
     }
 
     /// Check if edge operation is consistent with prior knowledge and acyclicity.
+    #[inline]
     fn is_valid<const OP: usize>(g: &G, x: usize, y: usize) -> bool {
         // Check validity depending on operation.
         let is_valid = match OP {
@@ -269,6 +272,7 @@ where
     S: DecomposableScoringCriterion<D, G>,
 {
     /// Compute delta score, if not already in cache, returning cache update.
+    #[inline]
     fn cache(&self, c: &C, d: &D, x: usize, z: &[usize]) -> (f64, CU) {
         // Check if score is already in cache.
         match c.get(&(x, z.to_vec())) {
@@ -285,6 +289,7 @@ where
     }
 
     /// Evaluate delta score of edge operation on given graph.
+    #[inline]
     fn eval<const OP: usize>(&self, c: &C, d: &D, g: &G, x: usize, y: usize) -> (f64, CU) {
         // Get current Y score.
         let mut pa_y: Vec<_> = Pa!(g, y).collect();
@@ -355,6 +360,7 @@ where
     }
 
     /// Search for best operation given current graph and edges space.
+    #[inline]
     fn search<const OP: usize>(
         &self,
         (op, delta): (A, f64),

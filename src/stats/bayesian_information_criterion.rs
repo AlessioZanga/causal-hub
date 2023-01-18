@@ -26,6 +26,7 @@ pub struct BayesianInformationCriterion<
 impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> Default
     for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -35,11 +36,13 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
 {
     /// Constructor for BIC functor.
-    pub fn new() -> Self {
+    #[inline]
+    pub const fn new() -> Self {
         Self { k: 1. }
     }
 
     /// Computes BIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the sample size.
         let n = d.nrows() as f64;
@@ -67,6 +70,7 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 
     /// Sets penalty coefficient.
+    #[inline]
     pub fn with_penalty_coeff(mut self, k: f64) -> Self {
         // Set penalty coefficient.
         self.k = k;
@@ -83,6 +87,7 @@ where
 {
     type ScoreType = score_types::Decomposable;
 
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
         V!(g)
             .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
@@ -97,6 +102,7 @@ impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }

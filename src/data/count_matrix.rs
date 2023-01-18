@@ -13,6 +13,7 @@ pub struct MarginalCountMatrix {
 
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
@@ -35,6 +36,7 @@ impl MarginalCountMatrix {
 impl Deref for MarginalCountMatrix {
     type Target = Array1<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }
@@ -46,6 +48,7 @@ pub struct ConditionalCountMatrix<const PARALLEL: bool> {
 }
 
 impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
+    #[inline]
     pub(crate) fn eval(
         shape: (usize, usize),
         rmi: &RavelMultiIndex,
@@ -69,6 +72,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 
     /// Build new count matrix with given data matrix and indices.
+    #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
@@ -96,6 +100,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
 impl<const PARALLEL: bool> Deref for ConditionalCountMatrix<PARALLEL> {
     type Target = Array2<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }
@@ -108,6 +113,7 @@ pub struct JointCountMatrix {
 
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
@@ -137,6 +143,7 @@ impl JointCountMatrix {
 impl Deref for JointCountMatrix {
     type Target = Array3<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }

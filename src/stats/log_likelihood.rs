@@ -15,10 +15,12 @@ pub struct MarginalLogLikelihood {}
 
 impl MarginalLogLikelihood {
     /// Constructor for marginal log-likelihood functor.
+    #[inline]
     pub const fn new() -> Self {
         Self {}
     }
 
+    #[inline]
     pub(crate) fn eval(n_i: ArrayView1<usize>) -> f64 {
         // Sum over levels and cast to floating point.
         let n = n_i.sum() as f64;
@@ -34,6 +36,7 @@ impl MarginalLogLikelihood {
     }
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
+    #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize) -> f64 {
         // Compute marginal contingency table.
         let n_i = MarginalCountMatrix::new(d, x);
@@ -57,10 +60,12 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     ConditionalLogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
 {
     /// Constructor for conditional log-likelihood functor.
+    #[inline]
     pub const fn new() -> Self {
         Self {}
     }
 
+    #[inline]
     pub(crate) fn eval(n_ij: ArrayView2<usize>) -> f64 {
         // Sum over levels and cast to floating point.
         let n_j = n_ij
@@ -79,6 +84,7 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
         let n_ij = ConditionalCountMatrix::<PARALLEL_CCM>::new(d, x, z);
@@ -108,11 +114,13 @@ pub struct LogLikelihood<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> {}
 
 impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> LogLikelihood<PARALLEL_CCM, PARALLEL_CLL> {
     /// Constructor for LL functor.
+    #[inline]
     pub const fn new() -> Self {
         Self {}
     }
 
     /// Computes LL given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
             true => MarginalLogLikelihood::new().call(d, x),
@@ -128,6 +136,7 @@ where
 {
     type ScoreType = score_types::Decomposable;
 
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
         V!(g)
             .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
@@ -142,6 +151,7 @@ impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    #[inline]
     fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }
