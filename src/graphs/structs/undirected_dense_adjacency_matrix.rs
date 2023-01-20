@@ -3,7 +3,7 @@ use std::{
     collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
-    iter::{Enumerate, FilterMap},
+    iter::{Enumerate, FilterMap, FusedIterator},
     ops::{Deref, Range},
 };
 
@@ -77,6 +77,8 @@ impl<'a> Iterator for LabelsIterator<'a> {
 
 impl<'a> ExactSizeIterator for LabelsIterator<'a> {}
 
+impl<'a> FusedIterator for LabelsIterator<'a> {}
+
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     g: &'a UndirectedDenseAdjacencyMatrixGraph,
@@ -125,6 +127,8 @@ impl<'a> Iterator for EdgesIterator<'a> {
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
+impl<'a> FusedIterator for EdgesIterator<'a> {}
+
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     g: &'a UndirectedDenseAdjacencyMatrixGraph,
@@ -160,6 +164,8 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
         self.iter.next()
     }
 }
+
+impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
 impl Display for UndirectedDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

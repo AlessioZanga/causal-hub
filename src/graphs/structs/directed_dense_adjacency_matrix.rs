@@ -3,7 +3,7 @@ use std::{
     collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
-    iter::{Enumerate, FilterMap},
+    iter::{Enumerate, FilterMap, FusedIterator},
     ops::{Deref, Range},
 };
 
@@ -89,6 +89,8 @@ pub struct EdgesIterator<'a> {
     size: usize,
 }
 
+impl<'a> FusedIterator for LabelsIterator<'a> {}
+
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
     #[inline]
@@ -124,6 +126,8 @@ impl<'a> Iterator for EdgesIterator<'a> {
 }
 
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
+
+impl<'a> FusedIterator for EdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
@@ -163,6 +167,8 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
         self.iter.next()
     }
 }
+
+impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
 impl Display for DirectedDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -980,6 +986,8 @@ impl<'a> Iterator for AncestorsIterator<'a> {
     }
 }
 
+impl<'a> FusedIterator for AncestorsIterator<'a> {}
+
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ParentsIterator<'a> {
     g: &'a DirectedDenseAdjacencyMatrixGraph,
@@ -1016,6 +1024,8 @@ impl<'a> Iterator for ParentsIterator<'a> {
     }
 }
 
+impl<'a> FusedIterator for ParentsIterator<'a> {}
+
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ChildrenIterator<'a> {
     g: &'a DirectedDenseAdjacencyMatrixGraph,
@@ -1051,6 +1061,8 @@ impl<'a> Iterator for ChildrenIterator<'a> {
         self.iter.next()
     }
 }
+
+impl<'a> FusedIterator for ChildrenIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct DescendantsIterator<'a> {
@@ -1103,6 +1115,8 @@ impl<'a> Iterator for DescendantsIterator<'a> {
         self.iter.next()
     }
 }
+
+impl<'a> FusedIterator for DescendantsIterator<'a> {}
 
 impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     type AncestorsIter<'a> = AncestorsIterator<'a>;

@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
@@ -96,6 +96,26 @@ where
     }
 }
 
+impl<'a, G, D> From<&'a G> for DepthFirstSearchEdges<'a, G, D>
+where
+    G: BaseGraph<Direction = D>,
+{
+    #[inline]
+    fn from(g: &'a G) -> Self {
+        Self::new(g, None, Traversal::Tree)
+    }
+}
+
+impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearchEdges<'a, G, D>
+where
+    G: BaseGraph<Direction = D>,
+{
+    #[inline]
+    fn from((g, x): (&'a G, usize)) -> Self {
+        Self::new(g, Some(x), Traversal::Tree)
+    }
+}
+
 impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Undirected>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
@@ -132,38 +152,44 @@ where
                 // Push vertices onto the stack in reverse order, this makes
                 // traversal order and neighborhood order the same.
                 self.stack.extend(queue);
-            // If the vertex is NOT WHITE.
-            } else {
-                // Remove it from stack.
-                self.stack.pop();
 
-                // Check if it is GRAY (not BLACK).
-                if self.finish_time[y] == usize::MAX
-                    && (self.predecessor[y] == usize::MAX || self.predecessor[y] == x)
-                {
-                    // Set its finish time (as BLACK).
-                    self.finish_time[y] = self.time;
-                    // Increment time.
-                    self.time += 1;
+                // Filter the base case.
+                if x == usize::MAX {
+                    continue;
                 }
+
+                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                return Some(DFSEdge::Tree(x, y));
             }
 
-            /* TODO: Refactor after this line. */
+            // If the vertex is NOT WHITE, remove it from stack.
+            self.stack.pop();
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+            // Check if it is GRAY (not BLACK).
+            if self.finish_time[y] == usize::MAX
+                && (predecessor_y == usize::MAX || predecessor_y == x)
+            {
+                // Set its finish time (as BLACK).
+                self.finish_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+            }
 
             // Filter the base case.
             if x == usize::MAX {
                 continue;
             }
 
-            // Classify the incoming edge w.r.t. the timings.
-            if self.discovery_time[y] == self.time - 1 {
-                // discovery[x] < discovery[y] && finish[x] < finish[y].
-                return Some(DFSEdge::Tree(x, y));
+            // Get X discovery time.
+            let discovery_x = self.discovery_time[x];
+            // Get Y discovery time.
+            let discovery_y = self.discovery_time[y];
+            // Get Y finish time.
+            let finish_y = self.finish_time[y];
+
             // NOTE: Given that the graph is undirected, there are no forward nor cross edges.
-            } else if self.discovery_time[x] >= self.discovery_time[y]
-                && self.finish_time[y] != usize::MAX
-                && self.discovery_time[x] <= self.finish_time[y]
-            {
+            if discovery_x >= discovery_y && discovery_x < finish_y && finish_y != usize::MAX {
                 // discovery[x] > discovery[y] && discovery[x] < finish[y].
                 return Some(DFSEdge::Back(x, y));
             }
@@ -171,6 +197,11 @@ where
 
         None
     }
+}
+
+impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Undirected> where
+    G: UndirectedGraph<Direction = directions::Undirected>
+{
 }
 
 impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Directed>
@@ -206,45 +237,55 @@ where
                 // Push vertices onto the stack in reverse order, this makes
                 // traversal order and neighborhood order the same.
                 self.stack.extend(queue);
-            // If the vertex is NOT WHITE.
-            } else {
-                // Remove it from stack.
-                self.stack.pop();
 
-                // Check if it is GRAY (not BLACK).
-                if self.finish_time[y] == usize::MAX
-                    && (self.predecessor[y] == usize::MAX || self.predecessor[y] == x)
-                {
-                    // Set its finish time (as BLACK).
-                    self.finish_time[y] = self.time;
-                    // Increment time.
-                    self.time += 1;
+                // Filter the base case.
+                if x == usize::MAX {
+                    continue;
                 }
+
+                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                return Some(DFSEdge::Tree(x, y));
             }
 
-            /* TODO: Refactor after this line. */
+            // If the vertex is NOT WHITE, remove it from stack.
+            self.stack.pop();
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+            // Check if it is GRAY (not BLACK).
+            if self.finish_time[y] == usize::MAX
+                && (predecessor_y == usize::MAX || predecessor_y == x)
+            {
+                // Set its finish time (as BLACK).
+                self.finish_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+            }
 
             // Filter the base case.
             if x == usize::MAX {
                 continue;
             }
 
-            // Classify the incoming edge w.r.t. the timings.
-            if self.discovery_time[y] == self.time - 1 {
-                // discovery[x] < discovery[y] && finish[x] < finish[y].
-                return Some(DFSEdge::Tree(x, y));
-            } else if self.discovery_time[x] >= self.discovery_time[y] {
-                if self.finish_time[y] != usize::MAX
-                    && self.discovery_time[x] <= self.finish_time[y]
-                {
-                    // discovery[x] > discovery[y] && discovery[x] < finish[y], or ...
+            // Get X discovery time.
+            let discovery_x = self.discovery_time[x];
+            // Get Y discovery time.
+            let discovery_y = self.discovery_time[y];
+            // Get Y finish time.
+            let finish_y = self.finish_time[y];
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+
+            // discovery[x] > discovery[y] ...
+            if discovery_x >= discovery_y {
+                // ... && discovery[x] < finish[y], or ...
+                if discovery_x < finish_y && finish_y != usize::MAX {
                     return Some(DFSEdge::Back(x, y));
-                } else {
-                    // discovery[x] > discovery[y] && discovery[x] > finish[y], or ...
-                    return Some(DFSEdge::Cross(x, y));
                 }
-            // ... it is a Forward edge.
-            } else if self.predecessor[y] != usize::MAX && self.predecessor[y] != x {
+                // ... && discovery[x] > finish[y], or ...
+                return Some(DFSEdge::Cross(x, y));
+            }
+            // ... it is a forward edge.
+            if predecessor_y != x && predecessor_y != usize::MAX {
                 return Some(DFSEdge::Forward(x, y));
             }
         }
@@ -253,24 +294,9 @@ where
     }
 }
 
-impl<'a, G, D> From<&'a G> for DepthFirstSearchEdges<'a, G, D>
-where
-    G: BaseGraph<Direction = D>,
+impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Directed> where
+    G: DirectedGraph<Direction = directions::Directed>
 {
-    #[inline]
-    fn from(g: &'a G) -> Self {
-        Self::new(g, None, Traversal::Tree)
-    }
-}
-
-impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearchEdges<'a, G, D>
-where
-    G: BaseGraph<Direction = D>,
-{
-    #[inline]
-    fn from((g, x): (&'a G, usize)) -> Self {
-        Self::new(g, Some(x), Traversal::Tree)
-    }
 }
 
 /// Alias for depth-first search.

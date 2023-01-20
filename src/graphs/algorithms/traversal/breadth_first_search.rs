@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
@@ -178,6 +178,11 @@ where
     }
 }
 
+impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Undirected> where
+    G: UndirectedGraph<Direction = directions::Undirected>
+{
+}
+
 impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::Directed>
 where
     G: DirectedGraph<Direction = directions::Directed>,
@@ -221,6 +226,11 @@ where
             x
         })
     }
+}
+
+impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Directed> where
+    G: DirectedGraph<Direction = directions::Directed>
+{
 }
 
 /// Alias for breadth-first search.
