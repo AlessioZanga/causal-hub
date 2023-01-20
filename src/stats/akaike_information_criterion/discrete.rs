@@ -1,3 +1,4 @@
+use super::AkaikeInformationCriterion;
 use crate::{
     data::DiscreteDataMatrix,
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
@@ -6,41 +7,9 @@ use crate::{
     Pa, V,
 };
 
-/// Akaike Information Criterion (AIC) functor.
-///
-/// # Generics
-///
-/// - `RESCALED`: Rescale by -2, allowing for direct comparison with log-likelihood.
-/// - `PARALLEL_CCM`: Enables parallel computation of conditional count matrix.
-/// - `PARALLEL_CCL`: Enables parallel computation of conditional log-likelihood.
-///
-#[derive(Clone, Debug)]
-pub struct AkaikeInformationCriterion<
-    const RESCALED: bool,
-    const PARALLEL_CCM: bool,
-    const PARALLEL_CLL: bool,
-> {
-    k: f64,
-}
-
-impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> Default
-    for AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+impl<const RESCALED: bool, const PARALLEL: bool>
+    AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
-{
-    /// Constructor for AIC functor.
-    #[inline]
-    pub const fn new() -> Self {
-        Self { k: 1. }
-    }
-
     /// Computes AIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
@@ -53,7 +22,7 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<PARALLEL_CCM, PARALLEL_CLL>::new();
+        let ll = LogLikelihood::<_, PARALLEL>::new();
         // Compute the log-likelihood.
         let ll = ll.call(d, x, z);
 
@@ -76,9 +45,8 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 }
 
-impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    ScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+impl<G, const RESCALED: bool, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>
+    for AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -93,9 +61,9 @@ where
     }
 }
 
-impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
+impl<G, const RESCALED: bool, const PARALLEL: bool>
     DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+    for AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -104,6 +72,3 @@ where
         self.call(d, x, z)
     }
 }
-
-/// Alias for (rescaled) single-thread AIC functor.
-pub type AIC = AkaikeInformationCriterion<true, false, false>;

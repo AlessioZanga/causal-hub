@@ -1,3 +1,4 @@
+use super::BayesianInformationCriterion;
 use crate::{
     data::DiscreteDataMatrix,
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
@@ -6,41 +7,9 @@ use crate::{
     Pa, V,
 };
 
-/// Bayesian Information Criterion (BIC) functor.
-///
-/// # Generics
-///
-/// - `RESCALED`: Rescale by -2, allowing for direct comparison with log-likelihood.
-/// - `PARALLEL_CCM`: Enables parallel computation of conditional count matrix.
-/// - `PARALLEL_CCL`: Enables parallel computation of conditional log-likelihood.
-///
-#[derive(Clone, Debug)]
-pub struct BayesianInformationCriterion<
-    const RESCALED: bool,
-    const PARALLEL_CCM: bool,
-    const PARALLEL_CLL: bool,
-> {
-    k: f64,
-}
-
-impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> Default
-    for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+impl<const RESCALED: bool, const PARALLEL: bool>
+    BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
-{
-    /// Constructor for BIC functor.
-    #[inline]
-    pub const fn new() -> Self {
-        Self { k: 1. }
-    }
-
     /// Computes BIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
@@ -56,7 +25,7 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<PARALLEL_CCM, PARALLEL_CLL>::new();
+        let ll = LogLikelihood::<DiscreteDataMatrix, PARALLEL>::new();
         // Compute the log-likelihood.
         let ll = ll.call(d, x, z);
 
@@ -79,9 +48,8 @@ impl<const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 }
 
-impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    ScoringCriterion<DiscreteDataMatrix, G>
-    for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+impl<G, const RESCALED: bool, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>
+    for BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -96,9 +64,9 @@ where
     }
 }
 
-impl<G, const RESCALED: bool, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
+impl<G, const RESCALED: bool, const PARALLEL: bool>
     DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for BayesianInformationCriterion<RESCALED, PARALLEL_CCM, PARALLEL_CLL>
+    for BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -107,6 +75,3 @@ where
         self.call(d, x, z)
     }
 }
-
-/// Alias for (rescaled) single-thread BIC functor.
-pub type BIC = BayesianInformationCriterion<true, false, false>;

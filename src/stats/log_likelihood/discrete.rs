@@ -1,6 +1,7 @@
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
+use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
 use crate::{
     data::{ConditionalCountMatrix, DiscreteDataMatrix, MarginalCountMatrix},
     discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
@@ -9,17 +10,7 @@ use crate::{
     Pa, V,
 };
 
-/// Marginal log-likelihood functor.
-#[derive(Clone, Debug, Default)]
-pub struct MarginalLogLikelihood {}
-
-impl MarginalLogLikelihood {
-    /// Constructor for marginal log-likelihood functor.
-    #[inline]
-    pub const fn new() -> Self {
-        Self {}
-    }
-
+impl MarginalLogLikelihood<DiscreteDataMatrix> {
     #[inline]
     pub(crate) fn eval(n_i: ArrayView1<usize>) -> f64 {
         // Sum over levels and cast to floating point.
@@ -37,7 +28,7 @@ impl MarginalLogLikelihood {
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
     #[inline]
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize) -> f64 {
+    pub fn call(d: &DiscreteDataMatrix, x: usize) -> f64 {
         // Compute marginal contingency table.
         let n_i = MarginalCountMatrix::new(d, x);
 
@@ -46,25 +37,7 @@ impl MarginalLogLikelihood {
     }
 }
 
-/// Conditional log-likelihood functor.
-///
-/// # Generics
-///
-/// - `PARALLEL_CCM`: Enables parallel computation of conditional count matrix.
-/// - `PARALLEL_CCL`: Enables parallel computation of conditional log-likelihood.
-///
-#[derive(Clone, Debug, Default)]
-pub struct ConditionalLogLikelihood<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> {}
-
-impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    ConditionalLogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
-{
-    /// Constructor for conditional log-likelihood functor.
-    #[inline]
-    pub const fn new() -> Self {
-        Self {}
-    }
-
+impl<const PARALLEL: bool> ConditionalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_ij: ArrayView2<usize>) -> f64 {
         // Sum over levels and cast to floating point.
@@ -85,15 +58,15 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    pub fn call(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
-        let n_ij = ConditionalCountMatrix::<PARALLEL_CCM>::new(d, x, z);
+        let n_ij = ConditionalCountMatrix::<PARALLEL>::new(d, x, z);
 
         // Iterate over chunks.
         let n_ij = n_ij.axis_chunks_iter(Axis(0), axis_chunks_size(&n_ij));
 
         // Check if parallelization is enabled.
-        match PARALLEL_CLL {
+        match PARALLEL {
             // Map each chunk and sum over in parallel.
             true => n_ij.into_par_iter().map(Self::eval).sum(),
             // Map each chunk and sum over.
@@ -102,35 +75,19 @@ impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
     }
 }
 
-/// Log-Likelihood (LL) functor.
-///
-/// # Generics
-///
-/// - `PARALLEL_CCM`: Enables parallel computation of conditional count matrix.
-/// - `PARALLEL_CCL`: Enables parallel computation of conditional log-likelihood.
-///
-#[derive(Clone, Debug, Default)]
-pub struct LogLikelihood<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> {}
-
-impl<const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> LogLikelihood<PARALLEL_CCM, PARALLEL_CLL> {
-    /// Constructor for LL functor.
-    #[inline]
-    pub const fn new() -> Self {
-        Self {}
-    }
-
+impl<const PARALLEL: bool> LogLikelihood<DiscreteDataMatrix, PARALLEL> {
     /// Computes LL given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => MarginalLogLikelihood::new().call(d, x),
-            false => ConditionalLogLikelihood::<PARALLEL_CCM, PARALLEL_CLL>::new().call(d, x, z),
+            true => MarginalLogLikelihood::call(d, x),
+            false => ConditionalLogLikelihood::<_, PARALLEL>::call(d, x, z),
         }
     }
 }
 
-impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool> ScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
+impl<G, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>
+    for LogLikelihood<DiscreteDataMatrix, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -145,9 +102,8 @@ where
     }
 }
 
-impl<G, const PARALLEL_CCM: bool, const PARALLEL_CLL: bool>
-    DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<PARALLEL_CCM, PARALLEL_CLL>
+impl<G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for LogLikelihood<DiscreteDataMatrix, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -156,6 +112,3 @@ where
         self.call(d, x, z)
     }
 }
-
-/// Alias for single-thread LL functor.
-pub type LL = LogLikelihood<false, false>;

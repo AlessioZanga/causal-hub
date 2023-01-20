@@ -22,7 +22,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = BayesianInformationCriterion::<true, false, false>::new();
+        let score = BayesianInformationCriterion::<_, true, false>::new();
 
         // Compute global score.
         assert_relative_eq!(
@@ -63,7 +63,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = BayesianInformationCriterion::<true, true, true>::new();
+        let score = BayesianInformationCriterion::<_, true, true>::new();
 
         // Compute global score.
         assert_relative_eq!(
