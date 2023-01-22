@@ -82,7 +82,7 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
         // Allocate a new contiguous matrix. TODO: Avoid initialization (?).
         let mut z_ = Array2::ones((n, m + 1));
         // Fill with observed variables, skipping the intercept.
-        for (i, &z) in z.into_iter().enumerate() {
+        for (i, &z) in z.iter().enumerate() {
             // Copy data from column to column.
             d.column(z).assign_to(z_.column_mut(i + 1));
         }
