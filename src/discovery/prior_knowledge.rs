@@ -4,7 +4,7 @@ use bimap::BiHashMap;
 
 /// Prior knowledge trait
 pub trait PriorKnowledge: Sync {
-    fn forbidden<'a>(&'a self) -> &HashSet<(usize, usize)>;
+    fn forbidden(&self) -> &HashSet<(usize, usize)>;
 
     fn has_forbidden(&self, x: usize, y: usize) -> bool;
 
@@ -12,7 +12,7 @@ pub trait PriorKnowledge: Sync {
 
     fn del_forbidden(&mut self, x: usize, y: usize) -> bool;
 
-    fn required<'a>(&'a self) -> &HashSet<(usize, usize)>;
+    fn required(&self) -> &HashSet<(usize, usize)>;
 
     fn has_required(&self, x: usize, y: usize) -> bool;
 
@@ -90,7 +90,7 @@ impl ForbiddenRequired {
 
 impl PriorKnowledge for ForbiddenRequired {
     #[inline]
-    fn forbidden<'a>(&'a self) -> &HashSet<(usize, usize)> {
+    fn forbidden(&self) -> &HashSet<(usize, usize)> {
         &self.forbidden
     }
 
@@ -111,7 +111,7 @@ impl PriorKnowledge for ForbiddenRequired {
     }
 
     #[inline]
-    fn required<'a>(&'a self) -> &HashSet<(usize, usize)> {
+    fn required(&self) -> &HashSet<(usize, usize)> {
         &self.required
     }
 

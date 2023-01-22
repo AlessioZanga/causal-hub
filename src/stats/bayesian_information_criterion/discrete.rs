@@ -1,10 +1,9 @@
 use super::BayesianInformationCriterion;
 use crate::{
     data::DiscreteDataMatrix,
-    discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
+    discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
-    Pa, V,
 };
 
 impl<const RESCALED: bool, const PARALLEL: bool>
@@ -36,22 +35,6 @@ impl<const RESCALED: bool, const PARALLEL: bool>
             // Otherwise, compute original BIC.
             false => self.k * theta * f64::ln(n) - 2. * ll,
         }
-    }
-}
-
-impl<G, const RESCALED: bool, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>
-    for BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
-where
-    G: DirectedGraph<Direction = directions::Directed>,
-{
-    type ScoreType = score_types::Decomposable;
-
-    #[inline]
-    fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
-        V!(g)
-            .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
-            .map(|(x, z)| self.call(d, x, &z))
-            .sum()
     }
 }
 

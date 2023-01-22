@@ -6,22 +6,21 @@ use ndarray_linalg::least_squares::*;
 use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
 use crate::{
     data::ContinuousDataMatrix,
-    discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
+    discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
-    Pa, V,
 };
 
 impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL> {
     #[inline]
-    pub(crate) fn eval(x: ArrayView1<f64>, n: usize) -> (f64, f64) {
+    pub(crate) fn eval(x: ArrayView1<f64>, n: usize) -> (Array1<f64>, f64) {
         // Compute the mean.
         let mean = x.sum() / n as f64;
-        // Compute the (sample) variance.
-        let var = (&x - mean).mapv(|x| f64::powi(x, 2)).sum() / (n - 1) as f64;
+        // Compute residuals.
+        let residuals = &x - mean;
         // Compute the standard deviation.
-        let std = f64::sqrt(var);
+        let std = residuals.std(1.);
 
-        (mean, std)
+        (residuals, std)
     }
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
@@ -29,11 +28,12 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL>
     pub fn call(d: &ContinuousDataMatrix, x: usize) -> f64 {
         // Get the variable and sample size.
         let (x, n) = (d.column(x), d.nrows());
-        // Compute mean and standard deviation. TODO: Parallelize over mean and variance.
-        let (mean, std) = Self::eval(x, n);
+
+        // Compute residuals and standard deviation. TODO: Parallelize over mean and variance.
+        let (residuals, std) = Self::eval(x, n);
 
         // Compute the (marginal) log-likelihood. TODO: Parallelize over log-likelihood.
-        ((&x - mean) / std)
+        (residuals / std)
             // Compute log(norm(mean, std).pdf(x)).
             .mapv(|x| -(f64::ln(f64::sqrt(2. * PI)) + 0.5 * x * x + f64::ln(std)))
             // Sum each term.
@@ -57,7 +57,7 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
             .expect("Failed to perform OLS");
 
         // Get fitted parameters and residuals sum of squared.
-        let (betas, rss) = (
+        let (beta, rss) = (
             ols.solution,
             ols.residual_sum_of_squares
                 .expect("Failed to compute the residuals sum of squares")
@@ -65,11 +65,11 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
         );
 
         // Compute fitted values.
-        let fitted = (&z * &betas).sum_axis(Axis(1));
+        let residuals = &x - (&z * &beta).sum_axis(Axis(1));
         // Compute standard deviation.
         let std = f64::sqrt(rss / (n - p) as f64);
 
-        (fitted, std)
+        (residuals, std)
     }
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
@@ -87,11 +87,11 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
             d.column(z).assign_to(z_.column_mut(i + 1));
         }
 
-        // Compute fitted values and standard deviation.
-        let (fitted, std) = Self::eval(x, z_.view(), n, m + 1);
+        // Compute residuals and standard deviation.
+        let (residuals, std) = Self::eval(x, z_.view(), n, m + 1);
 
         // Compute the (conditional) log-likelihood. TODO: Parallelize over log-likelihood.
-        ((&x - &fitted) / std)
+        (residuals / std)
             // Compute log(norm(mean, std).pdf(x)).
             .mapv(|x| -(f64::ln(f64::sqrt(2. * PI)) + 0.5 * x * x + f64::ln(std)))
             // Sum each term.
@@ -107,22 +107,6 @@ impl<const PARALLEL: bool> LogLikelihood<ContinuousDataMatrix, PARALLEL> {
             true => MarginalLogLikelihood::<ContinuousDataMatrix, PARALLEL>::call(d, x),
             false => ConditionalLogLikelihood::<ContinuousDataMatrix, PARALLEL>::call(d, x, z),
         }
-    }
-}
-
-impl<G, const PARALLEL: bool> ScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<ContinuousDataMatrix, PARALLEL>
-where
-    G: DirectedGraph<Direction = directions::Directed>,
-{
-    type ScoreType = score_types::Decomposable;
-
-    #[inline]
-    fn call(&self, d: &ContinuousDataMatrix, g: &G) -> f64 {
-        V!(g)
-            .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
-            .map(|(x, z)| self.call(d, x, &z))
-            .sum()
     }
 }
 

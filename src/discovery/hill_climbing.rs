@@ -49,6 +49,8 @@ type A = Option<(usize, usize, usize)>;
 /// Hill-climbing functor.
 pub struct HillClimbing<D, K, G, S, ST, const PARALLEL: bool>
 where
+    D: DataSet,
+    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     max_iter: usize,
@@ -60,6 +62,8 @@ where
 
 impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
 where
+    D: DataSet,
+    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
@@ -95,6 +99,8 @@ where
 
 impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
 where
+    D: DataSet,
+    K: PriorKnowledge,
     G: BaseGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {

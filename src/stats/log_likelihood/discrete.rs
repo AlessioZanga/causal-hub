@@ -4,10 +4,9 @@ use rayon::prelude::*;
 use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
 use crate::{
     data::{ConditionalCountMatrix, DiscreteDataMatrix, MarginalCountMatrix},
-    discovery::{score_types, DecomposableScoringCriterion, ScoringCriterion},
+    discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     utils::axis_chunks_size,
-    Pa, V,
 };
 
 impl<const PARALLEL: bool> MarginalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
@@ -81,22 +80,6 @@ impl<const PARALLEL: bool> LogLikelihood<DiscreteDataMatrix, PARALLEL> {
             true => MarginalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x),
             false => ConditionalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x, z),
         }
-    }
-}
-
-impl<G, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<DiscreteDataMatrix, PARALLEL>
-where
-    G: DirectedGraph<Direction = directions::Directed>,
-{
-    type ScoreType = score_types::Decomposable;
-
-    #[inline]
-    fn call(&self, d: &DiscreteDataMatrix, g: &G) -> f64 {
-        V!(g)
-            .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
-            .map(|(x, z)| self.call(d, x, &z))
-            .sum()
     }
 }
 
