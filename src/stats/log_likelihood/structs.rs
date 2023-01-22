@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 /// Marginal log-likelihood functor.
 #[derive(Clone, Debug, Default)]
-pub struct MarginalLogLikelihood<D> {
+pub struct MarginalLogLikelihood<D, const PARALLEL: bool> {
     _d: PhantomData<D>,
 }
 
@@ -38,3 +38,5 @@ impl<D, const PARALLEL: bool> LogLikelihood<D, PARALLEL> {
 
 /// Alias for single-thread LL functor.
 pub type LL<D> = LogLikelihood<D, false>;
+/// Alias for multi-thread LL functor.
+pub type ParallelLL<D> = LogLikelihood<D, true>;

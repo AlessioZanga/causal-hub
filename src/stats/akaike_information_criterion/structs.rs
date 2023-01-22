@@ -24,6 +24,15 @@ impl<D, const RESCALED: bool, const PARALLEL: bool>
             k: 1.,
         }
     }
+
+    /// Sets penalty coefficient.
+    #[inline]
+    pub const fn with_penalty_coeff(mut self, k: f64) -> Self {
+        // Set penalty coefficient.
+        self.k = k;
+
+        self
+    }
 }
 
 impl<D, const RESCALED: bool, const PARALLEL: bool> Default
@@ -37,3 +46,5 @@ impl<D, const RESCALED: bool, const PARALLEL: bool> Default
 
 /// Alias for (rescaled) single-thread AIC functor.
 pub type AIC<D> = AkaikeInformationCriterion<D, true, false>;
+/// Alias for (rescaled) multi-thread AIC functor.
+pub type ParallelAIC<D> = AkaikeInformationCriterion<D, true, true>;

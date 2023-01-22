@@ -22,7 +22,7 @@ impl<const RESCALED: bool, const PARALLEL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<_, PARALLEL>::new();
+        let ll = LogLikelihood::<DiscreteDataMatrix, PARALLEL>::new();
         // Compute the log-likelihood.
         let ll = ll.call(d, x, z);
 
@@ -33,15 +33,6 @@ impl<const RESCALED: bool, const PARALLEL: bool>
             // Otherwise, compute original AIC.
             false => 2. * self.k * theta - 2. * ll,
         }
-    }
-
-    /// Sets penalty coefficient.
-    #[inline]
-    pub fn with_penalty_coeff(mut self, k: f64) -> Self {
-        // Set penalty coefficient.
-        self.k = k;
-
-        self
     }
 }
 

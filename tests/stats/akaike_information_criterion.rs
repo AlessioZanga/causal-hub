@@ -22,7 +22,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = AkaikeInformationCriterion::<_, true, false>::new();
+        let score = AIC::new();
 
         // Compute global score.
         assert_relative_eq!(
@@ -63,7 +63,7 @@ mod tests {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let score = AkaikeInformationCriterion::<_, true, true>::new();
+        let score = ParallelAIC::new();
 
         // Compute global score.
         assert_relative_eq!(

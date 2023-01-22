@@ -37,15 +37,6 @@ impl<const RESCALED: bool, const PARALLEL: bool>
             false => self.k * theta * f64::ln(n) - 2. * ll,
         }
     }
-
-    /// Sets penalty coefficient.
-    #[inline]
-    pub fn with_penalty_coeff(mut self, k: f64) -> Self {
-        // Set penalty coefficient.
-        self.k = k;
-
-        self
-    }
 }
 
 impl<G, const RESCALED: bool, const PARALLEL: bool> ScoringCriterion<DiscreteDataMatrix, G>

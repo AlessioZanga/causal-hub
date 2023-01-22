@@ -17,7 +17,8 @@ bimap = "^0.6"
 is_sorted = "^0.1"
 itertools = "^0.10"
 log = "^0.4"
-ndarray = { version = "^0.15", features = [ "rayon", "serde" ] } 
+ndarray = { version = "^0.15", features = [ "rayon", "serde" ] }
+ndarray-linalg = { version = "^0.16", features = [ "openblas-static" ] }
 page_size = "^0.5"
 polars = { version = "^0.26", default-features = false, features = [ "csv-file", "dtype-categorical", "ndarray", "performant" ] }
 rayon = "^1.6"

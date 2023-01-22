@@ -10,7 +10,7 @@ use crate::{
     Pa, V,
 };
 
-impl MarginalLogLikelihood<DiscreteDataMatrix> {
+impl<const PARALLEL: bool> MarginalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_i: ArrayView1<usize>) -> f64 {
         // Sum over levels and cast to floating point.
@@ -18,12 +18,11 @@ impl MarginalLogLikelihood<DiscreteDataMatrix> {
         let n_i = n_i.mapv(|i| i as f64);
 
         // Compute log-likelihood as n_i * ln(n_i  / n).
-        let ll = &n_i * (&n_i / n).mapv(f64::ln);
-
-        // Map NaNs to zero.
-        let ll = ll.mapv(|i| f64::min(i, 0.));
-
-        ll.sum()
+        (&n_i * (&n_i / n).mapv(f64::ln))
+            // Map NaNs to zero.
+            .mapv(|i| f64::min(i, 0.))
+            // Sum each term.
+            .sum()
     }
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
@@ -48,12 +47,11 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<DiscreteDataMatrix, PARALLEL
         let n_ij = n_ij.mapv(|i| i as f64);
 
         // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
-        let ll = &n_ij * (&n_ij / n_j).mapv(f64::ln);
-
-        // Map NaNs to zero.
-        let ll = ll.mapv(|i| f64::min(i, 0.));
-
-        ll.sum()
+        (&n_ij * (&n_ij / n_j).mapv(f64::ln))
+            // Map NaNs to zero.
+            .mapv(|i| f64::min(i, 0.))
+            // Sum each term.
+            .sum()
     }
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
@@ -80,8 +78,8 @@ impl<const PARALLEL: bool> LogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => MarginalLogLikelihood::call(d, x),
-            false => ConditionalLogLikelihood::<_, PARALLEL>::call(d, x, z),
+            true => MarginalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x),
+            false => ConditionalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x, z),
         }
     }
 }
