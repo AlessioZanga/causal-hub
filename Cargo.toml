@@ -29,8 +29,7 @@ thiserror = "^1.0"
 
 [dev-dependencies]
 approx = "^0.5"
-ndarray-linalg = { version = "^0.16", features = [ "openblas-static" ] }
-openblas-src = { version = "^0.10", features = [ "static" ] }
+ndarray-linalg = { version = "^0.16", features = [ "openblas-system" ] }
 regex = "^1.7"
 serde_json = "^1.0"
 

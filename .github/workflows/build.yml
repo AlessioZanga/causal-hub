@@ -25,6 +25,18 @@ jobs:
         with:
           profile: minimal
           toolchain: ${{ matrix.env }}
+      - name: Dependencies (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install libopenblas-dev
+      - name: Dependencies (MacOS)
+        if: ${{ runner.os == 'MacOS' }}
+        run: brew install openblas
+      - name: Dependencies (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+          vcpkg install openblas
       - name: Build
         run: cargo +${{ matrix.env }} build -v
       - name: Test
