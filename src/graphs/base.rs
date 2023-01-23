@@ -38,7 +38,7 @@ macro_rules! Adj {
 }
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display + Hash + Sync {
+pub trait BaseGraph: Clone + Debug + Display + Hash + Send + Sync {
     /// Data type.
     type Data;
 
