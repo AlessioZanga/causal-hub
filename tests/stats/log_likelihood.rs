@@ -1,4 +1,103 @@
 #[cfg(test)]
+mod tests {
+    mod marginal_log_likelihood {
+        use causal_hub::{prelude::DiscreteDataMatrix, stats::MarginalLogLikelihood};
+
+        #[test]
+        fn clone() {
+            // Construct a new scoring criterion functor.
+            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Clone the functor.
+            let s = s.clone();
+
+            dbg!(&s);
+        }
+
+        #[test]
+        fn debug() {
+            // Construct a new scoring criterion functor.
+            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Debug the functor.
+            let s = format!("{:?}", s);
+
+            assert_eq!(&s, "MarginalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+        }
+
+        #[test]
+        fn default() {
+            // Construct the default scoring criterion functor.
+            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+
+            dbg!(&s);
+        }
+    }
+
+    mod conditional_log_likelihood {
+        use causal_hub::{prelude::DiscreteDataMatrix, stats::ConditionalLogLikelihood};
+
+        #[test]
+        fn clone() {
+            // Construct a new scoring criterion functor.
+            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Clone the functor.
+            let s = s.clone();
+
+            dbg!(&s);
+        }
+
+        #[test]
+        fn debug() {
+            // Construct a new scoring criterion functor.
+            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Debug the functor.
+            let s = format!("{:?}", s);
+
+            assert_eq!(&s, "ConditionalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+        }
+
+        #[test]
+        fn default() {
+            // Construct the default scoring criterion functor.
+            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+
+            dbg!(&s);
+        }
+    }
+
+    mod log_likelihood {
+        use causal_hub::{prelude::DiscreteDataMatrix, stats::LogLikelihood};
+
+        #[test]
+        fn clone() {
+            // Construct a new scoring criterion functor.
+            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Clone the functor.
+            let s = s.clone();
+
+            dbg!(&s);
+        }
+
+        #[test]
+        fn debug() {
+            // Construct a new scoring criterion functor.
+            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+            // Debug the functor.
+            let s = format!("{:?}", s);
+
+            assert_eq!(&s, "LogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+        }
+
+        #[test]
+        fn default() {
+            // Construct the default scoring criterion functor.
+            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+
+            dbg!(&s);
+        }
+    }
+}
+
+#[cfg(test)]
 mod discrete {
     use approx::*;
     use causal_hub::prelude::*;

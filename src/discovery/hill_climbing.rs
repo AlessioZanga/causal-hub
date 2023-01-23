@@ -384,8 +384,11 @@ where
              (op_star, (delta_star, c_star)): (A, (f64, CU<KE>))| {
                 // Merge cache updates.
                 u_star.extend(c_star.into_iter());
+                // Check if difference is meaningful.
+                let diff = delta_star - delta;
+                let diff = diff * !(f64::abs(diff) < f64::sqrt(f64::EPSILON)) as u8 as f64;
                 // Return best operation.
-                match delta_star > delta {
+                match diff > 0. {
                     true => (op_star, (delta_star, u_star)),
                     false => (op, (delta, u_star)),
                 }
@@ -582,8 +585,11 @@ where
              (op_star, (delta_star, c_star)): (A, (f64, CU<G>))| {
                 // Merge cache updates.
                 u_star.extend(c_star.into_iter());
+                // Check if difference is meaningful.
+                let diff = delta_star - delta;
+                let diff = diff * !(f64::abs(diff) < f64::sqrt(f64::EPSILON)) as u8 as f64;
                 // Return best operation.
-                match delta_star > delta {
+                match diff > 0. {
                     true => (op_star, (delta_star, u_star)),
                     false => (op, (delta, u_star)),
                 }

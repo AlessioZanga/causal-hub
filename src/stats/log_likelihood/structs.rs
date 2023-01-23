@@ -1,9 +1,17 @@
 use std::marker::PhantomData;
 
 /// Marginal log-likelihood functor.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct MarginalLogLikelihood<D, const PARALLEL: bool> {
     _d: PhantomData<D>,
+}
+
+impl<D, const PARALLEL: bool> Default for MarginalLogLikelihood<D, PARALLEL> {
+    fn default() -> Self {
+        Self {
+            _d: Default::default(),
+        }
+    }
 }
 
 /// Conditional log-likelihood functor.
@@ -12,9 +20,17 @@ pub struct MarginalLogLikelihood<D, const PARALLEL: bool> {
 ///
 /// - `PARALLEL`: Enables parallel computation of conditional count matrix and log-likelihood.
 ///
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ConditionalLogLikelihood<D, const PARALLEL: bool> {
     _d: PhantomData<D>,
+}
+
+impl<D, const PARALLEL: bool> Default for ConditionalLogLikelihood<D, PARALLEL> {
+    fn default() -> Self {
+        Self {
+            _d: Default::default(),
+        }
+    }
 }
 
 /// Log-Likelihood (LL) functor.
@@ -23,7 +39,7 @@ pub struct ConditionalLogLikelihood<D, const PARALLEL: bool> {
 ///
 /// - `PARALLEL`: Enables parallel computation of conditional count matrix and log-likelihood.
 ///
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct LogLikelihood<D, const PARALLEL: bool> {
     _d: PhantomData<D>,
 }
@@ -33,6 +49,12 @@ impl<D, const PARALLEL: bool> LogLikelihood<D, PARALLEL> {
     #[inline]
     pub const fn new() -> Self {
         Self { _d: PhantomData }
+    }
+}
+
+impl<D, const PARALLEL: bool> Default for LogLikelihood<D, PARALLEL> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

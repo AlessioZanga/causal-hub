@@ -1,4 +1,47 @@
 #[cfg(test)]
+mod tests {
+    use causal_hub::{prelude::DiscreteDataMatrix, stats::BIC};
+
+    #[test]
+    fn clone() {
+        // Construct a new scoring criterion functor.
+        let s = BIC::<DiscreteDataMatrix>::default();
+        // Clone the functor.
+        let s = s.clone();
+
+        dbg!(&s);
+    }
+
+    #[test]
+    fn debug() {
+        // Construct a new scoring criterion functor.
+        let s = BIC::<DiscreteDataMatrix>::default();
+        // Debug the functor.
+        let s = format!("{:?}", s);
+
+        assert_eq!(&s, "BayesianInformationCriterion { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix>, k: 1.0 }");
+    }
+
+    #[test]
+    fn default() {
+        // Construct the default scoring criterion functor.
+        let s = BIC::<DiscreteDataMatrix>::default();
+
+        dbg!(&s);
+    }
+
+    #[test]
+    fn with_penalty_coeff() {
+        // Construct the default scoring criterion functor.
+        let s = BIC::<DiscreteDataMatrix>::default();
+        // Set penalty coefficient.
+        let s = s.with_penalty_coeff(2.);
+
+        dbg!(&s);
+    }
+}
+
+#[cfg(test)]
 mod discrete {
     use approx::*;
     use causal_hub::prelude::*;

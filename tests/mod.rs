@@ -1,4 +1,4 @@
-#[allow(clippy::all)]
+#![allow(clippy::all)]
 mod data;
 mod discovery;
 mod graphs;
