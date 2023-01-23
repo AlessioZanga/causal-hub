@@ -35,7 +35,8 @@ jobs:
       - name: Dependencies (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          git clone -b patch-openblas https://github.com/AlessioZanga/vcpkg.git || true
+          git clone https://github.com/AlessioZanga/vcpkg.git || true
+          pushd vcpkg; git checkout e4937a2e83baab637fe682a506aeeefc882a50c3; popd
           .\vcpkg\bootstrap-vcpkg.bat
           vcpkg integrate install
           vcpkg install openblas
