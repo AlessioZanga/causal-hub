@@ -59,7 +59,7 @@ impl ForbiddenRequired {
             .map(|(i, x)| (x, i))
             .collect();
         // Map forbidden edges to vertices indices.
-        let forbidden = forbidden
+        let forbidden: HashSet<_> = forbidden
             .into_iter()
             .map(|(x, y)| (x.into(), y.into()))
             .map(|(x, y)| {
@@ -74,7 +74,7 @@ impl ForbiddenRequired {
             })
             .collect();
         // Map required edges to vertices indices.
-        let required = required
+        let required: HashSet<_> = required
             .into_iter()
             .map(|(x, y)| (x.into(), y.into()))
             .map(|(x, y)| {
@@ -89,7 +89,11 @@ impl ForbiddenRequired {
             })
             .collect();
 
-        // FIXME: Check forbidden and required consistency.
+        // Check forbidden and required consistency.
+        assert!(
+            forbidden.is_disjoint(&required),
+            "Forbidden and required sets must be disjoint"
+        );
 
         Self {
             forbidden,
@@ -112,7 +116,12 @@ impl PriorKnowledge for ForbiddenRequired {
 
     #[inline]
     fn add_forbidden(&mut self, x: usize, y: usize) -> bool {
-        // FIXME: Check forbidden and required consistency.
+        // Check forbidden and required consistency.
+        assert!(
+            !self.required.contains(&(x, y)),
+            "Failed to add edge as forbidden since it is in the required set"
+        );
+
         self.forbidden.insert((x, y))
     }
 
@@ -133,7 +142,12 @@ impl PriorKnowledge for ForbiddenRequired {
 
     #[inline]
     fn add_required(&mut self, x: usize, y: usize) -> bool {
-        // FIXME: Check forbidden and required consistency.
+        // Check forbidden and required consistency.
+        assert!(
+            !self.forbidden.contains(&(x, y)),
+            "Failed to add edge as required since it is in the forbidden set"
+        );
+
         self.required.insert((x, y))
     }
 
