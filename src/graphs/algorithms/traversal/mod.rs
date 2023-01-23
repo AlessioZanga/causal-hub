@@ -7,34 +7,19 @@ pub enum Traversal {
 }
 
 mod breadth_first_search;
-pub use breadth_first_search::BreadthFirstSearch;
-
-/// Alias for breadth-first search.
-pub type BFS<'a, G, D> = BreadthFirstSearch<'a, G, D>;
+pub use breadth_first_search::*;
 
 mod depth_first_search;
-pub use depth_first_search::DepthFirstSearch;
-
-/// Alias for depth-first search.
-pub type DFS<'a, G, D> = DepthFirstSearch<'a, G, D>;
+pub use depth_first_search::*;
 
 mod depth_first_search_edges;
-pub use depth_first_search_edges::{DFSEdge, DepthFirstSearchEdges};
-
-/// Alias for depth-first search.
-pub type DFSEdges<'a, G, D> = DepthFirstSearchEdges<'a, G, D>;
+pub use depth_first_search_edges::*;
 
 mod lexicographic_breadth_first_search;
-pub use lexicographic_breadth_first_search::LexicographicBreadthFirstSearch;
-
-/// Alias for lexicographic breadth-first search.
-pub type LexBFS<'a, G> = LexicographicBreadthFirstSearch<'a, G>;
+pub use lexicographic_breadth_first_search::*;
 
 mod lexicographic_depth_first_search;
-pub use lexicographic_depth_first_search::LexicographicDepthFirstSearch;
-
-/// Alias for lexicographic depth-first search.
-pub type LexDFS<'a, G> = LexicographicDepthFirstSearch<'a, G>;
+pub use lexicographic_depth_first_search::*;
 
 mod topological_sort;
-pub use topological_sort::TopologicalSort;
+pub use topological_sort::*;

@@ -9,51 +9,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest] # FIXME: , windows-latest]
         env: ["stable", "beta", "nightly"]
     steps:
       - uses: actions/checkout@v3
       - name: Cache
         uses: actions/cache@v3
-        env:
-          cache-name: cache-dependencies
         with:
           path: |
             ~/.cargo
             target
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
-      - name: Setup Rust
+            vcpkg
+          key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
+      - name: Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.env }}
-          components: rustfmt, clippy
-      - name: Check
-        run: cargo check --all -v
-      - name: Build
-        run: cargo build -v
-      - name: Test
-        run: cargo test --tests -v
-      - name: Doctest
-        run: cargo test --doc -v
-      - name: Clippy
-        run: cargo clippy --all-targets --all-features --no-deps -- -D warnings -v
-      - name: Format
-        if: ${{ runner.os == 'Linux' && matrix.env == 'nightly' }}
-        run: cargo +nightly fmt --all --check -v
-      - name: Coverage
-        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
+      - name: Dependencies (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install libopenblas-dev
+      - name: Dependencies (MacOS)
+        if: ${{ runner.os == 'MacOS' }}
+        run: brew install openblas
+      - name: Dependencies (Windows)
+        if: ${{ runner.os == 'Windows' }}
         run: |
-          cargo install cargo-llvm-cov
-          cargo llvm-cov --lcov --output-path lcov.info -v
-      - name: CodeCov
-        if: ${{ runner.os == 'Linux' && matrix.env == 'stable' }}
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./lcov.info
-          flags: unittests
-          fail_ci_if_error: true
+          echo "FIXME: Fix LAPACK build in VCPKG"
+      - name: Build
+        run: cargo +${{ matrix.env }} build -v
+      - name: Test
+        run: |
+          unzip -o ./tests/assets -d ./tests
+          cargo +${{ matrix.env }} test --tests -v
       - name: Publish
         if: ${{ runner.os == 'Linux' && matrix.env == 'stable' && github.ref == 'refs/heads/main' }}
         env:

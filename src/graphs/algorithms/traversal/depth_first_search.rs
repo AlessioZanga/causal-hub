@@ -131,7 +131,7 @@ where
 
 impl<'a, G> Iterator for DepthFirstSearch<'a, G, directions::Undirected>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     type Item = usize;
 
@@ -181,7 +181,7 @@ where
 
 impl<'a, G> Iterator for DepthFirstSearch<'a, G, directions::Directed>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     type Item = usize;
 
@@ -246,3 +246,6 @@ where
         Self::new(g, Some(x), Traversal::Tree)
     }
 }
+
+/// Alias for depth-first search.
+pub type DFS<'a, G, D> = DepthFirstSearch<'a, G, D>;

@@ -1,6 +1,6 @@
 [package]
 name = "causal-hub"
-version = "0.0.3"
+version = "0.1.0"
 edition = "2021"
 authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 description = "A hub for Causal Data Science."
@@ -14,15 +14,24 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 
 [dependencies]
 bimap = "^0.6"
+is_sorted = "^0.1"
 itertools = "^0.10"
-ndarray = "^0.15"
-nohash-hasher = "^0.2"
+log = "^0.4"
+ndarray = { version = "^0.15", features = [ "rayon", "serde" ] }
+ndarray-linalg = "^0.16"
+page_size = "^0.5"
+polars = { version = "^0.26", features = [ "dtype-categorical", "ndarray" ] }
+rayon = "^1.6"
 rustc-hash = "^1.1"
+serde = "^1.0"
 sprs = "^0.11"
 thiserror = "^1.0"
 
 [dev-dependencies]
+approx = "^0.5"
+ndarray-linalg = { version = "^0.16", features = [ "openblas-system" ] }
 regex = "^1.7"
+serde_json = "^1.0"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "./katex.html"]

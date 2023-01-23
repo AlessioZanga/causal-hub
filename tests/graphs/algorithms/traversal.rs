@@ -29,14 +29,10 @@ mod undirected {
                 // Check visit order.
                 assert_eq!(order, [0]);
 
-                // The BFS on a trivial graph contains only the root ...
-                assert_eq!(search.distance.len(), 1);
-                // ... and no predecessors by definition.
-                assert_eq!(search.predecessor.len(), 0);
                 // The root has distance zero ...
-                assert_eq!(search.distance[&0], 0);
+                assert_eq!(search.distance[0], 0);
                 // ... and no predecessors by definition.
-                assert_eq!(search.predecessor.get(&0), None);
+                assert_eq!(search.predecessor[0], usize::MAX);
 
                 // Add an edge.
                 g.add_vertex("B");
@@ -49,17 +45,13 @@ mod undirected {
                 // Check visit order.
                 assert_eq!(order, [0, 1]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 2);
-                assert_eq!(search.predecessor.len(), 1);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
 
                 // Add a disconnected vertex.
                 g.add_vertex("C");
@@ -71,19 +63,15 @@ mod undirected {
                 // Check visit order.
                 assert_eq!(order, [0, 1]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 2);
-                assert_eq!(search.predecessor.len(), 1);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
-                assert_eq!(search.distance.get(&2), None);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
+                assert_eq!(search.distance[2], usize::MAX);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
-                assert_eq!(search.predecessor.get(&2), None);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
+                assert_eq!(search.predecessor[2], usize::MAX);
 
                 // Build non-trivial graph.
                 let g = $G::new(
@@ -118,29 +106,25 @@ mod undirected {
                 // Check visit order.
                 assert_eq!(order, [0, 1, 3, 2, 4, 5, 6, 7]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 8);
-                assert_eq!(search.predecessor.len(), 7);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
-                assert_eq!(search.distance[&2], 2);
-                assert_eq!(search.distance[&3], 1);
-                assert_eq!(search.distance[&4], 2);
-                assert_eq!(search.distance[&5], 2);
-                assert_eq!(search.distance[&6], 3);
-                assert_eq!(search.distance[&7], 3);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
+                assert_eq!(search.distance[2], 2);
+                assert_eq!(search.distance[3], 1);
+                assert_eq!(search.distance[4], 2);
+                assert_eq!(search.distance[5], 2);
+                assert_eq!(search.distance[6], 3);
+                assert_eq!(search.distance[7], 3);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
-                assert_eq!(search.predecessor[&2], 1);
-                assert_eq!(search.predecessor[&3], 0);
-                assert_eq!(search.predecessor[&4], 3);
-                assert_eq!(search.predecessor[&5], 3);
-                assert_eq!(search.predecessor[&6], 4);
-                assert_eq!(search.predecessor[&7], 5);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
+                assert_eq!(search.predecessor[2], 1);
+                assert_eq!(search.predecessor[3], 0);
+                assert_eq!(search.predecessor[4], 3);
+                assert_eq!(search.predecessor[5], 3);
+                assert_eq!(search.predecessor[6], 4);
+                assert_eq!(search.predecessor[7], 5);
             }
 
             #[test]
@@ -723,7 +707,7 @@ mod undirected {
     }
 
     mod undirected_dense_matrix {
-        use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
         generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
     }
 }
@@ -733,7 +717,9 @@ mod directed {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::{
-                graphs::algorithms::traversal::{DFSEdge, DFSEdges, TopologicalSort, Traversal, BFS, DFS},
+                graphs::algorithms::traversal::{
+                    DFSEdge, DFSEdges, TopologicalSort, Traversal, BFS, DFS,
+                },
                 prelude::*,
             };
 
@@ -754,14 +740,10 @@ mod directed {
                 // Execute BFS for the trivial graph.
                 let search = BFS::from((&g, 0));
 
-                // The BFS on a trivial graph contains only the root ...
-                assert_eq!(search.distance.len(), 1);
-                // ... and no predecessors by definition.
-                assert_eq!(search.predecessor.len(), 0);
                 // The root has distance zero ...
-                assert_eq!(search.distance[&0], 0);
+                assert_eq!(search.distance[0], 0);
                 // ... and no predecessors by definition.
-                assert_eq!(search.predecessor.get(&0), None);
+                assert_eq!(search.predecessor[0], usize::MAX);
 
                 // Add an edge.
                 g.add_vertex("1");
@@ -773,17 +755,13 @@ mod directed {
                 // Check visit order.
                 assert_eq!(order, [0, 1]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 2);
-                assert_eq!(search.predecessor.len(), 1);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
 
                 // Add a disconnected vertex.
                 g.add_vertex("2");
@@ -794,19 +772,15 @@ mod directed {
                 // Check visit order.
                 assert_eq!(order, [0, 1]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 2);
-                assert_eq!(search.predecessor.len(), 1);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
-                assert_eq!(search.distance.get(&2), None);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
+                assert_eq!(search.distance[2], usize::MAX);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
-                assert_eq!(search.predecessor.get(&2), None);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
+                assert_eq!(search.predecessor[2], usize::MAX);
 
                 // Build non-trivial graph.
                 let g = $G::new(
@@ -840,29 +814,25 @@ mod directed {
                 // Check visit order.
                 assert_eq!(order, [0, 1, 3, 2, 4, 5, 6, 7]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 8);
-                assert_eq!(search.predecessor.len(), 7);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
-                assert_eq!(search.distance[&2], 2);
-                assert_eq!(search.distance[&3], 1);
-                assert_eq!(search.distance[&4], 2);
-                assert_eq!(search.distance[&5], 2);
-                assert_eq!(search.distance[&6], 3);
-                assert_eq!(search.distance[&7], 3);
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
+                assert_eq!(search.distance[2], 2);
+                assert_eq!(search.distance[3], 1);
+                assert_eq!(search.distance[4], 2);
+                assert_eq!(search.distance[5], 2);
+                assert_eq!(search.distance[6], 3);
+                assert_eq!(search.distance[7], 3);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
-                assert_eq!(search.predecessor[&2], 1);
-                assert_eq!(search.predecessor[&3], 0);
-                assert_eq!(search.predecessor[&4], 3);
-                assert_eq!(search.predecessor[&5], 3);
-                assert_eq!(search.predecessor[&6], 4);
-                assert_eq!(search.predecessor[&7], 5);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
+                assert_eq!(search.predecessor[2], 1);
+                assert_eq!(search.predecessor[3], 0);
+                assert_eq!(search.predecessor[4], 3);
+                assert_eq!(search.predecessor[5], 3);
+                assert_eq!(search.predecessor[6], 4);
+                assert_eq!(search.predecessor[7], 5);
             }
 
             #[test]
@@ -908,33 +878,29 @@ mod directed {
                 // Check visit order.
                 assert_eq!(order, [0, 1, 2, 3, 4, 5, 6, 7, 9, 8]);
 
-                // Check BFS coherence.
-                assert_eq!(search.distance.len(), 10);
-                assert_eq!(search.predecessor.len(), 8);
-
                 // Check distances.
-                assert_eq!(search.distance[&0], 0);
-                assert_eq!(search.distance[&1], 1);
-                assert_eq!(search.distance[&2], 1);
-                assert_eq!(search.distance[&3], 1);
-                assert_eq!(search.distance[&4], 2);
-                assert_eq!(search.distance[&5], 2);
-                assert_eq!(search.distance.get(&6), Some(&usize::MAX));
-                assert_eq!(search.distance.get(&7), Some(&usize::MAX));
-                assert_eq!(search.distance.get(&8), Some(&usize::MAX));
-                assert_eq!(search.distance.get(&9), Some(&usize::MAX));
+                assert_eq!(search.distance[0], 0);
+                assert_eq!(search.distance[1], 1);
+                assert_eq!(search.distance[2], 1);
+                assert_eq!(search.distance[3], 1);
+                assert_eq!(search.distance[4], 2);
+                assert_eq!(search.distance[5], 2);
+                assert_eq!(search.distance[6], 0);
+                assert_eq!(search.distance[7], 1);
+                assert_eq!(search.distance[8], 2);
+                assert_eq!(search.distance[9], 1);
 
                 // Check predecessors.
-                assert_eq!(search.predecessor.get(&0), None);
-                assert_eq!(search.predecessor[&1], 0);
-                assert_eq!(search.predecessor[&2], 0);
-                assert_eq!(search.predecessor[&3], 0);
-                assert_eq!(search.predecessor[&4], 1);
-                assert_eq!(search.predecessor[&5], 3);
-                assert_eq!(search.predecessor.get(&6), None);
-                assert_eq!(search.predecessor[&7], 6);
-                assert_eq!(search.predecessor[&8], 7);
-                assert_eq!(search.predecessor[&9], 6);
+                assert_eq!(search.predecessor[0], usize::MAX);
+                assert_eq!(search.predecessor[1], 0);
+                assert_eq!(search.predecessor[2], 0);
+                assert_eq!(search.predecessor[3], 0);
+                assert_eq!(search.predecessor[4], 1);
+                assert_eq!(search.predecessor[5], 3);
+                assert_eq!(search.predecessor[6], usize::MAX);
+                assert_eq!(search.predecessor[7], 6);
+                assert_eq!(search.predecessor[8], 7);
+                assert_eq!(search.predecessor[9], 6);
             }
 
             #[test]
@@ -1403,7 +1369,7 @@ mod directed {
     }
 
     mod directed_dense_matrix {
-        use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
         generic_tests!(DirectedDenseAdjacencyMatrixGraph);
     }
 }
