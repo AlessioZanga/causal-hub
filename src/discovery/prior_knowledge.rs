@@ -4,25 +4,35 @@ use bimap::BiHashMap;
 
 /// Prior knowledge trait
 pub trait PriorKnowledge: Sync {
+    /// Get the set of forbidden edges.
     fn forbidden(&self) -> &HashSet<(usize, usize)>;
 
+    /// Checks if edge is forbidden.
     fn has_forbidden(&self, x: usize, y: usize) -> bool;
 
+    /// Add edge to the forbidden set.
     fn add_forbidden(&mut self, x: usize, y: usize) -> bool;
 
+    /// Delete edge from the forbidden set.
     fn del_forbidden(&mut self, x: usize, y: usize) -> bool;
 
+    /// Get the set of required edges.
     fn required(&self) -> &HashSet<(usize, usize)>;
 
+    /// Checks if edge is required.
     fn has_required(&self, x: usize, y: usize) -> bool;
 
+    /// Add edge to the required set.
     fn add_required(&mut self, x: usize, y: usize) -> bool;
 
+    /// Delete edge from the required set.
     fn del_required(&mut self, x: usize, y: usize) -> bool;
 
+    /// Get the set of varibles labels.
     fn labels(&self) -> &BTreeSet<String>;
 }
 
+/// Forbidden and required sets.
 #[derive(Clone, Debug)]
 pub struct ForbiddenRequired {
     forbidden: HashSet<(usize, usize)>,
@@ -31,6 +41,7 @@ pub struct ForbiddenRequired {
 }
 
 impl ForbiddenRequired {
+    /// Constructor for the forbidden and required prior knowledge sets.
     pub fn new<V, I, J, K>(vertices: I, forbidden: J, required: K) -> Self
     where
         I: IntoIterator<Item = V>,
@@ -137,4 +148,5 @@ impl PriorKnowledge for ForbiddenRequired {
     }
 }
 
+/// Alias for the forbidden and required sets.
 pub type FR = ForbiddenRequired;
