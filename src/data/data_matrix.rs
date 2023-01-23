@@ -41,6 +41,12 @@ impl From<DataFrame> for DiscreteDataMatrix {
             )
         );
 
+        // Check for wrong data type.
+        assert!(
+            df.iter().all(|s| !s.dtype().is_float()),
+            "DataSet must contain only categorical types"
+        );
+
         // Cast to categorical datatype.
         let df = df.iter().map(|s| {
             s.cast(&DataType::Utf8)
@@ -179,6 +185,12 @@ impl From<DataFrame> for ContinuousDataMatrix {
                 "DataSet must contain no missing values. ",
                 "Refer to `ContinuousDataMatrixWithMissing` to handle missing values properly."
             )
+        );
+
+        // Check for wrong data type.
+        assert!(
+            df.iter().all(|s| s.dtype().is_float()),
+            "DataSet must contain only float types"
         );
 
         // Sort columns by name.
