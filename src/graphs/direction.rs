@@ -1,3 +1,5 @@
+use std::iter::FusedIterator;
+
 use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 
 /// Directions pseudo-enumerator for generics algorithms.
@@ -23,7 +25,7 @@ macro_rules! Ne {
 /// Undirected graph trait.
 pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// Neighbors iterator type.
-    type NeighborsIter<'a>: Iterator<Item = usize>
+    type NeighborsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
@@ -168,22 +170,22 @@ macro_rules! De {
 /// Directed graph trait.
 pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// Ancestors iterator type.
-    type AncestorsIter<'a>: Iterator<Item = usize>
+    type AncestorsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Parents iterator type.
-    type ParentsIter<'a>: Iterator<Item = usize>
+    type ParentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Children iterator type.
-    type ChildrenIter<'a>: Iterator<Item = usize>
+    type ChildrenIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Descendants iterator type.
-    type DescendantsIter<'a>: Iterator<Item = usize>
+    type DescendantsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
@@ -501,7 +503,7 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
 /// Convert to undirected graph trait.
 pub trait IntoUndirectedGraph {
     /// Associated undirected graph type.
-    type UndirectedGraph: BaseGraph<Direction = directions::Undirected> + UndirectedGraph;
+    type UndirectedGraph: UndirectedGraph<Direction = directions::Undirected>;
 
     /// Make an undirected copy of the graph.
     ///

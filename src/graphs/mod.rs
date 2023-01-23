@@ -1,8 +1,11 @@
 /// Algorithms on graphs.
 pub mod algorithms;
 
+/// Structures on graphs.
+pub mod structs;
+
 mod base;
-pub use base::BaseGraph;
+pub use base::*;
 
 mod default;
 pub use default::*;
@@ -16,14 +19,14 @@ pub use error::*;
 mod partial_ord;
 pub use partial_ord::*;
 
+mod path;
+pub use path::*;
+
 mod subgraph;
 pub use subgraph::*;
 
-mod structs;
-pub use structs::*;
-
 /// Default undirected graph implementation based on dense adjacency matrix.
-pub type Graph = UndirectedDenseAdjacencyMatrixGraph;
+pub type Graph = structs::UndirectedDenseAdjacencyMatrixGraph;
 
 /// Default directed graph implementation based on dense adjacency matrix.
-pub type DiGraph = DirectedDenseAdjacencyMatrixGraph;
+pub type DiGraph = structs::DirectedDenseAdjacencyMatrixGraph;

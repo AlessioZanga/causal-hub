@@ -86,7 +86,7 @@ where
 /* Implement u-separation */
 impl<'a, G> Independence for GraphicalIndependence<'a, G, directions::Undirected>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     fn is_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
@@ -151,7 +151,7 @@ where
 /* Implement d-separation */
 impl<'a, G> Independence for GraphicalIndependence<'a, G, directions::Directed>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph + MoralGraph,
+    G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
     fn is_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where

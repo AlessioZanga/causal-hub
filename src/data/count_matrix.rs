@@ -13,6 +13,7 @@ pub struct MarginalCountMatrix {
 
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
@@ -35,6 +36,7 @@ impl MarginalCountMatrix {
 impl Deref for MarginalCountMatrix {
     type Target = Array1<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }
@@ -46,6 +48,7 @@ pub struct ConditionalCountMatrix<const PARALLEL: bool> {
 }
 
 impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
+    #[inline]
     pub(crate) fn eval(
         shape: (usize, usize),
         rmi: &RavelMultiIndex,
@@ -58,7 +61,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Fill count matrix.
         for row in d.rows() {
             // Get multi index.
-            let row_z = row.select(Axis(0), z);
+            let row_z = z.iter().map(|&z| row[z]);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
@@ -69,11 +72,12 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 
     /// Build new count matrix with given data matrix and indices.
-    pub fn new(d: &DiscreteDataMatrix, x: usize, z: Vec<usize>) -> Self {
+    #[inline]
+    pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(cards.select(Axis(0), &z));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x]);
 
@@ -83,10 +87,10 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
             true => d
                 .axis_chunks_iter(Axis(0), axis_chunks_size(d))
                 .into_par_iter()
-                .map(|d| Self::eval(shape, &rmi, d, x, &z))
+                .map(|d| Self::eval(shape, &rmi, d, x, z))
                 .reduce(|| Array2::zeros(shape), |acc, x| acc + x),
             // Count the given observations.
-            false => Self::eval(shape, &rmi, d.view(), x, &z),
+            false => Self::eval(shape, &rmi, d.view(), x, z),
         };
 
         Self { n }
@@ -96,6 +100,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
 impl<const PARALLEL: bool> Deref for ConditionalCountMatrix<PARALLEL> {
     type Target = Array2<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }
@@ -108,12 +113,13 @@ pub struct JointCountMatrix {
 
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
-    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: Vec<usize>) -> Self {
+    #[inline]
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(cards.select(Axis(0), &z));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
 
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x], cards[y]);
@@ -123,7 +129,7 @@ impl JointCountMatrix {
         // Fill count matrix.
         for row in d.rows() {
             // Get multi index.
-            let row_z = row.select(Axis(0), &z);
+            let row_z = z.iter().map(|&z| row[z]);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
@@ -137,6 +143,7 @@ impl JointCountMatrix {
 impl Deref for JointCountMatrix {
     type Target = Array3<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
     }

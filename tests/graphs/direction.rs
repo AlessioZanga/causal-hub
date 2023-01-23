@@ -3,6 +3,7 @@ mod undirected {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;
+            use is_sorted::IsSorted;
 
             #[test]
             fn neighbors() {
@@ -39,6 +40,7 @@ mod undirected {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
+                    assert!(Ne!(g, x).is_sorted());
                     assert!(Ne!(g, x).eq(f));
                 }
             }
@@ -132,8 +134,9 @@ mod undirected {
         };
     }
 
+    #[allow(unstable_name_collisions)]
     mod undirected_dense_matrix {
-        use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
         generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
     }
 }
@@ -143,6 +146,7 @@ mod directed {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;
+            use is_sorted::IsSorted;
 
             #[test]
             fn ancestors() {
@@ -191,6 +195,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
+                    assert!(An!(g, x).is_sorted());
                     assert!(An!(g, x).eq(f));
                 }
             }
@@ -309,6 +314,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
+                    assert!(Pa!(g, x).is_sorted());
                     assert!(Pa!(g, x).eq(f));
                 }
             }
@@ -427,6 +433,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
+                    assert!(Ch!(g, x).is_sorted());
                     assert!(Ch!(g, x).eq(f));
                 }
             }
@@ -545,6 +552,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
+                    assert!(De!(g, x).is_sorted());
                     assert!(De!(g, x).eq(f));
                 }
             }
@@ -728,8 +736,9 @@ mod directed {
         };
     }
 
+    #[allow(unstable_name_collisions)]
     mod directed_dense_matrix {
-        use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
         generic_tests!(DirectedDenseAdjacencyMatrixGraph);
     }
 }

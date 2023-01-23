@@ -20,6 +20,8 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - name: Dependencies
+        run: sudo apt-get install libopenblas-dev
       - name: Coverage
         run: |
           unzip -o ./tests/assets -d ./tests

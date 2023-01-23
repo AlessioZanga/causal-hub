@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
@@ -117,6 +117,7 @@ impl<'a, G, D> From<&'a G> for BreadthFirstSearch<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from(g: &'a G) -> Self {
         Self::new(g, None, Traversal::Tree)
     }
@@ -126,6 +127,7 @@ impl<'a, G, D> From<(&'a G, usize)> for BreadthFirstSearch<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x), Traversal::Tree)
     }
@@ -133,7 +135,7 @@ where
 
 impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::Undirected>
 where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
+    G: UndirectedGraph<Direction = directions::Undirected>,
 {
     type Item = usize;
 
@@ -176,9 +178,14 @@ where
     }
 }
 
+impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Undirected> where
+    G: UndirectedGraph<Direction = directions::Undirected>
+{
+}
+
 impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::Directed>
 where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
+    G: DirectedGraph<Direction = directions::Directed>,
 {
     type Item = usize;
 
@@ -219,6 +226,11 @@ where
             x
         })
     }
+}
+
+impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Directed> where
+    G: DirectedGraph<Direction = directions::Directed>
+{
 }
 
 /// Alias for breadth-first search.

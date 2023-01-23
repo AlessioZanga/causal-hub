@@ -1,6 +1,7 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
+    iter::FusedIterator,
 };
 
 /// Vertex iterator.
@@ -37,7 +38,7 @@ macro_rules! Adj {
 }
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display + Hash {
+pub trait BaseGraph: Clone + Debug + Display + Hash + Send + Sync {
     /// Data type.
     type Data;
 
@@ -45,22 +46,22 @@ pub trait BaseGraph: Clone + Debug + Display + Hash {
     type Direction;
 
     /// Labels iterator type.
-    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Vertices iterator type.
-    type VerticesIter<'a>: Iterator<Item = usize> + ExactSizeIterator
+    type VerticesIter<'a>: Clone + Iterator<Item = usize> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Edges iterator type.
-    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator
+    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Adjacents vertices iterator type.
-    type AdjacentsIter<'a>: Iterator<Item = usize>
+    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 

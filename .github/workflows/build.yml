@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest] # FIXME: , windows-latest]
         env: ["stable", "beta", "nightly"]
     steps:
       - uses: actions/checkout@v3
@@ -19,12 +19,23 @@ jobs:
           path: |
             ~/.cargo
             target
+            vcpkg
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
       - name: Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.env }}
+      - name: Dependencies (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install libopenblas-dev
+      - name: Dependencies (MacOS)
+        if: ${{ runner.os == 'MacOS' }}
+        run: brew install openblas
+      - name: Dependencies (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          echo "FIXME: Fix LAPACK build in VCPKG"
       - name: Build
         run: cargo +${{ matrix.env }} build -v
       - name: Test

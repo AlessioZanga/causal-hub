@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap, VecDeque};
+use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Edge classification performed by the [depth first search edges](`DepthFirstSearchEdges`) algorithm.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum DFSEdge {
     /// From a vertex to an ancestor.
     Back(usize, usize),
@@ -34,11 +34,11 @@ where
     /// Global time counter.
     pub time: usize,
     /// Discovery time of each discovered vertex.
-    pub discovery_time: HashMap<usize, usize>,
+    pub discovery_time: Vec<usize>,
     /// Finish time of each discovered vertex.
-    pub finish_time: HashMap<usize, usize>,
+    pub finish_time: Vec<usize>,
     /// Predecessor of each discovered vertex (except the source vertex).
-    pub predecessor: HashMap<usize, usize>,
+    pub predecessor: Vec<usize>,
 }
 
 impl<'a, G, D> DepthFirstSearchEdges<'a, G, D>
@@ -54,192 +54,45 @@ where
     ///
     /// Panics if the (optional) source vertex is not in the graph.
     ///
+    #[inline]
     pub fn new(g: &'a G, x: Option<usize>, m: Traversal) -> Self {
-        // Initialize default search object.
-        let mut search = Self {
-            // Set target graph.
-            g,
-            // Initialize the to-be-visited queue with the source vertex.
-            stack: Default::default(),
-            // Initialize the global clock.
-            time: Default::default(),
-            // Initialize the discovery-time map.
-            discovery_time: Default::default(),
-            // Initialize the finish-time map.
-            finish_time: Default::default(),
-            // Initialize the predecessor map.
-            predecessor: Default::default(),
-        };
-        // If the graph is null.
-        if g.order() == 0 {
-            // Assert source vertex is none.
-            assert!(x.is_none());
-            // Then, return the default search object.
-            return search;
-        }
-        // Get source vertex, if any.
-        let x = match x {
-            // If no source vertex is given, choose the first one in the vertex set.
-            None => V!(g).next().unwrap(),
-            // Otherwise ...
-            Some(x) => {
-                // ... assert that source vertex is in graph.
-                assert!(g.has_vertex(x));
-                // Return given source vertex.
-                x
-            }
-        };
+        // Get graph order.
+        let order = g.order();
+        // Initialize the to-be-visited queue with the source vertex.
+        let mut stack = Vec::default();
+        // Initialize the global clock.
+        let time = 0;
+        // Initialize the discovery-time map.
+        let discovery_time = vec![usize::MAX; order];
+        // Initialize the finish-time map.
+        let finish_time = vec![usize::MAX; order];
+        // Initialize the predecessor map.
+        let predecessor = vec![usize::MAX; order];
+
         // If visit variant is Forest.
         if matches!(m, Traversal::Forest) {
-            // Add vertices to the visit stack in reverse to preserve order.
-            let mut queue = VecDeque::with_capacity(g.order());
-            queue.extend(V!(g).filter(|&y| y != x).map(|y| (y, y)));
-            search.stack.extend(queue.iter().rev());
-        }
-        // Push source vertex onto the stack.
-        search.stack.push((x, x));
-        // Return search object.
-        search
-    }
-}
-
-impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Undirected>
-where
-    G: BaseGraph<Direction = directions::Undirected> + UndirectedGraph,
-{
-    type Item = DFSEdge;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // If there are still vertices to be visited.
-        while let Some(&(x, y)) = self.stack.last() {
-            // Check if vertex is WHITE (i.e. was not seen before).
-            if let Entry::Vacant(e) = self.discovery_time.entry(y) {
-                // Set its discover time (as GRAY).
-                e.insert(self.time);
-                // Increment time.
-                self.time += 1;
-                // Initialize visiting queue.
-                let mut queue = VecDeque::new();
-                // Iterate over reachable vertices.
-                for z in Ne!(self.g, y) {
-                    // Filter incoming edge. TODO: Simplify this.
-                    if self.predecessor.get(&y) == Some(&z) {
-                        continue;
-                    }
-                    // Filter already visited vertices (as GRAY).
-                    if !self.discovery_time.contains_key(&z) {
-                        // Set predecessor.
-                        self.predecessor.insert(z, y);
-                    }
-                    // Add to queue.
-                    queue.push_front((y, z));
-                }
-                // Push vertices onto the stack in reverse order, this makes
-                // traversal order and neighborhood order the same.
-                self.stack.extend(queue);
-                // Filter the base case. TODO: Simplify this. Base case-related.
-                if x != y && self.predecessor.contains_key(&y) {
-                    // discovery[x] < discovery[y] && finish[x] < finish[y].
-                    return Some(DFSEdge::Tree(x, y));
-                }
-            // If the vertex is NOT WHITE.
-            } else {
-                // Remove it from stack.
-                self.stack.pop();
-                // Check if current vertex can be GRAY. TODO: Simplify this. Base case-related.
-                let flag = self.predecessor.get(&y);
-                // Check if it is GRAY (not BLACK). TODO: Simplify this. Base case-related.
-                if (flag.is_none() || flag == Some(&x)) && !self.finish_time.contains_key(&y) {
-                    // Set its finish time (as BLACK).
-                    self.finish_time.insert(y, self.time);
-                    // Increment time.
-                    self.time += 1;
-                }
-            }
-            // Classify the incoming edge w.r.t. the timings.
-            // NOTE: Given that the graph is undirected, there are no forward nor cross edges.
-            if self.discovery_time[&x] > self.discovery_time[&y]
-                && self.discovery_time[&x] < *self.finish_time.get(&y).unwrap_or(&0)
-            {
-                // discovery[x] > discovery[y] && discovery[x] < finish[y].
-                return Some(DFSEdge::Back(x, y));
-            }
+            // Add vertices to the visit stack...
+            stack.extend(V!(g).map(|x| (usize::MAX, x)));
+            // ... in reverse to preserve order.
+            stack.reverse();
         }
 
-        None
-    }
-}
+        // If no source vertex is given, choose the first in the vertex set.
+        if let Some(x) = x.or_else(|| V!(g).next()) {
+            // ... assert that source vertex is in graph.
+            assert!(g.has_vertex(x));
+            // Push source vertex onto the stack.
+            stack.push((usize::MAX, x));
+        };
 
-impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Directed>
-where
-    G: BaseGraph<Direction = directions::Directed> + DirectedGraph,
-{
-    type Item = DFSEdge;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // If there are still vertices to be visited.
-        while let Some(&(x, y)) = self.stack.last() {
-            // Check if vertex is WHITE (i.e. was not seen before).
-            if let Entry::Vacant(e) = self.discovery_time.entry(y) {
-                // Set its discover time (as GRAY).
-                e.insert(self.time);
-                // Increment time.
-                self.time += 1;
-                // Initialize visiting queue.
-                let mut queue = VecDeque::new();
-                // Iterate over reachable vertices.
-                for z in Ch!(self.g, y) {
-                    // Filter already visited vertices (as GRAY).
-                    if !self.discovery_time.contains_key(&z) {
-                        // Set predecessor.
-                        self.predecessor.insert(z, y);
-                    }
-                    // Add to queue.
-                    queue.push_front((y, z));
-                }
-                // Push vertices onto the stack in reverse order, this makes
-                // traversal order and neighborhood order the same.
-                self.stack.extend(queue);
-                // Filter the base case. TODO: Simplify this. Base case-related.
-                if x != y && self.predecessor.contains_key(&y) {
-                    // discovery[x] < discovery[y] && discovery[x] > finish[y].
-                    return Some(DFSEdge::Tree(x, y));
-                }
-            // If the vertex is NOT WHITE.
-            } else {
-                // Remove it from stack.
-                self.stack.pop();
-                // Check if current vertex can be GRAY. TODO: Simplify this. Base case-related.
-                let flag = self.predecessor.get(&y);
-                // Check if it is GRAY (not BLACK). TODO: Simplify this. Base case-related.
-                if (flag.is_none() || flag == Some(&x)) && !self.finish_time.contains_key(&y) {
-                    // Set its finish time (as BLACK).
-                    self.finish_time.insert(y, self.time);
-                    // Increment time.
-                    self.time += 1;
-                }
-            }
-            // Classify the incoming edge w.r.t. the timings.
-            if self.discovery_time[&x] > self.discovery_time[&y] {
-                if self.discovery_time[&x] < *self.finish_time.get(&y).unwrap_or(&0) {
-                    // discovery[x] > discovery[y] && discovery[x] < finish[y], or ...
-                    return Some(DFSEdge::Back(x, y));
-                } else {
-                    // discovery[x] > discovery[y] && discovery[x] > finish[y], or ...
-                    return Some(DFSEdge::Cross(x, y));
-                }
-            } else {
-                // Finally ... TODO: Simplify this. Partially base case-related.
-                let flag = self.predecessor.get(&y);
-                // ... if it is not a Tree edge ...
-                if x != y && flag.is_some() && flag != Some(&x) {
-                    // ... then it is a Forward edge.
-                    return Some(DFSEdge::Forward(x, y));
-                }
-            }
+        Self {
+            g,
+            stack,
+            time,
+            discovery_time,
+            finish_time,
+            predecessor,
         }
-
-        None
     }
 }
 
@@ -247,6 +100,7 @@ impl<'a, G, D> From<&'a G> for DepthFirstSearchEdges<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from(g: &'a G) -> Self {
         Self::new(g, None, Traversal::Tree)
     }
@@ -256,9 +110,193 @@ impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearchEdges<'a, G, D>
 where
     G: BaseGraph<Direction = D>,
 {
+    #[inline]
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x), Traversal::Tree)
     }
+}
+
+impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Undirected>
+where
+    G: UndirectedGraph<Direction = directions::Undirected>,
+{
+    type Item = DFSEdge;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If there are still vertices to be visited.
+        while let Some(&(x, y)) = self.stack.last() {
+            // Check if vertex is WHITE (i.e. was not seen before).
+            if self.discovery_time[y] == usize::MAX {
+                // Set its discover time (as GRAY).
+                self.discovery_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+
+                // Initialize visiting queue.
+                let mut queue = VecDeque::new();
+
+                // Iterate over reachable vertices.
+                for z in Ne!(self.g, y) {
+                    // Filter incoming edge.
+                    if self.predecessor[y] != z {
+                        // Add to queue.
+                        queue.push_front((y, z));
+                    }
+                    // Filter already visited vertices (as GRAY).
+                    if self.discovery_time[z] == usize::MAX {
+                        // Set predecessor.
+                        self.predecessor[z] = y;
+                    }
+                }
+
+                // Push vertices onto the stack in reverse order, this makes
+                // traversal order and neighborhood order the same.
+                self.stack.extend(queue);
+
+                // Filter the base case.
+                if x == usize::MAX {
+                    continue;
+                }
+
+                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                return Some(DFSEdge::Tree(x, y));
+            }
+
+            // If the vertex is NOT WHITE, remove it from stack.
+            self.stack.pop();
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+            // Check if it is GRAY (not BLACK).
+            if self.finish_time[y] == usize::MAX
+                && (predecessor_y == usize::MAX || predecessor_y == x)
+            {
+                // Set its finish time (as BLACK).
+                self.finish_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+            }
+
+            // Filter the base case.
+            if x == usize::MAX {
+                continue;
+            }
+
+            // Get X discovery time.
+            let discovery_x = self.discovery_time[x];
+            // Get Y discovery time.
+            let discovery_y = self.discovery_time[y];
+            // Get Y finish time.
+            let finish_y = self.finish_time[y];
+
+            // NOTE: Given that the graph is undirected, there are no forward nor cross edges.
+            if discovery_x >= discovery_y && discovery_x < finish_y && finish_y != usize::MAX {
+                // discovery[x] > discovery[y] && discovery[x] < finish[y].
+                return Some(DFSEdge::Back(x, y));
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Undirected> where
+    G: UndirectedGraph<Direction = directions::Undirected>
+{
+}
+
+impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::Directed>
+where
+    G: DirectedGraph<Direction = directions::Directed>,
+{
+    type Item = DFSEdge;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If there are still vertices to be visited.
+        while let Some(&(x, y)) = self.stack.last() {
+            // Check if vertex is WHITE (i.e. was not seen before).
+            if self.discovery_time[y] == usize::MAX {
+                // Set its discover time (as GRAY).
+                self.discovery_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+
+                // Initialize visiting queue.
+                let mut queue = VecDeque::new();
+
+                // Iterate over reachable vertices.
+                for z in Ch!(self.g, y) {
+                    // Add to queue.
+                    queue.push_front((y, z));
+                    // Filter already visited vertices (as GRAY).
+                    if self.discovery_time[z] == usize::MAX {
+                        // Set predecessor.
+                        self.predecessor[z] = y;
+                    }
+                }
+
+                // Push vertices onto the stack in reverse order, this makes
+                // traversal order and neighborhood order the same.
+                self.stack.extend(queue);
+
+                // Filter the base case.
+                if x == usize::MAX {
+                    continue;
+                }
+
+                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                return Some(DFSEdge::Tree(x, y));
+            }
+
+            // If the vertex is NOT WHITE, remove it from stack.
+            self.stack.pop();
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+            // Check if it is GRAY (not BLACK).
+            if self.finish_time[y] == usize::MAX
+                && (predecessor_y == usize::MAX || predecessor_y == x)
+            {
+                // Set its finish time (as BLACK).
+                self.finish_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+            }
+
+            // Filter the base case.
+            if x == usize::MAX {
+                continue;
+            }
+
+            // Get X discovery time.
+            let discovery_x = self.discovery_time[x];
+            // Get Y discovery time.
+            let discovery_y = self.discovery_time[y];
+            // Get Y finish time.
+            let finish_y = self.finish_time[y];
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+
+            // discovery[x] > discovery[y] ...
+            if discovery_x >= discovery_y {
+                // ... && discovery[x] < finish[y], or ...
+                if discovery_x < finish_y && finish_y != usize::MAX {
+                    return Some(DFSEdge::Back(x, y));
+                }
+                // ... && discovery[x] > finish[y], or ...
+                return Some(DFSEdge::Cross(x, y));
+            }
+            // ... it is a forward edge.
+            if predecessor_y != x && predecessor_y != usize::MAX {
+                return Some(DFSEdge::Forward(x, y));
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Directed> where
+    G: DirectedGraph<Direction = directions::Directed>
+{
 }
 
 /// Alias for depth-first search.

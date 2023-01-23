@@ -8,6 +8,8 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
 
+use super::DataSet;
+
 /* Implement DiscreteDataMatrix */
 
 /// Data matrix for discrete data.
@@ -16,12 +18,13 @@ pub struct DiscreteDataMatrix {
     data: Array2<usize>,
     labels: BTreeSet<String>,
     levels: HashMap<String, Vec<String>>,
-    cardinality: Array1<usize>,
+    cardinality: Vec<usize>,
 }
 
 impl Deref for DiscreteDataMatrix {
     type Target = Array2<usize>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.data
     }
@@ -36,6 +39,12 @@ impl From<DataFrame> for DiscreteDataMatrix {
                 "DataSet must contain no missing values.",
                 "Refer to `DiscreteDataMatrixWithMissing` to handle missing values properly."
             )
+        );
+
+        // Check for wrong data type.
+        assert!(
+            df.iter().all(|s| !s.dtype().is_float()),
+            "DataSet must contain only categorical types"
         );
 
         // Cast to categorical datatype.
@@ -126,19 +135,25 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
-impl DiscreteDataMatrix {
-    /// Gets the set of variables labels.
-    pub fn labels(&self) -> &BTreeSet<String> {
+impl DataSet for DiscreteDataMatrix {
+    type Data = Array2<usize>;
+
+    #[inline]
+    fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
+}
 
+impl DiscreteDataMatrix {
     /// Gets the map of variables to their levels.
+    #[inline]
     pub fn levels(&self) -> &HashMap<String, Vec<String>> {
         &self.levels
     }
 
     /// Gets the vector of variables cardinalities.
-    pub fn cardinality(&self) -> &Array1<usize> {
+    #[inline]
+    pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
 }
@@ -155,6 +170,7 @@ pub struct ContinuousDataMatrix {
 impl Deref for ContinuousDataMatrix {
     type Target = Array2<f64>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.data
     }
@@ -169,6 +185,12 @@ impl From<DataFrame> for ContinuousDataMatrix {
                 "DataSet must contain no missing values. ",
                 "Refer to `ContinuousDataMatrixWithMissing` to handle missing values properly."
             )
+        );
+
+        // Check for wrong data type.
+        assert!(
+            df.iter().all(|s| s.dtype().is_float()),
+            "DataSet must contain only float types"
         );
 
         // Sort columns by name.
@@ -190,9 +212,11 @@ impl From<DataFrame> for ContinuousDataMatrix {
     }
 }
 
-impl ContinuousDataMatrix {
-    /// Gets the set of variables labels.
-    pub fn labels(&self) -> &BTreeSet<String> {
+impl DataSet for ContinuousDataMatrix {
+    type Data = Array2<f64>;
+
+    #[inline]
+    fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
 }

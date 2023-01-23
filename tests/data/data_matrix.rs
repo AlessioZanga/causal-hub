@@ -3,7 +3,7 @@ mod tests {
     mod discrete {
         use std::collections::BTreeMap;
 
-        use causal_hub::data::DiscreteDataMatrix;
+        use causal_hub::prelude::*;
         use itertools::Itertools;
         use ndarray::prelude::*;
         use polars::prelude::*;
@@ -44,12 +44,12 @@ mod tests {
                 .sorted_by(|a, b| a.0.cmp(b.0))
                 .eq(&levels));
 
-            assert_eq!(data.cardinality(), array![3, 1, 2, 3]);
+            assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
         }
     }
 
     mod continuous {
-        use causal_hub::data::ContinuousDataMatrix;
+        use causal_hub::prelude::*;
         use ndarray::prelude::*;
         use polars::prelude::*;
 
