@@ -386,9 +386,9 @@ where
                 u_star.extend(c_star.into_iter());
                 // Check if difference is meaningful.
                 let diff = delta_star - delta;
-                let diff = diff * !(f64::abs(diff) < f64::sqrt(f64::EPSILON)) as u8 as f64;
+                let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
                 // Return best operation.
-                match diff > 0. {
+                match diff.is_sign_positive() && !sign {
                     true => (op_star, (delta_star, u_star)),
                     false => (op, (delta, u_star)),
                 }
@@ -587,9 +587,9 @@ where
                 u_star.extend(c_star.into_iter());
                 // Check if difference is meaningful.
                 let diff = delta_star - delta;
-                let diff = diff * !(f64::abs(diff) < f64::sqrt(f64::EPSILON)) as u8 as f64;
+                let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
                 // Return best operation.
-                match diff > 0. {
+                match diff.is_sign_positive() && !sign {
                     true => (op_star, (delta_star, u_star)),
                     false => (op, (delta, u_star)),
                 }
