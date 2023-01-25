@@ -1,4 +1,4 @@
-mod discrete;
+mod categorical;
 mod gaussian;
 
 mod structs;

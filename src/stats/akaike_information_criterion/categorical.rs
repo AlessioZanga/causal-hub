@@ -1,17 +1,17 @@
 use super::AkaikeInformationCriterion;
 use crate::{
-    data::DiscreteDataMatrix,
+    data::CategoricalDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
 };
 
 impl<const RESCALED: bool, const PARALLEL: bool>
-    AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
+    AkaikeInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
 {
     /// Computes AIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    pub fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the cardinality.
         let cards = d.cardinality();
         // Get the cardinality of vertices.
@@ -21,7 +21,7 @@ impl<const RESCALED: bool, const PARALLEL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<DiscreteDataMatrix, PARALLEL>::new();
+        let ll = LogLikelihood::<CategoricalDataMatrix, PARALLEL>::new();
         // Compute the log-likelihood.
         let ll = ll.call(d, x, z);
 
@@ -36,13 +36,13 @@ impl<const RESCALED: bool, const PARALLEL: bool>
 }
 
 impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
+    DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for AkaikeInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }
 }

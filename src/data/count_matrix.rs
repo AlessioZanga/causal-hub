@@ -3,7 +3,7 @@ use std::ops::Deref;
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::{DiscreteDataMatrix, RavelMultiIndex};
+use super::{CategoricalDataMatrix, RavelMultiIndex};
 use crate::utils::axis_chunks_size;
 
 /// One-dimensional marginal contingency table.
@@ -14,7 +14,7 @@ pub struct MarginalCountMatrix {
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
+    pub fn new(d: &CategoricalDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -39,6 +39,13 @@ impl Deref for MarginalCountMatrix {
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
+    }
+}
+
+impl From<MarginalCountMatrix> for Array1<usize> {
+    #[inline]
+    fn from(other: MarginalCountMatrix) -> Array1<usize> {
+        other.n
     }
 }
 
@@ -73,7 +80,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
 
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
+    pub fn new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
@@ -106,6 +113,13 @@ impl<const PARALLEL: bool> Deref for ConditionalCountMatrix<PARALLEL> {
     }
 }
 
+impl<const PARALLEL: bool> From<ConditionalCountMatrix<PARALLEL>> for Array2<usize> {
+    #[inline]
+    fn from(other: ConditionalCountMatrix<PARALLEL>) -> Array2<usize> {
+        other.n
+    }
+}
+
 /// Three-dimensional joint (conditional) contingency table.
 pub struct JointCountMatrix {
     n: Array3<usize>,
@@ -114,7 +128,7 @@ pub struct JointCountMatrix {
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
+    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -146,5 +160,12 @@ impl Deref for JointCountMatrix {
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.n
+    }
+}
+
+impl From<JointCountMatrix> for Array3<usize> {
+    #[inline]
+    fn from(other: JointCountMatrix) -> Array3<usize> {
+        other.n
     }
 }
