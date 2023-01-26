@@ -283,7 +283,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
     fn label(&self, x: usize) -> &str {
         self.labels_indices
             .get_by_right(&x)
-            .unwrap_or_else(|| panic!("No vertex with label `{}`", x))
+            .unwrap_or_else(|| panic!("No vertex with label `{x}`"))
     }
 
     #[inline]
@@ -296,7 +296,7 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         *self
             .labels_indices
             .get_by_left(x)
-            .unwrap_or_else(|| panic!("No vertex with identifier `{}`", x))
+            .unwrap_or_else(|| panic!("No vertex with identifier `{x}`"))
     }
 
     #[inline]
