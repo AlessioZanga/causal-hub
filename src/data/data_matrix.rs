@@ -21,6 +21,45 @@ pub struct CategoricalDataMatrix {
     cardinality: Vec<usize>,
 }
 
+impl CategoricalDataMatrix {
+    /// Construct a new categorical data matrix given data encoding, labels and levels.
+    pub fn new<V, I, J, K>(data: Array2<usize>, labels: I, levels: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, K)>,
+        K: IntoIterator<Item = V>,
+    {
+        // Construct the labels set.
+        let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
+        // Check labels consistency.
+        assert_eq!(data.ncols(), labels.len());
+        // Construct the levels map.
+        let levels: HashMap<String, Vec<String>> = levels
+            .into_iter()
+            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .collect();
+        // Check levels consistency.
+        assert!(labels.iter().eq(levels.keys().sorted()));
+        // Compute cardinalities from levels.
+        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Check cardinalities.
+        assert_eq!(
+            data.fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
+                .into_iter()
+                .collect::<Vec<_>>(),
+            cardinality
+        );
+
+        Self {
+            data,
+            labels,
+            levels,
+            cardinality,
+        }
+    }
+}
+
 impl Deref for CategoricalDataMatrix {
     type Target = Array2<usize>;
 

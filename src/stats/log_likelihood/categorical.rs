@@ -3,7 +3,7 @@ use rayon::prelude::*;
 
 use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
 use crate::{
-    data::{ConditionalCountMatrix, CategoricalDataMatrix, MarginalCountMatrix},
+    data::{CategoricalDataMatrix, ConditionalCountMatrix, MarginalCountMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     utils::axis_chunks_size,

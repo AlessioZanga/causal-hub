@@ -106,7 +106,8 @@ mod categorical {
     #[test]
     fn log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -146,7 +147,8 @@ mod categorical {
     #[test]
     fn parallel_log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
