@@ -66,10 +66,10 @@ impl ForbiddenRequired {
                 (
                     *labels_indices
                         .get_by_left(&x)
-                        .unwrap_or_else(|| panic!("No vertex with label `{}`", x)),
+                        .unwrap_or_else(|| panic!("No vertex with label `{x}`")),
                     *labels_indices
                         .get_by_left(&y)
-                        .unwrap_or_else(|| panic!("No vertex with label `{}`", y)),
+                        .unwrap_or_else(|| panic!("No vertex with label `{y}`")),
                 )
             })
             .collect();
@@ -81,10 +81,10 @@ impl ForbiddenRequired {
                 (
                     *labels_indices
                         .get_by_left(&x)
-                        .unwrap_or_else(|| panic!("No vertex with label `{}`", x)),
+                        .unwrap_or_else(|| panic!("No vertex with label `{x}`")),
                     *labels_indices
                         .get_by_left(&y)
-                        .unwrap_or_else(|| panic!("No vertex with label `{}`", y)),
+                        .unwrap_or_else(|| panic!("No vertex with label `{y}`")),
                 )
             })
             .collect();
