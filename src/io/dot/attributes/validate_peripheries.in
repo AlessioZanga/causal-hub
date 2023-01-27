@@ -1,1 +1,1 @@
-s.to_string()
+s.to_string() /* FIXME: Validate input. */
