@@ -13,6 +13,9 @@ pub mod discovery;
 /// Graphs algorithms and structures.
 pub mod graphs;
 
+/// I/O algorithms and structures.
+pub mod io;
+
 /// Models algorithms and structures.
 pub mod models;
 
