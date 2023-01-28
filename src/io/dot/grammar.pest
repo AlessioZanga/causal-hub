@@ -1,41 +1,57 @@
-file = { SOI ~ graph ~ EOI }
+file = _{ SOI ~ graphs ~ EOI }
 
-graph = { strict? ~ graph_type ~ id? ~ statements }
+graphs = _{ graph+ }
 
-strict = { "strict" }
-graph_type = { "graph" | "digraph" }
-statements = { "{" ~ statement* ~ "}" }
-statement = _{ pair | attribute | subgraph | path | vertex ~ ";"? }
+graph = { strict ~ graph_type ~ graph_id ~ "{" ~ statements ~ "}" }
 
-pair = { id ~ "=" ~ id }
+strict = { ^"strict"? }
+
+graph_type = { ^"graph" | ^"digraph" }
+
+graph_id = { id? }
+
+text = @{ !ASCII_DIGIT ~ ("_" | ASCII_ALPHANUMERIC)+ }
+
+quoted_text = @{ "\"" ~ (!"\"" ~ "\\\""? ~ ANY)* ~ "\"" }
+
+number = @{ "-"? ~ ("." ~ ASCII_DIGIT+ | ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT*)?) }
+
+id = _{ number | text | quoted_text }
+
+html = { "<" ~ (!(">" ~ WHITESPACE* ~">") ~ ANY)+ ~ ">" ~ WHITESPACE* ~ ">" }
+
+pair = { id ~ "=" ~ (id | html) }
+
 pairs = { "[" ~ (pair ~ (";" | ",")?)* ~ "]" }
-attribute = { ("graph" | "vertex" | "edge") ~ pairs }
 
-subgraph = { "subgraph" ~ id? ~ statements? }
+statements = { statement* }
 
-vertex = { vertex_id ~ pairs* }
+statement = _{ (pair | attribute | subgraph | path | vertex) ~ ";"? }
+
+attribute = { (graph_type | vertex_type | path_type) ~ pairs }
+
+subgraph_type = { ^"subgraph" }
+
+subgraph = { (subgraph_type ~ id?)? ~ "{" ~ statements? ~ "}" }
+
+vertex_type = { ^"node" }
+
 vertex_id = { id ~ port? }
-port = { (":" ~ compass) | (":" ~ id ~ (":" ~ compass)?) }
-compass = ${ "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw" | "c" | "_" }
 
-edge_op = _{ "->" | "--" }
-path_id = { (vertex_id | subgraph) ~ (edge_op ~ (vertex_id | subgraph))+ }
+port = { (":" ~ id ~ (":" ~ vertex_direction)? | ":" ~ vertex_direction) }
+
+vertex_direction = { "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw" | "c" | "_" }
+
+vertex = { vertex_id ~ pairs? }
+
+path_type = { ^"edge" }
+
+path_id = { (vertex_id | subgraph) ~ (path_direction ~ (vertex_id | subgraph))+ }
+
+path_direction = { ("->" | "--") }
+
 path = { path_id ~ pairs? }
 
-id = { text | html | quoted_text }
+WHITESPACE = _{ (" " | "\t" | NEWLINE) }
 
-text = ${ (word ~ (word | ASCII_DIGIT | "_")*) | number }
-word = _{ ('a'..'z' | 'A'..'Z')+ }
-number = ${ "-"? ~ (("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) ~ ("." ~ ASCII_DIGIT+)? | ("." ~ ASCII_DIGIT+)) }
-
-html = ${ "<" ~ (!(">" ~ WHITESPACE* ~">") ~ ANY)+ ~ ">" ~ WHITESPACE* ~ ">" }
-
-quoted_text = ${ "\"" ~ char* ~ "\"" }
-char = _{
-    !("\"" | "\\" | "\'") ~ ANY
-    | "\\" ~ ("\"" | "\'" |  "\\" | "/" | "b" | "f" | "n" | "r" | "t")
-    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
-}
-
-WHITESPACE = _{ " " | "\t" | "\r\n" | "\n" }
-COMMENT    = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | (("#" | "//") ~ (!NEWLINE ~ ANY)* ~ NEWLINE?) }
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/"  | "//" ~ (!"\n" ~ ANY)* | "#" ~ (!"\n" ~ ANY)*) }

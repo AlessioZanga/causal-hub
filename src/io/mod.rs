@@ -1,2 +1,2 @@
-/// `DOT` format.
-pub mod dot;
+mod dot;
+pub use dot::DOT;
