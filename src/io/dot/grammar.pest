@@ -1,0 +1,41 @@
+file = { SOI ~ graph ~ EOI }
+
+graph = { strict? ~ graph_type ~ id? ~ statements }
+
+strict = { "strict" }
+graph_type = { "graph" | "digraph" }
+statements = { "{" ~ statement* ~ "}" }
+statement = _{ pair | attribute | subgraph | path | vertex ~ ";"? }
+
+pair = { id ~ "=" ~ id }
+pairs = { "[" ~ (pair ~ (";" | ",")?)* ~ "]" }
+attribute = { ("graph" | "vertex" | "edge") ~ pairs }
+
+subgraph = { "subgraph" ~ id? ~ statements? }
+
+vertex = { vertex_id ~ pairs* }
+vertex_id = { id ~ port? }
+port = { (":" ~ compass) | (":" ~ id ~ (":" ~ compass)?) }
+compass = ${ "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw" | "c" | "_" }
+
+edge_op = _{ "->" | "--" }
+path_id = { (vertex_id | subgraph) ~ (edge_op ~ (vertex_id | subgraph))+ }
+path = { path_id ~ pairs? }
+
+id = { text | html | quoted_text }
+
+text = ${ (word ~ (word | ASCII_DIGIT | "_")*) | number }
+word = _{ ('a'..'z' | 'A'..'Z')+ }
+number = ${ "-"? ~ (("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) ~ ("." ~ ASCII_DIGIT+)? | ("." ~ ASCII_DIGIT+)) }
+
+html = ${ "<" ~ (!(">" ~ WHITESPACE* ~">") ~ ANY)+ ~ ">" ~ WHITESPACE* ~ ">" }
+
+quoted_text = ${ "\"" ~ char* ~ "\"" }
+char = _{
+    !("\"" | "\\" | "\'") ~ ANY
+    | "\\" ~ ("\"" | "\'" |  "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+WHITESPACE = _{ " " | "\t" | "\r\n" | "\n" }
+COMMENT    = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | (("#" | "//") ~ (!NEWLINE ~ ANY)* ~ NEWLINE?) }
