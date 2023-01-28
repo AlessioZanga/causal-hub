@@ -1,1 +1,4 @@
-s.to_string() /* FIXME: Validate input. */
+{
+	// FIXME: Validate input.
+	s.into()
+}

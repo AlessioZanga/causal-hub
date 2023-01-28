@@ -29,21 +29,21 @@ rs_attrs = ""
 for (k, v) in attrs.items():
     rs_attrs += f"/// {v['Description']}\n"
     rs_attrs += "#[derive(Clone, Debug)]\n"
-    rs_attrs += f"struct {sc2cm(k)}(String);\n"
+    rs_attrs += f"struct {sc2cm(k)}(pub(crate) String);\n"
     rs_attrs += "\n"
     rs_attrs += f"impl {sc2cm(k)}" + " {\n"
     rs_attrs += "    pub fn new(s: &str) -> Self {\n"
     path = f"./validate_{k.removeprefix('_').lower()}.in"
     if not os.path.exists(path):
         with open(path, "w") as file:
-            file.write("s.to_string()")
+            file.write("{\n\t// FIXME: Validate input.\n\ts.into()\n}\n")
     rs_attrs += f"        Self(include!(\"{path}\"))\n"
     rs_attrs += "    }\n"
     rs_attrs += "}\n"
     rs_attrs += "\n"
     rs_attrs += f"impl std::fmt::Display for {sc2cm(v['Name'])}" + " {\n"
     rs_attrs += "    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {\n"
-    rs_attrs += f"        write!(f, \"{v['Name']}" + " = \\\"{}\\\";\", self.0)\n"
+    rs_attrs += f"        write!(f, \"{v['Name']}" + " = \\\"{}\\\"\", self.0)\n"
     rs_attrs += "    }\n"
     rs_attrs += "}\n"
     rs_attrs += "\n"
@@ -58,7 +58,7 @@ for (k, v) in attrs.items():
 
 rs_used_by = ""
 
-for (k, v) in used_by.items():
+for (w, (k, v)) in enumerate(used_by.items()):
     rs_used_by += f"/// {k.removesuffix('s')} attributes.\n"
     rs_used_by += "#[derive(Clone, Debug, Default)]\n"
     rs_used_by += f"pub struct {k.removesuffix('s')}Attrs" + " {\n"
@@ -66,30 +66,42 @@ for (k, v) in used_by.items():
         rs_used_by += f"    {i.lower()}: Option<{sc2cm(i)}>,\n"
     rs_used_by += "}\n"
     rs_used_by += "\n"
-    rs_used_by += f"impl std::fmt::Display for {k.removesuffix('s')}Attrs" + " {\n"
-    rs_used_by += "    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {\n"
-    for i in v:
-        rs_used_by += f"        if let Some(a) = self.{i.lower()}.as_ref()" + " {\n"
-        rs_used_by += "            write!(f, \"{a} \")?;\n"
-        rs_used_by += "        }\n"
-    rs_used_by += "        write!(f, \"\")\n"
-    rs_used_by += "    }\n"
-    rs_used_by += "}\n"
-    rs_used_by += "\n"
     rs_used_by += f"impl {k.removesuffix('s')}Attrs" + " {\n"
     for (j, i) in enumerate(v):
-        rs_used_by += f"    /// {attrs[i]['Description']} More info [here](https://graphviz.org/docs/attrs/{i.removeprefix('_')}/).\n"
+        rs_used_by += f"    /// {attrs[i]['Description']} [Read more](https://graphviz.org/docs/attrs/{i.removeprefix('_')}/).\n"
+        rs_used_by += f"    pub fn get_{i.removeprefix('_').lower()}(&self) -> Option<&str>" + " {\n"
+        rs_used_by += f"        self.{i.lower()}.as_ref().map(|x| x.0.as_str())\n"
+        rs_used_by += "    }\n"
+        rs_used_by += "\n"
+        rs_used_by += f"    /// Set `{i.lower()}` attribute. [Read more](https://graphviz.org/docs/attrs/{i.removeprefix('_')}/).\n"
         rs_used_by += f"    pub fn set_{i.removeprefix('_').lower()}(&mut self, s: &str)" + " {\n"
         rs_used_by += f"        self.{i.lower()} = Some({sc2cm(i)}::new(s));\n"
         rs_used_by += "    }\n"
         rs_used_by += "\n"
-        rs_used_by += f"    /// Unset `{i.lower()}` attribute.\n"
+        rs_used_by += f"    /// Unset `{i.lower()}` attribute. [Read more](https://graphviz.org/docs/attrs/{i.removeprefix('_')}/).\n"
         rs_used_by += f"    pub fn unset_{i.removeprefix('_').lower()}(&mut self)" + " {\n"
         rs_used_by += f"        self.{i.lower()} = None;\n"
         rs_used_by += "    }\n"
         if j != len(v) - 1:
             rs_used_by += "\n"
     rs_used_by += "}\n"
+    rs_used_by += "\n"
+    rs_used_by += f"impl IntoIterator for {k.removesuffix('s')}Attrs" + " {\n"
+    rs_used_by += "    type Item = String;\n"
+    rs_used_by += "\n"
+    rs_used_by += f"    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, {len(v)}>>;\n"
+    rs_used_by += "\n"
+    rs_used_by += "    fn into_iter(self) -> Self::IntoIter {\n"
+    rs_used_by += "        [\n"
+    for i in v:
+        rs_used_by += f"            self.{i.lower()}.map(|x| x.to_string()),\n"
+    rs_used_by += "        ]\n"
+    rs_used_by += "        .into_iter()\n"
+    rs_used_by += "        .flatten()\n"
+    rs_used_by += "    }\n"
+    rs_used_by += "}\n"
+    if w != len(used_by) - 1:
+        rs_used_by += "\n"
 
 with open("mod.rs", "w") as file:
     file.write(f"// Automatically generated on: {datetime.now()} .\n\n" + rs_attrs + rs_used_by)
