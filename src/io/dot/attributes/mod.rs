@@ -1,7184 +1,5498 @@
-// Automatically generated on: 2023-01-28 12:37:25.340358 .
-
-/// A string in the xdot format specifying an arbitrary background.
-#[derive(Clone, Debug)]
-struct Background(pub(crate) String);
-
-impl Background {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_background.in"))
-    }
-}
-
-impl std::fmt::Display for Background {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "_background = \"{}\"", self.0)
-    }
-}
-
-/// Indicates the preferred area for a node or empty cluster. patchwork only.
-#[derive(Clone, Debug)]
-struct Area(pub(crate) String);
-
-impl Area {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_area.in"))
-    }
-}
-
-impl std::fmt::Display for Area {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "area = \"{}\"", self.0)
-    }
-}
-
-/// Style of arrowhead on the head node of an edge.
-#[derive(Clone, Debug)]
-struct Arrowhead(pub(crate) String);
-
-impl Arrowhead {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_arrowhead.in"))
-    }
-}
-
-impl std::fmt::Display for Arrowhead {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "arrowhead = \"{}\"", self.0)
-    }
-}
-
-/// Multiplicative scale factor for arrowheads.
-#[derive(Clone, Debug)]
-struct Arrowsize(pub(crate) String);
-
-impl Arrowsize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_arrowsize.in"))
-    }
-}
-
-impl std::fmt::Display for Arrowsize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "arrowsize = \"{}\"", self.0)
-    }
-}
-
-/// Style of arrowhead on the tail node of an edge.
-#[derive(Clone, Debug)]
-struct Arrowtail(pub(crate) String);
-
-impl Arrowtail {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_arrowtail.in"))
-    }
-}
-
-impl std::fmt::Display for Arrowtail {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "arrowtail = \"{}\"", self.0)
-    }
-}
-
-/// Bounding box of drawing in points. write only.
-#[derive(Clone, Debug)]
-struct Bb(pub(crate) String);
-
-impl Bb {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_bb.in"))
-    }
-}
-
-impl std::fmt::Display for Bb {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "bb = \"{}\"", self.0)
-    }
-}
-
-/// Whether to draw leaf nodes uniformly in a circle around the root node in sfdp.. sfdp only.
-#[derive(Clone, Debug)]
-struct Beautify(pub(crate) String);
-
-impl Beautify {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_beautify.in"))
-    }
-}
-
-impl std::fmt::Display for Beautify {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "beautify = \"{}\"", self.0)
-    }
-}
-
-/// Canvas background color.
-#[derive(Clone, Debug)]
-struct Bgcolor(pub(crate) String);
-
-impl Bgcolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_bgcolor.in"))
-    }
-}
-
-impl std::fmt::Display for Bgcolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "bgcolor = \"{}\"", self.0)
-    }
-}
-
-/// Whether to center the drawing in the output canvas.
-#[derive(Clone, Debug)]
-struct Center(pub(crate) String);
-
-impl Center {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_center.in"))
-    }
-}
-
-impl std::fmt::Display for Center {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "center = \"{}\"", self.0)
-    }
-}
-
-/// Character encoding used when interpreting string input as a text label..
-#[derive(Clone, Debug)]
-struct Charset(pub(crate) String);
-
-impl Charset {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_charset.in"))
-    }
-}
-
-impl std::fmt::Display for Charset {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "charset = \"{}\"", self.0)
-    }
-}
-
-/// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only.
-#[derive(Clone, Debug)]
-struct Class(pub(crate) String);
-
-impl Class {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_class.in"))
-    }
-}
-
-impl std::fmt::Display for Class {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "class = \"{}\"", self.0)
-    }
-}
-
-/// Whether the subgraph is a cluster.
-#[derive(Clone, Debug)]
-struct Cluster(pub(crate) String);
-
-impl Cluster {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_cluster.in"))
-    }
-}
-
-impl std::fmt::Display for Cluster {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "cluster = \"{}\"", self.0)
-    }
-}
-
-/// Mode used for handling clusters. dot only.
-#[derive(Clone, Debug)]
-struct Clusterrank(pub(crate) String);
-
-impl Clusterrank {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_clusterrank.in"))
-    }
-}
-
-impl std::fmt::Display for Clusterrank {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "clusterrank = \"{}\"", self.0)
-    }
-}
-
-/// Basic drawing color for graphics, not text.
-#[derive(Clone, Debug)]
-struct Color(pub(crate) String);
-
-impl Color {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_color.in"))
-    }
-}
-
-impl std::fmt::Display for Color {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "color = \"{}\"", self.0)
-    }
-}
-
-/// A color scheme namespace: the context for interpreting color names.
-#[derive(Clone, Debug)]
-struct Colorscheme(pub(crate) String);
-
-impl Colorscheme {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_colorscheme.in"))
-    }
-}
-
-impl std::fmt::Display for Colorscheme {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "colorscheme = \"{}\"", self.0)
-    }
-}
-
-/// Comments are inserted into output.
-#[derive(Clone, Debug)]
-struct Comment(pub(crate) String);
-
-impl Comment {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_comment.in"))
-    }
-}
-
-impl std::fmt::Display for Comment {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "comment = \"{}\"", self.0)
-    }
-}
-
-/// If true, allow edges between clusters. dot only.
-#[derive(Clone, Debug)]
-struct Compound(pub(crate) String);
-
-impl Compound {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_compound.in"))
-    }
-}
-
-impl std::fmt::Display for Compound {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "compound = \"{}\"", self.0)
-    }
-}
-
-/// If true, use edge concentrators.
-#[derive(Clone, Debug)]
-struct Concentrate(pub(crate) String);
-
-impl Concentrate {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_concentrate.in"))
-    }
-}
-
-impl std::fmt::Display for Concentrate {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "concentrate = \"{}\"", self.0)
-    }
-}
-
-/// If false, the edge is not used in ranking the nodes. dot only.
-#[derive(Clone, Debug)]
-struct Constraint(pub(crate) String);
-
-impl Constraint {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_constraint.in"))
-    }
-}
-
-impl std::fmt::Display for Constraint {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "constraint = \"{}\"", self.0)
-    }
-}
-
-/// Factor damping force motions.. neato only.
-#[derive(Clone, Debug)]
-struct Damping(pub(crate) String);
-
-impl Damping {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_damping.in"))
-    }
-}
-
-impl std::fmt::Display for Damping {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Damping = \"{}\"", self.0)
-    }
-}
-
-/// Whether to connect the edge label to the edge with a line.
-#[derive(Clone, Debug)]
-struct Decorate(pub(crate) String);
-
-impl Decorate {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_decorate.in"))
-    }
-}
-
-impl std::fmt::Display for Decorate {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "decorate = \"{}\"", self.0)
-    }
-}
-
-/// The distance between nodes in separate connected components. neato only.
-#[derive(Clone, Debug)]
-struct Defaultdist(pub(crate) String);
-
-impl Defaultdist {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_defaultdist.in"))
-    }
-}
-
-impl std::fmt::Display for Defaultdist {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "defaultdist = \"{}\"", self.0)
-    }
-}
-
-/// Set the number of dimensions used for the layout. neato, fdp, sfdp only.
-#[derive(Clone, Debug)]
-struct Dim(pub(crate) String);
-
-impl Dim {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_dim.in"))
-    }
-}
-
-impl std::fmt::Display for Dim {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "dim = \"{}\"", self.0)
-    }
-}
-
-/// Set the number of dimensions used for rendering. neato, fdp, sfdp only.
-#[derive(Clone, Debug)]
-struct Dimen(pub(crate) String);
-
-impl Dimen {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_dimen.in"))
-    }
-}
-
-impl std::fmt::Display for Dimen {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "dimen = \"{}\"", self.0)
-    }
-}
-
-/// Edge type for drawing arrowheads.
-#[derive(Clone, Debug)]
-struct Dir(pub(crate) String);
-
-impl Dir {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_dir.in"))
-    }
-}
-
-impl std::fmt::Display for Dir {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "dir = \"{}\"", self.0)
-    }
-}
-
-/// Whether to constrain most edges to point downwards. neato only.
-#[derive(Clone, Debug)]
-struct Diredgeconstraints(pub(crate) String);
-
-impl Diredgeconstraints {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_diredgeconstraints.in"))
-    }
-}
-
-impl std::fmt::Display for Diredgeconstraints {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "diredgeconstraints = \"{}\"", self.0)
-    }
-}
-
-/// Distortion factor for shape=polygon.
-#[derive(Clone, Debug)]
-struct Distortion(pub(crate) String);
-
-impl Distortion {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_distortion.in"))
-    }
-}
-
-impl std::fmt::Display for Distortion {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "distortion = \"{}\"", self.0)
-    }
-}
-
-/// Specifies the expected number of pixels per inch on a display device. bitmap output, svg only.
-#[derive(Clone, Debug)]
-struct Dpi(pub(crate) String);
-
-impl Dpi {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_dpi.in"))
-    }
-}
-
-impl std::fmt::Display for Dpi {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "dpi = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for edgeURL. map, svg only.
-#[derive(Clone, Debug)]
-struct Edgehref(pub(crate) String);
-
-impl Edgehref {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_edgehref.in"))
-    }
-}
-
-impl std::fmt::Display for Edgehref {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "edgehref = \"{}\"", self.0)
-    }
-}
-
-/// Browser window to use for the edgeURL link. map, svg only.
-#[derive(Clone, Debug)]
-struct Edgetarget(pub(crate) String);
-
-impl Edgetarget {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_edgetarget.in"))
-    }
-}
-
-impl std::fmt::Display for Edgetarget {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "edgetarget = \"{}\"", self.0)
-    }
-}
-
-/// Tooltip annotation attached to the non-label part of an edge. cmap, svg only.
-#[derive(Clone, Debug)]
-struct Edgetooltip(pub(crate) String);
-
-impl Edgetooltip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_edgetooltip.in"))
-    }
-}
-
-impl std::fmt::Display for Edgetooltip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "edgetooltip = \"{}\"", self.0)
-    }
-}
-
-/// The link for the non-label parts of an edge. map, svg only.
-#[derive(Clone, Debug)]
-struct Edgeurl(pub(crate) String);
-
-impl Edgeurl {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_edgeurl.in"))
-    }
-}
-
-impl std::fmt::Display for Edgeurl {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "edgeURL = \"{}\"", self.0)
-    }
-}
-
-/// Terminating condition. neato only.
-#[derive(Clone, Debug)]
-struct Epsilon(pub(crate) String);
-
-impl Epsilon {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_epsilon.in"))
-    }
-}
-
-impl std::fmt::Display for Epsilon {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "epsilon = \"{}\"", self.0)
-    }
-}
-
-/// Margin used around polygons for purposes of spline edge routing. neato only.
-#[derive(Clone, Debug)]
-struct Esep(pub(crate) String);
-
-impl Esep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_esep.in"))
-    }
-}
-
-impl std::fmt::Display for Esep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "esep = \"{}\"", self.0)
-    }
-}
-
-/// Color used to fill the background of a node or cluster.
-#[derive(Clone, Debug)]
-struct Fillcolor(pub(crate) String);
-
-impl Fillcolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fillcolor.in"))
-    }
-}
-
-impl std::fmt::Display for Fillcolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fillcolor = \"{}\"", self.0)
-    }
-}
-
-/// Whether to use the specified width and height attributes to choose node size (rather than sizing to fit the node contents).
-#[derive(Clone, Debug)]
-struct Fixedsize(pub(crate) String);
-
-impl Fixedsize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fixedsize.in"))
-    }
-}
-
-impl std::fmt::Display for Fixedsize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fixedsize = \"{}\"", self.0)
-    }
-}
-
-/// Color used for text.
-#[derive(Clone, Debug)]
-struct Fontcolor(pub(crate) String);
-
-impl Fontcolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fontcolor.in"))
-    }
-}
-
-impl std::fmt::Display for Fontcolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fontcolor = \"{}\"", self.0)
-    }
-}
-
-/// Font used for text.
-#[derive(Clone, Debug)]
-struct Fontname(pub(crate) String);
-
-impl Fontname {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fontname.in"))
-    }
-}
-
-impl std::fmt::Display for Fontname {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fontname = \"{}\"", self.0)
-    }
-}
-
-/// Allows user control of how basic fontnames are represented in SVG output. svg only.
-#[derive(Clone, Debug)]
-struct Fontnames(pub(crate) String);
-
-impl Fontnames {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fontnames.in"))
-    }
-}
-
-impl std::fmt::Display for Fontnames {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fontnames = \"{}\"", self.0)
-    }
-}
-
-/// Directory list used by libgd to search for bitmap fonts.
-#[derive(Clone, Debug)]
-struct Fontpath(pub(crate) String);
-
-impl Fontpath {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fontpath.in"))
-    }
-}
-
-impl std::fmt::Display for Fontpath {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fontpath = \"{}\"", self.0)
-    }
-}
-
-/// Font size, in points, used for text.
-#[derive(Clone, Debug)]
-struct Fontsize(pub(crate) String);
-
-impl Fontsize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_fontsize.in"))
-    }
-}
-
-impl std::fmt::Display for Fontsize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "fontsize = \"{}\"", self.0)
-    }
-}
-
-/// Whether to force placement of all xlabels, even if overlapping.
-#[derive(Clone, Debug)]
-struct Forcelabels(pub(crate) String);
-
-impl Forcelabels {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_forcelabels.in"))
-    }
-}
-
-impl std::fmt::Display for Forcelabels {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "forcelabels = \"{}\"", self.0)
-    }
-}
-
-/// If a gradient fill is being used, this determines the angle of the fill.
-#[derive(Clone, Debug)]
-struct Gradientangle(pub(crate) String);
-
-impl Gradientangle {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_gradientangle.in"))
-    }
-}
-
-impl std::fmt::Display for Gradientangle {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "gradientangle = \"{}\"", self.0)
-    }
-}
-
-/// Name for a group of nodes, for bundling edges avoiding crossings.. dot only.
-#[derive(Clone, Debug)]
-struct Group(pub(crate) String);
-
-impl Group {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_group.in"))
-    }
-}
-
-impl std::fmt::Display for Group {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "group = \"{}\"", self.0)
-    }
-}
-
-/// Center position of an edge's head label. write only.
-#[derive(Clone, Debug)]
-struct HeadLp(pub(crate) String);
-
-impl HeadLp {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_head_lp.in"))
-    }
-}
-
-impl std::fmt::Display for HeadLp {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "head_lp = \"{}\"", self.0)
-    }
-}
-
-/// If true, the head of an edge is clipped to the boundary of the head node.
-#[derive(Clone, Debug)]
-struct Headclip(pub(crate) String);
-
-impl Headclip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headclip.in"))
-    }
-}
-
-impl std::fmt::Display for Headclip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headclip = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for headURL. map, svg only.
-#[derive(Clone, Debug)]
-struct Headhref(pub(crate) String);
-
-impl Headhref {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headhref.in"))
-    }
-}
-
-impl std::fmt::Display for Headhref {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headhref = \"{}\"", self.0)
-    }
-}
-
-/// Text label to be placed near head of edge.
-#[derive(Clone, Debug)]
-struct Headlabel(pub(crate) String);
-
-impl Headlabel {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headlabel.in"))
-    }
-}
-
-impl std::fmt::Display for Headlabel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headlabel = \"{}\"", self.0)
-    }
-}
-
-/// Indicates where on the head node to attach the head of the edge.
-#[derive(Clone, Debug)]
-struct Headport(pub(crate) String);
-
-impl Headport {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headport.in"))
-    }
-}
-
-impl std::fmt::Display for Headport {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headport = \"{}\"", self.0)
-    }
-}
-
-/// Browser window to use for the headURL link. map, svg only.
-#[derive(Clone, Debug)]
-struct Headtarget(pub(crate) String);
-
-impl Headtarget {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headtarget.in"))
-    }
-}
-
-impl std::fmt::Display for Headtarget {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headtarget = \"{}\"", self.0)
-    }
-}
-
-/// Tooltip annotation attached to the head of an edge. cmap, svg only.
-#[derive(Clone, Debug)]
-struct Headtooltip(pub(crate) String);
-
-impl Headtooltip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headtooltip.in"))
-    }
-}
-
-impl std::fmt::Display for Headtooltip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headtooltip = \"{}\"", self.0)
-    }
-}
-
-/// If defined, headURL is output as part of the head label of the edge. map, svg only.
-#[derive(Clone, Debug)]
-struct Headurl(pub(crate) String);
-
-impl Headurl {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_headurl.in"))
-    }
-}
-
-impl std::fmt::Display for Headurl {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "headURL = \"{}\"", self.0)
-    }
-}
-
-/// Height of node, in inches.
-#[derive(Clone, Debug)]
-struct Height(pub(crate) String);
-
-impl Height {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_height.in"))
-    }
-}
-
-impl std::fmt::Display for Height {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "height = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for URL. map, postscript, svg only.
-#[derive(Clone, Debug)]
-struct Href(pub(crate) String);
-
-impl Href {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_href.in"))
-    }
-}
-
-impl std::fmt::Display for Href {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "href = \"{}\"", self.0)
-    }
-}
-
-/// Identifier for graph objects. map, postscript, svg only.
-#[derive(Clone, Debug)]
-struct Id(pub(crate) String);
-
-impl Id {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_id.in"))
-    }
-}
-
-impl std::fmt::Display for Id {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "id = \"{}\"", self.0)
-    }
-}
-
-/// Gives the name of a file containing an image to be displayed inside a node.
-#[derive(Clone, Debug)]
-struct Image(pub(crate) String);
-
-impl Image {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_image.in"))
-    }
-}
-
-impl std::fmt::Display for Image {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "image = \"{}\"", self.0)
-    }
-}
-
-/// A list of directories in which to look for image files.
-#[derive(Clone, Debug)]
-struct Imagepath(pub(crate) String);
-
-impl Imagepath {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_imagepath.in"))
-    }
-}
-
-impl std::fmt::Display for Imagepath {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "imagepath = \"{}\"", self.0)
-    }
-}
-
-/// Controls how an image is positioned within its containing node.
-#[derive(Clone, Debug)]
-struct Imagepos(pub(crate) String);
-
-impl Imagepos {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_imagepos.in"))
-    }
-}
-
-impl std::fmt::Display for Imagepos {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "imagepos = \"{}\"", self.0)
-    }
-}
-
-/// Controls how an image fills its containing node.
-#[derive(Clone, Debug)]
-struct Imagescale(pub(crate) String);
-
-impl Imagescale {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_imagescale.in"))
-    }
-}
-
-impl std::fmt::Display for Imagescale {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "imagescale = \"{}\"", self.0)
-    }
-}
-
-/// Scales the input positions to convert between length units. neato, fdp only.
-#[derive(Clone, Debug)]
-struct Inputscale(pub(crate) String);
-
-impl Inputscale {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_inputscale.in"))
-    }
-}
-
-impl std::fmt::Display for Inputscale {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "inputscale = \"{}\"", self.0)
-    }
-}
-
-/// Spring constant used in virtual physical model. fdp, sfdp only.
-#[derive(Clone, Debug)]
-struct K(pub(crate) String);
-
-impl K {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_k.in"))
-    }
-}
-
-impl std::fmt::Display for K {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "K = \"{}\"", self.0)
-    }
-}
-
-/// Text label attached to objects.
-#[derive(Clone, Debug)]
-struct Label(pub(crate) String);
-
-impl Label {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_label.in"))
-    }
-}
-
-impl std::fmt::Display for Label {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "label = \"{}\"", self.0)
-    }
-}
-
-/// Whether to treat a node whose name has the form |edgelabel|* as a special node representing an edge label.. sfdp only.
-#[derive(Clone, Debug)]
-struct LabelScheme(pub(crate) String);
-
-impl LabelScheme {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_label_scheme.in"))
-    }
-}
-
-impl std::fmt::Display for LabelScheme {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "label_scheme = \"{}\"", self.0)
-    }
-}
-
-/// The angle (in degrees) in polar coordinates of the head & tail edge labels..
-#[derive(Clone, Debug)]
-struct Labelangle(pub(crate) String);
-
-impl Labelangle {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelangle.in"))
-    }
-}
-
-impl std::fmt::Display for Labelangle {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelangle = \"{}\"", self.0)
-    }
-}
-
-/// Scaling factor for the distance of headlabel / taillabel from the head / tail nodes..
-#[derive(Clone, Debug)]
-struct Labeldistance(pub(crate) String);
-
-impl Labeldistance {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labeldistance.in"))
-    }
-}
-
-impl std::fmt::Display for Labeldistance {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labeldistance = \"{}\"", self.0)
-    }
-}
-
-/// If true, allows edge labels to be less constrained in position.
-#[derive(Clone, Debug)]
-struct Labelfloat(pub(crate) String);
-
-impl Labelfloat {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelfloat.in"))
-    }
-}
-
-impl std::fmt::Display for Labelfloat {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelfloat = \"{}\"", self.0)
-    }
-}
-
-/// Color used for headlabel and taillabel..
-#[derive(Clone, Debug)]
-struct Labelfontcolor(pub(crate) String);
-
-impl Labelfontcolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelfontcolor.in"))
-    }
-}
-
-impl std::fmt::Display for Labelfontcolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelfontcolor = \"{}\"", self.0)
-    }
-}
-
-/// Font for headlabel and taillabel.
-#[derive(Clone, Debug)]
-struct Labelfontname(pub(crate) String);
-
-impl Labelfontname {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelfontname.in"))
-    }
-}
-
-impl std::fmt::Display for Labelfontname {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelfontname = \"{}\"", self.0)
-    }
-}
-
-/// Font size of headlabel and taillabel.
-#[derive(Clone, Debug)]
-struct Labelfontsize(pub(crate) String);
-
-impl Labelfontsize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelfontsize.in"))
-    }
-}
-
-impl std::fmt::Display for Labelfontsize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelfontsize = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for labelURL. map, svg only.
-#[derive(Clone, Debug)]
-struct Labelhref(pub(crate) String);
-
-impl Labelhref {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelhref.in"))
-    }
-}
-
-impl std::fmt::Display for Labelhref {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelhref = \"{}\"", self.0)
-    }
-}
-
-/// Justification for graph & cluster labels.
-#[derive(Clone, Debug)]
-struct Labeljust(pub(crate) String);
-
-impl Labeljust {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labeljust.in"))
-    }
-}
-
-impl std::fmt::Display for Labeljust {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labeljust = \"{}\"", self.0)
-    }
-}
-
-/// Vertical placement of labels for nodes, root graphs and clusters.
-#[derive(Clone, Debug)]
-struct Labelloc(pub(crate) String);
-
-impl Labelloc {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelloc.in"))
-    }
-}
-
-impl std::fmt::Display for Labelloc {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelloc = \"{}\"", self.0)
-    }
-}
-
-/// Browser window to open labelURL links in. map, svg only.
-#[derive(Clone, Debug)]
-struct Labeltarget(pub(crate) String);
-
-impl Labeltarget {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labeltarget.in"))
-    }
-}
-
-impl std::fmt::Display for Labeltarget {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labeltarget = \"{}\"", self.0)
-    }
-}
-
-/// Tooltip annotation attached to label of an edge. cmap, svg only.
-#[derive(Clone, Debug)]
-struct Labeltooltip(pub(crate) String);
-
-impl Labeltooltip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labeltooltip.in"))
-    }
-}
-
-impl std::fmt::Display for Labeltooltip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labeltooltip = \"{}\"", self.0)
-    }
-}
-
-/// If defined, labelURL is the link used for the label of an edge. map, svg only.
-#[derive(Clone, Debug)]
-struct Labelurl(pub(crate) String);
-
-impl Labelurl {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_labelurl.in"))
-    }
-}
-
-impl std::fmt::Display for Labelurl {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "labelURL = \"{}\"", self.0)
-    }
-}
-
-/// If true, the graph is rendered in landscape mode.
-#[derive(Clone, Debug)]
-struct Landscape(pub(crate) String);
-
-impl Landscape {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_landscape.in"))
-    }
-}
-
-impl std::fmt::Display for Landscape {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "landscape = \"{}\"", self.0)
-    }
-}
-
-/// Specifies layers in which the node, edge or cluster is present.
-#[derive(Clone, Debug)]
-struct Layer(pub(crate) String);
-
-impl Layer {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layer.in"))
-    }
-}
-
-impl std::fmt::Display for Layer {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layer = \"{}\"", self.0)
-    }
-}
-
-/// The separator characters used to split attributes of type layerRange into a list of ranges..
-#[derive(Clone, Debug)]
-struct Layerlistsep(pub(crate) String);
-
-impl Layerlistsep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layerlistsep.in"))
-    }
-}
-
-impl std::fmt::Display for Layerlistsep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layerlistsep = \"{}\"", self.0)
-    }
-}
-
-/// A linearly ordered list of layer names attached to the graph.
-#[derive(Clone, Debug)]
-struct Layers(pub(crate) String);
-
-impl Layers {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layers.in"))
-    }
-}
-
-impl std::fmt::Display for Layers {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layers = \"{}\"", self.0)
-    }
-}
-
-/// Selects a list of layers to be emitted.
-#[derive(Clone, Debug)]
-struct Layerselect(pub(crate) String);
-
-impl Layerselect {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layerselect.in"))
-    }
-}
-
-impl std::fmt::Display for Layerselect {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layerselect = \"{}\"", self.0)
-    }
-}
-
-/// The separator characters for splitting the layers attribute into a list of layer names..
-#[derive(Clone, Debug)]
-struct Layersep(pub(crate) String);
-
-impl Layersep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layersep.in"))
-    }
-}
-
-impl std::fmt::Display for Layersep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layersep = \"{}\"", self.0)
-    }
-}
-
-/// Which layout engine to use.
-#[derive(Clone, Debug)]
-struct Layout(pub(crate) String);
-
-impl Layout {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_layout.in"))
-    }
-}
-
-impl std::fmt::Display for Layout {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "layout = \"{}\"", self.0)
-    }
-}
-
-/// Preferred edge length, in inches. neato, fdp only.
-#[derive(Clone, Debug)]
-struct Len(pub(crate) String);
-
-impl Len {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_len.in"))
-    }
-}
-
-impl std::fmt::Display for Len {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "len = \"{}\"", self.0)
-    }
-}
-
-/// Number of levels allowed in the multilevel scheme. sfdp only.
-#[derive(Clone, Debug)]
-struct Levels(pub(crate) String);
-
-impl Levels {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_levels.in"))
-    }
-}
-
-impl std::fmt::Display for Levels {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "levels = \"{}\"", self.0)
-    }
-}
-
-/// strictness of neato level constraints. neato only.
-#[derive(Clone, Debug)]
-struct Levelsgap(pub(crate) String);
-
-impl Levelsgap {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_levelsgap.in"))
-    }
-}
-
-impl std::fmt::Display for Levelsgap {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "levelsgap = \"{}\"", self.0)
-    }
-}
-
-/// Logical head of an edge. dot only.
-#[derive(Clone, Debug)]
-struct Lhead(pub(crate) String);
-
-impl Lhead {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_lhead.in"))
-    }
-}
-
-impl std::fmt::Display for Lhead {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "lhead = \"{}\"", self.0)
-    }
-}
-
-/// Height of graph or cluster label, in inches. write only.
-#[derive(Clone, Debug)]
-struct Lheight(pub(crate) String);
-
-impl Lheight {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_lheight.in"))
-    }
-}
-
-impl std::fmt::Display for Lheight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "lheight = \"{}\"", self.0)
-    }
-}
-
-/// How long strings should get before overflowing to next line, for text output..
-#[derive(Clone, Debug)]
-struct Linelength(pub(crate) String);
-
-impl Linelength {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_linelength.in"))
-    }
-}
-
-impl std::fmt::Display for Linelength {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "linelength = \"{}\"", self.0)
-    }
-}
-
-/// Label center position. write only.
-#[derive(Clone, Debug)]
-struct Lp(pub(crate) String);
-
-impl Lp {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_lp.in"))
-    }
-}
-
-impl std::fmt::Display for Lp {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "lp = \"{}\"", self.0)
-    }
-}
-
-/// Logical tail of an edge. dot only.
-#[derive(Clone, Debug)]
-struct Ltail(pub(crate) String);
-
-impl Ltail {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_ltail.in"))
-    }
-}
-
-impl std::fmt::Display for Ltail {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "ltail = \"{}\"", self.0)
-    }
-}
-
-/// Width of graph or cluster label, in inches. write only.
-#[derive(Clone, Debug)]
-struct Lwidth(pub(crate) String);
-
-impl Lwidth {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_lwidth.in"))
-    }
-}
-
-impl std::fmt::Display for Lwidth {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "lwidth = \"{}\"", self.0)
-    }
-}
-
-/// For graphs, this sets x and y margins of canvas, in inches.
-#[derive(Clone, Debug)]
-struct Margin(pub(crate) String);
-
-impl Margin {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_margin.in"))
-    }
-}
-
-impl std::fmt::Display for Margin {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "margin = \"{}\"", self.0)
-    }
-}
-
-/// Sets the number of iterations used. neato, fdp only.
-#[derive(Clone, Debug)]
-struct Maxiter(pub(crate) String);
-
-impl Maxiter {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_maxiter.in"))
-    }
-}
-
-impl std::fmt::Display for Maxiter {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "maxiter = \"{}\"", self.0)
-    }
-}
-
-/// Scale factor for mincross (mc) edge crossing minimiser parameters. dot only.
-#[derive(Clone, Debug)]
-struct Mclimit(pub(crate) String);
-
-impl Mclimit {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_mclimit.in"))
-    }
-}
-
-impl std::fmt::Display for Mclimit {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "mclimit = \"{}\"", self.0)
-    }
-}
-
-/// Specifies the minimum separation between all nodes. circo only.
-#[derive(Clone, Debug)]
-struct Mindist(pub(crate) String);
-
-impl Mindist {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_mindist.in"))
-    }
-}
-
-impl std::fmt::Display for Mindist {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "mindist = \"{}\"", self.0)
-    }
-}
-
-/// Minimum edge length (rank difference between head and tail). dot only.
-#[derive(Clone, Debug)]
-struct Minlen(pub(crate) String);
-
-impl Minlen {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_minlen.in"))
-    }
-}
-
-impl std::fmt::Display for Minlen {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "minlen = \"{}\"", self.0)
-    }
-}
-
-/// Technique for optimizing the layout. neato only.
-#[derive(Clone, Debug)]
-struct Mode(pub(crate) String);
-
-impl Mode {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_mode.in"))
-    }
-}
-
-impl std::fmt::Display for Mode {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "mode = \"{}\"", self.0)
-    }
-}
-
-/// Specifies how the distance matrix is computed for the input graph. neato only.
-#[derive(Clone, Debug)]
-struct Model(pub(crate) String);
-
-impl Model {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_model.in"))
-    }
-}
-
-impl std::fmt::Display for Model {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "model = \"{}\"", self.0)
-    }
-}
-
-/// Whether to use a single global ranking, ignoring clusters. dot only.
-#[derive(Clone, Debug)]
-struct Newrank(pub(crate) String);
-
-impl Newrank {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_newrank.in"))
-    }
-}
-
-impl std::fmt::Display for Newrank {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "newrank = \"{}\"", self.0)
-    }
-}
-
-/// In dot, nodesep specifies the minimum space between two adjacent nodes in the same rank, in inches.
-#[derive(Clone, Debug)]
-struct Nodesep(pub(crate) String);
-
-impl Nodesep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_nodesep.in"))
-    }
-}
-
-impl std::fmt::Display for Nodesep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "nodesep = \"{}\"", self.0)
-    }
-}
-
-/// Whether to justify multiline text vs the previous text line (rather than the side of the container)..
-#[derive(Clone, Debug)]
-struct Nojustify(pub(crate) String);
-
-impl Nojustify {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_nojustify.in"))
-    }
-}
-
-impl std::fmt::Display for Nojustify {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "nojustify = \"{}\"", self.0)
-    }
-}
-
-/// normalizes coordinates of final layout. neato, fdp, sfdp, twopi, circo only.
-#[derive(Clone, Debug)]
-struct Normalize(pub(crate) String);
-
-impl Normalize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_normalize.in"))
-    }
-}
-
-impl std::fmt::Display for Normalize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "normalize = \"{}\"", self.0)
-    }
-}
-
-/// Whether to avoid translating layout to the origin point. neato only.
-#[derive(Clone, Debug)]
-struct Notranslate(pub(crate) String);
-
-impl Notranslate {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_notranslate.in"))
-    }
-}
-
-impl std::fmt::Display for Notranslate {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "notranslate = \"{}\"", self.0)
-    }
-}
-
-/// Sets number of iterations in network simplex applications. dot only.
-#[derive(Clone, Debug)]
-struct Nslimit(pub(crate) String);
-
-impl Nslimit {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_nslimit.in"))
-    }
-}
-
-impl std::fmt::Display for Nslimit {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "nslimit = \"{}\"", self.0)
-    }
-}
-
-/// Sets number of iterations in network simplex applications. dot only.
-#[derive(Clone, Debug)]
-struct Nslimit1(pub(crate) String);
-
-impl Nslimit1 {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_nslimit1.in"))
-    }
-}
-
-impl std::fmt::Display for Nslimit1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "nslimit1 = \"{}\"", self.0)
-    }
-}
-
-/// Whether to draw circo graphs around one circle.. circo only.
-#[derive(Clone, Debug)]
-struct Oneblock(pub(crate) String);
-
-impl Oneblock {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_oneblock.in"))
-    }
-}
-
-impl std::fmt::Display for Oneblock {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "oneblock = \"{}\"", self.0)
-    }
-}
-
-/// Constrains the left-to-right ordering of node edges.. dot only.
-#[derive(Clone, Debug)]
-struct Ordering(pub(crate) String);
-
-impl Ordering {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_ordering.in"))
-    }
-}
-
-impl std::fmt::Display for Ordering {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "ordering = \"{}\"", self.0)
-    }
-}
-
-/// node shape rotation angle, or graph orientation.
-#[derive(Clone, Debug)]
-struct Orientation(pub(crate) String);
-
-impl Orientation {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_orientation.in"))
-    }
-}
-
-impl std::fmt::Display for Orientation {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "orientation = \"{}\"", self.0)
-    }
-}
-
-/// Specify order in which nodes and edges are drawn.
-#[derive(Clone, Debug)]
-struct Outputorder(pub(crate) String);
-
-impl Outputorder {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_outputorder.in"))
-    }
-}
-
-impl std::fmt::Display for Outputorder {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "outputorder = \"{}\"", self.0)
-    }
-}
-
-/// Determines if and how node overlaps should be removed. fdp, neato only.
-#[derive(Clone, Debug)]
-struct Overlap(pub(crate) String);
-
-impl Overlap {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_overlap.in"))
-    }
-}
-
-impl std::fmt::Display for Overlap {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "overlap = \"{}\"", self.0)
-    }
-}
-
-/// Scale layout by factor, to reduce node overlap.. prism, neato, sfdp, fdp, circo, twopi only.
-#[derive(Clone, Debug)]
-struct OverlapScaling(pub(crate) String);
-
-impl OverlapScaling {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_overlap_scaling.in"))
-    }
-}
-
-impl std::fmt::Display for OverlapScaling {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "overlap_scaling = \"{}\"", self.0)
-    }
-}
-
-/// Whether the overlap removal algorithm should perform a compression pass to reduce the size of the layout. prism only.
-#[derive(Clone, Debug)]
-struct OverlapShrink(pub(crate) String);
-
-impl OverlapShrink {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_overlap_shrink.in"))
-    }
-}
-
-impl std::fmt::Display for OverlapShrink {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "overlap_shrink = \"{}\"", self.0)
-    }
-}
-
-/// Whether each connected component of the graph should be laid out separately, and then the graphs packed together..
-#[derive(Clone, Debug)]
-struct Pack(pub(crate) String);
-
-impl Pack {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pack.in"))
-    }
-}
-
-impl std::fmt::Display for Pack {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pack = \"{}\"", self.0)
-    }
-}
-
-/// How connected components should be packed.
-#[derive(Clone, Debug)]
-struct Packmode(pub(crate) String);
-
-impl Packmode {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_packmode.in"))
-    }
-}
-
-impl std::fmt::Display for Packmode {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "packmode = \"{}\"", self.0)
-    }
-}
-
-/// Inches to extend the drawing area around the minimal area needed to draw the graph.
-#[derive(Clone, Debug)]
-struct Pad(pub(crate) String);
-
-impl Pad {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pad.in"))
-    }
-}
-
-impl std::fmt::Display for Pad {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pad = \"{}\"", self.0)
-    }
-}
-
-/// Width and height of output pages, in inches.
-#[derive(Clone, Debug)]
-struct Page(pub(crate) String);
-
-impl Page {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_page.in"))
-    }
-}
-
-impl std::fmt::Display for Page {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "page = \"{}\"", self.0)
-    }
-}
-
-/// The order in which pages are emitted.
-#[derive(Clone, Debug)]
-struct Pagedir(pub(crate) String);
-
-impl Pagedir {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pagedir.in"))
-    }
-}
-
-impl std::fmt::Display for Pagedir {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pagedir = \"{}\"", self.0)
-    }
-}
-
-/// Color used to draw the bounding box around a cluster.
-#[derive(Clone, Debug)]
-struct Pencolor(pub(crate) String);
-
-impl Pencolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pencolor.in"))
-    }
-}
-
-impl std::fmt::Display for Pencolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pencolor = \"{}\"", self.0)
-    }
-}
-
-/// Specifies the width of the pen, in points, used to draw lines and curves.
-#[derive(Clone, Debug)]
-struct Penwidth(pub(crate) String);
-
-impl Penwidth {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_penwidth.in"))
-    }
-}
-
-impl std::fmt::Display for Penwidth {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "penwidth = \"{}\"", self.0)
-    }
-}
-
-/// Set number of peripheries used in polygonal shapes and cluster boundaries.
-#[derive(Clone, Debug)]
-struct Peripheries(pub(crate) String);
-
-impl Peripheries {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_peripheries.in"))
-    }
-}
-
-impl std::fmt::Display for Peripheries {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "peripheries = \"{}\"", self.0)
-    }
-}
-
-/// Keeps the node at the node's given input position. neato, fdp only.
-#[derive(Clone, Debug)]
-struct Pin(pub(crate) String);
-
-impl Pin {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pin.in"))
-    }
-}
-
-impl std::fmt::Display for Pin {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pin = \"{}\"", self.0)
-    }
-}
-
-/// Position of node, or spline control points. neato, fdp only.
-#[derive(Clone, Debug)]
-struct Pos(pub(crate) String);
-
-impl Pos {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_pos.in"))
-    }
-}
-
-impl std::fmt::Display for Pos {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "pos = \"{}\"", self.0)
-    }
-}
-
-/// Quadtree scheme to use. sfdp only.
-#[derive(Clone, Debug)]
-struct Quadtree(pub(crate) String);
-
-impl Quadtree {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_quadtree.in"))
-    }
-}
-
-impl std::fmt::Display for Quadtree {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "quadtree = \"{}\"", self.0)
-    }
-}
-
-/// If quantum > 0.0, node label dimensions will be rounded to integral multiples of the quantum.
-#[derive(Clone, Debug)]
-struct Quantum(pub(crate) String);
-
-impl Quantum {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_quantum.in"))
-    }
-}
-
-impl std::fmt::Display for Quantum {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "quantum = \"{}\"", self.0)
-    }
-}
-
-/// Rank constraints on the nodes in a subgraph. dot only.
-#[derive(Clone, Debug)]
-struct Rank(pub(crate) String);
-
-impl Rank {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_rank.in"))
-    }
-}
-
-impl std::fmt::Display for Rank {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "rank = \"{}\"", self.0)
-    }
-}
-
-/// Sets direction of graph layout. dot only.
-#[derive(Clone, Debug)]
-struct Rankdir(pub(crate) String);
-
-impl Rankdir {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_rankdir.in"))
-    }
-}
-
-impl std::fmt::Display for Rankdir {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "rankdir = \"{}\"", self.0)
-    }
-}
-
-/// Specifies separation between ranks. dot, twopi only.
-#[derive(Clone, Debug)]
-struct Ranksep(pub(crate) String);
-
-impl Ranksep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_ranksep.in"))
-    }
-}
-
-impl std::fmt::Display for Ranksep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "ranksep = \"{}\"", self.0)
-    }
-}
-
-/// Sets the aspect ratio (drawing height/drawing width) for the drawing.
-#[derive(Clone, Debug)]
-struct Ratio(pub(crate) String);
-
-impl Ratio {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_ratio.in"))
-    }
-}
-
-impl std::fmt::Display for Ratio {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "ratio = \"{}\"", self.0)
-    }
-}
-
-/// Rectangles for fields of records, in points. write only.
-#[derive(Clone, Debug)]
-struct Rects(pub(crate) String);
-
-impl Rects {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_rects.in"))
-    }
-}
-
-impl std::fmt::Display for Rects {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "rects = \"{}\"", self.0)
-    }
-}
-
-/// If true, force polygon to be regular, i.e., the vertices of th.
-#[derive(Clone, Debug)]
-struct Regular(pub(crate) String);
-
-impl Regular {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_regular.in"))
-    }
-}
-
-impl std::fmt::Display for Regular {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "regular = \"{}\"", self.0)
-    }
-}
-
-/// If there are multiple clusters, whether to run edge crossing minimization a second time.. dot only.
-#[derive(Clone, Debug)]
-struct Remincross(pub(crate) String);
-
-impl Remincross {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_remincross.in"))
-    }
-}
-
-impl std::fmt::Display for Remincross {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "remincross = \"{}\"", self.0)
-    }
-}
-
-/// The power of the repulsive force used in an extended Fruchterman-Reingold. sfdp only.
-#[derive(Clone, Debug)]
-struct Repulsiveforce(pub(crate) String);
-
-impl Repulsiveforce {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_repulsiveforce.in"))
-    }
-}
-
-impl std::fmt::Display for Repulsiveforce {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "repulsiveforce = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for dpi.. bitmap output, svg only.
-#[derive(Clone, Debug)]
-struct Resolution(pub(crate) String);
-
-impl Resolution {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_resolution.in"))
-    }
-}
-
-impl std::fmt::Display for Resolution {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "resolution = \"{}\"", self.0)
-    }
-}
-
-/// Specifies nodes to be used as the center of the layout. twopi, circo only.
-#[derive(Clone, Debug)]
-struct Root(pub(crate) String);
-
-impl Root {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_root.in"))
-    }
-}
-
-impl std::fmt::Display for Root {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "root = \"{}\"", self.0)
-    }
-}
-
-/// If rotate=90, sets drawing orientation to landscape.
-#[derive(Clone, Debug)]
-struct Rotate(pub(crate) String);
-
-impl Rotate {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_rotate.in"))
-    }
-}
-
-impl std::fmt::Display for Rotate {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "rotate = \"{}\"", self.0)
-    }
-}
-
-/// Rotates the final layout counter-clockwise by the specified number of degrees. sfdp only.
-#[derive(Clone, Debug)]
-struct Rotation(pub(crate) String);
-
-impl Rotation {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_rotation.in"))
-    }
-}
-
-impl std::fmt::Display for Rotation {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "rotation = \"{}\"", self.0)
-    }
-}
-
-/// Edges with the same head and the same samehead value are aimed at the same point on the head. dot only.
-#[derive(Clone, Debug)]
-struct Samehead(pub(crate) String);
-
-impl Samehead {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_samehead.in"))
-    }
-}
-
-impl std::fmt::Display for Samehead {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "samehead = \"{}\"", self.0)
-    }
-}
-
-/// Edges with the same tail and the same sametail value are aimed at th. dot only.
-#[derive(Clone, Debug)]
-struct Sametail(pub(crate) String);
-
-impl Sametail {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_sametail.in"))
-    }
-}
-
-impl std::fmt::Display for Sametail {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "sametail = \"{}\"", self.0)
-    }
-}
-
-/// Gives the number of points used for a circle/ellipse node.
-#[derive(Clone, Debug)]
-struct Samplepoints(pub(crate) String);
-
-impl Samplepoints {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_samplepoints.in"))
-    }
-}
-
-impl std::fmt::Display for Samplepoints {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "samplepoints = \"{}\"", self.0)
-    }
-}
-
-/// Scales layout by the given factor after the initial layout. neato, twopi only.
-#[derive(Clone, Debug)]
-struct Scale(pub(crate) String);
-
-impl Scale {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_scale.in"))
-    }
-}
-
-impl std::fmt::Display for Scale {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "scale = \"{}\"", self.0)
-    }
-}
-
-/// During network simplex, the maximum number of edges with negative cut values to search when looking for an edge with minimum cut value.. dot only.
-#[derive(Clone, Debug)]
-struct Searchsize(pub(crate) String);
-
-impl Searchsize {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_searchsize.in"))
-    }
-}
-
-impl std::fmt::Display for Searchsize {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "searchsize = \"{}\"", self.0)
-    }
-}
-
-/// Margin to leave around nodes when removing node overlap. fdp, neato only.
-#[derive(Clone, Debug)]
-struct Sep(pub(crate) String);
-
-impl Sep {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_sep.in"))
-    }
-}
-
-impl std::fmt::Display for Sep {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "sep = \"{}\"", self.0)
-    }
-}
-
-/// Sets the shape of a node.
-#[derive(Clone, Debug)]
-struct Shape(pub(crate) String);
-
-impl Shape {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_shape.in"))
-    }
-}
-
-impl std::fmt::Display for Shape {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "shape = \"{}\"", self.0)
-    }
-}
-
-/// A file containing user-supplied node content.
-#[derive(Clone, Debug)]
-struct Shapefile(pub(crate) String);
-
-impl Shapefile {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_shapefile.in"))
-    }
-}
-
-impl std::fmt::Display for Shapefile {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "shapefile = \"{}\"", self.0)
-    }
-}
-
-/// Print guide boxes for debugging. dot only.
-#[derive(Clone, Debug)]
-struct Showboxes(pub(crate) String);
-
-impl Showboxes {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_showboxes.in"))
-    }
-}
-
-impl std::fmt::Display for Showboxes {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "showboxes = \"{}\"", self.0)
-    }
-}
-
-/// Number of sides when shape=polygon.
-#[derive(Clone, Debug)]
-struct Sides(pub(crate) String);
-
-impl Sides {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_sides.in"))
-    }
-}
-
-impl std::fmt::Display for Sides {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "sides = \"{}\"", self.0)
-    }
-}
-
-/// Maximum width and height of drawing, in inches.
-#[derive(Clone, Debug)]
-struct Size(pub(crate) String);
-
-impl Size {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_size.in"))
-    }
-}
-
-impl std::fmt::Display for Size {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "size = \"{}\"", self.0)
-    }
-}
-
-/// Skew factor for shape=polygon.
-#[derive(Clone, Debug)]
-struct Skew(pub(crate) String);
-
-impl Skew {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_skew.in"))
-    }
-}
-
-impl std::fmt::Display for Skew {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "skew = \"{}\"", self.0)
-    }
-}
-
-/// Specifies a post-processing step used to smooth out an uneven distribution of nodes.. sfdp only.
-#[derive(Clone, Debug)]
-struct Smoothing(pub(crate) String);
-
-impl Smoothing {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_smoothing.in"))
-    }
-}
-
-impl std::fmt::Display for Smoothing {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "smoothing = \"{}\"", self.0)
-    }
-}
-
-/// Sort order of graph components for ordering packmode packing..
-#[derive(Clone, Debug)]
-struct Sortv(pub(crate) String);
-
-impl Sortv {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_sortv.in"))
-    }
-}
-
-impl std::fmt::Display for Sortv {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "sortv = \"{}\"", self.0)
-    }
-}
-
-/// Controls how, and if, edges are represented.
-#[derive(Clone, Debug)]
-struct Splines(pub(crate) String);
-
-impl Splines {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_splines.in"))
-    }
-}
-
-impl std::fmt::Display for Splines {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "splines = \"{}\"", self.0)
-    }
-}
-
-/// Parameter used to determine the initial layout of nodes. neato, fdp, sfdp only.
-#[derive(Clone, Debug)]
-struct Start(pub(crate) String);
-
-impl Start {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_start.in"))
-    }
-}
-
-impl std::fmt::Display for Start {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "start = \"{}\"", self.0)
-    }
-}
-
-/// Set style information for components of the graph.
-#[derive(Clone, Debug)]
-struct Style(pub(crate) String);
-
-impl Style {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_style.in"))
-    }
-}
-
-impl std::fmt::Display for Style {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "style = \"{}\"", self.0)
-    }
-}
-
-/// A URL or pathname specifying an XML style sheet, used in SVG output. svg only.
-#[derive(Clone, Debug)]
-struct Stylesheet(pub(crate) String);
-
-impl Stylesheet {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_stylesheet.in"))
-    }
-}
-
-impl std::fmt::Display for Stylesheet {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "stylesheet = \"{}\"", self.0)
-    }
-}
-
-/// Position of an edge's tail label, in points.. write only.
-#[derive(Clone, Debug)]
-struct TailLp(pub(crate) String);
-
-impl TailLp {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tail_lp.in"))
-    }
-}
-
-impl std::fmt::Display for TailLp {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tail_lp = \"{}\"", self.0)
-    }
-}
-
-/// If true, the tail of an edge is clipped to the boundary of the tail node.
-#[derive(Clone, Debug)]
-struct Tailclip(pub(crate) String);
-
-impl Tailclip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailclip.in"))
-    }
-}
-
-impl std::fmt::Display for Tailclip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailclip = \"{}\"", self.0)
-    }
-}
-
-/// Synonym for tailURL.. map, svg only.
-#[derive(Clone, Debug)]
-struct Tailhref(pub(crate) String);
-
-impl Tailhref {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailhref.in"))
-    }
-}
-
-impl std::fmt::Display for Tailhref {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailhref = \"{}\"", self.0)
-    }
-}
-
-/// Text label to be placed near tail of edge.
-#[derive(Clone, Debug)]
-struct Taillabel(pub(crate) String);
-
-impl Taillabel {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_taillabel.in"))
-    }
-}
-
-impl std::fmt::Display for Taillabel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "taillabel = \"{}\"", self.0)
-    }
-}
-
-/// Indicates where on the tail node to attach the tail of the edge.
-#[derive(Clone, Debug)]
-struct Tailport(pub(crate) String);
-
-impl Tailport {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailport.in"))
-    }
-}
-
-impl std::fmt::Display for Tailport {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailport = \"{}\"", self.0)
-    }
-}
-
-/// Browser window to use for the tailURL link. map, svg only.
-#[derive(Clone, Debug)]
-struct Tailtarget(pub(crate) String);
-
-impl Tailtarget {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailtarget.in"))
-    }
-}
-
-impl std::fmt::Display for Tailtarget {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailtarget = \"{}\"", self.0)
-    }
-}
-
-/// Tooltip annotation attached to the tail of an edge. cmap, svg only.
-#[derive(Clone, Debug)]
-struct Tailtooltip(pub(crate) String);
-
-impl Tailtooltip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailtooltip.in"))
-    }
-}
-
-impl std::fmt::Display for Tailtooltip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailtooltip = \"{}\"", self.0)
-    }
-}
-
-/// If defined, tailURL is output as part of the tail label of th. map, svg only.
-#[derive(Clone, Debug)]
-struct Tailurl(pub(crate) String);
-
-impl Tailurl {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tailurl.in"))
-    }
-}
-
-impl std::fmt::Display for Tailurl {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tailURL = \"{}\"", self.0)
-    }
-}
-
-/// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only.
-#[derive(Clone, Debug)]
-struct Target(pub(crate) String);
-
-impl Target {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_target.in"))
-    }
-}
-
-impl std::fmt::Display for Target {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "target = \"{}\"", self.0)
-    }
-}
-
-/// Which rank to move floating (loose) nodes to. dot only.
-#[derive(Clone, Debug)]
-struct Tbbalance(pub(crate) String);
-
-impl Tbbalance {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tbbalance.in"))
-    }
-}
-
-impl std::fmt::Display for Tbbalance {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "TBbalance = \"{}\"", self.0)
-    }
-}
-
-/// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only.
-#[derive(Clone, Debug)]
-struct Tooltip(pub(crate) String);
-
-impl Tooltip {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_tooltip.in"))
-    }
-}
-
-impl std::fmt::Display for Tooltip {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "tooltip = \"{}\"", self.0)
-    }
-}
-
-/// Whether internal bitmap rendering relies on a truecolor color model or uses. bitmap output only.
-#[derive(Clone, Debug)]
-struct Truecolor(pub(crate) String);
-
-impl Truecolor {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_truecolor.in"))
-    }
-}
-
-impl std::fmt::Display for Truecolor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "truecolor = \"{}\"", self.0)
-    }
-}
-
-/// Hyperlinks incorporated into device-dependent output. map, postscript, svg only.
-#[derive(Clone, Debug)]
-struct Url(pub(crate) String);
-
-impl Url {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_url.in"))
-    }
-}
-
-impl std::fmt::Display for Url {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "URL = \"{}\"", self.0)
-    }
-}
-
-/// Sets the coordinates of the vertices of the node's polygon, in inches. write only.
-#[derive(Clone, Debug)]
-struct Vertices(pub(crate) String);
-
-impl Vertices {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_vertices.in"))
-    }
-}
-
-impl std::fmt::Display for Vertices {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "vertices = \"{}\"", self.0)
-    }
-}
-
-/// Clipping window on final drawing.
-#[derive(Clone, Debug)]
-struct Viewport(pub(crate) String);
-
-impl Viewport {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_viewport.in"))
-    }
-}
-
-impl std::fmt::Display for Viewport {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "viewport = \"{}\"", self.0)
-    }
-}
-
-/// Tuning margin of Voronoi technique. neato, fdp, sfdp, twopi, circo only.
-#[derive(Clone, Debug)]
-struct VoroMargin(pub(crate) String);
-
-impl VoroMargin {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_voro_margin.in"))
-    }
-}
-
-impl std::fmt::Display for VoroMargin {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "voro_margin = \"{}\"", self.0)
-    }
-}
-
-/// Weight of edge.
-#[derive(Clone, Debug)]
-struct Weight(pub(crate) String);
-
-impl Weight {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_weight.in"))
-    }
-}
-
-impl std::fmt::Display for Weight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "weight = \"{}\"", self.0)
-    }
-}
-
-/// Width of node, in inches.
-#[derive(Clone, Debug)]
-struct Width(pub(crate) String);
-
-impl Width {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_width.in"))
-    }
-}
-
-impl std::fmt::Display for Width {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "width = \"{}\"", self.0)
-    }
-}
-
-/// Determines the version of xdot used in output. xdot only.
-#[derive(Clone, Debug)]
-struct Xdotversion(pub(crate) String);
-
-impl Xdotversion {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_xdotversion.in"))
-    }
-}
-
-impl std::fmt::Display for Xdotversion {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "xdotversion = \"{}\"", self.0)
-    }
-}
-
-/// External label for a node or edge.
-#[derive(Clone, Debug)]
-struct Xlabel(pub(crate) String);
-
-impl Xlabel {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_xlabel.in"))
-    }
-}
-
-impl std::fmt::Display for Xlabel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "xlabel = \"{}\"", self.0)
-    }
-}
-
-/// Position of an exterior label, in points. write only.
-#[derive(Clone, Debug)]
-struct Xlp(pub(crate) String);
-
-impl Xlp {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_xlp.in"))
-    }
-}
-
-impl std::fmt::Display for Xlp {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "xlp = \"{}\"", self.0)
-    }
-}
-
-/// Z-coordinate value for 3D layouts and displays.
-#[derive(Clone, Debug)]
-struct Z(pub(crate) String);
-
-impl Z {
-    pub fn new(s: &str) -> Self {
-        Self(include!("./validate_z.in"))
-    }
-}
-
-impl std::fmt::Display for Z {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "z = \"{}\"", self.0)
+// Automatically generated on: 2023-01-30 19:00:55.498572 .
+
+use std::{
+    collections::{hash_set, HashSet},
+    hash::{Hash, Hasher},
+};
+
+/// Attribute enumerator.
+#[derive(Clone, Debug)]
+pub enum Attribute {
+    /// Indicates the preferred area for a node or empty cluster. patchwork only. <a href="https://graphviz.org/docs/attrs/area/" target="_blank">Read more</a>.
+    Area(String),
+    /// Style of arrowhead on the head node of an edge. <a href="https://graphviz.org/docs/attrs/arrowhead/" target="_blank">Read more</a>.
+    Arrowhead(String),
+    /// Multiplicative scale factor for arrowheads. <a href="https://graphviz.org/docs/attrs/arrowsize/" target="_blank">Read more</a>.
+    Arrowsize(String),
+    /// Style of arrowhead on the tail node of an edge. <a href="https://graphviz.org/docs/attrs/arrowtail/" target="_blank">Read more</a>.
+    Arrowtail(String),
+    /// A string in the xdot format specifying an arbitrary background. <a href="https://graphviz.org/docs/attrs/background/" target="_blank">Read more</a>.
+    Background(String),
+    /// Bounding box of drawing in points. write only. <a href="https://graphviz.org/docs/attrs/bb/" target="_blank">Read more</a>.
+    Bb(String),
+    /// Whether to draw leaf nodes uniformly in a circle around the root node in sfdp.. sfdp only. <a href="https://graphviz.org/docs/attrs/beautify/" target="_blank">Read more</a>.
+    Beautify(String),
+    /// Canvas background color. <a href="https://graphviz.org/docs/attrs/bgcolor/" target="_blank">Read more</a>.
+    Bgcolor(String),
+    /// Whether to center the drawing in the output canvas. <a href="https://graphviz.org/docs/attrs/center/" target="_blank">Read more</a>.
+    Center(String),
+    /// Character encoding used when interpreting string input as a text label.. <a href="https://graphviz.org/docs/attrs/charset/" target="_blank">Read more</a>.
+    Charset(String),
+    /// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only. <a href="https://graphviz.org/docs/attrs/class/" target="_blank">Read more</a>.
+    Class(String),
+    /// Whether the subgraph is a cluster. <a href="https://graphviz.org/docs/attrs/cluster/" target="_blank">Read more</a>.
+    Cluster(String),
+    /// Mode used for handling clusters. dot only. <a href="https://graphviz.org/docs/attrs/clusterrank/" target="_blank">Read more</a>.
+    Clusterrank(String),
+    /// Basic drawing color for graphics, not text. <a href="https://graphviz.org/docs/attrs/color/" target="_blank">Read more</a>.
+    Color(String),
+    /// A color scheme namespace: the context for interpreting color names. <a href="https://graphviz.org/docs/attrs/colorscheme/" target="_blank">Read more</a>.
+    Colorscheme(String),
+    /// Comments are inserted into output. <a href="https://graphviz.org/docs/attrs/comment/" target="_blank">Read more</a>.
+    Comment(String),
+    /// If true, allow edges between clusters. dot only. <a href="https://graphviz.org/docs/attrs/compound/" target="_blank">Read more</a>.
+    Compound(String),
+    /// If true, use edge concentrators. <a href="https://graphviz.org/docs/attrs/concentrate/" target="_blank">Read more</a>.
+    Concentrate(String),
+    /// If false, the edge is not used in ranking the nodes. dot only. <a href="https://graphviz.org/docs/attrs/constraint/" target="_blank">Read more</a>.
+    Constraint(String),
+    /// Factor damping force motions.. neato only. <a href="https://graphviz.org/docs/attrs/Damping/" target="_blank">Read more</a>.
+    Damping(String),
+    /// Whether to connect the edge label to the edge with a line. <a href="https://graphviz.org/docs/attrs/decorate/" target="_blank">Read more</a>.
+    Decorate(String),
+    /// The distance between nodes in separate connected components. neato only. <a href="https://graphviz.org/docs/attrs/defaultdist/" target="_blank">Read more</a>.
+    Defaultdist(String),
+    /// Set the number of dimensions used for the layout. neato, fdp, sfdp only. <a href="https://graphviz.org/docs/attrs/dim/" target="_blank">Read more</a>.
+    Dim(String),
+    /// Set the number of dimensions used for rendering. neato, fdp, sfdp only. <a href="https://graphviz.org/docs/attrs/dimen/" target="_blank">Read more</a>.
+    Dimen(String),
+    /// Edge type for drawing arrowheads. <a href="https://graphviz.org/docs/attrs/dir/" target="_blank">Read more</a>.
+    Dir(String),
+    /// Whether to constrain most edges to point downwards. neato only. <a href="https://graphviz.org/docs/attrs/diredgeconstraints/" target="_blank">Read more</a>.
+    Diredgeconstraints(String),
+    /// Distortion factor for shape=polygon. <a href="https://graphviz.org/docs/attrs/distortion/" target="_blank">Read more</a>.
+    Distortion(String),
+    /// Specifies the expected number of pixels per inch on a display device. bitmap output, svg only. <a href="https://graphviz.org/docs/attrs/dpi/" target="_blank">Read more</a>.
+    Dpi(String),
+    /// Synonym for edgeURL. map, svg only. <a href="https://graphviz.org/docs/attrs/edgehref/" target="_blank">Read more</a>.
+    Edgehref(String),
+    /// Browser window to use for the edgeURL link. map, svg only. <a href="https://graphviz.org/docs/attrs/edgetarget/" target="_blank">Read more</a>.
+    Edgetarget(String),
+    /// Tooltip annotation attached to the non-label part of an edge. cmap, svg only. <a href="https://graphviz.org/docs/attrs/edgetooltip/" target="_blank">Read more</a>.
+    Edgetooltip(String),
+    /// The link for the non-label parts of an edge. map, svg only. <a href="https://graphviz.org/docs/attrs/edgeURL/" target="_blank">Read more</a>.
+    Edgeurl(String),
+    /// Terminating condition. neato only. <a href="https://graphviz.org/docs/attrs/epsilon/" target="_blank">Read more</a>.
+    Epsilon(String),
+    /// Margin used around polygons for purposes of spline edge routing. neato only. <a href="https://graphviz.org/docs/attrs/esep/" target="_blank">Read more</a>.
+    Esep(String),
+    /// Color used to fill the background of a node or cluster. <a href="https://graphviz.org/docs/attrs/fillcolor/" target="_blank">Read more</a>.
+    Fillcolor(String),
+    /// Whether to use the specified width and height attributes to choose node size (rather than sizing to fit the node contents). <a href="https://graphviz.org/docs/attrs/fixedsize/" target="_blank">Read more</a>.
+    Fixedsize(String),
+    /// Color used for text. <a href="https://graphviz.org/docs/attrs/fontcolor/" target="_blank">Read more</a>.
+    Fontcolor(String),
+    /// Font used for text. <a href="https://graphviz.org/docs/attrs/fontname/" target="_blank">Read more</a>.
+    Fontname(String),
+    /// Allows user control of how basic fontnames are represented in SVG output. svg only. <a href="https://graphviz.org/docs/attrs/fontnames/" target="_blank">Read more</a>.
+    Fontnames(String),
+    /// Directory list used by libgd to search for bitmap fonts. <a href="https://graphviz.org/docs/attrs/fontpath/" target="_blank">Read more</a>.
+    Fontpath(String),
+    /// Font size, in points, used for text. <a href="https://graphviz.org/docs/attrs/fontsize/" target="_blank">Read more</a>.
+    Fontsize(String),
+    /// Whether to force placement of all xlabels, even if overlapping. <a href="https://graphviz.org/docs/attrs/forcelabels/" target="_blank">Read more</a>.
+    Forcelabels(String),
+    /// If a gradient fill is being used, this determines the angle of the fill. <a href="https://graphviz.org/docs/attrs/gradientangle/" target="_blank">Read more</a>.
+    Gradientangle(String),
+    /// Name for a group of nodes, for bundling edges avoiding crossings.. dot only. <a href="https://graphviz.org/docs/attrs/group/" target="_blank">Read more</a>.
+    Group(String),
+    /// Center position of an edge's head label. write only. <a href="https://graphviz.org/docs/attrs/head_lp/" target="_blank">Read more</a>.
+    HeadLp(String),
+    /// If true, the head of an edge is clipped to the boundary of the head node. <a href="https://graphviz.org/docs/attrs/headclip/" target="_blank">Read more</a>.
+    Headclip(String),
+    /// Synonym for headURL. map, svg only. <a href="https://graphviz.org/docs/attrs/headhref/" target="_blank">Read more</a>.
+    Headhref(String),
+    /// Text label to be placed near head of edge. <a href="https://graphviz.org/docs/attrs/headlabel/" target="_blank">Read more</a>.
+    Headlabel(String),
+    /// Indicates where on the head node to attach the head of the edge. <a href="https://graphviz.org/docs/attrs/headport/" target="_blank">Read more</a>.
+    Headport(String),
+    /// Browser window to use for the headURL link. map, svg only. <a href="https://graphviz.org/docs/attrs/headtarget/" target="_blank">Read more</a>.
+    Headtarget(String),
+    /// Tooltip annotation attached to the head of an edge. cmap, svg only. <a href="https://graphviz.org/docs/attrs/headtooltip/" target="_blank">Read more</a>.
+    Headtooltip(String),
+    /// If defined, headURL is output as part of the head label of the edge. map, svg only. <a href="https://graphviz.org/docs/attrs/headURL/" target="_blank">Read more</a>.
+    Headurl(String),
+    /// Height of node, in inches. <a href="https://graphviz.org/docs/attrs/height/" target="_blank">Read more</a>.
+    Height(String),
+    /// Synonym for URL. map, postscript, svg only. <a href="https://graphviz.org/docs/attrs/href/" target="_blank">Read more</a>.
+    Href(String),
+    /// Identifier for graph objects. map, postscript, svg only. <a href="https://graphviz.org/docs/attrs/id/" target="_blank">Read more</a>.
+    Id(String),
+    /// Gives the name of a file containing an image to be displayed inside a node. <a href="https://graphviz.org/docs/attrs/image/" target="_blank">Read more</a>.
+    Image(String),
+    /// A list of directories in which to look for image files. <a href="https://graphviz.org/docs/attrs/imagepath/" target="_blank">Read more</a>.
+    Imagepath(String),
+    /// Controls how an image is positioned within its containing node. <a href="https://graphviz.org/docs/attrs/imagepos/" target="_blank">Read more</a>.
+    Imagepos(String),
+    /// Controls how an image fills its containing node. <a href="https://graphviz.org/docs/attrs/imagescale/" target="_blank">Read more</a>.
+    Imagescale(String),
+    /// Scales the input positions to convert between length units. neato, fdp only. <a href="https://graphviz.org/docs/attrs/inputscale/" target="_blank">Read more</a>.
+    Inputscale(String),
+    /// Spring constant used in virtual physical model. fdp, sfdp only. <a href="https://graphviz.org/docs/attrs/K/" target="_blank">Read more</a>.
+    K(String),
+    /// Text label attached to objects. <a href="https://graphviz.org/docs/attrs/label/" target="_blank">Read more</a>.
+    Label(String),
+    /// Whether to treat a node whose name has the form |edgelabel|* as a special node representing an edge label.. sfdp only. <a href="https://graphviz.org/docs/attrs/label_scheme/" target="_blank">Read more</a>.
+    LabelScheme(String),
+    /// The angle (in degrees) in polar coordinates of the head & tail edge labels.. <a href="https://graphviz.org/docs/attrs/labelangle/" target="_blank">Read more</a>.
+    Labelangle(String),
+    /// Scaling factor for the distance of headlabel / taillabel from the head / tail nodes.. <a href="https://graphviz.org/docs/attrs/labeldistance/" target="_blank">Read more</a>.
+    Labeldistance(String),
+    /// If true, allows edge labels to be less constrained in position. <a href="https://graphviz.org/docs/attrs/labelfloat/" target="_blank">Read more</a>.
+    Labelfloat(String),
+    /// Color used for headlabel and taillabel.. <a href="https://graphviz.org/docs/attrs/labelfontcolor/" target="_blank">Read more</a>.
+    Labelfontcolor(String),
+    /// Font for headlabel and taillabel. <a href="https://graphviz.org/docs/attrs/labelfontname/" target="_blank">Read more</a>.
+    Labelfontname(String),
+    /// Font size of headlabel and taillabel. <a href="https://graphviz.org/docs/attrs/labelfontsize/" target="_blank">Read more</a>.
+    Labelfontsize(String),
+    /// Synonym for labelURL. map, svg only. <a href="https://graphviz.org/docs/attrs/labelhref/" target="_blank">Read more</a>.
+    Labelhref(String),
+    /// Justification for graph & cluster labels. <a href="https://graphviz.org/docs/attrs/labeljust/" target="_blank">Read more</a>.
+    Labeljust(String),
+    /// Vertical placement of labels for nodes, root graphs and clusters. <a href="https://graphviz.org/docs/attrs/labelloc/" target="_blank">Read more</a>.
+    Labelloc(String),
+    /// Browser window to open labelURL links in. map, svg only. <a href="https://graphviz.org/docs/attrs/labeltarget/" target="_blank">Read more</a>.
+    Labeltarget(String),
+    /// Tooltip annotation attached to label of an edge. cmap, svg only. <a href="https://graphviz.org/docs/attrs/labeltooltip/" target="_blank">Read more</a>.
+    Labeltooltip(String),
+    /// If defined, labelURL is the link used for the label of an edge. map, svg only. <a href="https://graphviz.org/docs/attrs/labelURL/" target="_blank">Read more</a>.
+    Labelurl(String),
+    /// If true, the graph is rendered in landscape mode. <a href="https://graphviz.org/docs/attrs/landscape/" target="_blank">Read more</a>.
+    Landscape(String),
+    /// Specifies layers in which the node, edge or cluster is present. <a href="https://graphviz.org/docs/attrs/layer/" target="_blank">Read more</a>.
+    Layer(String),
+    /// The separator characters used to split attributes of type layerRange into a list of ranges.. <a href="https://graphviz.org/docs/attrs/layerlistsep/" target="_blank">Read more</a>.
+    Layerlistsep(String),
+    /// A linearly ordered list of layer names attached to the graph. <a href="https://graphviz.org/docs/attrs/layers/" target="_blank">Read more</a>.
+    Layers(String),
+    /// Selects a list of layers to be emitted. <a href="https://graphviz.org/docs/attrs/layerselect/" target="_blank">Read more</a>.
+    Layerselect(String),
+    /// The separator characters for splitting the layers attribute into a list of layer names.. <a href="https://graphviz.org/docs/attrs/layersep/" target="_blank">Read more</a>.
+    Layersep(String),
+    /// Which layout engine to use. <a href="https://graphviz.org/docs/attrs/layout/" target="_blank">Read more</a>.
+    Layout(String),
+    /// Preferred edge length, in inches. neato, fdp only. <a href="https://graphviz.org/docs/attrs/len/" target="_blank">Read more</a>.
+    Len(String),
+    /// Number of levels allowed in the multilevel scheme. sfdp only. <a href="https://graphviz.org/docs/attrs/levels/" target="_blank">Read more</a>.
+    Levels(String),
+    /// strictness of neato level constraints. neato only. <a href="https://graphviz.org/docs/attrs/levelsgap/" target="_blank">Read more</a>.
+    Levelsgap(String),
+    /// Logical head of an edge. dot only. <a href="https://graphviz.org/docs/attrs/lhead/" target="_blank">Read more</a>.
+    Lhead(String),
+    /// Height of graph or cluster label, in inches. write only. <a href="https://graphviz.org/docs/attrs/lheight/" target="_blank">Read more</a>.
+    Lheight(String),
+    /// How long strings should get before overflowing to next line, for text output.. <a href="https://graphviz.org/docs/attrs/linelength/" target="_blank">Read more</a>.
+    Linelength(String),
+    /// Label center position. write only. <a href="https://graphviz.org/docs/attrs/lp/" target="_blank">Read more</a>.
+    Lp(String),
+    /// Logical tail of an edge. dot only. <a href="https://graphviz.org/docs/attrs/ltail/" target="_blank">Read more</a>.
+    Ltail(String),
+    /// Width of graph or cluster label, in inches. write only. <a href="https://graphviz.org/docs/attrs/lwidth/" target="_blank">Read more</a>.
+    Lwidth(String),
+    /// For graphs, this sets x and y margins of canvas, in inches. <a href="https://graphviz.org/docs/attrs/margin/" target="_blank">Read more</a>.
+    Margin(String),
+    /// Sets the number of iterations used. neato, fdp only. <a href="https://graphviz.org/docs/attrs/maxiter/" target="_blank">Read more</a>.
+    Maxiter(String),
+    /// Scale factor for mincross (mc) edge crossing minimiser parameters. dot only. <a href="https://graphviz.org/docs/attrs/mclimit/" target="_blank">Read more</a>.
+    Mclimit(String),
+    /// Specifies the minimum separation between all nodes. circo only. <a href="https://graphviz.org/docs/attrs/mindist/" target="_blank">Read more</a>.
+    Mindist(String),
+    /// Minimum edge length (rank difference between head and tail). dot only. <a href="https://graphviz.org/docs/attrs/minlen/" target="_blank">Read more</a>.
+    Minlen(String),
+    /// Technique for optimizing the layout. neato only. <a href="https://graphviz.org/docs/attrs/mode/" target="_blank">Read more</a>.
+    Mode(String),
+    /// Specifies how the distance matrix is computed for the input graph. neato only. <a href="https://graphviz.org/docs/attrs/model/" target="_blank">Read more</a>.
+    Model(String),
+    /// Whether to use a single global ranking, ignoring clusters. dot only. <a href="https://graphviz.org/docs/attrs/newrank/" target="_blank">Read more</a>.
+    Newrank(String),
+    /// In dot, nodesep specifies the minimum space between two adjacent nodes in the same rank, in inches. <a href="https://graphviz.org/docs/attrs/nodesep/" target="_blank">Read more</a>.
+    Nodesep(String),
+    /// Whether to justify multiline text vs the previous text line (rather than the side of the container).. <a href="https://graphviz.org/docs/attrs/nojustify/" target="_blank">Read more</a>.
+    Nojustify(String),
+    /// normalizes coordinates of final layout. neato, fdp, sfdp, twopi, circo only. <a href="https://graphviz.org/docs/attrs/normalize/" target="_blank">Read more</a>.
+    Normalize(String),
+    /// Whether to avoid translating layout to the origin point. neato only. <a href="https://graphviz.org/docs/attrs/notranslate/" target="_blank">Read more</a>.
+    Notranslate(String),
+    /// Sets number of iterations in network simplex applications. dot only. <a href="https://graphviz.org/docs/attrs/nslimit/" target="_blank">Read more</a>.
+    Nslimit(String),
+    /// Sets number of iterations in network simplex applications. dot only. <a href="https://graphviz.org/docs/attrs/nslimit1/" target="_blank">Read more</a>.
+    Nslimit1(String),
+    /// Whether to draw circo graphs around one circle.. circo only. <a href="https://graphviz.org/docs/attrs/oneblock/" target="_blank">Read more</a>.
+    Oneblock(String),
+    /// Constrains the left-to-right ordering of node edges.. dot only. <a href="https://graphviz.org/docs/attrs/ordering/" target="_blank">Read more</a>.
+    Ordering(String),
+    /// node shape rotation angle, or graph orientation. <a href="https://graphviz.org/docs/attrs/orientation/" target="_blank">Read more</a>.
+    Orientation(String),
+    /// Specify order in which nodes and edges are drawn. <a href="https://graphviz.org/docs/attrs/outputorder/" target="_blank">Read more</a>.
+    Outputorder(String),
+    /// Determines if and how node overlaps should be removed. fdp, neato only. <a href="https://graphviz.org/docs/attrs/overlap/" target="_blank">Read more</a>.
+    Overlap(String),
+    /// Scale layout by factor, to reduce node overlap.. prism, neato, sfdp, fdp, circo, twopi only. <a href="https://graphviz.org/docs/attrs/overlap_scaling/" target="_blank">Read more</a>.
+    OverlapScaling(String),
+    /// Whether the overlap removal algorithm should perform a compression pass to reduce the size of the layout. prism only. <a href="https://graphviz.org/docs/attrs/overlap_shrink/" target="_blank">Read more</a>.
+    OverlapShrink(String),
+    /// Whether each connected component of the graph should be laid out separately, and then the graphs packed together.. <a href="https://graphviz.org/docs/attrs/pack/" target="_blank">Read more</a>.
+    Pack(String),
+    /// How connected components should be packed. <a href="https://graphviz.org/docs/attrs/packmode/" target="_blank">Read more</a>.
+    Packmode(String),
+    /// Inches to extend the drawing area around the minimal area needed to draw the graph. <a href="https://graphviz.org/docs/attrs/pad/" target="_blank">Read more</a>.
+    Pad(String),
+    /// Width and height of output pages, in inches. <a href="https://graphviz.org/docs/attrs/page/" target="_blank">Read more</a>.
+    Page(String),
+    /// The order in which pages are emitted. <a href="https://graphviz.org/docs/attrs/pagedir/" target="_blank">Read more</a>.
+    Pagedir(String),
+    /// Color used to draw the bounding box around a cluster. <a href="https://graphviz.org/docs/attrs/pencolor/" target="_blank">Read more</a>.
+    Pencolor(String),
+    /// Specifies the width of the pen, in points, used to draw lines and curves. <a href="https://graphviz.org/docs/attrs/penwidth/" target="_blank">Read more</a>.
+    Penwidth(String),
+    /// Set number of peripheries used in polygonal shapes and cluster boundaries. <a href="https://graphviz.org/docs/attrs/peripheries/" target="_blank">Read more</a>.
+    Peripheries(String),
+    /// Keeps the node at the node's given input position. neato, fdp only. <a href="https://graphviz.org/docs/attrs/pin/" target="_blank">Read more</a>.
+    Pin(String),
+    /// Position of node, or spline control points. neato, fdp only. <a href="https://graphviz.org/docs/attrs/pos/" target="_blank">Read more</a>.
+    Pos(String),
+    /// Quadtree scheme to use. sfdp only. <a href="https://graphviz.org/docs/attrs/quadtree/" target="_blank">Read more</a>.
+    Quadtree(String),
+    /// If quantum > 0.0, node label dimensions will be rounded to integral multiples of the quantum. <a href="https://graphviz.org/docs/attrs/quantum/" target="_blank">Read more</a>.
+    Quantum(String),
+    /// Rank constraints on the nodes in a subgraph. dot only. <a href="https://graphviz.org/docs/attrs/rank/" target="_blank">Read more</a>.
+    Rank(String),
+    /// Sets direction of graph layout. dot only. <a href="https://graphviz.org/docs/attrs/rankdir/" target="_blank">Read more</a>.
+    Rankdir(String),
+    /// Specifies separation between ranks. dot, twopi only. <a href="https://graphviz.org/docs/attrs/ranksep/" target="_blank">Read more</a>.
+    Ranksep(String),
+    /// Sets the aspect ratio (drawing height/drawing width) for the drawing. <a href="https://graphviz.org/docs/attrs/ratio/" target="_blank">Read more</a>.
+    Ratio(String),
+    /// Rectangles for fields of records, in points. write only. <a href="https://graphviz.org/docs/attrs/rects/" target="_blank">Read more</a>.
+    Rects(String),
+    /// If true, force polygon to be regular, i.e., the vertices of th. <a href="https://graphviz.org/docs/attrs/regular/" target="_blank">Read more</a>.
+    Regular(String),
+    /// If there are multiple clusters, whether to run edge crossing minimization a second time.. dot only. <a href="https://graphviz.org/docs/attrs/remincross/" target="_blank">Read more</a>.
+    Remincross(String),
+    /// The power of the repulsive force used in an extended Fruchterman-Reingold. sfdp only. <a href="https://graphviz.org/docs/attrs/repulsiveforce/" target="_blank">Read more</a>.
+    Repulsiveforce(String),
+    /// Synonym for dpi.. bitmap output, svg only. <a href="https://graphviz.org/docs/attrs/resolution/" target="_blank">Read more</a>.
+    Resolution(String),
+    /// Specifies nodes to be used as the center of the layout. twopi, circo only. <a href="https://graphviz.org/docs/attrs/root/" target="_blank">Read more</a>.
+    Root(String),
+    /// If rotate=90, sets drawing orientation to landscape. <a href="https://graphviz.org/docs/attrs/rotate/" target="_blank">Read more</a>.
+    Rotate(String),
+    /// Rotates the final layout counter-clockwise by the specified number of degrees. sfdp only. <a href="https://graphviz.org/docs/attrs/rotation/" target="_blank">Read more</a>.
+    Rotation(String),
+    /// Edges with the same head and the same samehead value are aimed at the same point on the head. dot only. <a href="https://graphviz.org/docs/attrs/samehead/" target="_blank">Read more</a>.
+    Samehead(String),
+    /// Edges with the same tail and the same sametail value are aimed at th. dot only. <a href="https://graphviz.org/docs/attrs/sametail/" target="_blank">Read more</a>.
+    Sametail(String),
+    /// Gives the number of points used for a circle/ellipse node. <a href="https://graphviz.org/docs/attrs/samplepoints/" target="_blank">Read more</a>.
+    Samplepoints(String),
+    /// Scales layout by the given factor after the initial layout. neato, twopi only. <a href="https://graphviz.org/docs/attrs/scale/" target="_blank">Read more</a>.
+    Scale(String),
+    /// During network simplex, the maximum number of edges with negative cut values to search when looking for an edge with minimum cut value.. dot only. <a href="https://graphviz.org/docs/attrs/searchsize/" target="_blank">Read more</a>.
+    Searchsize(String),
+    /// Margin to leave around nodes when removing node overlap. fdp, neato only. <a href="https://graphviz.org/docs/attrs/sep/" target="_blank">Read more</a>.
+    Sep(String),
+    /// Sets the shape of a node. <a href="https://graphviz.org/docs/attrs/shape/" target="_blank">Read more</a>.
+    Shape(String),
+    /// A file containing user-supplied node content. <a href="https://graphviz.org/docs/attrs/shapefile/" target="_blank">Read more</a>.
+    Shapefile(String),
+    /// Print guide boxes for debugging. dot only. <a href="https://graphviz.org/docs/attrs/showboxes/" target="_blank">Read more</a>.
+    Showboxes(String),
+    /// Number of sides when shape=polygon. <a href="https://graphviz.org/docs/attrs/sides/" target="_blank">Read more</a>.
+    Sides(String),
+    /// Maximum width and height of drawing, in inches. <a href="https://graphviz.org/docs/attrs/size/" target="_blank">Read more</a>.
+    Size(String),
+    /// Skew factor for shape=polygon. <a href="https://graphviz.org/docs/attrs/skew/" target="_blank">Read more</a>.
+    Skew(String),
+    /// Specifies a post-processing step used to smooth out an uneven distribution of nodes.. sfdp only. <a href="https://graphviz.org/docs/attrs/smoothing/" target="_blank">Read more</a>.
+    Smoothing(String),
+    /// Sort order of graph components for ordering packmode packing.. <a href="https://graphviz.org/docs/attrs/sortv/" target="_blank">Read more</a>.
+    Sortv(String),
+    /// Controls how, and if, edges are represented. <a href="https://graphviz.org/docs/attrs/splines/" target="_blank">Read more</a>.
+    Splines(String),
+    /// Parameter used to determine the initial layout of nodes. neato, fdp, sfdp only. <a href="https://graphviz.org/docs/attrs/start/" target="_blank">Read more</a>.
+    Start(String),
+    /// Set style information for components of the graph. <a href="https://graphviz.org/docs/attrs/style/" target="_blank">Read more</a>.
+    Style(String),
+    /// A URL or pathname specifying an XML style sheet, used in SVG output. svg only. <a href="https://graphviz.org/docs/attrs/stylesheet/" target="_blank">Read more</a>.
+    Stylesheet(String),
+    /// Position of an edge's tail label, in points.. write only. <a href="https://graphviz.org/docs/attrs/tail_lp/" target="_blank">Read more</a>.
+    TailLp(String),
+    /// If true, the tail of an edge is clipped to the boundary of the tail node. <a href="https://graphviz.org/docs/attrs/tailclip/" target="_blank">Read more</a>.
+    Tailclip(String),
+    /// Synonym for tailURL.. map, svg only. <a href="https://graphviz.org/docs/attrs/tailhref/" target="_blank">Read more</a>.
+    Tailhref(String),
+    /// Text label to be placed near tail of edge. <a href="https://graphviz.org/docs/attrs/taillabel/" target="_blank">Read more</a>.
+    Taillabel(String),
+    /// Indicates where on the tail node to attach the tail of the edge. <a href="https://graphviz.org/docs/attrs/tailport/" target="_blank">Read more</a>.
+    Tailport(String),
+    /// Browser window to use for the tailURL link. map, svg only. <a href="https://graphviz.org/docs/attrs/tailtarget/" target="_blank">Read more</a>.
+    Tailtarget(String),
+    /// Tooltip annotation attached to the tail of an edge. cmap, svg only. <a href="https://graphviz.org/docs/attrs/tailtooltip/" target="_blank">Read more</a>.
+    Tailtooltip(String),
+    /// If defined, tailURL is output as part of the tail label of th. map, svg only. <a href="https://graphviz.org/docs/attrs/tailURL/" target="_blank">Read more</a>.
+    Tailurl(String),
+    /// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only. <a href="https://graphviz.org/docs/attrs/target/" target="_blank">Read more</a>.
+    Target(String),
+    /// Which rank to move floating (loose) nodes to. dot only. <a href="https://graphviz.org/docs/attrs/TBbalance/" target="_blank">Read more</a>.
+    Tbbalance(String),
+    /// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only. <a href="https://graphviz.org/docs/attrs/tooltip/" target="_blank">Read more</a>.
+    Tooltip(String),
+    /// Whether internal bitmap rendering relies on a truecolor color model or uses. bitmap output only. <a href="https://graphviz.org/docs/attrs/truecolor/" target="_blank">Read more</a>.
+    Truecolor(String),
+    /// Hyperlinks incorporated into device-dependent output. map, postscript, svg only. <a href="https://graphviz.org/docs/attrs/URL/" target="_blank">Read more</a>.
+    Url(String),
+    /// Sets the coordinates of the vertices of the node's polygon, in inches. write only. <a href="https://graphviz.org/docs/attrs/vertices/" target="_blank">Read more</a>.
+    Vertices(String),
+    /// Clipping window on final drawing. <a href="https://graphviz.org/docs/attrs/viewport/" target="_blank">Read more</a>.
+    Viewport(String),
+    /// Tuning margin of Voronoi technique. neato, fdp, sfdp, twopi, circo only. <a href="https://graphviz.org/docs/attrs/voro_margin/" target="_blank">Read more</a>.
+    VoroMargin(String),
+    /// Weight of edge. <a href="https://graphviz.org/docs/attrs/weight/" target="_blank">Read more</a>.
+    Weight(String),
+    /// Width of node, in inches. <a href="https://graphviz.org/docs/attrs/width/" target="_blank">Read more</a>.
+    Width(String),
+    /// Determines the version of xdot used in output. xdot only. <a href="https://graphviz.org/docs/attrs/xdotversion/" target="_blank">Read more</a>.
+    Xdotversion(String),
+    /// External label for a node or edge. <a href="https://graphviz.org/docs/attrs/xlabel/" target="_blank">Read more</a>.
+    Xlabel(String),
+    /// Position of an exterior label, in points. write only. <a href="https://graphviz.org/docs/attrs/xlp/" target="_blank">Read more</a>.
+    Xlp(String),
+    /// Z-coordinate value for 3D layouts and displays. <a href="https://graphviz.org/docs/attrs/z/" target="_blank">Read more</a>.
+    Z(String),
+}
+
+impl PartialEq for Attribute {
+    fn eq(&self, other: &Self) -> bool {
+        // Compare attributes based on their discriminant.
+        std::mem::discriminant(self).eq(&std::mem::discriminant(other))
+    }
+}
+
+impl Eq for Attribute {}
+
+impl Hash for Attribute {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash attributes based on their discriminant.
+        std::mem::discriminant(self).hash(state);
+    }
+}
+
+impl From<Attribute> for (String, String) {
+    fn from(attribute: Attribute) -> Self {
+        let (key, value) = match attribute {
+            Attribute::Area(x) => ("area", x),
+            Attribute::Arrowhead(x) => ("arrowhead", x),
+            Attribute::Arrowsize(x) => ("arrowsize", x),
+            Attribute::Arrowtail(x) => ("arrowtail", x),
+            Attribute::Background(x) => ("_background", x),
+            Attribute::Bb(x) => ("bb", x),
+            Attribute::Beautify(x) => ("beautify", x),
+            Attribute::Bgcolor(x) => ("bgcolor", x),
+            Attribute::Center(x) => ("center", x),
+            Attribute::Charset(x) => ("charset", x),
+            Attribute::Class(x) => ("class", x),
+            Attribute::Cluster(x) => ("cluster", x),
+            Attribute::Clusterrank(x) => ("clusterrank", x),
+            Attribute::Color(x) => ("color", x),
+            Attribute::Colorscheme(x) => ("colorscheme", x),
+            Attribute::Comment(x) => ("comment", x),
+            Attribute::Compound(x) => ("compound", x),
+            Attribute::Concentrate(x) => ("concentrate", x),
+            Attribute::Constraint(x) => ("constraint", x),
+            Attribute::Damping(x) => ("Damping", x),
+            Attribute::Decorate(x) => ("decorate", x),
+            Attribute::Defaultdist(x) => ("defaultdist", x),
+            Attribute::Dim(x) => ("dim", x),
+            Attribute::Dimen(x) => ("dimen", x),
+            Attribute::Dir(x) => ("dir", x),
+            Attribute::Diredgeconstraints(x) => ("diredgeconstraints", x),
+            Attribute::Distortion(x) => ("distortion", x),
+            Attribute::Dpi(x) => ("dpi", x),
+            Attribute::Edgehref(x) => ("edgehref", x),
+            Attribute::Edgetarget(x) => ("edgetarget", x),
+            Attribute::Edgetooltip(x) => ("edgetooltip", x),
+            Attribute::Edgeurl(x) => ("edgeURL", x),
+            Attribute::Epsilon(x) => ("epsilon", x),
+            Attribute::Esep(x) => ("esep", x),
+            Attribute::Fillcolor(x) => ("fillcolor", x),
+            Attribute::Fixedsize(x) => ("fixedsize", x),
+            Attribute::Fontcolor(x) => ("fontcolor", x),
+            Attribute::Fontname(x) => ("fontname", x),
+            Attribute::Fontnames(x) => ("fontnames", x),
+            Attribute::Fontpath(x) => ("fontpath", x),
+            Attribute::Fontsize(x) => ("fontsize", x),
+            Attribute::Forcelabels(x) => ("forcelabels", x),
+            Attribute::Gradientangle(x) => ("gradientangle", x),
+            Attribute::Group(x) => ("group", x),
+            Attribute::HeadLp(x) => ("head_lp", x),
+            Attribute::Headclip(x) => ("headclip", x),
+            Attribute::Headhref(x) => ("headhref", x),
+            Attribute::Headlabel(x) => ("headlabel", x),
+            Attribute::Headport(x) => ("headport", x),
+            Attribute::Headtarget(x) => ("headtarget", x),
+            Attribute::Headtooltip(x) => ("headtooltip", x),
+            Attribute::Headurl(x) => ("headURL", x),
+            Attribute::Height(x) => ("height", x),
+            Attribute::Href(x) => ("href", x),
+            Attribute::Id(x) => ("id", x),
+            Attribute::Image(x) => ("image", x),
+            Attribute::Imagepath(x) => ("imagepath", x),
+            Attribute::Imagepos(x) => ("imagepos", x),
+            Attribute::Imagescale(x) => ("imagescale", x),
+            Attribute::Inputscale(x) => ("inputscale", x),
+            Attribute::K(x) => ("K", x),
+            Attribute::Label(x) => ("label", x),
+            Attribute::LabelScheme(x) => ("label_scheme", x),
+            Attribute::Labelangle(x) => ("labelangle", x),
+            Attribute::Labeldistance(x) => ("labeldistance", x),
+            Attribute::Labelfloat(x) => ("labelfloat", x),
+            Attribute::Labelfontcolor(x) => ("labelfontcolor", x),
+            Attribute::Labelfontname(x) => ("labelfontname", x),
+            Attribute::Labelfontsize(x) => ("labelfontsize", x),
+            Attribute::Labelhref(x) => ("labelhref", x),
+            Attribute::Labeljust(x) => ("labeljust", x),
+            Attribute::Labelloc(x) => ("labelloc", x),
+            Attribute::Labeltarget(x) => ("labeltarget", x),
+            Attribute::Labeltooltip(x) => ("labeltooltip", x),
+            Attribute::Labelurl(x) => ("labelURL", x),
+            Attribute::Landscape(x) => ("landscape", x),
+            Attribute::Layer(x) => ("layer", x),
+            Attribute::Layerlistsep(x) => ("layerlistsep", x),
+            Attribute::Layers(x) => ("layers", x),
+            Attribute::Layerselect(x) => ("layerselect", x),
+            Attribute::Layersep(x) => ("layersep", x),
+            Attribute::Layout(x) => ("layout", x),
+            Attribute::Len(x) => ("len", x),
+            Attribute::Levels(x) => ("levels", x),
+            Attribute::Levelsgap(x) => ("levelsgap", x),
+            Attribute::Lhead(x) => ("lhead", x),
+            Attribute::Lheight(x) => ("lheight", x),
+            Attribute::Linelength(x) => ("linelength", x),
+            Attribute::Lp(x) => ("lp", x),
+            Attribute::Ltail(x) => ("ltail", x),
+            Attribute::Lwidth(x) => ("lwidth", x),
+            Attribute::Margin(x) => ("margin", x),
+            Attribute::Maxiter(x) => ("maxiter", x),
+            Attribute::Mclimit(x) => ("mclimit", x),
+            Attribute::Mindist(x) => ("mindist", x),
+            Attribute::Minlen(x) => ("minlen", x),
+            Attribute::Mode(x) => ("mode", x),
+            Attribute::Model(x) => ("model", x),
+            Attribute::Newrank(x) => ("newrank", x),
+            Attribute::Nodesep(x) => ("nodesep", x),
+            Attribute::Nojustify(x) => ("nojustify", x),
+            Attribute::Normalize(x) => ("normalize", x),
+            Attribute::Notranslate(x) => ("notranslate", x),
+            Attribute::Nslimit(x) => ("nslimit", x),
+            Attribute::Nslimit1(x) => ("nslimit1", x),
+            Attribute::Oneblock(x) => ("oneblock", x),
+            Attribute::Ordering(x) => ("ordering", x),
+            Attribute::Orientation(x) => ("orientation", x),
+            Attribute::Outputorder(x) => ("outputorder", x),
+            Attribute::Overlap(x) => ("overlap", x),
+            Attribute::OverlapScaling(x) => ("overlap_scaling", x),
+            Attribute::OverlapShrink(x) => ("overlap_shrink", x),
+            Attribute::Pack(x) => ("pack", x),
+            Attribute::Packmode(x) => ("packmode", x),
+            Attribute::Pad(x) => ("pad", x),
+            Attribute::Page(x) => ("page", x),
+            Attribute::Pagedir(x) => ("pagedir", x),
+            Attribute::Pencolor(x) => ("pencolor", x),
+            Attribute::Penwidth(x) => ("penwidth", x),
+            Attribute::Peripheries(x) => ("peripheries", x),
+            Attribute::Pin(x) => ("pin", x),
+            Attribute::Pos(x) => ("pos", x),
+            Attribute::Quadtree(x) => ("quadtree", x),
+            Attribute::Quantum(x) => ("quantum", x),
+            Attribute::Rank(x) => ("rank", x),
+            Attribute::Rankdir(x) => ("rankdir", x),
+            Attribute::Ranksep(x) => ("ranksep", x),
+            Attribute::Ratio(x) => ("ratio", x),
+            Attribute::Rects(x) => ("rects", x),
+            Attribute::Regular(x) => ("regular", x),
+            Attribute::Remincross(x) => ("remincross", x),
+            Attribute::Repulsiveforce(x) => ("repulsiveforce", x),
+            Attribute::Resolution(x) => ("resolution", x),
+            Attribute::Root(x) => ("root", x),
+            Attribute::Rotate(x) => ("rotate", x),
+            Attribute::Rotation(x) => ("rotation", x),
+            Attribute::Samehead(x) => ("samehead", x),
+            Attribute::Sametail(x) => ("sametail", x),
+            Attribute::Samplepoints(x) => ("samplepoints", x),
+            Attribute::Scale(x) => ("scale", x),
+            Attribute::Searchsize(x) => ("searchsize", x),
+            Attribute::Sep(x) => ("sep", x),
+            Attribute::Shape(x) => ("shape", x),
+            Attribute::Shapefile(x) => ("shapefile", x),
+            Attribute::Showboxes(x) => ("showboxes", x),
+            Attribute::Sides(x) => ("sides", x),
+            Attribute::Size(x) => ("size", x),
+            Attribute::Skew(x) => ("skew", x),
+            Attribute::Smoothing(x) => ("smoothing", x),
+            Attribute::Sortv(x) => ("sortv", x),
+            Attribute::Splines(x) => ("splines", x),
+            Attribute::Start(x) => ("start", x),
+            Attribute::Style(x) => ("style", x),
+            Attribute::Stylesheet(x) => ("stylesheet", x),
+            Attribute::TailLp(x) => ("tail_lp", x),
+            Attribute::Tailclip(x) => ("tailclip", x),
+            Attribute::Tailhref(x) => ("tailhref", x),
+            Attribute::Taillabel(x) => ("taillabel", x),
+            Attribute::Tailport(x) => ("tailport", x),
+            Attribute::Tailtarget(x) => ("tailtarget", x),
+            Attribute::Tailtooltip(x) => ("tailtooltip", x),
+            Attribute::Tailurl(x) => ("tailURL", x),
+            Attribute::Target(x) => ("target", x),
+            Attribute::Tbbalance(x) => ("TBbalance", x),
+            Attribute::Tooltip(x) => ("tooltip", x),
+            Attribute::Truecolor(x) => ("truecolor", x),
+            Attribute::Url(x) => ("URL", x),
+            Attribute::Vertices(x) => ("vertices", x),
+            Attribute::Viewport(x) => ("viewport", x),
+            Attribute::VoroMargin(x) => ("voro_margin", x),
+            Attribute::Weight(x) => ("weight", x),
+            Attribute::Width(x) => ("width", x),
+            Attribute::Xdotversion(x) => ("xdotversion", x),
+            Attribute::Xlabel(x) => ("xlabel", x),
+            Attribute::Xlp(x) => ("xlp", x),
+            Attribute::Z(x) => ("z", x),
+        };
+
+        (key.into(), value)
     }
 }
 
 /// Graph attributes.
 #[derive(Clone, Debug, Default)]
-pub struct GraphAttrs {
-    _background: Option<Background>,
-    bb: Option<Bb>,
-    beautify: Option<Beautify>,
-    bgcolor: Option<Bgcolor>,
-    center: Option<Center>,
-    charset: Option<Charset>,
-    class: Option<Class>,
-    clusterrank: Option<Clusterrank>,
-    colorscheme: Option<Colorscheme>,
-    comment: Option<Comment>,
-    compound: Option<Compound>,
-    concentrate: Option<Concentrate>,
-    damping: Option<Damping>,
-    defaultdist: Option<Defaultdist>,
-    dim: Option<Dim>,
-    dimen: Option<Dimen>,
-    diredgeconstraints: Option<Diredgeconstraints>,
-    dpi: Option<Dpi>,
-    epsilon: Option<Epsilon>,
-    esep: Option<Esep>,
-    fontcolor: Option<Fontcolor>,
-    fontname: Option<Fontname>,
-    fontnames: Option<Fontnames>,
-    fontpath: Option<Fontpath>,
-    fontsize: Option<Fontsize>,
-    forcelabels: Option<Forcelabels>,
-    gradientangle: Option<Gradientangle>,
-    href: Option<Href>,
-    id: Option<Id>,
-    imagepath: Option<Imagepath>,
-    inputscale: Option<Inputscale>,
-    k: Option<K>,
-    label: Option<Label>,
-    label_scheme: Option<LabelScheme>,
-    labeljust: Option<Labeljust>,
-    labelloc: Option<Labelloc>,
-    landscape: Option<Landscape>,
-    layerlistsep: Option<Layerlistsep>,
-    layers: Option<Layers>,
-    layerselect: Option<Layerselect>,
-    layersep: Option<Layersep>,
-    layout: Option<Layout>,
-    levels: Option<Levels>,
-    levelsgap: Option<Levelsgap>,
-    lheight: Option<Lheight>,
-    linelength: Option<Linelength>,
-    lp: Option<Lp>,
-    lwidth: Option<Lwidth>,
-    margin: Option<Margin>,
-    maxiter: Option<Maxiter>,
-    mclimit: Option<Mclimit>,
-    mindist: Option<Mindist>,
-    mode: Option<Mode>,
-    model: Option<Model>,
-    newrank: Option<Newrank>,
-    nodesep: Option<Nodesep>,
-    nojustify: Option<Nojustify>,
-    normalize: Option<Normalize>,
-    notranslate: Option<Notranslate>,
-    nslimit: Option<Nslimit>,
-    nslimit1: Option<Nslimit1>,
-    oneblock: Option<Oneblock>,
-    ordering: Option<Ordering>,
-    orientation: Option<Orientation>,
-    outputorder: Option<Outputorder>,
-    overlap: Option<Overlap>,
-    overlap_scaling: Option<OverlapScaling>,
-    overlap_shrink: Option<OverlapShrink>,
-    pack: Option<Pack>,
-    packmode: Option<Packmode>,
-    pad: Option<Pad>,
-    page: Option<Page>,
-    pagedir: Option<Pagedir>,
-    quadtree: Option<Quadtree>,
-    quantum: Option<Quantum>,
-    rankdir: Option<Rankdir>,
-    ranksep: Option<Ranksep>,
-    ratio: Option<Ratio>,
-    remincross: Option<Remincross>,
-    repulsiveforce: Option<Repulsiveforce>,
-    resolution: Option<Resolution>,
-    root: Option<Root>,
-    rotate: Option<Rotate>,
-    rotation: Option<Rotation>,
-    scale: Option<Scale>,
-    searchsize: Option<Searchsize>,
-    sep: Option<Sep>,
-    showboxes: Option<Showboxes>,
-    size: Option<Size>,
-    smoothing: Option<Smoothing>,
-    sortv: Option<Sortv>,
-    splines: Option<Splines>,
-    start: Option<Start>,
-    style: Option<Style>,
-    stylesheet: Option<Stylesheet>,
-    target: Option<Target>,
-    tbbalance: Option<Tbbalance>,
-    tooltip: Option<Tooltip>,
-    truecolor: Option<Truecolor>,
-    url: Option<Url>,
-    viewport: Option<Viewport>,
-    voro_margin: Option<VoroMargin>,
-    xdotversion: Option<Xdotversion>,
+pub struct GraphAttributes {
+    attributes: HashSet<Attribute>,
 }
 
-impl GraphAttrs {
-    /// A string in the xdot format specifying an arbitrary background. [Read more](https://graphviz.org/docs/attrs/background/).
-    pub fn get_background(&self) -> Option<&str> {
-        self._background.as_ref().map(|x| x.0.as_str())
-    }
+impl GraphAttributes {
+    /// Set attribute from `key` and `value` raw parts. Returns whether the attribute was newly set.
+    ///
+    /// # Panics
+    ///
+    /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
+    ///
+    pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let item = match key {
+            "_background" => Attribute::Background(value.into()),
+            "bb" => Attribute::Bb(value.into()),
+            "beautify" => Attribute::Beautify(value.into()),
+            "bgcolor" => Attribute::Bgcolor(value.into()),
+            "center" => Attribute::Center(value.into()),
+            "charset" => Attribute::Charset(value.into()),
+            "class" => Attribute::Class(value.into()),
+            "clusterrank" => Attribute::Clusterrank(value.into()),
+            "colorscheme" => Attribute::Colorscheme(value.into()),
+            "comment" => Attribute::Comment(value.into()),
+            "compound" => Attribute::Compound(value.into()),
+            "concentrate" => Attribute::Concentrate(value.into()),
+            "Damping" => Attribute::Damping(value.into()),
+            "defaultdist" => Attribute::Defaultdist(value.into()),
+            "dim" => Attribute::Dim(value.into()),
+            "dimen" => Attribute::Dimen(value.into()),
+            "diredgeconstraints" => Attribute::Diredgeconstraints(value.into()),
+            "dpi" => Attribute::Dpi(value.into()),
+            "epsilon" => Attribute::Epsilon(value.into()),
+            "esep" => Attribute::Esep(value.into()),
+            "fontcolor" => Attribute::Fontcolor(value.into()),
+            "fontname" => Attribute::Fontname(value.into()),
+            "fontnames" => Attribute::Fontnames(value.into()),
+            "fontpath" => Attribute::Fontpath(value.into()),
+            "fontsize" => Attribute::Fontsize(value.into()),
+            "forcelabels" => Attribute::Forcelabels(value.into()),
+            "gradientangle" => Attribute::Gradientangle(value.into()),
+            "href" => Attribute::Href(value.into()),
+            "id" => Attribute::Id(value.into()),
+            "imagepath" => Attribute::Imagepath(value.into()),
+            "inputscale" => Attribute::Inputscale(value.into()),
+            "K" => Attribute::K(value.into()),
+            "label" => Attribute::Label(value.into()),
+            "label_scheme" => Attribute::LabelScheme(value.into()),
+            "labeljust" => Attribute::Labeljust(value.into()),
+            "labelloc" => Attribute::Labelloc(value.into()),
+            "landscape" => Attribute::Landscape(value.into()),
+            "layerlistsep" => Attribute::Layerlistsep(value.into()),
+            "layers" => Attribute::Layers(value.into()),
+            "layerselect" => Attribute::Layerselect(value.into()),
+            "layersep" => Attribute::Layersep(value.into()),
+            "layout" => Attribute::Layout(value.into()),
+            "levels" => Attribute::Levels(value.into()),
+            "levelsgap" => Attribute::Levelsgap(value.into()),
+            "lheight" => Attribute::Lheight(value.into()),
+            "linelength" => Attribute::Linelength(value.into()),
+            "lp" => Attribute::Lp(value.into()),
+            "lwidth" => Attribute::Lwidth(value.into()),
+            "margin" => Attribute::Margin(value.into()),
+            "maxiter" => Attribute::Maxiter(value.into()),
+            "mclimit" => Attribute::Mclimit(value.into()),
+            "mindist" => Attribute::Mindist(value.into()),
+            "mode" => Attribute::Mode(value.into()),
+            "model" => Attribute::Model(value.into()),
+            "newrank" => Attribute::Newrank(value.into()),
+            "nodesep" => Attribute::Nodesep(value.into()),
+            "nojustify" => Attribute::Nojustify(value.into()),
+            "normalize" => Attribute::Normalize(value.into()),
+            "notranslate" => Attribute::Notranslate(value.into()),
+            "nslimit" => Attribute::Nslimit(value.into()),
+            "nslimit1" => Attribute::Nslimit1(value.into()),
+            "oneblock" => Attribute::Oneblock(value.into()),
+            "ordering" => Attribute::Ordering(value.into()),
+            "orientation" => Attribute::Orientation(value.into()),
+            "outputorder" => Attribute::Outputorder(value.into()),
+            "overlap" => Attribute::Overlap(value.into()),
+            "overlap_scaling" => Attribute::OverlapScaling(value.into()),
+            "overlap_shrink" => Attribute::OverlapShrink(value.into()),
+            "pack" => Attribute::Pack(value.into()),
+            "packmode" => Attribute::Packmode(value.into()),
+            "pad" => Attribute::Pad(value.into()),
+            "page" => Attribute::Page(value.into()),
+            "pagedir" => Attribute::Pagedir(value.into()),
+            "quadtree" => Attribute::Quadtree(value.into()),
+            "quantum" => Attribute::Quantum(value.into()),
+            "rankdir" => Attribute::Rankdir(value.into()),
+            "ranksep" => Attribute::Ranksep(value.into()),
+            "ratio" => Attribute::Ratio(value.into()),
+            "remincross" => Attribute::Remincross(value.into()),
+            "repulsiveforce" => Attribute::Repulsiveforce(value.into()),
+            "resolution" => Attribute::Resolution(value.into()),
+            "root" => Attribute::Root(value.into()),
+            "rotate" => Attribute::Rotate(value.into()),
+            "rotation" => Attribute::Rotation(value.into()),
+            "scale" => Attribute::Scale(value.into()),
+            "searchsize" => Attribute::Searchsize(value.into()),
+            "sep" => Attribute::Sep(value.into()),
+            "showboxes" => Attribute::Showboxes(value.into()),
+            "size" => Attribute::Size(value.into()),
+            "smoothing" => Attribute::Smoothing(value.into()),
+            "sortv" => Attribute::Sortv(value.into()),
+            "splines" => Attribute::Splines(value.into()),
+            "start" => Attribute::Start(value.into()),
+            "style" => Attribute::Style(value.into()),
+            "stylesheet" => Attribute::Stylesheet(value.into()),
+            "target" => Attribute::Target(value.into()),
+            "TBbalance" => Attribute::Tbbalance(value.into()),
+            "tooltip" => Attribute::Tooltip(value.into()),
+            "truecolor" => Attribute::Truecolor(value.into()),
+            "URL" => Attribute::Url(value.into()),
+            "viewport" => Attribute::Viewport(value.into()),
+            "voro_margin" => Attribute::VoroMargin(value.into()),
+            "xdotversion" => Attribute::Xdotversion(value.into()),
+            _ => panic!("Invalid attribute key `{key}` for GraphAttributes"),
+        };
 
-    /// Set `_background` attribute. [Read more](https://graphviz.org/docs/attrs/background/).
-    pub fn set_background(&mut self, s: &str) {
-        self._background = Some(Background::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `_background` attribute. [Read more](https://graphviz.org/docs/attrs/background/).
-    pub fn unset_background(&mut self) {
-        self._background = None;
-    }
+    /// Set [`Attribute::Background`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_background(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Background(s.into());
 
-    /// Bounding box of drawing in points. write only. [Read more](https://graphviz.org/docs/attrs/bb/).
-    pub fn get_bb(&self) -> Option<&str> {
-        self.bb.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `bb` attribute. [Read more](https://graphviz.org/docs/attrs/bb/).
-    pub fn set_bb(&mut self, s: &str) {
-        self.bb = Some(Bb::new(s));
-    }
+    /// Unset [`Attribute::Background`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_background(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Background(String::new());
 
-    /// Unset `bb` attribute. [Read more](https://graphviz.org/docs/attrs/bb/).
-    pub fn unset_bb(&mut self) {
-        self.bb = None;
+        self.attributes.remove(&item)
     }
 
-    /// Whether to draw leaf nodes uniformly in a circle around the root node in sfdp.. sfdp only. [Read more](https://graphviz.org/docs/attrs/beautify/).
-    pub fn get_beautify(&self) -> Option<&str> {
-        self.beautify.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Bb`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_bb(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Bb(s.into());
 
-    /// Set `beautify` attribute. [Read more](https://graphviz.org/docs/attrs/beautify/).
-    pub fn set_beautify(&mut self, s: &str) {
-        self.beautify = Some(Beautify::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `beautify` attribute. [Read more](https://graphviz.org/docs/attrs/beautify/).
-    pub fn unset_beautify(&mut self) {
-        self.beautify = None;
-    }
+    /// Unset [`Attribute::Bb`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_bb(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Bb(String::new());
 
-    /// Canvas background color. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn get_bgcolor(&self) -> Option<&str> {
-        self.bgcolor.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `bgcolor` attribute. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn set_bgcolor(&mut self, s: &str) {
-        self.bgcolor = Some(Bgcolor::new(s));
-    }
+    /// Set [`Attribute::Beautify`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_beautify(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Beautify(s.into());
 
-    /// Unset `bgcolor` attribute. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn unset_bgcolor(&mut self) {
-        self.bgcolor = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Whether to center the drawing in the output canvas. [Read more](https://graphviz.org/docs/attrs/center/).
-    pub fn get_center(&self) -> Option<&str> {
-        self.center.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Beautify`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_beautify(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Beautify(String::new());
 
-    /// Set `center` attribute. [Read more](https://graphviz.org/docs/attrs/center/).
-    pub fn set_center(&mut self, s: &str) {
-        self.center = Some(Center::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `center` attribute. [Read more](https://graphviz.org/docs/attrs/center/).
-    pub fn unset_center(&mut self) {
-        self.center = None;
-    }
+    /// Set [`Attribute::Bgcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_bgcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Bgcolor(s.into());
 
-    /// Character encoding used when interpreting string input as a text label.. [Read more](https://graphviz.org/docs/attrs/charset/).
-    pub fn get_charset(&self) -> Option<&str> {
-        self.charset.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `charset` attribute. [Read more](https://graphviz.org/docs/attrs/charset/).
-    pub fn set_charset(&mut self, s: &str) {
-        self.charset = Some(Charset::new(s));
-    }
+    /// Unset [`Attribute::Bgcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_bgcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Bgcolor(String::new());
 
-    /// Unset `charset` attribute. [Read more](https://graphviz.org/docs/attrs/charset/).
-    pub fn unset_charset(&mut self) {
-        self.charset = None;
+        self.attributes.remove(&item)
     }
 
-    /// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn get_class(&self) -> Option<&str> {
-        self.class.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Center`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_center(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Center(s.into());
 
-    /// Set `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn set_class(&mut self, s: &str) {
-        self.class = Some(Class::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn unset_class(&mut self) {
-        self.class = None;
-    }
+    /// Unset [`Attribute::Center`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_center(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Center(String::new());
 
-    /// Mode used for handling clusters. dot only. [Read more](https://graphviz.org/docs/attrs/clusterrank/).
-    pub fn get_clusterrank(&self) -> Option<&str> {
-        self.clusterrank.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `clusterrank` attribute. [Read more](https://graphviz.org/docs/attrs/clusterrank/).
-    pub fn set_clusterrank(&mut self, s: &str) {
-        self.clusterrank = Some(Clusterrank::new(s));
-    }
+    /// Set [`Attribute::Charset`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_charset(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Charset(s.into());
 
-    /// Unset `clusterrank` attribute. [Read more](https://graphviz.org/docs/attrs/clusterrank/).
-    pub fn unset_clusterrank(&mut self) {
-        self.clusterrank = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// A color scheme namespace: the context for interpreting color names. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn get_colorscheme(&self) -> Option<&str> {
-        self.colorscheme.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Charset`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_charset(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Charset(String::new());
 
-    /// Set `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn set_colorscheme(&mut self, s: &str) {
-        self.colorscheme = Some(Colorscheme::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn unset_colorscheme(&mut self) {
-        self.colorscheme = None;
-    }
+    /// Set [`Attribute::Class`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_class(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Class(s.into());
 
-    /// Comments are inserted into output. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn get_comment(&self) -> Option<&str> {
-        self.comment.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn set_comment(&mut self, s: &str) {
-        self.comment = Some(Comment::new(s));
-    }
+    /// Unset [`Attribute::Class`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_class(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Class(String::new());
 
-    /// Unset `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn unset_comment(&mut self) {
-        self.comment = None;
+        self.attributes.remove(&item)
     }
 
-    /// If true, allow edges between clusters. dot only. [Read more](https://graphviz.org/docs/attrs/compound/).
-    pub fn get_compound(&self) -> Option<&str> {
-        self.compound.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Clusterrank`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_clusterrank(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Clusterrank(s.into());
 
-    /// Set `compound` attribute. [Read more](https://graphviz.org/docs/attrs/compound/).
-    pub fn set_compound(&mut self, s: &str) {
-        self.compound = Some(Compound::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `compound` attribute. [Read more](https://graphviz.org/docs/attrs/compound/).
-    pub fn unset_compound(&mut self) {
-        self.compound = None;
-    }
+    /// Unset [`Attribute::Clusterrank`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_clusterrank(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Clusterrank(String::new());
 
-    /// If true, use edge concentrators. [Read more](https://graphviz.org/docs/attrs/concentrate/).
-    pub fn get_concentrate(&self) -> Option<&str> {
-        self.concentrate.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `concentrate` attribute. [Read more](https://graphviz.org/docs/attrs/concentrate/).
-    pub fn set_concentrate(&mut self, s: &str) {
-        self.concentrate = Some(Concentrate::new(s));
-    }
+    /// Set [`Attribute::Colorscheme`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_colorscheme(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Colorscheme(s.into());
 
-    /// Unset `concentrate` attribute. [Read more](https://graphviz.org/docs/attrs/concentrate/).
-    pub fn unset_concentrate(&mut self) {
-        self.concentrate = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Factor damping force motions.. neato only. [Read more](https://graphviz.org/docs/attrs/Damping/).
-    pub fn get_damping(&self) -> Option<&str> {
-        self.damping.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Colorscheme`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_colorscheme(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Colorscheme(String::new());
 
-    /// Set `damping` attribute. [Read more](https://graphviz.org/docs/attrs/Damping/).
-    pub fn set_damping(&mut self, s: &str) {
-        self.damping = Some(Damping::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `damping` attribute. [Read more](https://graphviz.org/docs/attrs/Damping/).
-    pub fn unset_damping(&mut self) {
-        self.damping = None;
-    }
+    /// Set [`Attribute::Comment`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_comment(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Comment(s.into());
 
-    /// The distance between nodes in separate connected components. neato only. [Read more](https://graphviz.org/docs/attrs/defaultdist/).
-    pub fn get_defaultdist(&self) -> Option<&str> {
-        self.defaultdist.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `defaultdist` attribute. [Read more](https://graphviz.org/docs/attrs/defaultdist/).
-    pub fn set_defaultdist(&mut self, s: &str) {
-        self.defaultdist = Some(Defaultdist::new(s));
-    }
+    /// Unset [`Attribute::Comment`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_comment(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Comment(String::new());
 
-    /// Unset `defaultdist` attribute. [Read more](https://graphviz.org/docs/attrs/defaultdist/).
-    pub fn unset_defaultdist(&mut self) {
-        self.defaultdist = None;
+        self.attributes.remove(&item)
     }
 
-    /// Set the number of dimensions used for the layout. neato, fdp, sfdp only. [Read more](https://graphviz.org/docs/attrs/dim/).
-    pub fn get_dim(&self) -> Option<&str> {
-        self.dim.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Compound`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_compound(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Compound(s.into());
 
-    /// Set `dim` attribute. [Read more](https://graphviz.org/docs/attrs/dim/).
-    pub fn set_dim(&mut self, s: &str) {
-        self.dim = Some(Dim::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `dim` attribute. [Read more](https://graphviz.org/docs/attrs/dim/).
-    pub fn unset_dim(&mut self) {
-        self.dim = None;
-    }
+    /// Unset [`Attribute::Compound`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_compound(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Compound(String::new());
 
-    /// Set the number of dimensions used for rendering. neato, fdp, sfdp only. [Read more](https://graphviz.org/docs/attrs/dimen/).
-    pub fn get_dimen(&self) -> Option<&str> {
-        self.dimen.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `dimen` attribute. [Read more](https://graphviz.org/docs/attrs/dimen/).
-    pub fn set_dimen(&mut self, s: &str) {
-        self.dimen = Some(Dimen::new(s));
-    }
+    /// Set [`Attribute::Concentrate`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_concentrate(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Concentrate(s.into());
 
-    /// Unset `dimen` attribute. [Read more](https://graphviz.org/docs/attrs/dimen/).
-    pub fn unset_dimen(&mut self) {
-        self.dimen = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Whether to constrain most edges to point downwards. neato only. [Read more](https://graphviz.org/docs/attrs/diredgeconstraints/).
-    pub fn get_diredgeconstraints(&self) -> Option<&str> {
-        self.diredgeconstraints.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Concentrate`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_concentrate(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Concentrate(String::new());
 
-    /// Set `diredgeconstraints` attribute. [Read more](https://graphviz.org/docs/attrs/diredgeconstraints/).
-    pub fn set_diredgeconstraints(&mut self, s: &str) {
-        self.diredgeconstraints = Some(Diredgeconstraints::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `diredgeconstraints` attribute. [Read more](https://graphviz.org/docs/attrs/diredgeconstraints/).
-    pub fn unset_diredgeconstraints(&mut self) {
-        self.diredgeconstraints = None;
-    }
+    /// Set [`Attribute::Damping`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_damping(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Damping(s.into());
 
-    /// Specifies the expected number of pixels per inch on a display device. bitmap output, svg only. [Read more](https://graphviz.org/docs/attrs/dpi/).
-    pub fn get_dpi(&self) -> Option<&str> {
-        self.dpi.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `dpi` attribute. [Read more](https://graphviz.org/docs/attrs/dpi/).
-    pub fn set_dpi(&mut self, s: &str) {
-        self.dpi = Some(Dpi::new(s));
-    }
+    /// Unset [`Attribute::Damping`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_damping(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Damping(String::new());
 
-    /// Unset `dpi` attribute. [Read more](https://graphviz.org/docs/attrs/dpi/).
-    pub fn unset_dpi(&mut self) {
-        self.dpi = None;
+        self.attributes.remove(&item)
     }
 
-    /// Terminating condition. neato only. [Read more](https://graphviz.org/docs/attrs/epsilon/).
-    pub fn get_epsilon(&self) -> Option<&str> {
-        self.epsilon.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Defaultdist`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_defaultdist(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Defaultdist(s.into());
 
-    /// Set `epsilon` attribute. [Read more](https://graphviz.org/docs/attrs/epsilon/).
-    pub fn set_epsilon(&mut self, s: &str) {
-        self.epsilon = Some(Epsilon::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `epsilon` attribute. [Read more](https://graphviz.org/docs/attrs/epsilon/).
-    pub fn unset_epsilon(&mut self) {
-        self.epsilon = None;
-    }
+    /// Unset [`Attribute::Defaultdist`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_defaultdist(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Defaultdist(String::new());
 
-    /// Margin used around polygons for purposes of spline edge routing. neato only. [Read more](https://graphviz.org/docs/attrs/esep/).
-    pub fn get_esep(&self) -> Option<&str> {
-        self.esep.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `esep` attribute. [Read more](https://graphviz.org/docs/attrs/esep/).
-    pub fn set_esep(&mut self, s: &str) {
-        self.esep = Some(Esep::new(s));
-    }
+    /// Set [`Attribute::Dim`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_dim(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Dim(s.into());
 
-    /// Unset `esep` attribute. [Read more](https://graphviz.org/docs/attrs/esep/).
-    pub fn unset_esep(&mut self) {
-        self.esep = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Color used for text. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn get_fontcolor(&self) -> Option<&str> {
-        self.fontcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Dim`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_dim(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Dim(String::new());
 
-    /// Set `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn set_fontcolor(&mut self, s: &str) {
-        self.fontcolor = Some(Fontcolor::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn unset_fontcolor(&mut self) {
-        self.fontcolor = None;
-    }
+    /// Set [`Attribute::Dimen`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_dimen(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Dimen(s.into());
 
-    /// Font used for text. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn get_fontname(&self) -> Option<&str> {
-        self.fontname.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn set_fontname(&mut self, s: &str) {
-        self.fontname = Some(Fontname::new(s));
-    }
+    /// Unset [`Attribute::Dimen`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_dimen(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Dimen(String::new());
 
-    /// Unset `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn unset_fontname(&mut self) {
-        self.fontname = None;
+        self.attributes.remove(&item)
     }
 
-    /// Allows user control of how basic fontnames are represented in SVG output. svg only. [Read more](https://graphviz.org/docs/attrs/fontnames/).
-    pub fn get_fontnames(&self) -> Option<&str> {
-        self.fontnames.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Diredgeconstraints`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_diredgeconstraints(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Diredgeconstraints(s.into());
 
-    /// Set `fontnames` attribute. [Read more](https://graphviz.org/docs/attrs/fontnames/).
-    pub fn set_fontnames(&mut self, s: &str) {
-        self.fontnames = Some(Fontnames::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `fontnames` attribute. [Read more](https://graphviz.org/docs/attrs/fontnames/).
-    pub fn unset_fontnames(&mut self) {
-        self.fontnames = None;
-    }
+    /// Unset [`Attribute::Diredgeconstraints`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_diredgeconstraints(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Diredgeconstraints(String::new());
 
-    /// Directory list used by libgd to search for bitmap fonts. [Read more](https://graphviz.org/docs/attrs/fontpath/).
-    pub fn get_fontpath(&self) -> Option<&str> {
-        self.fontpath.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `fontpath` attribute. [Read more](https://graphviz.org/docs/attrs/fontpath/).
-    pub fn set_fontpath(&mut self, s: &str) {
-        self.fontpath = Some(Fontpath::new(s));
-    }
+    /// Set [`Attribute::Dpi`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_dpi(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Dpi(s.into());
 
-    /// Unset `fontpath` attribute. [Read more](https://graphviz.org/docs/attrs/fontpath/).
-    pub fn unset_fontpath(&mut self) {
-        self.fontpath = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Font size, in points, used for text. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn get_fontsize(&self) -> Option<&str> {
-        self.fontsize.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Dpi`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_dpi(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Dpi(String::new());
 
-    /// Set `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn set_fontsize(&mut self, s: &str) {
-        self.fontsize = Some(Fontsize::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn unset_fontsize(&mut self) {
-        self.fontsize = None;
-    }
+    /// Set [`Attribute::Epsilon`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_epsilon(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Epsilon(s.into());
 
-    /// Whether to force placement of all xlabels, even if overlapping. [Read more](https://graphviz.org/docs/attrs/forcelabels/).
-    pub fn get_forcelabels(&self) -> Option<&str> {
-        self.forcelabels.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `forcelabels` attribute. [Read more](https://graphviz.org/docs/attrs/forcelabels/).
-    pub fn set_forcelabels(&mut self, s: &str) {
-        self.forcelabels = Some(Forcelabels::new(s));
-    }
+    /// Unset [`Attribute::Epsilon`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_epsilon(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Epsilon(String::new());
 
-    /// Unset `forcelabels` attribute. [Read more](https://graphviz.org/docs/attrs/forcelabels/).
-    pub fn unset_forcelabels(&mut self) {
-        self.forcelabels = None;
+        self.attributes.remove(&item)
     }
 
-    /// If a gradient fill is being used, this determines the angle of the fill. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn get_gradientangle(&self) -> Option<&str> {
-        self.gradientangle.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Esep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_esep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Esep(s.into());
 
-    /// Set `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn set_gradientangle(&mut self, s: &str) {
-        self.gradientangle = Some(Gradientangle::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn unset_gradientangle(&mut self) {
-        self.gradientangle = None;
-    }
+    /// Unset [`Attribute::Esep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_esep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Esep(String::new());
 
-    /// Synonym for URL. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn get_href(&self) -> Option<&str> {
-        self.href.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn set_href(&mut self, s: &str) {
-        self.href = Some(Href::new(s));
-    }
+    /// Set [`Attribute::Fontcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontcolor(s.into());
 
-    /// Unset `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn unset_href(&mut self) {
-        self.href = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Identifier for graph objects. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn get_id(&self) -> Option<&str> {
-        self.id.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fontcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontcolor(String::new());
 
-    /// Set `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn set_id(&mut self, s: &str) {
-        self.id = Some(Id::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn unset_id(&mut self) {
-        self.id = None;
-    }
+    /// Set [`Attribute::Fontname`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontname(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontname(s.into());
 
-    /// A list of directories in which to look for image files. [Read more](https://graphviz.org/docs/attrs/imagepath/).
-    pub fn get_imagepath(&self) -> Option<&str> {
-        self.imagepath.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `imagepath` attribute. [Read more](https://graphviz.org/docs/attrs/imagepath/).
-    pub fn set_imagepath(&mut self, s: &str) {
-        self.imagepath = Some(Imagepath::new(s));
-    }
+    /// Unset [`Attribute::Fontname`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontname(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontname(String::new());
 
-    /// Unset `imagepath` attribute. [Read more](https://graphviz.org/docs/attrs/imagepath/).
-    pub fn unset_imagepath(&mut self) {
-        self.imagepath = None;
+        self.attributes.remove(&item)
     }
 
-    /// Scales the input positions to convert between length units. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/inputscale/).
-    pub fn get_inputscale(&self) -> Option<&str> {
-        self.inputscale.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Fontnames`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontnames(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontnames(s.into());
 
-    /// Set `inputscale` attribute. [Read more](https://graphviz.org/docs/attrs/inputscale/).
-    pub fn set_inputscale(&mut self, s: &str) {
-        self.inputscale = Some(Inputscale::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `inputscale` attribute. [Read more](https://graphviz.org/docs/attrs/inputscale/).
-    pub fn unset_inputscale(&mut self) {
-        self.inputscale = None;
-    }
+    /// Unset [`Attribute::Fontnames`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontnames(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontnames(String::new());
 
-    /// Spring constant used in virtual physical model. fdp, sfdp only. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn get_k(&self) -> Option<&str> {
-        self.k.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `k` attribute. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn set_k(&mut self, s: &str) {
-        self.k = Some(K::new(s));
-    }
+    /// Set [`Attribute::Fontpath`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontpath(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontpath(s.into());
 
-    /// Unset `k` attribute. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn unset_k(&mut self) {
-        self.k = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Text label attached to objects. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn get_label(&self) -> Option<&str> {
-        self.label.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fontpath`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontpath(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontpath(String::new());
 
-    /// Set `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn set_label(&mut self, s: &str) {
-        self.label = Some(Label::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn unset_label(&mut self) {
-        self.label = None;
-    }
+    /// Set [`Attribute::Fontsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontsize(s.into());
 
-    /// Whether to treat a node whose name has the form |edgelabel|* as a special node representing an edge label.. sfdp only. [Read more](https://graphviz.org/docs/attrs/label_scheme/).
-    pub fn get_label_scheme(&self) -> Option<&str> {
-        self.label_scheme.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `label_scheme` attribute. [Read more](https://graphviz.org/docs/attrs/label_scheme/).
-    pub fn set_label_scheme(&mut self, s: &str) {
-        self.label_scheme = Some(LabelScheme::new(s));
-    }
+    /// Unset [`Attribute::Fontsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontsize(String::new());
 
-    /// Unset `label_scheme` attribute. [Read more](https://graphviz.org/docs/attrs/label_scheme/).
-    pub fn unset_label_scheme(&mut self) {
-        self.label_scheme = None;
+        self.attributes.remove(&item)
     }
 
-    /// Justification for graph & cluster labels. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn get_labeljust(&self) -> Option<&str> {
-        self.labeljust.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Forcelabels`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_forcelabels(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Forcelabels(s.into());
 
-    /// Set `labeljust` attribute. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn set_labeljust(&mut self, s: &str) {
-        self.labeljust = Some(Labeljust::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `labeljust` attribute. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn unset_labeljust(&mut self) {
-        self.labeljust = None;
-    }
+    /// Unset [`Attribute::Forcelabels`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_forcelabels(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Forcelabels(String::new());
 
-    /// Vertical placement of labels for nodes, root graphs and clusters. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn get_labelloc(&self) -> Option<&str> {
-        self.labelloc.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn set_labelloc(&mut self, s: &str) {
-        self.labelloc = Some(Labelloc::new(s));
-    }
+    /// Set [`Attribute::Gradientangle`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_gradientangle(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Gradientangle(s.into());
 
-    /// Unset `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn unset_labelloc(&mut self) {
-        self.labelloc = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// If true, the graph is rendered in landscape mode. [Read more](https://graphviz.org/docs/attrs/landscape/).
-    pub fn get_landscape(&self) -> Option<&str> {
-        self.landscape.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Gradientangle`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_gradientangle(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Gradientangle(String::new());
 
-    /// Set `landscape` attribute. [Read more](https://graphviz.org/docs/attrs/landscape/).
-    pub fn set_landscape(&mut self, s: &str) {
-        self.landscape = Some(Landscape::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `landscape` attribute. [Read more](https://graphviz.org/docs/attrs/landscape/).
-    pub fn unset_landscape(&mut self) {
-        self.landscape = None;
-    }
+    /// Set [`Attribute::Href`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_href(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Href(s.into());
 
-    /// The separator characters used to split attributes of type layerRange into a list of ranges.. [Read more](https://graphviz.org/docs/attrs/layerlistsep/).
-    pub fn get_layerlistsep(&self) -> Option<&str> {
-        self.layerlistsep.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `layerlistsep` attribute. [Read more](https://graphviz.org/docs/attrs/layerlistsep/).
-    pub fn set_layerlistsep(&mut self, s: &str) {
-        self.layerlistsep = Some(Layerlistsep::new(s));
-    }
+    /// Unset [`Attribute::Href`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_href(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Href(String::new());
 
-    /// Unset `layerlistsep` attribute. [Read more](https://graphviz.org/docs/attrs/layerlistsep/).
-    pub fn unset_layerlistsep(&mut self) {
-        self.layerlistsep = None;
+        self.attributes.remove(&item)
     }
 
-    /// A linearly ordered list of layer names attached to the graph. [Read more](https://graphviz.org/docs/attrs/layers/).
-    pub fn get_layers(&self) -> Option<&str> {
-        self.layers.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Id`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_id(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Id(s.into());
 
-    /// Set `layers` attribute. [Read more](https://graphviz.org/docs/attrs/layers/).
-    pub fn set_layers(&mut self, s: &str) {
-        self.layers = Some(Layers::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `layers` attribute. [Read more](https://graphviz.org/docs/attrs/layers/).
-    pub fn unset_layers(&mut self) {
-        self.layers = None;
-    }
+    /// Unset [`Attribute::Id`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_id(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Id(String::new());
 
-    /// Selects a list of layers to be emitted. [Read more](https://graphviz.org/docs/attrs/layerselect/).
-    pub fn get_layerselect(&self) -> Option<&str> {
-        self.layerselect.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `layerselect` attribute. [Read more](https://graphviz.org/docs/attrs/layerselect/).
-    pub fn set_layerselect(&mut self, s: &str) {
-        self.layerselect = Some(Layerselect::new(s));
-    }
+    /// Set [`Attribute::Imagepath`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_imagepath(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Imagepath(s.into());
 
-    /// Unset `layerselect` attribute. [Read more](https://graphviz.org/docs/attrs/layerselect/).
-    pub fn unset_layerselect(&mut self) {
-        self.layerselect = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// The separator characters for splitting the layers attribute into a list of layer names.. [Read more](https://graphviz.org/docs/attrs/layersep/).
-    pub fn get_layersep(&self) -> Option<&str> {
-        self.layersep.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Imagepath`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_imagepath(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Imagepath(String::new());
 
-    /// Set `layersep` attribute. [Read more](https://graphviz.org/docs/attrs/layersep/).
-    pub fn set_layersep(&mut self, s: &str) {
-        self.layersep = Some(Layersep::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `layersep` attribute. [Read more](https://graphviz.org/docs/attrs/layersep/).
-    pub fn unset_layersep(&mut self) {
-        self.layersep = None;
-    }
+    /// Set [`Attribute::Inputscale`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_inputscale(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Inputscale(s.into());
 
-    /// Which layout engine to use. [Read more](https://graphviz.org/docs/attrs/layout/).
-    pub fn get_layout(&self) -> Option<&str> {
-        self.layout.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `layout` attribute. [Read more](https://graphviz.org/docs/attrs/layout/).
-    pub fn set_layout(&mut self, s: &str) {
-        self.layout = Some(Layout::new(s));
-    }
+    /// Unset [`Attribute::Inputscale`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_inputscale(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Inputscale(String::new());
 
-    /// Unset `layout` attribute. [Read more](https://graphviz.org/docs/attrs/layout/).
-    pub fn unset_layout(&mut self) {
-        self.layout = None;
+        self.attributes.remove(&item)
     }
 
-    /// Number of levels allowed in the multilevel scheme. sfdp only. [Read more](https://graphviz.org/docs/attrs/levels/).
-    pub fn get_levels(&self) -> Option<&str> {
-        self.levels.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::K`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_k(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::K(s.into());
 
-    /// Set `levels` attribute. [Read more](https://graphviz.org/docs/attrs/levels/).
-    pub fn set_levels(&mut self, s: &str) {
-        self.levels = Some(Levels::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `levels` attribute. [Read more](https://graphviz.org/docs/attrs/levels/).
-    pub fn unset_levels(&mut self) {
-        self.levels = None;
-    }
+    /// Unset [`Attribute::K`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_k(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::K(String::new());
 
-    /// strictness of neato level constraints. neato only. [Read more](https://graphviz.org/docs/attrs/levelsgap/).
-    pub fn get_levelsgap(&self) -> Option<&str> {
-        self.levelsgap.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `levelsgap` attribute. [Read more](https://graphviz.org/docs/attrs/levelsgap/).
-    pub fn set_levelsgap(&mut self, s: &str) {
-        self.levelsgap = Some(Levelsgap::new(s));
-    }
+    /// Set [`Attribute::Label`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_label(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Label(s.into());
 
-    /// Unset `levelsgap` attribute. [Read more](https://graphviz.org/docs/attrs/levelsgap/).
-    pub fn unset_levelsgap(&mut self) {
-        self.levelsgap = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Height of graph or cluster label, in inches. write only. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn get_lheight(&self) -> Option<&str> {
-        self.lheight.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Label`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_label(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Label(String::new());
 
-    /// Set `lheight` attribute. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn set_lheight(&mut self, s: &str) {
-        self.lheight = Some(Lheight::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `lheight` attribute. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn unset_lheight(&mut self) {
-        self.lheight = None;
-    }
+    /// Set [`Attribute::LabelScheme`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_label_scheme(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::LabelScheme(s.into());
 
-    /// How long strings should get before overflowing to next line, for text output.. [Read more](https://graphviz.org/docs/attrs/linelength/).
-    pub fn get_linelength(&self) -> Option<&str> {
-        self.linelength.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `linelength` attribute. [Read more](https://graphviz.org/docs/attrs/linelength/).
-    pub fn set_linelength(&mut self, s: &str) {
-        self.linelength = Some(Linelength::new(s));
-    }
+    /// Unset [`Attribute::LabelScheme`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_label_scheme(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::LabelScheme(String::new());
 
-    /// Unset `linelength` attribute. [Read more](https://graphviz.org/docs/attrs/linelength/).
-    pub fn unset_linelength(&mut self) {
-        self.linelength = None;
+        self.attributes.remove(&item)
     }
 
-    /// Label center position. write only. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn get_lp(&self) -> Option<&str> {
-        self.lp.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Labeljust`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labeljust(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labeljust(s.into());
 
-    /// Set `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn set_lp(&mut self, s: &str) {
-        self.lp = Some(Lp::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn unset_lp(&mut self) {
-        self.lp = None;
-    }
+    /// Unset [`Attribute::Labeljust`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labeljust(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labeljust(String::new());
 
-    /// Width of graph or cluster label, in inches. write only. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn get_lwidth(&self) -> Option<&str> {
-        self.lwidth.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `lwidth` attribute. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn set_lwidth(&mut self, s: &str) {
-        self.lwidth = Some(Lwidth::new(s));
-    }
+    /// Set [`Attribute::Labelloc`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelloc(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelloc(s.into());
 
-    /// Unset `lwidth` attribute. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn unset_lwidth(&mut self) {
-        self.lwidth = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// For graphs, this sets x and y margins of canvas, in inches. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn get_margin(&self) -> Option<&str> {
-        self.margin.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Labelloc`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelloc(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelloc(String::new());
 
-    /// Set `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn set_margin(&mut self, s: &str) {
-        self.margin = Some(Margin::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn unset_margin(&mut self) {
-        self.margin = None;
-    }
+    /// Set [`Attribute::Landscape`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_landscape(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Landscape(s.into());
 
-    /// Sets the number of iterations used. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/maxiter/).
-    pub fn get_maxiter(&self) -> Option<&str> {
-        self.maxiter.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `maxiter` attribute. [Read more](https://graphviz.org/docs/attrs/maxiter/).
-    pub fn set_maxiter(&mut self, s: &str) {
-        self.maxiter = Some(Maxiter::new(s));
-    }
+    /// Unset [`Attribute::Landscape`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_landscape(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Landscape(String::new());
 
-    /// Unset `maxiter` attribute. [Read more](https://graphviz.org/docs/attrs/maxiter/).
-    pub fn unset_maxiter(&mut self) {
-        self.maxiter = None;
+        self.attributes.remove(&item)
     }
 
-    /// Scale factor for mincross (mc) edge crossing minimiser parameters. dot only. [Read more](https://graphviz.org/docs/attrs/mclimit/).
-    pub fn get_mclimit(&self) -> Option<&str> {
-        self.mclimit.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Layerlistsep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layerlistsep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layerlistsep(s.into());
 
-    /// Set `mclimit` attribute. [Read more](https://graphviz.org/docs/attrs/mclimit/).
-    pub fn set_mclimit(&mut self, s: &str) {
-        self.mclimit = Some(Mclimit::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `mclimit` attribute. [Read more](https://graphviz.org/docs/attrs/mclimit/).
-    pub fn unset_mclimit(&mut self) {
-        self.mclimit = None;
-    }
+    /// Unset [`Attribute::Layerlistsep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layerlistsep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layerlistsep(String::new());
 
-    /// Specifies the minimum separation between all nodes. circo only. [Read more](https://graphviz.org/docs/attrs/mindist/).
-    pub fn get_mindist(&self) -> Option<&str> {
-        self.mindist.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `mindist` attribute. [Read more](https://graphviz.org/docs/attrs/mindist/).
-    pub fn set_mindist(&mut self, s: &str) {
-        self.mindist = Some(Mindist::new(s));
-    }
+    /// Set [`Attribute::Layers`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layers(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layers(s.into());
 
-    /// Unset `mindist` attribute. [Read more](https://graphviz.org/docs/attrs/mindist/).
-    pub fn unset_mindist(&mut self) {
-        self.mindist = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Technique for optimizing the layout. neato only. [Read more](https://graphviz.org/docs/attrs/mode/).
-    pub fn get_mode(&self) -> Option<&str> {
-        self.mode.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Layers`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layers(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layers(String::new());
 
-    /// Set `mode` attribute. [Read more](https://graphviz.org/docs/attrs/mode/).
-    pub fn set_mode(&mut self, s: &str) {
-        self.mode = Some(Mode::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `mode` attribute. [Read more](https://graphviz.org/docs/attrs/mode/).
-    pub fn unset_mode(&mut self) {
-        self.mode = None;
-    }
+    /// Set [`Attribute::Layerselect`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layerselect(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layerselect(s.into());
 
-    /// Specifies how the distance matrix is computed for the input graph. neato only. [Read more](https://graphviz.org/docs/attrs/model/).
-    pub fn get_model(&self) -> Option<&str> {
-        self.model.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `model` attribute. [Read more](https://graphviz.org/docs/attrs/model/).
-    pub fn set_model(&mut self, s: &str) {
-        self.model = Some(Model::new(s));
-    }
+    /// Unset [`Attribute::Layerselect`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layerselect(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layerselect(String::new());
 
-    /// Unset `model` attribute. [Read more](https://graphviz.org/docs/attrs/model/).
-    pub fn unset_model(&mut self) {
-        self.model = None;
+        self.attributes.remove(&item)
     }
 
-    /// Whether to use a single global ranking, ignoring clusters. dot only. [Read more](https://graphviz.org/docs/attrs/newrank/).
-    pub fn get_newrank(&self) -> Option<&str> {
-        self.newrank.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Layersep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layersep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layersep(s.into());
 
-    /// Set `newrank` attribute. [Read more](https://graphviz.org/docs/attrs/newrank/).
-    pub fn set_newrank(&mut self, s: &str) {
-        self.newrank = Some(Newrank::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `newrank` attribute. [Read more](https://graphviz.org/docs/attrs/newrank/).
-    pub fn unset_newrank(&mut self) {
-        self.newrank = None;
-    }
+    /// Unset [`Attribute::Layersep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layersep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layersep(String::new());
 
-    /// In dot, nodesep specifies the minimum space between two adjacent nodes in the same rank, in inches. [Read more](https://graphviz.org/docs/attrs/nodesep/).
-    pub fn get_nodesep(&self) -> Option<&str> {
-        self.nodesep.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `nodesep` attribute. [Read more](https://graphviz.org/docs/attrs/nodesep/).
-    pub fn set_nodesep(&mut self, s: &str) {
-        self.nodesep = Some(Nodesep::new(s));
-    }
+    /// Set [`Attribute::Layout`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layout(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layout(s.into());
 
-    /// Unset `nodesep` attribute. [Read more](https://graphviz.org/docs/attrs/nodesep/).
-    pub fn unset_nodesep(&mut self) {
-        self.nodesep = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Whether to justify multiline text vs the previous text line (rather than the side of the container).. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn get_nojustify(&self) -> Option<&str> {
-        self.nojustify.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Layout`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layout(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layout(String::new());
 
-    /// Set `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn set_nojustify(&mut self, s: &str) {
-        self.nojustify = Some(Nojustify::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn unset_nojustify(&mut self) {
-        self.nojustify = None;
-    }
+    /// Set [`Attribute::Levels`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_levels(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Levels(s.into());
 
-    /// normalizes coordinates of final layout. neato, fdp, sfdp, twopi, circo only. [Read more](https://graphviz.org/docs/attrs/normalize/).
-    pub fn get_normalize(&self) -> Option<&str> {
-        self.normalize.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `normalize` attribute. [Read more](https://graphviz.org/docs/attrs/normalize/).
-    pub fn set_normalize(&mut self, s: &str) {
-        self.normalize = Some(Normalize::new(s));
-    }
+    /// Unset [`Attribute::Levels`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_levels(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Levels(String::new());
 
-    /// Unset `normalize` attribute. [Read more](https://graphviz.org/docs/attrs/normalize/).
-    pub fn unset_normalize(&mut self) {
-        self.normalize = None;
+        self.attributes.remove(&item)
     }
 
-    /// Whether to avoid translating layout to the origin point. neato only. [Read more](https://graphviz.org/docs/attrs/notranslate/).
-    pub fn get_notranslate(&self) -> Option<&str> {
-        self.notranslate.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Levelsgap`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_levelsgap(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Levelsgap(s.into());
 
-    /// Set `notranslate` attribute. [Read more](https://graphviz.org/docs/attrs/notranslate/).
-    pub fn set_notranslate(&mut self, s: &str) {
-        self.notranslate = Some(Notranslate::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `notranslate` attribute. [Read more](https://graphviz.org/docs/attrs/notranslate/).
-    pub fn unset_notranslate(&mut self) {
-        self.notranslate = None;
-    }
+    /// Unset [`Attribute::Levelsgap`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_levelsgap(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Levelsgap(String::new());
 
-    /// Sets number of iterations in network simplex applications. dot only. [Read more](https://graphviz.org/docs/attrs/nslimit/).
-    pub fn get_nslimit(&self) -> Option<&str> {
-        self.nslimit.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `nslimit` attribute. [Read more](https://graphviz.org/docs/attrs/nslimit/).
-    pub fn set_nslimit(&mut self, s: &str) {
-        self.nslimit = Some(Nslimit::new(s));
-    }
+    /// Set [`Attribute::Lheight`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lheight(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lheight(s.into());
 
-    /// Unset `nslimit` attribute. [Read more](https://graphviz.org/docs/attrs/nslimit/).
-    pub fn unset_nslimit(&mut self) {
-        self.nslimit = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Sets number of iterations in network simplex applications. dot only. [Read more](https://graphviz.org/docs/attrs/nslimit1/).
-    pub fn get_nslimit1(&self) -> Option<&str> {
-        self.nslimit1.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Lheight`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lheight(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lheight(String::new());
 
-    /// Set `nslimit1` attribute. [Read more](https://graphviz.org/docs/attrs/nslimit1/).
-    pub fn set_nslimit1(&mut self, s: &str) {
-        self.nslimit1 = Some(Nslimit1::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `nslimit1` attribute. [Read more](https://graphviz.org/docs/attrs/nslimit1/).
-    pub fn unset_nslimit1(&mut self) {
-        self.nslimit1 = None;
-    }
+    /// Set [`Attribute::Linelength`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_linelength(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Linelength(s.into());
 
-    /// Whether to draw circo graphs around one circle.. circo only. [Read more](https://graphviz.org/docs/attrs/oneblock/).
-    pub fn get_oneblock(&self) -> Option<&str> {
-        self.oneblock.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `oneblock` attribute. [Read more](https://graphviz.org/docs/attrs/oneblock/).
-    pub fn set_oneblock(&mut self, s: &str) {
-        self.oneblock = Some(Oneblock::new(s));
-    }
+    /// Unset [`Attribute::Linelength`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_linelength(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Linelength(String::new());
 
-    /// Unset `oneblock` attribute. [Read more](https://graphviz.org/docs/attrs/oneblock/).
-    pub fn unset_oneblock(&mut self) {
-        self.oneblock = None;
+        self.attributes.remove(&item)
     }
 
-    /// Constrains the left-to-right ordering of node edges.. dot only. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn get_ordering(&self) -> Option<&str> {
-        self.ordering.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Lp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lp(s.into());
 
-    /// Set `ordering` attribute. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn set_ordering(&mut self, s: &str) {
-        self.ordering = Some(Ordering::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `ordering` attribute. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn unset_ordering(&mut self) {
-        self.ordering = None;
-    }
+    /// Unset [`Attribute::Lp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lp(String::new());
 
-    /// node shape rotation angle, or graph orientation. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn get_orientation(&self) -> Option<&str> {
-        self.orientation.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `orientation` attribute. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn set_orientation(&mut self, s: &str) {
-        self.orientation = Some(Orientation::new(s));
-    }
+    /// Set [`Attribute::Lwidth`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lwidth(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lwidth(s.into());
 
-    /// Unset `orientation` attribute. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn unset_orientation(&mut self) {
-        self.orientation = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Specify order in which nodes and edges are drawn. [Read more](https://graphviz.org/docs/attrs/outputorder/).
-    pub fn get_outputorder(&self) -> Option<&str> {
-        self.outputorder.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Lwidth`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lwidth(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lwidth(String::new());
 
-    /// Set `outputorder` attribute. [Read more](https://graphviz.org/docs/attrs/outputorder/).
-    pub fn set_outputorder(&mut self, s: &str) {
-        self.outputorder = Some(Outputorder::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `outputorder` attribute. [Read more](https://graphviz.org/docs/attrs/outputorder/).
-    pub fn unset_outputorder(&mut self) {
-        self.outputorder = None;
-    }
+    /// Set [`Attribute::Margin`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_margin(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Margin(s.into());
 
-    /// Determines if and how node overlaps should be removed. fdp, neato only. [Read more](https://graphviz.org/docs/attrs/overlap/).
-    pub fn get_overlap(&self) -> Option<&str> {
-        self.overlap.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `overlap` attribute. [Read more](https://graphviz.org/docs/attrs/overlap/).
-    pub fn set_overlap(&mut self, s: &str) {
-        self.overlap = Some(Overlap::new(s));
-    }
+    /// Unset [`Attribute::Margin`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_margin(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Margin(String::new());
 
-    /// Unset `overlap` attribute. [Read more](https://graphviz.org/docs/attrs/overlap/).
-    pub fn unset_overlap(&mut self) {
-        self.overlap = None;
+        self.attributes.remove(&item)
     }
 
-    /// Scale layout by factor, to reduce node overlap.. prism, neato, sfdp, fdp, circo, twopi only. [Read more](https://graphviz.org/docs/attrs/overlap_scaling/).
-    pub fn get_overlap_scaling(&self) -> Option<&str> {
-        self.overlap_scaling.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Maxiter`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_maxiter(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Maxiter(s.into());
 
-    /// Set `overlap_scaling` attribute. [Read more](https://graphviz.org/docs/attrs/overlap_scaling/).
-    pub fn set_overlap_scaling(&mut self, s: &str) {
-        self.overlap_scaling = Some(OverlapScaling::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `overlap_scaling` attribute. [Read more](https://graphviz.org/docs/attrs/overlap_scaling/).
-    pub fn unset_overlap_scaling(&mut self) {
-        self.overlap_scaling = None;
-    }
+    /// Unset [`Attribute::Maxiter`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_maxiter(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Maxiter(String::new());
 
-    /// Whether the overlap removal algorithm should perform a compression pass to reduce the size of the layout. prism only. [Read more](https://graphviz.org/docs/attrs/overlap_shrink/).
-    pub fn get_overlap_shrink(&self) -> Option<&str> {
-        self.overlap_shrink.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `overlap_shrink` attribute. [Read more](https://graphviz.org/docs/attrs/overlap_shrink/).
-    pub fn set_overlap_shrink(&mut self, s: &str) {
-        self.overlap_shrink = Some(OverlapShrink::new(s));
-    }
+    /// Set [`Attribute::Mclimit`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_mclimit(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Mclimit(s.into());
 
-    /// Unset `overlap_shrink` attribute. [Read more](https://graphviz.org/docs/attrs/overlap_shrink/).
-    pub fn unset_overlap_shrink(&mut self) {
-        self.overlap_shrink = None;
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Mclimit`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_mclimit(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Mclimit(String::new());
 
-    /// Whether each connected component of the graph should be laid out separately, and then the graphs packed together.. [Read more](https://graphviz.org/docs/attrs/pack/).
-    pub fn get_pack(&self) -> Option<&str> {
-        self.pack.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `pack` attribute. [Read more](https://graphviz.org/docs/attrs/pack/).
-    pub fn set_pack(&mut self, s: &str) {
-        self.pack = Some(Pack::new(s));
+    /// Set [`Attribute::Mindist`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_mindist(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Mindist(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `pack` attribute. [Read more](https://graphviz.org/docs/attrs/pack/).
-    pub fn unset_pack(&mut self) {
-        self.pack = None;
+    /// Unset [`Attribute::Mindist`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_mindist(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Mindist(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Mode`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_mode(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Mode(s.into());
 
-    /// How connected components should be packed. [Read more](https://graphviz.org/docs/attrs/packmode/).
-    pub fn get_packmode(&self) -> Option<&str> {
-        self.packmode.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `packmode` attribute. [Read more](https://graphviz.org/docs/attrs/packmode/).
-    pub fn set_packmode(&mut self, s: &str) {
-        self.packmode = Some(Packmode::new(s));
+    /// Unset [`Attribute::Mode`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_mode(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Mode(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Unset `packmode` attribute. [Read more](https://graphviz.org/docs/attrs/packmode/).
-    pub fn unset_packmode(&mut self) {
-        self.packmode = None;
+    /// Set [`Attribute::Model`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_model(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Model(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Model`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_model(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Model(String::new());
 
-    /// Inches to extend the drawing area around the minimal area needed to draw the graph. [Read more](https://graphviz.org/docs/attrs/pad/).
-    pub fn get_pad(&self) -> Option<&str> {
-        self.pad.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `pad` attribute. [Read more](https://graphviz.org/docs/attrs/pad/).
-    pub fn set_pad(&mut self, s: &str) {
-        self.pad = Some(Pad::new(s));
+    /// Set [`Attribute::Newrank`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_newrank(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Newrank(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `pad` attribute. [Read more](https://graphviz.org/docs/attrs/pad/).
-    pub fn unset_pad(&mut self) {
-        self.pad = None;
+    /// Unset [`Attribute::Newrank`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_newrank(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Newrank(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Nodesep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nodesep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nodesep(s.into());
 
-    /// Width and height of output pages, in inches. [Read more](https://graphviz.org/docs/attrs/page/).
-    pub fn get_page(&self) -> Option<&str> {
-        self.page.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `page` attribute. [Read more](https://graphviz.org/docs/attrs/page/).
-    pub fn set_page(&mut self, s: &str) {
-        self.page = Some(Page::new(s));
+    /// Unset [`Attribute::Nodesep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nodesep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nodesep(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Nojustify`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nojustify(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nojustify(s.into());
 
-    /// Unset `page` attribute. [Read more](https://graphviz.org/docs/attrs/page/).
-    pub fn unset_page(&mut self) {
-        self.page = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// The order in which pages are emitted. [Read more](https://graphviz.org/docs/attrs/pagedir/).
-    pub fn get_pagedir(&self) -> Option<&str> {
-        self.pagedir.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Nojustify`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nojustify(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nojustify(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Normalize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_normalize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Normalize(s.into());
 
-    /// Set `pagedir` attribute. [Read more](https://graphviz.org/docs/attrs/pagedir/).
-    pub fn set_pagedir(&mut self, s: &str) {
-        self.pagedir = Some(Pagedir::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `pagedir` attribute. [Read more](https://graphviz.org/docs/attrs/pagedir/).
-    pub fn unset_pagedir(&mut self) {
-        self.pagedir = None;
+    /// Unset [`Attribute::Normalize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_normalize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Normalize(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Quadtree scheme to use. sfdp only. [Read more](https://graphviz.org/docs/attrs/quadtree/).
-    pub fn get_quadtree(&self) -> Option<&str> {
-        self.quadtree.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Notranslate`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_notranslate(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Notranslate(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Notranslate`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_notranslate(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Notranslate(String::new());
 
-    /// Set `quadtree` attribute. [Read more](https://graphviz.org/docs/attrs/quadtree/).
-    pub fn set_quadtree(&mut self, s: &str) {
-        self.quadtree = Some(Quadtree::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `quadtree` attribute. [Read more](https://graphviz.org/docs/attrs/quadtree/).
-    pub fn unset_quadtree(&mut self) {
-        self.quadtree = None;
+    /// Set [`Attribute::Nslimit`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nslimit(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nslimit(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// If quantum > 0.0, node label dimensions will be rounded to integral multiples of the quantum. [Read more](https://graphviz.org/docs/attrs/quantum/).
-    pub fn get_quantum(&self) -> Option<&str> {
-        self.quantum.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Nslimit`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nslimit(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nslimit(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Nslimit1`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nslimit1(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nslimit1(s.into());
 
-    /// Set `quantum` attribute. [Read more](https://graphviz.org/docs/attrs/quantum/).
-    pub fn set_quantum(&mut self, s: &str) {
-        self.quantum = Some(Quantum::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `quantum` attribute. [Read more](https://graphviz.org/docs/attrs/quantum/).
-    pub fn unset_quantum(&mut self) {
-        self.quantum = None;
+    /// Unset [`Attribute::Nslimit1`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nslimit1(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nslimit1(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Sets direction of graph layout. dot only. [Read more](https://graphviz.org/docs/attrs/rankdir/).
-    pub fn get_rankdir(&self) -> Option<&str> {
-        self.rankdir.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Oneblock`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_oneblock(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Oneblock(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Oneblock`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_oneblock(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Oneblock(String::new());
 
-    /// Set `rankdir` attribute. [Read more](https://graphviz.org/docs/attrs/rankdir/).
-    pub fn set_rankdir(&mut self, s: &str) {
-        self.rankdir = Some(Rankdir::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `rankdir` attribute. [Read more](https://graphviz.org/docs/attrs/rankdir/).
-    pub fn unset_rankdir(&mut self) {
-        self.rankdir = None;
+    /// Set [`Attribute::Ordering`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_ordering(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Ordering(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Ordering`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_ordering(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Ordering(String::new());
 
-    /// Specifies separation between ranks. dot, twopi only. [Read more](https://graphviz.org/docs/attrs/ranksep/).
-    pub fn get_ranksep(&self) -> Option<&str> {
-        self.ranksep.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `ranksep` attribute. [Read more](https://graphviz.org/docs/attrs/ranksep/).
-    pub fn set_ranksep(&mut self, s: &str) {
-        self.ranksep = Some(Ranksep::new(s));
+    /// Set [`Attribute::Orientation`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_orientation(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Orientation(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Orientation`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_orientation(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Orientation(String::new());
 
-    /// Unset `ranksep` attribute. [Read more](https://graphviz.org/docs/attrs/ranksep/).
-    pub fn unset_ranksep(&mut self) {
-        self.ranksep = None;
+        self.attributes.remove(&item)
     }
 
-    /// Sets the aspect ratio (drawing height/drawing width) for the drawing. [Read more](https://graphviz.org/docs/attrs/ratio/).
-    pub fn get_ratio(&self) -> Option<&str> {
-        self.ratio.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Outputorder`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_outputorder(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Outputorder(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `ratio` attribute. [Read more](https://graphviz.org/docs/attrs/ratio/).
-    pub fn set_ratio(&mut self, s: &str) {
-        self.ratio = Some(Ratio::new(s));
+    /// Unset [`Attribute::Outputorder`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_outputorder(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Outputorder(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Overlap`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_overlap(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Overlap(s.into());
 
-    /// Unset `ratio` attribute. [Read more](https://graphviz.org/docs/attrs/ratio/).
-    pub fn unset_ratio(&mut self) {
-        self.ratio = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// If there are multiple clusters, whether to run edge crossing minimization a second time.. dot only. [Read more](https://graphviz.org/docs/attrs/remincross/).
-    pub fn get_remincross(&self) -> Option<&str> {
-        self.remincross.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Overlap`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_overlap(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Overlap(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `remincross` attribute. [Read more](https://graphviz.org/docs/attrs/remincross/).
-    pub fn set_remincross(&mut self, s: &str) {
-        self.remincross = Some(Remincross::new(s));
+    /// Set [`Attribute::OverlapScaling`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_overlap_scaling(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::OverlapScaling(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::OverlapScaling`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_overlap_scaling(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::OverlapScaling(String::new());
 
-    /// Unset `remincross` attribute. [Read more](https://graphviz.org/docs/attrs/remincross/).
-    pub fn unset_remincross(&mut self) {
-        self.remincross = None;
+        self.attributes.remove(&item)
     }
 
-    /// The power of the repulsive force used in an extended Fruchterman-Reingold. sfdp only. [Read more](https://graphviz.org/docs/attrs/repulsiveforce/).
-    pub fn get_repulsiveforce(&self) -> Option<&str> {
-        self.repulsiveforce.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::OverlapShrink`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_overlap_shrink(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::OverlapShrink(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `repulsiveforce` attribute. [Read more](https://graphviz.org/docs/attrs/repulsiveforce/).
-    pub fn set_repulsiveforce(&mut self, s: &str) {
-        self.repulsiveforce = Some(Repulsiveforce::new(s));
+    /// Unset [`Attribute::OverlapShrink`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_overlap_shrink(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::OverlapShrink(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Pack`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pack(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pack(s.into());
 
-    /// Unset `repulsiveforce` attribute. [Read more](https://graphviz.org/docs/attrs/repulsiveforce/).
-    pub fn unset_repulsiveforce(&mut self) {
-        self.repulsiveforce = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Synonym for dpi.. bitmap output, svg only. [Read more](https://graphviz.org/docs/attrs/resolution/).
-    pub fn get_resolution(&self) -> Option<&str> {
-        self.resolution.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Pack`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pack(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pack(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Packmode`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_packmode(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Packmode(s.into());
 
-    /// Set `resolution` attribute. [Read more](https://graphviz.org/docs/attrs/resolution/).
-    pub fn set_resolution(&mut self, s: &str) {
-        self.resolution = Some(Resolution::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `resolution` attribute. [Read more](https://graphviz.org/docs/attrs/resolution/).
-    pub fn unset_resolution(&mut self) {
-        self.resolution = None;
+    /// Unset [`Attribute::Packmode`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_packmode(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Packmode(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Pad`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pad(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pad(s.into());
 
-    /// Specifies nodes to be used as the center of the layout. twopi, circo only. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn get_root(&self) -> Option<&str> {
-        self.root.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `root` attribute. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn set_root(&mut self, s: &str) {
-        self.root = Some(Root::new(s));
+    /// Unset [`Attribute::Pad`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pad(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pad(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Unset `root` attribute. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn unset_root(&mut self) {
-        self.root = None;
+    /// Set [`Attribute::Page`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_page(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Page(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Page`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_page(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Page(String::new());
 
-    /// If rotate=90, sets drawing orientation to landscape. [Read more](https://graphviz.org/docs/attrs/rotate/).
-    pub fn get_rotate(&self) -> Option<&str> {
-        self.rotate.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `rotate` attribute. [Read more](https://graphviz.org/docs/attrs/rotate/).
-    pub fn set_rotate(&mut self, s: &str) {
-        self.rotate = Some(Rotate::new(s));
+    /// Set [`Attribute::Pagedir`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pagedir(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pagedir(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `rotate` attribute. [Read more](https://graphviz.org/docs/attrs/rotate/).
-    pub fn unset_rotate(&mut self) {
-        self.rotate = None;
+    /// Unset [`Attribute::Pagedir`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pagedir(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pagedir(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Quadtree`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_quadtree(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Quadtree(s.into());
 
-    /// Rotates the final layout counter-clockwise by the specified number of degrees. sfdp only. [Read more](https://graphviz.org/docs/attrs/rotation/).
-    pub fn get_rotation(&self) -> Option<&str> {
-        self.rotation.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `rotation` attribute. [Read more](https://graphviz.org/docs/attrs/rotation/).
-    pub fn set_rotation(&mut self, s: &str) {
-        self.rotation = Some(Rotation::new(s));
+    /// Unset [`Attribute::Quadtree`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_quadtree(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Quadtree(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Unset `rotation` attribute. [Read more](https://graphviz.org/docs/attrs/rotation/).
-    pub fn unset_rotation(&mut self) {
-        self.rotation = None;
+    /// Set [`Attribute::Quantum`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_quantum(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Quantum(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Quantum`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_quantum(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Quantum(String::new());
 
-    /// Scales layout by the given factor after the initial layout. neato, twopi only. [Read more](https://graphviz.org/docs/attrs/scale/).
-    pub fn get_scale(&self) -> Option<&str> {
-        self.scale.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `scale` attribute. [Read more](https://graphviz.org/docs/attrs/scale/).
-    pub fn set_scale(&mut self, s: &str) {
-        self.scale = Some(Scale::new(s));
+    /// Set [`Attribute::Rankdir`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_rankdir(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Rankdir(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Rankdir`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_rankdir(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Rankdir(String::new());
 
-    /// Unset `scale` attribute. [Read more](https://graphviz.org/docs/attrs/scale/).
-    pub fn unset_scale(&mut self) {
-        self.scale = None;
+        self.attributes.remove(&item)
     }
 
-    /// During network simplex, the maximum number of edges with negative cut values to search when looking for an edge with minimum cut value.. dot only. [Read more](https://graphviz.org/docs/attrs/searchsize/).
-    pub fn get_searchsize(&self) -> Option<&str> {
-        self.searchsize.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Ranksep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_ranksep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Ranksep(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Ranksep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_ranksep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Ranksep(String::new());
 
-    /// Set `searchsize` attribute. [Read more](https://graphviz.org/docs/attrs/searchsize/).
-    pub fn set_searchsize(&mut self, s: &str) {
-        self.searchsize = Some(Searchsize::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `searchsize` attribute. [Read more](https://graphviz.org/docs/attrs/searchsize/).
-    pub fn unset_searchsize(&mut self) {
-        self.searchsize = None;
+    /// Set [`Attribute::Ratio`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_ratio(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Ratio(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Margin to leave around nodes when removing node overlap. fdp, neato only. [Read more](https://graphviz.org/docs/attrs/sep/).
-    pub fn get_sep(&self) -> Option<&str> {
-        self.sep.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Ratio`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_ratio(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Ratio(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Remincross`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_remincross(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Remincross(s.into());
 
-    /// Set `sep` attribute. [Read more](https://graphviz.org/docs/attrs/sep/).
-    pub fn set_sep(&mut self, s: &str) {
-        self.sep = Some(Sep::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `sep` attribute. [Read more](https://graphviz.org/docs/attrs/sep/).
-    pub fn unset_sep(&mut self) {
-        self.sep = None;
+    /// Unset [`Attribute::Remincross`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_remincross(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Remincross(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Print guide boxes for debugging. dot only. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn get_showboxes(&self) -> Option<&str> {
-        self.showboxes.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Repulsiveforce`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_repulsiveforce(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Repulsiveforce(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Repulsiveforce`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_repulsiveforce(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Repulsiveforce(String::new());
 
-    /// Set `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn set_showboxes(&mut self, s: &str) {
-        self.showboxes = Some(Showboxes::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn unset_showboxes(&mut self) {
-        self.showboxes = None;
+    /// Set [`Attribute::Resolution`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_resolution(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Resolution(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Maximum width and height of drawing, in inches. [Read more](https://graphviz.org/docs/attrs/size/).
-    pub fn get_size(&self) -> Option<&str> {
-        self.size.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Resolution`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_resolution(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Resolution(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Root`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_root(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Root(s.into());
 
-    /// Set `size` attribute. [Read more](https://graphviz.org/docs/attrs/size/).
-    pub fn set_size(&mut self, s: &str) {
-        self.size = Some(Size::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `size` attribute. [Read more](https://graphviz.org/docs/attrs/size/).
-    pub fn unset_size(&mut self) {
-        self.size = None;
+    /// Unset [`Attribute::Root`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_root(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Root(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Rotate`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_rotate(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Rotate(s.into());
 
-    /// Specifies a post-processing step used to smooth out an uneven distribution of nodes.. sfdp only. [Read more](https://graphviz.org/docs/attrs/smoothing/).
-    pub fn get_smoothing(&self) -> Option<&str> {
-        self.smoothing.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `smoothing` attribute. [Read more](https://graphviz.org/docs/attrs/smoothing/).
-    pub fn set_smoothing(&mut self, s: &str) {
-        self.smoothing = Some(Smoothing::new(s));
+    /// Unset [`Attribute::Rotate`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_rotate(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Rotate(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Rotation`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_rotation(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Rotation(s.into());
 
-    /// Unset `smoothing` attribute. [Read more](https://graphviz.org/docs/attrs/smoothing/).
-    pub fn unset_smoothing(&mut self) {
-        self.smoothing = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Sort order of graph components for ordering packmode packing.. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn get_sortv(&self) -> Option<&str> {
-        self.sortv.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Rotation`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_rotation(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Rotation(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn set_sortv(&mut self, s: &str) {
-        self.sortv = Some(Sortv::new(s));
+    /// Set [`Attribute::Scale`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_scale(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Scale(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Scale`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_scale(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Scale(String::new());
 
-    /// Unset `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn unset_sortv(&mut self) {
-        self.sortv = None;
+        self.attributes.remove(&item)
     }
 
-    /// Controls how, and if, edges are represented. [Read more](https://graphviz.org/docs/attrs/splines/).
-    pub fn get_splines(&self) -> Option<&str> {
-        self.splines.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Searchsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_searchsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Searchsize(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `splines` attribute. [Read more](https://graphviz.org/docs/attrs/splines/).
-    pub fn set_splines(&mut self, s: &str) {
-        self.splines = Some(Splines::new(s));
+    /// Unset [`Attribute::Searchsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_searchsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Searchsize(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Sep`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sep(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sep(s.into());
 
-    /// Unset `splines` attribute. [Read more](https://graphviz.org/docs/attrs/splines/).
-    pub fn unset_splines(&mut self) {
-        self.splines = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Parameter used to determine the initial layout of nodes. neato, fdp, sfdp only. [Read more](https://graphviz.org/docs/attrs/start/).
-    pub fn get_start(&self) -> Option<&str> {
-        self.start.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Sep`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sep(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sep(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `start` attribute. [Read more](https://graphviz.org/docs/attrs/start/).
-    pub fn set_start(&mut self, s: &str) {
-        self.start = Some(Start::new(s));
+    /// Set [`Attribute::Showboxes`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_showboxes(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Showboxes(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Showboxes`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_showboxes(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Showboxes(String::new());
 
-    /// Unset `start` attribute. [Read more](https://graphviz.org/docs/attrs/start/).
-    pub fn unset_start(&mut self) {
-        self.start = None;
+        self.attributes.remove(&item)
     }
 
-    /// Set style information for components of the graph. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn get_style(&self) -> Option<&str> {
-        self.style.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Size`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_size(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Size(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Size`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_size(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Size(String::new());
 
-    /// Set `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn set_style(&mut self, s: &str) {
-        self.style = Some(Style::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn unset_style(&mut self) {
-        self.style = None;
+    /// Set [`Attribute::Smoothing`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_smoothing(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Smoothing(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Smoothing`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_smoothing(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Smoothing(String::new());
 
-    /// A URL or pathname specifying an XML style sheet, used in SVG output. svg only. [Read more](https://graphviz.org/docs/attrs/stylesheet/).
-    pub fn get_stylesheet(&self) -> Option<&str> {
-        self.stylesheet.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `stylesheet` attribute. [Read more](https://graphviz.org/docs/attrs/stylesheet/).
-    pub fn set_stylesheet(&mut self, s: &str) {
-        self.stylesheet = Some(Stylesheet::new(s));
+    /// Set [`Attribute::Sortv`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sortv(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sortv(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `stylesheet` attribute. [Read more](https://graphviz.org/docs/attrs/stylesheet/).
-    pub fn unset_stylesheet(&mut self) {
-        self.stylesheet = None;
+    /// Unset [`Attribute::Sortv`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sortv(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sortv(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Splines`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_splines(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Splines(s.into());
 
-    /// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn get_target(&self) -> Option<&str> {
-        self.target.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn set_target(&mut self, s: &str) {
-        self.target = Some(Target::new(s));
+    /// Unset [`Attribute::Splines`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_splines(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Splines(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Unset `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn unset_target(&mut self) {
-        self.target = None;
+    /// Set [`Attribute::Start`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_start(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Start(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Start`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_start(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Start(String::new());
 
-    /// Which rank to move floating (loose) nodes to. dot only. [Read more](https://graphviz.org/docs/attrs/TBbalance/).
-    pub fn get_tbbalance(&self) -> Option<&str> {
-        self.tbbalance.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `tbbalance` attribute. [Read more](https://graphviz.org/docs/attrs/TBbalance/).
-    pub fn set_tbbalance(&mut self, s: &str) {
-        self.tbbalance = Some(Tbbalance::new(s));
+    /// Set [`Attribute::Style`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_style(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Style(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `tbbalance` attribute. [Read more](https://graphviz.org/docs/attrs/TBbalance/).
-    pub fn unset_tbbalance(&mut self) {
-        self.tbbalance = None;
+    /// Unset [`Attribute::Style`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_style(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Style(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Stylesheet`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_stylesheet(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Stylesheet(s.into());
 
-    /// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn get_tooltip(&self) -> Option<&str> {
-        self.tooltip.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn set_tooltip(&mut self, s: &str) {
-        self.tooltip = Some(Tooltip::new(s));
+    /// Unset [`Attribute::Stylesheet`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_stylesheet(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Stylesheet(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Target`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_target(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Target(s.into());
 
-    /// Unset `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn unset_tooltip(&mut self) {
-        self.tooltip = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Whether internal bitmap rendering relies on a truecolor color model or uses. bitmap output only. [Read more](https://graphviz.org/docs/attrs/truecolor/).
-    pub fn get_truecolor(&self) -> Option<&str> {
-        self.truecolor.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Target`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_target(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Target(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tbbalance`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tbbalance(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tbbalance(s.into());
 
-    /// Set `truecolor` attribute. [Read more](https://graphviz.org/docs/attrs/truecolor/).
-    pub fn set_truecolor(&mut self, s: &str) {
-        self.truecolor = Some(Truecolor::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `truecolor` attribute. [Read more](https://graphviz.org/docs/attrs/truecolor/).
-    pub fn unset_truecolor(&mut self) {
-        self.truecolor = None;
+    /// Unset [`Attribute::Tbbalance`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tbbalance(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tbbalance(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Hyperlinks incorporated into device-dependent output. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn get_url(&self) -> Option<&str> {
-        self.url.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Tooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tooltip(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Tooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tooltip(String::new());
 
-    /// Set `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn set_url(&mut self, s: &str) {
-        self.url = Some(Url::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn unset_url(&mut self) {
-        self.url = None;
+    /// Set [`Attribute::Truecolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_truecolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Truecolor(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Clipping window on final drawing. [Read more](https://graphviz.org/docs/attrs/viewport/).
-    pub fn get_viewport(&self) -> Option<&str> {
-        self.viewport.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Truecolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_truecolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Truecolor(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Url`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_url(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Url(s.into());
 
-    /// Set `viewport` attribute. [Read more](https://graphviz.org/docs/attrs/viewport/).
-    pub fn set_viewport(&mut self, s: &str) {
-        self.viewport = Some(Viewport::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `viewport` attribute. [Read more](https://graphviz.org/docs/attrs/viewport/).
-    pub fn unset_viewport(&mut self) {
-        self.viewport = None;
+    /// Unset [`Attribute::Url`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_url(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Url(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Tuning margin of Voronoi technique. neato, fdp, sfdp, twopi, circo only. [Read more](https://graphviz.org/docs/attrs/voro_margin/).
-    pub fn get_voro_margin(&self) -> Option<&str> {
-        self.voro_margin.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Viewport`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_viewport(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Viewport(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Viewport`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_viewport(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Viewport(String::new());
 
-    /// Set `voro_margin` attribute. [Read more](https://graphviz.org/docs/attrs/voro_margin/).
-    pub fn set_voro_margin(&mut self, s: &str) {
-        self.voro_margin = Some(VoroMargin::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `voro_margin` attribute. [Read more](https://graphviz.org/docs/attrs/voro_margin/).
-    pub fn unset_voro_margin(&mut self) {
-        self.voro_margin = None;
+    /// Set [`Attribute::VoroMargin`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_voro_margin(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::VoroMargin(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::VoroMargin`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_voro_margin(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::VoroMargin(String::new());
 
-    /// Determines the version of xdot used in output. xdot only. [Read more](https://graphviz.org/docs/attrs/xdotversion/).
-    pub fn get_xdotversion(&self) -> Option<&str> {
-        self.xdotversion.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `xdotversion` attribute. [Read more](https://graphviz.org/docs/attrs/xdotversion/).
-    pub fn set_xdotversion(&mut self, s: &str) {
-        self.xdotversion = Some(Xdotversion::new(s));
+    /// Set [`Attribute::Xdotversion`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_xdotversion(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Xdotversion(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Xdotversion`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_xdotversion(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Xdotversion(String::new());
 
-    /// Unset `xdotversion` attribute. [Read more](https://graphviz.org/docs/attrs/xdotversion/).
-    pub fn unset_xdotversion(&mut self) {
-        self.xdotversion = None;
+        self.attributes.remove(&item)
     }
 }
 
-impl IntoIterator for GraphAttrs {
-    type Item = String;
+impl IntoIterator for GraphAttributes {
+    type Item = Attribute;
 
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, 103>>;
+    type IntoIter = hash_set::IntoIter<Attribute>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        [
-            self._background.map(|x| x.to_string()),
-            self.bb.map(|x| x.to_string()),
-            self.beautify.map(|x| x.to_string()),
-            self.bgcolor.map(|x| x.to_string()),
-            self.center.map(|x| x.to_string()),
-            self.charset.map(|x| x.to_string()),
-            self.class.map(|x| x.to_string()),
-            self.clusterrank.map(|x| x.to_string()),
-            self.colorscheme.map(|x| x.to_string()),
-            self.comment.map(|x| x.to_string()),
-            self.compound.map(|x| x.to_string()),
-            self.concentrate.map(|x| x.to_string()),
-            self.damping.map(|x| x.to_string()),
-            self.defaultdist.map(|x| x.to_string()),
-            self.dim.map(|x| x.to_string()),
-            self.dimen.map(|x| x.to_string()),
-            self.diredgeconstraints.map(|x| x.to_string()),
-            self.dpi.map(|x| x.to_string()),
-            self.epsilon.map(|x| x.to_string()),
-            self.esep.map(|x| x.to_string()),
-            self.fontcolor.map(|x| x.to_string()),
-            self.fontname.map(|x| x.to_string()),
-            self.fontnames.map(|x| x.to_string()),
-            self.fontpath.map(|x| x.to_string()),
-            self.fontsize.map(|x| x.to_string()),
-            self.forcelabels.map(|x| x.to_string()),
-            self.gradientangle.map(|x| x.to_string()),
-            self.href.map(|x| x.to_string()),
-            self.id.map(|x| x.to_string()),
-            self.imagepath.map(|x| x.to_string()),
-            self.inputscale.map(|x| x.to_string()),
-            self.k.map(|x| x.to_string()),
-            self.label.map(|x| x.to_string()),
-            self.label_scheme.map(|x| x.to_string()),
-            self.labeljust.map(|x| x.to_string()),
-            self.labelloc.map(|x| x.to_string()),
-            self.landscape.map(|x| x.to_string()),
-            self.layerlistsep.map(|x| x.to_string()),
-            self.layers.map(|x| x.to_string()),
-            self.layerselect.map(|x| x.to_string()),
-            self.layersep.map(|x| x.to_string()),
-            self.layout.map(|x| x.to_string()),
-            self.levels.map(|x| x.to_string()),
-            self.levelsgap.map(|x| x.to_string()),
-            self.lheight.map(|x| x.to_string()),
-            self.linelength.map(|x| x.to_string()),
-            self.lp.map(|x| x.to_string()),
-            self.lwidth.map(|x| x.to_string()),
-            self.margin.map(|x| x.to_string()),
-            self.maxiter.map(|x| x.to_string()),
-            self.mclimit.map(|x| x.to_string()),
-            self.mindist.map(|x| x.to_string()),
-            self.mode.map(|x| x.to_string()),
-            self.model.map(|x| x.to_string()),
-            self.newrank.map(|x| x.to_string()),
-            self.nodesep.map(|x| x.to_string()),
-            self.nojustify.map(|x| x.to_string()),
-            self.normalize.map(|x| x.to_string()),
-            self.notranslate.map(|x| x.to_string()),
-            self.nslimit.map(|x| x.to_string()),
-            self.nslimit1.map(|x| x.to_string()),
-            self.oneblock.map(|x| x.to_string()),
-            self.ordering.map(|x| x.to_string()),
-            self.orientation.map(|x| x.to_string()),
-            self.outputorder.map(|x| x.to_string()),
-            self.overlap.map(|x| x.to_string()),
-            self.overlap_scaling.map(|x| x.to_string()),
-            self.overlap_shrink.map(|x| x.to_string()),
-            self.pack.map(|x| x.to_string()),
-            self.packmode.map(|x| x.to_string()),
-            self.pad.map(|x| x.to_string()),
-            self.page.map(|x| x.to_string()),
-            self.pagedir.map(|x| x.to_string()),
-            self.quadtree.map(|x| x.to_string()),
-            self.quantum.map(|x| x.to_string()),
-            self.rankdir.map(|x| x.to_string()),
-            self.ranksep.map(|x| x.to_string()),
-            self.ratio.map(|x| x.to_string()),
-            self.remincross.map(|x| x.to_string()),
-            self.repulsiveforce.map(|x| x.to_string()),
-            self.resolution.map(|x| x.to_string()),
-            self.root.map(|x| x.to_string()),
-            self.rotate.map(|x| x.to_string()),
-            self.rotation.map(|x| x.to_string()),
-            self.scale.map(|x| x.to_string()),
-            self.searchsize.map(|x| x.to_string()),
-            self.sep.map(|x| x.to_string()),
-            self.showboxes.map(|x| x.to_string()),
-            self.size.map(|x| x.to_string()),
-            self.smoothing.map(|x| x.to_string()),
-            self.sortv.map(|x| x.to_string()),
-            self.splines.map(|x| x.to_string()),
-            self.start.map(|x| x.to_string()),
-            self.style.map(|x| x.to_string()),
-            self.stylesheet.map(|x| x.to_string()),
-            self.target.map(|x| x.to_string()),
-            self.tbbalance.map(|x| x.to_string()),
-            self.tooltip.map(|x| x.to_string()),
-            self.truecolor.map(|x| x.to_string()),
-            self.url.map(|x| x.to_string()),
-            self.viewport.map(|x| x.to_string()),
-            self.voro_margin.map(|x| x.to_string()),
-            self.xdotversion.map(|x| x.to_string()),
-        ]
-        .into_iter()
-        .flatten()
+        self.attributes.into_iter()
     }
 }
 
-/// Node attributes.
+/// Vertex attributes.
 #[derive(Clone, Debug, Default)]
-pub struct NodeAttrs {
-    area: Option<Area>,
-    class: Option<Class>,
-    color: Option<Color>,
-    colorscheme: Option<Colorscheme>,
-    comment: Option<Comment>,
-    distortion: Option<Distortion>,
-    fillcolor: Option<Fillcolor>,
-    fixedsize: Option<Fixedsize>,
-    fontcolor: Option<Fontcolor>,
-    fontname: Option<Fontname>,
-    fontsize: Option<Fontsize>,
-    gradientangle: Option<Gradientangle>,
-    group: Option<Group>,
-    height: Option<Height>,
-    href: Option<Href>,
-    id: Option<Id>,
-    image: Option<Image>,
-    imagepos: Option<Imagepos>,
-    imagescale: Option<Imagescale>,
-    label: Option<Label>,
-    labelloc: Option<Labelloc>,
-    layer: Option<Layer>,
-    margin: Option<Margin>,
-    nojustify: Option<Nojustify>,
-    ordering: Option<Ordering>,
-    orientation: Option<Orientation>,
-    penwidth: Option<Penwidth>,
-    peripheries: Option<Peripheries>,
-    pin: Option<Pin>,
-    pos: Option<Pos>,
-    rects: Option<Rects>,
-    regular: Option<Regular>,
-    root: Option<Root>,
-    samplepoints: Option<Samplepoints>,
-    shape: Option<Shape>,
-    shapefile: Option<Shapefile>,
-    showboxes: Option<Showboxes>,
-    sides: Option<Sides>,
-    skew: Option<Skew>,
-    sortv: Option<Sortv>,
-    style: Option<Style>,
-    target: Option<Target>,
-    tooltip: Option<Tooltip>,
-    url: Option<Url>,
-    vertices: Option<Vertices>,
-    width: Option<Width>,
-    xlabel: Option<Xlabel>,
-    xlp: Option<Xlp>,
-    z: Option<Z>,
+pub struct VertexAttributes {
+    attributes: HashSet<Attribute>,
 }
 
-impl NodeAttrs {
-    /// Indicates the preferred area for a node or empty cluster. patchwork only. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn get_area(&self) -> Option<&str> {
-        self.area.as_ref().map(|x| x.0.as_str())
-    }
+impl VertexAttributes {
+    /// Set attribute from `key` and `value` raw parts. Returns whether the attribute was newly set.
+    ///
+    /// # Panics
+    ///
+    /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
+    ///
+    pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let item = match key {
+            "area" => Attribute::Area(value.into()),
+            "class" => Attribute::Class(value.into()),
+            "color" => Attribute::Color(value.into()),
+            "colorscheme" => Attribute::Colorscheme(value.into()),
+            "comment" => Attribute::Comment(value.into()),
+            "distortion" => Attribute::Distortion(value.into()),
+            "fillcolor" => Attribute::Fillcolor(value.into()),
+            "fixedsize" => Attribute::Fixedsize(value.into()),
+            "fontcolor" => Attribute::Fontcolor(value.into()),
+            "fontname" => Attribute::Fontname(value.into()),
+            "fontsize" => Attribute::Fontsize(value.into()),
+            "gradientangle" => Attribute::Gradientangle(value.into()),
+            "group" => Attribute::Group(value.into()),
+            "height" => Attribute::Height(value.into()),
+            "href" => Attribute::Href(value.into()),
+            "id" => Attribute::Id(value.into()),
+            "image" => Attribute::Image(value.into()),
+            "imagepos" => Attribute::Imagepos(value.into()),
+            "imagescale" => Attribute::Imagescale(value.into()),
+            "label" => Attribute::Label(value.into()),
+            "labelloc" => Attribute::Labelloc(value.into()),
+            "layer" => Attribute::Layer(value.into()),
+            "margin" => Attribute::Margin(value.into()),
+            "nojustify" => Attribute::Nojustify(value.into()),
+            "ordering" => Attribute::Ordering(value.into()),
+            "orientation" => Attribute::Orientation(value.into()),
+            "penwidth" => Attribute::Penwidth(value.into()),
+            "peripheries" => Attribute::Peripheries(value.into()),
+            "pin" => Attribute::Pin(value.into()),
+            "pos" => Attribute::Pos(value.into()),
+            "rects" => Attribute::Rects(value.into()),
+            "regular" => Attribute::Regular(value.into()),
+            "root" => Attribute::Root(value.into()),
+            "samplepoints" => Attribute::Samplepoints(value.into()),
+            "shape" => Attribute::Shape(value.into()),
+            "shapefile" => Attribute::Shapefile(value.into()),
+            "showboxes" => Attribute::Showboxes(value.into()),
+            "sides" => Attribute::Sides(value.into()),
+            "skew" => Attribute::Skew(value.into()),
+            "sortv" => Attribute::Sortv(value.into()),
+            "style" => Attribute::Style(value.into()),
+            "target" => Attribute::Target(value.into()),
+            "tooltip" => Attribute::Tooltip(value.into()),
+            "URL" => Attribute::Url(value.into()),
+            "vertices" => Attribute::Vertices(value.into()),
+            "width" => Attribute::Width(value.into()),
+            "xlabel" => Attribute::Xlabel(value.into()),
+            "xlp" => Attribute::Xlp(value.into()),
+            "z" => Attribute::Z(value.into()),
+            _ => panic!("Invalid attribute key `{key}` for VertexAttributes"),
+        };
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Set [`Attribute::Area`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_area(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Area(s.into());
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Unset [`Attribute::Area`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_area(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Area(String::new());
+
+        self.attributes.remove(&item)
+    }
+
+    /// Set [`Attribute::Class`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_class(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Class(s.into());
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Unset [`Attribute::Class`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_class(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Class(String::new());
+
+        self.attributes.remove(&item)
+    }
+
+    /// Set [`Attribute::Color`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_color(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Color(s.into());
 
-    /// Set `area` attribute. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn set_area(&mut self, s: &str) {
-        self.area = Some(Area::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `area` attribute. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn unset_area(&mut self) {
-        self.area = None;
-    }
+    /// Unset [`Attribute::Color`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_color(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Color(String::new());
 
-    /// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn get_class(&self) -> Option<&str> {
-        self.class.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn set_class(&mut self, s: &str) {
-        self.class = Some(Class::new(s));
-    }
+    /// Set [`Attribute::Colorscheme`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_colorscheme(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Colorscheme(s.into());
 
-    /// Unset `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn unset_class(&mut self) {
-        self.class = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Basic drawing color for graphics, not text. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn get_color(&self) -> Option<&str> {
-        self.color.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Colorscheme`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_colorscheme(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Colorscheme(String::new());
 
-    /// Set `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn set_color(&mut self, s: &str) {
-        self.color = Some(Color::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn unset_color(&mut self) {
-        self.color = None;
-    }
+    /// Set [`Attribute::Comment`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_comment(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Comment(s.into());
 
-    /// A color scheme namespace: the context for interpreting color names. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn get_colorscheme(&self) -> Option<&str> {
-        self.colorscheme.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn set_colorscheme(&mut self, s: &str) {
-        self.colorscheme = Some(Colorscheme::new(s));
-    }
+    /// Unset [`Attribute::Comment`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_comment(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Comment(String::new());
 
-    /// Unset `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn unset_colorscheme(&mut self) {
-        self.colorscheme = None;
+        self.attributes.remove(&item)
     }
 
-    /// Comments are inserted into output. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn get_comment(&self) -> Option<&str> {
-        self.comment.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Distortion`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_distortion(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Distortion(s.into());
 
-    /// Set `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn set_comment(&mut self, s: &str) {
-        self.comment = Some(Comment::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn unset_comment(&mut self) {
-        self.comment = None;
-    }
+    /// Unset [`Attribute::Distortion`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_distortion(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Distortion(String::new());
 
-    /// Distortion factor for shape=polygon. [Read more](https://graphviz.org/docs/attrs/distortion/).
-    pub fn get_distortion(&self) -> Option<&str> {
-        self.distortion.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `distortion` attribute. [Read more](https://graphviz.org/docs/attrs/distortion/).
-    pub fn set_distortion(&mut self, s: &str) {
-        self.distortion = Some(Distortion::new(s));
-    }
+    /// Set [`Attribute::Fillcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fillcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fillcolor(s.into());
 
-    /// Unset `distortion` attribute. [Read more](https://graphviz.org/docs/attrs/distortion/).
-    pub fn unset_distortion(&mut self) {
-        self.distortion = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Color used to fill the background of a node or cluster. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn get_fillcolor(&self) -> Option<&str> {
-        self.fillcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fillcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fillcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fillcolor(String::new());
 
-    /// Set `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn set_fillcolor(&mut self, s: &str) {
-        self.fillcolor = Some(Fillcolor::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn unset_fillcolor(&mut self) {
-        self.fillcolor = None;
-    }
+    /// Set [`Attribute::Fixedsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fixedsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fixedsize(s.into());
 
-    /// Whether to use the specified width and height attributes to choose node size (rather than sizing to fit the node contents). [Read more](https://graphviz.org/docs/attrs/fixedsize/).
-    pub fn get_fixedsize(&self) -> Option<&str> {
-        self.fixedsize.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `fixedsize` attribute. [Read more](https://graphviz.org/docs/attrs/fixedsize/).
-    pub fn set_fixedsize(&mut self, s: &str) {
-        self.fixedsize = Some(Fixedsize::new(s));
-    }
+    /// Unset [`Attribute::Fixedsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fixedsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fixedsize(String::new());
 
-    /// Unset `fixedsize` attribute. [Read more](https://graphviz.org/docs/attrs/fixedsize/).
-    pub fn unset_fixedsize(&mut self) {
-        self.fixedsize = None;
+        self.attributes.remove(&item)
     }
 
-    /// Color used for text. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn get_fontcolor(&self) -> Option<&str> {
-        self.fontcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Fontcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontcolor(s.into());
 
-    /// Set `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn set_fontcolor(&mut self, s: &str) {
-        self.fontcolor = Some(Fontcolor::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn unset_fontcolor(&mut self) {
-        self.fontcolor = None;
-    }
+    /// Unset [`Attribute::Fontcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontcolor(String::new());
 
-    /// Font used for text. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn get_fontname(&self) -> Option<&str> {
-        self.fontname.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn set_fontname(&mut self, s: &str) {
-        self.fontname = Some(Fontname::new(s));
-    }
+    /// Set [`Attribute::Fontname`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontname(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontname(s.into());
 
-    /// Unset `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn unset_fontname(&mut self) {
-        self.fontname = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Font size, in points, used for text. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn get_fontsize(&self) -> Option<&str> {
-        self.fontsize.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fontname`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontname(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontname(String::new());
 
-    /// Set `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn set_fontsize(&mut self, s: &str) {
-        self.fontsize = Some(Fontsize::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn unset_fontsize(&mut self) {
-        self.fontsize = None;
-    }
+    /// Set [`Attribute::Fontsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontsize(s.into());
 
-    /// If a gradient fill is being used, this determines the angle of the fill. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn get_gradientangle(&self) -> Option<&str> {
-        self.gradientangle.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn set_gradientangle(&mut self, s: &str) {
-        self.gradientangle = Some(Gradientangle::new(s));
-    }
+    /// Unset [`Attribute::Fontsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontsize(String::new());
 
-    /// Unset `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn unset_gradientangle(&mut self) {
-        self.gradientangle = None;
+        self.attributes.remove(&item)
     }
 
-    /// Name for a group of nodes, for bundling edges avoiding crossings.. dot only. [Read more](https://graphviz.org/docs/attrs/group/).
-    pub fn get_group(&self) -> Option<&str> {
-        self.group.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Gradientangle`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_gradientangle(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Gradientangle(s.into());
 
-    /// Set `group` attribute. [Read more](https://graphviz.org/docs/attrs/group/).
-    pub fn set_group(&mut self, s: &str) {
-        self.group = Some(Group::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `group` attribute. [Read more](https://graphviz.org/docs/attrs/group/).
-    pub fn unset_group(&mut self) {
-        self.group = None;
-    }
+    /// Unset [`Attribute::Gradientangle`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_gradientangle(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Gradientangle(String::new());
 
-    /// Height of node, in inches. [Read more](https://graphviz.org/docs/attrs/height/).
-    pub fn get_height(&self) -> Option<&str> {
-        self.height.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `height` attribute. [Read more](https://graphviz.org/docs/attrs/height/).
-    pub fn set_height(&mut self, s: &str) {
-        self.height = Some(Height::new(s));
-    }
+    /// Set [`Attribute::Group`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_group(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Group(s.into());
 
-    /// Unset `height` attribute. [Read more](https://graphviz.org/docs/attrs/height/).
-    pub fn unset_height(&mut self) {
-        self.height = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Synonym for URL. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn get_href(&self) -> Option<&str> {
-        self.href.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Group`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_group(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Group(String::new());
 
-    /// Set `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn set_href(&mut self, s: &str) {
-        self.href = Some(Href::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn unset_href(&mut self) {
-        self.href = None;
-    }
+    /// Set [`Attribute::Height`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_height(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Height(s.into());
 
-    /// Identifier for graph objects. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn get_id(&self) -> Option<&str> {
-        self.id.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn set_id(&mut self, s: &str) {
-        self.id = Some(Id::new(s));
-    }
+    /// Unset [`Attribute::Height`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_height(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Height(String::new());
 
-    /// Unset `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn unset_id(&mut self) {
-        self.id = None;
+        self.attributes.remove(&item)
     }
 
-    /// Gives the name of a file containing an image to be displayed inside a node. [Read more](https://graphviz.org/docs/attrs/image/).
-    pub fn get_image(&self) -> Option<&str> {
-        self.image.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Href`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_href(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Href(s.into());
 
-    /// Set `image` attribute. [Read more](https://graphviz.org/docs/attrs/image/).
-    pub fn set_image(&mut self, s: &str) {
-        self.image = Some(Image::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `image` attribute. [Read more](https://graphviz.org/docs/attrs/image/).
-    pub fn unset_image(&mut self) {
-        self.image = None;
-    }
+    /// Unset [`Attribute::Href`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_href(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Href(String::new());
 
-    /// Controls how an image is positioned within its containing node. [Read more](https://graphviz.org/docs/attrs/imagepos/).
-    pub fn get_imagepos(&self) -> Option<&str> {
-        self.imagepos.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `imagepos` attribute. [Read more](https://graphviz.org/docs/attrs/imagepos/).
-    pub fn set_imagepos(&mut self, s: &str) {
-        self.imagepos = Some(Imagepos::new(s));
-    }
+    /// Set [`Attribute::Id`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_id(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Id(s.into());
 
-    /// Unset `imagepos` attribute. [Read more](https://graphviz.org/docs/attrs/imagepos/).
-    pub fn unset_imagepos(&mut self) {
-        self.imagepos = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Controls how an image fills its containing node. [Read more](https://graphviz.org/docs/attrs/imagescale/).
-    pub fn get_imagescale(&self) -> Option<&str> {
-        self.imagescale.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Id`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_id(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Id(String::new());
 
-    /// Set `imagescale` attribute. [Read more](https://graphviz.org/docs/attrs/imagescale/).
-    pub fn set_imagescale(&mut self, s: &str) {
-        self.imagescale = Some(Imagescale::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `imagescale` attribute. [Read more](https://graphviz.org/docs/attrs/imagescale/).
-    pub fn unset_imagescale(&mut self) {
-        self.imagescale = None;
-    }
+    /// Set [`Attribute::Image`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_image(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Image(s.into());
 
-    /// Text label attached to objects. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn get_label(&self) -> Option<&str> {
-        self.label.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn set_label(&mut self, s: &str) {
-        self.label = Some(Label::new(s));
-    }
+    /// Unset [`Attribute::Image`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_image(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Image(String::new());
 
-    /// Unset `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn unset_label(&mut self) {
-        self.label = None;
+        self.attributes.remove(&item)
     }
 
-    /// Vertical placement of labels for nodes, root graphs and clusters. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn get_labelloc(&self) -> Option<&str> {
-        self.labelloc.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Imagepos`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_imagepos(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Imagepos(s.into());
 
-    /// Set `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn set_labelloc(&mut self, s: &str) {
-        self.labelloc = Some(Labelloc::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn unset_labelloc(&mut self) {
-        self.labelloc = None;
-    }
+    /// Unset [`Attribute::Imagepos`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_imagepos(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Imagepos(String::new());
 
-    /// Specifies layers in which the node, edge or cluster is present. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn get_layer(&self) -> Option<&str> {
-        self.layer.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn set_layer(&mut self, s: &str) {
-        self.layer = Some(Layer::new(s));
-    }
+    /// Set [`Attribute::Imagescale`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_imagescale(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Imagescale(s.into());
 
-    /// Unset `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn unset_layer(&mut self) {
-        self.layer = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// For graphs, this sets x and y margins of canvas, in inches. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn get_margin(&self) -> Option<&str> {
-        self.margin.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Imagescale`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_imagescale(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Imagescale(String::new());
 
-    /// Set `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn set_margin(&mut self, s: &str) {
-        self.margin = Some(Margin::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn unset_margin(&mut self) {
-        self.margin = None;
-    }
+    /// Set [`Attribute::Label`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_label(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Label(s.into());
 
-    /// Whether to justify multiline text vs the previous text line (rather than the side of the container).. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn get_nojustify(&self) -> Option<&str> {
-        self.nojustify.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn set_nojustify(&mut self, s: &str) {
-        self.nojustify = Some(Nojustify::new(s));
-    }
+    /// Unset [`Attribute::Label`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_label(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Label(String::new());
 
-    /// Unset `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn unset_nojustify(&mut self) {
-        self.nojustify = None;
+        self.attributes.remove(&item)
     }
 
-    /// Constrains the left-to-right ordering of node edges.. dot only. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn get_ordering(&self) -> Option<&str> {
-        self.ordering.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Labelloc`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelloc(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelloc(s.into());
 
-    /// Set `ordering` attribute. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn set_ordering(&mut self, s: &str) {
-        self.ordering = Some(Ordering::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `ordering` attribute. [Read more](https://graphviz.org/docs/attrs/ordering/).
-    pub fn unset_ordering(&mut self) {
-        self.ordering = None;
-    }
+    /// Unset [`Attribute::Labelloc`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelloc(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelloc(String::new());
 
-    /// node shape rotation angle, or graph orientation. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn get_orientation(&self) -> Option<&str> {
-        self.orientation.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `orientation` attribute. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn set_orientation(&mut self, s: &str) {
-        self.orientation = Some(Orientation::new(s));
-    }
+    /// Set [`Attribute::Layer`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layer(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layer(s.into());
 
-    /// Unset `orientation` attribute. [Read more](https://graphviz.org/docs/attrs/orientation/).
-    pub fn unset_orientation(&mut self) {
-        self.orientation = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Specifies the width of the pen, in points, used to draw lines and curves. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn get_penwidth(&self) -> Option<&str> {
-        self.penwidth.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Layer`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layer(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layer(String::new());
 
-    /// Set `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn set_penwidth(&mut self, s: &str) {
-        self.penwidth = Some(Penwidth::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn unset_penwidth(&mut self) {
-        self.penwidth = None;
-    }
+    /// Set [`Attribute::Margin`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_margin(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Margin(s.into());
 
-    /// Set number of peripheries used in polygonal shapes and cluster boundaries. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn get_peripheries(&self) -> Option<&str> {
-        self.peripheries.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `peripheries` attribute. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn set_peripheries(&mut self, s: &str) {
-        self.peripheries = Some(Peripheries::new(s));
-    }
+    /// Unset [`Attribute::Margin`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_margin(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Margin(String::new());
 
-    /// Unset `peripheries` attribute. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn unset_peripheries(&mut self) {
-        self.peripheries = None;
+        self.attributes.remove(&item)
     }
 
-    /// Keeps the node at the node's given input position. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/pin/).
-    pub fn get_pin(&self) -> Option<&str> {
-        self.pin.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Nojustify`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nojustify(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nojustify(s.into());
 
-    /// Set `pin` attribute. [Read more](https://graphviz.org/docs/attrs/pin/).
-    pub fn set_pin(&mut self, s: &str) {
-        self.pin = Some(Pin::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `pin` attribute. [Read more](https://graphviz.org/docs/attrs/pin/).
-    pub fn unset_pin(&mut self) {
-        self.pin = None;
-    }
+    /// Unset [`Attribute::Nojustify`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nojustify(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nojustify(String::new());
 
-    /// Position of node, or spline control points. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn get_pos(&self) -> Option<&str> {
-        self.pos.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `pos` attribute. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn set_pos(&mut self, s: &str) {
-        self.pos = Some(Pos::new(s));
-    }
+    /// Set [`Attribute::Ordering`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_ordering(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Ordering(s.into());
 
-    /// Unset `pos` attribute. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn unset_pos(&mut self) {
-        self.pos = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Rectangles for fields of records, in points. write only. [Read more](https://graphviz.org/docs/attrs/rects/).
-    pub fn get_rects(&self) -> Option<&str> {
-        self.rects.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Ordering`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_ordering(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Ordering(String::new());
 
-    /// Set `rects` attribute. [Read more](https://graphviz.org/docs/attrs/rects/).
-    pub fn set_rects(&mut self, s: &str) {
-        self.rects = Some(Rects::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `rects` attribute. [Read more](https://graphviz.org/docs/attrs/rects/).
-    pub fn unset_rects(&mut self) {
-        self.rects = None;
-    }
+    /// Set [`Attribute::Orientation`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_orientation(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Orientation(s.into());
 
-    /// If true, force polygon to be regular, i.e., the vertices of th. [Read more](https://graphviz.org/docs/attrs/regular/).
-    pub fn get_regular(&self) -> Option<&str> {
-        self.regular.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `regular` attribute. [Read more](https://graphviz.org/docs/attrs/regular/).
-    pub fn set_regular(&mut self, s: &str) {
-        self.regular = Some(Regular::new(s));
-    }
+    /// Unset [`Attribute::Orientation`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_orientation(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Orientation(String::new());
 
-    /// Unset `regular` attribute. [Read more](https://graphviz.org/docs/attrs/regular/).
-    pub fn unset_regular(&mut self) {
-        self.regular = None;
+        self.attributes.remove(&item)
     }
 
-    /// Specifies nodes to be used as the center of the layout. twopi, circo only. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn get_root(&self) -> Option<&str> {
-        self.root.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Penwidth`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_penwidth(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Penwidth(s.into());
 
-    /// Set `root` attribute. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn set_root(&mut self, s: &str) {
-        self.root = Some(Root::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `root` attribute. [Read more](https://graphviz.org/docs/attrs/root/).
-    pub fn unset_root(&mut self) {
-        self.root = None;
-    }
+    /// Unset [`Attribute::Penwidth`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_penwidth(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Penwidth(String::new());
 
-    /// Gives the number of points used for a circle/ellipse node. [Read more](https://graphviz.org/docs/attrs/samplepoints/).
-    pub fn get_samplepoints(&self) -> Option<&str> {
-        self.samplepoints.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `samplepoints` attribute. [Read more](https://graphviz.org/docs/attrs/samplepoints/).
-    pub fn set_samplepoints(&mut self, s: &str) {
-        self.samplepoints = Some(Samplepoints::new(s));
-    }
+    /// Set [`Attribute::Peripheries`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_peripheries(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Peripheries(s.into());
 
-    /// Unset `samplepoints` attribute. [Read more](https://graphviz.org/docs/attrs/samplepoints/).
-    pub fn unset_samplepoints(&mut self) {
-        self.samplepoints = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Sets the shape of a node. [Read more](https://graphviz.org/docs/attrs/shape/).
-    pub fn get_shape(&self) -> Option<&str> {
-        self.shape.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Peripheries`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_peripheries(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Peripheries(String::new());
 
-    /// Set `shape` attribute. [Read more](https://graphviz.org/docs/attrs/shape/).
-    pub fn set_shape(&mut self, s: &str) {
-        self.shape = Some(Shape::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `shape` attribute. [Read more](https://graphviz.org/docs/attrs/shape/).
-    pub fn unset_shape(&mut self) {
-        self.shape = None;
-    }
+    /// Set [`Attribute::Pin`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pin(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pin(s.into());
 
-    /// A file containing user-supplied node content. [Read more](https://graphviz.org/docs/attrs/shapefile/).
-    pub fn get_shapefile(&self) -> Option<&str> {
-        self.shapefile.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `shapefile` attribute. [Read more](https://graphviz.org/docs/attrs/shapefile/).
-    pub fn set_shapefile(&mut self, s: &str) {
-        self.shapefile = Some(Shapefile::new(s));
+    /// Unset [`Attribute::Pin`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pin(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pin(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Pos`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pos(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pos(s.into());
 
-    /// Unset `shapefile` attribute. [Read more](https://graphviz.org/docs/attrs/shapefile/).
-    pub fn unset_shapefile(&mut self) {
-        self.shapefile = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Print guide boxes for debugging. dot only. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn get_showboxes(&self) -> Option<&str> {
-        self.showboxes.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Pos`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pos(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pos(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn set_showboxes(&mut self, s: &str) {
-        self.showboxes = Some(Showboxes::new(s));
+    /// Set [`Attribute::Rects`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_rects(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Rects(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Rects`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_rects(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Rects(String::new());
 
-    /// Unset `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn unset_showboxes(&mut self) {
-        self.showboxes = None;
+        self.attributes.remove(&item)
     }
 
-    /// Number of sides when shape=polygon. [Read more](https://graphviz.org/docs/attrs/sides/).
-    pub fn get_sides(&self) -> Option<&str> {
-        self.sides.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Regular`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_regular(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Regular(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `sides` attribute. [Read more](https://graphviz.org/docs/attrs/sides/).
-    pub fn set_sides(&mut self, s: &str) {
-        self.sides = Some(Sides::new(s));
+    /// Unset [`Attribute::Regular`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_regular(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Regular(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Root`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_root(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Root(s.into());
 
-    /// Unset `sides` attribute. [Read more](https://graphviz.org/docs/attrs/sides/).
-    pub fn unset_sides(&mut self) {
-        self.sides = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Skew factor for shape=polygon. [Read more](https://graphviz.org/docs/attrs/skew/).
-    pub fn get_skew(&self) -> Option<&str> {
-        self.skew.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Root`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_root(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Root(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `skew` attribute. [Read more](https://graphviz.org/docs/attrs/skew/).
-    pub fn set_skew(&mut self, s: &str) {
-        self.skew = Some(Skew::new(s));
+    /// Set [`Attribute::Samplepoints`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_samplepoints(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Samplepoints(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Samplepoints`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_samplepoints(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Samplepoints(String::new());
 
-    /// Unset `skew` attribute. [Read more](https://graphviz.org/docs/attrs/skew/).
-    pub fn unset_skew(&mut self) {
-        self.skew = None;
+        self.attributes.remove(&item)
     }
 
-    /// Sort order of graph components for ordering packmode packing.. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn get_sortv(&self) -> Option<&str> {
-        self.sortv.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Shape`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_shape(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Shape(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn set_sortv(&mut self, s: &str) {
-        self.sortv = Some(Sortv::new(s));
+    /// Unset [`Attribute::Shape`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_shape(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Shape(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Shapefile`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_shapefile(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Shapefile(s.into());
 
-    /// Unset `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn unset_sortv(&mut self) {
-        self.sortv = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set style information for components of the graph. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn get_style(&self) -> Option<&str> {
-        self.style.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Shapefile`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_shapefile(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Shapefile(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn set_style(&mut self, s: &str) {
-        self.style = Some(Style::new(s));
+    /// Set [`Attribute::Showboxes`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_showboxes(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Showboxes(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Showboxes`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_showboxes(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Showboxes(String::new());
 
-    /// Unset `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn unset_style(&mut self) {
-        self.style = None;
+        self.attributes.remove(&item)
     }
 
-    /// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn get_target(&self) -> Option<&str> {
-        self.target.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Sides`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sides(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sides(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn set_target(&mut self, s: &str) {
-        self.target = Some(Target::new(s));
+    /// Unset [`Attribute::Sides`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sides(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sides(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Skew`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_skew(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Skew(s.into());
 
-    /// Unset `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn unset_target(&mut self) {
-        self.target = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn get_tooltip(&self) -> Option<&str> {
-        self.tooltip.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Skew`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_skew(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Skew(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn set_tooltip(&mut self, s: &str) {
-        self.tooltip = Some(Tooltip::new(s));
+    /// Set [`Attribute::Sortv`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sortv(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sortv(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Sortv`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sortv(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sortv(String::new());
 
-    /// Unset `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn unset_tooltip(&mut self) {
-        self.tooltip = None;
+        self.attributes.remove(&item)
     }
 
-    /// Hyperlinks incorporated into device-dependent output. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn get_url(&self) -> Option<&str> {
-        self.url.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Style`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_style(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Style(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn set_url(&mut self, s: &str) {
-        self.url = Some(Url::new(s));
+    /// Unset [`Attribute::Style`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_style(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Style(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Target`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_target(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Target(s.into());
 
-    /// Unset `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn unset_url(&mut self) {
-        self.url = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Sets the coordinates of the vertices of the node's polygon, in inches. write only. [Read more](https://graphviz.org/docs/attrs/vertices/).
-    pub fn get_vertices(&self) -> Option<&str> {
-        self.vertices.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Target`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_target(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Target(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `vertices` attribute. [Read more](https://graphviz.org/docs/attrs/vertices/).
-    pub fn set_vertices(&mut self, s: &str) {
-        self.vertices = Some(Vertices::new(s));
+    /// Set [`Attribute::Tooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tooltip(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Tooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tooltip(String::new());
 
-    /// Unset `vertices` attribute. [Read more](https://graphviz.org/docs/attrs/vertices/).
-    pub fn unset_vertices(&mut self) {
-        self.vertices = None;
+        self.attributes.remove(&item)
     }
 
-    /// Width of node, in inches. [Read more](https://graphviz.org/docs/attrs/width/).
-    pub fn get_width(&self) -> Option<&str> {
-        self.width.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Url`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_url(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Url(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `width` attribute. [Read more](https://graphviz.org/docs/attrs/width/).
-    pub fn set_width(&mut self, s: &str) {
-        self.width = Some(Width::new(s));
+    /// Unset [`Attribute::Url`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_url(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Url(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Vertices`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_vertices(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Vertices(s.into());
 
-    /// Unset `width` attribute. [Read more](https://graphviz.org/docs/attrs/width/).
-    pub fn unset_width(&mut self) {
-        self.width = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// External label for a node or edge. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn get_xlabel(&self) -> Option<&str> {
-        self.xlabel.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Vertices`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_vertices(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Vertices(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `xlabel` attribute. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn set_xlabel(&mut self, s: &str) {
-        self.xlabel = Some(Xlabel::new(s));
+    /// Set [`Attribute::Width`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_width(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Width(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Width`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_width(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Width(String::new());
 
-    /// Unset `xlabel` attribute. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn unset_xlabel(&mut self) {
-        self.xlabel = None;
+        self.attributes.remove(&item)
     }
 
-    /// Position of an exterior label, in points. write only. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn get_xlp(&self) -> Option<&str> {
-        self.xlp.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Xlabel`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_xlabel(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Xlabel(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `xlp` attribute. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn set_xlp(&mut self, s: &str) {
-        self.xlp = Some(Xlp::new(s));
+    /// Unset [`Attribute::Xlabel`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_xlabel(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Xlabel(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Xlp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_xlp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Xlp(s.into());
 
-    /// Unset `xlp` attribute. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn unset_xlp(&mut self) {
-        self.xlp = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Z-coordinate value for 3D layouts and displays. [Read more](https://graphviz.org/docs/attrs/z/).
-    pub fn get_z(&self) -> Option<&str> {
-        self.z.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Xlp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_xlp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Xlp(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `z` attribute. [Read more](https://graphviz.org/docs/attrs/z/).
-    pub fn set_z(&mut self, s: &str) {
-        self.z = Some(Z::new(s));
+    /// Set [`Attribute::Z`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_z(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Z(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Z`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_z(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Z(String::new());
 
-    /// Unset `z` attribute. [Read more](https://graphviz.org/docs/attrs/z/).
-    pub fn unset_z(&mut self) {
-        self.z = None;
+        self.attributes.remove(&item)
     }
 }
 
-impl IntoIterator for NodeAttrs {
-    type Item = String;
+impl IntoIterator for VertexAttributes {
+    type Item = Attribute;
 
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, 49>>;
+    type IntoIter = hash_set::IntoIter<Attribute>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        [
-            self.area.map(|x| x.to_string()),
-            self.class.map(|x| x.to_string()),
-            self.color.map(|x| x.to_string()),
-            self.colorscheme.map(|x| x.to_string()),
-            self.comment.map(|x| x.to_string()),
-            self.distortion.map(|x| x.to_string()),
-            self.fillcolor.map(|x| x.to_string()),
-            self.fixedsize.map(|x| x.to_string()),
-            self.fontcolor.map(|x| x.to_string()),
-            self.fontname.map(|x| x.to_string()),
-            self.fontsize.map(|x| x.to_string()),
-            self.gradientangle.map(|x| x.to_string()),
-            self.group.map(|x| x.to_string()),
-            self.height.map(|x| x.to_string()),
-            self.href.map(|x| x.to_string()),
-            self.id.map(|x| x.to_string()),
-            self.image.map(|x| x.to_string()),
-            self.imagepos.map(|x| x.to_string()),
-            self.imagescale.map(|x| x.to_string()),
-            self.label.map(|x| x.to_string()),
-            self.labelloc.map(|x| x.to_string()),
-            self.layer.map(|x| x.to_string()),
-            self.margin.map(|x| x.to_string()),
-            self.nojustify.map(|x| x.to_string()),
-            self.ordering.map(|x| x.to_string()),
-            self.orientation.map(|x| x.to_string()),
-            self.penwidth.map(|x| x.to_string()),
-            self.peripheries.map(|x| x.to_string()),
-            self.pin.map(|x| x.to_string()),
-            self.pos.map(|x| x.to_string()),
-            self.rects.map(|x| x.to_string()),
-            self.regular.map(|x| x.to_string()),
-            self.root.map(|x| x.to_string()),
-            self.samplepoints.map(|x| x.to_string()),
-            self.shape.map(|x| x.to_string()),
-            self.shapefile.map(|x| x.to_string()),
-            self.showboxes.map(|x| x.to_string()),
-            self.sides.map(|x| x.to_string()),
-            self.skew.map(|x| x.to_string()),
-            self.sortv.map(|x| x.to_string()),
-            self.style.map(|x| x.to_string()),
-            self.target.map(|x| x.to_string()),
-            self.tooltip.map(|x| x.to_string()),
-            self.url.map(|x| x.to_string()),
-            self.vertices.map(|x| x.to_string()),
-            self.width.map(|x| x.to_string()),
-            self.xlabel.map(|x| x.to_string()),
-            self.xlp.map(|x| x.to_string()),
-            self.z.map(|x| x.to_string()),
-        ]
-        .into_iter()
-        .flatten()
+        self.attributes.into_iter()
     }
 }
 
 /// Cluster attributes.
 #[derive(Clone, Debug, Default)]
-pub struct ClusterAttrs {
-    area: Option<Area>,
-    bgcolor: Option<Bgcolor>,
-    class: Option<Class>,
-    cluster: Option<Cluster>,
-    color: Option<Color>,
-    colorscheme: Option<Colorscheme>,
-    fillcolor: Option<Fillcolor>,
-    fontcolor: Option<Fontcolor>,
-    fontname: Option<Fontname>,
-    fontsize: Option<Fontsize>,
-    gradientangle: Option<Gradientangle>,
-    href: Option<Href>,
-    id: Option<Id>,
-    k: Option<K>,
-    label: Option<Label>,
-    labeljust: Option<Labeljust>,
-    labelloc: Option<Labelloc>,
-    layer: Option<Layer>,
-    lheight: Option<Lheight>,
-    lp: Option<Lp>,
-    lwidth: Option<Lwidth>,
-    margin: Option<Margin>,
-    nojustify: Option<Nojustify>,
-    pencolor: Option<Pencolor>,
-    penwidth: Option<Penwidth>,
-    peripheries: Option<Peripheries>,
-    sortv: Option<Sortv>,
-    style: Option<Style>,
-    target: Option<Target>,
-    tooltip: Option<Tooltip>,
-    url: Option<Url>,
+pub struct ClusterAttributes {
+    attributes: HashSet<Attribute>,
 }
 
-impl ClusterAttrs {
-    /// Indicates the preferred area for a node or empty cluster. patchwork only. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn get_area(&self) -> Option<&str> {
-        self.area.as_ref().map(|x| x.0.as_str())
-    }
+impl ClusterAttributes {
+    /// Set attribute from `key` and `value` raw parts. Returns whether the attribute was newly set.
+    ///
+    /// # Panics
+    ///
+    /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
+    ///
+    pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let item = match key {
+            "area" => Attribute::Area(value.into()),
+            "bgcolor" => Attribute::Bgcolor(value.into()),
+            "class" => Attribute::Class(value.into()),
+            "cluster" => Attribute::Cluster(value.into()),
+            "color" => Attribute::Color(value.into()),
+            "colorscheme" => Attribute::Colorscheme(value.into()),
+            "fillcolor" => Attribute::Fillcolor(value.into()),
+            "fontcolor" => Attribute::Fontcolor(value.into()),
+            "fontname" => Attribute::Fontname(value.into()),
+            "fontsize" => Attribute::Fontsize(value.into()),
+            "gradientangle" => Attribute::Gradientangle(value.into()),
+            "href" => Attribute::Href(value.into()),
+            "id" => Attribute::Id(value.into()),
+            "K" => Attribute::K(value.into()),
+            "label" => Attribute::Label(value.into()),
+            "labeljust" => Attribute::Labeljust(value.into()),
+            "labelloc" => Attribute::Labelloc(value.into()),
+            "layer" => Attribute::Layer(value.into()),
+            "lheight" => Attribute::Lheight(value.into()),
+            "lp" => Attribute::Lp(value.into()),
+            "lwidth" => Attribute::Lwidth(value.into()),
+            "margin" => Attribute::Margin(value.into()),
+            "nojustify" => Attribute::Nojustify(value.into()),
+            "pencolor" => Attribute::Pencolor(value.into()),
+            "penwidth" => Attribute::Penwidth(value.into()),
+            "peripheries" => Attribute::Peripheries(value.into()),
+            "sortv" => Attribute::Sortv(value.into()),
+            "style" => Attribute::Style(value.into()),
+            "target" => Attribute::Target(value.into()),
+            "tooltip" => Attribute::Tooltip(value.into()),
+            "URL" => Attribute::Url(value.into()),
+            _ => panic!("Invalid attribute key `{key}` for ClusterAttributes"),
+        };
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Set [`Attribute::Area`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_area(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Area(s.into());
+
+        self.attributes.replace(item).is_none()
+    }
 
-    /// Set `area` attribute. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn set_area(&mut self, s: &str) {
-        self.area = Some(Area::new(s));
-    }
+    /// Unset [`Attribute::Area`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_area(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Area(String::new());
 
-    /// Unset `area` attribute. [Read more](https://graphviz.org/docs/attrs/area/).
-    pub fn unset_area(&mut self) {
-        self.area = None;
+        self.attributes.remove(&item)
     }
 
-    /// Canvas background color. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn get_bgcolor(&self) -> Option<&str> {
-        self.bgcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Bgcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_bgcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Bgcolor(s.into());
 
-    /// Set `bgcolor` attribute. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn set_bgcolor(&mut self, s: &str) {
-        self.bgcolor = Some(Bgcolor::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `bgcolor` attribute. [Read more](https://graphviz.org/docs/attrs/bgcolor/).
-    pub fn unset_bgcolor(&mut self) {
-        self.bgcolor = None;
-    }
+    /// Unset [`Attribute::Bgcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_bgcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Bgcolor(String::new());
 
-    /// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn get_class(&self) -> Option<&str> {
-        self.class.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn set_class(&mut self, s: &str) {
-        self.class = Some(Class::new(s));
-    }
+    /// Set [`Attribute::Class`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_class(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Class(s.into());
 
-    /// Unset `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn unset_class(&mut self) {
-        self.class = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Whether the subgraph is a cluster. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn get_cluster(&self) -> Option<&str> {
-        self.cluster.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Class`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_class(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Class(String::new());
 
-    /// Set `cluster` attribute. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn set_cluster(&mut self, s: &str) {
-        self.cluster = Some(Cluster::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `cluster` attribute. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn unset_cluster(&mut self) {
-        self.cluster = None;
-    }
+    /// Set [`Attribute::Cluster`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_cluster(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Cluster(s.into());
 
-    /// Basic drawing color for graphics, not text. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn get_color(&self) -> Option<&str> {
-        self.color.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn set_color(&mut self, s: &str) {
-        self.color = Some(Color::new(s));
-    }
+    /// Unset [`Attribute::Cluster`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_cluster(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Cluster(String::new());
 
-    /// Unset `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn unset_color(&mut self) {
-        self.color = None;
+        self.attributes.remove(&item)
     }
 
-    /// A color scheme namespace: the context for interpreting color names. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn get_colorscheme(&self) -> Option<&str> {
-        self.colorscheme.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Color`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_color(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Color(s.into());
 
-    /// Set `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn set_colorscheme(&mut self, s: &str) {
-        self.colorscheme = Some(Colorscheme::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn unset_colorscheme(&mut self) {
-        self.colorscheme = None;
-    }
+    /// Unset [`Attribute::Color`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_color(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Color(String::new());
 
-    /// Color used to fill the background of a node or cluster. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn get_fillcolor(&self) -> Option<&str> {
-        self.fillcolor.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn set_fillcolor(&mut self, s: &str) {
-        self.fillcolor = Some(Fillcolor::new(s));
-    }
+    /// Set [`Attribute::Colorscheme`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_colorscheme(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Colorscheme(s.into());
 
-    /// Unset `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn unset_fillcolor(&mut self) {
-        self.fillcolor = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Color used for text. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn get_fontcolor(&self) -> Option<&str> {
-        self.fontcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Colorscheme`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_colorscheme(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Colorscheme(String::new());
 
-    /// Set `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn set_fontcolor(&mut self, s: &str) {
-        self.fontcolor = Some(Fontcolor::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn unset_fontcolor(&mut self) {
-        self.fontcolor = None;
-    }
+    /// Set [`Attribute::Fillcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fillcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fillcolor(s.into());
 
-    /// Font used for text. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn get_fontname(&self) -> Option<&str> {
-        self.fontname.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn set_fontname(&mut self, s: &str) {
-        self.fontname = Some(Fontname::new(s));
-    }
+    /// Unset [`Attribute::Fillcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fillcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fillcolor(String::new());
 
-    /// Unset `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn unset_fontname(&mut self) {
-        self.fontname = None;
+        self.attributes.remove(&item)
     }
 
-    /// Font size, in points, used for text. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn get_fontsize(&self) -> Option<&str> {
-        self.fontsize.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Fontcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontcolor(s.into());
 
-    /// Set `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn set_fontsize(&mut self, s: &str) {
-        self.fontsize = Some(Fontsize::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn unset_fontsize(&mut self) {
-        self.fontsize = None;
-    }
+    /// Unset [`Attribute::Fontcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontcolor(String::new());
 
-    /// If a gradient fill is being used, this determines the angle of the fill. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn get_gradientangle(&self) -> Option<&str> {
-        self.gradientangle.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn set_gradientangle(&mut self, s: &str) {
-        self.gradientangle = Some(Gradientangle::new(s));
-    }
+    /// Set [`Attribute::Fontname`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontname(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontname(s.into());
 
-    /// Unset `gradientangle` attribute. [Read more](https://graphviz.org/docs/attrs/gradientangle/).
-    pub fn unset_gradientangle(&mut self) {
-        self.gradientangle = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Synonym for URL. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn get_href(&self) -> Option<&str> {
-        self.href.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fontname`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontname(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontname(String::new());
 
-    /// Set `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn set_href(&mut self, s: &str) {
-        self.href = Some(Href::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn unset_href(&mut self) {
-        self.href = None;
-    }
+    /// Set [`Attribute::Fontsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontsize(s.into());
 
-    /// Identifier for graph objects. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn get_id(&self) -> Option<&str> {
-        self.id.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn set_id(&mut self, s: &str) {
-        self.id = Some(Id::new(s));
-    }
+    /// Unset [`Attribute::Fontsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontsize(String::new());
 
-    /// Unset `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn unset_id(&mut self) {
-        self.id = None;
+        self.attributes.remove(&item)
     }
 
-    /// Spring constant used in virtual physical model. fdp, sfdp only. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn get_k(&self) -> Option<&str> {
-        self.k.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Gradientangle`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_gradientangle(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Gradientangle(s.into());
 
-    /// Set `k` attribute. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn set_k(&mut self, s: &str) {
-        self.k = Some(K::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `k` attribute. [Read more](https://graphviz.org/docs/attrs/K/).
-    pub fn unset_k(&mut self) {
-        self.k = None;
-    }
+    /// Unset [`Attribute::Gradientangle`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_gradientangle(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Gradientangle(String::new());
 
-    /// Text label attached to objects. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn get_label(&self) -> Option<&str> {
-        self.label.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn set_label(&mut self, s: &str) {
-        self.label = Some(Label::new(s));
-    }
+    /// Set [`Attribute::Href`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_href(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Href(s.into());
 
-    /// Unset `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn unset_label(&mut self) {
-        self.label = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Justification for graph & cluster labels. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn get_labeljust(&self) -> Option<&str> {
-        self.labeljust.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Href`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_href(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Href(String::new());
 
-    /// Set `labeljust` attribute. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn set_labeljust(&mut self, s: &str) {
-        self.labeljust = Some(Labeljust::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `labeljust` attribute. [Read more](https://graphviz.org/docs/attrs/labeljust/).
-    pub fn unset_labeljust(&mut self) {
-        self.labeljust = None;
-    }
+    /// Set [`Attribute::Id`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_id(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Id(s.into());
 
-    /// Vertical placement of labels for nodes, root graphs and clusters. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn get_labelloc(&self) -> Option<&str> {
-        self.labelloc.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn set_labelloc(&mut self, s: &str) {
-        self.labelloc = Some(Labelloc::new(s));
-    }
+    /// Unset [`Attribute::Id`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_id(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Id(String::new());
 
-    /// Unset `labelloc` attribute. [Read more](https://graphviz.org/docs/attrs/labelloc/).
-    pub fn unset_labelloc(&mut self) {
-        self.labelloc = None;
+        self.attributes.remove(&item)
     }
 
-    /// Specifies layers in which the node, edge or cluster is present. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn get_layer(&self) -> Option<&str> {
-        self.layer.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::K`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_k(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::K(s.into());
 
-    /// Set `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn set_layer(&mut self, s: &str) {
-        self.layer = Some(Layer::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn unset_layer(&mut self) {
-        self.layer = None;
-    }
+    /// Unset [`Attribute::K`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_k(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::K(String::new());
 
-    /// Height of graph or cluster label, in inches. write only. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn get_lheight(&self) -> Option<&str> {
-        self.lheight.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `lheight` attribute. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn set_lheight(&mut self, s: &str) {
-        self.lheight = Some(Lheight::new(s));
-    }
+    /// Set [`Attribute::Label`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_label(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Label(s.into());
 
-    /// Unset `lheight` attribute. [Read more](https://graphviz.org/docs/attrs/lheight/).
-    pub fn unset_lheight(&mut self) {
-        self.lheight = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Label center position. write only. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn get_lp(&self) -> Option<&str> {
-        self.lp.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Label`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_label(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Label(String::new());
 
-    /// Set `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn set_lp(&mut self, s: &str) {
-        self.lp = Some(Lp::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn unset_lp(&mut self) {
-        self.lp = None;
-    }
+    /// Set [`Attribute::Labeljust`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labeljust(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labeljust(s.into());
 
-    /// Width of graph or cluster label, in inches. write only. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn get_lwidth(&self) -> Option<&str> {
-        self.lwidth.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `lwidth` attribute. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn set_lwidth(&mut self, s: &str) {
-        self.lwidth = Some(Lwidth::new(s));
-    }
+    /// Unset [`Attribute::Labeljust`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labeljust(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labeljust(String::new());
 
-    /// Unset `lwidth` attribute. [Read more](https://graphviz.org/docs/attrs/lwidth/).
-    pub fn unset_lwidth(&mut self) {
-        self.lwidth = None;
+        self.attributes.remove(&item)
     }
 
-    /// For graphs, this sets x and y margins of canvas, in inches. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn get_margin(&self) -> Option<&str> {
-        self.margin.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Labelloc`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelloc(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelloc(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Labelloc`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelloc(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelloc(String::new());
 
-    /// Set `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn set_margin(&mut self, s: &str) {
-        self.margin = Some(Margin::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `margin` attribute. [Read more](https://graphviz.org/docs/attrs/margin/).
-    pub fn unset_margin(&mut self) {
-        self.margin = None;
+    /// Set [`Attribute::Layer`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layer(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layer(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Layer`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layer(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layer(String::new());
 
-    /// Whether to justify multiline text vs the previous text line (rather than the side of the container).. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn get_nojustify(&self) -> Option<&str> {
-        self.nojustify.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn set_nojustify(&mut self, s: &str) {
-        self.nojustify = Some(Nojustify::new(s));
+    /// Set [`Attribute::Lheight`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lheight(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lheight(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Lheight`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lheight(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lheight(String::new());
 
-    /// Unset `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn unset_nojustify(&mut self) {
-        self.nojustify = None;
+        self.attributes.remove(&item)
     }
 
-    /// Color used to draw the bounding box around a cluster. [Read more](https://graphviz.org/docs/attrs/pencolor/).
-    pub fn get_pencolor(&self) -> Option<&str> {
-        self.pencolor.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Lp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lp(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Lp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lp(String::new());
 
-    /// Set `pencolor` attribute. [Read more](https://graphviz.org/docs/attrs/pencolor/).
-    pub fn set_pencolor(&mut self, s: &str) {
-        self.pencolor = Some(Pencolor::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `pencolor` attribute. [Read more](https://graphviz.org/docs/attrs/pencolor/).
-    pub fn unset_pencolor(&mut self) {
-        self.pencolor = None;
+    /// Set [`Attribute::Lwidth`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lwidth(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lwidth(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Lwidth`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lwidth(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lwidth(String::new());
 
-    /// Specifies the width of the pen, in points, used to draw lines and curves. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn get_penwidth(&self) -> Option<&str> {
-        self.penwidth.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn set_penwidth(&mut self, s: &str) {
-        self.penwidth = Some(Penwidth::new(s));
+    /// Set [`Attribute::Margin`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_margin(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Margin(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Margin`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_margin(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Margin(String::new());
 
-    /// Unset `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn unset_penwidth(&mut self) {
-        self.penwidth = None;
+        self.attributes.remove(&item)
     }
 
-    /// Set number of peripheries used in polygonal shapes and cluster boundaries. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn get_peripheries(&self) -> Option<&str> {
-        self.peripheries.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Nojustify`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nojustify(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nojustify(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Nojustify`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nojustify(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nojustify(String::new());
 
-    /// Set `peripheries` attribute. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn set_peripheries(&mut self, s: &str) {
-        self.peripheries = Some(Peripheries::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `peripheries` attribute. [Read more](https://graphviz.org/docs/attrs/peripheries/).
-    pub fn unset_peripheries(&mut self) {
-        self.peripheries = None;
+    /// Set [`Attribute::Pencolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pencolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pencolor(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Pencolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pencolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pencolor(String::new());
 
-    /// Sort order of graph components for ordering packmode packing.. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn get_sortv(&self) -> Option<&str> {
-        self.sortv.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn set_sortv(&mut self, s: &str) {
-        self.sortv = Some(Sortv::new(s));
+    /// Set [`Attribute::Penwidth`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_penwidth(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Penwidth(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Penwidth`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_penwidth(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Penwidth(String::new());
 
-    /// Unset `sortv` attribute. [Read more](https://graphviz.org/docs/attrs/sortv/).
-    pub fn unset_sortv(&mut self) {
-        self.sortv = None;
+        self.attributes.remove(&item)
     }
 
-    /// Set style information for components of the graph. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn get_style(&self) -> Option<&str> {
-        self.style.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Peripheries`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_peripheries(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Peripheries(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Peripheries`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_peripheries(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Peripheries(String::new());
 
-    /// Set `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn set_style(&mut self, s: &str) {
-        self.style = Some(Style::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn unset_style(&mut self) {
-        self.style = None;
+    /// Set [`Attribute::Sortv`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sortv(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sortv(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Sortv`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sortv(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sortv(String::new());
 
-    /// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn get_target(&self) -> Option<&str> {
-        self.target.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn set_target(&mut self, s: &str) {
-        self.target = Some(Target::new(s));
+    /// Set [`Attribute::Style`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_style(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Style(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Style`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_style(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Style(String::new());
 
-    /// Unset `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn unset_target(&mut self) {
-        self.target = None;
+        self.attributes.remove(&item)
     }
 
-    /// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn get_tooltip(&self) -> Option<&str> {
-        self.tooltip.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Target`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_target(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Target(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Target`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_target(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Target(String::new());
 
-    /// Set `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn set_tooltip(&mut self, s: &str) {
-        self.tooltip = Some(Tooltip::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn unset_tooltip(&mut self) {
-        self.tooltip = None;
+    /// Set [`Attribute::Tooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tooltip(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Tooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tooltip(String::new());
 
-    /// Hyperlinks incorporated into device-dependent output. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn get_url(&self) -> Option<&str> {
-        self.url.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn set_url(&mut self, s: &str) {
-        self.url = Some(Url::new(s));
+    /// Set [`Attribute::Url`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_url(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Url(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Url`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_url(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Url(String::new());
 
-    /// Unset `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn unset_url(&mut self) {
-        self.url = None;
+        self.attributes.remove(&item)
     }
 }
 
-impl IntoIterator for ClusterAttrs {
-    type Item = String;
+impl IntoIterator for ClusterAttributes {
+    type Item = Attribute;
 
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, 31>>;
+    type IntoIter = hash_set::IntoIter<Attribute>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        [
-            self.area.map(|x| x.to_string()),
-            self.bgcolor.map(|x| x.to_string()),
-            self.class.map(|x| x.to_string()),
-            self.cluster.map(|x| x.to_string()),
-            self.color.map(|x| x.to_string()),
-            self.colorscheme.map(|x| x.to_string()),
-            self.fillcolor.map(|x| x.to_string()),
-            self.fontcolor.map(|x| x.to_string()),
-            self.fontname.map(|x| x.to_string()),
-            self.fontsize.map(|x| x.to_string()),
-            self.gradientangle.map(|x| x.to_string()),
-            self.href.map(|x| x.to_string()),
-            self.id.map(|x| x.to_string()),
-            self.k.map(|x| x.to_string()),
-            self.label.map(|x| x.to_string()),
-            self.labeljust.map(|x| x.to_string()),
-            self.labelloc.map(|x| x.to_string()),
-            self.layer.map(|x| x.to_string()),
-            self.lheight.map(|x| x.to_string()),
-            self.lp.map(|x| x.to_string()),
-            self.lwidth.map(|x| x.to_string()),
-            self.margin.map(|x| x.to_string()),
-            self.nojustify.map(|x| x.to_string()),
-            self.pencolor.map(|x| x.to_string()),
-            self.penwidth.map(|x| x.to_string()),
-            self.peripheries.map(|x| x.to_string()),
-            self.sortv.map(|x| x.to_string()),
-            self.style.map(|x| x.to_string()),
-            self.target.map(|x| x.to_string()),
-            self.tooltip.map(|x| x.to_string()),
-            self.url.map(|x| x.to_string()),
-        ]
-        .into_iter()
-        .flatten()
+        self.attributes.into_iter()
     }
 }
 
 /// Edge attributes.
 #[derive(Clone, Debug, Default)]
-pub struct EdgeAttrs {
-    arrowhead: Option<Arrowhead>,
-    arrowsize: Option<Arrowsize>,
-    arrowtail: Option<Arrowtail>,
-    class: Option<Class>,
-    color: Option<Color>,
-    colorscheme: Option<Colorscheme>,
-    comment: Option<Comment>,
-    constraint: Option<Constraint>,
-    decorate: Option<Decorate>,
-    dir: Option<Dir>,
-    edgehref: Option<Edgehref>,
-    edgetarget: Option<Edgetarget>,
-    edgetooltip: Option<Edgetooltip>,
-    edgeurl: Option<Edgeurl>,
-    fillcolor: Option<Fillcolor>,
-    fontcolor: Option<Fontcolor>,
-    fontname: Option<Fontname>,
-    fontsize: Option<Fontsize>,
-    head_lp: Option<HeadLp>,
-    headclip: Option<Headclip>,
-    headhref: Option<Headhref>,
-    headlabel: Option<Headlabel>,
-    headport: Option<Headport>,
-    headtarget: Option<Headtarget>,
-    headtooltip: Option<Headtooltip>,
-    headurl: Option<Headurl>,
-    href: Option<Href>,
-    id: Option<Id>,
-    label: Option<Label>,
-    labelangle: Option<Labelangle>,
-    labeldistance: Option<Labeldistance>,
-    labelfloat: Option<Labelfloat>,
-    labelfontcolor: Option<Labelfontcolor>,
-    labelfontname: Option<Labelfontname>,
-    labelfontsize: Option<Labelfontsize>,
-    labelhref: Option<Labelhref>,
-    labeltarget: Option<Labeltarget>,
-    labeltooltip: Option<Labeltooltip>,
-    labelurl: Option<Labelurl>,
-    layer: Option<Layer>,
-    len: Option<Len>,
-    lhead: Option<Lhead>,
-    lp: Option<Lp>,
-    ltail: Option<Ltail>,
-    minlen: Option<Minlen>,
-    nojustify: Option<Nojustify>,
-    penwidth: Option<Penwidth>,
-    pos: Option<Pos>,
-    samehead: Option<Samehead>,
-    sametail: Option<Sametail>,
-    showboxes: Option<Showboxes>,
-    style: Option<Style>,
-    tail_lp: Option<TailLp>,
-    tailclip: Option<Tailclip>,
-    tailhref: Option<Tailhref>,
-    taillabel: Option<Taillabel>,
-    tailport: Option<Tailport>,
-    tailtarget: Option<Tailtarget>,
-    tailtooltip: Option<Tailtooltip>,
-    tailurl: Option<Tailurl>,
-    target: Option<Target>,
-    tooltip: Option<Tooltip>,
-    url: Option<Url>,
-    weight: Option<Weight>,
-    xlabel: Option<Xlabel>,
-    xlp: Option<Xlp>,
+pub struct EdgeAttributes {
+    attributes: HashSet<Attribute>,
 }
 
-impl EdgeAttrs {
-    /// Style of arrowhead on the head node of an edge. [Read more](https://graphviz.org/docs/attrs/arrowhead/).
-    pub fn get_arrowhead(&self) -> Option<&str> {
-        self.arrowhead.as_ref().map(|x| x.0.as_str())
-    }
+impl EdgeAttributes {
+    /// Set attribute from `key` and `value` raw parts. Returns whether the attribute was newly set.
+    ///
+    /// # Panics
+    ///
+    /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
+    ///
+    pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let item = match key {
+            "arrowhead" => Attribute::Arrowhead(value.into()),
+            "arrowsize" => Attribute::Arrowsize(value.into()),
+            "arrowtail" => Attribute::Arrowtail(value.into()),
+            "class" => Attribute::Class(value.into()),
+            "color" => Attribute::Color(value.into()),
+            "colorscheme" => Attribute::Colorscheme(value.into()),
+            "comment" => Attribute::Comment(value.into()),
+            "constraint" => Attribute::Constraint(value.into()),
+            "decorate" => Attribute::Decorate(value.into()),
+            "dir" => Attribute::Dir(value.into()),
+            "edgehref" => Attribute::Edgehref(value.into()),
+            "edgetarget" => Attribute::Edgetarget(value.into()),
+            "edgetooltip" => Attribute::Edgetooltip(value.into()),
+            "edgeURL" => Attribute::Edgeurl(value.into()),
+            "fillcolor" => Attribute::Fillcolor(value.into()),
+            "fontcolor" => Attribute::Fontcolor(value.into()),
+            "fontname" => Attribute::Fontname(value.into()),
+            "fontsize" => Attribute::Fontsize(value.into()),
+            "head_lp" => Attribute::HeadLp(value.into()),
+            "headclip" => Attribute::Headclip(value.into()),
+            "headhref" => Attribute::Headhref(value.into()),
+            "headlabel" => Attribute::Headlabel(value.into()),
+            "headport" => Attribute::Headport(value.into()),
+            "headtarget" => Attribute::Headtarget(value.into()),
+            "headtooltip" => Attribute::Headtooltip(value.into()),
+            "headURL" => Attribute::Headurl(value.into()),
+            "href" => Attribute::Href(value.into()),
+            "id" => Attribute::Id(value.into()),
+            "label" => Attribute::Label(value.into()),
+            "labelangle" => Attribute::Labelangle(value.into()),
+            "labeldistance" => Attribute::Labeldistance(value.into()),
+            "labelfloat" => Attribute::Labelfloat(value.into()),
+            "labelfontcolor" => Attribute::Labelfontcolor(value.into()),
+            "labelfontname" => Attribute::Labelfontname(value.into()),
+            "labelfontsize" => Attribute::Labelfontsize(value.into()),
+            "labelhref" => Attribute::Labelhref(value.into()),
+            "labeltarget" => Attribute::Labeltarget(value.into()),
+            "labeltooltip" => Attribute::Labeltooltip(value.into()),
+            "labelURL" => Attribute::Labelurl(value.into()),
+            "layer" => Attribute::Layer(value.into()),
+            "len" => Attribute::Len(value.into()),
+            "lhead" => Attribute::Lhead(value.into()),
+            "lp" => Attribute::Lp(value.into()),
+            "ltail" => Attribute::Ltail(value.into()),
+            "minlen" => Attribute::Minlen(value.into()),
+            "nojustify" => Attribute::Nojustify(value.into()),
+            "penwidth" => Attribute::Penwidth(value.into()),
+            "pos" => Attribute::Pos(value.into()),
+            "samehead" => Attribute::Samehead(value.into()),
+            "sametail" => Attribute::Sametail(value.into()),
+            "showboxes" => Attribute::Showboxes(value.into()),
+            "style" => Attribute::Style(value.into()),
+            "tail_lp" => Attribute::TailLp(value.into()),
+            "tailclip" => Attribute::Tailclip(value.into()),
+            "tailhref" => Attribute::Tailhref(value.into()),
+            "taillabel" => Attribute::Taillabel(value.into()),
+            "tailport" => Attribute::Tailport(value.into()),
+            "tailtarget" => Attribute::Tailtarget(value.into()),
+            "tailtooltip" => Attribute::Tailtooltip(value.into()),
+            "tailURL" => Attribute::Tailurl(value.into()),
+            "target" => Attribute::Target(value.into()),
+            "tooltip" => Attribute::Tooltip(value.into()),
+            "URL" => Attribute::Url(value.into()),
+            "weight" => Attribute::Weight(value.into()),
+            "xlabel" => Attribute::Xlabel(value.into()),
+            "xlp" => Attribute::Xlp(value.into()),
+            _ => panic!("Invalid attribute key `{key}` for EdgeAttributes"),
+        };
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Set [`Attribute::Arrowhead`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_arrowhead(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Arrowhead(s.into());
+
+        self.attributes.replace(item).is_none()
+    }
+
+    /// Unset [`Attribute::Arrowhead`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_arrowhead(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Arrowhead(String::new());
+
+        self.attributes.remove(&item)
+    }
+
+    /// Set [`Attribute::Arrowsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_arrowsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Arrowsize(s.into());
 
-    /// Set `arrowhead` attribute. [Read more](https://graphviz.org/docs/attrs/arrowhead/).
-    pub fn set_arrowhead(&mut self, s: &str) {
-        self.arrowhead = Some(Arrowhead::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `arrowhead` attribute. [Read more](https://graphviz.org/docs/attrs/arrowhead/).
-    pub fn unset_arrowhead(&mut self) {
-        self.arrowhead = None;
-    }
+    /// Unset [`Attribute::Arrowsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_arrowsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Arrowsize(String::new());
 
-    /// Multiplicative scale factor for arrowheads. [Read more](https://graphviz.org/docs/attrs/arrowsize/).
-    pub fn get_arrowsize(&self) -> Option<&str> {
-        self.arrowsize.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `arrowsize` attribute. [Read more](https://graphviz.org/docs/attrs/arrowsize/).
-    pub fn set_arrowsize(&mut self, s: &str) {
-        self.arrowsize = Some(Arrowsize::new(s));
-    }
+    /// Set [`Attribute::Arrowtail`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_arrowtail(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Arrowtail(s.into());
 
-    /// Unset `arrowsize` attribute. [Read more](https://graphviz.org/docs/attrs/arrowsize/).
-    pub fn unset_arrowsize(&mut self) {
-        self.arrowsize = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Style of arrowhead on the tail node of an edge. [Read more](https://graphviz.org/docs/attrs/arrowtail/).
-    pub fn get_arrowtail(&self) -> Option<&str> {
-        self.arrowtail.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Arrowtail`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_arrowtail(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Arrowtail(String::new());
 
-    /// Set `arrowtail` attribute. [Read more](https://graphviz.org/docs/attrs/arrowtail/).
-    pub fn set_arrowtail(&mut self, s: &str) {
-        self.arrowtail = Some(Arrowtail::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `arrowtail` attribute. [Read more](https://graphviz.org/docs/attrs/arrowtail/).
-    pub fn unset_arrowtail(&mut self) {
-        self.arrowtail = None;
-    }
+    /// Set [`Attribute::Class`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_class(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Class(s.into());
 
-    /// Classnames to attach to the node, edge, graph, or cluster's SVG element. svg only. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn get_class(&self) -> Option<&str> {
-        self.class.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn set_class(&mut self, s: &str) {
-        self.class = Some(Class::new(s));
-    }
+    /// Unset [`Attribute::Class`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_class(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Class(String::new());
 
-    /// Unset `class` attribute. [Read more](https://graphviz.org/docs/attrs/class/).
-    pub fn unset_class(&mut self) {
-        self.class = None;
+        self.attributes.remove(&item)
     }
 
-    /// Basic drawing color for graphics, not text. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn get_color(&self) -> Option<&str> {
-        self.color.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Color`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_color(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Color(s.into());
 
-    /// Set `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn set_color(&mut self, s: &str) {
-        self.color = Some(Color::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `color` attribute. [Read more](https://graphviz.org/docs/attrs/color/).
-    pub fn unset_color(&mut self) {
-        self.color = None;
-    }
+    /// Unset [`Attribute::Color`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_color(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Color(String::new());
 
-    /// A color scheme namespace: the context for interpreting color names. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn get_colorscheme(&self) -> Option<&str> {
-        self.colorscheme.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn set_colorscheme(&mut self, s: &str) {
-        self.colorscheme = Some(Colorscheme::new(s));
-    }
+    /// Set [`Attribute::Colorscheme`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_colorscheme(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Colorscheme(s.into());
 
-    /// Unset `colorscheme` attribute. [Read more](https://graphviz.org/docs/attrs/colorscheme/).
-    pub fn unset_colorscheme(&mut self) {
-        self.colorscheme = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Comments are inserted into output. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn get_comment(&self) -> Option<&str> {
-        self.comment.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Colorscheme`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_colorscheme(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Colorscheme(String::new());
 
-    /// Set `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn set_comment(&mut self, s: &str) {
-        self.comment = Some(Comment::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `comment` attribute. [Read more](https://graphviz.org/docs/attrs/comment/).
-    pub fn unset_comment(&mut self) {
-        self.comment = None;
-    }
+    /// Set [`Attribute::Comment`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_comment(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Comment(s.into());
 
-    /// If false, the edge is not used in ranking the nodes. dot only. [Read more](https://graphviz.org/docs/attrs/constraint/).
-    pub fn get_constraint(&self) -> Option<&str> {
-        self.constraint.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `constraint` attribute. [Read more](https://graphviz.org/docs/attrs/constraint/).
-    pub fn set_constraint(&mut self, s: &str) {
-        self.constraint = Some(Constraint::new(s));
-    }
+    /// Unset [`Attribute::Comment`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_comment(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Comment(String::new());
 
-    /// Unset `constraint` attribute. [Read more](https://graphviz.org/docs/attrs/constraint/).
-    pub fn unset_constraint(&mut self) {
-        self.constraint = None;
+        self.attributes.remove(&item)
     }
 
-    /// Whether to connect the edge label to the edge with a line. [Read more](https://graphviz.org/docs/attrs/decorate/).
-    pub fn get_decorate(&self) -> Option<&str> {
-        self.decorate.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Constraint`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_constraint(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Constraint(s.into());
 
-    /// Set `decorate` attribute. [Read more](https://graphviz.org/docs/attrs/decorate/).
-    pub fn set_decorate(&mut self, s: &str) {
-        self.decorate = Some(Decorate::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `decorate` attribute. [Read more](https://graphviz.org/docs/attrs/decorate/).
-    pub fn unset_decorate(&mut self) {
-        self.decorate = None;
-    }
+    /// Unset [`Attribute::Constraint`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_constraint(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Constraint(String::new());
 
-    /// Edge type for drawing arrowheads. [Read more](https://graphviz.org/docs/attrs/dir/).
-    pub fn get_dir(&self) -> Option<&str> {
-        self.dir.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `dir` attribute. [Read more](https://graphviz.org/docs/attrs/dir/).
-    pub fn set_dir(&mut self, s: &str) {
-        self.dir = Some(Dir::new(s));
-    }
+    /// Set [`Attribute::Decorate`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_decorate(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Decorate(s.into());
 
-    /// Unset `dir` attribute. [Read more](https://graphviz.org/docs/attrs/dir/).
-    pub fn unset_dir(&mut self) {
-        self.dir = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Synonym for edgeURL. map, svg only. [Read more](https://graphviz.org/docs/attrs/edgehref/).
-    pub fn get_edgehref(&self) -> Option<&str> {
-        self.edgehref.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Decorate`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_decorate(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Decorate(String::new());
 
-    /// Set `edgehref` attribute. [Read more](https://graphviz.org/docs/attrs/edgehref/).
-    pub fn set_edgehref(&mut self, s: &str) {
-        self.edgehref = Some(Edgehref::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `edgehref` attribute. [Read more](https://graphviz.org/docs/attrs/edgehref/).
-    pub fn unset_edgehref(&mut self) {
-        self.edgehref = None;
-    }
+    /// Set [`Attribute::Dir`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_dir(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Dir(s.into());
 
-    /// Browser window to use for the edgeURL link. map, svg only. [Read more](https://graphviz.org/docs/attrs/edgetarget/).
-    pub fn get_edgetarget(&self) -> Option<&str> {
-        self.edgetarget.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `edgetarget` attribute. [Read more](https://graphviz.org/docs/attrs/edgetarget/).
-    pub fn set_edgetarget(&mut self, s: &str) {
-        self.edgetarget = Some(Edgetarget::new(s));
-    }
+    /// Unset [`Attribute::Dir`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_dir(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Dir(String::new());
 
-    /// Unset `edgetarget` attribute. [Read more](https://graphviz.org/docs/attrs/edgetarget/).
-    pub fn unset_edgetarget(&mut self) {
-        self.edgetarget = None;
+        self.attributes.remove(&item)
     }
 
-    /// Tooltip annotation attached to the non-label part of an edge. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/edgetooltip/).
-    pub fn get_edgetooltip(&self) -> Option<&str> {
-        self.edgetooltip.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Edgehref`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_edgehref(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Edgehref(s.into());
 
-    /// Set `edgetooltip` attribute. [Read more](https://graphviz.org/docs/attrs/edgetooltip/).
-    pub fn set_edgetooltip(&mut self, s: &str) {
-        self.edgetooltip = Some(Edgetooltip::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `edgetooltip` attribute. [Read more](https://graphviz.org/docs/attrs/edgetooltip/).
-    pub fn unset_edgetooltip(&mut self) {
-        self.edgetooltip = None;
-    }
+    /// Unset [`Attribute::Edgehref`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_edgehref(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Edgehref(String::new());
 
-    /// The link for the non-label parts of an edge. map, svg only. [Read more](https://graphviz.org/docs/attrs/edgeURL/).
-    pub fn get_edgeurl(&self) -> Option<&str> {
-        self.edgeurl.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `edgeurl` attribute. [Read more](https://graphviz.org/docs/attrs/edgeURL/).
-    pub fn set_edgeurl(&mut self, s: &str) {
-        self.edgeurl = Some(Edgeurl::new(s));
-    }
+    /// Set [`Attribute::Edgetarget`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_edgetarget(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Edgetarget(s.into());
 
-    /// Unset `edgeurl` attribute. [Read more](https://graphviz.org/docs/attrs/edgeURL/).
-    pub fn unset_edgeurl(&mut self) {
-        self.edgeurl = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Color used to fill the background of a node or cluster. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn get_fillcolor(&self) -> Option<&str> {
-        self.fillcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Edgetarget`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_edgetarget(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Edgetarget(String::new());
 
-    /// Set `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn set_fillcolor(&mut self, s: &str) {
-        self.fillcolor = Some(Fillcolor::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `fillcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fillcolor/).
-    pub fn unset_fillcolor(&mut self) {
-        self.fillcolor = None;
-    }
+    /// Set [`Attribute::Edgetooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_edgetooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Edgetooltip(s.into());
 
-    /// Color used for text. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn get_fontcolor(&self) -> Option<&str> {
-        self.fontcolor.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn set_fontcolor(&mut self, s: &str) {
-        self.fontcolor = Some(Fontcolor::new(s));
-    }
+    /// Unset [`Attribute::Edgetooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_edgetooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Edgetooltip(String::new());
 
-    /// Unset `fontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/fontcolor/).
-    pub fn unset_fontcolor(&mut self) {
-        self.fontcolor = None;
+        self.attributes.remove(&item)
     }
 
-    /// Font used for text. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn get_fontname(&self) -> Option<&str> {
-        self.fontname.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Edgeurl`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_edgeurl(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Edgeurl(s.into());
 
-    /// Set `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn set_fontname(&mut self, s: &str) {
-        self.fontname = Some(Fontname::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `fontname` attribute. [Read more](https://graphviz.org/docs/attrs/fontname/).
-    pub fn unset_fontname(&mut self) {
-        self.fontname = None;
-    }
+    /// Unset [`Attribute::Edgeurl`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_edgeurl(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Edgeurl(String::new());
 
-    /// Font size, in points, used for text. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn get_fontsize(&self) -> Option<&str> {
-        self.fontsize.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn set_fontsize(&mut self, s: &str) {
-        self.fontsize = Some(Fontsize::new(s));
-    }
+    /// Set [`Attribute::Fillcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fillcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fillcolor(s.into());
 
-    /// Unset `fontsize` attribute. [Read more](https://graphviz.org/docs/attrs/fontsize/).
-    pub fn unset_fontsize(&mut self) {
-        self.fontsize = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Center position of an edge's head label. write only. [Read more](https://graphviz.org/docs/attrs/head_lp/).
-    pub fn get_head_lp(&self) -> Option<&str> {
-        self.head_lp.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fillcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fillcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fillcolor(String::new());
 
-    /// Set `head_lp` attribute. [Read more](https://graphviz.org/docs/attrs/head_lp/).
-    pub fn set_head_lp(&mut self, s: &str) {
-        self.head_lp = Some(HeadLp::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `head_lp` attribute. [Read more](https://graphviz.org/docs/attrs/head_lp/).
-    pub fn unset_head_lp(&mut self) {
-        self.head_lp = None;
-    }
+    /// Set [`Attribute::Fontcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontcolor(s.into());
 
-    /// If true, the head of an edge is clipped to the boundary of the head node. [Read more](https://graphviz.org/docs/attrs/headclip/).
-    pub fn get_headclip(&self) -> Option<&str> {
-        self.headclip.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `headclip` attribute. [Read more](https://graphviz.org/docs/attrs/headclip/).
-    pub fn set_headclip(&mut self, s: &str) {
-        self.headclip = Some(Headclip::new(s));
-    }
+    /// Unset [`Attribute::Fontcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontcolor(String::new());
 
-    /// Unset `headclip` attribute. [Read more](https://graphviz.org/docs/attrs/headclip/).
-    pub fn unset_headclip(&mut self) {
-        self.headclip = None;
+        self.attributes.remove(&item)
     }
 
-    /// Synonym for headURL. map, svg only. [Read more](https://graphviz.org/docs/attrs/headhref/).
-    pub fn get_headhref(&self) -> Option<&str> {
-        self.headhref.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Fontname`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontname(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontname(s.into());
 
-    /// Set `headhref` attribute. [Read more](https://graphviz.org/docs/attrs/headhref/).
-    pub fn set_headhref(&mut self, s: &str) {
-        self.headhref = Some(Headhref::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `headhref` attribute. [Read more](https://graphviz.org/docs/attrs/headhref/).
-    pub fn unset_headhref(&mut self) {
-        self.headhref = None;
-    }
+    /// Unset [`Attribute::Fontname`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontname(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontname(String::new());
 
-    /// Text label to be placed near head of edge. [Read more](https://graphviz.org/docs/attrs/headlabel/).
-    pub fn get_headlabel(&self) -> Option<&str> {
-        self.headlabel.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `headlabel` attribute. [Read more](https://graphviz.org/docs/attrs/headlabel/).
-    pub fn set_headlabel(&mut self, s: &str) {
-        self.headlabel = Some(Headlabel::new(s));
-    }
+    /// Set [`Attribute::Fontsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_fontsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Fontsize(s.into());
 
-    /// Unset `headlabel` attribute. [Read more](https://graphviz.org/docs/attrs/headlabel/).
-    pub fn unset_headlabel(&mut self) {
-        self.headlabel = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Indicates where on the head node to attach the head of the edge. [Read more](https://graphviz.org/docs/attrs/headport/).
-    pub fn get_headport(&self) -> Option<&str> {
-        self.headport.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Fontsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_fontsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Fontsize(String::new());
 
-    /// Set `headport` attribute. [Read more](https://graphviz.org/docs/attrs/headport/).
-    pub fn set_headport(&mut self, s: &str) {
-        self.headport = Some(Headport::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `headport` attribute. [Read more](https://graphviz.org/docs/attrs/headport/).
-    pub fn unset_headport(&mut self) {
-        self.headport = None;
-    }
+    /// Set [`Attribute::HeadLp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_head_lp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::HeadLp(s.into());
 
-    /// Browser window to use for the headURL link. map, svg only. [Read more](https://graphviz.org/docs/attrs/headtarget/).
-    pub fn get_headtarget(&self) -> Option<&str> {
-        self.headtarget.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `headtarget` attribute. [Read more](https://graphviz.org/docs/attrs/headtarget/).
-    pub fn set_headtarget(&mut self, s: &str) {
-        self.headtarget = Some(Headtarget::new(s));
-    }
+    /// Unset [`Attribute::HeadLp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_head_lp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::HeadLp(String::new());
 
-    /// Unset `headtarget` attribute. [Read more](https://graphviz.org/docs/attrs/headtarget/).
-    pub fn unset_headtarget(&mut self) {
-        self.headtarget = None;
+        self.attributes.remove(&item)
     }
 
-    /// Tooltip annotation attached to the head of an edge. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/headtooltip/).
-    pub fn get_headtooltip(&self) -> Option<&str> {
-        self.headtooltip.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Headclip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headclip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headclip(s.into());
 
-    /// Set `headtooltip` attribute. [Read more](https://graphviz.org/docs/attrs/headtooltip/).
-    pub fn set_headtooltip(&mut self, s: &str) {
-        self.headtooltip = Some(Headtooltip::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `headtooltip` attribute. [Read more](https://graphviz.org/docs/attrs/headtooltip/).
-    pub fn unset_headtooltip(&mut self) {
-        self.headtooltip = None;
-    }
+    /// Unset [`Attribute::Headclip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headclip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headclip(String::new());
 
-    /// If defined, headURL is output as part of the head label of the edge. map, svg only. [Read more](https://graphviz.org/docs/attrs/headURL/).
-    pub fn get_headurl(&self) -> Option<&str> {
-        self.headurl.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `headurl` attribute. [Read more](https://graphviz.org/docs/attrs/headURL/).
-    pub fn set_headurl(&mut self, s: &str) {
-        self.headurl = Some(Headurl::new(s));
-    }
+    /// Set [`Attribute::Headhref`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headhref(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headhref(s.into());
 
-    /// Unset `headurl` attribute. [Read more](https://graphviz.org/docs/attrs/headURL/).
-    pub fn unset_headurl(&mut self) {
-        self.headurl = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Synonym for URL. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn get_href(&self) -> Option<&str> {
-        self.href.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Headhref`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headhref(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headhref(String::new());
 
-    /// Set `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn set_href(&mut self, s: &str) {
-        self.href = Some(Href::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `href` attribute. [Read more](https://graphviz.org/docs/attrs/href/).
-    pub fn unset_href(&mut self) {
-        self.href = None;
-    }
+    /// Set [`Attribute::Headlabel`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headlabel(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headlabel(s.into());
 
-    /// Identifier for graph objects. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn get_id(&self) -> Option<&str> {
-        self.id.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn set_id(&mut self, s: &str) {
-        self.id = Some(Id::new(s));
-    }
+    /// Unset [`Attribute::Headlabel`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headlabel(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headlabel(String::new());
 
-    /// Unset `id` attribute. [Read more](https://graphviz.org/docs/attrs/id/).
-    pub fn unset_id(&mut self) {
-        self.id = None;
+        self.attributes.remove(&item)
     }
 
-    /// Text label attached to objects. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn get_label(&self) -> Option<&str> {
-        self.label.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Headport`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headport(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headport(s.into());
 
-    /// Set `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn set_label(&mut self, s: &str) {
-        self.label = Some(Label::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `label` attribute. [Read more](https://graphviz.org/docs/attrs/label/).
-    pub fn unset_label(&mut self) {
-        self.label = None;
-    }
+    /// Unset [`Attribute::Headport`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headport(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headport(String::new());
 
-    /// The angle (in degrees) in polar coordinates of the head & tail edge labels.. [Read more](https://graphviz.org/docs/attrs/labelangle/).
-    pub fn get_labelangle(&self) -> Option<&str> {
-        self.labelangle.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `labelangle` attribute. [Read more](https://graphviz.org/docs/attrs/labelangle/).
-    pub fn set_labelangle(&mut self, s: &str) {
-        self.labelangle = Some(Labelangle::new(s));
-    }
+    /// Set [`Attribute::Headtarget`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headtarget(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headtarget(s.into());
 
-    /// Unset `labelangle` attribute. [Read more](https://graphviz.org/docs/attrs/labelangle/).
-    pub fn unset_labelangle(&mut self) {
-        self.labelangle = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Scaling factor for the distance of headlabel / taillabel from the head / tail nodes.. [Read more](https://graphviz.org/docs/attrs/labeldistance/).
-    pub fn get_labeldistance(&self) -> Option<&str> {
-        self.labeldistance.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Headtarget`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headtarget(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headtarget(String::new());
 
-    /// Set `labeldistance` attribute. [Read more](https://graphviz.org/docs/attrs/labeldistance/).
-    pub fn set_labeldistance(&mut self, s: &str) {
-        self.labeldistance = Some(Labeldistance::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `labeldistance` attribute. [Read more](https://graphviz.org/docs/attrs/labeldistance/).
-    pub fn unset_labeldistance(&mut self) {
-        self.labeldistance = None;
-    }
+    /// Set [`Attribute::Headtooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headtooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headtooltip(s.into());
 
-    /// If true, allows edge labels to be less constrained in position. [Read more](https://graphviz.org/docs/attrs/labelfloat/).
-    pub fn get_labelfloat(&self) -> Option<&str> {
-        self.labelfloat.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `labelfloat` attribute. [Read more](https://graphviz.org/docs/attrs/labelfloat/).
-    pub fn set_labelfloat(&mut self, s: &str) {
-        self.labelfloat = Some(Labelfloat::new(s));
-    }
+    /// Unset [`Attribute::Headtooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headtooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headtooltip(String::new());
 
-    /// Unset `labelfloat` attribute. [Read more](https://graphviz.org/docs/attrs/labelfloat/).
-    pub fn unset_labelfloat(&mut self) {
-        self.labelfloat = None;
+        self.attributes.remove(&item)
     }
 
-    /// Color used for headlabel and taillabel.. [Read more](https://graphviz.org/docs/attrs/labelfontcolor/).
-    pub fn get_labelfontcolor(&self) -> Option<&str> {
-        self.labelfontcolor.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Headurl`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_headurl(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Headurl(s.into());
 
-    /// Set `labelfontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontcolor/).
-    pub fn set_labelfontcolor(&mut self, s: &str) {
-        self.labelfontcolor = Some(Labelfontcolor::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `labelfontcolor` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontcolor/).
-    pub fn unset_labelfontcolor(&mut self) {
-        self.labelfontcolor = None;
-    }
+    /// Unset [`Attribute::Headurl`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_headurl(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Headurl(String::new());
 
-    /// Font for headlabel and taillabel. [Read more](https://graphviz.org/docs/attrs/labelfontname/).
-    pub fn get_labelfontname(&self) -> Option<&str> {
-        self.labelfontname.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `labelfontname` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontname/).
-    pub fn set_labelfontname(&mut self, s: &str) {
-        self.labelfontname = Some(Labelfontname::new(s));
-    }
+    /// Set [`Attribute::Href`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_href(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Href(s.into());
 
-    /// Unset `labelfontname` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontname/).
-    pub fn unset_labelfontname(&mut self) {
-        self.labelfontname = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Font size of headlabel and taillabel. [Read more](https://graphviz.org/docs/attrs/labelfontsize/).
-    pub fn get_labelfontsize(&self) -> Option<&str> {
-        self.labelfontsize.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Href`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_href(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Href(String::new());
 
-    /// Set `labelfontsize` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontsize/).
-    pub fn set_labelfontsize(&mut self, s: &str) {
-        self.labelfontsize = Some(Labelfontsize::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `labelfontsize` attribute. [Read more](https://graphviz.org/docs/attrs/labelfontsize/).
-    pub fn unset_labelfontsize(&mut self) {
-        self.labelfontsize = None;
-    }
+    /// Set [`Attribute::Id`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_id(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Id(s.into());
 
-    /// Synonym for labelURL. map, svg only. [Read more](https://graphviz.org/docs/attrs/labelhref/).
-    pub fn get_labelhref(&self) -> Option<&str> {
-        self.labelhref.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `labelhref` attribute. [Read more](https://graphviz.org/docs/attrs/labelhref/).
-    pub fn set_labelhref(&mut self, s: &str) {
-        self.labelhref = Some(Labelhref::new(s));
-    }
+    /// Unset [`Attribute::Id`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_id(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Id(String::new());
 
-    /// Unset `labelhref` attribute. [Read more](https://graphviz.org/docs/attrs/labelhref/).
-    pub fn unset_labelhref(&mut self) {
-        self.labelhref = None;
+        self.attributes.remove(&item)
     }
 
-    /// Browser window to open labelURL links in. map, svg only. [Read more](https://graphviz.org/docs/attrs/labeltarget/).
-    pub fn get_labeltarget(&self) -> Option<&str> {
-        self.labeltarget.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Label`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_label(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Label(s.into());
 
-    /// Set `labeltarget` attribute. [Read more](https://graphviz.org/docs/attrs/labeltarget/).
-    pub fn set_labeltarget(&mut self, s: &str) {
-        self.labeltarget = Some(Labeltarget::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `labeltarget` attribute. [Read more](https://graphviz.org/docs/attrs/labeltarget/).
-    pub fn unset_labeltarget(&mut self) {
-        self.labeltarget = None;
-    }
+    /// Unset [`Attribute::Label`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_label(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Label(String::new());
 
-    /// Tooltip annotation attached to label of an edge. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/labeltooltip/).
-    pub fn get_labeltooltip(&self) -> Option<&str> {
-        self.labeltooltip.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `labeltooltip` attribute. [Read more](https://graphviz.org/docs/attrs/labeltooltip/).
-    pub fn set_labeltooltip(&mut self, s: &str) {
-        self.labeltooltip = Some(Labeltooltip::new(s));
-    }
+    /// Set [`Attribute::Labelangle`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelangle(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelangle(s.into());
 
-    /// Unset `labeltooltip` attribute. [Read more](https://graphviz.org/docs/attrs/labeltooltip/).
-    pub fn unset_labeltooltip(&mut self) {
-        self.labeltooltip = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// If defined, labelURL is the link used for the label of an edge. map, svg only. [Read more](https://graphviz.org/docs/attrs/labelURL/).
-    pub fn get_labelurl(&self) -> Option<&str> {
-        self.labelurl.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Labelangle`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelangle(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelangle(String::new());
 
-    /// Set `labelurl` attribute. [Read more](https://graphviz.org/docs/attrs/labelURL/).
-    pub fn set_labelurl(&mut self, s: &str) {
-        self.labelurl = Some(Labelurl::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `labelurl` attribute. [Read more](https://graphviz.org/docs/attrs/labelURL/).
-    pub fn unset_labelurl(&mut self) {
-        self.labelurl = None;
-    }
+    /// Set [`Attribute::Labeldistance`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labeldistance(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labeldistance(s.into());
 
-    /// Specifies layers in which the node, edge or cluster is present. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn get_layer(&self) -> Option<&str> {
-        self.layer.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn set_layer(&mut self, s: &str) {
-        self.layer = Some(Layer::new(s));
-    }
+    /// Unset [`Attribute::Labeldistance`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labeldistance(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labeldistance(String::new());
 
-    /// Unset `layer` attribute. [Read more](https://graphviz.org/docs/attrs/layer/).
-    pub fn unset_layer(&mut self) {
-        self.layer = None;
+        self.attributes.remove(&item)
     }
 
-    /// Preferred edge length, in inches. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/len/).
-    pub fn get_len(&self) -> Option<&str> {
-        self.len.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Labelfloat`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelfloat(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelfloat(s.into());
 
-    /// Set `len` attribute. [Read more](https://graphviz.org/docs/attrs/len/).
-    pub fn set_len(&mut self, s: &str) {
-        self.len = Some(Len::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `len` attribute. [Read more](https://graphviz.org/docs/attrs/len/).
-    pub fn unset_len(&mut self) {
-        self.len = None;
-    }
+    /// Unset [`Attribute::Labelfloat`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelfloat(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelfloat(String::new());
 
-    /// Logical head of an edge. dot only. [Read more](https://graphviz.org/docs/attrs/lhead/).
-    pub fn get_lhead(&self) -> Option<&str> {
-        self.lhead.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
 
-    /// Set `lhead` attribute. [Read more](https://graphviz.org/docs/attrs/lhead/).
-    pub fn set_lhead(&mut self, s: &str) {
-        self.lhead = Some(Lhead::new(s));
-    }
+    /// Set [`Attribute::Labelfontcolor`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelfontcolor(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelfontcolor(s.into());
 
-    /// Unset `lhead` attribute. [Read more](https://graphviz.org/docs/attrs/lhead/).
-    pub fn unset_lhead(&mut self) {
-        self.lhead = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Label center position. write only. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn get_lp(&self) -> Option<&str> {
-        self.lp.as_ref().map(|x| x.0.as_str())
-    }
+    /// Unset [`Attribute::Labelfontcolor`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelfontcolor(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelfontcolor(String::new());
 
-    /// Set `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn set_lp(&mut self, s: &str) {
-        self.lp = Some(Lp::new(s));
+        self.attributes.remove(&item)
     }
 
-    /// Unset `lp` attribute. [Read more](https://graphviz.org/docs/attrs/lp/).
-    pub fn unset_lp(&mut self) {
-        self.lp = None;
-    }
+    /// Set [`Attribute::Labelfontname`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelfontname(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelfontname(s.into());
 
-    /// Logical tail of an edge. dot only. [Read more](https://graphviz.org/docs/attrs/ltail/).
-    pub fn get_ltail(&self) -> Option<&str> {
-        self.ltail.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `ltail` attribute. [Read more](https://graphviz.org/docs/attrs/ltail/).
-    pub fn set_ltail(&mut self, s: &str) {
-        self.ltail = Some(Ltail::new(s));
-    }
+    /// Unset [`Attribute::Labelfontname`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelfontname(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelfontname(String::new());
 
-    /// Unset `ltail` attribute. [Read more](https://graphviz.org/docs/attrs/ltail/).
-    pub fn unset_ltail(&mut self) {
-        self.ltail = None;
+        self.attributes.remove(&item)
     }
 
-    /// Minimum edge length (rank difference between head and tail). dot only. [Read more](https://graphviz.org/docs/attrs/minlen/).
-    pub fn get_minlen(&self) -> Option<&str> {
-        self.minlen.as_ref().map(|x| x.0.as_str())
-    }
+    /// Set [`Attribute::Labelfontsize`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelfontsize(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelfontsize(s.into());
 
-    /// Set `minlen` attribute. [Read more](https://graphviz.org/docs/attrs/minlen/).
-    pub fn set_minlen(&mut self, s: &str) {
-        self.minlen = Some(Minlen::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `minlen` attribute. [Read more](https://graphviz.org/docs/attrs/minlen/).
-    pub fn unset_minlen(&mut self) {
-        self.minlen = None;
-    }
+    /// Unset [`Attribute::Labelfontsize`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelfontsize(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelfontsize(String::new());
 
-    /// Whether to justify multiline text vs the previous text line (rather than the side of the container).. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn get_nojustify(&self) -> Option<&str> {
-        self.nojustify.as_ref().map(|x| x.0.as_str())
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Labelhref`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelhref(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelhref(s.into());
 
-    /// Set `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn set_nojustify(&mut self, s: &str) {
-        self.nojustify = Some(Nojustify::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `nojustify` attribute. [Read more](https://graphviz.org/docs/attrs/nojustify/).
-    pub fn unset_nojustify(&mut self) {
-        self.nojustify = None;
+    /// Unset [`Attribute::Labelhref`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelhref(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelhref(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Labeltarget`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labeltarget(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labeltarget(s.into());
 
-    /// Specifies the width of the pen, in points, used to draw lines and curves. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn get_penwidth(&self) -> Option<&str> {
-        self.penwidth.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn set_penwidth(&mut self, s: &str) {
-        self.penwidth = Some(Penwidth::new(s));
+    /// Unset [`Attribute::Labeltarget`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labeltarget(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labeltarget(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Labeltooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labeltooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labeltooltip(s.into());
 
-    /// Unset `penwidth` attribute. [Read more](https://graphviz.org/docs/attrs/penwidth/).
-    pub fn unset_penwidth(&mut self) {
-        self.penwidth = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Position of node, or spline control points. neato, fdp only. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn get_pos(&self) -> Option<&str> {
-        self.pos.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Labeltooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labeltooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labeltooltip(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Labelurl`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_labelurl(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Labelurl(s.into());
 
-    /// Set `pos` attribute. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn set_pos(&mut self, s: &str) {
-        self.pos = Some(Pos::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `pos` attribute. [Read more](https://graphviz.org/docs/attrs/pos/).
-    pub fn unset_pos(&mut self) {
-        self.pos = None;
+    /// Unset [`Attribute::Labelurl`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_labelurl(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Labelurl(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Layer`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_layer(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Layer(s.into());
 
-    /// Edges with the same head and the same samehead value are aimed at the same point on the head. dot only. [Read more](https://graphviz.org/docs/attrs/samehead/).
-    pub fn get_samehead(&self) -> Option<&str> {
-        self.samehead.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `samehead` attribute. [Read more](https://graphviz.org/docs/attrs/samehead/).
-    pub fn set_samehead(&mut self, s: &str) {
-        self.samehead = Some(Samehead::new(s));
+    /// Unset [`Attribute::Layer`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_layer(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Layer(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Len`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_len(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Len(s.into());
 
-    /// Unset `samehead` attribute. [Read more](https://graphviz.org/docs/attrs/samehead/).
-    pub fn unset_samehead(&mut self) {
-        self.samehead = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Edges with the same tail and the same sametail value are aimed at th. dot only. [Read more](https://graphviz.org/docs/attrs/sametail/).
-    pub fn get_sametail(&self) -> Option<&str> {
-        self.sametail.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Len`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_len(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Len(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Lhead`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lhead(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lhead(s.into());
 
-    /// Set `sametail` attribute. [Read more](https://graphviz.org/docs/attrs/sametail/).
-    pub fn set_sametail(&mut self, s: &str) {
-        self.sametail = Some(Sametail::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `sametail` attribute. [Read more](https://graphviz.org/docs/attrs/sametail/).
-    pub fn unset_sametail(&mut self) {
-        self.sametail = None;
+    /// Unset [`Attribute::Lhead`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lhead(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lhead(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Lp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_lp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Lp(s.into());
 
-    /// Print guide boxes for debugging. dot only. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn get_showboxes(&self) -> Option<&str> {
-        self.showboxes.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn set_showboxes(&mut self, s: &str) {
-        self.showboxes = Some(Showboxes::new(s));
+    /// Unset [`Attribute::Lp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_lp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Lp(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Ltail`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_ltail(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Ltail(s.into());
 
-    /// Unset `showboxes` attribute. [Read more](https://graphviz.org/docs/attrs/showboxes/).
-    pub fn unset_showboxes(&mut self) {
-        self.showboxes = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set style information for components of the graph. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn get_style(&self) -> Option<&str> {
-        self.style.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Ltail`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_ltail(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Ltail(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Minlen`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_minlen(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Minlen(s.into());
 
-    /// Set `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn set_style(&mut self, s: &str) {
-        self.style = Some(Style::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `style` attribute. [Read more](https://graphviz.org/docs/attrs/style/).
-    pub fn unset_style(&mut self) {
-        self.style = None;
+    /// Unset [`Attribute::Minlen`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_minlen(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Minlen(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Nojustify`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_nojustify(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Nojustify(s.into());
 
-    /// Position of an edge's tail label, in points.. write only. [Read more](https://graphviz.org/docs/attrs/tail_lp/).
-    pub fn get_tail_lp(&self) -> Option<&str> {
-        self.tail_lp.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `tail_lp` attribute. [Read more](https://graphviz.org/docs/attrs/tail_lp/).
-    pub fn set_tail_lp(&mut self, s: &str) {
-        self.tail_lp = Some(TailLp::new(s));
+    /// Unset [`Attribute::Nojustify`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_nojustify(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Nojustify(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Penwidth`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_penwidth(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Penwidth(s.into());
 
-    /// Unset `tail_lp` attribute. [Read more](https://graphviz.org/docs/attrs/tail_lp/).
-    pub fn unset_tail_lp(&mut self) {
-        self.tail_lp = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// If true, the tail of an edge is clipped to the boundary of the tail node. [Read more](https://graphviz.org/docs/attrs/tailclip/).
-    pub fn get_tailclip(&self) -> Option<&str> {
-        self.tailclip.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Penwidth`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_penwidth(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Penwidth(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Pos`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_pos(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Pos(s.into());
 
-    /// Set `tailclip` attribute. [Read more](https://graphviz.org/docs/attrs/tailclip/).
-    pub fn set_tailclip(&mut self, s: &str) {
-        self.tailclip = Some(Tailclip::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `tailclip` attribute. [Read more](https://graphviz.org/docs/attrs/tailclip/).
-    pub fn unset_tailclip(&mut self) {
-        self.tailclip = None;
+    /// Unset [`Attribute::Pos`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_pos(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Pos(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Samehead`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_samehead(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Samehead(s.into());
 
-    /// Synonym for tailURL.. map, svg only. [Read more](https://graphviz.org/docs/attrs/tailhref/).
-    pub fn get_tailhref(&self) -> Option<&str> {
-        self.tailhref.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `tailhref` attribute. [Read more](https://graphviz.org/docs/attrs/tailhref/).
-    pub fn set_tailhref(&mut self, s: &str) {
-        self.tailhref = Some(Tailhref::new(s));
+    /// Unset [`Attribute::Samehead`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_samehead(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Samehead(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Sametail`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_sametail(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Sametail(s.into());
 
-    /// Unset `tailhref` attribute. [Read more](https://graphviz.org/docs/attrs/tailhref/).
-    pub fn unset_tailhref(&mut self) {
-        self.tailhref = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Text label to be placed near tail of edge. [Read more](https://graphviz.org/docs/attrs/taillabel/).
-    pub fn get_taillabel(&self) -> Option<&str> {
-        self.taillabel.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Sametail`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_sametail(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Sametail(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Showboxes`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_showboxes(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Showboxes(s.into());
 
-    /// Set `taillabel` attribute. [Read more](https://graphviz.org/docs/attrs/taillabel/).
-    pub fn set_taillabel(&mut self, s: &str) {
-        self.taillabel = Some(Taillabel::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `taillabel` attribute. [Read more](https://graphviz.org/docs/attrs/taillabel/).
-    pub fn unset_taillabel(&mut self) {
-        self.taillabel = None;
+    /// Unset [`Attribute::Showboxes`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_showboxes(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Showboxes(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Style`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_style(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Style(s.into());
 
-    /// Indicates where on the tail node to attach the tail of the edge. [Read more](https://graphviz.org/docs/attrs/tailport/).
-    pub fn get_tailport(&self) -> Option<&str> {
-        self.tailport.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `tailport` attribute. [Read more](https://graphviz.org/docs/attrs/tailport/).
-    pub fn set_tailport(&mut self, s: &str) {
-        self.tailport = Some(Tailport::new(s));
+    /// Unset [`Attribute::Style`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_style(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Style(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::TailLp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tail_lp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::TailLp(s.into());
 
-    /// Unset `tailport` attribute. [Read more](https://graphviz.org/docs/attrs/tailport/).
-    pub fn unset_tailport(&mut self) {
-        self.tailport = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Browser window to use for the tailURL link. map, svg only. [Read more](https://graphviz.org/docs/attrs/tailtarget/).
-    pub fn get_tailtarget(&self) -> Option<&str> {
-        self.tailtarget.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::TailLp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tail_lp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::TailLp(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailclip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailclip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailclip(s.into());
 
-    /// Set `tailtarget` attribute. [Read more](https://graphviz.org/docs/attrs/tailtarget/).
-    pub fn set_tailtarget(&mut self, s: &str) {
-        self.tailtarget = Some(Tailtarget::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `tailtarget` attribute. [Read more](https://graphviz.org/docs/attrs/tailtarget/).
-    pub fn unset_tailtarget(&mut self) {
-        self.tailtarget = None;
+    /// Unset [`Attribute::Tailclip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailclip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailclip(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailhref`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailhref(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailhref(s.into());
 
-    /// Tooltip annotation attached to the tail of an edge. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/tailtooltip/).
-    pub fn get_tailtooltip(&self) -> Option<&str> {
-        self.tailtooltip.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `tailtooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tailtooltip/).
-    pub fn set_tailtooltip(&mut self, s: &str) {
-        self.tailtooltip = Some(Tailtooltip::new(s));
+    /// Unset [`Attribute::Tailhref`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailhref(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailhref(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Taillabel`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_taillabel(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Taillabel(s.into());
 
-    /// Unset `tailtooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tailtooltip/).
-    pub fn unset_tailtooltip(&mut self) {
-        self.tailtooltip = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// If defined, tailURL is output as part of the tail label of th. map, svg only. [Read more](https://graphviz.org/docs/attrs/tailURL/).
-    pub fn get_tailurl(&self) -> Option<&str> {
-        self.tailurl.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Taillabel`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_taillabel(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Taillabel(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailport`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailport(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailport(s.into());
 
-    /// Set `tailurl` attribute. [Read more](https://graphviz.org/docs/attrs/tailURL/).
-    pub fn set_tailurl(&mut self, s: &str) {
-        self.tailurl = Some(Tailurl::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `tailurl` attribute. [Read more](https://graphviz.org/docs/attrs/tailURL/).
-    pub fn unset_tailurl(&mut self) {
-        self.tailurl = None;
+    /// Unset [`Attribute::Tailport`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailport(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailport(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailtarget`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailtarget(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailtarget(s.into());
 
-    /// If the object has a URL, this attribute determines which window of the browser is used for the URL.. map, svg only. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn get_target(&self) -> Option<&str> {
-        self.target.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn set_target(&mut self, s: &str) {
-        self.target = Some(Target::new(s));
+    /// Unset [`Attribute::Tailtarget`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailtarget(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailtarget(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailtooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailtooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailtooltip(s.into());
 
-    /// Unset `target` attribute. [Read more](https://graphviz.org/docs/attrs/target/).
-    pub fn unset_target(&mut self) {
-        self.target = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Tooltip (mouse hover text) attached to the node, edge, cluster, or graph. cmap, svg only. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn get_tooltip(&self) -> Option<&str> {
-        self.tooltip.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Tailtooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailtooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailtooltip(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tailurl`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tailurl(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tailurl(s.into());
 
-    /// Set `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn set_tooltip(&mut self, s: &str) {
-        self.tooltip = Some(Tooltip::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `tooltip` attribute. [Read more](https://graphviz.org/docs/attrs/tooltip/).
-    pub fn unset_tooltip(&mut self) {
-        self.tooltip = None;
+    /// Unset [`Attribute::Tailurl`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tailurl(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tailurl(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Target`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_target(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Target(s.into());
 
-    /// Hyperlinks incorporated into device-dependent output. map, postscript, svg only. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn get_url(&self) -> Option<&str> {
-        self.url.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn set_url(&mut self, s: &str) {
-        self.url = Some(Url::new(s));
+    /// Unset [`Attribute::Target`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_target(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Target(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Tooltip`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_tooltip(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Tooltip(s.into());
 
-    /// Unset `url` attribute. [Read more](https://graphviz.org/docs/attrs/URL/).
-    pub fn unset_url(&mut self) {
-        self.url = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Weight of edge. [Read more](https://graphviz.org/docs/attrs/weight/).
-    pub fn get_weight(&self) -> Option<&str> {
-        self.weight.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Tooltip`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_tooltip(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Tooltip(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Url`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_url(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Url(s.into());
 
-    /// Set `weight` attribute. [Read more](https://graphviz.org/docs/attrs/weight/).
-    pub fn set_weight(&mut self, s: &str) {
-        self.weight = Some(Weight::new(s));
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `weight` attribute. [Read more](https://graphviz.org/docs/attrs/weight/).
-    pub fn unset_weight(&mut self) {
-        self.weight = None;
+    /// Unset [`Attribute::Url`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_url(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Url(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Weight`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_weight(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Weight(s.into());
 
-    /// External label for a node or edge. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn get_xlabel(&self) -> Option<&str> {
-        self.xlabel.as_ref().map(|x| x.0.as_str())
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `xlabel` attribute. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn set_xlabel(&mut self, s: &str) {
-        self.xlabel = Some(Xlabel::new(s));
+    /// Unset [`Attribute::Weight`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_weight(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Weight(String::new());
+
+        self.attributes.remove(&item)
     }
+
+    /// Set [`Attribute::Xlabel`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_xlabel(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Xlabel(s.into());
 
-    /// Unset `xlabel` attribute. [Read more](https://graphviz.org/docs/attrs/xlabel/).
-    pub fn unset_xlabel(&mut self) {
-        self.xlabel = None;
+        self.attributes.replace(item).is_none()
     }
 
-    /// Position of an exterior label, in points. write only. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn get_xlp(&self) -> Option<&str> {
-        self.xlp.as_ref().map(|x| x.0.as_str())
+    /// Unset [`Attribute::Xlabel`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_xlabel(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Xlabel(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Set `xlp` attribute. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn set_xlp(&mut self, s: &str) {
-        self.xlp = Some(Xlp::new(s));
+    /// Set [`Attribute::Xlp`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_xlp(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Xlp(s.into());
+
+        self.attributes.replace(item).is_none()
     }
+
+    /// Unset [`Attribute::Xlp`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_xlp(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Xlp(String::new());
 
-    /// Unset `xlp` attribute. [Read more](https://graphviz.org/docs/attrs/xlp/).
-    pub fn unset_xlp(&mut self) {
-        self.xlp = None;
+        self.attributes.remove(&item)
     }
 }
 
-impl IntoIterator for EdgeAttrs {
-    type Item = String;
+impl IntoIterator for EdgeAttributes {
+    type Item = Attribute;
 
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, 66>>;
+    type IntoIter = hash_set::IntoIter<Attribute>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        [
-            self.arrowhead.map(|x| x.to_string()),
-            self.arrowsize.map(|x| x.to_string()),
-            self.arrowtail.map(|x| x.to_string()),
-            self.class.map(|x| x.to_string()),
-            self.color.map(|x| x.to_string()),
-            self.colorscheme.map(|x| x.to_string()),
-            self.comment.map(|x| x.to_string()),
-            self.constraint.map(|x| x.to_string()),
-            self.decorate.map(|x| x.to_string()),
-            self.dir.map(|x| x.to_string()),
-            self.edgehref.map(|x| x.to_string()),
-            self.edgetarget.map(|x| x.to_string()),
-            self.edgetooltip.map(|x| x.to_string()),
-            self.edgeurl.map(|x| x.to_string()),
-            self.fillcolor.map(|x| x.to_string()),
-            self.fontcolor.map(|x| x.to_string()),
-            self.fontname.map(|x| x.to_string()),
-            self.fontsize.map(|x| x.to_string()),
-            self.head_lp.map(|x| x.to_string()),
-            self.headclip.map(|x| x.to_string()),
-            self.headhref.map(|x| x.to_string()),
-            self.headlabel.map(|x| x.to_string()),
-            self.headport.map(|x| x.to_string()),
-            self.headtarget.map(|x| x.to_string()),
-            self.headtooltip.map(|x| x.to_string()),
-            self.headurl.map(|x| x.to_string()),
-            self.href.map(|x| x.to_string()),
-            self.id.map(|x| x.to_string()),
-            self.label.map(|x| x.to_string()),
-            self.labelangle.map(|x| x.to_string()),
-            self.labeldistance.map(|x| x.to_string()),
-            self.labelfloat.map(|x| x.to_string()),
-            self.labelfontcolor.map(|x| x.to_string()),
-            self.labelfontname.map(|x| x.to_string()),
-            self.labelfontsize.map(|x| x.to_string()),
-            self.labelhref.map(|x| x.to_string()),
-            self.labeltarget.map(|x| x.to_string()),
-            self.labeltooltip.map(|x| x.to_string()),
-            self.labelurl.map(|x| x.to_string()),
-            self.layer.map(|x| x.to_string()),
-            self.len.map(|x| x.to_string()),
-            self.lhead.map(|x| x.to_string()),
-            self.lp.map(|x| x.to_string()),
-            self.ltail.map(|x| x.to_string()),
-            self.minlen.map(|x| x.to_string()),
-            self.nojustify.map(|x| x.to_string()),
-            self.penwidth.map(|x| x.to_string()),
-            self.pos.map(|x| x.to_string()),
-            self.samehead.map(|x| x.to_string()),
-            self.sametail.map(|x| x.to_string()),
-            self.showboxes.map(|x| x.to_string()),
-            self.style.map(|x| x.to_string()),
-            self.tail_lp.map(|x| x.to_string()),
-            self.tailclip.map(|x| x.to_string()),
-            self.tailhref.map(|x| x.to_string()),
-            self.taillabel.map(|x| x.to_string()),
-            self.tailport.map(|x| x.to_string()),
-            self.tailtarget.map(|x| x.to_string()),
-            self.tailtooltip.map(|x| x.to_string()),
-            self.tailurl.map(|x| x.to_string()),
-            self.target.map(|x| x.to_string()),
-            self.tooltip.map(|x| x.to_string()),
-            self.url.map(|x| x.to_string()),
-            self.weight.map(|x| x.to_string()),
-            self.xlabel.map(|x| x.to_string()),
-            self.xlp.map(|x| x.to_string()),
-        ]
-        .into_iter()
-        .flatten()
+        self.attributes.into_iter()
     }
 }
 
 /// Subgraph attributes.
 #[derive(Clone, Debug, Default)]
-pub struct SubgraphAttrs {
-    cluster: Option<Cluster>,
-    rank: Option<Rank>,
+pub struct SubgraphAttributes {
+    attributes: HashSet<Attribute>,
 }
 
-impl SubgraphAttrs {
-    /// Whether the subgraph is a cluster. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn get_cluster(&self) -> Option<&str> {
-        self.cluster.as_ref().map(|x| x.0.as_str())
+impl SubgraphAttributes {
+    /// Set attribute from `key` and `value` raw parts. Returns whether the attribute was newly set.
+    ///
+    /// # Panics
+    ///
+    /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
+    ///
+    pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let item = match key {
+            "cluster" => Attribute::Cluster(value.into()),
+            "rank" => Attribute::Rank(value.into()),
+            _ => panic!("Invalid attribute key `{key}` for SubgraphAttributes"),
+        };
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `cluster` attribute. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn set_cluster(&mut self, s: &str) {
-        self.cluster = Some(Cluster::new(s));
+    /// Set [`Attribute::Cluster`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_cluster(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Cluster(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Unset `cluster` attribute. [Read more](https://graphviz.org/docs/attrs/cluster/).
-    pub fn unset_cluster(&mut self) {
-        self.cluster = None;
+    /// Unset [`Attribute::Cluster`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_cluster(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Cluster(String::new());
+
+        self.attributes.remove(&item)
     }
 
-    /// Rank constraints on the nodes in a subgraph. dot only. [Read more](https://graphviz.org/docs/attrs/rank/).
-    pub fn get_rank(&self) -> Option<&str> {
-        self.rank.as_ref().map(|x| x.0.as_str())
+    /// Set [`Attribute::Rank`] attribute. Returns whether the attribute was newly set.
+    #[inline]
+    pub fn set_rank(&mut self, s: &str) -> bool {
+        // Initialize new item for insertion or replacement.
+        let item = Attribute::Rank(s.into());
+
+        self.attributes.replace(item).is_none()
     }
 
-    /// Set `rank` attribute. [Read more](https://graphviz.org/docs/attrs/rank/).
-    pub fn set_rank(&mut self, s: &str) {
-        self.rank = Some(Rank::new(s));
-    }
+    /// Unset [`Attribute::Rank`] attribute. Returns whether the attribute was set.
+    #[inline]
+    pub fn unset_rank(&mut self) -> bool {
+        // Allocate item placeholder for removal.
+        let item = Attribute::Rank(String::new());
 
-    /// Unset `rank` attribute. [Read more](https://graphviz.org/docs/attrs/rank/).
-    pub fn unset_rank(&mut self) {
-        self.rank = None;
+        self.attributes.remove(&item)
     }
 }
 
-impl IntoIterator for SubgraphAttrs {
-    type Item = String;
+impl IntoIterator for SubgraphAttributes {
+    type Item = Attribute;
 
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<Option<Self::Item>, 2>>;
+    type IntoIter = hash_set::IntoIter<Attribute>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        [
-            self.cluster.map(|x| x.to_string()),
-            self.rank.map(|x| x.to_string()),
-        ]
-        .into_iter()
-        .flatten()
+        self.attributes.into_iter()
     }
 }
