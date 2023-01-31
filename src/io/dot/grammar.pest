@@ -1,16 +1,12 @@
 file = _{ SOI ~ graphs ~ EOI }
 
-graphs = _{ (graph | digraph)+ }
+graphs = _{ graph+ }
 
 graph = { strict ~ graph_type ~ graph_id ~ "{" ~ statements ~ "}" }
 
-digraph = { strict ~ digraph_type ~ graph_id ~ "{" ~ statements ~ "}" }
-
 strict = { ^"strict"? }
 
-graph_type = { ^"graph" }
-
-digraph_type = { ^"digraph" }
+graph_type = { ^"graph" | ^"digraph" }
 
 graph_id = { id? }
 

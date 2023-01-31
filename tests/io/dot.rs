@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::io::DOT;
+    use causal_hub::io::{Format, DOT};
 
     #[test]
     fn read() {

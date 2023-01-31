@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, io::Error as IOError, path::Path};
 
 use itertools::Itertools;
 use pest::{
@@ -9,6 +9,7 @@ use pest::{
 use pest_derive::Parser;
 
 use super::attributes::{EdgeAttributes, GraphAttributes, VertexAttributes};
+use crate::io::Format;
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
     fn extend<T: IntoIterator<Item = Pair<'a, Rule>>>(&mut self, iter: T) {
@@ -399,12 +400,19 @@ impl<'a> From<Pairs<'a, Rule>> for _Statements {
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct Graph {
+/// DOT parser.
+///
+/// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
+///
+#[derive(Clone, Debug, Default, Parser)]
+#[grammar = "io/dot/grammar.pest"]
+pub struct DOT {
     /// Graph strict attribute, if set.
     pub strict: bool,
     /// Graph ID, if any.
     pub id: Option<String>,
+    /// Graph type.
+    pub graph_type: String,
     /// Local graph attributes.
     pub attributes: GraphAttributes,
     /// Global graph attributes.
@@ -415,7 +423,7 @@ pub struct Graph {
     pub edges: BTreeMap<(String, String), Edge>,
 }
 
-impl<'a> From<Pair<'a, Rule>> for Graph {
+impl<'a> From<Pair<'a, Rule>> for DOT {
     fn from(pair: Pair<'a, Rule>) -> Self {
         // Assert rule match.
         assert!(matches!(pair.as_rule(), Rule::graph));
@@ -431,110 +439,8 @@ impl<'a> From<Pair<'a, Rule>> for Graph {
         // Assert rule match.
         let graph_type = inner.next().unwrap();
         assert!(matches!(graph_type.as_rule(), Rule::graph_type));
-
-        // Assert rule match.
-        let id = inner.next().unwrap();
-        assert!(matches!(id.as_rule(), Rule::graph_id));
         // Match inner rules.
-        let id = id.into_inner().next().map(|x| x.as_str().into());
-
-        // Assert rule match.
-        let statements = inner.next().unwrap();
-        assert!(matches!(statements.as_rule(), Rule::statements));
-        // Match inner rules.
-        let statements = _Statements::from(statements.into_inner());
-
-        Self {
-            strict,
-            id,
-            attributes: statements.attributes,
-            global_attributes: statements.global_attributes,
-            vertices: statements.vertices,
-            edges: statements.edges,
-        }
-    }
-}
-
-impl From<Graph> for String {
-    fn from(graph: Graph) -> Self {
-        // Allocate output string.
-        let mut dot = String::new();
-
-        // Add `strict` attribute.
-        if graph.strict {
-            dot += "strict ";
-        }
-
-        // Add graph type.
-        dot += "graph ";
-        // Concat `id` with proper spacing.
-        if let Some(id) = graph.id {
-            dot += &(id + " ");
-        }
-
-        // Open brackets.
-        dot += "{\n";
-
-        // Add local attributes.
-        for (key, value) in graph.attributes.into_iter().map(|x| x.into()) {
-            dot += &format!("\t{key} = {value};\n");
-        }
-
-        // Get global attributes.
-        let global_attributes: String = graph.global_attributes.into();
-        // Add global attributes.
-        if !global_attributes.is_empty() {
-            dot += &format!("{global_attributes}\n");
-        }
-
-        // Add vertices.
-        for vertex in graph.vertices.into_values().map(String::from) {
-            dot += &format!("\t{vertex}\n");
-        }
-        // Add edges.
-        for edge in graph.edges.into_values().map(String::from) {
-            dot += &format!("\t{edge}\n");
-        }
-
-        // Close brackets.
-        dot += "}\n";
-
-        dot
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct DiGraph {
-    /// Graph strict attribute, if set.
-    pub strict: bool,
-    /// Graph ID, if any.
-    pub id: Option<String>,
-    /// Local graph attributes.
-    pub attributes: GraphAttributes,
-    /// Global graph attributes.
-    pub global_attributes: GlobalAttributes,
-    /// Map of vertices IDs to vertices attributes.
-    pub vertices: BTreeMap<String, Vertex>,
-    /// Map of edges pairs to vertices attributes.
-    pub edges: BTreeMap<(String, String), Edge>,
-}
-
-impl<'a> From<Pair<'a, Rule>> for DiGraph {
-    fn from(pair: Pair<'a, Rule>) -> Self {
-        // Assert rule match.
-        assert!(matches!(pair.as_rule(), Rule::digraph));
-        // Match inner rules.
-        let mut inner = pair.into_inner();
-
-        // Assert rule match.
-        let strict = inner.next().unwrap();
-        assert!(matches!(strict.as_rule(), Rule::strict));
-        // Match inner rules.
-        let strict = !strict.as_str().is_empty();
-
-        // Assert rule match.
-        let digraph_type = inner.next().unwrap();
-        assert!(matches!(digraph_type.as_rule(), Rule::digraph_type));
+        let graph_type = graph_type.as_str().into();
 
         // Assert rule match.
         let id = inner.next().unwrap();
@@ -558,6 +464,7 @@ impl<'a> From<Pair<'a, Rule>> for DiGraph {
         Self {
             strict,
             id,
+            graph_type,
             attributes,
             global_attributes,
             vertices,
@@ -566,20 +473,21 @@ impl<'a> From<Pair<'a, Rule>> for DiGraph {
     }
 }
 
-impl From<DiGraph> for String {
-    fn from(graph: DiGraph) -> Self {
+impl From<DOT> for String {
+    fn from(value: DOT) -> Self {
         // Allocate output string.
         let mut dot = String::new();
 
         // Add `strict` attribute.
-        if graph.strict {
+        if value.strict {
             dot += "strict ";
         }
 
         // Add graph type.
-        dot += "digraph ";
+        dot += &(value.graph_type + " ");
+        
         // Concat `id` with proper spacing.
-        if let Some(id) = graph.id {
+        if let Some(id) = value.id {
             dot += &(id + " ");
         }
 
@@ -587,21 +495,21 @@ impl From<DiGraph> for String {
         dot += "{\n";
 
         // Add local attributes.
-        for (key, value) in graph.attributes.into_iter().map(|x| x.into()) {
+        for (key, value) in value.attributes.into_iter().map(|x| x.into()) {
             dot += &format!("\t{key} = {value};\n");
         }
         // Get global attributes.
-        let global_attributes: String = graph.global_attributes.into();
+        let global_attributes: String = value.global_attributes.into();
         // Add global attributes.
         if !global_attributes.is_empty() {
             dot += &format!("{global_attributes}\n");
         }
         // Add vertices.
-        for vertex in graph.vertices.into_values().map(String::from) {
+        for vertex in value.vertices.into_values().map(String::from) {
             dot += &format!("\t{vertex}\n");
         }
         // Add edges.
-        for edge in graph.edges.into_values().map(String::from) {
+        for edge in value.edges.into_values().map(String::from) {
             dot += &format!("\t{edge}\n");
         }
 
@@ -609,48 +517,6 @@ impl From<DiGraph> for String {
         dot += "}\n";
 
         dot
-    }
-}
-
-/// DOT parser.
-///
-/// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
-///
-#[derive(Parser)]
-#[grammar = "io/dot/grammar.pest"]
-pub enum DOT {
-    Graph(Graph),
-    DiGraph(DiGraph),
-}
-
-impl DOT {
-    #[allow(clippy::result_large_err)]
-    pub fn read(path: &Path) -> Result<Self, ParserError<Rule>> {
-        // Read file to string.
-        let string = std::fs::read_to_string(path)
-            .unwrap_or_else(|_| format!("Failed to read file: \"{}\"", path.display()));
-
-        Self::try_from(string)
-    }
-}
-
-impl<'a> From<Pair<'a, Rule>> for DOT {
-    fn from(pair: Pair<'a, Rule>) -> Self {
-        // Match inner rules.
-        match pair.as_rule() {
-            Rule::graph => DOT::Graph(Graph::from(pair)),
-            Rule::digraph => DOT::DiGraph(DiGraph::from(pair)),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<DOT> for String {
-    fn from(dot: DOT) -> Self {
-        match dot {
-            DOT::Graph(dot) => dot.into(),
-            DOT::DiGraph(dot) => dot.into(),
-        }
     }
 }
 
@@ -664,5 +530,26 @@ impl TryFrom<String> for DOT {
         let dot: DOT = dot.map(|x| x.into()).next().unwrap();
 
         Ok(dot)
+    }
+}
+
+impl Format for DOT {
+    type ReadError = ParserError<Rule>;
+
+    type WriteError = IOError;
+
+    fn read(path: &Path) -> Result<Self, Self::ReadError> {
+        // Read file to string.
+        let contents = std::fs::read_to_string(path)
+            .unwrap_or_else(|_| format!("Failed to read file: \"{}\"", path.display()));
+        // Parse string.
+        Self::try_from(contents)
+    }
+
+    fn write(self, path: &Path) -> Result<(), Self::WriteError> {
+        // Format to string.
+        let contents = String::from(self);
+        // Write string to file.
+        std::fs::write(path, contents)
     }
 }
