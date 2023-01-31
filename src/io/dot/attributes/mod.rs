@@ -1,4 +1,4 @@
-// Automatically generated on: 2023-01-30 19:00:55.498572 .
+// Automatically generated on: 2023-01-31 07:52:17.538018 .
 
 use std::{
     collections::{hash_set, HashSet},
@@ -685,6 +685,18 @@ impl GraphAttributes {
         };
 
         self.attributes.replace(item).is_none()
+    }
+
+    /// Get attributes length.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Check if attributes is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
     }
 
     /// Set [`Attribute::Background`] attribute. Returns whether the attribute was newly set.
@@ -2623,6 +2635,18 @@ impl VertexAttributes {
         self.attributes.replace(item).is_none()
     }
 
+    /// Get attributes length.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Check if attributes is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
+    }
+
     /// Set [`Attribute::Area`] attribute. Returns whether the attribute was newly set.
     #[inline]
     pub fn set_area(&mut self, s: &str) -> bool {
@@ -3569,6 +3593,18 @@ impl ClusterAttributes {
         self.attributes.replace(item).is_none()
     }
 
+    /// Get attributes length.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Check if attributes is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
+    }
+
     /// Set [`Attribute::Area`] attribute. Returns whether the attribute was newly set.
     #[inline]
     pub fn set_area(&mut self, s: &str) -> bool {
@@ -4224,6 +4260,18 @@ impl EdgeAttributes {
         };
 
         self.attributes.replace(item).is_none()
+    }
+
+    /// Get attributes length.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Check if attributes is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
     }
 
     /// Set [`Attribute::Arrowhead`] attribute. Returns whether the attribute was newly set.
@@ -5447,6 +5495,18 @@ impl SubgraphAttributes {
         };
 
         self.attributes.replace(item).is_none()
+    }
+
+    /// Get attributes length.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Check if attributes is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
     }
 
     /// Set [`Attribute::Cluster`] attribute. Returns whether the attribute was newly set.

@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display, path::Path};
+use std::{collections::BTreeMap, path::Path};
 
 use itertools::Itertools;
 use pest::{
@@ -9,12 +9,6 @@ use pest::{
 use pest_derive::Parser;
 
 use super::attributes::{EdgeAttributes, GraphAttributes, VertexAttributes};
-
-impl Display for VertexAttributes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
-    }
-}
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
     fn extend<T: IntoIterator<Item = Pair<'a, Rule>>>(&mut self, iter: T) {
@@ -45,9 +39,13 @@ impl<'a> From<Pair<'a, Rule>> for VertexAttributes {
     }
 }
 
-impl Display for EdgeAttributes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
+impl From<VertexAttributes> for String {
+    fn from(attributes: VertexAttributes) -> Self {
+        attributes
+            .into_iter()
+            .map(|x| x.into())
+            .map(|(key, value)| format!("{key} = {value};"))
+            .join(" ")
     }
 }
 
@@ -80,9 +78,13 @@ impl<'a> From<Pair<'a, Rule>> for EdgeAttributes {
     }
 }
 
-impl Display for GraphAttributes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
+impl From<EdgeAttributes> for String {
+    fn from(attributes: EdgeAttributes) -> Self {
+        attributes
+            .into_iter()
+            .map(|x| x.into())
+            .map(|(key, value)| format!("{key} = {value};"))
+            .join(" ")
     }
 }
 
@@ -115,6 +117,16 @@ impl<'a> From<Pair<'a, Rule>> for GraphAttributes {
     }
 }
 
+impl From<GraphAttributes> for String {
+    fn from(attributes: GraphAttributes) -> Self {
+        attributes
+            .into_iter()
+            .map(|x| x.into())
+            .map(|(key, value)| format!("{key} = {value};"))
+            .join(" ")
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct GlobalAttributes {
     /// Global graphs attributes.
@@ -123,12 +135,6 @@ pub struct GlobalAttributes {
     pub vertices: VertexAttributes,
     /// Global edges attributes.
     pub edges: EdgeAttributes,
-}
-
-impl Display for GlobalAttributes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
-    }
 }
 
 impl<'a> Extend<Pair<'a, Rule>> for GlobalAttributes {
@@ -159,6 +165,47 @@ impl<'a> From<Pair<'a, Rule>> for GlobalAttributes {
     }
 }
 
+impl From<GlobalAttributes> for String {
+    fn from(global_attributes: GlobalAttributes) -> Self {
+        // Initialize output string.
+        let mut dot = String::new();
+
+        // Get `graphs` global attributes.
+        let graphs: String = global_attributes.graphs.into();
+        // Check if there are global attributes.
+        if !graphs.is_empty() {
+            // Add global attributes.
+            dot += &format!("\tgraph [ {graphs} ]");
+        }
+
+        // Get `vertices` global attributes.
+        let vertices: String = global_attributes.vertices.into();
+        // Check if there are global attributes.
+        if !vertices.is_empty() {
+            // Add spacing if needed.
+            if !dot.is_empty() {
+                dot += &format!("\n{dot}");
+            }
+            // Add global attributes.
+            dot += &format!("\tnode [ {vertices} ]");
+        }
+
+        // Get `edges` global attributes.
+        let edges: String = global_attributes.edges.into();
+        // Check if there are global attributes.
+        if !edges.is_empty() {
+            // Add spacing if needed.
+            if !dot.is_empty() {
+                dot += &format!("\n{dot}");
+            }
+            // Add global attributes.
+            dot += &format!("\tedge [ {edges} ]");
+        }
+
+        dot
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Vertex {
     /// Vertex id.
@@ -167,12 +214,6 @@ pub struct Vertex {
     pub port: Option<String>,
     /// Vertex attributes.
     pub attributes: VertexAttributes,
-}
-
-impl Display for Vertex {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
-    }
 }
 
 impl<'a> From<Pair<'a, Rule>> for Vertex {
@@ -201,17 +242,53 @@ impl<'a> From<Pair<'a, Rule>> for Vertex {
     }
 }
 
+impl From<Vertex> for String {
+    fn from(vertex: Vertex) -> Self {
+        // Add vertex id.
+        let mut dot = vertex.id;
+
+        // Check vertex port.
+        if let Some(port) = vertex.port {
+            // Add vertex port.
+            dot += &format!(" {port}");
+        }
+
+        // Get attributes.
+        let attributes: String = vertex.attributes.into();
+        // Check if there are attributes.
+        if !attributes.is_empty() {
+            // Add attributes.
+            dot += &format!(" [ {attributes} ]");
+        }
+
+        dot
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Edge {
     /// Edge id as vertices pair.
     pub id: (String, String),
+    /// Edge operation direction.
+    pub op: String,
     /// Edge attributes.
     pub attributes: EdgeAttributes,
 }
 
-impl Display for Edge {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
+impl From<Edge> for String {
+    fn from(edge: Edge) -> Self {
+        // Add edge id and direction.
+        let mut dot = format!("{} {} {}", edge.id.0, edge.op, edge.id.1);
+
+        // Get attributes.
+        let attributes: String = edge.attributes.into();
+        // Check if there are attributes.
+        if !attributes.is_empty() {
+            // Add attributes.
+            dot += &format!(" [ {attributes} ]");
+        }
+
+        dot
     }
 }
 
@@ -240,20 +317,22 @@ impl<'a> From<Pairs<'a, Rule>> for _Path {
                 let from = match from.as_rule() {
                     // TODO: Add support for subgraphs.
                     Rule::subgraph => todo!("Subgraphs not supported yet"),
-                    Rule::vertex_id => from.as_str().into(),
+                    Rule::vertex_id => from.into_inner().next().unwrap().as_str().into(),
                     _ => unreachable!(),
                 };
-                // Skip path direction enumerator.
+                // Assert edge operator direction.
                 assert!(matches!(op.as_rule(), Rule::path_direction));
+                // Get edge operator direction.
+                let op = op.as_str().into();
                 // Get `to` vertex id.
                 let to = match to.as_rule() {
                     // TODO: Add support for subgraphs.
                     Rule::subgraph => todo!("Subgraphs not supported yet"),
-                    Rule::vertex_id => to.as_str().into(),
+                    Rule::vertex_id => to.into_inner().next().unwrap().as_str().into(),
                     _ => unreachable!(),
                 };
 
-                (from, to)
+                ((from, to), op)
             });
         // Match inner rules.
         let attributes = pairs.next().map(|x| x.into()).unwrap_or_default();
@@ -262,7 +341,7 @@ impl<'a> From<Pairs<'a, Rule>> for _Path {
         path.edges.extend(
             edges
                 .zip(std::iter::repeat(attributes))
-                .map(|(id, attributes)| Edge { id, attributes }),
+                .map(|((id, op), attributes)| Edge { id, op, attributes }),
         );
 
         path
@@ -336,12 +415,6 @@ pub struct Graph {
     pub edges: BTreeMap<(String, String), Edge>,
 }
 
-impl Display for Graph {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
-    }
-}
-
 impl<'a> From<Pair<'a, Rule>> for Graph {
     fn from(pair: Pair<'a, Rule>) -> Self {
         // Assert rule match.
@@ -382,6 +455,54 @@ impl<'a> From<Pair<'a, Rule>> for Graph {
     }
 }
 
+impl From<Graph> for String {
+    fn from(graph: Graph) -> Self {
+        // Allocate output string.
+        let mut dot = String::new();
+
+        // Add `strict` attribute.
+        if graph.strict {
+            dot += "strict ";
+        }
+
+        // Add graph type.
+        dot += "graph ";
+        // Concat `id` with proper spacing.
+        if let Some(id) = graph.id {
+            dot += &(id + " ");
+        }
+
+        // Open brackets.
+        dot += "{\n";
+
+        // Add local attributes.
+        for (key, value) in graph.attributes.into_iter().map(|x| x.into()) {
+            dot += &format!("\t{key} = {value};\n");
+        }
+
+        // Get global attributes.
+        let global_attributes: String = graph.global_attributes.into();
+        // Add global attributes.
+        if !global_attributes.is_empty() {
+            dot += &format!("{global_attributes}\n");
+        }
+
+        // Add vertices.
+        for vertex in graph.vertices.into_values().map(String::from) {
+            dot += &format!("\t{vertex}\n");
+        }
+        // Add edges.
+        for edge in graph.edges.into_values().map(String::from) {
+            dot += &format!("\t{edge}\n");
+        }
+
+        // Close brackets.
+        dot += "}\n";
+
+        dot
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct DiGraph {
     /// Graph strict attribute, if set.
@@ -396,12 +517,6 @@ pub struct DiGraph {
     pub vertices: BTreeMap<String, Vertex>,
     /// Map of edges pairs to vertices attributes.
     pub edges: BTreeMap<(String, String), Edge>,
-}
-
-impl Display for DiGraph {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
-    }
 }
 
 impl<'a> From<Pair<'a, Rule>> for DiGraph {
@@ -451,6 +566,52 @@ impl<'a> From<Pair<'a, Rule>> for DiGraph {
     }
 }
 
+impl From<DiGraph> for String {
+    fn from(graph: DiGraph) -> Self {
+        // Allocate output string.
+        let mut dot = String::new();
+
+        // Add `strict` attribute.
+        if graph.strict {
+            dot += "strict ";
+        }
+
+        // Add graph type.
+        dot += "digraph ";
+        // Concat `id` with proper spacing.
+        if let Some(id) = graph.id {
+            dot += &(id + " ");
+        }
+
+        // Open brackets.
+        dot += "{\n";
+
+        // Add local attributes.
+        for (key, value) in graph.attributes.into_iter().map(|x| x.into()) {
+            dot += &format!("\t{key} = {value};\n");
+        }
+        // Get global attributes.
+        let global_attributes: String = graph.global_attributes.into();
+        // Add global attributes.
+        if !global_attributes.is_empty() {
+            dot += &format!("{global_attributes}\n");
+        }
+        // Add vertices.
+        for vertex in graph.vertices.into_values().map(String::from) {
+            dot += &format!("\t{vertex}\n");
+        }
+        // Add edges.
+        for edge in graph.edges.into_values().map(String::from) {
+            dot += &format!("\t{edge}\n");
+        }
+
+        // Close brackets.
+        dot += "}\n";
+
+        dot
+    }
+}
+
 /// DOT parser.
 ///
 /// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
@@ -473,15 +634,6 @@ impl DOT {
     }
 }
 
-impl Display for DOT {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DOT::Graph(g) => write!(f, "{}", g.to_string()),
-            DOT::DiGraph(g) => write!(f, "{}", g.to_string()),
-        }
-    }
-}
-
 impl<'a> From<Pair<'a, Rule>> for DOT {
     fn from(pair: Pair<'a, Rule>) -> Self {
         // Match inner rules.
@@ -489,6 +641,15 @@ impl<'a> From<Pair<'a, Rule>> for DOT {
             Rule::graph => DOT::Graph(Graph::from(pair)),
             Rule::digraph => DOT::DiGraph(DiGraph::from(pair)),
             _ => unreachable!(),
+        }
+    }
+}
+
+impl From<DOT> for String {
+    fn from(dot: DOT) -> Self {
+        match dot {
+            DOT::Graph(dot) => dot.into(),
+            DOT::DiGraph(dot) => dot.into(),
         }
     }
 }
