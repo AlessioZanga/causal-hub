@@ -1,6 +1,5 @@
 # !pip install pandas lxml sortedcollections
 
-import os
 import requests
 import pandas as pd
 

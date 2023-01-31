@@ -8,8 +8,11 @@ use pest::{
 };
 use pest_derive::Parser;
 
-use super::attributes::{EdgeAttributes, GraphAttributes, VertexAttributes};
-use crate::io::Format;
+use super::{
+    attributes::{EdgeAttributes, GraphAttributes, VertexAttributes},
+    Format, Layout,
+};
+use crate::io::File;
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
     fn extend<T: IntoIterator<Item = Pair<'a, Rule>>>(&mut self, iter: T) {
@@ -404,9 +407,13 @@ impl<'a> From<Pairs<'a, Rule>> for _Statements {
 ///
 /// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
 ///
-#[derive(Clone, Debug, Default, Parser)]
+#[derive(Clone, Debug, Parser)]
 #[grammar = "io/dot/grammar.pest"]
 pub struct DOT {
+    /// Layout engine.
+    pub layout: Layout,
+    /// Output format.
+    pub format: Format,
     /// Graph strict attribute, if set.
     pub strict: bool,
     /// Graph ID, if any.
@@ -425,6 +432,11 @@ pub struct DOT {
 
 impl<'a> From<Pair<'a, Rule>> for DOT {
     fn from(pair: Pair<'a, Rule>) -> Self {
+        // Set default layout engine.
+        let layout = Default::default();
+        // Set default output format.
+        let format = Default::default();
+
         // Assert rule match.
         assert!(matches!(pair.as_rule(), Rule::graph));
         // Match inner rules.
@@ -462,6 +474,8 @@ impl<'a> From<Pair<'a, Rule>> for DOT {
         );
 
         Self {
+            layout,
+            format,
             strict,
             id,
             graph_type,
@@ -485,7 +499,7 @@ impl From<DOT> for String {
 
         // Add graph type.
         dot += &(value.graph_type + " ");
-        
+
         // Concat `id` with proper spacing.
         if let Some(id) = value.id {
             dot += &(id + " ");
@@ -533,7 +547,7 @@ impl TryFrom<String> for DOT {
     }
 }
 
-impl Format for DOT {
+impl File for DOT {
     type ReadError = ParserError<Rule>;
 
     type WriteError = IOError;

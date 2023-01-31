@@ -1,7 +1,7 @@
 use std::path::Path;
 
 /// I/O file format trait.
-pub trait Format: Into<String> + TryFrom<String> {
+pub trait File: Into<String> + TryFrom<String> {
     /// Read format from path error.
     type ReadError;
     /// Write format to path error.

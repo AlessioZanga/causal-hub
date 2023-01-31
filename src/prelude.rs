@@ -12,6 +12,8 @@ pub use crate::graphs::{
 };
 /// Re-export models.
 pub use crate::models::*;
+/// Re-export plots.
+pub use crate::plots::*;
 /// Re-export stats.
 pub use crate::stats::*;
 /// Re-export types.
