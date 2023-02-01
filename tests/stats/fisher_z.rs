@@ -33,7 +33,7 @@ mod tests {
 
             assert_eq!(pred_dof, true_dof);
             assert_relative_eq!(pred_stat, true_stat, max_relative = 1e-8);
-            // FIXME: assert_relative_eq!(pred_pval, true_pval, epsilon = 1e-2, max_relative = 1e-8);
+            assert_relative_eq!(pred_pval, true_pval, max_relative = 1e-8);
         }
     }
 }
