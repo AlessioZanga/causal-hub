@@ -22,13 +22,8 @@ impl CovarianceMatrix {
     pub fn new(sigma: Array2<f64>) -> Self {
         // Assert Sigma is square ...
         assert!(sigma.is_square(), "Covariance matrix must be square");
-        // ... symmetric ...
+        // ... symmetric.
         assert_eq!(sigma, sigma.t(), "Covariance matrix must be symmetric");
-        // ... and all values non-negative.
-        assert!(
-            sigma.iter().all(|s| s.is_sign_positive()),
-            "Covariance matrix must be non-negative"
-        );
 
         Self { sigma }
     }

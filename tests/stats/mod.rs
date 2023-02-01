@@ -3,4 +3,5 @@ mod bayesian_information_criterion;
 mod correlation_matrix;
 mod covariance_matrix;
 mod log_likelihood;
+mod partial_correlation;
 mod precision_matrix;
