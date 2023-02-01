@@ -8,7 +8,7 @@ use std::{
 /// Quote string if necessary.
 fn quote(s: &str) -> String {
     // Check if quoted and needs quoting.
-    if !(s.starts_with("\"") && s.ends_with("\"")) && s.contains(" ") {
+    if !(s.starts_with('"') && s.ends_with('"')) && s.contains(' ') {
         // Add quoting to given string.
         return format!("\"{s}\"");
     }
