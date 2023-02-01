@@ -1,11 +1,11 @@
 #[cfg(test)]
-mod tests {
-    use std::path::Path;
+mod attributes {
+    include!("./attributes.rs");
+}
 
-    use causal_hub::{
-        io::{File, DOT},
-        prelude::*,
-    };
+#[cfg(test)]
+mod parser {
+    use causal_hub::io::{File, DOT};
 
     #[test]
     fn read() {
@@ -19,6 +19,16 @@ mod tests {
                 assert!(dot.is_ok(), "{}: {:?}", x.display(), dot.err());
             });
     }
+}
+
+#[cfg(test)]
+mod plot {
+    use std::path::Path;
+
+    use causal_hub::{
+        io::{File, DOT},
+        prelude::*,
+    };
 
     #[test]
     fn plot() {
