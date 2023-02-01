@@ -17,6 +17,7 @@ approx = "^0.5"
 bimap = "^0.6"
 is_sorted = "^0.1"
 itertools = "^0.10"
+libm = "^0.2"
 log = "^0.4"
 ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon" ] }
 ndarray-linalg = "^0.16"
