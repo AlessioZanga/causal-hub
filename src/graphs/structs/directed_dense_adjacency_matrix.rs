@@ -18,6 +18,10 @@ use crate::{
         directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph,
     },
+    io::{
+        dot::{Edge, Vertex},
+        DOT,
+    },
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
@@ -1222,5 +1226,31 @@ impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
         }
 
         h
+    }
+}
+
+impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
+    fn from(g: DirectedDenseAdjacencyMatrixGraph) -> Self {
+        // Set graph type.
+        let graph_type = "digraph".into();
+        // Construct the vertex set.
+        let vertices = V!(g)
+            .map(|x| g.label(x).into())
+            .map(Vertex::new)
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the edge set.
+        let edges = E!(g)
+            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| Edge::new((x, y), "->".into()))
+            .map(|x| (x.id.clone(), x))
+            .collect();
+
+        Self {
+            graph_type,
+            vertices,
+            edges,
+            ..Default::default()
+        }
     }
 }

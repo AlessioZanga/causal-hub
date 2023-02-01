@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, io::Error as IOError, path::Path};
+use std::{collections::BTreeMap, io::Error as IOError, path::PathBuf};
 
 use itertools::Itertools;
 use pest::{
@@ -131,6 +131,7 @@ impl From<GraphAttributes> for String {
     }
 }
 
+/// Global attributes for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct GlobalAttributes {
     /// Global graphs attributes.
@@ -210,6 +211,7 @@ impl From<GlobalAttributes> for String {
     }
 }
 
+/// Vertex for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct Vertex {
     /// Vertex id.
@@ -218,6 +220,16 @@ pub struct Vertex {
     pub port: Option<String>,
     /// Vertex attributes.
     pub attributes: VertexAttributes,
+}
+
+impl Vertex {
+    /// Construct new vertex from id.
+    pub fn new(id: String) -> Self {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
 }
 
 impl<'a> From<Pair<'a, Rule>> for Vertex {
@@ -269,6 +281,7 @@ impl From<Vertex> for String {
     }
 }
 
+/// Edge for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct Edge {
     /// Edge id as vertices pair.
@@ -277,6 +290,17 @@ pub struct Edge {
     pub op: String,
     /// Edge attributes.
     pub attributes: EdgeAttributes,
+}
+
+impl Edge {
+    /// Construct new edge from id and direction operator.
+    pub fn new(id: (String, String), op: String) -> Self {
+        Self {
+            id,
+            op,
+            ..Default::default()
+        }
+    }
 }
 
 impl From<Edge> for String {
@@ -407,7 +431,7 @@ impl<'a> From<Pairs<'a, Rule>> for _Statements {
 ///
 /// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
 ///
-#[derive(Clone, Debug, Parser)]
+#[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/dot/grammar.pest"]
 pub struct DOT {
     /// Layout engine.
@@ -552,18 +576,26 @@ impl File for DOT {
 
     type WriteError = IOError;
 
-    fn read(path: &Path) -> Result<Self, Self::ReadError> {
+    fn read<P>(path: P) -> Result<Self, Self::ReadError>
+    where
+        P: Into<PathBuf>,
+    {
+        // Get path.
+        let path = path.into();
         // Read file to string.
-        let contents = std::fs::read_to_string(path)
+        let contents = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| format!("Failed to read file: \"{}\"", path.display()));
         // Parse string.
         Self::try_from(contents)
     }
 
-    fn write(self, path: &Path) -> Result<(), Self::WriteError> {
+    fn write<P>(self, path: P) -> Result<(), Self::WriteError>
+    where
+        P: Into<PathBuf>,
+    {
         // Format to string.
         let contents = String::from(self);
         // Write string to file.
-        std::fs::write(path, contents)
+        std::fs::write(path.into(), contents)
     }
 }

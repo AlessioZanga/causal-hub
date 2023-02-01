@@ -1,6 +1,6 @@
 use std::{
     io::{stderr, stdout, Error as IOError, Write},
-    path::Path,
+    path::PathBuf,
     process::{Command, Output},
 };
 
@@ -263,7 +263,10 @@ impl Plot for DOT {
     ///
     /// Require <a href = "https://graphviz.org/" target = "_blank">Graphviz</a> to work.
     ///
-    fn plot(self, path: &Path) -> Result<Self::Success, Self::Error> {
+    fn plot<P>(self, path: P) -> Result<Self::Success, Self::Error>
+    where
+        P: Into<PathBuf>,
+    {
         // Create new temp file.
         let input = NamedTempFile::new().expect("Failed to create tempfile");
 
@@ -281,7 +284,7 @@ impl Plot for DOT {
             // Set output format.
             .arg(format!("-T{format}"))
             // Set output path.
-            .arg(format!("-o{}", path.display()))
+            .arg(format!("-o{}", path.into().display()))
             // Set input path.
             .arg(input.path());
 

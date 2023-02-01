@@ -17,6 +17,10 @@ use crate::{
         directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, PathGraph, SubGraph,
         UndirectedGraph,
     },
+    io::{
+        dot::{Edge, Vertex},
+        DOT,
+    },
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
@@ -991,5 +995,31 @@ impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
+    }
+}
+
+impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
+    fn from(g: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+        // Set graph type.
+        let graph_type = "graph".into();
+        // Construct the vertex set.
+        let vertices = V!(g)
+            .map(|x| g.label(x).into())
+            .map(Vertex::new)
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the edge set.
+        let edges = E!(g)
+            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| Edge::new((x, y), "--".into()))
+            .map(|x| (x.id.clone(), x))
+            .collect();
+
+        Self {
+            graph_type,
+            vertices,
+            edges,
+            ..Default::default()
+        }
     }
 }

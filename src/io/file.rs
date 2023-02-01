@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 /// I/O file format trait.
 pub trait File: Into<String> + TryFrom<String> {
@@ -8,8 +8,12 @@ pub trait File: Into<String> + TryFrom<String> {
     type WriteError;
 
     /// Read format from a given path.
-    fn read(path: &Path) -> Result<Self, Self::ReadError>;
+    fn read<P>(path: P) -> Result<Self, Self::ReadError>
+    where
+        P: Into<PathBuf>;
 
     /// Write format to a given path.
-    fn write(self, path: &Path) -> Result<(), Self::WriteError>;
+    fn write<P>(self, path: P) -> Result<(), Self::WriteError>
+    where
+        P: Into<PathBuf>;
 }

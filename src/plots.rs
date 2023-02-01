@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 /// Plot trait.
 pub trait Plot {
@@ -8,5 +8,7 @@ pub trait Plot {
     type Error;
 
     /// Plot to given path.
-    fn plot(self, path: &Path) -> Result<Self::Success, Self::Error>;
+    fn plot<P>(self, path: P) -> Result<Self::Success, Self::Error>
+    where
+        P: Into<PathBuf>;
 }
