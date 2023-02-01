@@ -1,9 +1,20 @@
-// Automatically generated on: 2023-01-31 07:52:17.538018 .
+// Automatically generated on: 2023-02-01 07:56:16.127273 .
 
 use std::{
     collections::{hash_set, HashSet},
     hash::{Hash, Hasher},
 };
+
+/// Quote string if necessary.
+fn quote(s: &str) -> String {
+    // Check if quoted and needs quoting.
+    if !(s.starts_with("\"") && s.ends_with("\"")) && s.contains(" ") {
+        // Add quoting to given string.
+        return format!("\"{s}\"");
+    }
+
+    s.into()
+}
 
 /// Attribute enumerator.
 #[derive(Clone, Debug)]
@@ -577,110 +588,111 @@ impl GraphAttributes {
     /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
     ///
     pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let value = quote(value);
         let item = match key {
-            "_background" => Attribute::Background(value.into()),
-            "bb" => Attribute::Bb(value.into()),
-            "beautify" => Attribute::Beautify(value.into()),
-            "bgcolor" => Attribute::Bgcolor(value.into()),
-            "center" => Attribute::Center(value.into()),
-            "charset" => Attribute::Charset(value.into()),
-            "class" => Attribute::Class(value.into()),
-            "clusterrank" => Attribute::Clusterrank(value.into()),
-            "colorscheme" => Attribute::Colorscheme(value.into()),
-            "comment" => Attribute::Comment(value.into()),
-            "compound" => Attribute::Compound(value.into()),
-            "concentrate" => Attribute::Concentrate(value.into()),
-            "Damping" => Attribute::Damping(value.into()),
-            "defaultdist" => Attribute::Defaultdist(value.into()),
-            "dim" => Attribute::Dim(value.into()),
-            "dimen" => Attribute::Dimen(value.into()),
-            "diredgeconstraints" => Attribute::Diredgeconstraints(value.into()),
-            "dpi" => Attribute::Dpi(value.into()),
-            "epsilon" => Attribute::Epsilon(value.into()),
-            "esep" => Attribute::Esep(value.into()),
-            "fontcolor" => Attribute::Fontcolor(value.into()),
-            "fontname" => Attribute::Fontname(value.into()),
-            "fontnames" => Attribute::Fontnames(value.into()),
-            "fontpath" => Attribute::Fontpath(value.into()),
-            "fontsize" => Attribute::Fontsize(value.into()),
-            "forcelabels" => Attribute::Forcelabels(value.into()),
-            "gradientangle" => Attribute::Gradientangle(value.into()),
-            "href" => Attribute::Href(value.into()),
-            "id" => Attribute::Id(value.into()),
-            "imagepath" => Attribute::Imagepath(value.into()),
-            "inputscale" => Attribute::Inputscale(value.into()),
-            "K" => Attribute::K(value.into()),
-            "label" => Attribute::Label(value.into()),
-            "label_scheme" => Attribute::LabelScheme(value.into()),
-            "labeljust" => Attribute::Labeljust(value.into()),
-            "labelloc" => Attribute::Labelloc(value.into()),
-            "landscape" => Attribute::Landscape(value.into()),
-            "layerlistsep" => Attribute::Layerlistsep(value.into()),
-            "layers" => Attribute::Layers(value.into()),
-            "layerselect" => Attribute::Layerselect(value.into()),
-            "layersep" => Attribute::Layersep(value.into()),
-            "layout" => Attribute::Layout(value.into()),
-            "levels" => Attribute::Levels(value.into()),
-            "levelsgap" => Attribute::Levelsgap(value.into()),
-            "lheight" => Attribute::Lheight(value.into()),
-            "linelength" => Attribute::Linelength(value.into()),
-            "lp" => Attribute::Lp(value.into()),
-            "lwidth" => Attribute::Lwidth(value.into()),
-            "margin" => Attribute::Margin(value.into()),
-            "maxiter" => Attribute::Maxiter(value.into()),
-            "mclimit" => Attribute::Mclimit(value.into()),
-            "mindist" => Attribute::Mindist(value.into()),
-            "mode" => Attribute::Mode(value.into()),
-            "model" => Attribute::Model(value.into()),
-            "newrank" => Attribute::Newrank(value.into()),
-            "nodesep" => Attribute::Nodesep(value.into()),
-            "nojustify" => Attribute::Nojustify(value.into()),
-            "normalize" => Attribute::Normalize(value.into()),
-            "notranslate" => Attribute::Notranslate(value.into()),
-            "nslimit" => Attribute::Nslimit(value.into()),
-            "nslimit1" => Attribute::Nslimit1(value.into()),
-            "oneblock" => Attribute::Oneblock(value.into()),
-            "ordering" => Attribute::Ordering(value.into()),
-            "orientation" => Attribute::Orientation(value.into()),
-            "outputorder" => Attribute::Outputorder(value.into()),
-            "overlap" => Attribute::Overlap(value.into()),
-            "overlap_scaling" => Attribute::OverlapScaling(value.into()),
-            "overlap_shrink" => Attribute::OverlapShrink(value.into()),
-            "pack" => Attribute::Pack(value.into()),
-            "packmode" => Attribute::Packmode(value.into()),
-            "pad" => Attribute::Pad(value.into()),
-            "page" => Attribute::Page(value.into()),
-            "pagedir" => Attribute::Pagedir(value.into()),
-            "quadtree" => Attribute::Quadtree(value.into()),
-            "quantum" => Attribute::Quantum(value.into()),
-            "rankdir" => Attribute::Rankdir(value.into()),
-            "ranksep" => Attribute::Ranksep(value.into()),
-            "ratio" => Attribute::Ratio(value.into()),
-            "remincross" => Attribute::Remincross(value.into()),
-            "repulsiveforce" => Attribute::Repulsiveforce(value.into()),
-            "resolution" => Attribute::Resolution(value.into()),
-            "root" => Attribute::Root(value.into()),
-            "rotate" => Attribute::Rotate(value.into()),
-            "rotation" => Attribute::Rotation(value.into()),
-            "scale" => Attribute::Scale(value.into()),
-            "searchsize" => Attribute::Searchsize(value.into()),
-            "sep" => Attribute::Sep(value.into()),
-            "showboxes" => Attribute::Showboxes(value.into()),
-            "size" => Attribute::Size(value.into()),
-            "smoothing" => Attribute::Smoothing(value.into()),
-            "sortv" => Attribute::Sortv(value.into()),
-            "splines" => Attribute::Splines(value.into()),
-            "start" => Attribute::Start(value.into()),
-            "style" => Attribute::Style(value.into()),
-            "stylesheet" => Attribute::Stylesheet(value.into()),
-            "target" => Attribute::Target(value.into()),
-            "TBbalance" => Attribute::Tbbalance(value.into()),
-            "tooltip" => Attribute::Tooltip(value.into()),
-            "truecolor" => Attribute::Truecolor(value.into()),
-            "URL" => Attribute::Url(value.into()),
-            "viewport" => Attribute::Viewport(value.into()),
-            "voro_margin" => Attribute::VoroMargin(value.into()),
-            "xdotversion" => Attribute::Xdotversion(value.into()),
+            "_background" => Attribute::Background(value),
+            "bb" => Attribute::Bb(value),
+            "beautify" => Attribute::Beautify(value),
+            "bgcolor" => Attribute::Bgcolor(value),
+            "center" => Attribute::Center(value),
+            "charset" => Attribute::Charset(value),
+            "class" => Attribute::Class(value),
+            "clusterrank" => Attribute::Clusterrank(value),
+            "colorscheme" => Attribute::Colorscheme(value),
+            "comment" => Attribute::Comment(value),
+            "compound" => Attribute::Compound(value),
+            "concentrate" => Attribute::Concentrate(value),
+            "Damping" => Attribute::Damping(value),
+            "defaultdist" => Attribute::Defaultdist(value),
+            "dim" => Attribute::Dim(value),
+            "dimen" => Attribute::Dimen(value),
+            "diredgeconstraints" => Attribute::Diredgeconstraints(value),
+            "dpi" => Attribute::Dpi(value),
+            "epsilon" => Attribute::Epsilon(value),
+            "esep" => Attribute::Esep(value),
+            "fontcolor" => Attribute::Fontcolor(value),
+            "fontname" => Attribute::Fontname(value),
+            "fontnames" => Attribute::Fontnames(value),
+            "fontpath" => Attribute::Fontpath(value),
+            "fontsize" => Attribute::Fontsize(value),
+            "forcelabels" => Attribute::Forcelabels(value),
+            "gradientangle" => Attribute::Gradientangle(value),
+            "href" => Attribute::Href(value),
+            "id" => Attribute::Id(value),
+            "imagepath" => Attribute::Imagepath(value),
+            "inputscale" => Attribute::Inputscale(value),
+            "K" => Attribute::K(value),
+            "label" => Attribute::Label(value),
+            "label_scheme" => Attribute::LabelScheme(value),
+            "labeljust" => Attribute::Labeljust(value),
+            "labelloc" => Attribute::Labelloc(value),
+            "landscape" => Attribute::Landscape(value),
+            "layerlistsep" => Attribute::Layerlistsep(value),
+            "layers" => Attribute::Layers(value),
+            "layerselect" => Attribute::Layerselect(value),
+            "layersep" => Attribute::Layersep(value),
+            "layout" => Attribute::Layout(value),
+            "levels" => Attribute::Levels(value),
+            "levelsgap" => Attribute::Levelsgap(value),
+            "lheight" => Attribute::Lheight(value),
+            "linelength" => Attribute::Linelength(value),
+            "lp" => Attribute::Lp(value),
+            "lwidth" => Attribute::Lwidth(value),
+            "margin" => Attribute::Margin(value),
+            "maxiter" => Attribute::Maxiter(value),
+            "mclimit" => Attribute::Mclimit(value),
+            "mindist" => Attribute::Mindist(value),
+            "mode" => Attribute::Mode(value),
+            "model" => Attribute::Model(value),
+            "newrank" => Attribute::Newrank(value),
+            "nodesep" => Attribute::Nodesep(value),
+            "nojustify" => Attribute::Nojustify(value),
+            "normalize" => Attribute::Normalize(value),
+            "notranslate" => Attribute::Notranslate(value),
+            "nslimit" => Attribute::Nslimit(value),
+            "nslimit1" => Attribute::Nslimit1(value),
+            "oneblock" => Attribute::Oneblock(value),
+            "ordering" => Attribute::Ordering(value),
+            "orientation" => Attribute::Orientation(value),
+            "outputorder" => Attribute::Outputorder(value),
+            "overlap" => Attribute::Overlap(value),
+            "overlap_scaling" => Attribute::OverlapScaling(value),
+            "overlap_shrink" => Attribute::OverlapShrink(value),
+            "pack" => Attribute::Pack(value),
+            "packmode" => Attribute::Packmode(value),
+            "pad" => Attribute::Pad(value),
+            "page" => Attribute::Page(value),
+            "pagedir" => Attribute::Pagedir(value),
+            "quadtree" => Attribute::Quadtree(value),
+            "quantum" => Attribute::Quantum(value),
+            "rankdir" => Attribute::Rankdir(value),
+            "ranksep" => Attribute::Ranksep(value),
+            "ratio" => Attribute::Ratio(value),
+            "remincross" => Attribute::Remincross(value),
+            "repulsiveforce" => Attribute::Repulsiveforce(value),
+            "resolution" => Attribute::Resolution(value),
+            "root" => Attribute::Root(value),
+            "rotate" => Attribute::Rotate(value),
+            "rotation" => Attribute::Rotation(value),
+            "scale" => Attribute::Scale(value),
+            "searchsize" => Attribute::Searchsize(value),
+            "sep" => Attribute::Sep(value),
+            "showboxes" => Attribute::Showboxes(value),
+            "size" => Attribute::Size(value),
+            "smoothing" => Attribute::Smoothing(value),
+            "sortv" => Attribute::Sortv(value),
+            "splines" => Attribute::Splines(value),
+            "start" => Attribute::Start(value),
+            "style" => Attribute::Style(value),
+            "stylesheet" => Attribute::Stylesheet(value),
+            "target" => Attribute::Target(value),
+            "TBbalance" => Attribute::Tbbalance(value),
+            "tooltip" => Attribute::Tooltip(value),
+            "truecolor" => Attribute::Truecolor(value),
+            "URL" => Attribute::Url(value),
+            "viewport" => Attribute::Viewport(value),
+            "voro_margin" => Attribute::VoroMargin(value),
+            "xdotversion" => Attribute::Xdotversion(value),
             _ => panic!("Invalid attribute key `{key}` for GraphAttributes"),
         };
 
@@ -703,7 +715,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_background(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Background(s.into());
+        let item = Attribute::Background(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -721,7 +733,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_bb(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Bb(s.into());
+        let item = Attribute::Bb(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -739,7 +751,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_beautify(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Beautify(s.into());
+        let item = Attribute::Beautify(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -757,7 +769,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_bgcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Bgcolor(s.into());
+        let item = Attribute::Bgcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -775,7 +787,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_center(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Center(s.into());
+        let item = Attribute::Center(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -793,7 +805,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_charset(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Charset(s.into());
+        let item = Attribute::Charset(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -811,7 +823,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_class(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Class(s.into());
+        let item = Attribute::Class(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -829,7 +841,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_clusterrank(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Clusterrank(s.into());
+        let item = Attribute::Clusterrank(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -847,7 +859,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_colorscheme(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Colorscheme(s.into());
+        let item = Attribute::Colorscheme(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -865,7 +877,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_comment(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Comment(s.into());
+        let item = Attribute::Comment(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -883,7 +895,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_compound(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Compound(s.into());
+        let item = Attribute::Compound(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -901,7 +913,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_concentrate(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Concentrate(s.into());
+        let item = Attribute::Concentrate(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -919,7 +931,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_damping(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Damping(s.into());
+        let item = Attribute::Damping(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -937,7 +949,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_defaultdist(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Defaultdist(s.into());
+        let item = Attribute::Defaultdist(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -955,7 +967,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_dim(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Dim(s.into());
+        let item = Attribute::Dim(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -973,7 +985,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_dimen(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Dimen(s.into());
+        let item = Attribute::Dimen(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -991,7 +1003,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_diredgeconstraints(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Diredgeconstraints(s.into());
+        let item = Attribute::Diredgeconstraints(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1009,7 +1021,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_dpi(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Dpi(s.into());
+        let item = Attribute::Dpi(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1027,7 +1039,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_epsilon(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Epsilon(s.into());
+        let item = Attribute::Epsilon(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1045,7 +1057,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_esep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Esep(s.into());
+        let item = Attribute::Esep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1063,7 +1075,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_fontcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontcolor(s.into());
+        let item = Attribute::Fontcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1081,7 +1093,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_fontname(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontname(s.into());
+        let item = Attribute::Fontname(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1099,7 +1111,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_fontnames(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontnames(s.into());
+        let item = Attribute::Fontnames(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1117,7 +1129,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_fontpath(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontpath(s.into());
+        let item = Attribute::Fontpath(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1135,7 +1147,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_fontsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontsize(s.into());
+        let item = Attribute::Fontsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1153,7 +1165,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_forcelabels(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Forcelabels(s.into());
+        let item = Attribute::Forcelabels(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1171,7 +1183,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_gradientangle(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Gradientangle(s.into());
+        let item = Attribute::Gradientangle(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1189,7 +1201,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_href(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Href(s.into());
+        let item = Attribute::Href(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1207,7 +1219,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_id(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Id(s.into());
+        let item = Attribute::Id(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1225,7 +1237,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_imagepath(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Imagepath(s.into());
+        let item = Attribute::Imagepath(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1243,7 +1255,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_inputscale(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Inputscale(s.into());
+        let item = Attribute::Inputscale(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1261,7 +1273,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_k(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::K(s.into());
+        let item = Attribute::K(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1279,7 +1291,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_label(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Label(s.into());
+        let item = Attribute::Label(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1297,7 +1309,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_label_scheme(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::LabelScheme(s.into());
+        let item = Attribute::LabelScheme(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1315,7 +1327,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_labeljust(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labeljust(s.into());
+        let item = Attribute::Labeljust(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1333,7 +1345,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_labelloc(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelloc(s.into());
+        let item = Attribute::Labelloc(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1351,7 +1363,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_landscape(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Landscape(s.into());
+        let item = Attribute::Landscape(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1369,7 +1381,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_layerlistsep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layerlistsep(s.into());
+        let item = Attribute::Layerlistsep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1387,7 +1399,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_layers(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layers(s.into());
+        let item = Attribute::Layers(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1405,7 +1417,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_layerselect(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layerselect(s.into());
+        let item = Attribute::Layerselect(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1423,7 +1435,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_layersep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layersep(s.into());
+        let item = Attribute::Layersep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1441,7 +1453,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_layout(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layout(s.into());
+        let item = Attribute::Layout(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1459,7 +1471,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_levels(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Levels(s.into());
+        let item = Attribute::Levels(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1477,7 +1489,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_levelsgap(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Levelsgap(s.into());
+        let item = Attribute::Levelsgap(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1495,7 +1507,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_lheight(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lheight(s.into());
+        let item = Attribute::Lheight(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1513,7 +1525,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_linelength(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Linelength(s.into());
+        let item = Attribute::Linelength(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1531,7 +1543,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_lp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lp(s.into());
+        let item = Attribute::Lp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1549,7 +1561,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_lwidth(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lwidth(s.into());
+        let item = Attribute::Lwidth(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1567,7 +1579,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_margin(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Margin(s.into());
+        let item = Attribute::Margin(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1585,7 +1597,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_maxiter(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Maxiter(s.into());
+        let item = Attribute::Maxiter(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1603,7 +1615,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_mclimit(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Mclimit(s.into());
+        let item = Attribute::Mclimit(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1621,7 +1633,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_mindist(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Mindist(s.into());
+        let item = Attribute::Mindist(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1639,7 +1651,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_mode(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Mode(s.into());
+        let item = Attribute::Mode(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1657,7 +1669,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_model(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Model(s.into());
+        let item = Attribute::Model(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1675,7 +1687,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_newrank(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Newrank(s.into());
+        let item = Attribute::Newrank(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1693,7 +1705,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_nodesep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nodesep(s.into());
+        let item = Attribute::Nodesep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1711,7 +1723,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_nojustify(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nojustify(s.into());
+        let item = Attribute::Nojustify(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1729,7 +1741,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_normalize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Normalize(s.into());
+        let item = Attribute::Normalize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1747,7 +1759,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_notranslate(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Notranslate(s.into());
+        let item = Attribute::Notranslate(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1765,7 +1777,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_nslimit(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nslimit(s.into());
+        let item = Attribute::Nslimit(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1783,7 +1795,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_nslimit1(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nslimit1(s.into());
+        let item = Attribute::Nslimit1(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1801,7 +1813,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_oneblock(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Oneblock(s.into());
+        let item = Attribute::Oneblock(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1819,7 +1831,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_ordering(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Ordering(s.into());
+        let item = Attribute::Ordering(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1837,7 +1849,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_orientation(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Orientation(s.into());
+        let item = Attribute::Orientation(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1855,7 +1867,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_outputorder(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Outputorder(s.into());
+        let item = Attribute::Outputorder(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1873,7 +1885,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_overlap(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Overlap(s.into());
+        let item = Attribute::Overlap(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1891,7 +1903,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_overlap_scaling(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::OverlapScaling(s.into());
+        let item = Attribute::OverlapScaling(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1909,7 +1921,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_overlap_shrink(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::OverlapShrink(s.into());
+        let item = Attribute::OverlapShrink(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1927,7 +1939,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_pack(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pack(s.into());
+        let item = Attribute::Pack(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1945,7 +1957,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_packmode(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Packmode(s.into());
+        let item = Attribute::Packmode(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1963,7 +1975,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_pad(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pad(s.into());
+        let item = Attribute::Pad(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1981,7 +1993,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_page(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Page(s.into());
+        let item = Attribute::Page(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -1999,7 +2011,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_pagedir(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pagedir(s.into());
+        let item = Attribute::Pagedir(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2017,7 +2029,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_quadtree(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Quadtree(s.into());
+        let item = Attribute::Quadtree(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2035,7 +2047,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_quantum(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Quantum(s.into());
+        let item = Attribute::Quantum(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2053,7 +2065,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_rankdir(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Rankdir(s.into());
+        let item = Attribute::Rankdir(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2071,7 +2083,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_ranksep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Ranksep(s.into());
+        let item = Attribute::Ranksep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2089,7 +2101,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_ratio(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Ratio(s.into());
+        let item = Attribute::Ratio(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2107,7 +2119,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_remincross(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Remincross(s.into());
+        let item = Attribute::Remincross(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2125,7 +2137,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_repulsiveforce(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Repulsiveforce(s.into());
+        let item = Attribute::Repulsiveforce(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2143,7 +2155,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_resolution(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Resolution(s.into());
+        let item = Attribute::Resolution(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2161,7 +2173,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_root(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Root(s.into());
+        let item = Attribute::Root(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2179,7 +2191,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_rotate(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Rotate(s.into());
+        let item = Attribute::Rotate(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2197,7 +2209,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_rotation(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Rotation(s.into());
+        let item = Attribute::Rotation(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2215,7 +2227,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_scale(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Scale(s.into());
+        let item = Attribute::Scale(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2233,7 +2245,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_searchsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Searchsize(s.into());
+        let item = Attribute::Searchsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2251,7 +2263,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_sep(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sep(s.into());
+        let item = Attribute::Sep(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2269,7 +2281,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_showboxes(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Showboxes(s.into());
+        let item = Attribute::Showboxes(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2287,7 +2299,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_size(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Size(s.into());
+        let item = Attribute::Size(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2305,7 +2317,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_smoothing(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Smoothing(s.into());
+        let item = Attribute::Smoothing(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2323,7 +2335,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_sortv(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sortv(s.into());
+        let item = Attribute::Sortv(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2341,7 +2353,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_splines(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Splines(s.into());
+        let item = Attribute::Splines(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2359,7 +2371,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_start(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Start(s.into());
+        let item = Attribute::Start(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2377,7 +2389,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_style(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Style(s.into());
+        let item = Attribute::Style(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2395,7 +2407,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_stylesheet(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Stylesheet(s.into());
+        let item = Attribute::Stylesheet(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2413,7 +2425,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_target(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Target(s.into());
+        let item = Attribute::Target(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2431,7 +2443,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_tbbalance(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tbbalance(s.into());
+        let item = Attribute::Tbbalance(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2449,7 +2461,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_tooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tooltip(s.into());
+        let item = Attribute::Tooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2467,7 +2479,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_truecolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Truecolor(s.into());
+        let item = Attribute::Truecolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2485,7 +2497,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_url(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Url(s.into());
+        let item = Attribute::Url(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2503,7 +2515,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_viewport(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Viewport(s.into());
+        let item = Attribute::Viewport(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2521,7 +2533,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_voro_margin(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::VoroMargin(s.into());
+        let item = Attribute::VoroMargin(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2539,7 +2551,7 @@ impl GraphAttributes {
     #[inline]
     pub fn set_xdotversion(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Xdotversion(s.into());
+        let item = Attribute::Xdotversion(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2579,56 +2591,57 @@ impl VertexAttributes {
     /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
     ///
     pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let value = quote(value);
         let item = match key {
-            "area" => Attribute::Area(value.into()),
-            "class" => Attribute::Class(value.into()),
-            "color" => Attribute::Color(value.into()),
-            "colorscheme" => Attribute::Colorscheme(value.into()),
-            "comment" => Attribute::Comment(value.into()),
-            "distortion" => Attribute::Distortion(value.into()),
-            "fillcolor" => Attribute::Fillcolor(value.into()),
-            "fixedsize" => Attribute::Fixedsize(value.into()),
-            "fontcolor" => Attribute::Fontcolor(value.into()),
-            "fontname" => Attribute::Fontname(value.into()),
-            "fontsize" => Attribute::Fontsize(value.into()),
-            "gradientangle" => Attribute::Gradientangle(value.into()),
-            "group" => Attribute::Group(value.into()),
-            "height" => Attribute::Height(value.into()),
-            "href" => Attribute::Href(value.into()),
-            "id" => Attribute::Id(value.into()),
-            "image" => Attribute::Image(value.into()),
-            "imagepos" => Attribute::Imagepos(value.into()),
-            "imagescale" => Attribute::Imagescale(value.into()),
-            "label" => Attribute::Label(value.into()),
-            "labelloc" => Attribute::Labelloc(value.into()),
-            "layer" => Attribute::Layer(value.into()),
-            "margin" => Attribute::Margin(value.into()),
-            "nojustify" => Attribute::Nojustify(value.into()),
-            "ordering" => Attribute::Ordering(value.into()),
-            "orientation" => Attribute::Orientation(value.into()),
-            "penwidth" => Attribute::Penwidth(value.into()),
-            "peripheries" => Attribute::Peripheries(value.into()),
-            "pin" => Attribute::Pin(value.into()),
-            "pos" => Attribute::Pos(value.into()),
-            "rects" => Attribute::Rects(value.into()),
-            "regular" => Attribute::Regular(value.into()),
-            "root" => Attribute::Root(value.into()),
-            "samplepoints" => Attribute::Samplepoints(value.into()),
-            "shape" => Attribute::Shape(value.into()),
-            "shapefile" => Attribute::Shapefile(value.into()),
-            "showboxes" => Attribute::Showboxes(value.into()),
-            "sides" => Attribute::Sides(value.into()),
-            "skew" => Attribute::Skew(value.into()),
-            "sortv" => Attribute::Sortv(value.into()),
-            "style" => Attribute::Style(value.into()),
-            "target" => Attribute::Target(value.into()),
-            "tooltip" => Attribute::Tooltip(value.into()),
-            "URL" => Attribute::Url(value.into()),
-            "vertices" => Attribute::Vertices(value.into()),
-            "width" => Attribute::Width(value.into()),
-            "xlabel" => Attribute::Xlabel(value.into()),
-            "xlp" => Attribute::Xlp(value.into()),
-            "z" => Attribute::Z(value.into()),
+            "area" => Attribute::Area(value),
+            "class" => Attribute::Class(value),
+            "color" => Attribute::Color(value),
+            "colorscheme" => Attribute::Colorscheme(value),
+            "comment" => Attribute::Comment(value),
+            "distortion" => Attribute::Distortion(value),
+            "fillcolor" => Attribute::Fillcolor(value),
+            "fixedsize" => Attribute::Fixedsize(value),
+            "fontcolor" => Attribute::Fontcolor(value),
+            "fontname" => Attribute::Fontname(value),
+            "fontsize" => Attribute::Fontsize(value),
+            "gradientangle" => Attribute::Gradientangle(value),
+            "group" => Attribute::Group(value),
+            "height" => Attribute::Height(value),
+            "href" => Attribute::Href(value),
+            "id" => Attribute::Id(value),
+            "image" => Attribute::Image(value),
+            "imagepos" => Attribute::Imagepos(value),
+            "imagescale" => Attribute::Imagescale(value),
+            "label" => Attribute::Label(value),
+            "labelloc" => Attribute::Labelloc(value),
+            "layer" => Attribute::Layer(value),
+            "margin" => Attribute::Margin(value),
+            "nojustify" => Attribute::Nojustify(value),
+            "ordering" => Attribute::Ordering(value),
+            "orientation" => Attribute::Orientation(value),
+            "penwidth" => Attribute::Penwidth(value),
+            "peripheries" => Attribute::Peripheries(value),
+            "pin" => Attribute::Pin(value),
+            "pos" => Attribute::Pos(value),
+            "rects" => Attribute::Rects(value),
+            "regular" => Attribute::Regular(value),
+            "root" => Attribute::Root(value),
+            "samplepoints" => Attribute::Samplepoints(value),
+            "shape" => Attribute::Shape(value),
+            "shapefile" => Attribute::Shapefile(value),
+            "showboxes" => Attribute::Showboxes(value),
+            "sides" => Attribute::Sides(value),
+            "skew" => Attribute::Skew(value),
+            "sortv" => Attribute::Sortv(value),
+            "style" => Attribute::Style(value),
+            "target" => Attribute::Target(value),
+            "tooltip" => Attribute::Tooltip(value),
+            "URL" => Attribute::Url(value),
+            "vertices" => Attribute::Vertices(value),
+            "width" => Attribute::Width(value),
+            "xlabel" => Attribute::Xlabel(value),
+            "xlp" => Attribute::Xlp(value),
+            "z" => Attribute::Z(value),
             _ => panic!("Invalid attribute key `{key}` for VertexAttributes"),
         };
 
@@ -2651,7 +2664,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_area(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Area(s.into());
+        let item = Attribute::Area(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2669,7 +2682,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_class(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Class(s.into());
+        let item = Attribute::Class(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2687,7 +2700,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_color(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Color(s.into());
+        let item = Attribute::Color(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2705,7 +2718,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_colorscheme(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Colorscheme(s.into());
+        let item = Attribute::Colorscheme(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2723,7 +2736,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_comment(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Comment(s.into());
+        let item = Attribute::Comment(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2741,7 +2754,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_distortion(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Distortion(s.into());
+        let item = Attribute::Distortion(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2759,7 +2772,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_fillcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fillcolor(s.into());
+        let item = Attribute::Fillcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2777,7 +2790,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_fixedsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fixedsize(s.into());
+        let item = Attribute::Fixedsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2795,7 +2808,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_fontcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontcolor(s.into());
+        let item = Attribute::Fontcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2813,7 +2826,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_fontname(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontname(s.into());
+        let item = Attribute::Fontname(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2831,7 +2844,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_fontsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontsize(s.into());
+        let item = Attribute::Fontsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2849,7 +2862,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_gradientangle(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Gradientangle(s.into());
+        let item = Attribute::Gradientangle(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2867,7 +2880,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_group(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Group(s.into());
+        let item = Attribute::Group(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2885,7 +2898,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_height(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Height(s.into());
+        let item = Attribute::Height(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2903,7 +2916,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_href(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Href(s.into());
+        let item = Attribute::Href(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2921,7 +2934,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_id(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Id(s.into());
+        let item = Attribute::Id(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2939,7 +2952,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_image(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Image(s.into());
+        let item = Attribute::Image(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2957,7 +2970,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_imagepos(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Imagepos(s.into());
+        let item = Attribute::Imagepos(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2975,7 +2988,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_imagescale(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Imagescale(s.into());
+        let item = Attribute::Imagescale(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -2993,7 +3006,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_label(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Label(s.into());
+        let item = Attribute::Label(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3011,7 +3024,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_labelloc(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelloc(s.into());
+        let item = Attribute::Labelloc(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3029,7 +3042,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_layer(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layer(s.into());
+        let item = Attribute::Layer(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3047,7 +3060,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_margin(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Margin(s.into());
+        let item = Attribute::Margin(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3065,7 +3078,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_nojustify(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nojustify(s.into());
+        let item = Attribute::Nojustify(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3083,7 +3096,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_ordering(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Ordering(s.into());
+        let item = Attribute::Ordering(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3101,7 +3114,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_orientation(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Orientation(s.into());
+        let item = Attribute::Orientation(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3119,7 +3132,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_penwidth(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Penwidth(s.into());
+        let item = Attribute::Penwidth(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3137,7 +3150,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_peripheries(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Peripheries(s.into());
+        let item = Attribute::Peripheries(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3155,7 +3168,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_pin(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pin(s.into());
+        let item = Attribute::Pin(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3173,7 +3186,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_pos(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pos(s.into());
+        let item = Attribute::Pos(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3191,7 +3204,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_rects(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Rects(s.into());
+        let item = Attribute::Rects(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3209,7 +3222,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_regular(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Regular(s.into());
+        let item = Attribute::Regular(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3227,7 +3240,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_root(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Root(s.into());
+        let item = Attribute::Root(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3245,7 +3258,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_samplepoints(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Samplepoints(s.into());
+        let item = Attribute::Samplepoints(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3263,7 +3276,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_shape(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Shape(s.into());
+        let item = Attribute::Shape(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3281,7 +3294,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_shapefile(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Shapefile(s.into());
+        let item = Attribute::Shapefile(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3299,7 +3312,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_showboxes(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Showboxes(s.into());
+        let item = Attribute::Showboxes(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3317,7 +3330,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_sides(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sides(s.into());
+        let item = Attribute::Sides(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3335,7 +3348,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_skew(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Skew(s.into());
+        let item = Attribute::Skew(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3353,7 +3366,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_sortv(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sortv(s.into());
+        let item = Attribute::Sortv(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3371,7 +3384,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_style(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Style(s.into());
+        let item = Attribute::Style(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3389,7 +3402,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_target(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Target(s.into());
+        let item = Attribute::Target(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3407,7 +3420,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_tooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tooltip(s.into());
+        let item = Attribute::Tooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3425,7 +3438,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_url(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Url(s.into());
+        let item = Attribute::Url(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3443,7 +3456,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_vertices(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Vertices(s.into());
+        let item = Attribute::Vertices(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3461,7 +3474,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_width(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Width(s.into());
+        let item = Attribute::Width(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3479,7 +3492,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_xlabel(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Xlabel(s.into());
+        let item = Attribute::Xlabel(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3497,7 +3510,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_xlp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Xlp(s.into());
+        let item = Attribute::Xlp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3515,7 +3528,7 @@ impl VertexAttributes {
     #[inline]
     pub fn set_z(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Z(s.into());
+        let item = Attribute::Z(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3555,38 +3568,39 @@ impl ClusterAttributes {
     /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
     ///
     pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let value = quote(value);
         let item = match key {
-            "area" => Attribute::Area(value.into()),
-            "bgcolor" => Attribute::Bgcolor(value.into()),
-            "class" => Attribute::Class(value.into()),
-            "cluster" => Attribute::Cluster(value.into()),
-            "color" => Attribute::Color(value.into()),
-            "colorscheme" => Attribute::Colorscheme(value.into()),
-            "fillcolor" => Attribute::Fillcolor(value.into()),
-            "fontcolor" => Attribute::Fontcolor(value.into()),
-            "fontname" => Attribute::Fontname(value.into()),
-            "fontsize" => Attribute::Fontsize(value.into()),
-            "gradientangle" => Attribute::Gradientangle(value.into()),
-            "href" => Attribute::Href(value.into()),
-            "id" => Attribute::Id(value.into()),
-            "K" => Attribute::K(value.into()),
-            "label" => Attribute::Label(value.into()),
-            "labeljust" => Attribute::Labeljust(value.into()),
-            "labelloc" => Attribute::Labelloc(value.into()),
-            "layer" => Attribute::Layer(value.into()),
-            "lheight" => Attribute::Lheight(value.into()),
-            "lp" => Attribute::Lp(value.into()),
-            "lwidth" => Attribute::Lwidth(value.into()),
-            "margin" => Attribute::Margin(value.into()),
-            "nojustify" => Attribute::Nojustify(value.into()),
-            "pencolor" => Attribute::Pencolor(value.into()),
-            "penwidth" => Attribute::Penwidth(value.into()),
-            "peripheries" => Attribute::Peripheries(value.into()),
-            "sortv" => Attribute::Sortv(value.into()),
-            "style" => Attribute::Style(value.into()),
-            "target" => Attribute::Target(value.into()),
-            "tooltip" => Attribute::Tooltip(value.into()),
-            "URL" => Attribute::Url(value.into()),
+            "area" => Attribute::Area(value),
+            "bgcolor" => Attribute::Bgcolor(value),
+            "class" => Attribute::Class(value),
+            "cluster" => Attribute::Cluster(value),
+            "color" => Attribute::Color(value),
+            "colorscheme" => Attribute::Colorscheme(value),
+            "fillcolor" => Attribute::Fillcolor(value),
+            "fontcolor" => Attribute::Fontcolor(value),
+            "fontname" => Attribute::Fontname(value),
+            "fontsize" => Attribute::Fontsize(value),
+            "gradientangle" => Attribute::Gradientangle(value),
+            "href" => Attribute::Href(value),
+            "id" => Attribute::Id(value),
+            "K" => Attribute::K(value),
+            "label" => Attribute::Label(value),
+            "labeljust" => Attribute::Labeljust(value),
+            "labelloc" => Attribute::Labelloc(value),
+            "layer" => Attribute::Layer(value),
+            "lheight" => Attribute::Lheight(value),
+            "lp" => Attribute::Lp(value),
+            "lwidth" => Attribute::Lwidth(value),
+            "margin" => Attribute::Margin(value),
+            "nojustify" => Attribute::Nojustify(value),
+            "pencolor" => Attribute::Pencolor(value),
+            "penwidth" => Attribute::Penwidth(value),
+            "peripheries" => Attribute::Peripheries(value),
+            "sortv" => Attribute::Sortv(value),
+            "style" => Attribute::Style(value),
+            "target" => Attribute::Target(value),
+            "tooltip" => Attribute::Tooltip(value),
+            "URL" => Attribute::Url(value),
             _ => panic!("Invalid attribute key `{key}` for ClusterAttributes"),
         };
 
@@ -3609,7 +3623,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_area(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Area(s.into());
+        let item = Attribute::Area(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3627,7 +3641,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_bgcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Bgcolor(s.into());
+        let item = Attribute::Bgcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3645,7 +3659,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_class(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Class(s.into());
+        let item = Attribute::Class(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3663,7 +3677,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_cluster(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Cluster(s.into());
+        let item = Attribute::Cluster(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3681,7 +3695,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_color(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Color(s.into());
+        let item = Attribute::Color(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3699,7 +3713,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_colorscheme(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Colorscheme(s.into());
+        let item = Attribute::Colorscheme(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3717,7 +3731,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_fillcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fillcolor(s.into());
+        let item = Attribute::Fillcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3735,7 +3749,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_fontcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontcolor(s.into());
+        let item = Attribute::Fontcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3753,7 +3767,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_fontname(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontname(s.into());
+        let item = Attribute::Fontname(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3771,7 +3785,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_fontsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontsize(s.into());
+        let item = Attribute::Fontsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3789,7 +3803,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_gradientangle(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Gradientangle(s.into());
+        let item = Attribute::Gradientangle(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3807,7 +3821,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_href(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Href(s.into());
+        let item = Attribute::Href(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3825,7 +3839,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_id(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Id(s.into());
+        let item = Attribute::Id(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3843,7 +3857,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_k(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::K(s.into());
+        let item = Attribute::K(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3861,7 +3875,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_label(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Label(s.into());
+        let item = Attribute::Label(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3879,7 +3893,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_labeljust(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labeljust(s.into());
+        let item = Attribute::Labeljust(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3897,7 +3911,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_labelloc(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelloc(s.into());
+        let item = Attribute::Labelloc(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3915,7 +3929,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_layer(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layer(s.into());
+        let item = Attribute::Layer(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3933,7 +3947,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_lheight(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lheight(s.into());
+        let item = Attribute::Lheight(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3951,7 +3965,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_lp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lp(s.into());
+        let item = Attribute::Lp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3969,7 +3983,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_lwidth(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lwidth(s.into());
+        let item = Attribute::Lwidth(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -3987,7 +4001,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_margin(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Margin(s.into());
+        let item = Attribute::Margin(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4005,7 +4019,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_nojustify(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nojustify(s.into());
+        let item = Attribute::Nojustify(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4023,7 +4037,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_pencolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pencolor(s.into());
+        let item = Attribute::Pencolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4041,7 +4055,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_penwidth(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Penwidth(s.into());
+        let item = Attribute::Penwidth(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4059,7 +4073,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_peripheries(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Peripheries(s.into());
+        let item = Attribute::Peripheries(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4077,7 +4091,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_sortv(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sortv(s.into());
+        let item = Attribute::Sortv(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4095,7 +4109,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_style(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Style(s.into());
+        let item = Attribute::Style(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4113,7 +4127,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_target(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Target(s.into());
+        let item = Attribute::Target(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4131,7 +4145,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_tooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tooltip(s.into());
+        let item = Attribute::Tooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4149,7 +4163,7 @@ impl ClusterAttributes {
     #[inline]
     pub fn set_url(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Url(s.into());
+        let item = Attribute::Url(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4189,73 +4203,74 @@ impl EdgeAttributes {
     /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
     ///
     pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let value = quote(value);
         let item = match key {
-            "arrowhead" => Attribute::Arrowhead(value.into()),
-            "arrowsize" => Attribute::Arrowsize(value.into()),
-            "arrowtail" => Attribute::Arrowtail(value.into()),
-            "class" => Attribute::Class(value.into()),
-            "color" => Attribute::Color(value.into()),
-            "colorscheme" => Attribute::Colorscheme(value.into()),
-            "comment" => Attribute::Comment(value.into()),
-            "constraint" => Attribute::Constraint(value.into()),
-            "decorate" => Attribute::Decorate(value.into()),
-            "dir" => Attribute::Dir(value.into()),
-            "edgehref" => Attribute::Edgehref(value.into()),
-            "edgetarget" => Attribute::Edgetarget(value.into()),
-            "edgetooltip" => Attribute::Edgetooltip(value.into()),
-            "edgeURL" => Attribute::Edgeurl(value.into()),
-            "fillcolor" => Attribute::Fillcolor(value.into()),
-            "fontcolor" => Attribute::Fontcolor(value.into()),
-            "fontname" => Attribute::Fontname(value.into()),
-            "fontsize" => Attribute::Fontsize(value.into()),
-            "head_lp" => Attribute::HeadLp(value.into()),
-            "headclip" => Attribute::Headclip(value.into()),
-            "headhref" => Attribute::Headhref(value.into()),
-            "headlabel" => Attribute::Headlabel(value.into()),
-            "headport" => Attribute::Headport(value.into()),
-            "headtarget" => Attribute::Headtarget(value.into()),
-            "headtooltip" => Attribute::Headtooltip(value.into()),
-            "headURL" => Attribute::Headurl(value.into()),
-            "href" => Attribute::Href(value.into()),
-            "id" => Attribute::Id(value.into()),
-            "label" => Attribute::Label(value.into()),
-            "labelangle" => Attribute::Labelangle(value.into()),
-            "labeldistance" => Attribute::Labeldistance(value.into()),
-            "labelfloat" => Attribute::Labelfloat(value.into()),
-            "labelfontcolor" => Attribute::Labelfontcolor(value.into()),
-            "labelfontname" => Attribute::Labelfontname(value.into()),
-            "labelfontsize" => Attribute::Labelfontsize(value.into()),
-            "labelhref" => Attribute::Labelhref(value.into()),
-            "labeltarget" => Attribute::Labeltarget(value.into()),
-            "labeltooltip" => Attribute::Labeltooltip(value.into()),
-            "labelURL" => Attribute::Labelurl(value.into()),
-            "layer" => Attribute::Layer(value.into()),
-            "len" => Attribute::Len(value.into()),
-            "lhead" => Attribute::Lhead(value.into()),
-            "lp" => Attribute::Lp(value.into()),
-            "ltail" => Attribute::Ltail(value.into()),
-            "minlen" => Attribute::Minlen(value.into()),
-            "nojustify" => Attribute::Nojustify(value.into()),
-            "penwidth" => Attribute::Penwidth(value.into()),
-            "pos" => Attribute::Pos(value.into()),
-            "samehead" => Attribute::Samehead(value.into()),
-            "sametail" => Attribute::Sametail(value.into()),
-            "showboxes" => Attribute::Showboxes(value.into()),
-            "style" => Attribute::Style(value.into()),
-            "tail_lp" => Attribute::TailLp(value.into()),
-            "tailclip" => Attribute::Tailclip(value.into()),
-            "tailhref" => Attribute::Tailhref(value.into()),
-            "taillabel" => Attribute::Taillabel(value.into()),
-            "tailport" => Attribute::Tailport(value.into()),
-            "tailtarget" => Attribute::Tailtarget(value.into()),
-            "tailtooltip" => Attribute::Tailtooltip(value.into()),
-            "tailURL" => Attribute::Tailurl(value.into()),
-            "target" => Attribute::Target(value.into()),
-            "tooltip" => Attribute::Tooltip(value.into()),
-            "URL" => Attribute::Url(value.into()),
-            "weight" => Attribute::Weight(value.into()),
-            "xlabel" => Attribute::Xlabel(value.into()),
-            "xlp" => Attribute::Xlp(value.into()),
+            "arrowhead" => Attribute::Arrowhead(value),
+            "arrowsize" => Attribute::Arrowsize(value),
+            "arrowtail" => Attribute::Arrowtail(value),
+            "class" => Attribute::Class(value),
+            "color" => Attribute::Color(value),
+            "colorscheme" => Attribute::Colorscheme(value),
+            "comment" => Attribute::Comment(value),
+            "constraint" => Attribute::Constraint(value),
+            "decorate" => Attribute::Decorate(value),
+            "dir" => Attribute::Dir(value),
+            "edgehref" => Attribute::Edgehref(value),
+            "edgetarget" => Attribute::Edgetarget(value),
+            "edgetooltip" => Attribute::Edgetooltip(value),
+            "edgeURL" => Attribute::Edgeurl(value),
+            "fillcolor" => Attribute::Fillcolor(value),
+            "fontcolor" => Attribute::Fontcolor(value),
+            "fontname" => Attribute::Fontname(value),
+            "fontsize" => Attribute::Fontsize(value),
+            "head_lp" => Attribute::HeadLp(value),
+            "headclip" => Attribute::Headclip(value),
+            "headhref" => Attribute::Headhref(value),
+            "headlabel" => Attribute::Headlabel(value),
+            "headport" => Attribute::Headport(value),
+            "headtarget" => Attribute::Headtarget(value),
+            "headtooltip" => Attribute::Headtooltip(value),
+            "headURL" => Attribute::Headurl(value),
+            "href" => Attribute::Href(value),
+            "id" => Attribute::Id(value),
+            "label" => Attribute::Label(value),
+            "labelangle" => Attribute::Labelangle(value),
+            "labeldistance" => Attribute::Labeldistance(value),
+            "labelfloat" => Attribute::Labelfloat(value),
+            "labelfontcolor" => Attribute::Labelfontcolor(value),
+            "labelfontname" => Attribute::Labelfontname(value),
+            "labelfontsize" => Attribute::Labelfontsize(value),
+            "labelhref" => Attribute::Labelhref(value),
+            "labeltarget" => Attribute::Labeltarget(value),
+            "labeltooltip" => Attribute::Labeltooltip(value),
+            "labelURL" => Attribute::Labelurl(value),
+            "layer" => Attribute::Layer(value),
+            "len" => Attribute::Len(value),
+            "lhead" => Attribute::Lhead(value),
+            "lp" => Attribute::Lp(value),
+            "ltail" => Attribute::Ltail(value),
+            "minlen" => Attribute::Minlen(value),
+            "nojustify" => Attribute::Nojustify(value),
+            "penwidth" => Attribute::Penwidth(value),
+            "pos" => Attribute::Pos(value),
+            "samehead" => Attribute::Samehead(value),
+            "sametail" => Attribute::Sametail(value),
+            "showboxes" => Attribute::Showboxes(value),
+            "style" => Attribute::Style(value),
+            "tail_lp" => Attribute::TailLp(value),
+            "tailclip" => Attribute::Tailclip(value),
+            "tailhref" => Attribute::Tailhref(value),
+            "taillabel" => Attribute::Taillabel(value),
+            "tailport" => Attribute::Tailport(value),
+            "tailtarget" => Attribute::Tailtarget(value),
+            "tailtooltip" => Attribute::Tailtooltip(value),
+            "tailURL" => Attribute::Tailurl(value),
+            "target" => Attribute::Target(value),
+            "tooltip" => Attribute::Tooltip(value),
+            "URL" => Attribute::Url(value),
+            "weight" => Attribute::Weight(value),
+            "xlabel" => Attribute::Xlabel(value),
+            "xlp" => Attribute::Xlp(value),
             _ => panic!("Invalid attribute key `{key}` for EdgeAttributes"),
         };
 
@@ -4278,7 +4293,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_arrowhead(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Arrowhead(s.into());
+        let item = Attribute::Arrowhead(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4296,7 +4311,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_arrowsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Arrowsize(s.into());
+        let item = Attribute::Arrowsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4314,7 +4329,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_arrowtail(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Arrowtail(s.into());
+        let item = Attribute::Arrowtail(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4332,7 +4347,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_class(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Class(s.into());
+        let item = Attribute::Class(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4350,7 +4365,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_color(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Color(s.into());
+        let item = Attribute::Color(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4368,7 +4383,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_colorscheme(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Colorscheme(s.into());
+        let item = Attribute::Colorscheme(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4386,7 +4401,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_comment(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Comment(s.into());
+        let item = Attribute::Comment(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4404,7 +4419,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_constraint(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Constraint(s.into());
+        let item = Attribute::Constraint(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4422,7 +4437,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_decorate(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Decorate(s.into());
+        let item = Attribute::Decorate(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4440,7 +4455,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_dir(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Dir(s.into());
+        let item = Attribute::Dir(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4458,7 +4473,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_edgehref(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Edgehref(s.into());
+        let item = Attribute::Edgehref(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4476,7 +4491,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_edgetarget(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Edgetarget(s.into());
+        let item = Attribute::Edgetarget(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4494,7 +4509,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_edgetooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Edgetooltip(s.into());
+        let item = Attribute::Edgetooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4512,7 +4527,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_edgeurl(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Edgeurl(s.into());
+        let item = Attribute::Edgeurl(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4530,7 +4545,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_fillcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fillcolor(s.into());
+        let item = Attribute::Fillcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4548,7 +4563,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_fontcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontcolor(s.into());
+        let item = Attribute::Fontcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4566,7 +4581,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_fontname(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontname(s.into());
+        let item = Attribute::Fontname(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4584,7 +4599,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_fontsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Fontsize(s.into());
+        let item = Attribute::Fontsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4602,7 +4617,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_head_lp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::HeadLp(s.into());
+        let item = Attribute::HeadLp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4620,7 +4635,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headclip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headclip(s.into());
+        let item = Attribute::Headclip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4638,7 +4653,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headhref(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headhref(s.into());
+        let item = Attribute::Headhref(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4656,7 +4671,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headlabel(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headlabel(s.into());
+        let item = Attribute::Headlabel(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4674,7 +4689,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headport(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headport(s.into());
+        let item = Attribute::Headport(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4692,7 +4707,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headtarget(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headtarget(s.into());
+        let item = Attribute::Headtarget(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4710,7 +4725,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headtooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headtooltip(s.into());
+        let item = Attribute::Headtooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4728,7 +4743,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_headurl(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Headurl(s.into());
+        let item = Attribute::Headurl(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4746,7 +4761,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_href(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Href(s.into());
+        let item = Attribute::Href(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4764,7 +4779,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_id(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Id(s.into());
+        let item = Attribute::Id(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4782,7 +4797,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_label(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Label(s.into());
+        let item = Attribute::Label(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4800,7 +4815,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelangle(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelangle(s.into());
+        let item = Attribute::Labelangle(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4818,7 +4833,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labeldistance(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labeldistance(s.into());
+        let item = Attribute::Labeldistance(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4836,7 +4851,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelfloat(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelfloat(s.into());
+        let item = Attribute::Labelfloat(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4854,7 +4869,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelfontcolor(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelfontcolor(s.into());
+        let item = Attribute::Labelfontcolor(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4872,7 +4887,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelfontname(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelfontname(s.into());
+        let item = Attribute::Labelfontname(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4890,7 +4905,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelfontsize(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelfontsize(s.into());
+        let item = Attribute::Labelfontsize(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4908,7 +4923,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelhref(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelhref(s.into());
+        let item = Attribute::Labelhref(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4926,7 +4941,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labeltarget(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labeltarget(s.into());
+        let item = Attribute::Labeltarget(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4944,7 +4959,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labeltooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labeltooltip(s.into());
+        let item = Attribute::Labeltooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4962,7 +4977,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_labelurl(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Labelurl(s.into());
+        let item = Attribute::Labelurl(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4980,7 +4995,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_layer(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Layer(s.into());
+        let item = Attribute::Layer(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -4998,7 +5013,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_len(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Len(s.into());
+        let item = Attribute::Len(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5016,7 +5031,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_lhead(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lhead(s.into());
+        let item = Attribute::Lhead(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5034,7 +5049,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_lp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Lp(s.into());
+        let item = Attribute::Lp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5052,7 +5067,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_ltail(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Ltail(s.into());
+        let item = Attribute::Ltail(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5070,7 +5085,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_minlen(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Minlen(s.into());
+        let item = Attribute::Minlen(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5088,7 +5103,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_nojustify(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Nojustify(s.into());
+        let item = Attribute::Nojustify(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5106,7 +5121,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_penwidth(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Penwidth(s.into());
+        let item = Attribute::Penwidth(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5124,7 +5139,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_pos(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Pos(s.into());
+        let item = Attribute::Pos(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5142,7 +5157,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_samehead(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Samehead(s.into());
+        let item = Attribute::Samehead(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5160,7 +5175,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_sametail(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Sametail(s.into());
+        let item = Attribute::Sametail(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5178,7 +5193,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_showboxes(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Showboxes(s.into());
+        let item = Attribute::Showboxes(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5196,7 +5211,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_style(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Style(s.into());
+        let item = Attribute::Style(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5214,7 +5229,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tail_lp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::TailLp(s.into());
+        let item = Attribute::TailLp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5232,7 +5247,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailclip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailclip(s.into());
+        let item = Attribute::Tailclip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5250,7 +5265,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailhref(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailhref(s.into());
+        let item = Attribute::Tailhref(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5268,7 +5283,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_taillabel(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Taillabel(s.into());
+        let item = Attribute::Taillabel(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5286,7 +5301,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailport(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailport(s.into());
+        let item = Attribute::Tailport(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5304,7 +5319,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailtarget(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailtarget(s.into());
+        let item = Attribute::Tailtarget(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5322,7 +5337,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailtooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailtooltip(s.into());
+        let item = Attribute::Tailtooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5340,7 +5355,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tailurl(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tailurl(s.into());
+        let item = Attribute::Tailurl(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5358,7 +5373,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_target(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Target(s.into());
+        let item = Attribute::Target(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5376,7 +5391,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_tooltip(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Tooltip(s.into());
+        let item = Attribute::Tooltip(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5394,7 +5409,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_url(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Url(s.into());
+        let item = Attribute::Url(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5412,7 +5427,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_weight(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Weight(s.into());
+        let item = Attribute::Weight(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5430,7 +5445,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_xlabel(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Xlabel(s.into());
+        let item = Attribute::Xlabel(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5448,7 +5463,7 @@ impl EdgeAttributes {
     #[inline]
     pub fn set_xlp(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Xlp(s.into());
+        let item = Attribute::Xlp(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5488,9 +5503,10 @@ impl SubgraphAttributes {
     /// Key is not valid for this attributes set. <a href="https://graphviz.org/doc/info/attrs.html#h:uses" target="_blank">Read more</a>.
     ///
     pub fn insert_raw_parts(&mut self, key: &str, value: &str) -> bool {
+        let value = quote(value);
         let item = match key {
-            "cluster" => Attribute::Cluster(value.into()),
-            "rank" => Attribute::Rank(value.into()),
+            "cluster" => Attribute::Cluster(value),
+            "rank" => Attribute::Rank(value),
             _ => panic!("Invalid attribute key `{key}` for SubgraphAttributes"),
         };
 
@@ -5513,7 +5529,7 @@ impl SubgraphAttributes {
     #[inline]
     pub fn set_cluster(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Cluster(s.into());
+        let item = Attribute::Cluster(quote(s));
 
         self.attributes.replace(item).is_none()
     }
@@ -5531,7 +5547,7 @@ impl SubgraphAttributes {
     #[inline]
     pub fn set_rank(&mut self, s: &str) -> bool {
         // Initialize new item for insertion or replacement.
-        let item = Attribute::Rank(s.into());
+        let item = Attribute::Rank(quote(s));
 
         self.attributes.replace(item).is_none()
     }
