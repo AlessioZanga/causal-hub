@@ -1,0 +1,57 @@
+file = _{ SOI ~ graphs ~ EOI }
+
+graphs = _{ graph+ }
+
+graph = { strict ~ graph_type ~ graph_id ~ "{" ~ statements ~ "}" }
+
+strict = { ^"strict"? }
+
+graph_type = { ^"graph" | ^"digraph" }
+
+graph_id = { id? }
+
+text = @{ !ASCII_DIGIT ~ ("_" | ASCII_ALPHANUMERIC)+ }
+
+quoted_text = @{ "\"" ~ (!"\"" ~ "\\\""? ~ ANY)* ~ "\"" }
+
+number = @{ "-"? ~ ("." ~ ASCII_DIGIT+ | ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT*)?) }
+
+id = _{ number | text | quoted_text }
+
+html = { "<" ~ (!(">" ~ WHITESPACE* ~">") ~ ANY)+ ~ ">" ~ WHITESPACE* ~ ">" }
+
+attribute = { id ~ "=" ~ (id | html) }
+
+attributes = { "[" ~ (attribute ~ (";" | ",")?)* ~ "]" }
+
+statements = { statement* }
+
+statement = _{ (attribute | global_attributes | subgraph | path | vertex) ~ ";"? }
+
+global_attributes = { (graph_type | vertex_type | path_type) ~ attributes }
+
+subgraph_type = { ^"subgraph" }
+
+subgraph = { (subgraph_type ~ id?)? ~ "{" ~ statements? ~ "}" }
+
+vertex_type = { ^"node" }
+
+vertex_id = { id ~ port? }
+
+port = { (":" ~ id ~ (":" ~ vertex_direction)? | ":" ~ vertex_direction) }
+
+vertex_direction = { "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw" | "c" | "_" }
+
+vertex = { vertex_id ~ attributes? }
+
+path_type = { ^"edge" }
+
+path_id = { (vertex_id | subgraph) ~ (path_direction ~ (vertex_id | subgraph))+ }
+
+path_direction = { ("->" | "--") }
+
+path = { path_id ~ attributes? }
+
+WHITESPACE = _{ (" " | "\t" | NEWLINE) }
+
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/"  | "//" ~ (!"\n" ~ ANY)* | "#" ~ (!"\n" ~ ANY)*) }

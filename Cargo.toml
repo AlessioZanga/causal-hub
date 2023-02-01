@@ -18,20 +18,24 @@ bimap = "^0.6"
 is_sorted = "^0.1"
 itertools = "^0.10"
 log = "^0.4"
-ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon", "serde" ] }
+ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon" ] }
 ndarray-linalg = "^0.16"
 ndarray-stats = "^0.5"
 page_size = "^0.5"
+pest = "^2.5"
+pest_derive = "^2.5"
 polars = { version = "^0.26", features = [ "dtype-categorical", "ndarray" ] }
 rayon = "^1.6"
 rustc-hash = "^1.1"
-serde = "^1.0"
 sprs = "^0.11"
+tempfile = "^3.3"
 thiserror = "^1.0"
 
 [dev-dependencies]
+ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon", "serde" ] }
 ndarray-linalg = { version = "^0.16", features = [ "openblas-system" ] }
 regex = "^1.7"
+serde = "^1.0"
 serde_json = "^1.0"
 
 [package.metadata.docs.rs]
