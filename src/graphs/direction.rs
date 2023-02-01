@@ -5,9 +5,11 @@ use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 /// Directions pseudo-enumerator for generics algorithms.
 pub mod directions {
     /// Undirected pseudo-enumerator for generics algorithms.
+    #[derive(Clone, Copy, Debug)]
     pub struct Undirected;
 
     /// Directed pseudo-enumerator for generics algorithms.
+    #[derive(Clone, Copy, Debug)]
     pub struct Directed;
 }
 
