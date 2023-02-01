@@ -1,6 +1,6 @@
 use std::f64::consts::FRAC_1_SQRT_2;
 
-use libm::erf;
+use libm::erfc;
 
 use crate::{
     data::ContinuousDataMatrix,
@@ -40,17 +40,21 @@ impl ConditionalIndependenceTest for FisherZ {
         let dof = self.n - z.len() - 3;
 
         // Compute partial correlation.
-        let rho = self.rho.call(x, y, z);
+        let stat = self.rho.call(x, y, z);
         // Compute test statistic from partial correlation as:
         //      sqrt(n - |z| - 3) * (1/2 * ln((1 + rho) / (1 - rho)))
-        let stat = 0.5 * f64::ln((1. + rho) / (1. - rho));
-        let stat = f64::sqrt(dof as f64) * stat;
+        //      sqrt(n - |z| - 3) * atanh(rho)
+        let stat = f64::sqrt(dof as f64) * f64::atanh(stat);
 
         // Compute p-value as:
-        //  2 * CDF(x, mu = 0, sigma = 1)
-        //  2 * (1/2 * (1 + erf(|x| / sqrt(2))))
-        //  1 + erf(|x| / sqrt(2)
-        let pval = 1. + erf(f64::abs(stat) * FRAC_1_SQRT_2);
+        //      |stat| > \Phi^-1(1 - \alpha / 2)
+        //      \Phi(|x|) > 1 - \alpha / 2
+        //      2 * (1 - \Phi(|x|)) < \alpha
+        //      2 * (1 - (1 / 2  * (1 + erf(|x| / sqrt(2))))) < \alpha
+        //      2 - (1 + erf(|x| / sqrt(2))) < \alpha
+        //      1 - erf(|x| / sqrt(2)) < \alpha
+        //      erfc(|x| * 1 / sqrt(2)) < \alpha
+        let pval = erfc(f64::abs(stat) * FRAC_1_SQRT_2);
 
         (dof, stat, pval)
     }
