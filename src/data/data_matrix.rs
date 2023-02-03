@@ -10,18 +10,57 @@ use polars::prelude::*;
 
 use super::DataSet;
 
-/* Implement DiscreteDataMatrix */
+/* Implement CategoricalDataMatrix */
 
-/// Data matrix for discrete data.
+/// Data matrix for categorical data.
 #[derive(Clone, Debug)]
-pub struct DiscreteDataMatrix {
+pub struct CategoricalDataMatrix {
     data: Array2<usize>,
     labels: BTreeSet<String>,
     levels: HashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
 }
 
-impl Deref for DiscreteDataMatrix {
+impl CategoricalDataMatrix {
+    /// Construct a new categorical data matrix given data encoding, labels and levels.
+    pub fn new<V, I, J, K>(data: Array2<usize>, labels: I, levels: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, K)>,
+        K: IntoIterator<Item = V>,
+    {
+        // Construct the labels set.
+        let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
+        // Check labels consistency.
+        assert_eq!(data.ncols(), labels.len());
+        // Construct the levels map.
+        let levels: HashMap<String, Vec<String>> = levels
+            .into_iter()
+            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .collect();
+        // Check levels consistency.
+        assert!(labels.iter().eq(levels.keys().sorted()));
+        // Compute cardinalities from levels.
+        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Check cardinalities.
+        assert_eq!(
+            data.fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
+                .into_iter()
+                .collect::<Vec<_>>(),
+            cardinality
+        );
+
+        Self {
+            data,
+            labels,
+            levels,
+            cardinality,
+        }
+    }
+}
+
+impl Deref for CategoricalDataMatrix {
     type Target = Array2<usize>;
 
     #[inline]
@@ -30,14 +69,14 @@ impl Deref for DiscreteDataMatrix {
     }
 }
 
-impl From<DataFrame> for DiscreteDataMatrix {
+impl From<DataFrame> for CategoricalDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
-                "Refer to `DiscreteDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
             )
         );
 
@@ -135,7 +174,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
-impl DataSet for DiscreteDataMatrix {
+impl DataSet for CategoricalDataMatrix {
     type Data = Array2<usize>;
 
     #[inline]
@@ -144,7 +183,7 @@ impl DataSet for DiscreteDataMatrix {
     }
 }
 
-impl DiscreteDataMatrix {
+impl CategoricalDataMatrix {
     /// Gets the map of variables to their levels.
     #[inline]
     pub fn levels(&self) -> &HashMap<String, Vec<String>> {

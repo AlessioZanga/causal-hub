@@ -28,10 +28,16 @@ jobs:
           toolchain: ${{ matrix.env }}
       - name: Dependencies (Linux)
         if: ${{ runner.os == 'Linux' }}
-        run: sudo apt-get install libopenblas-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libopenblas-dev \
+            graphviz
       - name: Dependencies (MacOS)
         if: ${{ runner.os == 'MacOS' }}
-        run: brew install openblas
+        run: |
+          brew install openblas
+          brew install graphviz
       - name: Dependencies (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |

@@ -13,14 +13,20 @@ pub mod discovery;
 /// Graphs algorithms and structures.
 pub mod graphs;
 
+/// I/O algorithms and structures.
+pub mod io;
+
 /// Models algorithms and structures.
 pub mod models;
 
-/// Statistical module.
-pub mod stats;
+/// Plot algorithms and traits.
+pub mod plots;
 
 /// Frequently used items.
 pub mod prelude;
+
+/// Statistical module.
+pub mod stats;
 
 /// Crate-wide types.
 pub mod types;

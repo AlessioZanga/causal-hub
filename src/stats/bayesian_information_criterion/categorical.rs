@@ -1,17 +1,17 @@
 use super::BayesianInformationCriterion;
 use crate::{
-    data::DiscreteDataMatrix,
+    data::CategoricalDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
 };
 
 impl<const RESCALED: bool, const PARALLEL: bool>
-    BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
+    BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
 {
     /// Computes BIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    pub fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the sample size.
         let n = d.nrows() as f64;
 
@@ -24,7 +24,7 @@ impl<const RESCALED: bool, const PARALLEL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<DiscreteDataMatrix, PARALLEL>::new();
+        let ll = LogLikelihood::<CategoricalDataMatrix, PARALLEL>::new();
         // Compute the log-likelihood.
         let ll = ll.call(d, x, z);
 
@@ -39,13 +39,13 @@ impl<const RESCALED: bool, const PARALLEL: bool>
 }
 
 impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
+    DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         self.call(d, x, z)
     }
 }

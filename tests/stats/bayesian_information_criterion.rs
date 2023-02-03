@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{prelude::DiscreteDataMatrix, stats::BIC};
+    use causal_hub::{prelude::CategoricalDataMatrix, stats::BIC};
 
     #[test]
     fn clone() {
         // Construct a new scoring criterion functor.
-        let s = BIC::<DiscreteDataMatrix>::default();
+        let s = BIC::<CategoricalDataMatrix>::default();
         // Clone the functor.
         let s = s.clone();
 
@@ -15,17 +15,17 @@ mod tests {
     #[test]
     fn debug() {
         // Construct a new scoring criterion functor.
-        let s = BIC::<DiscreteDataMatrix>::default();
+        let s = BIC::<CategoricalDataMatrix>::default();
         // Debug the functor.
         let s = format!("{:?}", s);
 
-        assert_eq!(&s, "BayesianInformationCriterion { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix>, k: 1.0 }");
+        assert_eq!(&s, "BayesianInformationCriterion { _d: PhantomData<causal_hub::data::data_matrix::CategoricalDataMatrix>, k: 1.0 }");
     }
 
     #[test]
     fn default() {
         // Construct the default scoring criterion functor.
-        let s = BIC::<DiscreteDataMatrix>::default();
+        let s = BIC::<CategoricalDataMatrix>::default();
 
         dbg!(&s);
     }
@@ -33,7 +33,7 @@ mod tests {
     #[test]
     fn with_penalty_coeff() {
         // Construct the default scoring criterion functor.
-        let s = BIC::<DiscreteDataMatrix>::default();
+        let s = BIC::<CategoricalDataMatrix>::default();
         // Set penalty coefficient.
         let s = s.with_penalty_coeff(2.);
 
@@ -42,7 +42,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use approx::*;
     use causal_hub::prelude::*;
     use polars::prelude::*;
@@ -50,9 +50,10 @@ mod discrete {
     #[test]
     fn bayesian_information_criterion() {
         // Read test database from file.
-        let data =
-            std::fs::read_to_string("./tests/assets/bayesian_information_criterion/discrete.json")
-                .unwrap();
+        let data = std::fs::read_to_string(
+            "./tests/assets/bayesian_information_criterion/categorical.json",
+        )
+        .unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -60,7 +61,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -92,9 +93,10 @@ mod discrete {
     #[test]
     fn parallel_bayesian_information_criterion() {
         // Read test database from file.
-        let data =
-            std::fs::read_to_string("./tests/assets/bayesian_information_criterion/discrete.json")
-                .unwrap();
+        let data = std::fs::read_to_string(
+            "./tests/assets/bayesian_information_criterion/categorical.json",
+        )
+        .unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -102,7 +104,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());

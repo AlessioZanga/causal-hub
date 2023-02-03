@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
     mod marginal_log_likelihood {
-        use causal_hub::{prelude::DiscreteDataMatrix, stats::MarginalLogLikelihood};
+        use causal_hub::{prelude::CategoricalDataMatrix, stats::MarginalLogLikelihood};
 
         #[test]
         fn clone() {
             // Construct a new scoring criterion functor.
-            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = MarginalLogLikelihood::<CategoricalDataMatrix, false>::default();
             // Clone the functor.
             let s = s.clone();
 
@@ -16,29 +16,29 @@ mod tests {
         #[test]
         fn debug() {
             // Construct a new scoring criterion functor.
-            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = MarginalLogLikelihood::<CategoricalDataMatrix, false>::default();
             // Debug the functor.
             let s = format!("{:?}", s);
 
-            assert_eq!(&s, "MarginalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+            assert_eq!(&s, "MarginalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::CategoricalDataMatrix> }");
         }
 
         #[test]
         fn default() {
             // Construct the default scoring criterion functor.
-            let s = MarginalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = MarginalLogLikelihood::<CategoricalDataMatrix, false>::default();
 
             dbg!(&s);
         }
     }
 
     mod conditional_log_likelihood {
-        use causal_hub::{prelude::DiscreteDataMatrix, stats::ConditionalLogLikelihood};
+        use causal_hub::{prelude::CategoricalDataMatrix, stats::ConditionalLogLikelihood};
 
         #[test]
         fn clone() {
             // Construct a new scoring criterion functor.
-            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = ConditionalLogLikelihood::<CategoricalDataMatrix, false>::default();
             // Clone the functor.
             let s = s.clone();
 
@@ -48,29 +48,29 @@ mod tests {
         #[test]
         fn debug() {
             // Construct a new scoring criterion functor.
-            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = ConditionalLogLikelihood::<CategoricalDataMatrix, false>::default();
             // Debug the functor.
             let s = format!("{:?}", s);
 
-            assert_eq!(&s, "ConditionalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+            assert_eq!(&s, "ConditionalLogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::CategoricalDataMatrix> }");
         }
 
         #[test]
         fn default() {
             // Construct the default scoring criterion functor.
-            let s = ConditionalLogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = ConditionalLogLikelihood::<CategoricalDataMatrix, false>::default();
 
             dbg!(&s);
         }
     }
 
     mod log_likelihood {
-        use causal_hub::{prelude::DiscreteDataMatrix, stats::LogLikelihood};
+        use causal_hub::{prelude::CategoricalDataMatrix, stats::LogLikelihood};
 
         #[test]
         fn clone() {
             // Construct a new scoring criterion functor.
-            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = LogLikelihood::<CategoricalDataMatrix, false>::default();
             // Clone the functor.
             let s = s.clone();
 
@@ -80,17 +80,17 @@ mod tests {
         #[test]
         fn debug() {
             // Construct a new scoring criterion functor.
-            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = LogLikelihood::<CategoricalDataMatrix, false>::default();
             // Debug the functor.
             let s = format!("{:?}", s);
 
-            assert_eq!(&s, "LogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::DiscreteDataMatrix> }");
+            assert_eq!(&s, "LogLikelihood { _d: PhantomData<causal_hub::data::data_matrix::CategoricalDataMatrix> }");
         }
 
         #[test]
         fn default() {
             // Construct the default scoring criterion functor.
-            let s = LogLikelihood::<DiscreteDataMatrix, false>::default();
+            let s = LogLikelihood::<CategoricalDataMatrix, false>::default();
 
             dbg!(&s);
         }
@@ -98,7 +98,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use approx::*;
     use causal_hub::prelude::*;
     use polars::prelude::*;
@@ -106,7 +106,8 @@ mod discrete {
     #[test]
     fn log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -114,7 +115,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -146,7 +147,8 @@ mod discrete {
     #[test]
     fn parallel_log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/categorical.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -154,7 +156,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());

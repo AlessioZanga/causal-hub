@@ -21,7 +21,11 @@ jobs:
           profile: minimal
           toolchain: stable
       - name: Dependencies
-        run: sudo apt-get install libopenblas-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libopenblas-dev \
+            graphviz
       - name: Coverage
         run: |
           unzip -o ./tests/assets -d ./tests
