@@ -10,7 +10,7 @@ use std::{
 use bimap::BiHashMap;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{

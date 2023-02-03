@@ -7,7 +7,7 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::DataSet;
 

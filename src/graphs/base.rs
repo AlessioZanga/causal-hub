@@ -4,7 +4,7 @@ use std::{
     iter::FusedIterator,
 };
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Vertex iterator.
 ///
