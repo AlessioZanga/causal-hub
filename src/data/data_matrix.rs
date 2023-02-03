@@ -7,13 +7,14 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
+use serde::{Serialize, Deserialize};
 
 use super::DataSet;
 
 /* Implement CategoricalDataMatrix */
 
 /// Data matrix for categorical data.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataMatrix {
     data: Array2<usize>,
     labels: BTreeSet<String>,
@@ -200,7 +201,7 @@ impl CategoricalDataMatrix {
 /* Implement ContinuousDataMatrix */
 
 /// Data matrix for continuous data.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataMatrix {
     data: Array2<f64>,
     labels: BTreeSet<String>,
