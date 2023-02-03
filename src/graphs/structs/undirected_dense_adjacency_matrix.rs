@@ -10,6 +10,7 @@ use std::{
 use bimap::BiHashMap;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     graphs::{
@@ -28,7 +29,7 @@ use crate::{
 };
 
 /// Undirected graph struct based on dense adjacency matrix data structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UndirectedDenseAdjacencyMatrixGraph {
     labels: BTreeSet<String>,
     labels_indices: BiHashMap<String, usize>,
