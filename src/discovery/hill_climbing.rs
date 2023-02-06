@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeSet, HashSet},
-    marker::PhantomData,
-};
+use std::{collections::BTreeSet, marker::PhantomData};
 
 use itertools::iproduct;
 use log::debug;
@@ -111,9 +108,12 @@ where
     fn apply(mut g: G, x: usize, y: usize, a: usize) -> G {
         // Apply operation.
         match a {
-            Op::ADD => g.add_edge(x, y),
-            Op::DEL => g.del_edge(x, y),
-            Op::REV => g.del_edge(x, y) && g.add_edge(y, x),
+            Op::ADD => assert!(g.add_edge(x, y)),
+            Op::DEL => assert!(g.del_edge(x, y)),
+            Op::REV => {
+                assert!(g.del_edge(x, y));
+                assert!(g.add_edge(y, x));
+            }
             _ => panic!("Unknown operation code"),
         };
 
@@ -139,22 +139,41 @@ where
         // Apply operation.
         match a {
             Op::ADD => {
-                add.remove(&(x, y));
-                add.remove(&(y, x));
-                del.insert((x, y));
-                rev.insert((x, y));
+                // Remove performed action.
+                assert!(add.remove(&(x, y)));
+                // Add(X, Y) implies that (X, Y) is not in the
+                // required list, therefore Del(X, Y) is valid.
+                assert!(del.insert((x, y)));
+                // If Add(Y, X) and Del(X, Y) are valid, then Rev(X, Y) is valid.
+                // Since Del(X, Y) is valid by construction, check only Add(Y, X).
+                if add.contains(&(y, x)) {
+                    assert!(rev.insert((x, y)));
+                }
             }
             Op::DEL => {
-                add.insert((x, y));
-                add.insert((y, x));
-                del.remove(&(x, y));
-                rev.remove(&(x, y));
+                // Del(X, Y) implies that (X, Y) is not in the
+                // forbidden list, therefore Add(X, Y) is valid.
+                assert!(add.insert((x, y)));
+                // Remove performed action.
+                assert!(del.remove(&(x, y)));
+                // Del(X, Y) implies that Rev(X, Y) is not valid.
+                assert!(rev.remove(&(x, y)));
             }
             Op::REV => {
-                del.remove(&(x, y));
-                del.insert((y, x));
-                rev.remove(&(x, y));
-                rev.insert((y, x));
+                // Remove performed action(s).
+                assert!(add.remove(&(y, x)));
+                assert!(del.remove(&(x, y)));
+                assert!(rev.remove(&(x, y)));
+                // Rev(X, Y) implies than (X, Y) is not in the
+                // required list nor in the forbidden list,
+                // therefore, Add(X, Y) is valid.
+                assert!(add.insert((x, y)));
+                // Rev(X, Y) implies than (Y, X) is not in the
+                // required list nor in the forbidden list,
+                // therefore, Del(Y, X) is valid.
+                assert!(del.insert((y, x)));
+                // If Rev(X, Y) is valid then Rev(Y, X) is valid.
+                assert!(rev.insert((y, x)));
             }
             _ => panic!("Unknown operation code"),
         };
@@ -208,28 +227,25 @@ where
         // Get number of variables.
         let n = d.labels().len();
         // Get current edge set.
-        let e: HashSet<_> = E!(g).collect();
+        let e: BTreeSet<_> = E!(g).collect();
 
         // Initialize potential edges to be added.
         let add: BTreeSet<_> = iproduct!(0..n, 0..n)
             // Remove any edge (X, Y) s.t. X == Y, is present in the initial graph, or is in the forbidden list.
-            .filter(|&(x, y)| {
-                x != y && !e.contains(&(x, y)) && !e.contains(&(y, x)) && !k.has_forbidden(x, y)
-            })
+            .filter(|&(x, y)| x != y && !e.contains(&(x, y)) && !k.has_forbidden(x, y))
             .collect();
 
         // Initialize potential edges to be deleted.
         let del: BTreeSet<_> = e
-            .iter()
+            .clone()
+            .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y))
-            .cloned()
             .collect(); // Remove any edge in the required list.
 
         // Initialize potential edges to be reversed.
-        let rev = del
-            .iter()
-            .filter(|(x, y)| !k.has_forbidden(*y, *x))
-            .cloned()
+        let rev: BTreeSet<_> = e
+            .into_iter()
+            .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect(); // Remove any reversed edge in the forbidden list.
 
         (g, (add, del, rev))
@@ -241,7 +257,7 @@ where
         // Check validity depending on operation.
         let is_valid = match OP {
             // (X, Y) not in F, pi(Y, X) not in G.
-            Op::ADD => !g.has_path(y, x),
+            Op::ADD => !g.has_edge(y, x) && !g.has_path(y, x),
             // (X, Y) in R.
             Op::DEL => true,
             // (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
