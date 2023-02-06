@@ -4,6 +4,8 @@ use std::{
     iter::FusedIterator,
 };
 
+use serde::{Deserialize, Serialize};
+
 /// Vertex iterator.
 ///
 /// Return the vertex iterator representing $V(\mathcal{G})$.
@@ -38,7 +40,9 @@ macro_rules! Adj {
 }
 
 /// Base graph trait.
-pub trait BaseGraph: Clone + Debug + Display + Hash + Send + Sync {
+pub trait BaseGraph:
+    Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+{
     /// Data type.
     type Data;
 
