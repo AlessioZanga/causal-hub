@@ -25,12 +25,12 @@ ndarray-stats = "^0.5"
 page_size = "^0.5"
 pest = "^2.5"
 pest_derive = "^2.5"
-polars = { version = "^0.26", features = [ "dtype-categorical", "ndarray" ] }
+polars = { version = "^0.27", features = [ "dtype-categorical", "ndarray" ] }
 rayon = "^1.6"
 rustc-hash = "^1.1"
 serde = { version = "^1.0", features = [ "derive" ] }
-special-fun = "^0.2"
 sprs = "^0.11"
+statrs = "^0.16"
 tempfile = "^3.3"
 thiserror = "^1.0"
 
