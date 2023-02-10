@@ -21,3 +21,6 @@ pub use partial_correlation::*;
 
 mod precision_matrix;
 pub use precision_matrix::*;
+
+mod students_t;
+pub use students_t::*;

@@ -6,3 +6,4 @@ mod fisher_z;
 mod log_likelihood;
 mod partial_correlation;
 mod precision_matrix;
+mod students_t;

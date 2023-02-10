@@ -1,6 +1,4 @@
-use std::f64::consts::FRAC_1_SQRT_2;
-
-use libm::erfc;
+use special_fun::cephes_double::incbet;
 
 use crate::{
     data::ContinuousDataMatrix,
@@ -8,16 +6,16 @@ use crate::{
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
-/// Fisher's Z conditional independence test.
+/// Student's T conditional independence test.
 #[derive(Clone, Debug)]
-pub struct FisherZ {
+pub struct StudentsT {
     rho: PartialCorrelation,
     alpha: f64,
     n: usize,
 }
 
-impl FisherZ {
-    /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
+impl StudentsT {
+    /// Construct Student's T conditional independence test with $\alpha = 0.05$ .
     #[inline]
     pub fn new(d: &ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
@@ -33,28 +31,32 @@ impl FisherZ {
     }
 }
 
-impl ConditionalIndependenceTest for FisherZ {
+impl ConditionalIndependenceTest for StudentsT {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
-        let dof = self.n - z.len() - 3;
+        let dof = self.n - z.len() - 2;
 
         // Compute partial correlation.
         let stat = self.rho.call(x, y, z);
-        // Compute test statistic from partial correlation as:
-        //      sqrt(n - |z| - 3) * (1/2 * ln((1 + rho) / (1 - rho)))
-        //      sqrt(n - |z| - 3) * atanh(rho)
-        let stat = f64::sqrt(dof as f64) * f64::atanh(stat);
 
+        // Compute test statistic from partial correlation as:
+        //      |sqrt((n - |z| - 2) / (1 - rho^2)) * rho|
+        let v = dof as f64;
+        let t = f64::abs(f64::sqrt(v / (1. - f64::powi(stat, 2))) * stat);
         // Compute p-value as:
-        //      |x| > \Phi^-1(1 - \alpha / 2)
-        //      \Phi(|x|) > 1 - \alpha / 2
-        //      2 * (1 - \Phi(|x|)) < \alpha
-        //      2 * (1 - (1 / 2  * (1 + erf(|x| / sqrt(2))))) < \alpha
-        //      2 - (1 + erf(|x| / sqrt(2))) < \alpha
-        //      1 - erf(|x| / sqrt(2)) < \alpha
-        //      erfc(|x| * 1 / sqrt(2)) < \alpha
-        let pval = erfc(f64::abs(stat) * FRAC_1_SQRT_2);
+        //      |t| > \Phi^-1(1 - \alpha / 2)
+        //      \Phi(|t|) > 1 - \alpha / 2
+        //      2 * (1 - \Phi(|t|)) < \alpha
+        //      2 * (1 - (1 - 1 / 2 * I_x(a, b))) < \alpha
+        //      2 * (1 / 2 * I_x(a, b)) < \alpha
+        //      I_x(a, b) < \alpha
+        // where:
+        //      a = v / 2,
+        //      b = 1 / 2,
+        //      x = v / (t^2 + v).
+        let (a, b, x) = (0.5 * v, 0.5, v / (f64::powi(t, 2) + v));
+        let pval = incbet(a, b, x);
 
         (dof, stat, pval)
     }
