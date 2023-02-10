@@ -1,1 +1,1 @@
-mod independence;
+mod graphical_separation;

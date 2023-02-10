@@ -17,6 +17,7 @@ approx = "^0.5"
 bimap = { version = "^0.6", features = [ "serde" ] }
 is_sorted = "^0.1"
 itertools = "^0.10"
+libm = "^0.2"
 log = "^0.4"
 ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon", "serde" ] }
 ndarray-linalg = "^0.16"
@@ -28,6 +29,7 @@ polars = { version = "^0.26", features = [ "dtype-categorical", "ndarray" ] }
 rayon = "^1.6"
 rustc-hash = "^1.1"
 serde = { version = "^1.0", features = [ "derive" ] }
+special-fun = "^0.2"
 sprs = "^0.11"
 tempfile = "^3.3"
 thiserror = "^1.0"

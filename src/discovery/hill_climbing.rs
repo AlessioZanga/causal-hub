@@ -299,8 +299,10 @@ where
     /// Compute delta score, if not already in cache, returning cache update.
     #[inline]
     fn cache(&self, c: &C<KE>, d: &D, x: usize, z: &[usize]) -> (f64, CU<KE>) {
+        // Construct the key.
+        let key = (x, z.to_vec());
         // Check if score is already in cache.
-        match c.get(&(x, z.to_vec())) {
+        match c.get(&key) {
             // If so, return cached values.
             Some(s) => (*s, CU::default()),
             // If not, then ...
@@ -308,7 +310,7 @@ where
                 // Compute vertex score.
                 let s = DecomposableScoringCriterion::call(&self.s, d, x, z);
 
-                (s, CU::from_iter([((x, z.to_vec()), s)]))
+                (s, CU::from_iter([(key, s)]))
             }
         }
     }
