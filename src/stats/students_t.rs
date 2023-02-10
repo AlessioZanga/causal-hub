@@ -1,4 +1,4 @@
-use special_fun::cephes_double::incbet;
+use statrs::function::beta::beta_reg;
 
 use crate::{
     data::ContinuousDataMatrix,
@@ -56,7 +56,7 @@ impl ConditionalIndependenceTest for StudentsT {
         //      b = 1 / 2,
         //      x = v / (t^2 + v).
         let (a, b, x) = (0.5 * v, 0.5, v / (f64::powi(t, 2) + v));
-        let pval = incbet(a, b, x);
+        let pval = beta_reg(a, b, x);
 
         (dof, stat, pval)
     }
