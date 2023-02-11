@@ -11,6 +11,11 @@ pub trait ConditionalIndependenceTest: Clone + Debug + Sync {
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 
     /// Set significance level $\alpha$.
+    ///
+    /// # Panics
+    ///
+    /// If $\alpha$ is not in the (0, 1) interval.
+    ///
     fn with_significance_level(self, alpha: f64) -> Self;
 }
 

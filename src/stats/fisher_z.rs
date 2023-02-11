@@ -33,6 +33,13 @@ impl FisherZ {
     }
 }
 
+impl From<&ContinuousDataMatrix> for FisherZ {
+    #[inline]
+    fn from(d: &ContinuousDataMatrix) -> Self {
+        Self::new(d)
+    }
+}
+
 impl ConditionalIndependenceTest for FisherZ {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
@@ -67,7 +74,10 @@ impl ConditionalIndependenceTest for FisherZ {
         pval < self.alpha
     }
 
+    #[inline]
     fn with_significance_level(mut self, alpha: f64) -> Self {
+        // Assert alpha in (0, 1).
+        assert!((0. ..1.).contains(&alpha));
         // Set significance level.
         self.alpha = alpha;
 

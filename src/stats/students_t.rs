@@ -6,7 +6,7 @@ use crate::{
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
-/// Student's T conditional independence test.
+/// Students' T conditional independence test.
 #[derive(Clone, Debug)]
 pub struct StudentsT {
     rho: PartialCorrelation,
@@ -15,7 +15,7 @@ pub struct StudentsT {
 }
 
 impl StudentsT {
-    /// Construct Student's T conditional independence test with $\alpha = 0.05$ .
+    /// Construct Students' T conditional independence test with $\alpha = 0.05$ .
     #[inline]
     pub fn new(d: &ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
@@ -28,6 +28,13 @@ impl StudentsT {
             alpha: 0.05,
             n: d.nrows(),
         }
+    }
+}
+
+impl From<&ContinuousDataMatrix> for StudentsT {
+    #[inline]
+    fn from(d: &ContinuousDataMatrix) -> Self {
+        Self::new(d)
     }
 }
 
@@ -69,7 +76,10 @@ impl ConditionalIndependenceTest for StudentsT {
         pval < self.alpha
     }
 
+    #[inline]
     fn with_significance_level(mut self, alpha: f64) -> Self {
+        // Assert alpha in (0, 1).
+        assert!((0. ..1.).contains(&alpha));
         // Set significance level.
         self.alpha = alpha;
 
