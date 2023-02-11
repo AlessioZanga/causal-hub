@@ -7,22 +7,22 @@ mod tests {
     #[test]
     fn eval() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/fisher_z/gaussian.json").unwrap();
+        let data = std::fs::read_to_string("./tests/assets/chi_squared/categorical.json").unwrap();
         let data: Vec<(String, String, Vec<String>, (usize, f64, f64))> =
             serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
-        let d = CsvReader::from_path("./tests/assets/ecoli70.csv")
+        let d = CsvReader::from_path("./tests/assets/asia.csv")
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
 
         // Initialize conditional independence test.
-        let test = FisherZ::from(&d);
+        let test = ChiSquared::from(&d);
 
         for (x, y, z, (true_dof, true_stat, true_pval)) in data {
             let x = g.vertex(&x);
@@ -40,22 +40,22 @@ mod tests {
     #[test]
     fn call() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/fisher_z/gaussian.json").unwrap();
+        let data = std::fs::read_to_string("./tests/assets/chi_squared/categorical.json").unwrap();
         let data: Vec<(String, String, Vec<String>, (usize, f64, f64))> =
             serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
-        let d = CsvReader::from_path("./tests/assets/ecoli70.csv")
+        let d = CsvReader::from_path("./tests/assets/asia.csv")
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
 
         // Initialize conditional independence test.
-        let test = FisherZ::from(&d);
+        let test = ChiSquared::from(&d);
 
         for (x, y, z, (_, _, true_pval)) in data {
             let x = g.vertex(&x);

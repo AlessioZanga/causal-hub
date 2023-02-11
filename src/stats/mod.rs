@@ -4,6 +4,9 @@ pub use akaike_information_criterion::*;
 mod bayesian_information_criterion;
 pub use bayesian_information_criterion::*;
 
+mod chi_squared;
+pub use chi_squared::*;
+
 mod correlation_matrix;
 pub use correlation_matrix::*;
 
