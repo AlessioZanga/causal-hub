@@ -1,10 +1,12 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: If you use this software, please cite it as below.
 authors:
-- family-names: "Alessio"
-  given-names: "Zanga"
+- family-names: Alessio
+  given-names: Zanga
+  email: alessio.zanga@unimib.it
+  website: "https://github.com/AlessioZanga"
+  affiliation: "University of Milano - Bicocca, Milan, Italy"
   orcid: "https://orcid.org/0000-0003-4423-2121"
 title: "causal-hub: A Package for Causal Data Science"
-version: 0.1.1
-date-released: 2023-02-03
+type: software
 url: "https://github.com/AlessioZanga/causal-hub"
