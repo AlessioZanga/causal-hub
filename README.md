@@ -18,7 +18,7 @@ A package for Causal Data Science.
 
 ## Overview
 
-Causal _inference_ is the process of identifying and estimating the causal effect of a given _treatment_ for a chosen _outcome_. To formally describe the relationship between a cause and its effect, a causal model must be constructed from the available data and the experts' prior knowledge in process called causal _discovery_. This library is intended to collect, organize and exploit state of the art methodology to enable _causal data science_.
+Causal _inference_ is the process of identifying and estimating the causal effect of a given _treatment_ for a chosen _outcome_. To formally describe the relationship between a cause and its effect, a causal model must be constructed from the available data and the experts' prior knowledge in a process called causal _discovery_. This library is intended to collect, organize and exploit state of the art methodology to enable _causal data science_.
 
 To use this software, run the following `cargo` command in your project directory:
 
