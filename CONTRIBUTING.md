@@ -65,7 +65,7 @@ Or output the `lcov.info` and use an appropriate coverage extension for your IDE
 
 To execute the code linting, run the following [cargo-clippy](https://github.com/rust-lang/rust-clippy) command:
 
-    cargo clippy --all-targets --all-features --no-deps
+    cargo clippy --no-deps -- -D warnings -v
 
 ### Formatting
 
@@ -77,7 +77,7 @@ NOTE: The [+nighlty](https://doc.rust-lang.org/cargo/commands/cargo.html?highlig
 
 ### Documenting
 
-TODO:
+To ensure high-quality documentation, the `#![warn(missing_docs)]` lint has been enforced crate-wide. This means that linting will fail if there is undocumented code.
 
 ### Profiling
 
