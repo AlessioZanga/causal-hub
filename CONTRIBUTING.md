@@ -42,7 +42,7 @@ To build the crate, run the following `cargo` command:
 
 Before writing tests, read the [How to Write Tests](https://doc.rust-lang.org/book/ch11-01-writing-tests.html) chapter of the Rust Book.
 
-In `Rust` projects, tests are split into unit, integration and doc tests. While it is true that unit tests are usually written in the same file of the code to be tested, here unit tests are placed along integration tests in the `tests` folder. Please, note that some tests may require assets to be execute, hence, decompress them before the execution:
+In `Rust` projects, tests are split into unit, integration and doc tests. While it is true that unit tests are usually written in the same file of the code to be tested, here unit tests are placed along integration tests in the `tests` folder. Please, note that some tests may require assets to be executed, therefore, decompress them before the execution:
 
 - Unzip the test assets with `unzip -o tests/assets -d tests`,
 - To execute all tests, run the `cargo test` command,
