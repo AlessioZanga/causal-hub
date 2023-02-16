@@ -8,11 +8,11 @@ To contribute to the repository, fork it, solve an issue and open a pull request
 
 ### Bug Report
 
-TODO:
+Before opening a bug report, check for duplicates. If there is one, contribute in the discussion thread. Otherwise, file a now report with the provided template.
 
 ### Feature Request
 
-TODO:
+Before opening a feature request, check for duplicates. While filing a now report with the provided template, be sure to include all the necessary details of the feature requested, adding external resources, if any.
 
 ### Pull Request
 
