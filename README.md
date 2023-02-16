@@ -41,7 +41,7 @@ All notable changes to this project will be documented in the [CHANGELOG](./CHAN
 
 ## Contributing
 
-To contribute to this software refer to [CONTRIBUTING](./CONTRIBUTING.md).
+To contribute to this software refer to [CONTRIBUTING](./.github/CONTRIBUTING.md).
 
 ## Citation
 
