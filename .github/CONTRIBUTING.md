@@ -22,7 +22,7 @@ Before opening a pull request:
 1. Add documentation and tests for the modified code.
 2. Execute tests and check the code coverage. If coverage is unsatisfactory, repeat from step 1.
 3. Execute linting and formatting. If linting and/or formatting change the code, repeat from step 1. 
-4. Open a pull request.
+4. Open a pull request following the provided template.
 
 After opening a pull request:
 
