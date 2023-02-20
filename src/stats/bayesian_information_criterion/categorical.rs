@@ -6,12 +6,14 @@ use crate::{
     stats::LogLikelihood,
 };
 
-impl<const RESCALED: bool, const PARALLEL: bool>
-    BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+impl<G, const RESCALED: bool, const PARALLEL: bool>
+    DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+where
+    G: DirectedGraph<Direction = directions::Directed>,
 {
-    /// Computes BIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the sample size.
         let n = d.nrows() as f64;
 
@@ -24,28 +26,16 @@ impl<const RESCALED: bool, const PARALLEL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<CategoricalDataMatrix, PARALLEL>::new();
+        let s = LogLikelihood::<_, PARALLEL>::new();
         // Compute the log-likelihood.
-        let ll = ll.call(d, x, z);
+        let s = DecomposableScoringCriterion::<CategoricalDataMatrix, G>::call(&s, d, x, z);
 
         // Check if BIC must be scaled.
         match RESCALED {
             // Rescale BIC by -2, coherently with LL.
-            true => ll - 0.5 * self.k * theta * f64::ln(n),
+            true => s - 0.5 * self.k * theta * f64::ln(n),
             // Otherwise, compute original BIC.
-            false => self.k * theta * f64::ln(n) - 2. * ll,
+            false => self.k * theta * f64::ln(n) - 2. * s,
         }
-    }
-}
-
-impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
-where
-    G: DirectedGraph<Direction = directions::Directed>,
-{
-    #[inline]
-    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
-        self.call(d, x, z)
     }
 }
