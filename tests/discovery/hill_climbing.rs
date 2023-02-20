@@ -78,6 +78,45 @@ mod categorical {
 
         assert_eq!(pred_g, true_g);
     }
+
+    #[test]
+    fn with_shuffle() {
+        // Set true graph.
+        let true_g = DiGraph::new(
+            ["A", "B", "D", "E", "L", "S", "T", "X"],
+            [
+                ("B", "S"),
+                ("D", "B"),
+                ("E", "B"),
+                ("E", "D"),
+                ("E", "L"),
+                ("E", "T"),
+                ("L", "S"),
+                ("T", "L"),
+                ("X", "E"),
+            ],
+        );
+
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/asia.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = CategoricalDataMatrix::from(d);
+
+        // Initialize empty prior knowledge.
+        let k = FR::new(d.labels(), [], []);
+
+        // Initialize score functor.
+        let s = BIC::new();
+
+        // Initialize discovery functor.
+        let hc = HC::new(s).with_shuffle(42);
+        // Perform discovery.
+        let pred_g: DiGraph = hc.call(&d, &k);
+
+        assert_eq!(pred_g, true_g);
+    }
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 use std::{hash::BuildHasherDefault, marker::PhantomData};
 
 use indexmap::IndexSet;
-use itertools::iproduct;
+use itertools::{iproduct, Itertools};
 use log::{debug, trace};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -248,6 +248,11 @@ where
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
             // Shuffle columns.
             n.shuffle(&mut rng);
+            // Log shuffled columns.
+            debug!(
+                "Seed is set, shuffled columns as: [{}]",
+                n.iter().map(|&x| g.label(x)).format(", ")
+            );
         }
 
         // Get current edge set.
