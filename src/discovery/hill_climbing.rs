@@ -240,49 +240,34 @@ where
 
         // Get number of variables.
         let n = d.labels().len();
+        // Get columns index.
+        let mut n: Vec<_> = (0..n).collect();
+        // Check if random number generator has been set.
+        if let Some(seed) = self.seed {
+            // Initialize random number generator.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+            // Shuffle columns.
+            n.shuffle(&mut rng);
+        }
+
         // Get current edge set.
         let e: E = E!(g).collect();
         // Initialize potential edges to be added.
-        let mut add: E = iproduct!(0..n, 0..n)
+        let add: E = iproduct!(n.clone(), n)
             // Remove any edge (X, Y) s.t. X == Y, is present in the initial graph, or is in the forbidden list.
             .filter(|&(x, y)| x != y && !e.contains(&(x, y)) && !k.has_forbidden(x, y))
             .collect();
         // Initialize potential edges to be deleted.
-        let mut del: E = e
+        let del: E = e
             .clone()
             .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y))
             .collect(); // Remove any edge in the required list.
                         // Initialize potential edges to be reversed.
-        let mut rev: E = e
+        let rev: E = e
             .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect(); // Remove any reversed edge in the forbidden list.
-
-        // Check if random number generator has been set.
-        if let Some(seed) = self.seed {
-            // Initialize random number generator.
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
-            // Shuffle sets.
-            (add, del, rev) = {
-                // Convert to vectors.
-                let (mut add, mut del, mut rev): (Vec<_>, Vec<_>, Vec<_>) = (
-                    add.into_iter().collect(),
-                    del.into_iter().collect(),
-                    rev.into_iter().collect(),
-                );
-                // Shuffle vectors in-place.
-                add.shuffle(&mut rng);
-                del.shuffle(&mut rng);
-                rev.shuffle(&mut rng);
-                // Convert to sets.
-                (
-                    add.into_iter().collect(),
-                    del.into_iter().collect(),
-                    rev.into_iter().collect(),
-                )
-            }
-        }
 
         (g, (add, del, rev))
     }
