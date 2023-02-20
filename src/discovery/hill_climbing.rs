@@ -1,9 +1,12 @@
-use std::{collections::BTreeSet, marker::PhantomData};
+use std::{hash::BuildHasherDefault, marker::PhantomData};
 
+use indexmap::IndexSet;
 use itertools::iproduct;
 use log::debug;
+use rand::prelude::*;
+use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHasher};
 
 use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
 use crate::{
@@ -21,7 +24,7 @@ type CU<K> = Vec<(K, f64)>;
 type KE = (usize, Vec<usize>);
 
 /// Local edge space type
-type E = BTreeSet<(usize, usize)>;
+type E = IndexSet<(usize, usize), BuildHasherDefault<FxHasher>>;
 /// Local operations edge space type.
 type ES = (
     E, // To-be-added space,
@@ -53,6 +56,7 @@ where
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     max_iter: usize,
+    seed: Option<u64>,
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     g: Option<G>,
@@ -70,6 +74,7 @@ where
     pub const fn new(s: S) -> Self {
         Self {
             max_iter: usize::MAX,
+            seed: None,
             _d: PhantomData,
             _k: PhantomData,
             g: None,
@@ -88,9 +93,18 @@ where
 
     /// Set max iterations.
     #[inline]
-    pub fn with_max_iter(mut self, max_iter: usize) -> Self {
+    pub const fn with_max_iter(mut self, max_iter: usize) -> Self {
         // Set hyper parameter.
         self.max_iter = max_iter;
+
+        self
+    }
+
+    /// Enable edge operations shuffling and set the seed.
+    #[inline]
+    pub const fn with_shuffle(mut self, seed: u64) -> Self {
+        // Set random number generator seed.
+        self.seed = Some(seed);
 
         self
     }
@@ -227,26 +241,48 @@ where
         // Get number of variables.
         let n = d.labels().len();
         // Get current edge set.
-        let e: BTreeSet<_> = E!(g).collect();
-
+        let e: E = E!(g).collect();
         // Initialize potential edges to be added.
-        let add: BTreeSet<_> = iproduct!(0..n, 0..n)
+        let mut add: E = iproduct!(0..n, 0..n)
             // Remove any edge (X, Y) s.t. X == Y, is present in the initial graph, or is in the forbidden list.
             .filter(|&(x, y)| x != y && !e.contains(&(x, y)) && !k.has_forbidden(x, y))
             .collect();
-
         // Initialize potential edges to be deleted.
-        let del: BTreeSet<_> = e
+        let mut del: E = e
             .clone()
             .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y))
             .collect(); // Remove any edge in the required list.
-
-        // Initialize potential edges to be reversed.
-        let rev: BTreeSet<_> = e
+                        // Initialize potential edges to be reversed.
+        let mut rev: E = e
             .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect(); // Remove any reversed edge in the forbidden list.
+
+        // Check if random number generator has been set.
+        if let Some(seed) = self.seed {
+            // Initialize random number generator.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+            // Shuffle sets.
+            (add, del, rev) = {
+                // Convert to vectors.
+                let (mut add, mut del, mut rev): (Vec<_>, Vec<_>, Vec<_>) = (
+                    add.into_iter().collect(),
+                    del.into_iter().collect(),
+                    rev.into_iter().collect(),
+                );
+                // Shuffle vectors in-place.
+                add.shuffle(&mut rng);
+                del.shuffle(&mut rng);
+                rev.shuffle(&mut rng);
+                // Convert to sets.
+                (
+                    add.into_iter().collect(),
+                    del.into_iter().collect(),
+                    rev.into_iter().collect(),
+                )
+            }
+        }
 
         (g, (add, del, rev))
     }
