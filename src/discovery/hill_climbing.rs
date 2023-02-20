@@ -100,7 +100,7 @@ where
         self
     }
 
-    /// Enable edge operations shuffling and set the seed.
+    /// Enables columns shuffling by setting the seed.
     #[inline]
     pub const fn with_shuffle(mut self, seed: u64) -> Self {
         // Set random number generator seed.
