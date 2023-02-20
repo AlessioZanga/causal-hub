@@ -2,7 +2,7 @@ use std::{hash::BuildHasherDefault, marker::PhantomData};
 
 use indexmap::IndexSet;
 use itertools::iproduct;
-use log::debug;
+use log::{debug, trace};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
@@ -292,7 +292,7 @@ where
         // Check if invalid.
         if !is_valid {
             // Log invalid.
-            debug!(
+            trace!(
                 "op: {}({}, {}), invalid",
                 match OP {
                     Op::ADD => "Add",
@@ -391,7 +391,7 @@ where
         };
 
         // Log current operation delta.
-        debug!(
+        trace!(
             "op: {}({}, {}), delta: {}",
             match OP {
                 Op::ADD => "Add",
