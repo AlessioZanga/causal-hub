@@ -79,7 +79,7 @@ impl From<(Graph, Graph)> for ConfusionMatrix {
                 false => None,
             });
 
-        Self::from((true_graph.into_iter(), pred_graph.into_iter()))
+        Self::from((true_graph, pred_graph))
     }
 }
 
@@ -102,7 +102,7 @@ impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
         let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
         let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
 
-        Self::from((true_graph.into_iter(), pred_graph.into_iter()))
+        Self::from((true_graph, pred_graph))
     }
 }
 
