@@ -7,6 +7,9 @@ pub use bayesian_information_criterion::*;
 mod chi_squared;
 pub use chi_squared::*;
 
+mod confusion_matrix;
+pub use confusion_matrix::*;
+
 mod correlation_matrix;
 pub use correlation_matrix::*;
 
