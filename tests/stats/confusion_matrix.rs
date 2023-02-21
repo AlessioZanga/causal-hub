@@ -3,10 +3,10 @@ mod tests {
     use std::ops::Deref;
 
     use approx::*;
-    use causal_hub::stats::ConfusionMatrix;
+    use causal_hub::prelude::*;
 
     #[test]
-    fn from() {
+    fn from_into_iterator() {
         // Initialize classes.
         let true_class = vec![
             true, false, true, false, true, true, true, true, false, false, true, true, false,
@@ -58,5 +58,27 @@ mod tests {
         assert_relative_eq!(cm.true_negative_rate(), 0.6190476190476191);
         assert_relative_eq!(cm.true_positive(), 22.);
         assert_relative_eq!(cm.true_positive_rate(), 0.3793103448275862);
+    }
+
+    #[test]
+    fn from_graphs() {
+        // Initialize graphs.
+        let true_graph = Graph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let pred_graph = Graph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
+        // Construct confusion matrix.
+        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        // Deref slice.
+        assert_eq!(cm.deref(), &[4., 0., 0., 2.]);
+    }
+
+    #[test]
+    fn from_digraphs() {
+        // Initialize graphs.
+        let true_graph = DiGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let pred_graph = DiGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
+        // Construct confusion matrix.
+        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        // Deref slice.
+        assert_eq!(cm.deref(), &[6., 1., 1., 1.]);
     }
 }

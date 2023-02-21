@@ -1,5 +1,11 @@
 use std::ops::Deref;
 
+use crate::{
+    graphs::{BaseGraph, DiGraph, Graph},
+    types::DenseAdjacencyMatrix,
+    V,
+};
+
 /// (Binary) Confusion Matrix.
 #[derive(Copy, Clone, Debug, Default)]
 pub struct ConfusionMatrix {
@@ -10,6 +16,7 @@ pub struct ConfusionMatrix {
 impl Deref for ConfusionMatrix {
     type Target = [f64; 4];
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.c
     }
@@ -39,8 +46,69 @@ where
     }
 }
 
+impl From<(Graph, Graph)> for ConfusionMatrix {
+    fn from((true_graph, pred_graph): (Graph, Graph)) -> Self {
+        // Assert same vertices.
+        assert_eq!(
+            V!(true_graph),
+            V!(pred_graph),
+            "Graphs must have same vertex set"
+        );
+        // Assert same memory layout.
+        assert_eq!(
+            true_graph.is_standard_layout(),
+            pred_graph.is_standard_layout(),
+            "Graphs must have same memory layout"
+        );
+
+        // Get adjacency matrices.
+        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
+        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
+
+        // Get lower triangular.
+        let true_graph = true_graph
+            .indexed_iter()
+            .filter_map(|((i, j), &f)| match i <= j {
+                true => Some(f),
+                false => None,
+            });
+        let pred_graph = pred_graph
+            .indexed_iter()
+            .filter_map(|((i, j), &f)| match i <= j {
+                true => Some(f),
+                false => None,
+            });
+
+        Self::from((true_graph.into_iter(), pred_graph.into_iter()))
+    }
+}
+
+impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
+    fn from((true_graph, pred_graph): (DiGraph, DiGraph)) -> Self {
+        // Assert same vertices.
+        assert_eq!(
+            V!(true_graph),
+            V!(pred_graph),
+            "Graphs must have same vertex set"
+        );
+        // Assert same memory layout.
+        assert_eq!(
+            true_graph.is_standard_layout(),
+            pred_graph.is_standard_layout(),
+            "Graphs must have same memory layout"
+        );
+
+        // Get adjacency matrices.
+        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
+        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
+
+        Self::from((true_graph.into_iter(), pred_graph.into_iter()))
+    }
+}
+
 impl ConfusionMatrix {
     /// Construct a new confusion matrix.
+    #[inline]
     pub fn new(c: [f64; 4]) -> Self {
         // Check that all values are positives.
         assert!(
