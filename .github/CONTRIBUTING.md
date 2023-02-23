@@ -76,6 +76,10 @@ To execute code formatting, run [rustfmt](https://github.com/rust-lang/rustfmt):
 
 The [+nighlty](https://doc.rust-lang.org/cargo/commands/cargo.html?highlight=toolchain#common-options) toolchain option is needed only for the formatting step.
 
+Also, if edited, formatting the `Cargo.toml` is required. To do this, run [cargo-sort](https://crates.io/crates/cargo-sort):
+
+    cargo sort
+
 ### Documenting
 
 The `#![warn(missing_docs)]` lint has been enforced crate-wide to ensure high-quality documentation. This means that linting will fail if there is undocumented code.

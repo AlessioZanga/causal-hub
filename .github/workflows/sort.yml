@@ -1,0 +1,25 @@
+on: [push]
+
+name: sort
+
+jobs:
+  build:
+    name: causal-hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/sort.yml') }}
+      - name: Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Sort
+        run: |
+          cargo install cargo-sort
+          cargo sort -c
