@@ -16,9 +16,8 @@ jobs:
             target
           key: Linux-rust-stable-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/lint.yml') }}
       - name: Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: stable
           components: clippy
       - name: Clippy

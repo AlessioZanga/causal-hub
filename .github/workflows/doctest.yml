@@ -26,9 +26,8 @@ jobs:
             target
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/doctest.yml') }}
       - name: Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.env }}
       - name: Doctest
         run: cargo +${{ matrix.env }} test --doc -v
