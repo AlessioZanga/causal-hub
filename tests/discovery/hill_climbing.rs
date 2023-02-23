@@ -34,7 +34,7 @@ mod categorical {
         let s = BIC::new();
 
         // Initialize discovery functor.
-        let hc = HC::new(s);
+        let hc = HC::new(&s);
         // Perform discovery.
         let pred_g: DiGraph = hc.call(&d, &k);
 
@@ -72,7 +72,7 @@ mod categorical {
         let s = BIC::new();
 
         // Initialize discovery functor.
-        let hc = ParallelHC::new(s);
+        let hc = ParallelHC::new(&s);
         // Perform discovery.
         let pred_g: DiGraph = hc.call(&d, &k);
 
@@ -111,7 +111,7 @@ mod categorical {
         let s = BIC::new();
 
         // Initialize discovery functor.
-        let hc = HC::new(s).with_shuffle(42);
+        let hc = HC::new(&s).with_shuffle(42);
         // Perform discovery.
         let pred_g: DiGraph = hc.call(&d, &k);
 
@@ -236,7 +236,7 @@ mod gaussian {
         let s = BIC::new();
 
         // Initialize discovery functor.
-        let hc = HC::new(s);
+        let hc = HC::new(&s);
         // Perform discovery.
         let pred_g: DiGraph = hc.call(&d, &k);
 
@@ -355,7 +355,7 @@ mod gaussian {
         let s = BIC::new();
 
         // Initialize discovery functor.
-        let hc = ParallelHC::new(s);
+        let hc = ParallelHC::new(&s);
         // Perform discovery.
         let pred_g: DiGraph = hc.call(&d, &k);
 
