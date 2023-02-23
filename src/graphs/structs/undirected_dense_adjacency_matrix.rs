@@ -18,10 +18,7 @@ use crate::{
         directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, PathGraph, SubGraph,
         UndirectedGraph,
     },
-    io::{
-        dot::{Edge, Vertex},
-        DOT,
-    },
+    io::DOT,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
@@ -999,28 +996,15 @@ impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(g: UndirectedDenseAdjacencyMatrixGraph) -> Self {
-        // Set graph type.
-        let graph_type = "graph".into();
-        // Construct the vertex set.
-        let vertices = V!(g)
-            .map(|x| g.label(x).into())
-            .map(Vertex::new)
-            .map(|x| (x.id.clone(), x))
-            .collect();
-        // Construct the edge set.
-        let edges = E!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
-            .map(|(x, y)| Edge::new((x, y), "--".into()))
-            .map(|x| (x.id.clone(), x))
-            .collect();
+impl From<DOT> for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn from(other: DOT) -> Self {
+        // Assert graph type.
+        assert_eq!(
+            other.graph_type, "graph",
+            "DOT graph type must match direction"
+        );
 
-        Self {
-            graph_type,
-            vertices,
-            edges,
-            ..Default::default()
-        }
+        Self::new(other.vertices.into_keys(), other.edges.into_keys())
     }
 }

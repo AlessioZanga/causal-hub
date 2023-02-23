@@ -12,7 +12,14 @@ use super::{
     attributes::{EdgeAttributes, GraphAttributes, VertexAttributes},
     Format, Layout,
 };
-use crate::io::File;
+use crate::{
+    graphs::{
+        structs::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph},
+        BaseGraph,
+    },
+    io::File,
+    E, V,
+};
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
     fn extend<T: IntoIterator<Item = Pair<'a, Rule>>>(&mut self, iter: T) {
@@ -597,5 +604,57 @@ impl File for DOT {
         let contents = String::from(self);
         // Write string to file.
         std::fs::write(path.into(), contents)
+    }
+}
+
+impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
+    fn from(g: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+        // Set graph type.
+        let graph_type = "graph".into();
+        // Construct the vertex set.
+        let vertices = V!(g)
+            .map(|x| g.label(x).into())
+            .map(Vertex::new)
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the edge set.
+        let edges = E!(g)
+            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| Edge::new((x, y), "--".into()))
+            .map(|x| (x.id.clone(), x))
+            .collect();
+
+        Self {
+            graph_type,
+            vertices,
+            edges,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
+    fn from(g: DirectedDenseAdjacencyMatrixGraph) -> Self {
+        // Set graph type.
+        let graph_type = "digraph".into();
+        // Construct the vertex set.
+        let vertices = V!(g)
+            .map(|x| g.label(x).into())
+            .map(Vertex::new)
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the edge set.
+        let edges = E!(g)
+            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| Edge::new((x, y), "->".into()))
+            .map(|x| (x.id.clone(), x))
+            .collect();
+
+        Self {
+            graph_type,
+            vertices,
+            edges,
+            ..Default::default()
+        }
     }
 }

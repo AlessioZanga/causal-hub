@@ -5,7 +5,10 @@ mod attributes {
 
 #[cfg(test)]
 mod parser {
-    use causal_hub::io::{File, DOT};
+    use causal_hub::{
+        io::{File, DOT},
+        prelude::*,
+    };
 
     #[test]
     fn read() {
@@ -18,6 +21,25 @@ mod parser {
                 let dot = DOT::read(&x);
                 assert!(dot.is_ok(), "{}: {:?}", x.display(), dot.err());
             });
+    }
+
+    #[test]
+    fn from_graph() {
+        let dot = DOT::read("tests/assets/dot/1658.dot").unwrap();
+        let g = Graph::from(dot);
+
+        assert!(g.labels().eq([
+            "0", "1", "2", "3", "ADC1", "ADC2", "ADC3", "Charger", "GND", "IHall1", "IHall2",
+            "IHall3", "OpAmp1", "OpAmp2", "OpAmp3", "Temp1", "Temp2", "Temp3", "V1", "V2", "V3"
+        ]));
+    }
+
+    #[test]
+    fn from_digraph() {
+        let dot = DOT::read("tests/assets/dot/14.dot").unwrap();
+        let g = DiGraph::from(dot);
+
+        assert!(g.labels().eq(["a", "b"]));
     }
 }
 
