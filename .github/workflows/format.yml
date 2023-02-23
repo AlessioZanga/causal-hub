@@ -1,4 +1,4 @@
-on: [push]
+on: [push, pull_request]
 
 name: format
 
@@ -16,9 +16,8 @@ jobs:
             target
           key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/format.yml') }}
       - name: Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: nightly
           components: rustfmt
       - name: Format
