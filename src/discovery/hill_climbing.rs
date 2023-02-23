@@ -49,10 +49,8 @@ type A = Option<(usize, usize, usize)>;
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
-pub struct HillClimbing<D, K, G, S, ST, const PARALLEL: bool>
+pub struct HillClimbing<'a, D, K, G, S, ST, const PARALLEL: bool>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     max_iter: usize,
@@ -60,18 +58,16 @@ where
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     g: Option<G>,
-    s: S,
+    s: &'a S,
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
     #[inline]
-    pub const fn new(s: S) -> Self {
+    pub const fn new(s: &'a S) -> Self {
         Self {
             max_iter: usize::MAX,
             seed: None,
@@ -110,10 +106,8 @@ where
     }
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     G: BaseGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
@@ -196,7 +190,7 @@ where
     }
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -315,7 +309,8 @@ where
 }
 
 /* Implement Hill-Climbing for Decomposable Scoring Criteria */
-impl<D, K, G, S, const PARALLEL: bool> HillClimbing<D, K, G, S, score_types::Decomposable, PARALLEL>
+impl<'a, D, K, G, S, const PARALLEL: bool>
+    HillClimbing<'a, D, K, G, S, score_types::Decomposable, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -334,7 +329,7 @@ where
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = DecomposableScoringCriterion::call(&self.s, d, x, z);
+                let s = self.s.call(d, x, z);
 
                 (s, CU::from_iter([(key, s)]))
             }
@@ -477,7 +472,7 @@ where
                 // Get vertex parents.
                 let z: Vec<_> = Pa!(g, x).collect();
                 // Compute vertex score.
-                let s = DecomposableScoringCriterion::call(&self.s, d, x, &z);
+                let s = self.s.call(d, x, &z);
                 // Insert into the cache.
                 c.insert((x, z), s);
 
@@ -527,8 +522,8 @@ where
 }
 
 /* Implement Hill-Climbing for Non-Decomposable Scoring Criteria */
-impl<D, K, G, S, const PARALLEL: bool>
-    HillClimbing<D, K, G, S, score_types::NonDecomposable, PARALLEL>
+impl<'a, D, K, G, S, const PARALLEL: bool>
+    HillClimbing<'a, D, K, G, S, score_types::NonDecomposable, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -545,7 +540,7 @@ where
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = ScoringCriterion::call(&self.s, d, g);
+                let s = self.s.call(d, g);
 
                 (s, CU::from_iter([(g.clone(), s)]))
             }
@@ -672,7 +667,7 @@ where
         // Initialize graph from D and K.
         let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
         // Compute the initial score.
-        let mut s_g: f64 = ScoringCriterion::call(&self.s, d, &g);
+        let mut s_g = self.s.call(d, &g);
         // Update cache.
         c.insert(g.clone(), s_g);
 
@@ -717,6 +712,6 @@ where
 }
 
 /// Alias for the single-thread Hill-Climbing algorithm.
-pub type HC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, false>;
+pub type HC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, false>;
 /// Alias for the multi-thread Hill-Climbing algorithm.
-pub type ParallelHC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, true>;
+pub type ParallelHC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, true>;
