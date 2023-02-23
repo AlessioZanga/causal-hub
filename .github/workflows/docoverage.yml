@@ -19,5 +19,5 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-      - name: Format
+      - name: Docs Coverage
         run: cargo +nightly rustdoc -- --show-coverage -Z unstable-options
