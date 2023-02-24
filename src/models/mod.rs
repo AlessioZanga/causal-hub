@@ -1,8 +1,11 @@
-mod independence;
-pub use independence::*;
+mod graphical_separation;
+pub use graphical_separation::*;
 
 /// Alias for graphical independence.
-pub type GIndependence<'a, G, D> = GraphicalIndependence<'a, G, D>;
+pub type GSeparation<'a, G, D> = GraphicalSeparation<'a, G, D>;
+
+mod independence;
+pub use independence::*;
 
 mod moral;
 pub use moral::*;

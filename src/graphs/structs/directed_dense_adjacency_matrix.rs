@@ -10,6 +10,7 @@ use std::{
 use bimap::BiHashMap;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
+use serde::{Deserialize, Serialize};
 
 use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
@@ -18,10 +19,7 @@ use crate::{
         directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph,
     },
-    io::{
-        dot::{Edge, Vertex},
-        DOT,
-    },
+    io::DOT,
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
@@ -30,7 +28,7 @@ use crate::{
 };
 
 /// Directed graph struct based on dense adjacency matrix data structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DirectedDenseAdjacencyMatrixGraph {
     labels: BTreeSet<String>,
     labels_indices: BiHashMap<String, usize>,
@@ -1229,28 +1227,15 @@ impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(g: DirectedDenseAdjacencyMatrixGraph) -> Self {
-        // Set graph type.
-        let graph_type = "digraph".into();
-        // Construct the vertex set.
-        let vertices = V!(g)
-            .map(|x| g.label(x).into())
-            .map(Vertex::new)
-            .map(|x| (x.id.clone(), x))
-            .collect();
-        // Construct the edge set.
-        let edges = E!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
-            .map(|(x, y)| Edge::new((x, y), "->".into()))
-            .map(|x| (x.id.clone(), x))
-            .collect();
+impl From<DOT> for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn from(other: DOT) -> Self {
+        // Assert graph type.
+        assert_eq!(
+            other.graph_type, "digraph",
+            "DOT graph type must match direction"
+        );
 
-        Self {
-            graph_type,
-            vertices,
-            edges,
-            ..Default::default()
-        }
+        Self::new(other.vertices.into_keys(), other.edges.into_keys())
     }
 }

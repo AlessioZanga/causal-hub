@@ -120,12 +120,55 @@ impl<const PARALLEL: bool> From<ConditionalCountMatrix<PARALLEL>> for Array2<usi
     }
 }
 
-/// Three-dimensional joint (conditional) contingency table.
+/// Two-dimensional joint contingency table.
 pub struct JointCountMatrix {
-    n: Array3<usize>,
+    n: Array2<usize>,
 }
 
 impl JointCountMatrix {
+    /// Build new count matrix with given data matrix and indices.
+    #[inline]
+    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize) -> Self {
+        // Get cardinalities.
+        let cards = d.cardinality();
+
+        // Set count matrix shape.
+        let shape = (cards[x], cards[y]);
+
+        // Allocate count matrix.
+        let mut n = Array2::zeros(shape);
+        // Fill count matrix.
+        for row in d.rows() {
+            // Increment at given index.
+            n[[row[x], row[y]]] += 1;
+        }
+
+        Self { n }
+    }
+}
+
+impl Deref for JointCountMatrix {
+    type Target = Array2<usize>;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.n
+    }
+}
+
+impl From<JointCountMatrix> for Array2<usize> {
+    #[inline]
+    fn from(other: JointCountMatrix) -> Array2<usize> {
+        other.n
+    }
+}
+
+/// Three-dimensional joint (conditional) contingency table.
+pub struct JointConditionalCountMatrix {
+    n: Array3<usize>,
+}
+
+impl JointConditionalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
     pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
@@ -154,7 +197,7 @@ impl JointCountMatrix {
     }
 }
 
-impl Deref for JointCountMatrix {
+impl Deref for JointConditionalCountMatrix {
     type Target = Array3<usize>;
 
     #[inline]
@@ -163,9 +206,9 @@ impl Deref for JointCountMatrix {
     }
 }
 
-impl From<JointCountMatrix> for Array3<usize> {
+impl From<JointConditionalCountMatrix> for Array3<usize> {
     #[inline]
-    fn from(other: JointCountMatrix) -> Array3<usize> {
+    fn from(other: JointConditionalCountMatrix) -> Array3<usize> {
         other.n
     }
 }

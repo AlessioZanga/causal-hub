@@ -1,5 +1,5 @@
 [build]
-rustdocflags = [ "--html-in-header", "./katex.html" ]
+rustdocflags = [ "--html-in-header", "./docs/header.html" ]
 
 [env]
 RUST_TEST_THREADS = "4"

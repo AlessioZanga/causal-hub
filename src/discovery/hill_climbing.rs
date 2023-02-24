@@ -1,12 +1,12 @@
-use std::{
-    collections::{BTreeSet, HashSet},
-    marker::PhantomData,
-};
+use std::{hash::BuildHasherDefault, marker::PhantomData};
 
-use itertools::iproduct;
-use log::debug;
+use indexmap::IndexSet;
+use itertools::{iproduct, Itertools};
+use log::{debug, trace};
+use rand::prelude::*;
+use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHasher};
 
 use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
 use crate::{
@@ -24,7 +24,7 @@ type CU<K> = Vec<(K, f64)>;
 type KE = (usize, Vec<usize>);
 
 /// Local edge space type
-type E = BTreeSet<(usize, usize)>;
+type E = IndexSet<(usize, usize), BuildHasherDefault<FxHasher>>;
 /// Local operations edge space type.
 type ES = (
     E, // To-be-added space,
@@ -49,30 +49,28 @@ type A = Option<(usize, usize, usize)>;
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
-pub struct HillClimbing<D, K, G, S, ST, const PARALLEL: bool>
+pub struct HillClimbing<'a, D, K, G, S, ST, const PARALLEL: bool>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     max_iter: usize,
+    seed: Option<u64>,
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     g: Option<G>,
-    s: S,
+    s: &'a S,
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
     #[inline]
-    pub const fn new(s: S) -> Self {
+    pub const fn new(s: &'a S) -> Self {
         Self {
             max_iter: usize::MAX,
+            seed: None,
             _d: PhantomData,
             _k: PhantomData,
             g: None,
@@ -91,18 +89,25 @@ where
 
     /// Set max iterations.
     #[inline]
-    pub fn with_max_iter(mut self, max_iter: usize) -> Self {
+    pub const fn with_max_iter(mut self, max_iter: usize) -> Self {
         // Set hyper parameter.
         self.max_iter = max_iter;
 
         self
     }
+
+    /// Enables columns shuffling by setting the seed.
+    #[inline]
+    pub const fn with_shuffle(mut self, seed: u64) -> Self {
+        // Set random number generator seed.
+        self.seed = Some(seed);
+
+        self
+    }
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
-    D: DataSet,
-    K: PriorKnowledge,
     G: BaseGraph,
     S: ScoringCriterion<D, G, ScoreType = ST>,
 {
@@ -111,9 +116,12 @@ where
     fn apply(mut g: G, x: usize, y: usize, a: usize) -> G {
         // Apply operation.
         match a {
-            Op::ADD => g.add_edge(x, y),
-            Op::DEL => g.del_edge(x, y),
-            Op::REV => g.del_edge(x, y) && g.add_edge(y, x),
+            Op::ADD => assert!(g.add_edge(x, y)),
+            Op::DEL => assert!(g.del_edge(x, y)),
+            Op::REV => {
+                assert!(g.del_edge(x, y));
+                assert!(g.add_edge(y, x));
+            }
             _ => panic!("Unknown operation code"),
         };
 
@@ -139,22 +147,41 @@ where
         // Apply operation.
         match a {
             Op::ADD => {
-                add.remove(&(x, y));
-                add.remove(&(y, x));
-                del.insert((x, y));
-                rev.insert((x, y));
+                // Remove performed action.
+                assert!(add.remove(&(x, y)));
+                // Add(X, Y) implies that (X, Y) is not in the
+                // required list, therefore Del(X, Y) is valid.
+                assert!(del.insert((x, y)));
+                // If Add(Y, X) and Del(X, Y) are valid, then Rev(X, Y) is valid.
+                // Since Del(X, Y) is valid by construction, check only Add(Y, X).
+                if add.contains(&(y, x)) {
+                    assert!(rev.insert((x, y)));
+                }
             }
             Op::DEL => {
-                add.insert((x, y));
-                add.insert((y, x));
-                del.remove(&(x, y));
-                rev.remove(&(x, y));
+                // Del(X, Y) implies that (X, Y) is not in the
+                // forbidden list, therefore Add(X, Y) is valid.
+                assert!(add.insert((x, y)));
+                // Remove performed action.
+                assert!(del.remove(&(x, y)));
+                // Del(X, Y) implies that Rev(X, Y) is not valid.
+                assert!(rev.remove(&(x, y)));
             }
             Op::REV => {
-                del.remove(&(x, y));
-                del.insert((y, x));
-                rev.remove(&(x, y));
-                rev.insert((y, x));
+                // Remove performed action(s).
+                assert!(add.remove(&(y, x)));
+                assert!(del.remove(&(x, y)));
+                assert!(rev.remove(&(x, y)));
+                // Rev(X, Y) implies than (X, Y) is not in the
+                // required list nor in the forbidden list,
+                // therefore, Add(X, Y) is valid.
+                assert!(add.insert((x, y)));
+                // Rev(X, Y) implies than (Y, X) is not in the
+                // required list nor in the forbidden list,
+                // therefore, Del(Y, X) is valid.
+                assert!(del.insert((y, x)));
+                // If Rev(X, Y) is valid then Rev(Y, X) is valid.
+                assert!(rev.insert((y, x)));
             }
             _ => panic!("Unknown operation code"),
         };
@@ -163,7 +190,7 @@ where
     }
 }
 
-impl<D, K, G, S, ST, const PARALLEL: bool> HillClimbing<D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -207,29 +234,38 @@ where
 
         // Get number of variables.
         let n = d.labels().len();
+        // Get columns index.
+        let mut n: Vec<_> = (0..n).collect();
+        // Check if random number generator has been set.
+        if let Some(seed) = self.seed {
+            // Initialize random number generator.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+            // Shuffle columns.
+            n.shuffle(&mut rng);
+            // Log shuffled columns.
+            debug!(
+                "Seed is set, shuffled columns as: [{}]",
+                n.iter().map(|&x| g.label(x)).format(", ")
+            );
+        }
+
         // Get current edge set.
-        let e: HashSet<_> = E!(g).collect();
-
+        let e: E = E!(g).collect();
         // Initialize potential edges to be added.
-        let add: BTreeSet<_> = iproduct!(0..n, 0..n)
+        let add: E = iproduct!(n.clone(), n)
             // Remove any edge (X, Y) s.t. X == Y, is present in the initial graph, or is in the forbidden list.
-            .filter(|&(x, y)| {
-                x != y && !e.contains(&(x, y)) && !e.contains(&(y, x)) && !k.has_forbidden(x, y)
-            })
+            .filter(|&(x, y)| x != y && !e.contains(&(x, y)) && !k.has_forbidden(x, y))
             .collect();
-
         // Initialize potential edges to be deleted.
-        let del: BTreeSet<_> = e
-            .iter()
+        let del: E = e
+            .clone()
+            .into_iter()
             .filter(|(x, y)| !k.has_required(*x, *y))
-            .cloned()
             .collect(); // Remove any edge in the required list.
-
-        // Initialize potential edges to be reversed.
-        let rev = del
-            .iter()
-            .filter(|(x, y)| !k.has_forbidden(*y, *x))
-            .cloned()
+                        // Initialize potential edges to be reversed.
+        let rev: E = e
+            .into_iter()
+            .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect(); // Remove any reversed edge in the forbidden list.
 
         (g, (add, del, rev))
@@ -241,7 +277,7 @@ where
         // Check validity depending on operation.
         let is_valid = match OP {
             // (X, Y) not in F, pi(Y, X) not in G.
-            Op::ADD => !g.has_path(y, x),
+            Op::ADD => !g.has_edge(y, x) && !g.has_path(y, x),
             // (X, Y) in R.
             Op::DEL => true,
             // (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
@@ -255,7 +291,7 @@ where
         // Check if invalid.
         if !is_valid {
             // Log invalid.
-            debug!(
+            trace!(
                 "op: {}({}, {}), invalid",
                 match OP {
                     Op::ADD => "Add",
@@ -273,7 +309,8 @@ where
 }
 
 /* Implement Hill-Climbing for Decomposable Scoring Criteria */
-impl<D, K, G, S, const PARALLEL: bool> HillClimbing<D, K, G, S, score_types::Decomposable, PARALLEL>
+impl<'a, D, K, G, S, const PARALLEL: bool>
+    HillClimbing<'a, D, K, G, S, score_types::Decomposable, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -283,16 +320,18 @@ where
     /// Compute delta score, if not already in cache, returning cache update.
     #[inline]
     fn cache(&self, c: &C<KE>, d: &D, x: usize, z: &[usize]) -> (f64, CU<KE>) {
+        // Construct the key.
+        let key = (x, z.to_vec());
         // Check if score is already in cache.
-        match c.get(&(x, z.to_vec())) {
+        match c.get(&key) {
             // If so, return cached values.
             Some(s) => (*s, CU::default()),
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = DecomposableScoringCriterion::call(&self.s, d, x, z);
+                let s = self.s.call(d, x, z);
 
-                (s, CU::from_iter([((x, z.to_vec()), s)]))
+                (s, CU::from_iter([(key, s)]))
             }
         }
     }
@@ -352,7 +391,7 @@ where
         };
 
         // Log current operation delta.
-        debug!(
+        trace!(
             "op: {}({}, {}), delta: {}",
             match OP {
                 Op::ADD => "Add",
@@ -433,7 +472,7 @@ where
                 // Get vertex parents.
                 let z: Vec<_> = Pa!(g, x).collect();
                 // Compute vertex score.
-                let s = DecomposableScoringCriterion::call(&self.s, d, x, &z);
+                let s = self.s.call(d, x, &z);
                 // Insert into the cache.
                 c.insert((x, z), s);
 
@@ -483,8 +522,8 @@ where
 }
 
 /* Implement Hill-Climbing for Non-Decomposable Scoring Criteria */
-impl<D, K, G, S, const PARALLEL: bool>
-    HillClimbing<D, K, G, S, score_types::NonDecomposable, PARALLEL>
+impl<'a, D, K, G, S, const PARALLEL: bool>
+    HillClimbing<'a, D, K, G, S, score_types::NonDecomposable, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -501,7 +540,7 @@ where
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = ScoringCriterion::call(&self.s, d, g);
+                let s = self.s.call(d, g);
 
                 (s, CU::from_iter([(g.clone(), s)]))
             }
@@ -628,7 +667,7 @@ where
         // Initialize graph from D and K.
         let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
         // Compute the initial score.
-        let mut s_g: f64 = ScoringCriterion::call(&self.s, d, &g);
+        let mut s_g = self.s.call(d, &g);
         // Update cache.
         c.insert(g.clone(), s_g);
 
@@ -673,6 +712,6 @@ where
 }
 
 /// Alias for the single-thread Hill-Climbing algorithm.
-pub type HC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, false>;
+pub type HC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, false>;
 /// Alias for the multi-thread Hill-Climbing algorithm.
-pub type ParallelHC<D, K, G, S, ST> = HillClimbing<D, K, G, S, ST, true>;
+pub type ParallelHC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, true>;

@@ -72,17 +72,6 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARAL
     }
 }
 
-impl<const PARALLEL: bool> LogLikelihood<CategoricalDataMatrix, PARALLEL> {
-    /// Computes LL given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
-    #[inline]
-    pub fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
-        match z.is_empty() {
-            true => MarginalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x),
-            false => ConditionalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x, z),
-        }
-    }
-}
-
 impl<G, const PARALLEL: bool> DecomposableScoringCriterion<CategoricalDataMatrix, G>
     for LogLikelihood<CategoricalDataMatrix, PARALLEL>
 where
@@ -90,6 +79,9 @@ where
 {
     #[inline]
     fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
-        self.call(d, x, z)
+        match z.is_empty() {
+            true => MarginalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x),
+            false => ConditionalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x, z),
+        }
     }
 }

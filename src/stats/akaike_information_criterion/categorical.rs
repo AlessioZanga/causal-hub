@@ -6,12 +6,14 @@ use crate::{
     stats::LogLikelihood,
 };
 
-impl<const RESCALED: bool, const PARALLEL: bool>
-    AkaikeInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+impl<G, const RESCALED: bool, const PARALLEL: bool>
+    DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for AkaikeInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+where
+    G: DirectedGraph<Direction = directions::Directed>,
 {
-    /// Computes AIC given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the cardinality.
         let cards = d.cardinality();
         // Get the cardinality of vertices.
@@ -21,28 +23,16 @@ impl<const RESCALED: bool, const PARALLEL: bool>
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::<CategoricalDataMatrix, PARALLEL>::new();
+        let s = LogLikelihood::<_, PARALLEL>::new();
         // Compute the log-likelihood.
-        let ll = ll.call(d, x, z);
+        let s = DecomposableScoringCriterion::<CategoricalDataMatrix, G>::call(&s, d, x, z);
 
         // Check if AIC must be scaled.
         match RESCALED {
             // Rescale AIC by -2, coherently with LL.
-            true => ll - self.k * theta,
+            true => s - self.k * theta,
             // Otherwise, compute original AIC.
-            false => 2. * self.k * theta - 2. * ll,
+            false => 2. * self.k * theta - 2. * s,
         }
-    }
-}
-
-impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for AkaikeInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
-where
-    G: DirectedGraph<Direction = directions::Directed>,
-{
-    #[inline]
-    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
-        self.call(d, x, z)
     }
 }

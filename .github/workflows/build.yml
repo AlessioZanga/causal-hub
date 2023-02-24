@@ -1,4 +1,4 @@
-on: [push]
+on: [push, pull_request]
 
 name: build
 
@@ -22,9 +22,8 @@ jobs:
             vcpkg
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
       - name: Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.env }}
       - name: Dependencies (Linux)
         if: ${{ runner.os == 'Linux' }}
