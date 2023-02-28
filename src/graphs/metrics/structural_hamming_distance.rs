@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::{graphs::BaseGraph, E};
 
 /// Structural Hamming Distance (SHD).
-pub fn shd<G, H>(true_graph: &G, pred_graph: &H) -> f64
+pub fn structural_hamming_distance<G, H>(true_graph: &G, pred_graph: &H) -> f64
 where
     G: BaseGraph,
     H: BaseGraph,

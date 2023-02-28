@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{graphs::algorithms::metrics::shd, prelude::*};
+    use causal_hub::{graphs::metrics::structural_hamming_distance as shd, prelude::*};
 
     #[test]
-    fn structural_hamming_distance() {
+    fn call() {
         // Initialize graphs.
         let true_graph = DiGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C"), ("C", "C")]);
         let pred_graph = DiGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C"), ("C", "A")]);

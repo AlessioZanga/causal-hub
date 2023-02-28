@@ -1,6 +1,9 @@
 /// Algorithms on graphs.
 pub mod algorithms;
 
+/// Structural metrics.
+pub mod metrics;
+
 /// Structures on graphs.
 pub mod structs;
 
