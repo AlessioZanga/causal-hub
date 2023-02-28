@@ -176,7 +176,7 @@ impl DataSet for CategoricalDataMatrix {
         &self.labels
     }
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values

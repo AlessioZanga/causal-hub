@@ -30,7 +30,7 @@ impl MarginalCountMatrix {
         Self { n }
     }
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array1<usize> {
         &self.n
@@ -99,7 +99,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         Self { n }
     }
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -139,7 +139,7 @@ impl JointCountMatrix {
         Self { n }
     }
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -186,7 +186,7 @@ impl JointConditionalCountMatrix {
         Self { n }
     }
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array3<usize> {
         &self.n

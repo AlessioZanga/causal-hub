@@ -10,9 +10,9 @@ pub trait DataSet:
     /// Data set underlying data structure.
     type Data;
 
-    /// Gets the set of variables labels.
+    /// Get the set of variables labels.
     fn labels(&self) -> &BTreeSet<String>;
 
-    /// Return reference to underlying values.
+    /// Get reference to underlying values.
     fn values(&self) -> &Self::Data;
 }
