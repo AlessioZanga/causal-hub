@@ -1,42 +1,50 @@
 use std::{
+    cmp::Ordering::Less,
     collections::BTreeSet,
     fmt::{Debug, Display, Formatter},
-    ops::{Add, Deref, Div, Mul},
+    ops::{Add, Div, Mul},
 };
 
+use itertools::Itertools;
 use ndarray::prelude::*;
-use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::nan_to_zero;
+use crate::{types::FxIndexMap, utils::nan_to_zero};
 
+/// Factor trait.
 pub trait Factor:
     Clone + Debug + Display + Add + Mul + Div + Serialize + for<'a> Deserialize<'a>
 {
-    fn labels(&self) -> &BTreeSet<String>;
+    /// Get the set of variables levels.
+    fn levels(&self) -> &FxIndexMap<String, BTreeSet<String>>;
 
+    /// Get reference to underlying values.
+    fn values(&self) -> &ArrayD<f64>;
+
+    /// Compute the factor normalization.
     fn normalize(self) -> Self;
 
-    fn marginalize<I>(self, iter: I) -> Self
+    /// Compute the factor marginalization.
+    fn marginalize<'a, I>(self, x: I) -> Self
     where
-        I: IntoIterator<Item = usize>;
+        I: IntoIterator<Item = &'a str>;
 
-    fn reduce<I>(self, iter: I) -> Self
+    /// Compute the factor reduction.
+    fn reduce<'a, I>(self, x: I) -> Self
     where
-        I: IntoIterator<Item = (usize, usize)>;
+        I: IntoIterator<Item = (&'a str, &'a str)>;
 }
 
 /// Categorical factor.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalFactor {
+    levels: FxIndexMap<String, BTreeSet<String>>,
     values: ArrayD<f64>,
-    labels: BTreeSet<String>,
-    levels: FxHashMap<String, BTreeSet<String>>,
 }
 
 impl CategoricalFactor {
     /// Construct a new categorical factor given its values and levels.
-    pub fn new<D, I, J, K>(values: Array<f64, D>, levels: I) -> Self
+    pub fn new<D, I, J, K>(levels: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
         I: IntoIterator<Item = (K, J)>,
@@ -44,15 +52,14 @@ impl CategoricalFactor {
         K: Into<String>,
     {
         // Collect levels.
-        let levels: FxHashMap<String, BTreeSet<String>> = levels
+        let levels: FxIndexMap<String, BTreeSet<String>> = levels
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .sorted()
             .collect();
-        // Collect labels.
-        let labels: BTreeSet<String> = levels.keys().map(|x| x.into()).collect();
         // Compute factor values shape.
-        let shape: Vec<_> = labels
-            .iter()
+        let shape: Vec<_> = levels
+            .keys()
             .map(|x| levels.get(x).unwrap())
             .map(|x| x.len())
             .collect();
@@ -64,25 +71,12 @@ impl CategoricalFactor {
             .expect("Values and levels must have same shape")
             .into_dyn();
 
-        Self {
-            values,
-            labels,
-            levels,
-        }
-    }
-}
-
-impl Deref for CategoricalFactor {
-    type Target = ArrayD<f64>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.values
+        Self { levels, values }
     }
 }
 
 impl Display for CategoricalFactor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!() // FIXME:
     }
 }
@@ -90,7 +84,7 @@ impl Display for CategoricalFactor {
 impl Add for CategoricalFactor {
     type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
+    fn add(self, _phi: Self) -> Self::Output {
         todo!() // FIXME:
     }
 }
@@ -98,18 +92,22 @@ impl Add for CategoricalFactor {
 impl Mul for CategoricalFactor {
     type Output = Self;
 
-    fn mul(self, other: Self) -> Self::Output {
+    fn mul(self, phi: Self) -> Self::Output {
         // Compute scope of factor product.
-        let labels = &self.labels | &other.labels;
+        let levels: FxIndexMap<_, _> = iter_set::union(
+            self.levels.clone().into_iter(),
+            phi.levels.clone().into_iter(),
+        )
+        .collect();
         // Compute broadcasting shapes.
-        let lhs: Vec<_> = labels
-            .iter()
+        let lhs: Vec<_> = levels
+            .keys()
             .map(|x| self.levels.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
-        let rhs: Vec<_> = labels
-            .iter()
-            .map(|x| other.levels.get(x))
+        let rhs: Vec<_> = levels
+            .keys()
+            .map(|x| phi.levels.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
         // Apply broadcasting shapes.
@@ -117,40 +115,33 @@ impl Mul for CategoricalFactor {
             .values
             .into_shape(lhs)
             .expect("Failed to broadcast LHS factor values to given shape");
-        let rhs = other
+        let rhs = phi
             .values
             .into_shape(rhs)
             .expect("Failed to broadcast RHS factor values to given shape");
         // Compute factor product.
         let values = (lhs * rhs).into_dyn();
-        // Compute levels of product.
-        let mut levels = self.levels;
-        levels.extend(other.levels.into_iter());
 
-        Self {
-            values,
-            labels,
-            levels,
-        }
+        Self { levels, values }
     }
 }
 
 impl Div for CategoricalFactor {
     type Output = Self;
 
-    fn div(self, other: Self) -> Self::Output {
+    fn div(self, phi: Self) -> Self::Output {
         // Compute scope and levels of factor division.
-        let (labels, levels) = (self.labels, self.levels);
+        let levels = self.levels;
         // Assert RHS scope is subset of LHS scope.
-        assert!(other.labels.is_subset(&labels));
+        assert_eq!(iter_set::cmp(phi.levels.keys(), levels.keys()), Some(Less));
         // Compute broadcasting shapes.
-        let rhs: Vec<_> = labels
-            .iter()
-            .map(|x| other.levels.get(x))
+        let rhs: Vec<_> = levels
+            .keys()
+            .map(|x| phi.levels.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
         // Apply broadcasting shapes.
-        let rhs = other
+        let rhs = phi
             .values
             .into_shape(rhs)
             .expect("Failed to broadcast RHS factor values to given shape");
@@ -160,18 +151,19 @@ impl Div for CategoricalFactor {
             .mapv(nan_to_zero)
             .into_dyn();
 
-        Self {
-            values,
-            labels,
-            levels,
-        }
+        Self { levels, values }
     }
 }
 
 impl Factor for CategoricalFactor {
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn levels(&self) -> &FxIndexMap<String, BTreeSet<String>> {
+        &self.levels
+    }
+
+    #[inline]
+    fn values(&self) -> &ArrayD<f64> {
+        &self.values
     }
 
     #[inline]
@@ -182,16 +174,30 @@ impl Factor for CategoricalFactor {
         self
     }
 
-    fn marginalize<I>(self, iter: I) -> Self
+    fn marginalize<'a, I>(mut self, x: I) -> Self
     where
-        I: IntoIterator<Item = usize>,
+        I: IntoIterator<Item = &'a str>,
     {
-        todo!() // FIXME:
+        // For each variable.
+        x.into_iter()
+            // Get variables indices.
+            .map(|x| {
+                self.levels
+                    .get_index_of(x)
+                    .expect("Failed to get variable index")
+            })
+            // Sort in decreasing order to ensure correctness.
+            .sorted()
+            .rev()
+            // Sum given axis.
+            .for_each(|x| self.values = self.values.sum_axis(Axis(x)));
+
+        self
     }
 
-    fn reduce<I>(self, iter: I) -> Self
+    fn reduce<'a, I>(self, _x: I) -> Self
     where
-        I: IntoIterator<Item = (usize, usize)>,
+        I: IntoIterator<Item = (&'a str, &'a str)>,
     {
         todo!() // FIXME:
     }
