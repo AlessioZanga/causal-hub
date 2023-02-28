@@ -4,6 +4,7 @@ use statrs::function::gamma::gamma_lr;
 use crate::{
     data::{CategoricalDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
     prelude::ConditionalIndependenceTest,
+    utils::nan_to_zero,
 };
 
 /// Chi Squared conditional independence test.
@@ -54,10 +55,10 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
             .insert_axis(Axis(1))
             .insert_axis(Axis(2));
         // Compute expected counts, mapping NaNs to zero.
-        let e_ijk = ((o_ik * o_jk) / o_k).mapv(|x| f64::max(x, 0.));
+        let e_ijk = ((o_ik * o_jk) / o_k).mapv(nan_to_zero);
         // Compute test statistic, mapping NaNs to zero.
         let stat = ((o_ijk - &e_ijk).mapv(|x| f64::powi(x, 2)) / e_ijk)
-            .mapv(|x| f64::max(x, 0.))
+            .mapv(nan_to_zero)
             .sum();
 
         // Compute p-value as:

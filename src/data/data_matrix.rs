@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet},
     ops::Deref,
 };
 
@@ -7,6 +7,7 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
@@ -16,15 +17,15 @@ use super::DataSet;
 /// Data matrix for categorical data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataMatrix {
-    data: Array2<usize>,
+    values: Array2<usize>,
     labels: BTreeSet<String>,
-    levels: HashMap<String, Vec<String>>,
+    levels: FxHashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
 }
 
 impl CategoricalDataMatrix {
     /// Construct a new categorical data matrix given data encoding, labels and levels.
-    pub fn new<V, I, J, K>(data: Array2<usize>, labels: I, levels: J) -> Self
+    pub fn new<V, I, J, K>(values: Array2<usize>, labels: I, levels: J) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -34,9 +35,9 @@ impl CategoricalDataMatrix {
         // Construct the labels set.
         let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
         // Check labels consistency.
-        assert_eq!(data.ncols(), labels.len());
+        assert_eq!(values.ncols(), labels.len());
         // Construct the levels map.
-        let levels: HashMap<String, Vec<String>> = levels
+        let levels: FxHashMap<String, Vec<String>> = levels
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
             .collect();
@@ -46,14 +47,15 @@ impl CategoricalDataMatrix {
         let cardinality = labels.iter().map(|l| levels[l].len()).collect();
         // Check cardinalities.
         assert_eq!(
-            data.fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
+            values
+                .fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
                 .into_iter()
                 .collect::<Vec<_>>(),
             cardinality
         );
 
         Self {
-            data,
+            values,
             labels,
             levels,
             cardinality,
@@ -66,7 +68,7 @@ impl Deref for CategoricalDataMatrix {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.data
+        &self.values
     }
 }
 
@@ -99,7 +101,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
         let df: DataFrame = df.sorted_by(|a, b| a.name().cmp(b.name())).collect();
 
         // Get underlying data matrix.
-        let mut data = df
+        let mut values = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as usize);
@@ -108,7 +110,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
         let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().collect();
 
         // Get variables levels.
-        let levels: HashMap<String, Vec<String>> = df
+        let levels: FxHashMap<String, Vec<String>> = df
             // Iterate over the columns.
             .iter()
             // Get index-to-label mapping.
@@ -153,7 +155,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
                     let mut indices: Vec<_> = (0..levels.len()).collect();
                     indices.sort_by_key(|&i| &levels[i]);
                     // Sort the data.
-                    data.column_mut(i).mapv_inplace(|x| indices[x]);
+                    values.column_mut(i).mapv_inplace(|x| indices[x]);
                     // Sort the labels.
                     levels.sort();
                 }
@@ -167,7 +169,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
         let cardinality = labels.iter().map(|l| levels[l].len()).collect();
 
         Self {
-            data,
+            values,
             labels,
             levels,
             cardinality,
@@ -187,7 +189,7 @@ impl DataSet for CategoricalDataMatrix {
 impl CategoricalDataMatrix {
     /// Gets the map of variables to their levels.
     #[inline]
-    pub fn levels(&self) -> &HashMap<String, Vec<String>> {
+    pub fn levels(&self) -> &FxHashMap<String, Vec<String>> {
         &self.levels
     }
 
@@ -203,7 +205,7 @@ impl CategoricalDataMatrix {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataMatrix {
-    data: Array2<f64>,
+    values: Array2<f64>,
     labels: BTreeSet<String>,
 }
 
@@ -212,7 +214,7 @@ impl Deref for ContinuousDataMatrix {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.data
+        &self.values
     }
 }
 
@@ -241,14 +243,14 @@ impl From<DataFrame> for ContinuousDataMatrix {
             .collect();
 
         // Get underlying data matrix.
-        let data = df
+        let values = df
             .to_ndarray::<Float64Type>()
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().collect();
 
-        Self { data, labels }
+        Self { values, labels }
     }
 }
 

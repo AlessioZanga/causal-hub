@@ -1,3 +1,6 @@
+mod factor;
+pub use factor::*;
+
 mod graphical_separation;
 pub use graphical_separation::*;
 

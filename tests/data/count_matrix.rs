@@ -1,10 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
     use polars::prelude::*;
+    use rustc_hash::FxHashMap;
 
     #[test]
     fn marginal_count_matrix() {
@@ -85,7 +84,7 @@ mod tests {
             .expect("Failed to read from CSV file");
         let d = CategoricalDataMatrix::from(d);
 
-        let m: HashMap<_, _> = d
+        let m: FxHashMap<_, _> = d
             .labels()
             .iter()
             .cloned()

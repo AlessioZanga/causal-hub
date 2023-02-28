@@ -6,7 +6,7 @@ use crate::{
     data::{CategoricalDataMatrix, ConditionalCountMatrix, MarginalCountMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
-    utils::axis_chunks_size,
+    utils::{axis_chunks_size, nan_to_zero},
 };
 
 impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL> {
@@ -19,7 +19,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL
         // Compute log-likelihood as n_i * ln(n_i  / n).
         (&n_i * (&n_i / n).mapv(f64::ln))
             // Map NaNs to zero.
-            .mapv(|i| f64::min(i, 0.))
+            .mapv(nan_to_zero)
             // Sum each term.
             .sum()
     }
@@ -48,7 +48,7 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARAL
         // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
         (&n_ij * (&n_ij / n_j).mapv(f64::ln))
             // Map NaNs to zero.
-            .mapv(|i| f64::min(i, 0.))
+            .mapv(nan_to_zero)
             // Sum each term.
             .sum()
     }
