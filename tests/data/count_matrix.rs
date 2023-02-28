@@ -19,16 +19,16 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         let n = MarginalCountMatrix::new(&d, 0);
-        assert_eq!(*n, array![1, 1, 1]);
+        assert_eq!(n.values(), array![1, 1, 1]);
 
         let n = MarginalCountMatrix::new(&d, 1);
-        assert_eq!(*n, array![3]);
+        assert_eq!(n.values(), array![3]);
 
         let n = MarginalCountMatrix::new(&d, 2);
-        assert_eq!(*n, array![2, 1]);
+        assert_eq!(n.values(), array![2, 1]);
 
         let n = MarginalCountMatrix::new(&d, 3);
-        assert_eq!(*n, array![1, 1, 1]);
+        assert_eq!(n.values(), array![1, 1, 1]);
     }
 
     #[test]
@@ -45,20 +45,20 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 1, &[2]);
-        assert_eq!(*n, array![[2], [1]]);
+        assert_eq!(n.values(), array![[2], [1]]);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 2, &[1]);
-        assert_eq!(*n, array![[2, 1]]);
+        assert_eq!(n.values(), array![[2, 1]]);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 3, &[1]);
-        assert_eq!(*n, array![[1, 1, 1]]);
+        assert_eq!(n.values(), array![[1, 1, 1]]);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 1, &[2, 3]);
-        assert_eq!(*n, array![[1], [0], [1], [0], [1], [0]]);
+        assert_eq!(n.values(), array![[1], [0], [1], [0], [1], [0]]);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 0, &[1, 2, 3]);
         assert_eq!(
-            *n,
+            n.values(),
             array![
                 [1, 0, 0],
                 [0, 0, 0],
@@ -96,7 +96,7 @@ mod tests {
             let x = m[&x];
             let z: Vec<_> = z.into_iter().map(|z| m[&z]).collect();
 
-            assert_eq!(*ConditionalCountMatrix::<true>::new(&d, x, &z), c);
+            assert_eq!(ConditionalCountMatrix::<true>::new(&d, x, &z).values(), c);
         }
     }
 
@@ -114,9 +114,9 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         let n = JointConditionalCountMatrix::new(&d, 1, 2, &[3]);
-        assert_eq!(*n, array![[[1, 0]], [[0, 1]], [[1, 0]]]);
+        assert_eq!(n.values(), array![[[1, 0]], [[0, 1]], [[1, 0]]]);
 
         let n = JointConditionalCountMatrix::new(&d, 1, 3, &[2]);
-        assert_eq!(*n, array![[[1, 0, 1]], [[0, 1, 0]]]);
+        assert_eq!(n.values(), array![[[1, 0, 1]], [[0, 1, 0]]]);
     }
 }

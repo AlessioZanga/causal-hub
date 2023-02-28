@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
 use super::CovarianceMatrix;
-use crate::data::ContinuousDataMatrix;
+use crate::data::{ContinuousDataMatrix, DataSet};
 
 /// Correlation matrix $\Rho$.
 #[derive(Clone, Debug)]
@@ -63,6 +63,7 @@ impl From<&ContinuousDataMatrix> for CorrelationMatrix {
     fn from(d: &ContinuousDataMatrix) -> Self {
         // Compute the correlation matrix.
         let rho = d
+            .values()
             .t()
             .pearson_correlation()
             .expect("Failed to compute the correlation matrix");

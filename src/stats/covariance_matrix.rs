@@ -3,7 +3,7 @@ use std::ops::Deref;
 use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
-use crate::data::ContinuousDataMatrix;
+use crate::data::{ContinuousDataMatrix, DataSet};
 
 /// (Sample) Covariance matrix $\Sigma$.
 #[derive(Clone, Debug)]
@@ -50,6 +50,7 @@ impl From<&ContinuousDataMatrix> for CovarianceMatrix {
     fn from(d: &ContinuousDataMatrix) -> Self {
         // Compute the (sample) covariance matrix.
         let sigma = d
+            .values()
             .t()
             .cov(1.)
             .expect("Failed to compute the correlation matrix");

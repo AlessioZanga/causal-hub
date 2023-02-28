@@ -8,6 +8,7 @@ use crate::{
     data::ContinuousDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
+    prelude::DataSet,
 };
 
 impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL> {
@@ -27,7 +28,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL>
     #[inline]
     pub fn call(d: &ContinuousDataMatrix, x: usize) -> f64 {
         // Get the variable and sample size.
-        let (x, n) = (d.column(x), d.nrows());
+        let (x, n) = (d.values().column(x), d.values().nrows());
 
         // Compute residuals and standard deviation. TODO: Parallelize over mean and variance.
         let (residuals, std) = Self::eval(x, n);
@@ -75,6 +76,8 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(d: &ContinuousDataMatrix, x: usize, z: &[usize]) -> f64 {
+        // Get reference to underling values.
+        let d = d.values();
         // Get sample size and number of conditioning variables.
         let (n, m) = (d.nrows(), z.len());
         // Get a copy of the variable.

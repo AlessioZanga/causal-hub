@@ -3,6 +3,7 @@ use statrs::function::beta::beta_reg;
 use crate::{
     data::ContinuousDataMatrix,
     discovery::ConditionalIndependenceTest,
+    prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
@@ -26,7 +27,7 @@ impl StudentsT {
         Self {
             rho,
             alpha: 0.05,
-            n: d.nrows(),
+            n: d.values().nrows(),
         }
     }
 }

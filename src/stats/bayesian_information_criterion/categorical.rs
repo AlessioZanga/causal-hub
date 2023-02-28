@@ -3,6 +3,7 @@ use crate::{
     data::CategoricalDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
+    prelude::DataSet,
     stats::LogLikelihood,
 };
 
@@ -15,7 +16,7 @@ where
     #[inline]
     fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the sample size.
-        let n = d.nrows() as f64;
+        let n = d.values().nrows() as f64;
 
         // Get the cardinality.
         let cards = d.cardinality();

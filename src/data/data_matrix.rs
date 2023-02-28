@@ -17,15 +17,15 @@ use super::DataSet;
 /// Data matrix for categorical data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataMatrix {
-    values: Array2<usize>,
     labels: BTreeSet<String>,
     levels: FxHashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
+    values: Array2<usize>,
 }
 
 impl CategoricalDataMatrix {
     /// Construct a new categorical data matrix given data encoding, labels and levels.
-    pub fn new<V, I, J, K>(values: Array2<usize>, labels: I, levels: J) -> Self
+    pub fn new<V, I, J, K>(labels: I, levels: J, values: Array2<usize>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -55,20 +55,11 @@ impl CategoricalDataMatrix {
         );
 
         Self {
-            values,
             labels,
             levels,
             cardinality,
+            values,
         }
-    }
-}
-
-impl Deref for CategoricalDataMatrix {
-    type Target = Array2<usize>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.values
     }
 }
 
@@ -169,10 +160,10 @@ impl From<DataFrame> for CategoricalDataMatrix {
         let cardinality = labels.iter().map(|l| levels[l].len()).collect();
 
         Self {
-            values,
             labels,
             levels,
             cardinality,
+            values,
         }
     }
 }
@@ -183,6 +174,12 @@ impl DataSet for CategoricalDataMatrix {
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
+    }
+
+    /// Return reference to underlying values.
+    #[inline]
+    fn values(&self) -> &Self::Data {
+        &self.values
     }
 }
 
@@ -207,15 +204,6 @@ impl CategoricalDataMatrix {
 pub struct ContinuousDataMatrix {
     values: Array2<f64>,
     labels: BTreeSet<String>,
-}
-
-impl Deref for ContinuousDataMatrix {
-    type Target = Array2<f64>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.values
-    }
 }
 
 impl From<DataFrame> for ContinuousDataMatrix {
@@ -250,7 +238,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().collect();
 
-        Self { values, labels }
+        Self { labels, values }
     }
 }
 
@@ -260,5 +248,10 @@ impl DataSet for ContinuousDataMatrix {
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Data {
+        &self.values
     }
 }

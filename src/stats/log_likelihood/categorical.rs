@@ -31,7 +31,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL
         let n_i = MarginalCountMatrix::new(d, x);
 
         // Compute the log likelihood.
-        Self::eval(n_i.view())
+        Self::eval(n_i.values().view())
     }
 }
 
@@ -60,7 +60,9 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARAL
         let n_ij = ConditionalCountMatrix::<PARALLEL>::new(d, x, z);
 
         // Iterate over chunks.
-        let n_ij = n_ij.axis_chunks_iter(Axis(0), axis_chunks_size(&n_ij));
+        let n_ij = n_ij
+            .values()
+            .axis_chunks_iter(Axis(0), axis_chunks_size(n_ij.values()));
 
         // Check if parallelization is enabled.
         match PARALLEL {

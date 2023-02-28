@@ -21,7 +21,10 @@ mod tests {
             // Cast dataframe to datamatrix.
             let data = CategoricalDataMatrix::from(df);
 
-            assert_eq!(*data, array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]);
+            assert_eq!(
+                data.values(),
+                array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
+            );
 
             assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
 
@@ -67,7 +70,7 @@ mod tests {
             let data = ContinuousDataMatrix::from(df);
 
             assert_eq!(
-                *data,
+                data.values(),
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
