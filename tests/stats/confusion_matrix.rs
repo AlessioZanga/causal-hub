@@ -29,7 +29,7 @@ mod tests {
             false, true, true, false, true, false, false, false, false,
         ];
         // Construct confusion matrix.
-        let cm = ConfusionMatrix::from((true_class, pred_class));
+        let cm = ConfusionMatrix::from((&true_class, &pred_class));
         // Deref slice.
         assert_eq!(
             cm.deref(),
@@ -66,7 +66,7 @@ mod tests {
         let true_graph = Graph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
         let pred_graph = Graph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
         // Construct confusion matrix.
-        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        let cm = ConfusionMatrix::from((&true_graph, &pred_graph));
         // Deref slice.
         assert_eq!(cm.deref(), &[4., 0., 0., 2.]);
     }
@@ -77,7 +77,7 @@ mod tests {
         let true_graph = DiGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
         let pred_graph = DiGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
         // Construct confusion matrix.
-        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        let cm = ConfusionMatrix::from((&true_graph, &pred_graph));
         // Deref slice.
         assert_eq!(cm.deref(), &[6., 1., 1., 1.]);
     }

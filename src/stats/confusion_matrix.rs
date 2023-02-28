@@ -2,7 +2,6 @@ use std::ops::Deref;
 
 use crate::{
     graphs::{BaseGraph, DiGraph, Graph},
-    types::DenseAdjacencyMatrix,
     V,
 };
 
@@ -28,10 +27,10 @@ impl From<ConfusionMatrix> for [f64; 4] {
     }
 }
 
-impl<I, J> From<(I, J)> for ConfusionMatrix
+impl<'a, I, J> From<(I, J)> for ConfusionMatrix
 where
-    I: IntoIterator<Item = bool>,
-    J: IntoIterator<Item = bool>,
+    I: IntoIterator<Item = &'a bool>,
+    J: IntoIterator<Item = &'a bool>,
 {
     fn from((true_class, pred_class): (I, J)) -> Self {
         // Initialize confusion matrix.
@@ -39,15 +38,15 @@ where
         // Count classes pairs.
         for (p, t) in pred_class.into_iter().zip(true_class.into_iter()) {
             // Increment statistic.
-            c[p as usize + 2 * t as usize] += 1.;
+            c[*p as usize + 2 * *t as usize] += 1.;
         }
 
         Self { c }
     }
 }
 
-impl From<(Graph, Graph)> for ConfusionMatrix {
-    fn from((true_graph, pred_graph): (Graph, Graph)) -> Self {
+impl From<(&Graph, &Graph)> for ConfusionMatrix {
+    fn from((true_graph, pred_graph): (&Graph, &Graph)) -> Self {
         // Assert same vertices.
         assert_eq!(
             V!(true_graph),
@@ -61,20 +60,18 @@ impl From<(Graph, Graph)> for ConfusionMatrix {
             "Graphs must have same memory layout"
         );
 
-        // Get adjacency matrices.
-        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
-        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
-
         // Get lower triangular.
         let true_graph = true_graph
+            .deref()
             .indexed_iter()
-            .filter_map(|((i, j), &f)| match i <= j {
+            .filter_map(|((i, j), f)| match i <= j {
                 true => Some(f),
                 false => None,
             });
         let pred_graph = pred_graph
+            .deref()
             .indexed_iter()
-            .filter_map(|((i, j), &f)| match i <= j {
+            .filter_map(|((i, j), f)| match i <= j {
                 true => Some(f),
                 false => None,
             });
@@ -83,8 +80,8 @@ impl From<(Graph, Graph)> for ConfusionMatrix {
     }
 }
 
-impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
-    fn from((true_graph, pred_graph): (DiGraph, DiGraph)) -> Self {
+impl From<(&DiGraph, &DiGraph)> for ConfusionMatrix {
+    fn from((true_graph, pred_graph): (&DiGraph, &DiGraph)) -> Self {
         // Assert same vertices.
         assert_eq!(
             V!(true_graph),
@@ -98,11 +95,7 @@ impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
             "Graphs must have same memory layout"
         );
 
-        // Get adjacency matrices.
-        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
-        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
-
-        Self::from((true_graph, pred_graph))
+        Self::from((true_graph.deref().iter(), pred_graph.deref().iter()))
     }
 }
 
