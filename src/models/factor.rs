@@ -1,6 +1,5 @@
 use std::{
     cmp::Ordering::Less,
-    collections::BTreeSet,
     fmt::{Debug, Display, Formatter},
     ops::{Add, Div, Mul},
 };
@@ -9,14 +8,17 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{types::FxIndexMap, utils::nan_to_zero};
+use crate::{
+    types::{FxIndexMap, FxIndexSet},
+    utils::nan_to_zero,
+};
 
 /// Factor trait.
 pub trait Factor:
     Clone + Debug + Display + Add + Mul + Div + Serialize + for<'a> Deserialize<'a>
 {
     /// Get the set of variables levels.
-    fn levels(&self) -> &FxIndexMap<String, BTreeSet<String>>;
+    fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>>;
 
     /// Get reference to underlying values.
     fn values(&self) -> &ArrayD<f64>;
@@ -38,7 +40,7 @@ pub trait Factor:
 /// Categorical factor.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalFactor {
-    levels: FxIndexMap<String, BTreeSet<String>>,
+    levels: FxIndexMap<String, FxIndexSet<String>>,
     values: ArrayD<f64>,
 }
 
@@ -52,10 +54,15 @@ impl CategoricalFactor {
         K: Into<String>,
     {
         // Collect levels.
-        let levels: FxIndexMap<String, BTreeSet<String>> = levels
+        let levels: FxIndexMap<String, FxIndexSet<String>> = levels
             .into_iter()
-            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
-            .sorted()
+            .map(|(x, ys)| {
+                (
+                    x.into(),
+                    ys.into_iter().map(|y| y.into()).sorted().collect(),
+                )
+            })
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Compute factor values shape.
         let shape: Vec<_> = levels
@@ -94,9 +101,10 @@ impl Mul for CategoricalFactor {
 
     fn mul(self, phi: Self) -> Self::Output {
         // Compute scope of factor product.
-        let levels: FxIndexMap<_, _> = iter_set::union(
+        let levels: FxIndexMap<_, _> = iter_set::union_by(
             self.levels.clone().into_iter(),
             phi.levels.clone().into_iter(),
+            |(x, _), (y, _)| x.cmp(&y),
         )
         .collect();
         // Compute broadcasting shapes.
@@ -157,7 +165,7 @@ impl Div for CategoricalFactor {
 
 impl Factor for CategoricalFactor {
     #[inline]
-    fn levels(&self) -> &FxIndexMap<String, BTreeSet<String>> {
+    fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.levels
     }
 
@@ -179,7 +187,8 @@ impl Factor for CategoricalFactor {
         I: IntoIterator<Item = &'a str>,
     {
         // For each variable.
-        x.into_iter()
+        let x: Vec<_> = x
+            .into_iter()
             // Get variables indices.
             .map(|x| {
                 self.levels
@@ -189,8 +198,19 @@ impl Factor for CategoricalFactor {
             // Sort in decreasing order to ensure correctness.
             .sorted()
             .rev()
+            // Collect to remove associated levels.
+            .collect();
+
+        // For each index.
+        for i in x {
             // Sum given axis.
-            .for_each(|x| self.values = self.values.sum_axis(Axis(x)));
+            self.values = self.values.sum_axis(Axis(i));
+            // Remove associated level.
+            self.levels.swap_remove_index(i);
+        }
+
+        // Re-sort levels variables.
+        self.levels.sort_keys();
 
         self
     }

@@ -91,4 +91,22 @@ mod tests {
             .into_dyn()
         );
     }
+
+    #[test]
+    fn marginalize() {
+        // Initialize factor.
+        let phi = CategoricalFactor::new(
+            [
+                ("A", vec!["a1", "a2", "a3"]),
+                ("B", vec!["b1", "b2"]),
+                ("C", vec!["c1", "c2"]),
+            ],
+            array![0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18],
+        );
+
+        assert_relative_eq!(
+            phi.marginalize(["B"]).values(),
+            &array![[0.33, 0.51], [0.05, 0.07], [0.24, 0.39]].into_dyn()
+        );
+    }
 }
