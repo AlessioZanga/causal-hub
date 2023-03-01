@@ -6,6 +6,7 @@ use std::{
 
 use itertools::Itertools;
 use ndarray::prelude::*;
+use prettytable::Table;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -83,8 +84,19 @@ impl CategoricalFactor {
 }
 
 impl Display for CategoricalFactor {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // Create print table.
+        let mut table = Table::new();
+        // Add header to table.
+        table.add_row(self.levels.keys().chain([&"Values".to_string()]).collect());
+        // Construct iterator over levels cartesian product.
+        let levels = self.levels.values().multi_cartesian_product();
+        // Add rows to table.
+        for (i, x) in levels.zip(self.values.iter()) {
+            table.add_row(i.into_iter().chain([&x.to_string()]).collect());
+        }
+        // Write table to formatter.
+        write!(f, "{table}")
     }
 }
 
