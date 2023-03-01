@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::{CategoricalDataMatrix, DataSet, RavelMultiIndex};
+use super::{DataSet, DiscreteDataMatrix, RavelMultiIndex};
 use crate::utils::axis_chunks_size;
 
 /// One-dimensional marginal contingency table.
@@ -12,7 +12,7 @@ pub struct MarginalCountMatrix {
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -75,7 +75,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
 
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
@@ -121,7 +121,7 @@ pub struct JointCountMatrix {
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -161,7 +161,7 @@ pub struct JointConditionalCountMatrix {
 impl JointConditionalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 

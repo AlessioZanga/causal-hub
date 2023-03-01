@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn display() {
         // Initialize factor.
-        let phi = CategoricalFactor::new(
+        let phi = DiscreteFactor::new(
             [
                 ("A", vec!["a0", "a1"]),
                 ("B", vec!["b0", "b1"]),
@@ -79,11 +79,11 @@ mod tests {
     #[test]
     fn add() {
         // Initialize factors.
-        let lhs = CategoricalFactor::new(
+        let lhs = DiscreteFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
         );
-        let rhs = CategoricalFactor::new(
+        let rhs = DiscreteFactor::new(
             [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
         );
@@ -106,11 +106,11 @@ mod tests {
     #[test]
     fn mul() {
         // Initialize factors.
-        let lhs = CategoricalFactor::new(
+        let lhs = DiscreteFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
         );
-        let rhs = CategoricalFactor::new(
+        let rhs = DiscreteFactor::new(
             [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
         );
@@ -133,11 +133,11 @@ mod tests {
     #[test]
     fn div() {
         // Initialize factors.
-        let lhs = CategoricalFactor::new(
+        let lhs = DiscreteFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.2, 0., 0., 0.3, 0.45],
         );
-        let rhs = CategoricalFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
+        let rhs = DiscreteFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
         // Compute factor division.
         let out = lhs / rhs;
         // Assert labels and levels of factor division.
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn normalize() {
         // Initialize factor.
-        let phi = CategoricalFactor::new(
+        let phi = DiscreteFactor::new(
             [
                 ("A", vec!["a0", "a1"]),
                 ("B", vec!["b0", "b1"]),
@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn marginalize() {
         // Initialize factor.
-        let phi = CategoricalFactor::new(
+        let phi = DiscreteFactor::new(
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),
@@ -212,7 +212,7 @@ mod tests {
     #[test]
     fn reduce() {
         // Initialize factor.
-        let phi = CategoricalFactor::new(
+        let phi = DiscreteFactor::new(
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),

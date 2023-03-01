@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    mod categorical {
+    mod discrete {
         use std::collections::BTreeMap;
 
         use causal_hub::prelude::*;
@@ -19,7 +19,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data = DiscreteDataMatrix::from(df);
 
             assert_eq!(
                 data.values(),

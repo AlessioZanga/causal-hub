@@ -3,13 +3,13 @@ use rayon::prelude::*;
 
 use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
 use crate::{
-    data::{CategoricalDataMatrix, ConditionalCountMatrix, MarginalCountMatrix},
+    data::{ConditionalCountMatrix, DiscreteDataMatrix, MarginalCountMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     utils::{axis_chunks_size, nan_to_zero},
 };
 
-impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL> {
+impl<const PARALLEL: bool> MarginalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_i: ArrayView1<usize>) -> f64 {
         // Sum over levels and cast to floating point.
@@ -26,7 +26,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
     #[inline]
-    pub fn call(d: &CategoricalDataMatrix, x: usize) -> f64 {
+    pub fn call(d: &DiscreteDataMatrix, x: usize) -> f64 {
         // Compute marginal contingency table.
         let n_i = MarginalCountMatrix::new(d, x);
 
@@ -35,7 +35,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<CategoricalDataMatrix, PARALLEL
     }
 }
 
-impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARALLEL> {
+impl<const PARALLEL: bool> ConditionalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_ij: ArrayView2<usize>) -> f64 {
         // Sum over levels and cast to floating point.
@@ -55,7 +55,7 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARAL
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
+    pub fn call(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
         let n_ij = ConditionalCountMatrix::<PARALLEL>::new(d, x, z);
 
@@ -74,16 +74,16 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<CategoricalDataMatrix, PARAL
     }
 }
 
-impl<G, const PARALLEL: bool> DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for LogLikelihood<CategoricalDataMatrix, PARALLEL>
+impl<G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for LogLikelihood<DiscreteDataMatrix, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => MarginalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x),
-            false => ConditionalLogLikelihood::<CategoricalDataMatrix, PARALLEL>::call(d, x, z),
+            true => MarginalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x),
+            false => ConditionalLogLikelihood::<DiscreteDataMatrix, PARALLEL>::call(d, x, z),
         }
     }
 }

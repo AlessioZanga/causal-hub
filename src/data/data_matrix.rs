@@ -12,19 +12,19 @@ use serde::{Deserialize, Serialize};
 
 use super::DataSet;
 
-/* Implement CategoricalDataMatrix */
+/* Implement DiscreteDataMatrix */
 
-/// Data matrix for categorical data.
+/// Data matrix for discrete data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalDataMatrix {
+pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
     levels: FxHashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
     values: Array2<usize>,
 }
 
-impl CategoricalDataMatrix {
-    /// Construct a new categorical data matrix given data encoding, labels and levels.
+impl DiscreteDataMatrix {
+    /// Construct a new discrete data matrix given data encoding, labels and levels.
     pub fn new<V, I, J, K>(labels: I, levels: J, values: Array2<usize>) -> Self
     where
         V: Into<String>,
@@ -63,29 +63,29 @@ impl CategoricalDataMatrix {
     }
 }
 
-impl From<DataFrame> for CategoricalDataMatrix {
+impl From<DataFrame> for DiscreteDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
-                "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `DiscreteDataMatrixWithMissing` to handle missing values properly."
             )
         );
 
         // Check for wrong data type.
         assert!(
             df.iter().all(|s| !s.dtype().is_float()),
-            "DataSet must contain only categorical types"
+            "DataSet must contain only discrete types"
         );
 
-        // Cast to categorical datatype.
+        // Cast to discrete datatype.
         let df = df.iter().map(|s| {
             s.cast(&DataType::Utf8)
                 .expect("Failed to cast to intermediate UTF-8 datatype")
                 .cast(&DataType::Categorical(None))
-                .expect("Failed to cast to categorical datatype")
+                .expect("Failed to cast to discrete datatype")
         });
 
         // Sort columns by name.
@@ -109,7 +109,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
                 (
                     s.name().into(),
                     s.categorical()
-                        .expect("Failed to access categorical representation")
+                        .expect("Failed to access discrete representation")
                         .get_rev_map()
                         .deref(),
                 )
@@ -168,7 +168,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
     }
 }
 
-impl DataSet for CategoricalDataMatrix {
+impl DataSet for DiscreteDataMatrix {
     type Data = Array2<usize>;
 
     #[inline]
@@ -183,7 +183,7 @@ impl DataSet for CategoricalDataMatrix {
     }
 }
 
-impl CategoricalDataMatrix {
+impl DiscreteDataMatrix {
     /// Gets the map of variables to their levels.
     #[inline]
     pub fn levels(&self) -> &FxHashMap<String, Vec<String>> {

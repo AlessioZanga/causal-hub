@@ -1,6 +1,6 @@
 use super::BayesianInformationCriterion;
 use crate::{
-    data::CategoricalDataMatrix,
+    data::DiscreteDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     prelude::DataSet,
@@ -8,13 +8,13 @@ use crate::{
 };
 
 impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+    DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for BayesianInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the sample size.
         let n = d.values().nrows() as f64;
 
@@ -29,7 +29,7 @@ where
         // Initialize the log-likelihood functor.
         let s = LogLikelihood::<_, PARALLEL>::new();
         // Compute the log-likelihood.
-        let s = DecomposableScoringCriterion::<CategoricalDataMatrix, G>::call(&s, d, x, z);
+        let s = DecomposableScoringCriterion::<DiscreteDataMatrix, G>::call(&s, d, x, z);
 
         // Check if BIC must be scaled.
         match RESCALED {

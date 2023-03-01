@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
 
 use crate::{
-    data::{CategoricalDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
+    data::{DiscreteDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
     prelude::ConditionalIndependenceTest,
     utils::nan_to_zero,
 };
@@ -10,21 +10,21 @@ use crate::{
 /// Chi Squared conditional independence test.
 #[derive(Clone, Debug)]
 pub struct ChiSquared<'a> {
-    d: &'a CategoricalDataMatrix,
+    d: &'a DiscreteDataMatrix,
     alpha: f64,
 }
 
 impl<'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub const fn new(d: &'a CategoricalDataMatrix) -> Self {
+    pub const fn new(d: &'a DiscreteDataMatrix) -> Self {
         Self { d, alpha: 0.05 }
     }
 }
 
-impl<'a> From<&'a CategoricalDataMatrix> for ChiSquared<'a> {
+impl<'a> From<&'a DiscreteDataMatrix> for ChiSquared<'a> {
     #[inline]
-    fn from(d: &'a CategoricalDataMatrix) -> Self {
+    fn from(d: &'a DiscreteDataMatrix) -> Self {
         Self::new(d)
     }
 }

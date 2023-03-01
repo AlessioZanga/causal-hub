@@ -1,9 +1,11 @@
 use std::{
     cmp::Ordering::Less,
     fmt::{Debug, Display, Formatter},
+    iter::{FusedIterator, Map},
     ops::{Add, Div, Mul},
 };
 
+use indexmap::map::Keys;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use prettytable::Table;
@@ -18,8 +20,16 @@ use crate::{
 pub trait Factor:
     Clone + Debug + Display + Add + Mul + Div + Serialize + for<'a> Deserialize<'a>
 {
-    /// Get the set of variables levels.
-    fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>>;
+    /// Labels iterator associated type.
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Value type of the variables.
+    type Value<'a>;
+
+    /// Get the set of variables labels.
+    fn labels(&self) -> Self::LabelsIter<'_>;
 
     /// Get reference to underlying values.
     fn values(&self) -> &ArrayD<f64>;
@@ -35,18 +45,18 @@ pub trait Factor:
     /// Compute the factor reduction.
     fn reduce<'a, I>(self, x: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, &'a str)>;
+        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
 }
 
-/// Categorical factor.
+/// Discrete factor.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalFactor {
+pub struct DiscreteFactor {
     levels: FxIndexMap<String, FxIndexSet<String>>,
     values: ArrayD<f64>,
 }
 
-impl CategoricalFactor {
-    /// Construct a new categorical factor given its values and levels.
+impl DiscreteFactor {
+    /// Construct a new discrete factor given its values and levels.
     pub fn new<D, I, J, K>(levels: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -81,9 +91,15 @@ impl CategoricalFactor {
 
         Self { levels, values }
     }
+
+    /// Get the set of variables levels.
+    #[inline]
+    pub const fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.levels
+    }
 }
 
-impl Display for CategoricalFactor {
+impl Display for DiscreteFactor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Create print table.
         let mut table = Table::new();
@@ -100,7 +116,7 @@ impl Display for CategoricalFactor {
     }
 }
 
-impl Add for CategoricalFactor {
+impl Add for DiscreteFactor {
     type Output = Self;
 
     fn add(self, phi: Self) -> Self::Output {
@@ -138,7 +154,7 @@ impl Add for CategoricalFactor {
     }
 }
 
-impl Mul for CategoricalFactor {
+impl Mul for DiscreteFactor {
     type Output = Self;
 
     fn mul(self, phi: Self) -> Self::Output {
@@ -176,7 +192,7 @@ impl Mul for CategoricalFactor {
     }
 }
 
-impl Div for CategoricalFactor {
+impl Div for DiscreteFactor {
     type Output = Self;
 
     fn div(self, phi: Self) -> Self::Output {
@@ -205,10 +221,13 @@ impl Div for CategoricalFactor {
     }
 }
 
-impl Factor for CategoricalFactor {
-    #[inline]
-    fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
-        &self.levels
+impl Factor for DiscreteFactor {
+    type LabelsIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+
+    type Value<'a> = &'a str;
+
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.levels.keys().map(|x| x.as_str())
     }
 
     #[inline]
@@ -259,7 +278,7 @@ impl Factor for CategoricalFactor {
 
     fn reduce<'a, I>(mut self, x: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, &'a str)>,
+        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
         // For each variable.
         let index: Vec<_> = x

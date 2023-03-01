@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn eval() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/chi_squared/categorical.json").unwrap();
+        let data = std::fs::read_to_string("./tests/assets/chi_squared/discrete.json").unwrap();
         let data: Vec<(String, String, Vec<String>, (usize, f64, f64))> =
             serde_json::from_str(&data).unwrap();
 
@@ -16,7 +16,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn call() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/chi_squared/categorical.json").unwrap();
+        let data = std::fs::read_to_string("./tests/assets/chi_squared/discrete.json").unwrap();
         let data: Vec<(String, String, Vec<String>, (usize, f64, f64))> =
             serde_json::from_str(&data).unwrap();
 
@@ -49,7 +49,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
