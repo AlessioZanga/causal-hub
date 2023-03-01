@@ -103,8 +103,38 @@ impl Display for CategoricalFactor {
 impl Add for CategoricalFactor {
     type Output = Self;
 
-    fn add(self, _phi: Self) -> Self::Output {
-        todo!() // FIXME:
+    fn add(self, phi: Self) -> Self::Output {
+        // Compute scope of factor sum.
+        let levels: FxIndexMap<_, _> = iter_set::union_by(
+            self.levels.clone().into_iter(),
+            phi.levels.clone().into_iter(),
+            |(x, _), (y, _)| x.cmp(&y),
+        )
+        .collect();
+        // Compute broadcasting shapes.
+        let lhs: Vec<_> = levels
+            .keys()
+            .map(|x| self.levels.get(x))
+            .map(|x| x.map_or(1, |x| x.len()))
+            .collect();
+        let rhs: Vec<_> = levels
+            .keys()
+            .map(|x| phi.levels.get(x))
+            .map(|x| x.map_or(1, |x| x.len()))
+            .collect();
+        // Apply broadcasting shapes.
+        let lhs = self
+            .values
+            .into_shape(lhs)
+            .expect("Failed to broadcast LHS factor values to given shape");
+        let rhs = phi
+            .values
+            .into_shape(rhs)
+            .expect("Failed to broadcast RHS factor values to given shape");
+        // Compute factor sum.
+        let values = (lhs + rhs).into_dyn();
+
+        Self { levels, values }
     }
 }
 

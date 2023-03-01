@@ -77,6 +77,33 @@ mod tests {
     }
 
     #[test]
+    fn add() {
+        // Initialize factors.
+        let lhs = CategoricalFactor::new(
+            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
+            array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
+        );
+        let rhs = CategoricalFactor::new(
+            [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
+            array![0.5, 0.7, 0.1, 0.2],
+        );
+        // Compute factor sum.
+        let out = lhs + rhs;
+        // Assert labels and levels of factor product.
+        assert!(out.levels().keys().eq(&["A", "B", "C"]));
+        // Assert values and shapes of factor product.
+        assert_relative_eq!(
+            out.values(),
+            &array![
+                [[1.0, 1.2], [0.9, 1.0]],
+                [[0.6, 0.8], [0.1, 0.2]],
+                [[0.8, 1.0], [1.0, 1.1]]
+            ]
+            .into_dyn()
+        );
+    }
+
+    #[test]
     fn mul() {
         // Initialize factors.
         let lhs = CategoricalFactor::new(
