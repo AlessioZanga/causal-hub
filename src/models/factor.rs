@@ -226,6 +226,7 @@ impl Factor for DiscreteFactor {
 
     type Value<'a> = &'a str;
 
+    #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
         self.levels.keys().map(|x| x.as_str())
     }
@@ -317,5 +318,82 @@ impl Factor for DiscreteFactor {
         }
 
         self
+    }
+}
+
+/// Discrete Conditional Probability Distribution (Discrete CPD).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DiscreteCPD {
+    levels: FxIndexMap<String, FxIndexSet<String>>,
+    values: ArrayD<f64>,
+}
+
+impl Display for DiscreteCPD {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!() // FIXME:
+    }
+}
+
+impl Add for DiscreteCPD {
+    type Output = Self;
+
+    fn add(self, cpd: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Mul for DiscreteCPD {
+    type Output = Self;
+
+    fn mul(self, cpd: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Div for DiscreteCPD {
+    type Output = Self;
+
+    fn div(self, cpd: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Factor for DiscreteCPD {
+    type LabelsIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+
+    type Value<'a> = &'a str;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.levels.keys().map(|x| x.as_str())
+    }
+
+    #[inline]
+    fn values(&self) -> &ndarray::ArrayD<f64> {
+        &self.values
+    }
+
+    fn normalize(self) -> Self {
+        todo!() // FIXME:
+    }
+
+    fn marginalize<'a, I>(self, x: I) -> Self
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        todo!() // FIXME:
+    }
+
+    fn reduce<'a, I>(self, x: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
+    {
+        todo!() // FIXME:
+    }
+}
+
+impl From<DiscreteCPD> for DiscreteFactor {
+    fn from(cpd: DiscreteCPD) -> Self {
+        todo!() // FIXME:
     }
 }
