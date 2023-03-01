@@ -187,7 +187,7 @@ impl Factor for CategoricalFactor {
         I: IntoIterator<Item = &'a str>,
     {
         // For each variable.
-        let x: Vec<_> = x
+        let index: Vec<_> = x
             .into_iter()
             // Get variables indices.
             .map(|x| {
@@ -202,11 +202,11 @@ impl Factor for CategoricalFactor {
             .collect();
 
         // For each index.
-        for i in x {
+        for x in index {
             // Sum given axis.
-            self.values = self.values.sum_axis(Axis(i));
+            self.values = self.values.sum_axis(Axis(x));
             // Remove associated level.
-            self.levels.swap_remove_index(i);
+            self.levels.swap_remove_index(x);
         }
 
         // Re-sort levels variables.
@@ -215,10 +215,46 @@ impl Factor for CategoricalFactor {
         self
     }
 
-    fn reduce<'a, I>(self, _x: I) -> Self
+    fn reduce<'a, I>(mut self, x: I) -> Self
     where
         I: IntoIterator<Item = (&'a str, &'a str)>,
     {
-        todo!() // FIXME:
+        // For each variable.
+        let index: Vec<_> = x
+            .into_iter()
+            // Get variables and levels indices.
+            .map(|(x, y)| {
+                // Get variable index.
+                let x = self
+                    .levels
+                    .get_index_of(x)
+                    .expect("Failed to get variable index");
+                // Get level index.
+                let y = self
+                    .levels
+                    .get_index(x)
+                    .expect("Failed to get variable by index")
+                    .1
+                    .get_index_of(y)
+                    .expect("Failed to get level index");
+
+                (x, y)
+            })
+            // Collect to remove associated levels.
+            .collect();
+
+        // For each (variable, level) index pairs.
+        for (x, y) in index {
+            // Reduce to given axis index.
+            self.values.collapse_axis(Axis(x), y);
+            // Reduce to given level.
+            let y = self.levels[x]
+                .swap_remove_index(y)
+                .expect("Failed to get level by index");
+            self.levels[x].clear();
+            self.levels[x].insert(y);
+        }
+
+        self
     }
 }
