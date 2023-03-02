@@ -271,9 +271,26 @@ mod discrete_cpd {
     }
 
     #[test]
-    #[ignore]
     fn add() {
-        todo!() // FIXME:
+        // Initialize CPD.
+        let cpd = DiscreteCPD::new(
+            ("Grade", vec!["g0", "g1", "g2"]),
+            [
+                ("Difficulty", vec!["d0", "d1"]),
+                ("Intelligence", vec!["i0", "i1"]),
+            ],
+            array![
+                [0.3, 0.4, 0.3],
+                [0.05, 0.25, 0.7],
+                [0.9, 0.08, 0.02],
+                [0.5, 0.3, 0.2]
+            ],
+        );
+
+        // Sum CPD.
+        let out = cpd.clone() + cpd.clone();
+
+        assert_relative_eq!(out.values(), cpd.values());
     }
 
     #[test]
@@ -289,9 +306,23 @@ mod discrete_cpd {
     }
 
     #[test]
-    #[ignore]
     fn normalize() {
-        todo!() // FIXME:
+        // Initialize CPD.
+        let cpd = DiscreteCPD::new(
+            ("Grade", vec!["g0", "g1", "g2"]),
+            [
+                ("Difficulty", vec!["d0", "d1"]),
+                ("Intelligence", vec!["i0", "i1"]),
+            ],
+            array![
+                [0.3, 0.4, 0.3],
+                [0.05, 0.25, 0.7],
+                [0.9, 0.08, 0.02],
+                [0.5, 0.3, 0.2]
+            ],
+        );
+
+        assert_relative_eq!(cpd.clone().values(), cpd.normalize().values());
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use std::{
-    cmp::Ordering::Less,
+    cmp::Ordering::{Equal, Less},
     collections::{BTreeMap, BTreeSet},
     fmt::{Debug, Display, Formatter},
     iter::{FusedIterator, Map},
@@ -94,6 +94,10 @@ impl DiscreteFactor {
             .expect("Failed to reshape values")
             // Permute axes to align X axis w.r.t. sorted variables labels.
             .permuted_axes(axes)
+            // Make into standard memory layout.
+            .as_standard_layout()
+            .to_owned()
+            // Cast to dynamic shape.
             .into_dyn();
 
         Self { states, values }
@@ -206,7 +210,10 @@ impl Div for DiscreteFactor {
         // Compute scope and states of factor division.
         let states = self.states;
         // Assert RHS scope is subset of LHS scope.
-        assert_eq!(iter_set::cmp(phi.states.keys(), states.keys()), Some(Less));
+        assert!(matches!(
+            iter_set::cmp(phi.states.keys(), states.keys()),
+            Some(Less) | Some(Equal)
+        ));
         // Compute broadcasting shapes.
         let rhs: Vec<_> = states
             .keys()
@@ -353,11 +360,13 @@ impl DiscreteCPD {
         let values = values.reversed_axes();
         // Construct underlying factor.
         let phi = DiscreteFactor::new(states, values);
+
         // Assert sum over target axis yields ones.
         let e = f64::sqrt(f64::EPSILON);
+        let i = phi.states.get_index_of(&x).unwrap();
         assert!(
             phi.values
-                .sum_axis(Axis(phi.states.get_index_of(&x).unwrap()))
+                .sum_axis(Axis(i))
                 .into_iter()
                 .all(|x| x.relative_eq(&1., e, e)),
             "CPD rows must sum to one"
@@ -440,11 +449,11 @@ impl Add for DiscreteCPD {
     type Output = Self;
 
     #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
+    fn add(mut self, rhs: Self) -> Self::Output {
         // Compute factor addition.
-        let (x, phi) = (self.x, self.phi + rhs.phi);
-
-        Self { x, phi }
+        self.phi = self.phi + rhs.phi;
+        // Return normalized CPD.
+        self.normalize()
     }
 }
 
@@ -452,11 +461,11 @@ impl Mul for DiscreteCPD {
     type Output = Self;
 
     #[inline]
-    fn mul(self, rhs: Self) -> Self::Output {
-        // Compute factor multiplication.
-        let (x, phi) = (self.x, self.phi * rhs.phi);
-
-        Self { x, phi }
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        // Compute factor product.
+        self.phi = self.phi * rhs.phi;
+        // Return normalized CPD.
+        self.normalize()
     }
 }
 
@@ -464,11 +473,11 @@ impl Div for DiscreteCPD {
     type Output = Self;
 
     #[inline]
-    fn div(self, rhs: Self) -> Self::Output {
+    fn div(mut self, rhs: Self) -> Self::Output {
         // Compute factor division.
-        let (x, phi) = (self.x, self.phi / rhs.phi);
-
-        Self { x, phi }
+        self.phi = self.phi / rhs.phi;
+        // Return normalized CPD.
+        self.normalize()
     }
 }
 
@@ -507,6 +516,8 @@ impl Factor for DiscreteCPD {
     where
         I: IntoIterator<Item = &'a str>,
     {
+        // Assert variables do not include target.
+        let z = z.into_iter().inspect(|&z| assert_ne!(z, self.x));
         // Marginalize underlying factor.
         self.phi = self.phi.marginalize(z);
         // Return normalized CPD.
@@ -518,6 +529,8 @@ impl Factor for DiscreteCPD {
     where
         I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
+        // Assert variables do not include target.
+        let z = z.into_iter().inspect(|&(z, _)| assert_ne!(z, self.x));
         // Reduce underlying factor.
         self.phi = self.phi.reduce(z);
         // Return normalized CPD.
