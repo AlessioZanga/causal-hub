@@ -292,26 +292,21 @@ impl Factor for DiscreteFactor {
     where
         I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
-        // For each variable. FIXME: Reduce only over intersection with the scope.
+        // For each variable.
         let z: BTreeMap<_, _> = z
             .into_iter()
-            // Get variables and states indices.
-            .map(|(x, y)| {
-                // Get variable index.
-                let x = self
-                    .states
-                    .get_index_of(x)
-                    .expect("Failed to get variable index");
-                // Get state index.
-                let y = self
-                    .states
-                    .get_index(x)
-                    .expect("Failed to get variable by index")
-                    .1
-                    .get_index_of(y)
-                    .expect("Failed to get state index");
-
-                (x, y)
+            // Get variables and states indices, if present in scope.
+            .filter_map(|(x, y)| {
+                // Get variable index, if present in scope.
+                self.states.get_index_of(x).map(|x| {
+                    // Get state index.
+                    (
+                        x,
+                        self.states[x]
+                            .get_index_of(y)
+                            .expect("Failed to get state index"),
+                    )
+                })
             })
             // Collect to sort and deduplicate states.
             .collect();
