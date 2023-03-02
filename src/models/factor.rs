@@ -361,14 +361,17 @@ impl DiscreteCPD {
         // Construct underlying factor.
         let phi = DiscreteFactor::new(states, values);
 
+        // Get target axis.
+        let i = phi
+            .states
+            .get_index_of(&x)
+            .expect("Failed to get target index");
         // Assert sum over target axis yields ones.
-        let e = f64::sqrt(f64::EPSILON);
-        let i = phi.states.get_index_of(&x).unwrap();
         assert!(
             phi.values
                 .sum_axis(Axis(i))
                 .into_iter()
-                .all(|x| x.relative_eq(&1., e, e)),
+                .all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
             "CPD rows must sum to one"
         );
 
@@ -503,7 +506,7 @@ impl Factor for DiscreteCPD {
             .phi
             .states
             .get_index_of(&self.x)
-            .expect("Failed to get target axis index");
+            .expect("Failed to get target index");
 
         // Normalize over target axis.
         self.phi.values /= &self.phi.values.sum_axis(Axis(x)).insert_axis(Axis(x));

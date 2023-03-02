@@ -294,18 +294,6 @@ mod discrete_cpd {
     }
 
     #[test]
-    #[ignore]
-    fn mul() {
-        todo!() // FIXME:
-    }
-
-    #[test]
-    #[ignore]
-    fn div() {
-        todo!() // FIXME:
-    }
-
-    #[test]
     fn normalize() {
         // Initialize CPD.
         let cpd = DiscreteCPD::new(
@@ -326,14 +314,48 @@ mod discrete_cpd {
     }
 
     #[test]
-    #[ignore]
     fn marginalize() {
-        todo!() // FIXME:
+        // Initialize CPD.
+        let cpd = DiscreteCPD::new(
+            ("Grade", vec!["g0", "g1", "g2"]),
+            [
+                ("Difficulty", vec!["d0", "d1"]),
+                ("Intelligence", vec!["i0", "i1"]),
+            ],
+            array![
+                [0.3, 0.4, 0.3],
+                [0.05, 0.25, 0.7],
+                [0.9, 0.08, 0.02],
+                [0.5, 0.3, 0.2]
+            ],
+        );
+
+        assert_relative_eq!(
+            cpd.marginalize(["Intelligence"]).values(),
+            &array![[0.6, 0.24, 0.16], [0.275, 0.275, 0.45]].into_dyn()
+        );
     }
 
     #[test]
-    #[ignore]
     fn reduce() {
-        todo!() // FIXME:
+        // Initialize CPD.
+        let cpd = DiscreteCPD::new(
+            ("Grade", vec!["g0", "g1", "g2"]),
+            [
+                ("Difficulty", vec!["d0", "d1"]),
+                ("Intelligence", vec!["i0", "i1"]),
+            ],
+            array![
+                [0.3, 0.4, 0.3],
+                [0.05, 0.25, 0.7],
+                [0.9, 0.08, 0.02],
+                [0.5, 0.3, 0.2]
+            ],
+        );
+
+        assert_relative_eq!(
+            cpd.reduce([("Intelligence", "i0")]).values(),
+            &array![[[0.3], [0.4], [0.3]], [[0.05], [0.25], [0.7]]].into_dyn()
+        );
     }
 }
