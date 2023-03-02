@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod discrete_factor {
     use approx::*;
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
@@ -39,7 +39,7 @@ mod tests {
             concat![
                 "+----+----+----+----+--------------------------+\n",
                 "| A  | B  | C  | D  | Values                   |\n",
-                "+----+----+----+----+--------------------------+\n",
+                "+====+====+====+====+==========================+\n",
                 "| a0 | b0 | c0 | d0 | 0.0416560212390167       |\n",
                 "+----+----+----+----+--------------------------+\n",
                 "| a0 | b0 | c0 | d1 | 0.0416560212390167       |\n",
@@ -89,8 +89,8 @@ mod tests {
         );
         // Compute factor sum.
         let out = lhs + rhs;
-        // Assert labels and levels of factor product.
-        assert!(out.levels().keys().eq(&["A", "B", "C"]));
+        // Assert labels and states of factor product.
+        assert!(out.states().keys().eq(&["A", "B", "C"]));
         // Assert values and shapes of factor product.
         assert_relative_eq!(
             out.values(),
@@ -116,8 +116,8 @@ mod tests {
         );
         // Compute factor product.
         let out = lhs * rhs;
-        // Assert labels and levels of factor product.
-        assert!(out.levels().keys().eq(&["A", "B", "C"]));
+        // Assert labels and states of factor product.
+        assert!(out.states().keys().eq(&["A", "B", "C"]));
         // Assert values and shapes of factor product.
         assert_relative_eq!(
             out.values(),
@@ -140,8 +140,8 @@ mod tests {
         let rhs = DiscreteFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
         // Compute factor division.
         let out = lhs / rhs;
-        // Assert labels and levels of factor division.
-        assert!(out.levels().keys().eq(&["A", "B"]));
+        // Assert labels and states of factor division.
+        assert!(out.states().keys().eq(&["A", "B"]));
         // Assert values and shapes of factor division.
         assert_relative_eq!(
             out.values(),
@@ -225,5 +225,84 @@ mod tests {
             phi.reduce([("C", "c1")]).values(),
             &array![[[0.25], [0.08]], [[0.05], [0.0]], [[0.15], [0.09]]].into_dyn()
         );
+    }
+}
+
+mod discrete_cpd {
+    use approx::*;
+    use causal_hub::prelude::*;
+    use ndarray::prelude::*;
+
+    #[test]
+    fn display() {
+        // Initialize CPD.
+        let cpd = DiscreteCPD::new(
+            ("Grade", vec!["g0", "g1", "g2"]),
+            [
+                ("Difficulty", vec!["d0", "d1"]),
+                ("Intelligence", vec!["i0", "i1"]),
+            ],
+            array![
+                [0.3, 0.4, 0.3],
+                [0.05, 0.25, 0.7],
+                [0.9, 0.08, 0.02],
+                [0.5, 0.3, 0.2]
+            ],
+        );
+
+        assert_eq!(
+            format!("{cpd}"),
+            concat!(
+                "+------------+--------------+-------+------+------+\n",
+                "|            |              | Grade |      |      |\n",
+                "+============+==============+=======+======+======+\n",
+                "| Difficulty | Intelligence | g0    | g1   | g2   |\n",
+                "+------------+--------------+-------+------+------+\n",
+                "| d0         | i0           | 0.3   | 0.4  | 0.3  |\n",
+                "+------------+--------------+-------+------+------+\n",
+                "| d0         | i1           | 0.9   | 0.08 | 0.02 |\n",
+                "+------------+--------------+-------+------+------+\n",
+                "| d1         | i0           | 0.05  | 0.25 | 0.7  |\n",
+                "+------------+--------------+-------+------+------+\n",
+                "| d1         | i1           | 0.5   | 0.3  | 0.2  |\n",
+                "+------------+--------------+-------+------+------+\n",
+            )
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn add() {
+        todo!() // FIXME:
+    }
+
+    #[test]
+    #[ignore]
+    fn mul() {
+        todo!() // FIXME:
+    }
+
+    #[test]
+    #[ignore]
+    fn div() {
+        todo!() // FIXME:
+    }
+
+    #[test]
+    #[ignore]
+    fn normalize() {
+        todo!() // FIXME:
+    }
+
+    #[test]
+    #[ignore]
+    fn marginalize() {
+        todo!() // FIXME:
+    }
+
+    #[test]
+    #[ignore]
+    fn reduce() {
+        todo!() // FIXME:
     }
 }

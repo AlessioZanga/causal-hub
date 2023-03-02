@@ -18,14 +18,14 @@ use super::DataSet;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
-    levels: FxHashMap<String, Vec<String>>,
+    states: FxHashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
     values: Array2<usize>,
 }
 
 impl DiscreteDataMatrix {
-    /// Construct a new discrete data matrix given data encoding, labels and levels.
-    pub fn new<V, I, J, K>(labels: I, levels: J, values: Array2<usize>) -> Self
+    /// Construct a new discrete data matrix given data encoding, labels and states.
+    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<usize>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -36,15 +36,15 @@ impl DiscreteDataMatrix {
         let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
         // Check labels consistency.
         assert_eq!(values.ncols(), labels.len());
-        // Construct the levels map.
-        let levels: FxHashMap<String, Vec<String>> = levels
+        // Construct the states map.
+        let states: FxHashMap<String, Vec<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
             .collect();
-        // Check levels consistency.
-        assert!(labels.iter().eq(levels.keys().sorted()));
-        // Compute cardinalities from levels.
-        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Check states consistency.
+        assert!(labels.iter().eq(states.keys().sorted()));
+        // Compute cardinalities from states.
+        let cardinality = labels.iter().map(|l| states[l].len()).collect();
         // Check cardinalities.
         assert_eq!(
             values
@@ -56,7 +56,7 @@ impl DiscreteDataMatrix {
 
         Self {
             labels,
-            levels,
+            states,
             cardinality,
             values,
         }
@@ -100,8 +100,8 @@ impl From<DataFrame> for DiscreteDataMatrix {
         // Get variables as set of strings.
         let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().collect();
 
-        // Get variables levels.
-        let levels: FxHashMap<String, Vec<String>> = df
+        // Get variables states.
+        let states: FxHashMap<String, Vec<String>> = df
             // Iterate over the columns.
             .iter()
             // Get index-to-label mapping.
@@ -114,54 +114,54 @@ impl From<DataFrame> for DiscreteDataMatrix {
                         .deref(),
                 )
             })
-            // Get levels.
-            .map(|(label, levels)| match levels {
-                RevMapping::Global(map, levels, _) => {
-                    // Reorder to vector of levels.
+            // Get states.
+            .map(|(label, states)| match states {
+                RevMapping::Global(map, states, _) => {
+                    // Reorder to vector of states.
                     let map: BTreeMap<_, _> = map
                         .into_iter()
                         .map(|(&i, &j)| (i as usize, j as usize))
                         .collect();
-                    let levels: Vec<_> = map
+                    let states: Vec<_> = map
                         .into_values()
-                        .map(|i| levels.get(i).unwrap().into())
+                        .map(|i| states.get(i).unwrap().into())
                         .collect();
 
-                    (label, levels)
+                    (label, states)
                 }
-                RevMapping::Local(levels) => {
-                    // Cast to vector of levels.
-                    let levels: Vec<_> = levels.values_iter().map(|s| s.into()).collect();
+                RevMapping::Local(states) => {
+                    // Cast to vector of states.
+                    let states: Vec<_> = states.values_iter().map(|s| s.into()).collect();
 
-                    (label, levels)
+                    (label, states)
                 }
             })
             // Get series index.
             .enumerate()
-            // Check that levels are sorted.
-            .map(|(i, (label, mut levels))| {
-                // Check if levels are ordered.
-                if !levels.iter().is_sorted() {
+            // Check that states are sorted.
+            .map(|(i, (label, mut states))| {
+                // Check if states are ordered.
+                if !states.iter().is_sorted() {
                     // If not, build a map of the sorted indices.
-                    let mut indices: Vec<_> = (0..levels.len()).collect();
-                    indices.sort_by_key(|&i| &levels[i]);
+                    let mut indices: Vec<_> = (0..states.len()).collect();
+                    indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
                     values.column_mut(i).mapv_inplace(|x| indices[x]);
                     // Sort the labels.
-                    levels.sort();
+                    states.sort();
                 }
 
-                (label, levels)
+                (label, states)
             })
-            // Collect variables levels.
+            // Collect variables states.
             .collect();
 
-        // Compute cardinalities from levels.
-        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Compute cardinalities from states.
+        let cardinality = labels.iter().map(|l| states[l].len()).collect();
 
         Self {
             labels,
-            levels,
+            states,
             cardinality,
             values,
         }
@@ -184,10 +184,10 @@ impl DataSet for DiscreteDataMatrix {
 }
 
 impl DiscreteDataMatrix {
-    /// Gets the map of variables to their levels.
+    /// Gets the map of variables to their states.
     #[inline]
-    pub fn levels(&self) -> &FxHashMap<String, Vec<String>> {
-        &self.levels
+    pub fn states(&self) -> &FxHashMap<String, Vec<String>> {
+        &self.states
     }
 
     /// Gets the vector of variables cardinalities.

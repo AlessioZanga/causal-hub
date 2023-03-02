@@ -28,7 +28,7 @@ mod tests {
 
             assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
 
-            let levels: BTreeMap<String, Vec<String>> = BTreeMap::from([
+            let states: BTreeMap<String, Vec<String>> = BTreeMap::from([
                 (
                     "W".to_string(),
                     vec!["I".to_string(), "J".to_string(), "K".to_string()],
@@ -42,10 +42,10 @@ mod tests {
             ]);
 
             assert!(data
-                .levels()
+                .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
-                .eq(&levels));
+                .eq(&states));
 
             assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
         }

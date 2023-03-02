@@ -12,7 +12,7 @@ use crate::{
 impl<const PARALLEL: bool> MarginalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_i: ArrayView1<usize>) -> f64 {
-        // Sum over levels and cast to floating point.
+        // Sum over states and cast to floating point.
         let n = n_i.sum() as f64;
         let n_i = n_i.mapv(|i| i as f64);
 
@@ -38,7 +38,7 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
 impl<const PARALLEL: bool> ConditionalLogLikelihood<DiscreteDataMatrix, PARALLEL> {
     #[inline]
     pub(crate) fn eval(n_ij: ArrayView2<usize>) -> f64 {
-        // Sum over levels and cast to floating point.
+        // Sum over states and cast to floating point.
         let n_j = n_ij
             .sum_axis(Axis(1))
             .insert_axis(Axis(1))

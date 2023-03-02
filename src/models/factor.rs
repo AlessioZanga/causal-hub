@@ -1,10 +1,12 @@
 use std::{
     cmp::Ordering::Less,
+    collections::{BTreeMap, BTreeSet},
     fmt::{Debug, Display, Formatter},
     iter::{FusedIterator, Map},
     ops::{Add, Div, Mul},
 };
 
+use approx::*;
 use indexmap::map::Keys;
 use itertools::Itertools;
 use ndarray::prelude::*;
@@ -38,12 +40,12 @@ pub trait Factor:
     fn normalize(self) -> Self;
 
     /// Compute the factor marginalization.
-    fn marginalize<'a, I>(self, x: I) -> Self
+    fn marginalize<'a, I>(self, z: I) -> Self
     where
         I: IntoIterator<Item = &'a str>;
 
     /// Compute the factor reduction.
-    fn reduce<'a, I>(self, x: I) -> Self
+    fn reduce<'a, I>(self, z: I) -> Self
     where
         I: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
 }
@@ -51,51 +53,56 @@ pub trait Factor:
 /// Discrete factor.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteFactor {
-    levels: FxIndexMap<String, FxIndexSet<String>>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
     values: ArrayD<f64>,
 }
 
 impl DiscreteFactor {
-    /// Construct a new discrete factor given its values and levels.
-    pub fn new<D, I, J, K>(levels: I, values: Array<f64, D>) -> Self
+    /// Construct a new discrete factor given its values and states.
+    pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
         I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = K>,
+        J: IntoIterator<Item = V>,
         K: Into<String>,
+        V: Into<String>,
     {
-        // Collect levels.
-        let levels: FxIndexMap<String, FxIndexSet<String>> = levels
+        // Collect states.
+        let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
-            .map(|(x, ys)| {
-                (
-                    x.into(),
-                    ys.into_iter().map(|y| y.into()).sorted().collect(),
-                )
-            })
+            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .collect();
+        // Compute factor values shape as given in input.
+        let shape: Vec<usize> = states.values().map(|x| x.len()).collect();
+        // Sort axes according to sorted variables labels.
+        let mut axes: Vec<usize> = (0..states.len()).collect();
+        axes.sort_by_key(|&i| {
+            states
+                .get_index(i)
+                .expect("Failed to get variable label by index")
+                .0
+        });
+        // Sort variables labels.
+        let states: FxIndexMap<_, _> = states
+            .into_iter()
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
-        // Compute factor values shape.
-        let shape: Vec<_> = levels
-            .keys()
-            .map(|x| levels.get(x).unwrap())
-            .map(|x| x.len())
-            .collect();
-        // Assert levels are not empty.
-        assert!(shape.iter().all(|&x| x > 0), "Levels must be non empty");
-        // Cast array to dynamic shape.
+        // Cast to n-dimensional array.
         let values = values
+            // Reshape values to [X_0, X_1, ..., X_(n-1)].
             .into_shape(shape)
-            .expect("Values and levels must have same shape")
+            .expect("Failed to reshape values")
+            // Permute axes to align X axis w.r.t. sorted variables labels.
+            .permuted_axes(axes)
             .into_dyn();
 
-        Self { levels, values }
+        Self { states, values }
     }
 
-    /// Get the set of variables levels.
+    /// Get the set of variables states.
     #[inline]
-    pub const fn levels(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
-        &self.levels
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.states
     }
 }
 
@@ -104,11 +111,11 @@ impl Display for DiscreteFactor {
         // Create print table.
         let mut table = Table::new();
         // Add header to table.
-        table.add_row(self.levels.keys().chain([&"Values".to_string()]).collect());
-        // Construct iterator over levels cartesian product.
-        let levels = self.levels.values().multi_cartesian_product();
+        table.set_titles(self.states.keys().chain([&"Values".to_string()]).collect());
+        // Construct iterator over states cartesian product.
+        let states = self.states.values().multi_cartesian_product();
         // Add rows to table.
-        for (i, x) in levels.zip(self.values.iter()) {
+        for (i, x) in states.zip(self.values.iter()) {
             table.add_row(i.into_iter().chain([&x.to_string()]).collect());
         }
         // Write table to formatter.
@@ -121,21 +128,21 @@ impl Add for DiscreteFactor {
 
     fn add(self, phi: Self) -> Self::Output {
         // Compute scope of factor sum.
-        let levels: FxIndexMap<_, _> = iter_set::union_by(
-            self.levels.clone().into_iter(),
-            phi.levels.clone().into_iter(),
+        let states: FxIndexMap<_, _> = iter_set::union_by(
+            self.states.clone().into_iter(),
+            phi.states.clone().into_iter(),
             |(x, _), (y, _)| x.cmp(&y),
         )
         .collect();
         // Compute broadcasting shapes.
-        let lhs: Vec<_> = levels
+        let lhs: Vec<_> = states
             .keys()
-            .map(|x| self.levels.get(x))
+            .map(|x| self.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
-        let rhs: Vec<_> = levels
+        let rhs: Vec<_> = states
             .keys()
-            .map(|x| phi.levels.get(x))
+            .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
         // Apply broadcasting shapes.
@@ -150,7 +157,7 @@ impl Add for DiscreteFactor {
         // Compute factor sum.
         let values = (lhs + rhs).into_dyn();
 
-        Self { levels, values }
+        Self { states, values }
     }
 }
 
@@ -159,21 +166,21 @@ impl Mul for DiscreteFactor {
 
     fn mul(self, phi: Self) -> Self::Output {
         // Compute scope of factor product.
-        let levels: FxIndexMap<_, _> = iter_set::union_by(
-            self.levels.clone().into_iter(),
-            phi.levels.clone().into_iter(),
+        let states: FxIndexMap<_, _> = iter_set::union_by(
+            self.states.clone().into_iter(),
+            phi.states.clone().into_iter(),
             |(x, _), (y, _)| x.cmp(&y),
         )
         .collect();
         // Compute broadcasting shapes.
-        let lhs: Vec<_> = levels
+        let lhs: Vec<_> = states
             .keys()
-            .map(|x| self.levels.get(x))
+            .map(|x| self.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
-        let rhs: Vec<_> = levels
+        let rhs: Vec<_> = states
             .keys()
-            .map(|x| phi.levels.get(x))
+            .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
         // Apply broadcasting shapes.
@@ -188,7 +195,7 @@ impl Mul for DiscreteFactor {
         // Compute factor product.
         let values = (lhs * rhs).into_dyn();
 
-        Self { levels, values }
+        Self { states, values }
     }
 }
 
@@ -196,14 +203,14 @@ impl Div for DiscreteFactor {
     type Output = Self;
 
     fn div(self, phi: Self) -> Self::Output {
-        // Compute scope and levels of factor division.
-        let levels = self.levels;
+        // Compute scope and states of factor division.
+        let states = self.states;
         // Assert RHS scope is subset of LHS scope.
-        assert_eq!(iter_set::cmp(phi.levels.keys(), levels.keys()), Some(Less));
+        assert_eq!(iter_set::cmp(phi.states.keys(), states.keys()), Some(Less));
         // Compute broadcasting shapes.
-        let rhs: Vec<_> = levels
+        let rhs: Vec<_> = states
             .keys()
-            .map(|x| phi.levels.get(x))
+            .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
             .collect();
         // Apply broadcasting shapes.
@@ -217,7 +224,7 @@ impl Div for DiscreteFactor {
             .mapv(nan_to_zero)
             .into_dyn();
 
-        Self { levels, values }
+        Self { states, values }
     }
 }
 
@@ -228,7 +235,7 @@ impl Factor for DiscreteFactor {
 
     #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
-        self.levels.keys().map(|x| x.as_str())
+        self.states.keys().map(|x| x.as_str())
     }
 
     #[inline]
@@ -244,77 +251,74 @@ impl Factor for DiscreteFactor {
         self
     }
 
-    fn marginalize<'a, I>(mut self, x: I) -> Self
+    fn marginalize<'a, I>(mut self, z: I) -> Self
     where
         I: IntoIterator<Item = &'a str>,
     {
         // For each variable.
-        let index: Vec<_> = x
+        let z: BTreeSet<_> = z
             .into_iter()
             // Get variables indices.
             .map(|x| {
-                self.levels
+                self.states
                     .get_index_of(x)
                     .expect("Failed to get variable index")
             })
-            // Sort in decreasing order to ensure correctness.
-            .sorted()
-            .rev()
-            // Collect to remove associated levels.
+            // Collect to sort and deduplicate states.
             .collect();
 
-        // For each index.
-        for x in index {
+        // Sum in decreasing order to ensure correctness.
+        for x in z.into_iter().rev() {
             // Sum given axis.
             self.values = self.values.sum_axis(Axis(x));
-            // Remove associated level.
-            self.levels.swap_remove_index(x);
+            // Remove associated state.
+            self.states.swap_remove_index(x);
         }
 
-        // Re-sort levels variables.
-        self.levels.sort_keys();
+        // Re-sort states variables.
+        self.states.sort_keys();
 
         self
     }
 
-    fn reduce<'a, I>(mut self, x: I) -> Self
+    fn reduce<'a, I>(mut self, z: I) -> Self
     where
         I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
-        // For each variable.
-        let index: Vec<_> = x
+        // For each variable. FIXME: Reduce only over intersection with the scope.
+        let z: BTreeMap<_, _> = z
             .into_iter()
-            // Get variables and levels indices.
+            // Get variables and states indices.
             .map(|(x, y)| {
                 // Get variable index.
                 let x = self
-                    .levels
+                    .states
                     .get_index_of(x)
                     .expect("Failed to get variable index");
-                // Get level index.
+                // Get state index.
                 let y = self
-                    .levels
+                    .states
                     .get_index(x)
                     .expect("Failed to get variable by index")
                     .1
                     .get_index_of(y)
-                    .expect("Failed to get level index");
+                    .expect("Failed to get state index");
 
                 (x, y)
             })
-            // Collect to remove associated levels.
+            // Collect to sort and deduplicate states.
             .collect();
 
-        // For each (variable, level) index pairs.
-        for (x, y) in index {
+        // For each (variable, state) index pairs.
+        for (x, y) in z {
             // Reduce to given axis index.
             self.values.collapse_axis(Axis(x), y);
-            // Reduce to given level.
-            let y = self.levels[x]
+            // Reduce to given state.
+            let y = self.states[x]
                 .swap_remove_index(y)
-                .expect("Failed to get level by index");
-            self.levels[x].clear();
-            self.levels[x].insert(y);
+                .expect("Failed to get state by index");
+            self.states[x].clear();
+            self.states[x].insert(y);
         }
 
         self
@@ -324,37 +328,147 @@ impl Factor for DiscreteFactor {
 /// Discrete Conditional Probability Distribution (Discrete CPD).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteCPD {
-    levels: FxIndexMap<String, FxIndexSet<String>>,
-    values: ArrayD<f64>,
+    /// Target variable,
+    x: String,
+    /// Underlying factor.
+    phi: DiscreteFactor,
+}
+
+impl DiscreteCPD {
+    /// Construct a new tabular CPD given its values and states.
+    pub fn new<I, J, K, V>((x, y): (K, J), z: I, values: Array2<f64>) -> Self
+    where
+        I: IntoIterator<Item = (K, J)>,
+        J: IntoIterator<Item = V>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        // Cast target variable to String.
+        let x = x.into();
+        // Chain states as [X, Z].
+        let states = [(x.clone(), y)]
+            .into_iter()
+            .chain(z.into_iter().map(|(s, t)| (s.into(), t)));
+        // Align values axis [Z, X] to [X, Z] as states.
+        let values = values.reversed_axes();
+        // Construct underlying factor.
+        let phi = DiscreteFactor::new(states, values);
+        // Assert sum over target axis yields ones.
+        let e = f64::sqrt(f64::EPSILON);
+        assert!(
+            phi.values
+                .sum_axis(Axis(phi.states.get_index_of(&x).unwrap()))
+                .into_iter()
+                .all(|x| x.relative_eq(&1., e, e)),
+            "CPD rows must sum to one"
+        );
+
+        Self { x, phi }
+    }
+
+    /// Get the set of variables states.
+    #[inline]
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.phi.states
+    }
+
+    /// Get the target variable $X$ of the CPD $\mathcal(P)(X | \mathbf{Z})$
+    #[inline]
+    pub fn target(&self) -> &str {
+        self.x.as_str()
+    }
 }
 
 impl Display for DiscreteCPD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!() // FIXME:
+        // Create print table.
+        let mut table = Table::new();
+        // Add first header to table. TODO: Add `with_hspan`if possible.
+        table.set_titles(
+            std::iter::repeat("")
+                .take(self.phi.states.len() - 1)
+                .chain([self.x.as_str()])
+                .collect(),
+        );
+        // Add second header to table.
+        table.add_row(
+            self.phi
+                .states
+                .keys()
+                .filter(|&x| !x.eq(&self.x))
+                .chain(self.phi.states[&self.x].iter())
+                .collect(),
+        );
+        // Construct iterator over states levels.
+        let states = self
+            .phi
+            .states
+            .iter()
+            .filter_map(|(x, y)| match !x.eq(&self.x) {
+                true => Some(y),
+                false => None,
+            })
+            .multi_cartesian_product();
+        // Get target index.
+        let x = self
+            .phi
+            .states
+            .get_index_of(&self.x)
+            .expect("Failed to get index of target variable");
+        // Construct iterator over values.
+        let mut values: Vec<_> = self
+            .phi
+            .values
+            .axis_iter(Axis(x))
+            .map(|x| x.into_iter())
+            .collect();
+        // Add rows to table.
+        for s in states {
+            table.add_row(
+                s.into_iter()
+                    .cloned()
+                    .chain(values.iter_mut().map(|x| x.next().unwrap().to_string()))
+                    .collect(),
+            );
+        }
+        // Write table to formatter.
+        write!(f, "{table}")
     }
 }
 
 impl Add for DiscreteCPD {
     type Output = Self;
 
-    fn add(self, cpd: Self) -> Self::Output {
-        todo!() // FIXME:
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        // Compute factor addition.
+        let (x, phi) = (self.x, self.phi + rhs.phi);
+
+        Self { x, phi }
     }
 }
 
 impl Mul for DiscreteCPD {
     type Output = Self;
 
-    fn mul(self, cpd: Self) -> Self::Output {
-        todo!() // FIXME:
+    #[inline]
+    fn mul(self, rhs: Self) -> Self::Output {
+        // Compute factor multiplication.
+        let (x, phi) = (self.x, self.phi * rhs.phi);
+
+        Self { x, phi }
     }
 }
 
 impl Div for DiscreteCPD {
     type Output = Self;
 
-    fn div(self, cpd: Self) -> Self::Output {
-        todo!() // FIXME:
+    #[inline]
+    fn div(self, rhs: Self) -> Self::Output {
+        // Compute factor division.
+        let (x, phi) = (self.x, self.phi / rhs.phi);
+
+        Self { x, phi }
     }
 }
 
@@ -365,35 +479,56 @@ impl Factor for DiscreteCPD {
 
     #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
-        self.levels.keys().map(|x| x.as_str())
+        self.phi.states.keys().map(|x| x.as_str())
     }
 
     #[inline]
     fn values(&self) -> &ndarray::ArrayD<f64> {
-        &self.values
+        &self.phi.values
     }
 
-    fn normalize(self) -> Self {
-        todo!() // FIXME:
+    #[inline]
+    fn normalize(mut self) -> Self {
+        // Get normalization axis.
+        let x = self
+            .phi
+            .states
+            .get_index_of(&self.x)
+            .expect("Failed to get target axis index");
+
+        // Normalize over target axis.
+        self.phi.values /= &self.phi.values.sum_axis(Axis(x)).insert_axis(Axis(x));
+
+        self
     }
 
-    fn marginalize<'a, I>(self, x: I) -> Self
+    #[inline]
+    fn marginalize<'a, I>(mut self, z: I) -> Self
     where
         I: IntoIterator<Item = &'a str>,
     {
-        todo!() // FIXME:
+        // Marginalize underlying factor.
+        self.phi = self.phi.marginalize(z);
+        // Return normalized CPD.
+        self.normalize()
     }
 
-    fn reduce<'a, I>(self, x: I) -> Self
+    #[inline]
+    fn reduce<'a, I>(mut self, z: I) -> Self
     where
         I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
-        todo!() // FIXME:
+        // Reduce underlying factor.
+        self.phi = self.phi.reduce(z);
+        // Return normalized CPD.
+        self.normalize()
     }
 }
 
 impl From<DiscreteCPD> for DiscreteFactor {
-    fn from(cpd: DiscreteCPD) -> Self {
-        todo!() // FIXME:
+    #[inline]
+    fn from(other: DiscreteCPD) -> Self {
+        // Return underlying factor.
+        other.phi
     }
 }
