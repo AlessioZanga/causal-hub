@@ -15,8 +15,9 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 [dependencies]
 approx = "^0.5"
 bimap = { version = "^0.6", features = [ "serde" ] }
-indexmap = { version = "^1.9", features = [ "rayon" ] }
+indexmap = { version = "^1.9", features = [ "rayon", "serde" ] }
 is_sorted = "^0.1"
+iter-set = "^2.0"
 itertools = "^0.10"
 libm = "^0.2"
 log = "^0.4"
@@ -27,6 +28,7 @@ page_size = "^0.5"
 pest = "^2.5"
 pest_derive = "^2.5"
 polars = { version = "^0.27", features = [ "dtype-categorical", "ndarray" ] }
+prettytable-rs = "^0.10"
 rand = "^0.8"
 rand_xoshiro = "^0.6"
 rayon = "^1.6"

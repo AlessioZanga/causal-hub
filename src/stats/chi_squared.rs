@@ -2,28 +2,29 @@ use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
 
 use crate::{
-    data::{CategoricalDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
+    data::{DiscreteDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
     prelude::ConditionalIndependenceTest,
+    utils::nan_to_zero,
 };
 
 /// Chi Squared conditional independence test.
 #[derive(Clone, Debug)]
 pub struct ChiSquared<'a> {
-    d: &'a CategoricalDataMatrix,
+    d: &'a DiscreteDataMatrix,
     alpha: f64,
 }
 
 impl<'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub const fn new(d: &'a CategoricalDataMatrix) -> Self {
+    pub const fn new(d: &'a DiscreteDataMatrix) -> Self {
         Self { d, alpha: 0.05 }
     }
 }
 
-impl<'a> From<&'a CategoricalDataMatrix> for ChiSquared<'a> {
+impl<'a> From<&'a DiscreteDataMatrix> for ChiSquared<'a> {
     #[inline]
-    fn from(d: &'a CategoricalDataMatrix) -> Self {
+    fn from(d: &'a DiscreteDataMatrix) -> Self {
         Self::new(d)
     }
 }
@@ -54,10 +55,10 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
             .insert_axis(Axis(1))
             .insert_axis(Axis(2));
         // Compute expected counts, mapping NaNs to zero.
-        let e_ijk = ((o_ik * o_jk) / o_k).mapv(|x| f64::max(x, 0.));
+        let e_ijk = ((o_ik * o_jk) / o_k).mapv(nan_to_zero);
         // Compute test statistic, mapping NaNs to zero.
         let stat = ((o_ijk - &e_ijk).mapv(|x| f64::powi(x, 2)) / e_ijk)
-            .mapv(|x| f64::max(x, 0.))
+            .mapv(nan_to_zero)
             .sum();
 
         // Compute p-value as:

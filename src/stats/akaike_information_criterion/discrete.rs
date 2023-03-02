@@ -1,22 +1,19 @@
-use super::BayesianInformationCriterion;
+use super::AkaikeInformationCriterion;
 use crate::{
-    data::CategoricalDataMatrix,
+    data::DiscreteDataMatrix,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
 };
 
 impl<G, const RESCALED: bool, const PARALLEL: bool>
-    DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for BayesianInformationCriterion<CategoricalDataMatrix, RESCALED, PARALLEL>
+    DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> f64 {
-        // Get the sample size.
-        let n = d.nrows() as f64;
-
+    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
         // Get the cardinality.
         let cards = d.cardinality();
         // Get the cardinality of vertices.
@@ -28,14 +25,14 @@ where
         // Initialize the log-likelihood functor.
         let s = LogLikelihood::<_, PARALLEL>::new();
         // Compute the log-likelihood.
-        let s = DecomposableScoringCriterion::<CategoricalDataMatrix, G>::call(&s, d, x, z);
+        let s = DecomposableScoringCriterion::<DiscreteDataMatrix, G>::call(&s, d, x, z);
 
-        // Check if BIC must be scaled.
+        // Check if AIC must be scaled.
         match RESCALED {
-            // Rescale BIC by -2, coherently with LL.
-            true => s - 0.5 * self.k * theta * f64::ln(n),
-            // Otherwise, compute original BIC.
-            false => self.k * theta * f64::ln(n) - 2. * s,
+            // Rescale AIC by -2, coherently with LL.
+            true => s - self.k * theta,
+            // Otherwise, compute original AIC.
+            false => 2. * self.k * theta - 2. * s,
         }
     }
 }

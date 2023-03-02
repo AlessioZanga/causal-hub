@@ -5,6 +5,7 @@ use libm::erfc;
 use crate::{
     data::ContinuousDataMatrix,
     discovery::ConditionalIndependenceTest,
+    prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
@@ -28,7 +29,7 @@ impl FisherZ {
         Self {
             rho,
             alpha: 0.05,
-            n: d.nrows(),
+            n: d.values().nrows(),
         }
     }
 }

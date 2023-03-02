@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    mod categorical {
+    mod discrete {
         use std::collections::BTreeMap;
 
         use causal_hub::prelude::*;
@@ -19,13 +19,16 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data = DiscreteDataMatrix::from(df);
 
-            assert_eq!(*data, array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]);
+            assert_eq!(
+                data.values(),
+                array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
+            );
 
             assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
 
-            let levels: BTreeMap<String, Vec<String>> = BTreeMap::from([
+            let states: BTreeMap<String, Vec<String>> = BTreeMap::from([
                 (
                     "W".to_string(),
                     vec!["I".to_string(), "J".to_string(), "K".to_string()],
@@ -39,10 +42,10 @@ mod tests {
             ]);
 
             assert!(data
-                .levels()
+                .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
-                .eq(&levels));
+                .eq(&states));
 
             assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
         }
@@ -67,7 +70,7 @@ mod tests {
             let data = ContinuousDataMatrix::from(df);
 
             assert_eq!(
-                *data,
+                data.values(),
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 

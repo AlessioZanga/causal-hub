@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet},
     ops::Deref,
 };
 
@@ -7,24 +7,25 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
 
-/* Implement CategoricalDataMatrix */
+/* Implement DiscreteDataMatrix */
 
-/// Data matrix for categorical data.
+/// Data matrix for discrete data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalDataMatrix {
-    data: Array2<usize>,
+pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
-    levels: HashMap<String, Vec<String>>,
+    states: FxHashMap<String, Vec<String>>,
     cardinality: Vec<usize>,
+    values: Array2<usize>,
 }
 
-impl CategoricalDataMatrix {
-    /// Construct a new categorical data matrix given data encoding, labels and levels.
-    pub fn new<V, I, J, K>(data: Array2<usize>, labels: I, levels: J) -> Self
+impl DiscreteDataMatrix {
+    /// Construct a new discrete data matrix given data encoding, labels and states.
+    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<usize>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -34,72 +35,64 @@ impl CategoricalDataMatrix {
         // Construct the labels set.
         let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
         // Check labels consistency.
-        assert_eq!(data.ncols(), labels.len());
-        // Construct the levels map.
-        let levels: HashMap<String, Vec<String>> = levels
+        assert_eq!(values.ncols(), labels.len());
+        // Construct the states map.
+        let states: FxHashMap<String, Vec<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
             .collect();
-        // Check levels consistency.
-        assert!(labels.iter().eq(levels.keys().sorted()));
-        // Compute cardinalities from levels.
-        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Check states consistency.
+        assert!(labels.iter().eq(states.keys().sorted()));
+        // Compute cardinalities from states.
+        let cardinality = labels.iter().map(|l| states[l].len()).collect();
         // Check cardinalities.
         assert_eq!(
-            data.fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
+            values
+                .fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
                 .into_iter()
                 .collect::<Vec<_>>(),
             cardinality
         );
 
         Self {
-            data,
             labels,
-            levels,
+            states,
             cardinality,
+            values,
         }
     }
 }
 
-impl Deref for CategoricalDataMatrix {
-    type Target = Array2<usize>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-impl From<DataFrame> for CategoricalDataMatrix {
+impl From<DataFrame> for DiscreteDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
-                "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `DiscreteDataMatrixWithMissing` to handle missing values properly."
             )
         );
 
         // Check for wrong data type.
         assert!(
             df.iter().all(|s| !s.dtype().is_float()),
-            "DataSet must contain only categorical types"
+            "DataSet must contain only discrete types"
         );
 
-        // Cast to categorical datatype.
+        // Cast to discrete datatype.
         let df = df.iter().map(|s| {
             s.cast(&DataType::Utf8)
                 .expect("Failed to cast to intermediate UTF-8 datatype")
                 .cast(&DataType::Categorical(None))
-                .expect("Failed to cast to categorical datatype")
+                .expect("Failed to cast to discrete datatype")
         });
 
         // Sort columns by name.
         let df: DataFrame = df.sorted_by(|a, b| a.name().cmp(b.name())).collect();
 
         // Get underlying data matrix.
-        let mut data = df
+        let mut values = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as usize);
@@ -107,8 +100,8 @@ impl From<DataFrame> for CategoricalDataMatrix {
         // Get variables as set of strings.
         let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().collect();
 
-        // Get variables levels.
-        let levels: HashMap<String, Vec<String>> = df
+        // Get variables states.
+        let states: FxHashMap<String, Vec<String>> = df
             // Iterate over the columns.
             .iter()
             // Get index-to-label mapping.
@@ -116,79 +109,85 @@ impl From<DataFrame> for CategoricalDataMatrix {
                 (
                     s.name().into(),
                     s.categorical()
-                        .expect("Failed to access categorical representation")
+                        .expect("Failed to access discrete representation")
                         .get_rev_map()
                         .deref(),
                 )
             })
-            // Get levels.
-            .map(|(label, levels)| match levels {
-                RevMapping::Global(map, levels, _) => {
-                    // Reorder to vector of levels.
+            // Get states.
+            .map(|(label, states)| match states {
+                RevMapping::Global(map, states, _) => {
+                    // Reorder to vector of states.
                     let map: BTreeMap<_, _> = map
                         .into_iter()
                         .map(|(&i, &j)| (i as usize, j as usize))
                         .collect();
-                    let levels: Vec<_> = map
+                    let states: Vec<_> = map
                         .into_values()
-                        .map(|i| levels.get(i).unwrap().into())
+                        .map(|i| states.get(i).unwrap().into())
                         .collect();
 
-                    (label, levels)
+                    (label, states)
                 }
-                RevMapping::Local(levels) => {
-                    // Cast to vector of levels.
-                    let levels: Vec<_> = levels.values_iter().map(|s| s.into()).collect();
+                RevMapping::Local(states) => {
+                    // Cast to vector of states.
+                    let states: Vec<_> = states.values_iter().map(|s| s.into()).collect();
 
-                    (label, levels)
+                    (label, states)
                 }
             })
             // Get series index.
             .enumerate()
-            // Check that levels are sorted.
-            .map(|(i, (label, mut levels))| {
-                // Check if levels are ordered.
-                if !levels.iter().is_sorted() {
+            // Check that states are sorted.
+            .map(|(i, (label, mut states))| {
+                // Check if states are ordered.
+                if !states.iter().is_sorted() {
                     // If not, build a map of the sorted indices.
-                    let mut indices: Vec<_> = (0..levels.len()).collect();
-                    indices.sort_by_key(|&i| &levels[i]);
+                    let mut indices: Vec<_> = (0..states.len()).collect();
+                    indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
-                    data.column_mut(i).mapv_inplace(|x| indices[x]);
+                    values.column_mut(i).mapv_inplace(|x| indices[x]);
                     // Sort the labels.
-                    levels.sort();
+                    states.sort();
                 }
 
-                (label, levels)
+                (label, states)
             })
-            // Collect variables levels.
+            // Collect variables states.
             .collect();
 
-        // Compute cardinalities from levels.
-        let cardinality = labels.iter().map(|l| levels[l].len()).collect();
+        // Compute cardinalities from states.
+        let cardinality = labels.iter().map(|l| states[l].len()).collect();
 
         Self {
-            data,
             labels,
-            levels,
+            states,
             cardinality,
+            values,
         }
     }
 }
 
-impl DataSet for CategoricalDataMatrix {
+impl DataSet for DiscreteDataMatrix {
     type Data = Array2<usize>;
 
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
+
+    /// Get reference to underlying values.
+    #[inline]
+    fn values(&self) -> &Self::Data {
+        &self.values
+    }
 }
 
-impl CategoricalDataMatrix {
-    /// Gets the map of variables to their levels.
+impl DiscreteDataMatrix {
+    /// Gets the map of variables to their states.
     #[inline]
-    pub fn levels(&self) -> &HashMap<String, Vec<String>> {
-        &self.levels
+    pub fn states(&self) -> &FxHashMap<String, Vec<String>> {
+        &self.states
     }
 
     /// Gets the vector of variables cardinalities.
@@ -203,17 +202,8 @@ impl CategoricalDataMatrix {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataMatrix {
-    data: Array2<f64>,
+    values: Array2<f64>,
     labels: BTreeSet<String>,
-}
-
-impl Deref for ContinuousDataMatrix {
-    type Target = Array2<f64>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
 }
 
 impl From<DataFrame> for ContinuousDataMatrix {
@@ -241,14 +231,14 @@ impl From<DataFrame> for ContinuousDataMatrix {
             .collect();
 
         // Get underlying data matrix.
-        let data = df
+        let values = df
             .to_ndarray::<Float64Type>()
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().collect();
 
-        Self { data, labels }
+        Self { labels, values }
     }
 }
 
@@ -258,5 +248,10 @@ impl DataSet for ContinuousDataMatrix {
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Data {
+        &self.values
     }
 }

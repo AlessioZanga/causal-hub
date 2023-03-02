@@ -1,9 +1,7 @@
-use std::ops::Deref;
-
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::{CategoricalDataMatrix, RavelMultiIndex};
+use super::{DataSet, DiscreteDataMatrix, RavelMultiIndex};
 use crate::utils::axis_chunks_size;
 
 /// One-dimensional marginal contingency table.
@@ -14,7 +12,7 @@ pub struct MarginalCountMatrix {
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -24,20 +22,17 @@ impl MarginalCountMatrix {
         // Allocate count matrix.
         let mut n = Array1::zeros(shape);
         // Fill count matrix.
-        for row in d.rows() {
+        for row in d.values().rows() {
             // Increment at given index.
             n[row[x]] += 1;
         }
 
         Self { n }
     }
-}
 
-impl Deref for MarginalCountMatrix {
-    type Target = Array1<usize>;
-
+    /// Get reference to underlying values.
     #[inline]
-    fn deref(&self) -> &Self::Target {
+    pub const fn values(&self) -> &Array1<usize> {
         &self.n
     }
 }
@@ -80,7 +75,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
 
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
@@ -92,23 +87,21 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         let n = match PARALLEL {
             // Count the given observations in parallel.
             true => d
-                .axis_chunks_iter(Axis(0), axis_chunks_size(d))
+                .values()
+                .axis_chunks_iter(Axis(0), axis_chunks_size(d.values()))
                 .into_par_iter()
                 .map(|d| Self::eval(shape, &rmi, d, x, z))
                 .reduce(|| Array2::zeros(shape), |acc, x| acc + x),
             // Count the given observations.
-            false => Self::eval(shape, &rmi, d.view(), x, z),
+            false => Self::eval(shape, &rmi, d.values().view(), x, z),
         };
 
         Self { n }
     }
-}
 
-impl<const PARALLEL: bool> Deref for ConditionalCountMatrix<PARALLEL> {
-    type Target = Array2<usize>;
-
+    /// Get reference to underlying values.
     #[inline]
-    fn deref(&self) -> &Self::Target {
+    pub const fn values(&self) -> &Array2<usize> {
         &self.n
     }
 }
@@ -128,7 +121,7 @@ pub struct JointCountMatrix {
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -138,20 +131,17 @@ impl JointCountMatrix {
         // Allocate count matrix.
         let mut n = Array2::zeros(shape);
         // Fill count matrix.
-        for row in d.rows() {
+        for row in d.values().rows() {
             // Increment at given index.
             n[[row[x], row[y]]] += 1;
         }
 
         Self { n }
     }
-}
 
-impl Deref for JointCountMatrix {
-    type Target = Array2<usize>;
-
+    /// Get reference to underlying values.
     #[inline]
-    fn deref(&self) -> &Self::Target {
+    pub const fn values(&self) -> &Array2<usize> {
         &self.n
     }
 }
@@ -171,7 +161,7 @@ pub struct JointConditionalCountMatrix {
 impl JointConditionalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
     #[inline]
-    pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
+    pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
         let cards = d.cardinality();
 
@@ -184,7 +174,7 @@ impl JointConditionalCountMatrix {
         // Allocate count matrix.
         let mut n = Array3::zeros(shape);
         // Fill count matrix.
-        for row in d.rows() {
+        for row in d.values().rows() {
             // Get multi index.
             let row_z = z.iter().map(|&z| row[z]);
             // Ravel multi index.
@@ -195,13 +185,10 @@ impl JointConditionalCountMatrix {
 
         Self { n }
     }
-}
 
-impl Deref for JointConditionalCountMatrix {
-    type Target = Array3<usize>;
-
+    /// Get reference to underlying values.
     #[inline]
-    fn deref(&self) -> &Self::Target {
+    pub const fn values(&self) -> &Array3<usize> {
         &self.n
     }
 }
