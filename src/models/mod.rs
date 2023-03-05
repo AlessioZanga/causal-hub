@@ -16,8 +16,8 @@ pub type GSeparation<'a, G, D> = GraphicalSeparation<'a, G, D>;
 mod independence;
 pub use independence::*;
 
-mod inference;
-pub use inference::*;
-
 mod moral;
 pub use moral::*;
+
+mod variable_elimination;
+pub use variable_elimination::*;
