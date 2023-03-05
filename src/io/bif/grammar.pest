@@ -1,0 +1,94 @@
+compilation_unit = _{
+    SOI
+    ~ network_declaration
+    ~ ( variable_declaration | probability_declaration )*
+    ~ EOI
+}
+
+network_declaration = { NETWORK ~ WORD ~ network_content }
+
+network_content = { "{" ~ ( property )* ~ "}" }
+
+variable_declaration = {
+    VARIABLE
+    ~ variable_name
+    ~ variable_content
+}
+
+variable_content = { "{" ~ ( property | variable_discrete )* ~ "}" }
+
+variable_discrete = {
+    VARIABLE_TYPE
+    ~ DISCRETE
+    ~ "[" ~ DECIMAL_LITERAL ~ "]"
+    ~ "{" ~ variable_states_list ~ "}"
+    ~ ";"
+}
+
+variable_states_list = { variable_state+ }
+
+variable_state = _{ WORD }
+
+probability_declaration = {
+    PROBABILITY
+    ~ probability_variables_list
+    ~ probability_content
+}
+
+probability_variables_list = { "(" ~ variable_name+ ~ ")" }
+
+variable_name = _{ WORD }
+
+probability_content = {
+    "{"
+    ~ (
+        property
+        | probability_default_entry
+        | probability_entry
+        | probability_table
+    )*
+    ~ "}"
+}
+
+property = { PROPERTY_STRING }
+
+probability_entry = {
+    probability_values_list
+    ~ floating_point_list
+    ~ ";"
+}
+
+probability_values_list = { "(" ~ variable_name+ ~ ")" }
+
+probability_default_entry = { floating_point_list ~ ";" }
+
+probability_table = { TABLE_VALUES ~ floating_point_list ~ ";" }
+
+floating_point_list = { FLOATING_POINT_LITERAL+ }
+
+WORD = @{ LETTER ~ (LETTER | DIGIT)* }
+LETTER = @{ ("_" | "-" | ASCII_ALPHA) }
+DIGIT = @{ ASCII_DIGIT }
+
+DECIMAL_LITERAL = @{ ASCII_DIGIT+ }
+FLOATING_POINT_LITERAL = @{
+    (
+        ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* ~ EXPONENT?
+        | "." ~ ASCII_DIGIT+ ~ EXPONENT?
+        | ASCII_DIGIT+ ~ EXPONENT?
+    )
+}
+EXPONENT = @{ ( "e" | "E" ) ~ ( "+" | "-" )? ~ ASCII_DIGIT+ }
+
+NETWORK = _{ "network" }
+VARIABLE = _{ "variable" }
+PROBABILITY = _{ "probability" }
+PROPERTY = _{ "property" }
+PROPERTY_STRING = { PROPERTY ~ (";" ~ PROPERTY)* ~ ";"? }
+VARIABLE_TYPE = _{ "type" }
+DISCRETE = _{ "discrete" }
+DEFAULT_VALUE = _{ "default" }
+TABLE_VALUES = _{ "table" }
+
+WHITESPACE = _{ " " | "," | "|" | "\t" | "\n" | "\r" }
+COMMENT = _{ "//" ~ ("\n" | "\r\n") | "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
