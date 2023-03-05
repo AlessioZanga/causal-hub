@@ -18,3 +18,6 @@ pub use independence::*;
 
 mod moral;
 pub use moral::*;
+
+mod variable_elimination;
+pub use variable_elimination::*;

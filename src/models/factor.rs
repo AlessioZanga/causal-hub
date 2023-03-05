@@ -20,18 +20,28 @@ use crate::{
 
 /// Factor trait.
 pub trait Factor:
-    Clone + Debug + Display + Add + Mul + Div + Serialize + for<'a> Deserialize<'a>
+    Clone
+    + Debug
+    + Display
+    + Add<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + Serialize
+    + for<'a> Deserialize<'a>
 {
     /// Labels iterator associated type.
-    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    type ScopeIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Value type of the variables.
     type Value<'a>;
 
-    /// Get the set of variables labels.
-    fn labels(&self) -> Self::LabelsIter<'_>;
+    /// Get the variables scope.
+    fn scope(&self) -> Self::ScopeIter<'_>;
+
+    /// Check whether a variable is in scope.
+    fn in_scope(&self, x: &str) -> bool;
 
     /// Get reference to underlying values.
     fn values(&self) -> &ArrayD<f64>;
@@ -74,7 +84,7 @@ impl DiscreteFactor {
             .collect();
         // Compute factor values shape as given in input.
         let shape: Vec<usize> = states.values().map(|x| x.len()).collect();
-        // Sort axes according to sorted variables labels.
+        // Sort axes according to sorted variables scope.
         let mut axes: Vec<usize> = (0..states.len()).collect();
         axes.sort_by_key(|&i| {
             states
@@ -82,7 +92,7 @@ impl DiscreteFactor {
                 .expect("Failed to get variable label by index")
                 .0
         });
-        // Sort variables labels.
+        // Sort variables scope.
         let states: FxIndexMap<_, _> = states
             .into_iter()
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
@@ -92,7 +102,7 @@ impl DiscreteFactor {
             // Reshape values to [X_0, X_1, ..., X_(n-1)].
             .into_shape(shape)
             .expect("Failed to reshape values")
-            // Permute axes to align X axis w.r.t. sorted variables labels.
+            // Permute axes to align X axis w.r.t. sorted variables scope.
             .permuted_axes(axes)
             // Make into standard memory layout.
             .as_standard_layout()
@@ -236,13 +246,18 @@ impl Div for DiscreteFactor {
 }
 
 impl Factor for DiscreteFactor {
-    type LabelsIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+    type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     type Value<'a> = &'a str;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn scope(&self) -> Self::ScopeIter<'_> {
         self.states.keys().map(|x| x.as_str())
+    }
+
+    #[inline]
+    fn in_scope(&self, x: &str) -> bool {
+        self.states.contains_key(x)
     }
 
     #[inline]
@@ -480,13 +495,18 @@ impl Div for DiscreteCPD {
 }
 
 impl Factor for DiscreteCPD {
-    type LabelsIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+    type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     type Value<'a> = &'a str;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn scope(&self) -> Self::ScopeIter<'_> {
         self.phi.states.keys().map(|x| x.as_str())
+    }
+
+    #[inline]
+    fn in_scope(&self, x: &str) -> bool {
+        self.phi.states.contains_key(x)
     }
 
     #[inline]
