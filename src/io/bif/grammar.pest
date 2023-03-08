@@ -37,7 +37,7 @@ probability_declaration = {
 
 probability_variables_list = { "(" ~ variable_name+ ~ ")" }
 
-variable_name = _{ WORD }
+variable_name = { WORD }
 
 probability_content = {
     "{"
@@ -64,13 +64,13 @@ probability_default_entry = { floating_point_list ~ ";" }
 
 probability_table = { TABLE_VALUES ~ floating_point_list ~ ";" }
 
-floating_point_list = { FLOATING_POINT_LITERAL+ }
+floating_point_list = _{ FLOATING_POINT_LITERAL+ }
 
 WORD = @{ LETTER+ }
 LETTER = @{ ("+" | "-" | "." | "/" | "<" | "=" | ">" | "_" | ASCII_ALPHANUMERIC) }
 DIGIT = @{ ASCII_DIGIT }
 
-DECIMAL_LITERAL = @{ ASCII_DIGIT+ }
+DECIMAL_LITERAL = _{ ASCII_DIGIT+ }
 FLOATING_POINT_LITERAL = @{
     (
         ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* ~ EXPONENT?
