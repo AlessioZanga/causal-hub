@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parser {
-    use causal_hub::io::{BIF, File};
+    use causal_hub::io::{File, BIF};
 
     #[test]
     fn read() {
