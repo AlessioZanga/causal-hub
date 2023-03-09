@@ -8,7 +8,7 @@ use pest_derive::Parser;
 use crate::{
     io::File,
     models::DiscreteCPD,
-    prelude::{DiscreteBayesianNetwork, FxIndexMap, FxIndexSet},
+    prelude::{DiscreteBayesianNetwork, Factor, FxIndexMap, FxIndexSet},
 };
 
 #[derive(Clone, Debug, Default, Parser)]
@@ -167,7 +167,30 @@ impl From<BIF> for String {
             bif += &format!("variable {x} {{\n  type discrete [ {c} ] {{ {s} }};\n}}\n");
         }
 
-        // FIXME: Write variables probability.
+        // Write variables probability.
+        for phi in value.theta {
+            // Get associated target.
+            let x = phi.target();
+            // Match probability declaration with states.
+            match phi.states().len() > 1 {
+                // Format P(X | Z).
+                true => {
+                    // Get conditioning variables.
+                    let z = phi.states().keys().filter(|&z| z != x).join(", ");
+                    // FIXME: Format probability values with conditioning states.
+                    let v = "  ";
+                    // Format probability declaration.
+                    bif += &format!("probability ( {x} | {z} ) {{\n{v}\n}}\n");
+                }
+                // Format P(X).
+                false => {
+                    // Format probability values.
+                    let v = phi.values().into_iter().map(|x| x.to_string()).join(", ");
+                    // Format probability declaration.
+                    bif += &format!("probability ( {x} ) {{\n  table {v};\n}}\n")
+                }
+            }
+        }
 
         bif
     }
