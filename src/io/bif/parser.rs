@@ -151,7 +151,7 @@ impl From<BIF> for String {
         let mut bif = String::new();
 
         // Write network declaration.
-        bif += "network unknown {{\n}}\n";
+        bif += "network unknown {\n}\n";
 
         // Write variables declaration.
         for phi in value.theta.iter() {
@@ -175,10 +175,42 @@ impl From<BIF> for String {
             match phi.states().len() > 1 {
                 // Format P(X | Z).
                 true => {
+                    // Get associated states.
+                    let s = phi.states();
                     // Get conditioning variables.
-                    let z = phi.states().keys().filter(|&z| z != x).join(", ");
-                    // FIXME: Format probability values with conditioning states.
-                    let v = "  ";
+                    let z = s.keys().filter(|&z| z != x).join(", ");
+                    // Get target index.
+                    let i = s
+                        .get_index_of(x)
+                        .expect("Failed to get index of target variable");
+                    // Construct iterator over states levels.
+                    let s = s
+                        .iter()
+                        .filter_map(|(s, t)| match !s.eq(&x) {
+                            true => Some(t),
+                            false => None,
+                        })
+                        .multi_cartesian_product();
+                    // Construct iterator over values.
+                    let mut v: Vec<_> = phi
+                        .values()
+                        .axis_iter(Axis(i))
+                        .map(|x| x.into_iter())
+                        .collect();
+                    // Format probability values with conditioning states.
+                    let v = s
+                        .map(|s| {
+                            // Format conditioning states.
+                            let s = s.into_iter().join(", ");
+                            // Format conditioned values.
+                            let v = v
+                                .iter_mut()
+                                .map(|x| x.next().unwrap().to_string())
+                                .join(", ");
+                            // Joint states and values.
+                            format!("  ( {s} ) {v};")
+                        })
+                        .join("\n");
                     // Format probability declaration.
                     bif += &format!("probability ( {x} | {z} ) {{\n{v}\n}}\n");
                 }

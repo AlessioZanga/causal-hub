@@ -414,6 +414,12 @@ impl Display for DiscreteCPD {
                 .chain(self.phi.states[&self.x].iter())
                 .collect(),
         );
+        // Get target index.
+        let i = self
+            .phi
+            .states
+            .get_index_of(&self.x)
+            .expect("Failed to get index of target variable");
         // Construct iterator over states levels.
         let states = self
             .phi
@@ -424,17 +430,11 @@ impl Display for DiscreteCPD {
                 false => None,
             })
             .multi_cartesian_product();
-        // Get target index.
-        let x = self
-            .phi
-            .states
-            .get_index_of(&self.x)
-            .expect("Failed to get index of target variable");
         // Construct iterator over values.
         let mut values: Vec<_> = self
             .phi
             .values
-            .axis_iter(Axis(x))
+            .axis_iter(Axis(i))
             .map(|x| x.into_iter())
             .collect();
         // Add rows to table.

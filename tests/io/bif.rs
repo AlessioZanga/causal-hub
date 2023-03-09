@@ -35,7 +35,6 @@ mod parser {
     }
 
     #[test]
-    #[ignore]
     fn write() {
         // FIXME:
         println!(
