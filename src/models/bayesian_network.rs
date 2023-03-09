@@ -6,12 +6,20 @@ use serde::{Deserialize, Serialize};
 use super::{DiscreteCPD, Factor};
 use crate::{
     graphs::{directions, DiGraph, DirectedGraph},
+    io::BIF,
     prelude::BaseGraph,
     types::FxIndexMap,
 };
 
 /// Bayesian Network trait.
-pub trait BayesianNetwork: Clone + Debug + Display + Serialize + for<'a> Deserialize<'a> {
+pub trait BayesianNetwork:
+    Clone
+    + Debug
+    + Display
+    + Serialize
+    + for<'a> Deserialize<'a>
+    + Into<(Self::Graph, FxIndexMap<String, Self::Parameter>)>
+{
     /// Underlying directed graph associated type.
     type Graph: DirectedGraph<Direction = directions::Directed>;
     /// Parameter associated type.
@@ -27,6 +35,11 @@ pub trait BayesianNetwork: Clone + Debug + Display + Serialize + for<'a> Deseria
 
     /// Reference to the parameters.
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
+
+    /// Construct $\mathcal{B}$ and the associated graph $\mathcal{G}$ given the parameters $\Theta$.
+    fn with_parameters<I>(theta: I) -> Self
+    where
+        I: IntoIterator<Item = Self::Parameter>;
 }
 
 /// Discrete Bayesian Network implementation.
@@ -45,6 +58,17 @@ impl Display for DiscreteBayesianNetwork {
         }
 
         Ok(())
+    }
+}
+
+impl From<DiscreteBayesianNetwork>
+    for (
+        <DiscreteBayesianNetwork as BayesianNetwork>::Graph,
+        FxIndexMap<String, <DiscreteBayesianNetwork as BayesianNetwork>::Parameter>,
+    )
+{
+    fn from(b: DiscreteBayesianNetwork) -> Self {
+        (b.graph, b.theta)
     }
 }
 
@@ -80,5 +104,37 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
     #[inline]
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter> {
         &self.theta
+    }
+
+    fn with_parameters<I>(theta: I) -> Self
+    where
+        I: IntoIterator<Item = Self::Parameter>,
+    {
+        // Get parameters target.
+        let theta: FxIndexMap<_, _> = theta
+            .into_iter()
+            .map(|theta| (theta.target().to_owned(), theta))
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
+            .collect();
+        // Get vertices.
+        let vertices = theta.keys().map(|x| x.as_str());
+        // Get edges.
+        let edges = theta.values().flat_map(|phi| {
+            phi.states()
+                .keys()
+                .filter(|&z| z != phi.target())
+                .map(|z| z.as_str())
+                .zip(std::iter::repeat(phi.target()))
+        });
+        // Construct graph.
+        let graph = Self::Graph::new(vertices, edges);
+
+        Self { graph, theta }
+    }
+}
+
+impl From<BIF> for DiscreteBayesianNetwork {
+    fn from(bif: BIF) -> Self {
+        Self::with_parameters(bif.theta)
     }
 }

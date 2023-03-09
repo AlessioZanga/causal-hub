@@ -366,24 +366,17 @@ impl DiscreteCPD {
         let states = [(x.clone(), y)]
             .into_iter()
             .chain(z.into_iter().map(|(s, t)| (s.into(), t)));
+        // Assert sum over target axis yields ones.
+        let values_sum = values.sum_axis(Axis(1));
+        assert!(
+            values_sum.iter().all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
+            "CPD rows must sum to one: {}",
+            values_sum
+        );
         // Align values axis [Z, X] to [X, Z] as states.
         let values = values.reversed_axes();
         // Construct underlying factor.
         let phi = DiscreteFactor::new(states, values);
-
-        // Get target axis.
-        let i = phi
-            .states
-            .get_index_of(&x)
-            .expect("Failed to get target index");
-        // Assert sum over target axis yields ones.
-        assert!(
-            phi.values
-                .sum_axis(Axis(i))
-                .into_iter()
-                .all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
-            "CPD rows must sum to one"
-        );
 
         Self { x, phi }
     }

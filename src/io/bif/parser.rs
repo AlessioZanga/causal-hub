@@ -1,5 +1,6 @@
 use std::{io::Error as IOError, path::PathBuf};
 
+use itertools::Itertools;
 use ndarray::prelude::*;
 use pest::{error::Error as ParserError, iterators::Pairs, Parser};
 use pest_derive::Parser;
@@ -7,17 +8,17 @@ use pest_derive::Parser;
 use crate::{
     io::File,
     models::DiscreteCPD,
-    prelude::{FxIndexMap, FxIndexSet},
+    prelude::{DiscreteBayesianNetwork, FxIndexMap, FxIndexSet},
 };
 
 #[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/bif/grammar.pest"]
-pub struct BayesianInterchangeFormat {
+pub struct BIF {
     /// Parameters. TODO: Generalize to the continuous case.
     pub theta: Vec<DiscreteCPD>,
 }
 
-impl<'a> From<Pairs<'a, Rule>> for BayesianInterchangeFormat {
+impl<'a> From<Pairs<'a, Rule>> for BIF {
     fn from(pairs: Pairs<'a, Rule>) -> Self {
         // Initialize scope map. TODO: Generalize to the continuous case.
         let mut scope: FxIndexMap<String, FxIndexSet<String>> = Default::default();
@@ -126,15 +127,17 @@ impl<'a> From<Pairs<'a, Rule>> for BayesianInterchangeFormat {
                 let mut variables = variables.into_iter();
                 // Get target variable X scope.
                 let x = variables.next().expect("Failed to get target variable");
-                let x = (x.clone(), scope[&x].clone());
+                let (x, y) = (x.clone(), scope[&x].clone());
                 // Get conditioning variables Z scopes.
                 let z = variables.map(|z| (z.clone(), scope[&z].clone()));
                 // Compute values shape as (\Prod_i |Z_i|, |X|).
-                let shape = (values.len() / x.1.len(), x.1.len());
+                let shape = (values.len() / y.len(), y.len());
                 // Reshape values.
                 let values = values.into_shape(shape).expect("Failed to reshape values");
+                // Normalized values.
+                let values = &values / values.sum_axis(Axis(1)).insert_axis(Axis(1));
                 // Construct associated parameter.
-                DiscreteCPD::new(x, z, values)
+                DiscreteCPD::new((x, y), z, values)
             })
             .collect();
 
@@ -142,13 +145,35 @@ impl<'a> From<Pairs<'a, Rule>> for BayesianInterchangeFormat {
     }
 }
 
-impl From<BayesianInterchangeFormat> for String {
-    fn from(_value: BayesianInterchangeFormat) -> Self {
-        todo!() // FIXME:
+impl From<BIF> for String {
+    fn from(value: BIF) -> Self {
+        // Allocate output string.
+        let mut bif = String::new();
+
+        // Write network declaration.
+        bif += "network unknown {{\n}}\n";
+
+        // Write variables declaration.
+        for phi in value.theta.iter() {
+            // Get associated target.
+            let x = phi.target();
+            // Get associated states.
+            let s = &phi.states()[x];
+            // Get cardinality of associated states.
+            let c = s.len();
+            // Collect associated states.
+            let s = s.iter().join(", ");
+            // Format variable declaration.
+            bif += &format!("variable {x} {{\n  type discrete [ {c} ] {{ {s} }};\n}}\n");
+        }
+
+        // FIXME: Write variables probability.
+
+        bif
     }
 }
 
-impl TryFrom<String> for BayesianInterchangeFormat {
+impl TryFrom<String> for BIF {
     type Error = ParserError<Rule>;
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
@@ -161,7 +186,7 @@ impl TryFrom<String> for BayesianInterchangeFormat {
     }
 }
 
-impl File for BayesianInterchangeFormat {
+impl File for BIF {
     type ReadError = ParserError<Rule>;
 
     type WriteError = IOError;
@@ -187,5 +212,16 @@ impl File for BayesianInterchangeFormat {
         let out = String::from(self);
         // Write string to file.
         std::fs::write(path.into(), out)
+    }
+}
+
+impl From<DiscreteBayesianNetwork> for BIF {
+    fn from(b: DiscreteBayesianNetwork) -> Self {
+        // Get parameters.
+        let (_, theta) = b.into();
+        // Map to vector of parameters.
+        let theta = theta.into_values().collect();
+
+        Self { theta }
     }
 }
