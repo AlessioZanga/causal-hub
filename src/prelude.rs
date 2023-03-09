@@ -19,4 +19,4 @@ pub use crate::stats::*;
 /// Re-export types.
 pub use crate::types::*;
 /// Re-export macros.
-pub use crate::{Adj, An, Ch, De, Ne, Pa, E, V};
+pub use crate::{Adj, An, Ch, De, Ne, Pa, E, L, V};
