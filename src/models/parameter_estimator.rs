@@ -5,7 +5,7 @@ use super::DiscreteBayesianNetwork;
 use crate::{
     data::{DataSet, DiscreteDataMatrix},
     graphs::{structs::DirectedDenseAdjacencyMatrixGraph, BaseGraph, DirectedGraph},
-    prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD},
+    prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix},
     Pa, L, V,
 };
 
@@ -43,9 +43,11 @@ impl
             // ... compute the relative frequencies ...
             .map(|(x, z)| {
                 // Compute the absolute frequencies.
-                let n = ConditionalCountMatrix::<false>::new(d, x, &z);
-                // Get the underlying counts and cast to float.
-                let n: Array2<usize> = n.into();
+                let n = match z.is_empty() {
+                    true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
+                    false => ConditionalCountMatrix::<false>::new(d, x, &z).into(),
+                };
+                // Cast to float.
                 let n = n.mapv(|n| n as f64);
                 // Compute marginal sums.
                 let n_i = n.sum_axis(Axis(1)).insert_axis(Axis(1));

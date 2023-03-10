@@ -9,9 +9,8 @@ use ndarray::prelude::*;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::types::FxIndexMap;
-
 use super::DataSet;
+use crate::types::FxIndexMap;
 
 /* Implement DiscreteDataMatrix */
 

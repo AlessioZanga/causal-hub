@@ -398,32 +398,35 @@ impl Display for DiscreteCPD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Create print table.
         let mut table = Table::new();
+        // Get target, states and values.
+        let (s, v) = (&self.phi.states, &self.phi.values);
         // Add first header to table. TODO: Add `with_hspan`if possible.
         table.set_titles(
             std::iter::repeat("")
-                .take(self.phi.states.len() - 1)
+                .take(s.len() - 1)
                 .chain([self.x.as_str()])
                 .collect(),
         );
         // Add second header to table.
         table.add_row(
-            self.phi
-                .states
-                .keys()
+            s.keys()
                 .filter(|&x| !x.eq(&self.x))
-                .chain(self.phi.states[&self.x].iter())
+                .chain(s[&self.x].iter())
                 .collect(),
         );
+        // If there are no conditioning variables ...
+        if s.len() == 1 {
+            // ... add only the row of marginal values.
+            table.add_row(v.iter().map(|x| x.to_string()).collect());
+            // Return table.
+            return write!(f, "{table}");
+        }
         // Get target index.
-        let i = self
-            .phi
-            .states
+        let i = s
             .get_index_of(&self.x)
             .expect("Failed to get index of target variable");
         // Construct iterator over states levels.
-        let states = self
-            .phi
-            .states
+        let states = s
             .iter()
             .filter_map(|(x, y)| match !x.eq(&self.x) {
                 true => Some(y),
@@ -431,18 +434,13 @@ impl Display for DiscreteCPD {
             })
             .multi_cartesian_product();
         // Construct iterator over values.
-        let mut values = self
-            .phi
-            .values
-            .axis_iter(Axis(i))
-            .map(|x| x.into_iter())
-            .collect_vec();
+        let mut w = v.axis_iter(Axis(i)).map(|x| x.into_iter()).collect_vec();
         // Add rows to table.
         for s in states {
             table.add_row(
                 s.into_iter()
                     .cloned()
-                    .chain(values.iter_mut().map(|x| x.next().unwrap().to_string()))
+                    .chain(w.iter_mut().map(|x| x.next().unwrap().to_string()))
                     .collect(),
             );
         }
