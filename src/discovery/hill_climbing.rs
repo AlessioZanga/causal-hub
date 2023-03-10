@@ -1,30 +1,28 @@
-use std::{hash::BuildHasherDefault, marker::PhantomData};
+use std::marker::PhantomData;
 
-use indexmap::IndexSet;
 use itertools::{iproduct, Itertools};
 use log::{debug, trace};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
-use rustc_hash::{FxHashMap, FxHasher};
 
 use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
 use crate::{
     data::DataSet,
     graphs::PathGraph,
-    prelude::{directions, BaseGraph, DirectedGraph, BFS},
+    prelude::{directions, BaseGraph, DirectedGraph, FxIndexMap, FxIndexSet, BFS},
     Ch, Pa, E, L, V,
 };
 
 /// Local cache type.
-type C<K> = FxHashMap<K, f64>;
+type C<K> = FxIndexMap<K, f64>;
 /// Local cache update type.
 type CU<K> = Vec<(K, f64)>;
 /// Local edge key cache type.
 type KE = (usize, Vec<usize>);
 
 /// Local edge space type
-type E = IndexSet<(usize, usize), BuildHasherDefault<FxHasher>>;
+type E = FxIndexSet<(usize, usize)>;
 /// Local operations edge space type.
 type ES = (
     E, // To-be-added space,

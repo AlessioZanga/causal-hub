@@ -10,6 +10,8 @@ pub use crate::graphs::{
     },
     *,
 };
+/// Re-export io.
+pub use crate::io::*;
 /// Re-export models.
 pub use crate::models::*;
 /// Re-export plots.

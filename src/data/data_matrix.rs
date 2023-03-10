@@ -44,7 +44,7 @@ impl DiscreteDataMatrix {
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Check states consistency.
-        assert!(labels.iter().eq(states.keys().sorted()));
+        assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
         let cardinality = labels.iter().map(|l| states[l].len()).collect();
         // Check cardinalities.
