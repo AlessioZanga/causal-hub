@@ -26,7 +26,7 @@ mod tests {
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(L!(data).into_iter().eq(&["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<String, Vec<String>> = BTreeMap::from([
                 (
@@ -74,7 +74,7 @@ mod tests {
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
+            assert!(L!(data).into_iter().eq(&["X", "Y", "Z"]));
         }
     }
 }

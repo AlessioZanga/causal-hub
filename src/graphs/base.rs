@@ -176,10 +176,10 @@ pub trait BaseGraph:
     /// let g = Graph::empty(["A", "B", "C"]);
     ///
     /// // Use the vertex set iterator.
-    /// assert!(g.labels().eq(["A", "B", "C"]));
+    /// assert!(L!(g).eq(["A", "B", "C"]));
     ///
     /// // Iterate over the vertex set.
-    /// for x in g.labels() {
+    /// for x in L!(g) {
     ///     assert!(g.has_vertex(g.vertex(x)));
     /// }
     /// ```

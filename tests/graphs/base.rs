@@ -256,7 +256,7 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new(i, []);
                     assert!(L!(g).is_sorted());
-                    assert!(L!(g).eq(g.labels()));
+                    assert!(L!(g).eq(L!(g)));
                     assert!(L!(g).eq(j));
                 }
             }
@@ -942,7 +942,7 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::new(i, []);
                     assert!(L!(g).is_sorted());
-                    assert!(L!(g).eq(g.labels()));
+                    assert!(L!(g).eq(L!(g)));
                     assert!(L!(g).eq(j));
                 }
             }

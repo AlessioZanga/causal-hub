@@ -19,7 +19,7 @@ mod tests {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize conditional independence test.
         let test = FisherZ::from(&d);
@@ -52,7 +52,7 @@ mod tests {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize conditional independence test.
         let test = FisherZ::from(&d);

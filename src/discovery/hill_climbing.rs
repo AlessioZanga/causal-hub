@@ -13,7 +13,7 @@ use crate::{
     data::DataSet,
     graphs::PathGraph,
     prelude::{directions, BaseGraph, DirectedGraph, BFS},
-    Ch, Pa, E, V,
+    Ch, Pa, E, L, V,
 };
 
 /// Local cache type.
@@ -204,17 +204,17 @@ where
             // If initial graph is provided ...
             Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.
-            None => G::empty(d.labels()),
+            None => G::empty(L!(d)),
         };
 
         // Check coherence with data set ...
         assert!(
-            g.labels().eq(d.labels()),
+            L!(g).eq(L!(d)),
             "Graph labels must be equal to data set labels"
         );
         // Check coherence of graph and prior knowledge.
         assert!(
-            g.labels().eq(k.labels()),
+            L!(g).eq(L!(k)),
             "Graph labels must be equal to prior knowledge labels"
         );
 
@@ -233,7 +233,7 @@ where
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
         // Get number of variables.
-        let n = d.labels().len();
+        let n = L!(d).len();
         // Get columns index.
         let mut n: Vec<_> = (0..n).collect();
         // Check if random number generator has been set.

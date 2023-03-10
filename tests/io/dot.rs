@@ -28,7 +28,7 @@ mod parser {
         let dot = DOT::read("tests/assets/dot/1658.dot").unwrap();
         let g = Graph::from(dot);
 
-        assert!(g.labels().eq([
+        assert!(L!(g).eq([
             "0", "1", "2", "3", "ADC1", "ADC2", "ADC3", "Charger", "GND", "IHall1", "IHall2",
             "IHall3", "OpAmp1", "OpAmp2", "OpAmp3", "Temp1", "Temp2", "Temp3", "V1", "V2", "V3"
         ]));
@@ -39,7 +39,7 @@ mod parser {
         let dot = DOT::read("tests/assets/dot/14.dot").unwrap();
         let g = DiGraph::from(dot);
 
-        assert!(g.labels().eq(["a", "b"]));
+        assert!(L!(g).eq(["a", "b"]));
     }
 }
 

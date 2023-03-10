@@ -7,7 +7,7 @@ use crate::{
     models::{BayesianNetwork, Factor},
     prelude::FxIndexMap,
     types::FxIndexSet,
-    Adj, V,
+    Adj, L, V,
 };
 
 /// Variable Elimination functor.
@@ -114,7 +114,7 @@ where
         // Sort and deduplicate query variables.
         let x: BTreeSet<_> = x.into_iter().collect();
         // Get variables labels.
-        let z = self.model.graph().labels();
+        let z = L!(self.model.graph());
         // Get the variables that needs to be eliminated.
         let z = iter_set::difference(z, x);
         // Compute the elimination order.
