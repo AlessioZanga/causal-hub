@@ -7,8 +7,9 @@ use super::{DiscreteCPD, Factor};
 use crate::{
     graphs::{directions, DiGraph, DirectedGraph},
     io::BIF,
-    prelude::BaseGraph,
+    prelude::{BaseGraph, PathGraph},
     types::FxIndexMap,
+    Pa, L, V,
 };
 
 /// Bayesian Network trait.
@@ -87,11 +88,26 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
             .map(|theta| (theta.target().to_owned(), theta))
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
+
         // Assert graph and parameters must contain the same variables.
         assert!(
-            graph.labels().eq(theta.keys()),
+            L!(graph).eq(theta.keys()),
             "Graph and parameters must contain the same variables"
         );
+        // Assert graph and parameters must induce the same structure.
+        assert!(
+            V!(graph)
+                .zip(L!(graph))
+                .zip(theta.values())
+                .all(|((i, x), t)| {
+                    Pa!(graph, i)
+                        .map(|y| graph.label(y))
+                        .eq(t.scope().filter(|&z| z != x))
+                }),
+            "Graph and parameters must induce the same structure"
+        );
+        // Assert graph is acyclic.
+        assert!(graph.is_acyclic(), "Graph must be acyclic");
 
         Self { graph, theta }
     }
