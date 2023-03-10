@@ -208,7 +208,7 @@ impl From<BIF> for String {
                                 .map(|x| x.next().unwrap().to_string())
                                 .join(", ");
                             // Joint states and values.
-                            format!("  ( {s} ) {v};")
+                            format!("  ({s}) {v};")
                         })
                         .join("\n");
                     // Format probability declaration.
