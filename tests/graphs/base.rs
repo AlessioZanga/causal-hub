@@ -236,6 +236,32 @@ mod undirected {
             }
 
             #[test]
+            fn labels() {
+                // Test for ...
+                let data = [
+                    // ... zero vertices,
+                    (vec![], vec![]),
+                    // ... one vertex,
+                    (vec!["0"], vec!["0"]),
+                    // ... multiple vertices,
+                    (vec!["0", "1", "2", "3"], vec!["0", "1", "2", "3"]),
+                    // ... random vertices,
+                    (
+                        vec!["71", "1", "58", "3", "75"],
+                        vec!["1", "3", "58", "71", "75"],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new(i, []);
+                    assert!(L!(g).is_sorted());
+                    assert!(L!(g).eq(g.labels()));
+                    assert!(L!(g).eq(j));
+                }
+            }
+
+            #[test]
             fn vertices() {
                 // Test for ...
                 let data = [
@@ -892,6 +918,32 @@ mod directed {
                     assert_eq!(g.size(), 0);
                     assert!(V!(g).next().is_none());
                     assert!(E!(g).next().is_none());
+                }
+            }
+
+            #[test]
+            fn labels() {
+                // Test for ...
+                let data = [
+                    // ... zero vertices,
+                    (vec![], vec![]),
+                    // ... one vertex,
+                    (vec!["0"], vec!["0"]),
+                    // ... multiple vertices,
+                    (vec!["0", "1", "2", "3"], vec!["0", "1", "2", "3"]),
+                    // ... random vertices,
+                    (
+                        vec!["71", "1", "58", "3", "75"],
+                        vec!["1", "3", "58", "71", "75"],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new(i, []);
+                    assert!(L!(g).is_sorted());
+                    assert!(L!(g).eq(g.labels()));
+                    assert!(L!(g).eq(j));
                 }
             }
 

@@ -6,6 +6,17 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+/// Labels iterator.
+///
+/// Return the labels iterator representing $L(\mathcal{G})$.
+///
+#[macro_export]
+macro_rules! L {
+    ($g:expr) => {
+        $g.labels()
+    };
+}
+
 /// Vertex iterator.
 ///
 /// Return the vertex iterator representing $V(\mathcal{G})$.
