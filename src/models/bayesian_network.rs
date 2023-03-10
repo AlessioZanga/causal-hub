@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{DiscreteCPD, Factor};
 use crate::{
-    graphs::{directions, DiGraph, DirectedGraph},
+    graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
     prelude::{BaseGraph, PathGraph},
     types::FxIndexMap,
@@ -46,7 +46,7 @@ pub trait BayesianNetwork:
 /// Discrete Bayesian Network implementation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteBayesianNetwork {
-    graph: DiGraph,
+    graph: DirectedDenseAdjacencyMatrixGraph,
     theta: FxIndexMap<String, DiscreteCPD>,
 }
 
@@ -74,7 +74,7 @@ impl From<DiscreteBayesianNetwork>
 }
 
 impl BayesianNetwork for DiscreteBayesianNetwork {
-    type Graph = DiGraph;
+    type Graph = DirectedDenseAdjacencyMatrixGraph;
 
     type Parameter = DiscreteCPD;
 

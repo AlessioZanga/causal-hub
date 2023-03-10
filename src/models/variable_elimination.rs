@@ -1,5 +1,6 @@
 use std::{collections::BTreeSet, ops::Mul};
 
+use itertools::Itertools;
 use split_iter::Splittable;
 
 use crate::{
@@ -120,13 +121,13 @@ where
         // Compute the elimination order.
         let z = self.elimination_order(z);
         // Get the parameters.
-        let phi: Vec<_> = self
+        let phi = self
             .model
             .parameters()
             .values()
             .cloned()
             .map(|phi| phi.into())
-            .collect();
+            .collect_vec();
         // Execute variable elimination.
         Self::sum_product(phi, z)
     }

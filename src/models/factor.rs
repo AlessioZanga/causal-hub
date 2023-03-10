@@ -149,16 +149,16 @@ impl Add for DiscreteFactor {
         )
         .collect();
         // Compute broadcasting shapes.
-        let lhs: Vec<_> = states
+        let lhs = states
             .keys()
             .map(|x| self.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
-            .collect();
-        let rhs: Vec<_> = states
+            .collect_vec();
+        let rhs = states
             .keys()
             .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
-            .collect();
+            .collect_vec();
         // Apply broadcasting shapes.
         let lhs = self
             .values
@@ -187,16 +187,16 @@ impl Mul for DiscreteFactor {
         )
         .collect();
         // Compute broadcasting shapes.
-        let lhs: Vec<_> = states
+        let lhs = states
             .keys()
             .map(|x| self.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
-            .collect();
-        let rhs: Vec<_> = states
+            .collect_vec();
+        let rhs = states
             .keys()
             .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
-            .collect();
+            .collect_vec();
         // Apply broadcasting shapes.
         let lhs = self
             .values
@@ -225,11 +225,11 @@ impl Div for DiscreteFactor {
             Some(Less) | Some(Equal)
         ));
         // Compute broadcasting shapes.
-        let rhs: Vec<_> = states
+        let rhs = states
             .keys()
             .map(|x| phi.states.get(x))
             .map(|x| x.map_or(1, |x| x.len()))
-            .collect();
+            .collect_vec();
         // Apply broadcasting shapes.
         let rhs = phi
             .values
@@ -431,12 +431,12 @@ impl Display for DiscreteCPD {
             })
             .multi_cartesian_product();
         // Construct iterator over values.
-        let mut values: Vec<_> = self
+        let mut values = self
             .phi
             .values
             .axis_iter(Axis(i))
             .map(|x| x.into_iter())
-            .collect();
+            .collect_vec();
         // Add rows to table.
         for s in states {
             table.add_row(

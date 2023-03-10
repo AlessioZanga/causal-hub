@@ -627,7 +627,7 @@ where
 {
     fn from(adjacency_list: AdjacencyList<V>) -> Self {
         // Map into vertices.
-        let vertices: Vec<_> = adjacency_list.keys().cloned().collect();
+        let vertices = adjacency_list.keys().cloned().collect_vec();
         // Map into edges.
         let edges = adjacency_list
             .into_iter()
@@ -755,7 +755,7 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for DirectedDenseAdjacencyM
         rows.shrink_to_fit();
         cols.shrink_to_fit();
         // Build data vector.
-        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
+        let data = std::iter::repeat(true).take(rows.len()).collect_vec();
         // Construct sparse adjacency matrix.
         let sparse_adjacency_matrix =
             SparseAdjacencyMatrix::from_triplets(self.adjacency_matrix.dim(), rows, cols, data);
@@ -835,14 +835,14 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
         }
 
         // Map the indices.
-        let indices: Vec<_> = indices
+        let indices = indices
             .into_iter()
             .enumerate()
             .filter_map(|(i, f)| match f {
                 true => Some(i),
                 false => None,
             })
-            .collect();
+            .collect_vec();
 
         // Get minor of matrix.
         let adjacency_matrix = adjacency_matrix
@@ -868,7 +868,7 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
         // Remove duplicated vertices identifiers.
         let indices: BTreeSet<_> = vertices.into_iter().collect();
         // Cast to vector of indices.
-        let indices: Vec<_> = indices.into_iter().collect();
+        let indices = indices.into_iter().collect_vec();
 
         // Get minor of matrix.
         let adjacency_matrix = self
@@ -907,14 +907,14 @@ impl SubGraph for DirectedDenseAdjacencyMatrixGraph {
         }
 
         // Map the indices.
-        let indices: Vec<_> = indices
+        let indices = indices
             .into_iter()
             .enumerate()
             .filter_map(|(i, f)| match f {
                 true => Some(i),
                 false => None,
             })
-            .collect();
+            .collect_vec();
 
         // Get minor of matrix.
         let adjacency_matrix = adjacency_matrix
