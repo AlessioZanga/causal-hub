@@ -569,12 +569,12 @@ impl TryFrom<String> for DOT {
     type Error = ParserError<Rule>;
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
-        // Parse the given dot string.
-        let dot = DOT::parse(Rule::file, string.trim())?;
+        // Parse the given string.
+        let out = Self::parse(Rule::file, string.trim())?;
         // Match inner rules. TODO: Match more than one graph.
-        let dot: DOT = dot.map(|x| x.into()).next().unwrap();
+        let out: Self = out.map(|x| x.into()).next().unwrap();
 
-        Ok(dot)
+        Ok(out)
     }
 }
 
@@ -590,10 +590,10 @@ impl File for DOT {
         // Get path.
         let path = path.into();
         // Read file to string.
-        let contents = std::fs::read_to_string(&path)
+        let out = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| format!("Failed to read file: \"{}\"", path.display()));
         // Parse string.
-        Self::try_from(contents)
+        Self::try_from(out)
     }
 
     fn write<P>(self, path: P) -> Result<(), Self::WriteError>
@@ -601,9 +601,9 @@ impl File for DOT {
         P: Into<PathBuf>,
     {
         // Format to string.
-        let contents = String::from(self);
+        let out = String::from(self);
         // Write string to file.
-        std::fs::write(path.into(), contents)
+        std::fs::write(path.into(), out)
     }
 }
 

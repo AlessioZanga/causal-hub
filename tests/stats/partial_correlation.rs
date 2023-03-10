@@ -19,7 +19,7 @@ mod tests {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(&d);

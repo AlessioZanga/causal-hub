@@ -63,7 +63,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = BIC::new();
@@ -105,7 +105,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = ParallelBIC::new();
@@ -154,7 +154,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = BIC::new();
@@ -196,7 +196,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = ParallelBIC::new();

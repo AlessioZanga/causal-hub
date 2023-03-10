@@ -117,7 +117,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = LL::new();
@@ -157,7 +157,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = ParallelLL::new();
@@ -204,7 +204,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = LL::new();
@@ -244,7 +244,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let score = ParallelLL::new();

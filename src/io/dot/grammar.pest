@@ -53,5 +53,4 @@ path_direction = { ("->" | "--") }
 path = { path_id ~ attributes? }
 
 WHITESPACE = _{ (" " | "\t" | NEWLINE) }
-
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/"  | "//" ~ (!"\n" ~ ANY)* | "#" ~ (!"\n" ~ ANY)*) }

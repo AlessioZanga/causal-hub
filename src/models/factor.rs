@@ -366,24 +366,17 @@ impl DiscreteCPD {
         let states = [(x.clone(), y)]
             .into_iter()
             .chain(z.into_iter().map(|(s, t)| (s.into(), t)));
+        // Assert sum over target axis yields ones.
+        let values_sum = values.sum_axis(Axis(1));
+        assert!(
+            values_sum.iter().all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
+            "CPD rows must sum to one: {}",
+            values_sum
+        );
         // Align values axis [Z, X] to [X, Z] as states.
         let values = values.reversed_axes();
         // Construct underlying factor.
         let phi = DiscreteFactor::new(states, values);
-
-        // Get target axis.
-        let i = phi
-            .states
-            .get_index_of(&x)
-            .expect("Failed to get target index");
-        // Assert sum over target axis yields ones.
-        assert!(
-            phi.values
-                .sum_axis(Axis(i))
-                .into_iter()
-                .all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
-            "CPD rows must sum to one"
-        );
 
         Self { x, phi }
     }
@@ -421,6 +414,12 @@ impl Display for DiscreteCPD {
                 .chain(self.phi.states[&self.x].iter())
                 .collect(),
         );
+        // Get target index.
+        let i = self
+            .phi
+            .states
+            .get_index_of(&self.x)
+            .expect("Failed to get index of target variable");
         // Construct iterator over states levels.
         let states = self
             .phi
@@ -431,17 +430,11 @@ impl Display for DiscreteCPD {
                 false => None,
             })
             .multi_cartesian_product();
-        // Get target index.
-        let x = self
-            .phi
-            .states
-            .get_index_of(&self.x)
-            .expect("Failed to get index of target variable");
         // Construct iterator over values.
         let mut values: Vec<_> = self
             .phi
             .values
-            .axis_iter(Axis(x))
+            .axis_iter(Axis(i))
             .map(|x| x.into_iter())
             .collect();
         // Add rows to table.
