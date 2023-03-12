@@ -192,11 +192,11 @@ impl From<BIF> for String {
                         })
                         .multi_cartesian_product();
                     // Construct iterator over values.
-                    let mut v: Vec<_> = phi
+                    let mut v = phi
                         .values()
                         .axis_iter(Axis(i))
                         .map(|x| x.into_iter())
-                        .collect();
+                        .collect_vec();
                     // Format probability values with conditioning states.
                     let v = s
                         .map(|s| {

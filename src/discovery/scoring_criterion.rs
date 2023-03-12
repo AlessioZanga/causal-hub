@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use itertools::Itertools;
+
 use crate::{
     graphs::{directions, DirectedGraph},
     Pa, V,
@@ -39,7 +41,7 @@ where
     #[inline]
     fn call(&self, d: &D, g: &G) -> f64 {
         V!(g)
-            .map(|x| (x, Pa!(g, x).collect::<Vec<_>>()))
+            .map(|x| (x, Pa!(g, x).collect_vec()))
             .map(|(x, z)| self.call(d, x, &z))
             .sum()
     }

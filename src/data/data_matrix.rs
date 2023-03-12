@@ -7,10 +7,10 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
-use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
+use crate::types::FxIndexMap;
 
 /* Implement DiscreteDataMatrix */
 
@@ -18,7 +18,7 @@ use super::DataSet;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
-    states: FxHashMap<String, Vec<String>>,
+    states: FxIndexMap<String, Vec<String>>,
     cardinality: Vec<usize>,
     values: Array2<usize>,
 }
@@ -37,12 +37,13 @@ impl DiscreteDataMatrix {
         // Check labels consistency.
         assert_eq!(values.ncols(), labels.len());
         // Construct the states map.
-        let states: FxHashMap<String, Vec<String>> = states
+        let states: FxIndexMap<String, Vec<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Check states consistency.
-        assert!(labels.iter().eq(states.keys().sorted()));
+        assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
         let cardinality = labels.iter().map(|l| states[l].len()).collect();
         // Check cardinalities.
@@ -50,7 +51,7 @@ impl DiscreteDataMatrix {
             values
                 .fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
                 .into_iter()
-                .collect::<Vec<_>>(),
+                .collect_vec(),
             cardinality
         );
 
@@ -98,16 +99,16 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .mapv(|x| x as usize);
 
         // Get variables as set of strings.
-        let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().collect();
+        let labels: BTreeSet<_> = df.get_column_names_owned().into_iter().collect();
 
         // Get variables states.
-        let states: FxHashMap<String, Vec<String>> = df
+        let states: FxIndexMap<_, _> = df
             // Iterate over the columns.
             .iter()
             // Get index-to-label mapping.
             .map(|s| {
                 (
-                    s.name().into(),
+                    s.name().to_owned(),
                     s.categorical()
                         .expect("Failed to access discrete representation")
                         .get_rev_map()
@@ -122,16 +123,16 @@ impl From<DataFrame> for DiscreteDataMatrix {
                         .into_iter()
                         .map(|(&i, &j)| (i as usize, j as usize))
                         .collect();
-                    let states: Vec<_> = map
+                    let states = map
                         .into_values()
                         .map(|i| states.get(i).unwrap().into())
-                        .collect();
+                        .collect_vec();
 
                     (label, states)
                 }
                 RevMapping::Local(states) => {
                     // Cast to vector of states.
-                    let states: Vec<_> = states.values_iter().map(|s| s.into()).collect();
+                    let states = states.values_iter().map(|s| s.into()).collect_vec();
 
                     (label, states)
                 }
@@ -143,7 +144,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
                 // Check if states are ordered.
                 if !states.iter().is_sorted() {
                     // If not, build a map of the sorted indices.
-                    let mut indices: Vec<_> = (0..states.len()).collect();
+                    let mut indices = (0..states.len()).collect_vec();
                     indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
                     values.column_mut(i).mapv_inplace(|x| indices[x]);
@@ -153,6 +154,8 @@ impl From<DataFrame> for DiscreteDataMatrix {
 
                 (label, states)
             })
+            // Sort by variables labels.
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
             // Collect variables states.
             .collect();
 
@@ -186,7 +189,7 @@ impl DataSet for DiscreteDataMatrix {
 impl DiscreteDataMatrix {
     /// Gets the map of variables to their states.
     #[inline]
-    pub fn states(&self) -> &FxHashMap<String, Vec<String>> {
+    pub fn states(&self) -> &FxIndexMap<String, Vec<String>> {
         &self.states
     }
 

@@ -19,5 +19,11 @@ pub use independence::*;
 mod moral;
 pub use moral::*;
 
+mod parameter_estimator;
+pub use parameter_estimator::*;
+
+/// Alias for maximum likelihood estimator.
+pub type MLE = MaximumLikelihoodEstimator;
+
 mod variable_elimination;
 pub use variable_elimination::*;

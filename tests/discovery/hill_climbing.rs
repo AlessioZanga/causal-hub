@@ -7,16 +7,18 @@ mod discrete {
     fn call() {
         // Set true graph.
         let true_g = DiGraph::new(
-            ["A", "B", "D", "E", "L", "S", "T", "X"],
             [
-                ("B", "D"),
-                ("E", "D"),
-                ("E", "L"),
-                ("E", "T"),
-                ("E", "X"),
-                ("L", "S"),
-                ("L", "T"),
-                ("S", "B"),
+                "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
+            ],
+            [
+                ("bronc", "dysp"),
+                ("either", "dysp"),
+                ("either", "lung"),
+                ("either", "tub"),
+                ("either", "xray"),
+                ("lung", "smoke"),
+                ("lung", "tub"),
+                ("smoke", "bronc"),
             ],
         );
 
@@ -45,16 +47,18 @@ mod discrete {
     fn parallel_call() {
         // Set true graph.
         let true_g = DiGraph::new(
-            ["A", "B", "D", "E", "L", "S", "T", "X"],
             [
-                ("B", "D"),
-                ("E", "D"),
-                ("E", "L"),
-                ("E", "T"),
-                ("E", "X"),
-                ("L", "S"),
-                ("L", "T"),
-                ("S", "B"),
+                "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
+            ],
+            [
+                ("bronc", "dysp"),
+                ("either", "dysp"),
+                ("either", "lung"),
+                ("either", "tub"),
+                ("either", "xray"),
+                ("lung", "smoke"),
+                ("lung", "tub"),
+                ("smoke", "bronc"),
             ],
         );
 
@@ -83,17 +87,19 @@ mod discrete {
     fn with_shuffle() {
         // Set true graph.
         let true_g = DiGraph::new(
-            ["A", "B", "D", "E", "L", "S", "T", "X"],
             [
-                ("B", "S"),
-                ("D", "B"),
-                ("E", "B"),
-                ("E", "D"),
-                ("E", "L"),
-                ("E", "T"),
-                ("L", "S"),
-                ("T", "L"),
-                ("X", "E"),
+                "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
+            ],
+            [
+                ("bronc", "smoke"),
+                ("dysp", "bronc"),
+                ("either", "bronc"),
+                ("either", "dysp"),
+                ("either", "lung"),
+                ("either", "tub"),
+                ("lung", "smoke"),
+                ("tub", "lung"),
+                ("xray", "either"),
             ],
         );
 

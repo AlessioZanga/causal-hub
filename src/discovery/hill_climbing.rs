@@ -1,30 +1,28 @@
-use std::{hash::BuildHasherDefault, marker::PhantomData};
+use std::marker::PhantomData;
 
-use indexmap::IndexSet;
 use itertools::{iproduct, Itertools};
 use log::{debug, trace};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
-use rustc_hash::{FxHashMap, FxHasher};
 
 use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
 use crate::{
     data::DataSet,
     graphs::PathGraph,
-    prelude::{directions, BaseGraph, DirectedGraph, BFS},
+    prelude::{directions, BaseGraph, DirectedGraph, FxIndexMap, FxIndexSet, BFS},
     Ch, Pa, E, L, V,
 };
 
 /// Local cache type.
-type C<K> = FxHashMap<K, f64>;
+type C<K> = FxIndexMap<K, f64>;
 /// Local cache update type.
 type CU<K> = Vec<(K, f64)>;
 /// Local edge key cache type.
 type KE = (usize, Vec<usize>);
 
 /// Local edge space type
-type E = IndexSet<(usize, usize), BuildHasherDefault<FxHasher>>;
+type E = FxIndexSet<(usize, usize)>;
 /// Local operations edge space type.
 type ES = (
     E, // To-be-added space,
@@ -235,7 +233,7 @@ where
         // Get number of variables.
         let n = L!(d).len();
         // Get columns index.
-        let mut n: Vec<_> = (0..n).collect();
+        let mut n = (0..n).collect_vec();
         // Check if random number generator has been set.
         if let Some(seed) = self.seed {
             // Initialize random number generator.
@@ -340,7 +338,7 @@ where
     #[inline]
     fn eval<const OP: usize>(&self, c: &C<KE>, d: &D, g: &G, x: usize, y: usize) -> (f64, CU<KE>) {
         // Get current Y score.
-        let mut pa_y: Vec<_> = Pa!(g, y).collect();
+        let mut pa_y = Pa!(g, y).collect_vec();
         let (s_y, mut c_y) = self.cache(c, d, y, &pa_y);
         // Compute delta score depending on operation.
         let (delta_star, c_star) = match OP {
@@ -368,7 +366,7 @@ where
             }
             Op::REV => {
                 // Get current X score.
-                let mut pa_x: Vec<_> = Pa!(g, x).collect();
+                let mut pa_x = Pa!(g, x).collect_vec();
                 let (s_x, c_x) = self.cache(c, d, x, &pa_x);
                 // Merge cache updates.
                 c_y.extend(c_x.into_iter());
@@ -470,7 +468,7 @@ where
             // For each vertex.
             .map(|x| {
                 // Get vertex parents.
-                let z: Vec<_> = Pa!(g, x).collect();
+                let z = Pa!(g, x).collect_vec();
                 // Compute vertex score.
                 let s = self.s.call(d, x, &z);
                 // Insert into the cache.
