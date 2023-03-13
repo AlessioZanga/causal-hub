@@ -87,3 +87,109 @@ mod maximum_likelihood_estimator {
         }
     }
 }
+
+#[cfg(test)]
+mod bayesian_estimator {
+    use approx::*;
+    use causal_hub::prelude::*;
+    use ndarray::prelude::*;
+    use polars::prelude::*;
+
+    #[test]
+    fn call() {
+        // Test cases.
+        let data = [
+            (
+                "asia",
+                array![0.9914034386245502, 0.00859656137544982].into_dyn(),
+            ),
+            (
+                "bronc",
+                array![
+                    [0.7004422999597909, 0.2824791418355185],
+                    [0.2995577000402091, 0.7175208581644815]
+                ]
+                .into_dyn(),
+            ),
+            (
+                "dysp",
+                array![
+                    [
+                        [0.8998272884283247, 0.21397756686798963],
+                        [0.1001727115716753, 0.7860224331320104]
+                    ],
+                    [
+                        [0.2805755395683453, 0.14893617021276595],
+                        [0.7194244604316546, 0.851063829787234]
+                    ]
+                ]
+                .into_dyn(),
+            ),
+            (
+                "either",
+                array![
+                    [
+                        [0.9997841105354058, 0.003048780487804878],
+                        [0.023809523809523808, 0.16666666666666666]
+                    ],
+                    [
+                        [0.0002158894645941278, 0.9969512195121951],
+                        [0.9761904761904762, 0.8333333333333334]
+                    ]
+                ]
+                .into_dyn(),
+            ),
+            (
+                "lung",
+                array![
+                    [0.9859268194611982, 0.8820023837902264],
+                    [0.01407318053880177, 0.11799761620977355]
+                ]
+                .into_dyn(),
+            ),
+            (
+                "smoke",
+                array![0.49700119952019195, 0.502998800479808].into_dyn(),
+            ),
+            (
+                "tub",
+                array![
+                    [0.9913306451612903, 0.008669354838709677],
+                    [0.9318181818181818, 0.06818181818181818]
+                ]
+                .into_dyn(),
+            ),
+            (
+                "xray",
+                array![
+                    [0.9563903281519862, 0.043609671848013815],
+                    [0.008064516129032258, 0.9919354838709677]
+                ]
+                .into_dyn(),
+            ),
+        ];
+
+        // Read data.
+        let d: DiscreteDataMatrix = CsvReader::from_path("tests/assets/asia.csv")
+            .unwrap()
+            .finish()
+            .unwrap()
+            .into();
+        // Read Bayesian network.
+        let b: DiscreteBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
+
+        // Fit Bayesian network given data and true graph.
+        let c: DiscreteBayesianNetwork = BE::call(&d, &b.graph());
+
+        // Check reference and fitted BN have the same underlying graph.
+        assert_eq!(b.graph(), c.graph());
+
+        // Check fitted BN is fitted correctly.
+        for ((x, phi), (y, psi)) in data.into_iter().zip(c.parameters().into_iter()) {
+            // Assert same target variable.
+            assert_eq!(x, y);
+            // Assert same underlying values.
+            assert_relative_eq!(phi, psi.values());
+        }
+    }
+}
