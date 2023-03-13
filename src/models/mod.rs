@@ -28,5 +28,8 @@ pub type MLE = MaximumLikelihoodEstimation;
 /// Alias for bayesian estimation.
 pub type BE = BayesianEstimation;
 
+mod query_estimation;
+pub use query_estimation::*;
+
 mod variable_elimination;
 pub use variable_elimination::*;

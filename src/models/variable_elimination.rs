@@ -3,6 +3,7 @@ use std::{collections::BTreeSet, ops::Mul};
 use itertools::Itertools;
 use split_iter::Splittable;
 
+use super::{DiscreteBN, DiscreteCPD, DiscreteFactor, QueryEstimation};
 use crate::{
     graphs::BaseGraph,
     models::{BayesianNetwork, Factor},
@@ -105,12 +106,35 @@ where
 
         order
     }
+}
 
-    /// Execute the query for $\phi(\mathbf{X})$.
-    pub fn query<'b, X, Y>(&self, x: X) -> Y
+impl<'a> QueryEstimation for VariableElimination<'a, DiscreteBN> {
+    type Marginal = DiscreteFactor; // FIXME: Implement DiscreteMPD.
+
+    type Joint = DiscreteFactor; // FIXME: Implement DiscreteJPD.
+
+    type Conditional = DiscreteCPD;
+
+    fn marginal(&self, x: &str) -> Self::Marginal {
+        // Get the variables that needs to be eliminated.
+        let z = L!(self.model.graph()).filter(|&z| z != x);
+        // Compute the elimination order.
+        let z = self.elimination_order(z);
+        // Get the parameters.
+        let phi = self
+            .model
+            .parameters()
+            .values()
+            .cloned()
+            .map(|phi| phi.into())
+            .collect_vec();
+        // Execute variable elimination.
+        Self::sum_product(phi, z)
+    }
+
+    fn joint<'b, X>(&self, x: X) -> Self::Joint
     where
         X: IntoIterator<Item = &'b str>,
-        Y: Factor + From<M::Parameter>,
     {
         // Sort and deduplicate query variables.
         let x: BTreeSet<_> = x.into_iter().collect();
@@ -130,5 +154,12 @@ where
             .collect_vec();
         // Execute variable elimination.
         Self::sum_product(phi, z)
+    }
+
+    fn conditional<'b, Z>(&self, _x: &'b str, _z: Z) -> Self::Conditional
+    where
+        Z: IntoIterator<Item = &'b str>,
+    {
+        todo!() // FIXME:
     }
 }
