@@ -25,5 +25,8 @@ pub use parameter_estimator::*;
 /// Alias for maximum likelihood estimator.
 pub type MLE = MaximumLikelihoodEstimator;
 
+/// Alias for bayesian estimator.
+pub type BE = BayesianEstimator;
+
 mod variable_elimination;
 pub use variable_elimination::*;
