@@ -1,4 +1,4 @@
 mod factor;
 mod graphical_separation;
-mod parameter_estimator;
+mod parameter_estimation;
 mod variable_elimination;

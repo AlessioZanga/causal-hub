@@ -19,14 +19,14 @@ pub use independence::*;
 mod moral;
 pub use moral::*;
 
-mod parameter_estimator;
-pub use parameter_estimator::*;
+mod parameter_estimation;
+pub use parameter_estimation::*;
 
-/// Alias for maximum likelihood estimator.
-pub type MLE = MaximumLikelihoodEstimator;
+/// Alias for maximum likelihood estimation.
+pub type MLE = MaximumLikelihoodEstimation;
 
-/// Alias for bayesian estimator.
-pub type BE = BayesianEstimator;
+/// Alias for bayesian estimation.
+pub type BE = BayesianEstimation;
 
 mod variable_elimination;
 pub use variable_elimination::*;
