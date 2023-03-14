@@ -46,18 +46,18 @@ mod variable_elimination {
             ],
         );
 
-        // Construct query functor.
-        let query = VariableElimination::new(&bn);
+        // Construct distribution functor.
+        let distribution = VariableElimination::new(&bn);
 
-        // Perform query.
-        let true_query = DiscreteFactor::new(
+        // Perform distribution.
+        let true_distribution = DiscreteFactor::new(
             [("Difficulty", vec!["d0", "d1"])],
             array![0.6, 0.4].into_dyn(),
         );
-        let pred_query = query.marginal("Difficulty");
+        let pred_distribution = distribution.marginal("Difficulty");
 
-        assert!(pred_query.scope().eq(true_query.scope()));
-        assert_relative_eq!(pred_query.values(), true_query.values());
+        assert!(pred_distribution.scope().eq(true_distribution.scope()));
+        assert_relative_eq!(pred_distribution.values(), true_distribution.values());
     }
 
     #[test]
@@ -102,17 +102,17 @@ mod variable_elimination {
             ],
         );
 
-        // Construct query functor.
-        let query = VariableElimination::new(&bn);
+        // Construct distribution functor.
+        let distribution = VariableElimination::new(&bn);
 
-        // Perform query.
-        let true_query = DiscreteFactor::new(
+        // Perform distribution.
+        let true_distribution = DiscreteFactor::new(
             [("Difficulty", vec!["d0", "d1"])],
             array![0.6, 0.4].into_dyn(),
         );
-        let pred_query = query.joint(["Difficulty"]);
+        let pred_distribution = distribution.joint(["Difficulty"]);
 
-        assert!(pred_query.scope().eq(true_query.scope()));
-        assert_relative_eq!(pred_query.values(), true_query.values());
+        assert!(pred_distribution.scope().eq(true_distribution.scope()));
+        assert_relative_eq!(pred_distribution.values(), true_distribution.values());
     }
 }
