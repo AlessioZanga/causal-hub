@@ -28,7 +28,11 @@ pub trait Factor:
     + Div<Output = Self>
     + Serialize
     + for<'a> Deserialize<'a>
+    + Into<Self::Phi>
 {
+    /// Underlying factor type.
+    type Phi: Factor;
+
     /// Labels iterator associated type.
     type ScopeIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
     where
@@ -50,17 +54,32 @@ pub trait Factor:
     fn normalize(self) -> Self;
 
     /// Compute the factor marginalization.
-    fn marginalize<'a, I>(self, z: I) -> Self
+    fn marginalize<'a, Z>(self, z: Z) -> Self
     where
-        I: IntoIterator<Item = &'a str>;
+        Z: IntoIterator<Item = &'a str>;
 
     /// Compute the factor reduction.
-    fn reduce<'a, I>(self, z: I) -> Self
+    fn reduce<'a, Z>(self, z: Z) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
+        Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
 }
 
-/// Discrete factor.
+pub trait MarginalProbabilityDistribution: Factor {
+    /// Construct marginal distribution from associated factor.
+    fn from_factor(phi: Self::Phi) -> Self;
+}
+
+pub trait JointProbabilityDistribution: Factor {
+    /// Construct joint distribution from associated factor.
+    fn from_factor(phi: Self::Phi) -> Self;
+}
+
+pub trait ConditionalProbabilityDistribution: Factor {
+    /// Construct conditional distribution from associated factor.
+    fn from_factor(x: &str, phi: Self::Phi) -> Self;
+}
+
+/// Discrete Factor $\phi(\mathbf{X})$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteFactor {
     states: FxIndexMap<String, FxIndexSet<String>>,
@@ -246,6 +265,8 @@ impl Div for DiscreteFactor {
 }
 
 impl Factor for DiscreteFactor {
+    type Phi = Self;
+
     type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     type Value<'a> = &'a str;
@@ -273,9 +294,9 @@ impl Factor for DiscreteFactor {
         self
     }
 
-    fn marginalize<'a, I>(mut self, z: I) -> Self
+    fn marginalize<'a, Z>(mut self, z: Z) -> Self
     where
-        I: IntoIterator<Item = &'a str>,
+        Z: IntoIterator<Item = &'a str>,
     {
         // For each variable.
         let z: BTreeSet<_> = z
@@ -303,9 +324,9 @@ impl Factor for DiscreteFactor {
         self
     }
 
-    fn reduce<'a, I>(mut self, z: I) -> Self
+    fn reduce<'a, Z>(mut self, z: Z) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
+        Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
         // For each variable.
         let z: BTreeMap<_, _> = z
@@ -342,7 +363,197 @@ impl Factor for DiscreteFactor {
     }
 }
 
-/// Discrete Conditional Probability Distribution (Discrete CPD).
+/// Discrete Marginal Probability Distribution $\mathcal{P}(X)$ .
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DiscreteMPD {}
+
+impl Display for DiscreteMPD {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!() // FIXME:
+    }
+}
+
+impl Add for DiscreteMPD {
+    type Output = Self;
+
+    #[inline]
+    fn add(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Mul for DiscreteMPD {
+    type Output = Self;
+
+    #[inline]
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Div for DiscreteMPD {
+    type Output = Self;
+
+    #[inline]
+    fn div(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl From<DiscreteMPD> for DiscreteFactor {
+    #[inline]
+    fn from(other: DiscreteMPD) -> Self {
+        todo!() // FIXME:
+    }
+}
+
+impl Factor for DiscreteMPD {
+    type Phi = DiscreteFactor;
+
+    type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+
+    type Value<'a> = &'a str;
+
+    #[inline]
+    fn scope(&self) -> Self::ScopeIter<'_> {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn in_scope(&self, x: &str) -> bool {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn values(&self) -> &ArrayD<f64> {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn normalize(self) -> Self {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn marginalize<'a, Z>(self, z: Z) -> Self
+    where
+        Z: IntoIterator<Item = &'a str>,
+    {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn reduce<'a, Z>(self, z: Z) -> Self
+    where
+        Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
+    {
+        todo!() // FIXME:
+    }
+}
+
+impl MarginalProbabilityDistribution for DiscreteMPD {
+    #[inline]
+    fn from_factor(phi: Self::Phi) -> Self {
+        todo!() // FIXME:
+    }
+}
+
+/// Discrete Joint Probability Distribution $\mathcal{P}(\mathbf{X})$ .
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DiscreteJPD {}
+
+impl Display for DiscreteJPD {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!() // FIXME:
+    }
+}
+
+impl Add for DiscreteJPD {
+    type Output = Self;
+
+    #[inline]
+    fn add(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Mul for DiscreteJPD {
+    type Output = Self;
+
+    #[inline]
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl Div for DiscreteJPD {
+    type Output = Self;
+
+    #[inline]
+    fn div(mut self, rhs: Self) -> Self::Output {
+        todo!() // FIXME:
+    }
+}
+
+impl From<DiscreteJPD> for DiscreteFactor {
+    #[inline]
+    fn from(other: DiscreteJPD) -> Self {
+        todo!() // FIXME:
+    }
+}
+
+impl Factor for DiscreteJPD {
+    type Phi = DiscreteFactor;
+
+    type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+
+    type Value<'a> = &'a str;
+
+    #[inline]
+    fn scope(&self) -> Self::ScopeIter<'_> {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn in_scope(&self, x: &str) -> bool {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn values(&self) -> &ArrayD<f64> {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn normalize(self) -> Self {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn marginalize<'a, Z>(self, z: Z) -> Self
+    where
+        Z: IntoIterator<Item = &'a str>,
+    {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn reduce<'a, Z>(self, z: Z) -> Self
+    where
+        Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
+    {
+        todo!() // FIXME:
+    }
+}
+
+impl JointProbabilityDistribution for DiscreteJPD {
+    #[inline]
+    fn from_factor(phi: Self::Phi) -> Self {
+        todo!() // FIXME:
+    }
+}
+
+/// Discrete Conditional Probability Distribution $\mathcal{P}(X \mid \mathbf{Z})$ .
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteCPD {
     /// Target variable,
@@ -485,7 +696,16 @@ impl Div for DiscreteCPD {
     }
 }
 
+impl From<DiscreteCPD> for DiscreteFactor {
+    #[inline]
+    fn from(other: DiscreteCPD) -> Self {
+        other.phi
+    }
+}
+
 impl Factor for DiscreteCPD {
+    type Phi = DiscreteFactor;
+
     type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     type Value<'a> = &'a str;
@@ -521,9 +741,9 @@ impl Factor for DiscreteCPD {
     }
 
     #[inline]
-    fn marginalize<'a, I>(mut self, z: I) -> Self
+    fn marginalize<'a, Z>(mut self, z: Z) -> Self
     where
-        I: IntoIterator<Item = &'a str>,
+        Z: IntoIterator<Item = &'a str>,
     {
         // Assert variables do not include target.
         let z = z.into_iter().inspect(|&z| assert_ne!(z, self.x));
@@ -534,9 +754,9 @@ impl Factor for DiscreteCPD {
     }
 
     #[inline]
-    fn reduce<'a, I>(mut self, z: I) -> Self
+    fn reduce<'a, Z>(mut self, z: Z) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
+        Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>,
     {
         // Assert variables do not include target.
         let z = z.into_iter().inspect(|&(z, _)| assert_ne!(z, self.x));
@@ -547,10 +767,9 @@ impl Factor for DiscreteCPD {
     }
 }
 
-impl From<DiscreteCPD> for DiscreteFactor {
+impl ConditionalProbabilityDistribution for DiscreteCPD {
     #[inline]
-    fn from(other: DiscreteCPD) -> Self {
-        // Return underlying factor.
-        other.phi
+    fn from_factor(x: &str, phi: Self::Phi) -> Self {
+        todo!() // FIXME:
     }
 }

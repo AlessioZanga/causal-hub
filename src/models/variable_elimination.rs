@@ -3,16 +3,19 @@ use std::{collections::BTreeSet, ops::Mul};
 use itertools::Itertools;
 use split_iter::Splittable;
 
-use super::{DiscreteBayesianNetwork, DiscreteCPD, DiscreteFactor, DistributionEstimation};
+use super::{DistributionEstimation, ProbabilisticGraphicalModel};
 use crate::{
     graphs::BaseGraph,
-    models::{BayesianNetwork, Factor},
+    models::{
+        ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution,
+        MarginalProbabilityDistribution,
+    },
     prelude::FxIndexMap,
     types::FxIndexSet,
     Adj, L, V,
 };
 
-/// Variable Elimination functor.
+/// Variable Elimination (VE) functor.
 #[derive(Clone, Debug)]
 pub struct VariableElimination<'a, M> {
     model: &'a M,
@@ -30,7 +33,7 @@ impl<'a, M> VariableElimination<'a, M> {
     ///
     /// Panics if $\pmb{\Phi}$ is empty, or when $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
     ///
-    pub fn sum_product<'b, P, Z>(phi: P, z: Z) -> P::Item
+    fn sum_product<'b, P, Z>(phi: P, z: Z) -> P::Item
     where
         P: IntoIterator + FromIterator<P::Item>,
         P::Item: Factor,
@@ -39,7 +42,7 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Apply variable elimination to the given variables.
         let phi = z.into_iter().fold(phi, Self::variable_elimination);
-        // Compute the factor product.
+        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
         phi.into_iter().reduce(Mul::mul).unwrap()
     }
 
@@ -49,14 +52,14 @@ impl<'a, M> VariableElimination<'a, M> {
     ///
     /// Panics if $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
     ///
-    pub fn variable_elimination<P>(phi: P, z: &str) -> P
+    fn variable_elimination<P>(phi: P, z: &str) -> P
     where
         P: IntoIterator + FromIterator<P::Item>,
         P::Item: Factor,
     {
         // Split factors when the given variable is in their scope.
         let (phi_prime, phi_dprime) = phi.into_iter().split(|phi| !phi.in_scope(z));
-        // Compute the factor product.
+        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
         let psi = phi_prime.reduce(Mul::mul).unwrap();
         // Eliminate variable by marginalization.
         let tau = psi.marginalize([z]);
@@ -67,10 +70,10 @@ impl<'a, M> VariableElimination<'a, M> {
 
 impl<'a, M> VariableElimination<'a, M>
 where
-    M: BayesianNetwork,
+    M: ProbabilisticGraphicalModel,
 {
     /// Compute the elimination order w.r.t. the given variables $\mathbf{Z}$.
-    pub fn elimination_order<'b, Z>(&self, z: Z) -> Vec<&'b str>
+    fn elimination_order<'b, Z>(&self, z: Z) -> Vec<&'b str>
     where
         Z: IntoIterator<Item = &'b str>,
     {
@@ -106,33 +109,14 @@ where
 
         order
     }
-}
 
-impl<'a> DistributionEstimation for VariableElimination<'a, DiscreteBayesianNetwork> {
-    type Marginal = DiscreteFactor; // FIXME: Implement DiscreteMPD.
-
-    type Joint = DiscreteFactor; // FIXME: Implement DiscreteJPD.
-
-    type Conditional = DiscreteCPD;
-
-    fn marginal(&self, x: &str) -> Self::Marginal {
-        // Get the variables that needs to be eliminated.
-        let z = L!(self.model.graph()).filter(|&z| z != x);
-        // Compute the elimination order.
-        let z = self.elimination_order(z);
-        // Get the parameters.
-        let phi = self
-            .model
-            .parameters()
-            .values()
-            .cloned()
-            .map(|phi| phi.into())
-            .collect_vec();
-        // Execute variable elimination.
-        Self::sum_product(phi, z)
-    }
-
-    fn joint<'b, X>(&self, x: X) -> Self::Joint
+    /// Perform variable elimination w.r.t. the given variables $X$.
+    ///
+    /// # Panics
+    ///
+    /// Panics if $\mathbf{X}$ is not a subset of the scope of $\pmb{\Phi}$.
+    ///
+    pub fn call<'b, X>(&self, x: X) -> <M::Parameter as Factor>::Phi
     where
         X: IntoIterator<Item = &'b str>,
     {
@@ -155,11 +139,33 @@ impl<'a> DistributionEstimation for VariableElimination<'a, DiscreteBayesianNetw
         // Execute variable elimination.
         Self::sum_product(phi, z)
     }
+}
 
-    fn conditional<'b, Z>(&self, _x: &'b str, _z: Z) -> Self::Conditional
+impl<'a, M> DistributionEstimation for VariableElimination<'a, M>
+where
+    M: ProbabilisticGraphicalModel,
+{
+    type MPD = M::MPD;
+
+    type JPD = M::JPD;
+
+    type CPD = M::CPD;
+
+    fn marginal(&self, x: &str) -> Self::MPD {
+        Self::MPD::from_factor(self.call([x]))
+    }
+
+    fn joint<'b, X>(&self, x: X) -> Self::JPD
+    where
+        X: IntoIterator<Item = &'b str>,
+    {
+        Self::JPD::from_factor(self.call(x))
+    }
+
+    fn conditional<'b, Z>(&self, x: &'b str, z: Z) -> Self::CPD
     where
         Z: IntoIterator<Item = &'b str>,
     {
-        todo!() // FIXME:
+        Self::CPD::from_factor(x, self.call([x].into_iter().chain(z)))
     }
 }

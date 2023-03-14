@@ -19,7 +19,7 @@ where
     fn call(d: &D, g: &G) -> M;
 }
 
-/// Maximum Likelihood Estimation (MLE).
+/// Maximum Likelihood Estimation (MLE) functor.
 pub struct MaximumLikelihoodEstimation {}
 
 impl
@@ -77,7 +77,7 @@ impl
     }
 }
 
-/// Bayesian Estimation (BE) with given Prior Distribution.
+/// Bayesian Estimation (BE) functor.
 pub struct BayesianEstimation {}
 
 impl
