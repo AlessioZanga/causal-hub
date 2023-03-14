@@ -7,6 +7,9 @@ pub type DiscreteBN = DiscreteBayesianNetwork;
 mod factor;
 pub use factor::*;
 
+mod distribution_estimation;
+pub use distribution_estimation::*;
+
 mod graphical_separation;
 pub use graphical_separation::*;
 
@@ -27,9 +30,6 @@ pub type MLE = MaximumLikelihoodEstimation;
 
 /// Alias for bayesian estimation.
 pub type BE = BayesianEstimation;
-
-mod query_estimation;
-pub use query_estimation::*;
 
 mod variable_elimination;
 pub use variable_elimination::*;

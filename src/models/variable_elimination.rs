@@ -3,7 +3,7 @@ use std::{collections::BTreeSet, ops::Mul};
 use itertools::Itertools;
 use split_iter::Splittable;
 
-use super::{DiscreteBN, DiscreteCPD, DiscreteFactor, QueryEstimation};
+use super::{DiscreteBayesianNetwork, DiscreteCPD, DiscreteFactor, DistributionEstimation};
 use crate::{
     graphs::BaseGraph,
     models::{BayesianNetwork, Factor},
@@ -108,7 +108,7 @@ where
     }
 }
 
-impl<'a> QueryEstimation for VariableElimination<'a, DiscreteBN> {
+impl<'a> DistributionEstimation for VariableElimination<'a, DiscreteBayesianNetwork> {
     type Marginal = DiscreteFactor; // FIXME: Implement DiscreteMPD.
 
     type Joint = DiscreteFactor; // FIXME: Implement DiscreteJPD.

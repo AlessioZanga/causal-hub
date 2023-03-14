@@ -1,5 +1,5 @@
 /// Trait for marginal $\mathcal{P}(X)$, joint $\mathcal{P}(\mathbf{X})$ and conditional $\mathcal{P}(X \mid \mathbf{Z})$ query estimation.
-pub trait QueryEstimation {
+pub trait DistributionEstimation {
     /// Marginal query associated type.
     type Marginal;
     /// Joint query associated type.

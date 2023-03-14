@@ -7,7 +7,7 @@ mod variable_elimination {
     #[test]
     fn marginal() {
         // Initialize Bayesian network.
-        let bn = DiscreteBN::new(
+        let bn = DiscreteBayesianNetwork::new(
             DiGraph::new(
                 ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
                 [
@@ -63,7 +63,7 @@ mod variable_elimination {
     #[test]
     fn joint() {
         // Initialize Bayesian network.
-        let bn = DiscreteBN::new(
+        let bn = DiscreteBayesianNetwork::new(
             DiGraph::new(
                 ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
                 [
