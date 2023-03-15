@@ -1,20 +1,15 @@
-use super::{
-    ConditionalProbabilityDistribution, JointProbabilityDistribution,
-    MarginalProbabilityDistribution,
-};
+use super::{ConditionalProbabilityDistribution, JointProbabilityDistribution};
 
 /// Marginal $\mathcal{P}(X)$, joint $\mathcal{P}(\mathbf{X})$ and
 /// conditional $\mathcal{P}(X \mid \mathbf{Z})$ distribution estimation trait.
 pub trait DistributionEstimation {
-    /// Marginal distribution associated type.
-    type MPD: MarginalProbabilityDistribution;
     /// Joint distribution associated type.
     type JPD: JointProbabilityDistribution;
     /// Conditional distribution associated type.
     type CPD: ConditionalProbabilityDistribution;
 
     /// Compute the marginal distribution $\mathcal{P}(X)$.
-    fn marginal(&self, x: &str) -> Self::MPD;
+    fn marginal(&self, x: &str) -> Self::JPD;
 
     /// Compute the joint distribution $\mathcal{P}(\mathbf{X})$.
     fn joint<'a, X>(&self, x: X) -> Self::JPD

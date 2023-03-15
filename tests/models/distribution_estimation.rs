@@ -7,7 +7,7 @@ mod variable_elimination {
     #[test]
     fn marginal() {
         // Initialize Bayesian network.
-        let bn = DiscreteBayesianNetwork::new(
+        let b = DiscreteBayesianNetwork::new(
             DiGraph::new(
                 ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
                 [
@@ -46,24 +46,25 @@ mod variable_elimination {
             ],
         );
 
-        // Construct distribution functor.
-        let distribution = VariableElimination::new(&bn);
-
-        // Perform distribution.
-        let true_distribution = DiscreteFactor::new(
+        let true_dist = DiscreteJPD::new(
             [("Difficulty", vec!["d0", "d1"])],
             array![0.6, 0.4].into_dyn(),
         );
-        let pred_distribution = distribution.marginal("Difficulty");
 
-        assert!(pred_distribution.scope().eq(true_distribution.scope()));
-        assert_relative_eq!(pred_distribution.values(), true_distribution.values());
+        // Construct estimator.
+        let estimator = VariableElimination::new(&b);
+
+        // Perform distribution estimation.
+        let pred_dist = estimator.marginal("Difficulty");
+
+        assert!(pred_dist.scope().eq(true_dist.scope()));
+        assert_relative_eq!(pred_dist.values(), true_dist.values());
     }
 
     #[test]
     fn joint() {
         // Initialize Bayesian network.
-        let bn = DiscreteBayesianNetwork::new(
+        let b = DiscreteBayesianNetwork::new(
             DiGraph::new(
                 ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
                 [
@@ -102,17 +103,17 @@ mod variable_elimination {
             ],
         );
 
-        // Construct distribution functor.
-        let distribution = VariableElimination::new(&bn);
-
-        // Perform distribution.
-        let true_distribution = DiscreteFactor::new(
+        let true_dist = DiscreteJPD::new(
             [("Difficulty", vec!["d0", "d1"])],
             array![0.6, 0.4].into_dyn(),
         );
-        let pred_distribution = distribution.joint(["Difficulty"]);
 
-        assert!(pred_distribution.scope().eq(true_distribution.scope()));
-        assert_relative_eq!(pred_distribution.values(), true_distribution.values());
+        // Construct estimator.
+        let estimator = VariableElimination::new(&b);
+
+        // Perform distribution estimation.
+        let pred_dist = estimator.joint(["Difficulty"]);
+
+        assert_eq!(pred_dist, true_dist);
     }
 }

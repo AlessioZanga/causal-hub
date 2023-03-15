@@ -4,8 +4,8 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    ConditionalProbabilityDistribution, DiscreteCPD, DiscreteJPD, DiscreteMPD, Factor,
-    JointProbabilityDistribution, MarginalProbabilityDistribution,
+    ConditionalProbabilityDistribution, DiscreteCPD, DiscreteJPD, Factor,
+    JointProbabilityDistribution,
 };
 use crate::{
     graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
@@ -29,8 +29,6 @@ pub trait ProbabilisticGraphicalModel:
     /// Parameter associated type.
     type Parameter: Factor;
 
-    /// Marginal distribution associated type.
-    type MPD: MarginalProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
     /// Joint distribution associated type.
     type JPD: JointProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
     /// Conditional distribution associated type.
@@ -90,8 +88,6 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 
     type Parameter = DiscreteCPD;
-
-    type MPD = DiscreteMPD;
 
     type JPD = DiscreteJPD;
 

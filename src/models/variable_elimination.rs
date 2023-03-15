@@ -6,10 +6,7 @@ use split_iter::Splittable;
 use super::{DistributionEstimation, ProbabilisticGraphicalModel};
 use crate::{
     graphs::BaseGraph,
-    models::{
-        ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution,
-        MarginalProbabilityDistribution,
-    },
+    models::{ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution},
     prelude::FxIndexMap,
     types::FxIndexSet,
     Adj, L, V,
@@ -145,14 +142,12 @@ impl<'a, M> DistributionEstimation for VariableElimination<'a, M>
 where
     M: ProbabilisticGraphicalModel,
 {
-    type MPD = M::MPD;
-
     type JPD = M::JPD;
 
     type CPD = M::CPD;
 
-    fn marginal(&self, x: &str) -> Self::MPD {
-        Self::MPD::from_factor(self.call([x]))
+    fn marginal(&self, x: &str) -> Self::JPD {
+        Self::JPD::from_factor(self.call([x]))
     }
 
     fn joint<'b, X>(&self, x: X) -> Self::JPD
