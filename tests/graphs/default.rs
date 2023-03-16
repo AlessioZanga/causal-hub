@@ -106,7 +106,7 @@ mod undirected {
                     let g = $G::complete(i);
 
                     assert_eq!(g.order(), o);
-                    assert_eq!(g.size(), (o * (o + 1)) / 2);
+                    assert_eq!(g.size(), (o * (o + 1)) / 2 - o);
                     assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
                     assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                 }
