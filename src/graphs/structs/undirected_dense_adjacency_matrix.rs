@@ -628,7 +628,7 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
 
         // Compute size.
-        let size = (order * (order + 1)) / 2;
+        let size = (order * (order.saturating_sub(1))) / 2;
 
         Self {
             labels,
