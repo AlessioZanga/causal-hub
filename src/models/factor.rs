@@ -96,14 +96,15 @@ impl DiscreteFactor {
         V: Into<String>,
     {
         // Collect states.
-        let states: FxIndexMap<String, FxIndexSet<String>> = states
+        let mut states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
             .collect();
         // Compute factor values shape as given in input.
-        let shape: Vec<usize> = states.values().map(|x| x.len()).collect();
+        let shape = states.values().map(|x| x.len()).collect_vec();
+
         // Sort axes according to sorted variables scope.
-        let mut axes: Vec<usize> = (0..states.len()).collect();
+        let mut axes = (0..states.len()).collect_vec();
         axes.sort_by_key(|&i| {
             states
                 .get_index(i)
@@ -111,22 +112,40 @@ impl DiscreteFactor {
                 .0
         });
         // Sort variables scope.
-        let states: FxIndexMap<_, _> = states
-            .into_iter()
-            .sorted_by(|(x, _), (y, _)| x.cmp(y))
-            .collect();
+        states.sort_keys();
         // Cast to n-dimensional array.
         let values = values
             // Reshape values to [X_0, X_1, ..., X_(n-1)].
             .into_shape(shape)
             .expect("Failed to reshape values")
-            // Permute axes to align X axis w.r.t. sorted variables scope.
+            // Permute axes to align X axis w.r.t. sorted variables labels.
             .permuted_axes(axes)
-            // Make into standard memory layout.
-            .as_standard_layout()
-            .to_owned()
-            // Cast to dynamic shape.
             .into_dyn();
+
+        // Align axes values w.r.t. sorted variables states.
+        let mut axes = states
+            .values()
+            .map(|x| (0..x.len()).collect_vec())
+            .collect_vec();
+        axes.iter_mut()
+            .zip(states.values())
+            .for_each(|(axis, state)| axis.sort_by_key(|&i| &state[i]));
+        // Sort variables states.
+        states.values_mut().for_each(|x| x.sort());
+        // Allocate new array for aligned values.
+        let mut aligned_values = ArrayD::<f64>::zeros(values.shape());
+        // Compute `from` and `to` indices.
+        let axes = axes.into_iter().multi_cartesian_product().zip(
+            states
+                .values()
+                .map(|x| 0..x.len())
+                .multi_cartesian_product(),
+        );
+        // Permute values positions w.r.t. sorted variables states.
+        axes.for_each(|(from, to)| aligned_values[to.as_slice()] = values[from.as_slice()]);
+
+        // Cast to standard memory layout.
+        let values = aligned_values.as_standard_layout().to_owned();
 
         Self { states, values }
     }
@@ -736,7 +755,20 @@ impl Factor for DiscreteCPD {
 
 impl ConditionalProbabilityDistribution for DiscreteCPD {
     #[inline]
-    fn from_factor(_x: &str, _phi: Self::Phi) -> Self {
-        todo!() // FIXME:
+    fn from_factor(x: &str, phi: Self::Phi) -> Self {
+        // Compute P(X | Z) as  P(X U Z) / P(Z).
+        let mut phi = phi.clone() / phi.marginalize([x]);
+
+        // Clone label.
+        let x = x.to_owned();
+        // Get normalization axis.
+        let i = phi
+            .states()
+            .get_index_of(&x)
+            .expect("Failed to get target index");
+        // Normalize over target axis.
+        phi.values /= &phi.values.sum_axis(Axis(i)).insert_axis(Axis(i));
+
+        Self { x, phi }
     }
 }
