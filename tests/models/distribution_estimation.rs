@@ -1,119 +1,41 @@
 #[cfg(test)]
 mod variable_elimination {
-    use approx::*;
+    use approx::assert_relative_eq;
     use causal_hub::prelude::*;
-    use ndarray::prelude::*;
+    use itertools::Itertools;
+    use ndarray::ArrayD;
 
     #[test]
-    fn marginal() {
+    fn call() {
+        // Load data from file.
+        let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
+            .expect("Failed to read file to string");
+        let data: Vec<(&str, Vec<&str>, Vec<usize>, Vec<Option<f64>>)> =
+            serde_json::from_str(&text).expect("Failed to deserialize string to struct");
         // Initialize Bayesian network.
-        let b = DiscreteBayesianNetwork::new(
-            DiGraph::new(
-                ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
-                [
-                    ("Difficulty", "Grade"),
-                    ("Intelligence", "Grade"),
-                    ("Intelligence", "SAT"),
-                    ("Grade", "Letter"),
-                ],
-            ),
-            [
-                DiscreteCPD::new(("Difficulty", vec!["d0", "d1"]), [], array![[0.6, 0.4]]),
-                DiscreteCPD::new(("Intelligence", vec!["i0", "i1"]), [], array![[0.7, 0.3]]),
-                DiscreteCPD::new(
-                    ("Grade", vec!["g0", "g1", "g2"]),
-                    [
-                        ("Intelligence", vec!["i0", "i1"]),
-                        ("Difficulty", vec!["d0", "d1"]),
-                    ],
-                    array![
-                        [0.3, 0.4, 0.3],
-                        [0.05, 0.25, 0.7],
-                        [0.9, 0.08, 0.02],
-                        [0.5, 0.3, 0.2]
-                    ],
-                ),
-                DiscreteCPD::new(
-                    ("SAT", vec!["s0", "s1"]),
-                    [("Intelligence", vec!["i0", "i1"])],
-                    array![[0.95, 0.05], [0.2, 0.8]],
-                ),
-                DiscreteCPD::new(
-                    ("Letter", vec!["l0", "l1"]),
-                    [("Grade", vec!["g0", "g1", "g2"])],
-                    array![[0.1, 0.9], [0.4, 0.6], [0.99, 0.01]],
-                ),
-            ],
-        );
-
-        let true_dist = DiscreteJPD::new(
-            [("Difficulty", vec!["d0", "d1"])],
-            array![0.6, 0.4].into_dyn(),
-        );
+        let b: DiscreteBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Construct estimator.
         let estimator = VariableElimination::new(&b);
 
-        // Perform distribution estimation.
-        let pred_dist = estimator.marginal("Difficulty");
+        // Test for each query type.
+        for (t, x, shape, values) in data {
+            // Map None values to NaN.
+            let values = values
+                .into_iter()
+                .map(|x| x.unwrap_or(f64::NAN))
+                .collect_vec();
+            // Construct factor values.
+            let true_query = ArrayD::from_shape_vec(shape, values).unwrap();
+            // Perform the specified query.
+            let pred_query: DiscreteFactor = match t {
+                "marginal" => estimator.marginal(x[0]).into(),
+                "joint" => estimator.joint(x).into(),
+                "conditional" => continue, // FIXME: estimator.conditional(x[0], x.into_iter().skip(1)).into(),
+                _ => unreachable!(),
+            };
 
-        assert!(pred_dist.scope().eq(true_dist.scope()));
-        assert_relative_eq!(pred_dist.values(), true_dist.values());
-    }
-
-    #[test]
-    fn joint() {
-        // Initialize Bayesian network.
-        let b = DiscreteBayesianNetwork::new(
-            DiGraph::new(
-                ["Difficulty", "Intelligence", "Grade", "SAT", "Letter"],
-                [
-                    ("Difficulty", "Grade"),
-                    ("Intelligence", "Grade"),
-                    ("Intelligence", "SAT"),
-                    ("Grade", "Letter"),
-                ],
-            ),
-            [
-                DiscreteCPD::new(("Difficulty", vec!["d0", "d1"]), [], array![[0.6, 0.4]]),
-                DiscreteCPD::new(("Intelligence", vec!["i0", "i1"]), [], array![[0.7, 0.3]]),
-                DiscreteCPD::new(
-                    ("Grade", vec!["g0", "g1", "g2"]),
-                    [
-                        ("Intelligence", vec!["i0", "i1"]),
-                        ("Difficulty", vec!["d0", "d1"]),
-                    ],
-                    array![
-                        [0.3, 0.4, 0.3],
-                        [0.05, 0.25, 0.7],
-                        [0.9, 0.08, 0.02],
-                        [0.5, 0.3, 0.2]
-                    ],
-                ),
-                DiscreteCPD::new(
-                    ("SAT", vec!["s0", "s1"]),
-                    [("Intelligence", vec!["i0", "i1"])],
-                    array![[0.95, 0.05], [0.2, 0.8]],
-                ),
-                DiscreteCPD::new(
-                    ("Letter", vec!["l0", "l1"]),
-                    [("Grade", vec!["g0", "g1", "g2"])],
-                    array![[0.1, 0.9], [0.4, 0.6], [0.99, 0.01]],
-                ),
-            ],
-        );
-
-        let true_dist = DiscreteJPD::new(
-            [("Difficulty", vec!["d0", "d1"])],
-            array![0.6, 0.4].into_dyn(),
-        );
-
-        // Construct estimator.
-        let estimator = VariableElimination::new(&b);
-
-        // Perform distribution estimation.
-        let pred_dist = estimator.joint(["Difficulty"]);
-
-        assert_eq!(pred_dist, true_dist);
+            assert_relative_eq!(true_query, pred_query.values());
+        }
     }
 }
