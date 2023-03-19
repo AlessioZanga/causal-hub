@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod variable_elimination {
-    use approx::assert_relative_eq;
+    use approx::*;
     use causal_hub::prelude::*;
     use itertools::Itertools;
     use ndarray::ArrayD;
@@ -31,11 +31,15 @@ mod variable_elimination {
             let pred_query: DiscreteFactor = match t {
                 "marginal" => estimator.marginal(x[0]).into(),
                 "joint" => estimator.joint(x).into(),
-                "conditional" => continue, // FIXME: estimator.conditional(x[0], x.into_iter().skip(1)).into(),
+                "conditional" => estimator.conditional(x[0], x.into_iter().skip(1)).into(),
                 _ => unreachable!(),
             };
 
-            assert_relative_eq!(true_query, pred_query.values());
+            // Assert relative equal by handling NaN values accordingly.
+            assert!(true_query
+                .into_iter()
+                .zip(pred_query.values().into_iter())
+                .all(|(x, y)| { x.relative_eq(y, 1e-16, 1e-15) || (x.is_nan() && y.is_nan()) }));
         }
     }
 }
