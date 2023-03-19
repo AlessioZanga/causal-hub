@@ -42,7 +42,7 @@ pub trait ProbabilisticGraphicalModel:
 }
 
 /// Bayesian Network $\mathcal{B}$ trait.
-pub trait BayesianNetwork: ProbabilisticGraphicalModel {
+pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
     /// Constructor of $\mathcal{B} = (\mathcal{G}, \Theta)$.
     fn new<I>(graph: Self::Graph, theta: I) -> Self
     where
@@ -103,6 +103,14 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
         &self.theta
     }
 }
+
+impl PartialEq for DiscreteBayesianNetwork {
+    fn eq(&self, other: &Self) -> bool {
+        self.graph == other.graph && self.theta == other.theta
+    }
+}
+
+impl Eq for DiscreteBayesianNetwork {}
 
 impl BayesianNetwork for DiscreteBayesianNetwork {
     fn new<I>(graph: Self::Graph, theta: I) -> Self

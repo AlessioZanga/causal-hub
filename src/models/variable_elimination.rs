@@ -3,13 +3,15 @@ use std::{collections::BTreeSet, ops::Mul};
 use itertools::Itertools;
 use split_iter::Splittable;
 
-use super::{DistributionEstimation, ProbabilisticGraphicalModel};
+use super::{
+    BayesianNetwork, DistributionEstimation, DistributionProjection, ProbabilisticGraphicalModel,
+};
 use crate::{
     graphs::BaseGraph,
     models::{ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution},
-    prelude::FxIndexMap,
+    prelude::{DirectedGraph, FxIndexMap},
     types::FxIndexSet,
-    Adj, L, V,
+    Adj, Pa, L, V,
 };
 
 /// Variable Elimination (VE) functor.
@@ -162,5 +164,28 @@ where
         Z: IntoIterator<Item = &'b str>,
     {
         Self::CPD::from_factor(x, self.call([x].into_iter().chain(z)))
+    }
+}
+
+impl<'a, M> DistributionProjection for VariableElimination<'a, M>
+where
+    M: BayesianNetwork<Parameter = <Self as DistributionEstimation>::CPD>,
+    M::Graph: DirectedGraph,
+{
+    type Projection = M;
+
+    fn project_onto(&self, q: &Self::Projection) -> Self::Projection {
+        // Get underlying graphs of Q.
+        let g_q = q.graph();
+        // Assert P and Q labels are the same.
+        assert!(L!(self.model.graph()).eq(L!(g_q)));
+        // Project P parameters onto Q structure.
+        let theta = V!(g_q)
+            // Get the parents of each vertex.
+            .map(|x| (x, Pa!(g_q, x).collect_vec()))
+            // Project P parameters onto Q structure.
+            .map(|(x, z)| self.conditional(g_q.label(x), z.into_iter().map(|z| g_q.label(z))));
+        // Construct projection of P given projected parameters.
+        Self::Projection::with_parameters(theta)
     }
 }
