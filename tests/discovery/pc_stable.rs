@@ -14,23 +14,15 @@ mod discrete {
             labels,
             [
                 ("bronc", "dysp"),
-                ("either", "dysp"),
-                ("either", "lung"),
-                ("either", "tub"),
-                ("either", "xray"),
+                ("bronc", "smoke"),
                 ("lung", "smoke"),
-                ("lung", "tub"),
-                ("smoke", "bronc"),
+                ("lung", "either"),
+                ("tub", "either"),
             ],
         );
 
         // Set complete graph
         let complete_graph = Graph::complete(labels);
-
-        // Plot true skeleton
-        DOT::from(true_skel.clone())
-            .plot("./tests/discovery/true_skel")
-            .unwrap();
 
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/asia.csv")
@@ -46,11 +38,6 @@ mod discrete {
         // Perform skeleton discovery
         let skel = skeleton(&test, complete_graph);
 
-        // Plot found skeleton
-        DOT::from(skel.clone())
-            .plot("./tests/discovery/skel")
-            .unwrap();
-
-        assert!(skel.is_subgraph(&true_skel));
+        assert_eq!(skel, true_skel);
     }
 }
