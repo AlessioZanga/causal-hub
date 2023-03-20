@@ -31,6 +31,23 @@ impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesian
                 "consider distribution projection, where needed"
             )
         );
+        // Assert models have same parameters.
+        self.p
+            .parameters()
+            .values()
+            .zip(self.q.parameters().values())
+            .map(|(p, q)| (p.states(), q.states()))
+            .for_each(|(p, q)| {
+                assert_eq!(
+                    p, q,
+                    concat!(
+                        "P and Q must have the same parameters states:\n",
+                        "P:\n{:?}\n,",
+                        "Q:\n{:?}\n.",
+                    ),
+                    p, q
+                )
+            });
 
         // Compute the KL divergence leveraging local decomposition.
         V!(self.p.graph())

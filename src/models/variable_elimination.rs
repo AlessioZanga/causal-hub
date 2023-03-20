@@ -182,9 +182,9 @@ where
         // Project P parameters onto Q structure.
         let theta = V!(g_q)
             // Get the parents of each vertex.
-            .map(|x| (x, Pa!(g_q, x).collect_vec()))
+            .map(|x| (g_q.label(x), Pa!(g_q, x).map(|z| g_q.label(z))))
             // Project P parameters onto Q structure.
-            .map(|(x, z)| self.conditional(g_q.label(x), z.into_iter().map(|z| g_q.label(z))));
+            .map(|(x, z)| self.conditional(x, z));
         // Construct projection of P given projected parameters.
         Self::Projection::with_parameters(theta)
     }

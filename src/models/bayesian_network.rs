@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 
+use is_sorted::IsSorted;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
@@ -100,6 +101,9 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
 
     #[inline]
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter> {
+        // Assert parameters are sorted according to keys.
+        debug_assert!(self.theta.keys().is_sorted());
+
         &self.theta
     }
 }
