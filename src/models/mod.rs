@@ -19,6 +19,12 @@ pub type GSeparation<'a, G, D> = GraphicalSeparation<'a, G, D>;
 mod independence;
 pub use independence::*;
 
+mod kullback_leibler;
+pub use kullback_leibler::*;
+
+/// Alias for Kullback-Leibler divergence.
+pub type KL<'a, P, Q> = KullbackLeiblerDivergence<'a, P, Q>;
+
 mod moral;
 pub use moral::*;
 
