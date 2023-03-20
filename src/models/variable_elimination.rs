@@ -3,15 +3,18 @@ use std::{collections::BTreeSet, ops::Mul};
 use itertools::Itertools;
 use split_iter::Splittable;
 
+use super::{
+    BayesianNetwork, DistributionEstimation, DistributionProjection, ProbabilisticGraphicalModel,
+};
 use crate::{
     graphs::BaseGraph,
-    models::{BayesianNetwork, Factor},
-    prelude::FxIndexMap,
+    models::{ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution},
+    prelude::{DirectedGraph, FxIndexMap},
     types::FxIndexSet,
-    Adj, L, V,
+    Adj, Pa, L, V,
 };
 
-/// Variable Elimination functor.
+/// Variable Elimination (VE) functor.
 #[derive(Clone, Debug)]
 pub struct VariableElimination<'a, M> {
     model: &'a M,
@@ -29,7 +32,7 @@ impl<'a, M> VariableElimination<'a, M> {
     ///
     /// Panics if $\pmb{\Phi}$ is empty, or when $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
     ///
-    pub fn sum_product<'b, P, Z>(phi: P, z: Z) -> P::Item
+    fn sum_product<'b, P, Z>(phi: P, z: Z) -> P::Item
     where
         P: IntoIterator + FromIterator<P::Item>,
         P::Item: Factor,
@@ -38,7 +41,7 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Apply variable elimination to the given variables.
         let phi = z.into_iter().fold(phi, Self::variable_elimination);
-        // Compute the factor product.
+        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
         phi.into_iter().reduce(Mul::mul).unwrap()
     }
 
@@ -48,14 +51,14 @@ impl<'a, M> VariableElimination<'a, M> {
     ///
     /// Panics if $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
     ///
-    pub fn variable_elimination<P>(phi: P, z: &str) -> P
+    fn variable_elimination<P>(phi: P, z: &str) -> P
     where
         P: IntoIterator + FromIterator<P::Item>,
         P::Item: Factor,
     {
         // Split factors when the given variable is in their scope.
         let (phi_prime, phi_dprime) = phi.into_iter().split(|phi| !phi.in_scope(z));
-        // Compute the factor product.
+        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
         let psi = phi_prime.reduce(Mul::mul).unwrap();
         // Eliminate variable by marginalization.
         let tau = psi.marginalize([z]);
@@ -66,10 +69,10 @@ impl<'a, M> VariableElimination<'a, M> {
 
 impl<'a, M> VariableElimination<'a, M>
 where
-    M: BayesianNetwork,
+    M: ProbabilisticGraphicalModel,
 {
     /// Compute the elimination order w.r.t. the given variables $\mathbf{Z}$.
-    pub fn elimination_order<'b, Z>(&self, z: Z) -> Vec<&'b str>
+    fn elimination_order<'b, Z>(&self, z: Z) -> Vec<&'b str>
     where
         Z: IntoIterator<Item = &'b str>,
     {
@@ -106,11 +109,15 @@ where
         order
     }
 
-    /// Execute the query for $\phi(\mathbf{X})$.
-    pub fn query<'b, X, Y>(&self, x: X) -> Y
+    /// Perform variable elimination w.r.t. the given variables $X$.
+    ///
+    /// # Panics
+    ///
+    /// Panics if $\mathbf{X}$ is not a subset of the scope of $\pmb{\Phi}$.
+    ///
+    pub fn call<'b, X>(&self, x: X) -> <M::Parameter as Factor>::Phi
     where
         X: IntoIterator<Item = &'b str>,
-        Y: Factor + From<M::Parameter>,
     {
         // Sort and deduplicate query variables.
         let x: BTreeSet<_> = x.into_iter().collect();
@@ -130,5 +137,55 @@ where
             .collect_vec();
         // Execute variable elimination.
         Self::sum_product(phi, z)
+    }
+}
+
+impl<'a, M> DistributionEstimation for VariableElimination<'a, M>
+where
+    M: ProbabilisticGraphicalModel,
+{
+    type JPD = M::JPD;
+
+    type CPD = M::CPD;
+
+    fn marginal(&self, x: &str) -> Self::JPD {
+        Self::JPD::from_factor(self.call([x]))
+    }
+
+    fn joint<'b, X>(&self, x: X) -> Self::JPD
+    where
+        X: IntoIterator<Item = &'b str>,
+    {
+        Self::JPD::from_factor(self.call(x))
+    }
+
+    fn conditional<'b, Z>(&self, x: &'b str, z: Z) -> Self::CPD
+    where
+        Z: IntoIterator<Item = &'b str>,
+    {
+        Self::CPD::from_factor(x, self.call([x].into_iter().chain(z)))
+    }
+}
+
+impl<'a, M> DistributionProjection for VariableElimination<'a, M>
+where
+    M: BayesianNetwork<Parameter = <Self as DistributionEstimation>::CPD>,
+    M::Graph: DirectedGraph,
+{
+    type Projection = M;
+
+    fn project_onto(&self, q: &Self::Projection) -> Self::Projection {
+        // Get underlying graphs of Q.
+        let g_q = q.graph();
+        // Assert P and Q labels are the same.
+        assert!(L!(self.model.graph()).eq(L!(g_q)));
+        // Project P parameters onto Q structure.
+        let theta = V!(g_q)
+            // Get the parents of each vertex.
+            .map(|x| (x, Pa!(g_q, x).collect_vec()))
+            // Project P parameters onto Q structure.
+            .map(|(x, z)| self.conditional(g_q.label(x), z.into_iter().map(|z| g_q.label(z))));
+        // Construct projection of P given projected parameters.
+        Self::Projection::with_parameters(theta)
     }
 }

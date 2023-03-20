@@ -1,4 +1,5 @@
+mod distribution_estimation;
+mod distribution_projection;
 mod factor;
 mod graphical_separation;
-mod parameter_estimator;
-mod variable_elimination;
+mod parameter_estimation;

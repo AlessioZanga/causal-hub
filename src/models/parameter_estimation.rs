@@ -9,8 +9,8 @@ use crate::{
     Pa, L, V,
 };
 
-/// Parameter estimator trait for model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
-pub trait ParameterEstimator<D, G, M>
+/// Parameter estimation trait for model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
+pub trait ParameterEstimation<D, G, M>
 where
     D: DataSet,
     G: BaseGraph,
@@ -19,15 +19,15 @@ where
     fn call(d: &D, g: &G) -> M;
 }
 
-/// Maximum Likelihood Estimator (MLE).
-pub struct MaximumLikelihoodEstimator {}
+/// Maximum Likelihood Estimation (MLE) functor.
+pub struct MaximumLikelihoodEstimation {}
 
 impl
-    ParameterEstimator<
+    ParameterEstimation<
         DiscreteDataMatrix,
         DirectedDenseAdjacencyMatrixGraph,
         DiscreteBayesianNetwork,
-    > for MaximumLikelihoodEstimator
+    > for MaximumLikelihoodEstimation
 {
     fn call(
         d: &DiscreteDataMatrix,
@@ -77,15 +77,15 @@ impl
     }
 }
 
-/// Bayesian Estimator (BE) with given Prior Distribution.
-pub struct BayesianEstimator {}
+/// Bayesian Estimation (BE) functor.
+pub struct BayesianEstimation {}
 
 impl
-    ParameterEstimator<
+    ParameterEstimation<
         DiscreteDataMatrix,
         DirectedDenseAdjacencyMatrixGraph,
         DiscreteBayesianNetwork,
-    > for BayesianEstimator
+    > for BayesianEstimation
 {
     fn call(
         d: &DiscreteDataMatrix,

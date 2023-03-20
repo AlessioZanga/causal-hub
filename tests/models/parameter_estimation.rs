@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod maximum_likelihood_estimator {
+mod maximum_likelihood_estimation {
     use approx::*;
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
@@ -89,7 +89,7 @@ mod maximum_likelihood_estimator {
 }
 
 #[cfg(test)]
-mod bayesian_estimator {
+mod bayesian_estimation {
     use approx::*;
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
