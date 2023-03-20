@@ -41,8 +41,6 @@ impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesian
                     self.q.parameters()[x].values(),
                 )
             })
-            // FIXME:
-            .inspect(|(p, q)| println!("P/Q:\n{}\n", (*p / *q)))
             // Compute the KL(P, Q) = \sum P(X | Z) * log( P(X | Z) / Q(X | Z) ),
             // with 0 * log 0 = 0 and 0 / 0 = 0, i.e. mapping NaNs to zeros.
             .map(|(p, q)| (p * (p / q).mapv(f64::ln)).mapv(nan_to_zero).sum())
