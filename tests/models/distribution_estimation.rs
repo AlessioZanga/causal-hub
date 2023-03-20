@@ -3,7 +3,7 @@ mod variable_elimination {
     use approx::*;
     use causal_hub::prelude::*;
     use itertools::Itertools;
-    use ndarray::ArrayD;
+    use ndarray::prelude::*;
 
     #[test]
     fn call() {

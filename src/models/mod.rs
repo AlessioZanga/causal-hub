@@ -39,3 +39,6 @@ pub type BE = BayesianEstimation;
 
 mod variable_elimination;
 pub use variable_elimination::*;
+
+/// Alias for variable elimination.
+pub type VE<'a, M> = VariableElimination<'a, M>;
