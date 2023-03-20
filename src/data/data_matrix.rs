@@ -10,7 +10,7 @@ use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
-use crate::types::FxIndexMap;
+use crate::types::{FxIndexMap, FxIndexSet};
 
 /* Implement DiscreteDataMatrix */
 
@@ -18,7 +18,7 @@ use crate::types::FxIndexMap;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
-    states: FxIndexMap<String, Vec<String>>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<usize>,
     values: Array2<usize>,
 }
@@ -37,7 +37,7 @@ impl DiscreteDataMatrix {
         // Check labels consistency.
         assert_eq!(values.ncols(), labels.len());
         // Construct the states map.
-        let states: FxIndexMap<String, Vec<String>> = states
+        let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
@@ -46,14 +46,6 @@ impl DiscreteDataMatrix {
         assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
         let cardinality = labels.iter().map(|l| states[l].len()).collect();
-        // Check cardinalities.
-        assert_eq!(
-            values
-                .fold_axis(Axis(1), 0, |&acc, &x| usize::max(acc, x))
-                .into_iter()
-                .collect_vec(),
-            cardinality
-        );
 
         Self {
             labels,
@@ -61,6 +53,60 @@ impl DiscreteDataMatrix {
             cardinality,
             values,
         }
+    }
+
+    /// Gets the map of variables to their states.
+    #[inline]
+    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.states
+    }
+
+    /// Set states of the discrete data matrix.
+    ///
+    /// # Panics
+    ///
+    /// Panics if provided states are not a superset of the existing ones.
+    ///
+    pub fn with_states<I, J, K, V>(mut self, states: I) -> Self
+    where
+        I: IntoIterator<Item = (K, J)>,
+        J: IntoIterator<Item = V>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        // Accumulate states.
+        let states: FxIndexMap<String, FxIndexSet<String>> = states
+            .into_iter()
+            .map(|(k, v)| (k.into(), v.into_iter().map(|v| v.into()).sorted().collect()))
+            .sorted_by(|(a, _), (b, _)| a.cmp(b))
+            .collect();
+
+        // Assert new states are superset of the existing ones.
+        assert!(states.iter().all(|(k, v)| self.states[k].is_subset(v)));
+
+        // Update values encoding w.r.t. new states.
+        states.into_iter().for_each(|(k, v)| {
+            // Get columns to be updated.
+            let (i, _, s_v) = self.states.get_full(&k).unwrap();
+            // Align values encodings.
+            self.values.column_mut(i).map_inplace(|x| {
+                // Set new location w.r.t. previous state.
+                *x = v.get_index_of(&s_v[*x]).unwrap();
+            });
+            // Set new states.
+            self.states[&k] = v;
+        });
+
+        // Compute cardinalities.
+        self.cardinality = self.states.values().map(|x| x.len()).collect();
+
+        self
+    }
+
+    /// Gets the vector of variables cardinalities.
+    #[inline]
+    pub fn cardinality(&self) -> &Vec<usize> {
+        &self.cardinality
     }
 }
 
@@ -123,16 +169,16 @@ impl From<DataFrame> for DiscreteDataMatrix {
                         .into_iter()
                         .map(|(&i, &j)| (i as usize, j as usize))
                         .collect();
-                    let states = map
+                    let states: FxIndexSet<String> = map
                         .into_values()
                         .map(|i| states.get(i).unwrap().into())
-                        .collect_vec();
+                        .collect();
 
                     (label, states)
                 }
                 RevMapping::Local(states) => {
                     // Cast to vector of states.
-                    let states = states.values_iter().map(|s| s.into()).collect_vec();
+                    let states = states.values_iter().map(|s| s.into()).collect();
 
                     (label, states)
                 }
@@ -183,20 +229,6 @@ impl DataSet for DiscreteDataMatrix {
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
-    }
-}
-
-impl DiscreteDataMatrix {
-    /// Gets the map of variables to their states.
-    #[inline]
-    pub fn states(&self) -> &FxIndexMap<String, Vec<String>> {
-        &self.states
-    }
-
-    /// Gets the vector of variables cardinalities.
-    #[inline]
-    pub fn cardinality(&self) -> &Vec<usize> {
-        &self.cardinality
     }
 }
 
