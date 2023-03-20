@@ -1,6 +1,7 @@
 use std::{collections::BTreeSet, ops::Mul};
 
 use itertools::Itertools;
+use rayon::prelude::*;
 use split_iter::Splittable;
 
 use super::{
@@ -16,11 +17,11 @@ use crate::{
 
 /// Variable Elimination (VE) functor.
 #[derive(Clone, Debug)]
-pub struct VariableElimination<'a, M> {
+pub struct VariableElimination<'a, M, const PARALLEL: bool> {
     model: &'a M,
 }
 
-impl<'a, M> VariableElimination<'a, M> {
+impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL> {
     /// Construct a new variable elimination functor.
     pub const fn new(model: &'a M) -> Self {
         Self { model }
@@ -32,17 +33,20 @@ impl<'a, M> VariableElimination<'a, M> {
     ///
     /// Panics if $\pmb{\Phi}$ is empty, or when $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
     ///
-    fn sum_product<'b, P, Z>(phi: P, z: Z) -> P::Item
+    fn sum_product<'b, I, P, Z>(phi: I, z: Z) -> P
     where
-        P: IntoIterator + FromIterator<P::Item>,
-        P::Item: Factor,
+        I: IntoIterator<Item = P> + FromIterator<P> + IntoParallelIterator<Item = P>,
+        P: Factor,
         Z: IntoIterator<Item = &'b str>,
         Self: 'a,
     {
         // Apply variable elimination to the given variables.
         let phi = z.into_iter().fold(phi, Self::variable_elimination);
-        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
-        phi.into_iter().reduce(Mul::mul).unwrap()
+        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+        match PARALLEL {
+            true => phi.into_par_iter().reduce_with(Mul::mul).unwrap(),
+            false => phi.into_iter().reduce(Mul::mul).unwrap(),
+        }
     }
 
     /// Perform variable elimination w.r.t. the given variable $Z$.
@@ -58,8 +62,15 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Split factors when the given variable is in their scope.
         let (phi_prime, phi_dprime) = phi.into_iter().split(|phi| !phi.in_scope(z));
-        // Compute the factor product. TODO: Change reduce to fold to avoid unwrap.
-        let psi = phi_prime.reduce(Mul::mul).unwrap();
+        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+        let psi = match PARALLEL {
+            true => phi_prime
+                .collect_vec()
+                .into_par_iter()
+                .reduce_with(Mul::mul)
+                .unwrap(),
+            false => phi_prime.reduce(Mul::mul).unwrap(),
+        };
         // Eliminate variable by marginalization.
         let tau = psi.marginalize([z]);
         // Return new sum-product factor.
@@ -67,7 +78,7 @@ impl<'a, M> VariableElimination<'a, M> {
     }
 }
 
-impl<'a, M> VariableElimination<'a, M>
+impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL>
 where
     M: ProbabilisticGraphicalModel,
 {
@@ -140,7 +151,7 @@ where
     }
 }
 
-impl<'a, M> DistributionEstimation for VariableElimination<'a, M>
+impl<'a, M, const PARALLEL: bool> DistributionEstimation for VariableElimination<'a, M, PARALLEL>
 where
     M: ProbabilisticGraphicalModel,
 {
@@ -167,7 +178,7 @@ where
     }
 }
 
-impl<'a, M> DistributionProjection for VariableElimination<'a, M>
+impl<'a, M, const PARALLEL: bool> DistributionProjection for VariableElimination<'a, M, PARALLEL>
 where
     M: BayesianNetwork<Parameter = <Self as DistributionEstimation>::CPD>,
     M::Graph: DirectedGraph,
@@ -182,9 +193,9 @@ where
         // Project P parameters onto Q structure.
         let theta = V!(g_q)
             // Get the parents of each vertex.
-            .map(|x| (x, Pa!(g_q, x).collect_vec()))
+            .map(|x| (g_q.label(x), Pa!(g_q, x).map(|z| g_q.label(z))))
             // Project P parameters onto Q structure.
-            .map(|(x, z)| self.conditional(g_q.label(x), z.into_iter().map(|z| g_q.label(z))));
+            .map(|(x, z)| self.conditional(x, z));
         // Construct projection of P given projected parameters.
         Self::Projection::with_parameters(theta)
     }

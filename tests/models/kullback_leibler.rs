@@ -1,10 +1,11 @@
 #[cfg(test)]
-mod variable_elimination {
+mod tests {
+    use approx::*;
     use causal_hub::prelude::*;
     use polars::prelude::*;
 
     #[test]
-    fn project_onto() {
+    fn call() {
         // Load reference data.
         let d: DiscreteDataMatrix = CsvReader::from_path("./tests/assets/asia.csv")
             .unwrap()
@@ -14,26 +15,17 @@ mod variable_elimination {
         // Load reference model.
         let p: DiscreteBN = BIF::read("./tests/assets/bif/asia.bif").unwrap().into();
 
-        // Construct distribution projection estimator.
-        let estimator = VE::new(&p);
-        // Compute projection of P on itself.
-        let q = estimator.project_onto(&p);
-
-        assert_eq!(p, q);
+        // KL of P given P is zero.
+        assert_relative_eq!(KL::new(&p, &p).call(), 0.);
 
         // Construct modified graph.
         let mut q = p.graph().clone();
-        q.del_edge(q.vertex("asia"), q.vertex("tub"));
+        q.del_edge(q.vertex("bronc"), q.vertex("dysp"));
         // Fit modified graph with maximum likelihood estimator.
         let q = MLE::call(&d, &q);
         // Project P onto Q using variable elimination as estimator.
-        let p = estimator.project_onto(&q);
+        let p = VE::new(&p).project_onto(&q);
 
-        assert_eq!(
-            p,
-            BIF::read("./tests/assets/distribution_projection/asia_projected.bif")
-                .unwrap()
-                .into()
-        );
+        assert_relative_eq!(KL::new(&p, &q).call(), 0.04892162293878239);
     }
 }

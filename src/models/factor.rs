@@ -30,6 +30,8 @@ pub trait Factor:
     + Eq
     + Serialize
     + for<'a> Deserialize<'a>
+    + Send
+    + Sync
     + Into<Self::Phi>
 {
     /// Underlying factor type.
@@ -768,6 +770,14 @@ impl ConditionalProbabilityDistribution for DiscreteCPD {
             .expect("Failed to get target index");
         // Normalize over target axis.
         phi.values /= &phi.values.sum_axis(Axis(i)).insert_axis(Axis(i));
+        // Assert values are in [0, 1].
+        debug_assert!(
+            phi.values
+                .iter()
+                .all(|x| (0. ..=1.).contains(x) || x.is_nan()),
+            "{}",
+            phi.values
+        );
 
         Self { x, phi }
     }
