@@ -42,7 +42,7 @@ impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesian
                     p, q,
                     concat!(
                         "P and Q must have the same parameters states:\n",
-                        "P: {:?}",
+                        "P: {:?}\n",
                         "Q: {:?}",
                     ),
                     p, q
