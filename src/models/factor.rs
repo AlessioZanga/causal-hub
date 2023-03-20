@@ -30,6 +30,8 @@ pub trait Factor:
     + Eq
     + Serialize
     + for<'a> Deserialize<'a>
+    + Send
+    + Sync
     + Into<Self::Phi>
 {
     /// Underlying factor type.

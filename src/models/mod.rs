@@ -40,5 +40,7 @@ pub type BE = BayesianEstimation;
 mod variable_elimination;
 pub use variable_elimination::*;
 
-/// Alias for variable elimination.
-pub type VE<'a, M> = VariableElimination<'a, M>;
+/// Alias for the single-thread Variable-Elimination algorithm.
+pub type VE<'a, M> = VariableElimination<'a, M, false>;
+/// Alias for the multi-thread Variable-Elimination algorithm.
+pub type ParallelVE<'a, M> = VariableElimination<'a, M, true>;
