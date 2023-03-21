@@ -28,26 +28,69 @@ mod tests {
 
             assert!(L!(data).into_iter().eq(&["W", "X", "Y", "Z"]));
 
-            let states: BTreeMap<String, Vec<String>> = BTreeMap::from([
-                (
-                    "W".to_string(),
-                    vec!["I".to_string(), "J".to_string(), "K".to_string()],
-                ),
-                ("X".to_string(), vec!["A".to_string()]),
-                ("Y".to_string(), vec!["A".to_string(), "B".to_string()]),
-                (
-                    "Z".to_string(),
-                    vec!["A".to_string(), "B".to_string(), "C".to_string()],
-                ),
+            let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
+                ("W", vec!["I", "J", "K"].into_iter().collect()),
+                ("X", vec!["A"].into_iter().collect()),
+                ("Y", vec!["A", "B"].into_iter().collect()),
+                ("Z", vec!["A", "B", "C"].into_iter().collect()),
             ]);
 
             assert!(data
                 .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
-                .eq(&states));
+                .zip(states.into_iter())
+                .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
+                    && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
             assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
+        }
+
+        #[test]
+        fn with_states() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(df).with_states([
+                ("X", vec!["A", "B"]),
+                ("Y", vec!["A", "B", "C"]),
+                ("W", vec!["G", "H", "I", "J", "K", "L", "M", "N"]),
+            ]);
+
+            assert_eq!(
+                data.values(),
+                array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
+            );
+
+            assert!(L!(data).into_iter().eq(&["W", "X", "Y", "Z"]));
+
+            let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
+                (
+                    "W",
+                    vec!["G", "H", "I", "J", "K", "L", "M", "N"]
+                        .into_iter()
+                        .collect(),
+                ),
+                ("X", vec!["A", "B"].into_iter().collect()),
+                ("Y", vec!["A", "B", "C"].into_iter().collect()),
+                ("Z", vec!["A", "B", "C"].into_iter().collect()),
+            ]);
+
+            assert!(data
+                .states()
+                .into_iter()
+                .sorted_by(|a, b| a.0.cmp(b.0))
+                .zip(states.into_iter())
+                .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
+                    && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
+
+            assert_eq!(data.cardinality(), &vec![8, 2, 3, 3]);
         }
     }
 

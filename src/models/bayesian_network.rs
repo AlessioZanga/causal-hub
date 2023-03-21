@@ -1,9 +1,13 @@
 use std::fmt::{Debug, Display, Formatter};
 
+use is_sorted::IsSorted;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use super::{DiscreteCPD, Factor};
+use super::{
+    ConditionalProbabilityDistribution, DiscreteCPD, DiscreteJPD, Factor,
+    JointProbabilityDistribution,
+};
 use crate::{
     graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
@@ -12,8 +16,8 @@ use crate::{
     Pa, L, V,
 };
 
-/// Bayesian Network trait.
-pub trait BayesianNetwork:
+/// Probabilistic Graphical Model (PGM) trait.
+pub trait ProbabilisticGraphicalModel:
     Clone
     + Debug
     + Display
@@ -21,21 +25,29 @@ pub trait BayesianNetwork:
     + for<'a> Deserialize<'a>
     + Into<(Self::Graph, FxIndexMap<String, Self::Parameter>)>
 {
-    /// Underlying directed graph associated type.
+    /// Underlying directed graph associated type. TODO: Generalize this bound.
     type Graph: DirectedGraph<Direction = directions::Directed>;
     /// Parameter associated type.
     type Parameter: Factor;
 
-    /// Constructor of $\mathcal{B} = (\mathcal{G}, \Theta)$.
-    fn new<I>(graph: Self::Graph, theta: I) -> Self
-    where
-        I: IntoIterator<Item = Self::Parameter>;
+    /// Joint distribution associated type.
+    type JPD: JointProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
+    /// Conditional distribution associated type.
+    type CPD: ConditionalProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
 
     /// Reference to the underlying graph.
     fn graph(&self) -> &Self::Graph;
 
     /// Reference to the parameters.
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
+}
+
+/// Bayesian Network $\mathcal{B}$ trait.
+pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
+    /// Constructor of $\mathcal{B} = (\mathcal{G}, \Theta)$.
+    fn new<I>(graph: Self::Graph, theta: I) -> Self
+    where
+        I: IntoIterator<Item = Self::Parameter>;
 
     /// Construct $\mathcal{B}$ and the associated graph $\mathcal{G}$ given the parameters $\Theta$.
     fn with_parameters<I>(theta: I) -> Self
@@ -43,7 +55,7 @@ pub trait BayesianNetwork:
         I: IntoIterator<Item = Self::Parameter>;
 }
 
-/// Discrete Bayesian Network implementation.
+/// Discrete Bayesian Network $\mathcal{B}$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteBayesianNetwork {
     graph: DirectedDenseAdjacencyMatrixGraph,
@@ -64,8 +76,8 @@ impl Display for DiscreteBayesianNetwork {
 
 impl From<DiscreteBayesianNetwork>
     for (
-        <DiscreteBayesianNetwork as BayesianNetwork>::Graph,
-        FxIndexMap<String, <DiscreteBayesianNetwork as BayesianNetwork>::Parameter>,
+        DirectedDenseAdjacencyMatrixGraph,
+        FxIndexMap<String, DiscreteCPD>,
     )
 {
     fn from(b: DiscreteBayesianNetwork) -> Self {
@@ -73,11 +85,38 @@ impl From<DiscreteBayesianNetwork>
     }
 }
 
-impl BayesianNetwork for DiscreteBayesianNetwork {
+impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 
     type Parameter = DiscreteCPD;
 
+    type JPD = DiscreteJPD;
+
+    type CPD = DiscreteCPD;
+
+    #[inline]
+    fn graph(&self) -> &Self::Graph {
+        &self.graph
+    }
+
+    #[inline]
+    fn parameters(&self) -> &FxIndexMap<String, Self::Parameter> {
+        // Assert parameters are sorted according to keys.
+        debug_assert!(self.theta.keys().is_sorted());
+
+        &self.theta
+    }
+}
+
+impl PartialEq for DiscreteBayesianNetwork {
+    fn eq(&self, other: &Self) -> bool {
+        self.graph == other.graph && self.theta == other.theta
+    }
+}
+
+impl Eq for DiscreteBayesianNetwork {}
+
+impl BayesianNetwork for DiscreteBayesianNetwork {
     fn new<I>(graph: Self::Graph, theta: I) -> Self
     where
         I: IntoIterator<Item = Self::Parameter>,
@@ -110,16 +149,6 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
         assert!(graph.is_acyclic(), "Graph must be acyclic");
 
         Self { graph, theta }
-    }
-
-    #[inline]
-    fn graph(&self) -> &Self::Graph {
-        &self.graph
-    }
-
-    #[inline]
-    fn parameters(&self) -> &FxIndexMap<String, Self::Parameter> {
-        &self.theta
     }
 
     fn with_parameters<I>(theta: I) -> Self
