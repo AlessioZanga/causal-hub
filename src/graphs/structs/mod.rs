@@ -3,3 +3,6 @@ pub use directed_dense_adjacency_matrix::DirectedDenseAdjacencyMatrixGraph;
 
 mod undirected_dense_adjacency_matrix;
 pub use undirected_dense_adjacency_matrix::UndirectedDenseAdjacencyMatrixGraph;
+
+mod mixed_dense_adjacency_matrix;
+pub use mixed_dense_adjacency_matrix::MixedDenseAdjacencyMatrixGraph;

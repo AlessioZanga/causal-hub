@@ -30,3 +30,6 @@ pub type Graph = structs::UndirectedDenseAdjacencyMatrixGraph;
 
 /// Default directed graph implementation based on dense adjacency matrix.
 pub type DiGraph = structs::DirectedDenseAdjacencyMatrixGraph;
+
+/// Default mixed graph implementation based on two dense adjacency matrices.
+pub type MiGraph = structs::MixedDenseAdjacencyMatrixGraph;
