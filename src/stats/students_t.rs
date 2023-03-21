@@ -74,7 +74,7 @@ impl ConditionalIndependenceTest for StudentsT {
         // Compute p-value.
         let (_, _, pval) = self.eval(x, y, z);
 
-        pval < self.alpha
+        pval > self.alpha
     }
 
     #[inline]

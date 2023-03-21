@@ -64,7 +64,7 @@ mod tests {
 
             let pred_call = test.call(x, y, &z);
 
-            assert_eq!(pred_call, true_pval < 0.05);
+            assert_eq!(pred_call, true_pval > 0.05);
         }
     }
 }

@@ -7,7 +7,7 @@ pub trait ConditionalIndependenceTest: Clone + Debug + Sync {
     /// Compute (degree-of-freedom, statistic, p-value) of $X \mathrlap{\thinspace\perp}{\perp} \thinspace Y \mid \mathbf{Z}$.
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64);
 
-    /// Check whether $X \mathrlap{\thinspace\perp}{\perp}_{\mathcal{P}} \thinspace Y \mid \mathbf{Z}$ holds or not.
+    /// Returns `true` whether $\text{H}_0: X \mathrlap{\thinspace\perp}{\perp}_{\mathcal{P}} \thinspace Y \mid \mathbf{Z}$ is not rejected.
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 
     /// Set significance level $\alpha$.
