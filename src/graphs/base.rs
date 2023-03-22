@@ -550,9 +550,6 @@ pub trait BaseGraph:
     }
 }
 
-
-
-
 /// Multiple graph trait. //FIXME: documentation below
 pub trait MultGraph:
     Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
@@ -573,6 +570,16 @@ pub trait MultGraph:
     where
         Self: 'a;
 
+    /// Undirected edges iterator type.
+    type UndEdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Directed edges iterator type.
+    type DirEdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
     /// Edges iterator type.
     type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
     where
@@ -583,4 +590,63 @@ pub trait MultGraph:
     where
         Self: 'a;
 
+    fn new<V, I, M, J>(vertices: I, edges: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        M: IntoIterator<Item = (V, V)>,
+        J: IntoIterator<Item = (usize, M)>;
+
+    fn clear(&mut self);
+
+    fn label(&self, x: usize) -> &str;
+
+    fn labels(&self) -> Self::LabelsIter<'_>;
+
+    fn vertex(&self, x: &str) -> usize;
+
+    fn vertices(&self) -> Self::VerticesIter<'_>;
+
+    fn order(&self) -> usize {
+        V!(self).len()
+    }
+
+    fn has_vertex(&self, x: usize) -> bool {
+        V!(self).any(|y| y == x)
+    }
+
+    fn add_vertex<V>(&mut self, x: V) -> usize
+    where
+        V: Into<String>;
+
+    fn del_vertex(&mut self, x: usize) -> bool;
+
+    fn und_edges(&self) -> Self::UndEdgesIter<'_>;
+
+    fn dir_edges(&self) -> Self::DirEdgesIter<'_>;
+
+    fn edges(&self) -> Self::EdgesIter<'_>;
+
+    fn size(&self) -> usize {
+        E!(self).len()
+    }
+    fn has_und_edge(&self, x: usize, y: usize) -> bool {
+        self.und_edges().any(|z| z == (x, y))
+    }
+    fn has_dir_edge(&self, x: usize, y: usize) -> bool {
+        self.dir_edges().any(|z| z == (x, y))
+    }
+    fn has_edge(&self, x: usize, y: usize) -> bool {
+        E!(self).any(|z| z == (x, y))
+    }
+
+    fn add_edge(&mut self, which: usize, x: usize, y: usize) -> bool;
+
+    fn del_edge(&mut self, x: usize, y: usize) -> bool;
+
+    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_>;
+
+    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+        Adj!(self, x).any(|z| z == y)
+    }
 }
