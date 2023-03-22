@@ -20,6 +20,9 @@ pub type DenseAdjacencyMatrix = Matrix<bool>;
 /// Sparse adjacency matrix type.
 pub type SparseAdjacencyMatrix = TriMat<bool>;
 
+/// Multiple adjacency matrix type.
+pub type MultipleDenseAdjacencyMatrix = Vec<(usize, Matrix<bool>)>;
+
 /// IndexSet with FxHasher.
 pub type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
 
