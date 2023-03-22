@@ -58,6 +58,267 @@ impl MixedDenseAdjacencyMatrixGraph {
     }
 }
 
+pub struct LabelsIterator<'a> {
+    graph: &'a MixedDenseAdjacencyMatrixGraph,
+    iter: Range<usize>,
+}
+
+impl<'a> LabelsIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+        Self {
+            graph: g,
+            iter: Range {
+                start: 0,
+                end: g.labels.len(),
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for LabelsIterator<'a> {
+    type Item = &'a str;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|x| self.graph.label(x))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a> ExactSizeIterator for LabelsIterator<'a> {}
+
+impl<'a> FusedIterator for LabelsIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct UndirectedEdgesIterator<'a> {
+    g: &'a MixedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        IndexedIter<'a, bool, Ix2>,
+        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
+    >,
+    size: usize,
+}
+
+impl<'a> UndirectedEdgesIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+        Self {
+            g,
+            iter: g
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match f && i <= j {
+                    true => Some((i, j)),
+                    false => None,
+                }),
+            size: g.size,
+        }
+    }
+}
+
+impl<'a> Iterator for UndirectedEdgesIterator<'a> {
+    type Item = (usize, usize);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|(x, y)| {
+            // Decrement inner counter.
+            self.size -= 1;
+
+            (x, y)
+        })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.size, Some(self.size))
+    }
+}
+
+impl<'a> ExactSizeIterator for UndirectedEdgesIterator<'a> {}
+
+impl<'a> FusedIterator for UndirectedEdgesIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct DirectedEdgesIterator<'a> {
+    g: &'a MixedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        IndexedIter<'a, bool, Ix2>,
+        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
+    >,
+    size: usize,
+}
+
+impl<'a> DirectedEdgesIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+        Self {
+            g,
+            iter: g
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match f && i <= j {
+                    true => Some((i, j)),
+                    false => None,
+                }),
+            size: g.size,
+        }
+    }
+}
+
+impl<'a> Iterator for DirectedEdgesIterator<'a> {
+    type Item = (usize, usize);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|(x, y)| {
+            // Decrement inner counter.
+            self.size -= 1;
+
+            (x, y)
+        })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.size, Some(self.size))
+    }
+}
+
+impl<'a> ExactSizeIterator for DirectedEdgesIterator<'a> {}
+
+impl<'a> FusedIterator for DirectedEdgesIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct EdgesIterator<'a> {
+    g: &'a MixedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        IndexedIter<'a, bool, Ix2>,
+        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
+    >,
+    size: usize,
+}
+
+//FIXME: collect iterator into matrix
+impl<'a> EdgesIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+        let merged_matrix = g.merged_matrix();
+        Self {
+            g,
+            iter: merged_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match f {
+                    true => Some((i, j)),
+                    false => None,
+                }),
+            size: g.size,
+        }
+    }
+}
+
+impl<'a> Iterator for EdgesIterator<'a> {
+    type Item = (usize, usize);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|(x, y)| {
+            // Decrement inner counter.
+            self.size -= 1;
+
+            (x, y)
+        })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.size, Some(self.size))
+    }
+}
+
+impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
+
+impl<'a> FusedIterator for EdgesIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct AdjacentsIterator<'a> {
+    g: &'a MixedDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
+        fn((usize, &bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> AdjacentsIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        let merged_matrix = g.merged_matrix();
+        Self {
+            g,
+            iter: merged_matrix
+                .row(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, &f)| match f {
+                    true => Some(i),
+                    false => None,
+                }),
+        }
+    }
+}
+
+impl<'a> Iterator for AdjacentsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for AdjacentsIterator<'a> {}
+
+impl Display for MixedDenseAdjacencyMatrixGraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Write graph type.
+        write!(f, "MixedGraph {{ ")?;
+        // Write vertex set.
+        write!(
+            f,
+            "V = {{{}}}, ",
+            V!(self)
+                .map(|x| format!("\"{}\"", self.label(x)))
+                .join(", ")
+        )?;
+        // Write edge set.
+        write!(
+            f,
+            "E = {{{}}}",
+            E!(self)
+                .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
+                .join(", ")
+        )?;
+        // Write ending character.
+        write!(f, " }}")
+    }
+}
+
+impl Hash for MixedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.labels.hash(state);
+        self.merged_matrix().hash(state); //FIXME: correct?
+    }
+}
+
 
 // TODO: AdvGraph
 // TODO: Default, DefaultGraph
