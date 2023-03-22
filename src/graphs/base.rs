@@ -549,3 +549,38 @@ pub trait BaseGraph:
         Adj!(self, x).any(|z| z == y)
     }
 }
+
+
+
+
+/// Multiple graph trait. //FIXME: documentation below
+pub trait MultGraph:
+    Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+{
+    /// Data type.
+    type Data;
+
+    /// Directional type.
+    type Direction;
+
+    /// Labels iterator type.
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Vertices iterator type.
+    type VerticesIter<'a>: Clone + Iterator<Item = usize> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Edges iterator type.
+    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Adjacents vertices iterator type.
+    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
+    where
+        Self: 'a;
+
+}
