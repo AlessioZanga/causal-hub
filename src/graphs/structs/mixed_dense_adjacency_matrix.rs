@@ -19,7 +19,7 @@ use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
         directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
-        PartialOrdGraph, PathGraph, SubGraph,
+        MultGraph, PartialOrdGraph, PathGraph, SubGraph,
     },
     io::DOT,
     models::MoralGraph,
@@ -112,6 +112,7 @@ impl<'a> UndirectedEdgesIterator<'a> {
         Self {
             g,
             iter: g
+                .deref(0)
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f && i <= j {
                     true => Some((i, j)),
@@ -162,6 +163,7 @@ impl<'a> DirectedEdgesIterator<'a> {
         Self {
             g,
             iter: g
+                .deref(1)
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f && i <= j {
                     true => Some((i, j)),
@@ -205,7 +207,6 @@ pub struct EdgesIterator<'a> {
     size: usize,
 }
 
-//FIXME: collect iterator into matrix
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
     #[inline]
@@ -319,8 +320,119 @@ impl Hash for MixedDenseAdjacencyMatrixGraph {
     }
 }
 
+// TODO: Implementing AdvGraph
 
-// TODO: AdvGraph
+impl MultGraph for MixedDenseAdjacencyMatrixGraph {
+    type Data = DenseAdjacencyMatrix;
+
+    type Direction = directions::Mixed;
+
+    type LabelsIter<'a> = LabelsIterator<'a>;
+
+    type VerticesIter<'a> = Range<usize>;
+
+    type UndEdgesIter<'a> = UndirectedEdgesIterator<'a>;
+
+    type DirEdgesIter<'a> = DirectedEdgesIterator<'a>;
+
+    type EdgesIter<'a> = EdgesIterator<'a>;
+
+    type AdjacentsIter<'a> = AdjacentsIterator<'a>;
+
+    fn new<V, I, M, J>(vertices: I, edges: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        M: IntoIterator<Item = (V, V)>,
+        J: IntoIterator<Item = (usize, M)>,
+    {
+        todo!()
+    }
+
+    fn clear(&mut self) {
+        todo!()
+    }
+
+    fn label(&self, x: usize) -> &str {
+        todo!()
+    }
+
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        todo!()
+    }
+
+    fn vertex(&self, x: &str) -> usize {
+        todo!()
+    }
+
+    fn vertices(&self) -> Self::VerticesIter<'_> {
+        todo!()
+    }
+
+    fn order(&self) -> usize {
+        V!(self).len()
+    }
+
+    fn has_vertex(&self, x: usize) -> bool {
+        V!(self).any(|y| y == x)
+    }
+
+    fn add_vertex<V>(&mut self, x: V) -> usize
+    where
+        V: Into<String>,
+    {
+        todo!()
+    }
+
+    fn del_vertex(&mut self, x: usize) -> bool {
+        todo!()
+    }
+
+    fn und_edges(&self) -> Self::UndEdgesIter<'_> {
+        todo!()
+    }
+
+    fn dir_edges(&self) -> Self::DirEdgesIter<'_> {
+        todo!()
+    }
+
+    fn edges(&self) -> Self::EdgesIter<'_> {
+        todo!()
+    }
+
+    fn size(&self) -> usize {
+        E!(self).len()
+    }
+    
+    fn has_und_edge(&self, x: usize, y: usize) -> bool {
+        self.und_edges().any(|z| z == (x, y))
+    }
+
+    fn has_dir_edge(&self, x: usize, y: usize) -> bool {
+        self.dir_edges().any(|z| z == (x, y))
+    }
+
+    fn has_edge(&self, x: usize, y: usize) -> bool {
+        E!(self).any(|z| z == (x, y))
+    }
+
+    fn add_edge(&mut self, which: usize, x: usize, y: usize) -> bool {
+        todo!()
+    }
+
+    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+        todo!()
+    }
+
+    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
+        todo!()
+    }
+
+    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+        Adj!(self, x).any(|z| z == y)
+    }
+}
+
 // TODO: Default, DefaultGraph
 // TODO: From, TryFrom, Into
 // TODO: PartialEq, Eq
