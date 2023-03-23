@@ -852,6 +852,80 @@ impl Default for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
+impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
+    fn empty<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Map vertices labels to vertices indices.
+        let labels_indices = labels
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
+        // Initialize adjacency matrix given graph order.
+        let undirected_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+        let directed_adjacency_matrix = undirected_adjacency_matrix.clone();
+        let skeleton_adjacency_matrix = undirected_adjacency_matrix.clone();
+
+        Self {
+            labels,
+            labels_indices,
+            undirected_adjacency_matrix,
+            directed_adjacency_matrix,
+            skeleton_adjacency_matrix,
+            size: 0,
+        }
+    }
+
+    fn complete<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Map vertices labels to vertices indices.
+        let labels_indices = labels
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
+        // Initialize directed adjacency matrix and undirected adjacency matrix given graph order.
+        let directed_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+        let mut undirected_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
+        
+        // Remove self loops.
+        undirected_adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
+
+        // Instantiate skeleton adjacency matrix as a clone of undirected adjacency matrix
+        let skeleton_adjacency_matrix = undirected_adjacency_matrix.clone();
+
+        // Compute size.
+        let size = (order * (order.saturating_sub(1))) / 2;
+
+        Self {
+            labels,
+            labels_indices,
+            undirected_adjacency_matrix,
+            directed_adjacency_matrix,
+            skeleton_adjacency_matrix,
+            size,
+        }
+    }
+}
+
 // TODO: Default, DefaultGraph
 // TODO: From, TryFrom, Into
 // TODO: PartialEq, Eq
