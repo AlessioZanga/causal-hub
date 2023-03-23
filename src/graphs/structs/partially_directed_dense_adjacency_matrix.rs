@@ -19,15 +19,12 @@ use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
         directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
-        MultGraph, PartialOrdGraph, PathGraph, SubGraph,
+        PartialOrdGraph, PathGraph, SubGraph,
     },
     io::DOT,
     models::MoralGraph,
     prelude::BFS,
-    types::{
-        AdjacencyList, DenseAdjacencyMatrix, EdgeList, MultipleDenseAdjacencyMatrix,
-        SparseAdjacencyMatrix,
-    },
+    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
 };
@@ -39,6 +36,7 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
     labels_indices: BiHashMap<String, usize>,
     directed_adjacency_matrix: DenseAdjacencyMatrix,
     undirected_adjacency_matrix: DenseAdjacencyMatrix,
+    full_adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
 
@@ -54,7 +52,7 @@ impl PartiallyDenseAdjacencyMatrixGraph {
                 *f = false;
             }
         });
-        let merged_matrix = merged_matrix | self.directed_adjacency_matrix;
+        merged_matrix = merged_matrix | self.directed_adjacency_matrix.clone();
         merged_matrix
     }
 }
@@ -212,10 +210,9 @@ impl<'a> EdgesIterator<'a> {
     /// Constructor.
     #[inline]
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
-        let merged_matrix = g.merged_matrix();
         Self {
             g,
-            iter: merged_matrix
+            iter: g.merged_matrix()
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f {
                     true => Some((i, j)),
@@ -262,10 +259,9 @@ impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     #[inline]
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
-        let merged_matrix = g.merged_matrix();
         Self {
             g,
-            iter: merged_matrix
+            iter: g.merged_matrix()
                 .row(x)
                 .into_iter()
                 .enumerate()
