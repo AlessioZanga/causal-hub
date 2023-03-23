@@ -19,7 +19,7 @@ where
             );
             for z in adj {
                 flag = true;
-                if !test.call(x, y, &z) {
+                if test.call(x, y, &z) {
                     e_prime.push((x, y));
                     break;
                 }
