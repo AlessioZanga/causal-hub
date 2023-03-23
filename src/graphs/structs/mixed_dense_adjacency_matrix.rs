@@ -323,7 +323,7 @@ impl Hash for PartiallyDenseAdjacencyMatrixGraph {
 
 // TODO: Implementing AdvGraph
 
-impl MultGraph for PartiallyDenseAdjacencyMatrixGraph {
+impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Data = DenseAdjacencyMatrix;
 
     type Direction = directions::Mixed;
@@ -332,20 +332,15 @@ impl MultGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     type VerticesIter<'a> = Range<usize>;
 
-    type UndEdgesIter<'a> = UndirectedEdgesIterator<'a>;
-
-    type DirEdgesIter<'a> = DirectedEdgesIterator<'a>;
-
     type EdgesIter<'a> = EdgesIterator<'a>;
 
     type AdjacentsIter<'a> = AdjacentsIterator<'a>;
 
-    fn new<V, I, M, J>(vertices: I, edges: J) -> Self
+    fn new<V, I, J>(vertices: I, edges: J) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
-        M: IntoIterator<Item = (V, V)>,
-        J: IntoIterator<Item = (usize, M)>,
+        J: IntoIterator<Item = (V, V)>,
     {
         todo!()
     }
@@ -389,14 +384,6 @@ impl MultGraph for PartiallyDenseAdjacencyMatrixGraph {
         todo!()
     }
 
-    fn und_edges(&self) -> Self::UndEdgesIter<'_> {
-        todo!()
-    }
-
-    fn dir_edges(&self) -> Self::DirEdgesIter<'_> {
-        todo!()
-    }
-
     fn edges(&self) -> Self::EdgesIter<'_> {
         todo!()
     }
@@ -405,19 +392,11 @@ impl MultGraph for PartiallyDenseAdjacencyMatrixGraph {
         E!(self).len()
     }
 
-    fn has_und_edge(&self, x: usize, y: usize) -> bool {
-        self.und_edges().any(|z| z == (x, y))
-    }
-
-    fn has_dir_edge(&self, x: usize, y: usize) -> bool {
-        self.dir_edges().any(|z| z == (x, y))
-    }
-
     fn has_edge(&self, x: usize, y: usize) -> bool {
         E!(self).any(|z| z == (x, y))
     }
 
-    fn add_edge(&mut self, which: usize, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> bool {
         todo!()
     }
 
