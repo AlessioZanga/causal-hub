@@ -36,24 +36,13 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
     labels_indices: BiHashMap<String, usize>,
     directed_adjacency_matrix: DenseAdjacencyMatrix,
     undirected_adjacency_matrix: DenseAdjacencyMatrix,
-    full_adjacency_matrix: DenseAdjacencyMatrix,
+    skeleton_adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
 
 impl PartiallyDenseAdjacencyMatrixGraph {
     fn deref(&self) -> &DenseAdjacencyMatrix {
         todo!() // TODO:
-    }
-
-    fn merged_matrix(&self) -> DenseAdjacencyMatrix {
-        let mut merged_matrix: Array2<bool> = self.undirected_adjacency_matrix.clone();
-        merged_matrix.indexed_iter_mut().for_each(|((i, j), f)| {
-            if i >= j {
-                *f = false;
-            }
-        });
-        merged_matrix = merged_matrix | self.directed_adjacency_matrix.clone();
-        merged_matrix
     }
 }
 
@@ -212,7 +201,8 @@ impl<'a> EdgesIterator<'a> {
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
-            iter: g.merged_matrix()
+            iter: g
+                .skeleton_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f {
                     true => Some((i, j)),
@@ -261,7 +251,8 @@ impl<'a> AdjacentsIterator<'a> {
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
-            iter: g.merged_matrix()
+            iter: g
+                .skeleton_adjacency_matrix
                 .row(x)
                 .into_iter()
                 .enumerate()
@@ -312,12 +303,23 @@ impl Display for PartiallyDenseAdjacencyMatrixGraph {
 impl Hash for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.labels.hash(state);
-        self.merged_matrix().hash(state); //FIXME: correct?
+        todo!() //TODO: 
     }
 }
 
-// TODO: Implementing AdvGraph
+impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
+
+    #[inline]
+    fn to_undirected(&self) -> Self::UndirectedGraph {
+        // Make the adjacent matrix symmetric.
+        let adjacency_matrix = &self.undirected_adjacency_matrix
+            | &self.directed_adjacency_matrix
+            | &self.directed_adjacency_matrix.t();
+
+        Self::UndirectedGraph::try_from((self.labels.clone(), adjacency_matrix)).unwrap()
+    }
+}
 
 impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Data = DenseAdjacencyMatrix;
