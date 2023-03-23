@@ -34,39 +34,40 @@ use crate::{
 
 /// Mixed graph struct based on a couple of dense adjacency matrix data structures.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MixedDenseAdjacencyMatrixGraph {
+pub struct PartiallyDenseAdjacencyMatrixGraph {
     labels: BTreeSet<String>,
     labels_indices: BiHashMap<String, usize>,
-    adjacency_matrix: MultipleDenseAdjacencyMatrix,
+    directed_adjacency_matrix: DenseAdjacencyMatrix,
+    undirected_adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
 
-impl MixedDenseAdjacencyMatrixGraph {
-    fn deref(&self, which: usize) -> &DenseAdjacencyMatrix {
-        &self.adjacency_matrix[which].1 //FIXME: case of which > len(adjacency_matrix)
+impl PartiallyDenseAdjacencyMatrixGraph {
+    fn deref(&self) -> &DenseAdjacencyMatrix {
+        todo!() // TODO:
     }
 
     fn merged_matrix(&self) -> DenseAdjacencyMatrix {
-        let mut merged_matrix: Array2<bool> = self.deref(0).clone();
+        let mut merged_matrix: Array2<bool> = self.undirected_adjacency_matrix.clone();
         merged_matrix.indexed_iter_mut().for_each(|((i, j), f)| {
             if i >= j {
                 *f = false;
             }
         });
-        let merged_matrix = merged_matrix | self.deref(1);
+        let merged_matrix = merged_matrix | self.directed_adjacency_matrix;
         merged_matrix
     }
 }
 
 pub struct LabelsIterator<'a> {
-    graph: &'a MixedDenseAdjacencyMatrixGraph,
+    graph: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: Range<usize>,
 }
 
 impl<'a> LabelsIterator<'a> {
     /// Constructor.
     #[inline]
-    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             graph: g,
             iter: Range {
@@ -97,7 +98,7 @@ impl<'a> FusedIterator for LabelsIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct UndirectedEdgesIterator<'a> {
-    g: &'a MixedDenseAdjacencyMatrixGraph,
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         IndexedIter<'a, bool, Ix2>,
         fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
@@ -108,11 +109,11 @@ pub struct UndirectedEdgesIterator<'a> {
 impl<'a> UndirectedEdgesIterator<'a> {
     /// Constructor.
     #[inline]
-    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
             iter: g
-                .deref(0)
+                .undirected_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f && i <= j {
                     true => Some((i, j)),
@@ -148,7 +149,7 @@ impl<'a> FusedIterator for UndirectedEdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct DirectedEdgesIterator<'a> {
-    g: &'a MixedDenseAdjacencyMatrixGraph,
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         IndexedIter<'a, bool, Ix2>,
         fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
@@ -159,11 +160,11 @@ pub struct DirectedEdgesIterator<'a> {
 impl<'a> DirectedEdgesIterator<'a> {
     /// Constructor.
     #[inline]
-    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
             iter: g
-                .deref(1)
+                .directed_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f && i <= j {
                     true => Some((i, j)),
@@ -199,7 +200,7 @@ impl<'a> FusedIterator for DirectedEdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
-    g: &'a MixedDenseAdjacencyMatrixGraph,
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         IndexedIter<'a, bool, Ix2>,
         fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
@@ -210,7 +211,7 @@ pub struct EdgesIterator<'a> {
 impl<'a> EdgesIterator<'a> {
     /// Constructor.
     #[inline]
-    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph) -> Self {
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         let merged_matrix = g.merged_matrix();
         Self {
             g,
@@ -250,7 +251,7 @@ impl<'a> FusedIterator for EdgesIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
-    g: &'a MixedDenseAdjacencyMatrixGraph,
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
         fn((usize, &bool)) -> Option<usize>,
@@ -260,7 +261,7 @@ pub struct AdjacentsIterator<'a> {
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     #[inline]
-    pub fn new(g: &'a MixedDenseAdjacencyMatrixGraph, x: usize) -> Self {
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
         let merged_matrix = g.merged_matrix();
         Self {
             g,
@@ -287,10 +288,10 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
-impl Display for MixedDenseAdjacencyMatrixGraph {
+impl Display for PartiallyDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
-        write!(f, "MixedGraph {{ ")?;
+        write!(f, "PartiallyDirectedGraph {{ ")?;
         // Write vertex set.
         write!(
             f,
@@ -312,7 +313,7 @@ impl Display for MixedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl Hash for MixedDenseAdjacencyMatrixGraph {
+impl Hash for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.labels.hash(state);
@@ -322,7 +323,7 @@ impl Hash for MixedDenseAdjacencyMatrixGraph {
 
 // TODO: Implementing AdvGraph
 
-impl MultGraph for MixedDenseAdjacencyMatrixGraph {
+impl MultGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Data = DenseAdjacencyMatrix;
 
     type Direction = directions::Mixed;
@@ -403,7 +404,7 @@ impl MultGraph for MixedDenseAdjacencyMatrixGraph {
     fn size(&self) -> usize {
         E!(self).len()
     }
-    
+
     fn has_und_edge(&self, x: usize, y: usize) -> bool {
         self.und_edges().any(|z| z == (x, y))
     }
