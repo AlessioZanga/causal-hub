@@ -76,7 +76,7 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         // Compute p-value.
         let (_, _, pval) = self.eval(x, y, z);
 
-        pval < self.alpha
+        pval > self.alpha
     }
 
     #[inline]
