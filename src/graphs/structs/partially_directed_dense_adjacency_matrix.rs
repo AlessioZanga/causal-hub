@@ -321,7 +321,7 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Data = DenseAdjacencyMatrix;
 
-    type Direction = directions::Mixed;
+    type Direction = directions::PartiallyDirected;
 
     type LabelsIter<'a> = LabelsIterator<'a>;
 

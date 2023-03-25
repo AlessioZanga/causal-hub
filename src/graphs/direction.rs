@@ -12,9 +12,9 @@ pub mod directions {
     #[derive(Clone, Copy, Debug)]
     pub struct Directed;
 
-    /// Mixed pseudo-enumerator for generics algorithms.
+    /// Partially directed pseudo-enumerator for generics algorithms.
     #[derive(Clone, Copy, Debug)]
-    pub struct Mixed;
+    pub struct PartiallyDirected;
 }
 
 /// Neighbors iterator.
