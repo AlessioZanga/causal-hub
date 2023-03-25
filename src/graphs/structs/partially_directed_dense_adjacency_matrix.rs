@@ -18,7 +18,7 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
+        directions, BaseGraph, PartiallyGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph,
     },
     io::DOT,
@@ -830,6 +830,8 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         f
     }
 }
+
+impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {}
 
 /* Implement DefaultGraph trait. */
 impl Default for PartiallyDenseAdjacencyMatrixGraph {
