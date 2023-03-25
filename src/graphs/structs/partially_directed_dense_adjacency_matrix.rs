@@ -40,12 +40,6 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
     size: usize,
 }
 
-impl PartiallyDenseAdjacencyMatrixGraph {
-    fn deref(&self) -> &DenseAdjacencyMatrix {
-        todo!() // TODO:
-    }
-}
-
 pub struct LabelsIterator<'a> {
     graph: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: Range<usize>,
@@ -905,9 +899,11 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
         // Initialize directed adjacency matrix and undirected adjacency matrix given graph order.
         let directed_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
         let mut undirected_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
-        
+
         // Remove self loops.
-        undirected_adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
+        undirected_adjacency_matrix
+            .diag_mut()
+            .map_inplace(|x| *x = false);
 
         // Instantiate skeleton adjacency matrix as a clone of undirected adjacency matrix
         let skeleton_adjacency_matrix = undirected_adjacency_matrix.clone();
@@ -926,9 +922,27 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: Default, DefaultGraph
 // TODO: From, TryFrom, Into
-// TODO: PartialEq, Eq
+
+/* Implement PartialOrdGraph trait. */
+impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        // Check that V(\mathcal{G}) == V(\mathcal{H}) && E(\mathcal{G}) == E(\mathcal{H}).
+        let labels: bool = self.labels.eq(&other.labels);
+        let undirected: bool = self
+            .undirected_adjacency_matrix
+            .eq(&other.undirected_adjacency_matrix);
+        let directed: bool = self
+            .directed_adjacency_matrix
+            .eq(&other.directed_adjacency_matrix);
+        debug_assert!(self.skeleton_adjacency_matrix == &other.skeleton_adjacency_matrix);
+        labels && undirected && directed
+    }
+}
+
+impl Eq for PartiallyDenseAdjacencyMatrixGraph {}
+
 // TODO: PartialOrd, PartialOrdGraph
 // TODO: SubGraph
 // TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator
