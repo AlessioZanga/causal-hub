@@ -166,6 +166,7 @@ pub struct AdjacentsIterator<'a> {
     >,
 }
 
+// TODO: add: new_undirected, new_directed
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     #[inline]
@@ -709,6 +710,9 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         self.undirected_adjacency_matrix[[x, y]] = false;
         self.undirected_adjacency_matrix[[y, x]] = false;
 
+        self.directed_adjacency_matrix[[x, y]] = false;
+        self.directed_adjacency_matrix[[y, x]] = false;
+
         self.skeleton_adjacency_matrix[[x, y]] = false;
         self.skeleton_adjacency_matrix[[y, x]] = false;
 
@@ -723,6 +727,16 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         debug_assert_eq!(
             self.skeleton_adjacency_matrix[[x, y]],
             self.skeleton_adjacency_matrix[[y, x]]
+        );
+
+        debug_assert_eq!(
+            self.undirected_adjacency_matrix[[x, y]],
+            self.skeleton_adjacency_matrix[[x, y]]
+        );
+
+        debug_assert_eq!(
+            self.directed_adjacency_matrix[[x, y]],
+            self.skeleton_adjacency_matrix[[x, y]]
         );
         // Assert size counter and adjacency matrices are still consistent.
         debug_assert_eq!(
@@ -772,13 +786,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     type Direction = directions::PartiallyDirected;
 
-    type LabelsIter<'a> = LabelsIterator<'a>; //FIXME: maybe unused
-
-    type VerticesIter<'a> = Range<usize>; //FIXME: maybe unused
-
     type EdgesIter<'a> = EdgesIterator<'a>;
-
-    type AdjacentsIter<'a> = AdjacentsIterator<'a>; //FIXME: maybe unused
 
     fn new_spec<V, I, J>(vertices: I, undirected_edges: J, directed_edges: J) -> Self
     where
@@ -971,6 +979,14 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
 
         true
     }
+    fn orient_edge(&mut self, x: usize, y: usize) -> bool {
+        if !self.has_edge(x, y) {
+            return false;
+        }
+        self.del_edge(x, y);
+        self.add_edge_of_type(x, y, 'd');
+        true
+    }
 }
 
 /* Implement DefaultGraph trait. */
@@ -1064,8 +1080,6 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: From, TryFrom, Into
-
 /* Implement PartialOrdGraph trait. */
 impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
@@ -1085,11 +1099,11 @@ impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
 
 impl Eq for PartiallyDenseAdjacencyMatrixGraph {}
 
-// TODO: PartialOrd, PartialOrdGraph
-// TODO: SubGraph
-// TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator
-// TODO: UndirectedGraph, DirectedGraph
-// TODO: PathGraph
-// TODO: IntoUndirectedGraph
-// TODO: MoralGraph
-// TODO: From<DOT>
+// TODO: From, TryFrom, Into traits impl
+// TODO: PartialOrd, PartialOrdGraph traits impl
+// TODO: SubGraph trait impl
+// TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
+// TODO: UndirectedGraph, DirectedGraph traits impl
+// TODO: PathGraph trait impl
+// TODO: MoralGraph trait impl
+// TODO: From<DOT> trait impl

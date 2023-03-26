@@ -21,23 +21,8 @@ pub trait PartiallyGraph:
     /// Directional type.
     type Direction;
 
-    /// Labels iterator type.
-    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
-    where
-        Self: 'a;
-
-    /// Vertices iterator type.
-    type VerticesIter<'a>: Clone + Iterator<Item = usize> + ExactSizeIterator + FusedIterator
-    where
-        Self: 'a;
-
     /// Edges iterator type.
     type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
-    where
-        Self: 'a;
-
-    /// Adjacents vertices iterator type.
-    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
@@ -59,6 +44,9 @@ pub trait PartiallyGraph:
 
     /// Specilized edge adder. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
     fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool;
+
+    /// Orient (or re-orient) an already present edge
+    fn orient_edge(&mut self, x: usize, y: usize) -> bool;
 
     //TODO: Improve documentation
 }
