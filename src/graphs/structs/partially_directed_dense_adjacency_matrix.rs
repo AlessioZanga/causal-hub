@@ -4,7 +4,7 @@ use std::{
     collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
-    iter::{Enumerate, FilterMap, FusedIterator},
+    iter::{Chain, Enumerate, FilterMap, FusedIterator},
     ops::{Deref, Range},
 };
 
@@ -12,14 +12,13 @@ use bimap::BiHashMap;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
 use serde::{Deserialize, Serialize};
-use std::iter::Chain;
 
 use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, PartiallyGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
-        PartialOrdGraph, PathGraph, SubGraph,
+        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
+        PartialOrdGraph, PartiallyGraph, PathGraph, SubGraph, UndirectedGraph,
     },
     io::DOT,
     models::MoralGraph,
@@ -78,7 +77,7 @@ impl<'a> ExactSizeIterator for LabelsIterator<'a> {}
 impl<'a> FusedIterator for LabelsIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
-pub struct UndirectedEdgesIterator<'a> {
+pub struct EdgesIterator<'a> {
     g: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: FilterMap<
         IndexedIter<'a, bool, Ix2>,
@@ -87,10 +86,25 @@ pub struct UndirectedEdgesIterator<'a> {
     size: usize,
 }
 
-impl<'a> UndirectedEdgesIterator<'a> {
-    /// Constructor.
+impl<'a> EdgesIterator<'a> {
+    /// Skeleton constructor.
     #[inline]
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
+        Self {
+            g,
+            iter: g
+                .skeleton_adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match f {
+                    true => Some((i, j)),
+                    false => None,
+                }),
+            size: g.size,
+        }
+    }
+    /// Undirected edges constructor.
+    #[inline]
+    pub fn new_undirected(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
             iter: g
@@ -103,100 +117,13 @@ impl<'a> UndirectedEdgesIterator<'a> {
             size: g.size,
         }
     }
-}
-
-impl<'a> Iterator for UndirectedEdgesIterator<'a> {
-    type Item = (usize, usize);
-
+    /// Directed edges constructor.
     #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(x, y)| {
-            // Decrement inner counter.
-            self.size -= 1;
-
-            (x, y)
-        })
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.size, Some(self.size))
-    }
-}
-
-impl<'a> ExactSizeIterator for UndirectedEdgesIterator<'a> {}
-
-impl<'a> FusedIterator for UndirectedEdgesIterator<'a> {}
-
-#[allow(dead_code, clippy::type_complexity)]
-pub struct DirectedEdgesIterator<'a> {
-    g: &'a PartiallyDenseAdjacencyMatrixGraph,
-    iter: FilterMap<
-        IndexedIter<'a, bool, Ix2>,
-        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
-    >,
-    size: usize,
-}
-
-impl<'a> DirectedEdgesIterator<'a> {
-    /// Constructor.
-    #[inline]
-    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
+    pub fn new_directed(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
         Self {
             g,
             iter: g
                 .directed_adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match f && i <= j {
-                    true => Some((i, j)),
-                    false => None,
-                }),
-            size: g.size,
-        }
-    }
-}
-
-impl<'a> Iterator for DirectedEdgesIterator<'a> {
-    type Item = (usize, usize);
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(x, y)| {
-            // Decrement inner counter.
-            self.size -= 1;
-
-            (x, y)
-        })
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.size, Some(self.size))
-    }
-}
-
-impl<'a> ExactSizeIterator for DirectedEdgesIterator<'a> {}
-
-impl<'a> FusedIterator for DirectedEdgesIterator<'a> {}
-
-#[allow(dead_code, clippy::type_complexity)]
-pub struct EdgesIterator<'a> {
-    g: &'a PartiallyDenseAdjacencyMatrixGraph,
-    iter: FilterMap<
-        IndexedIter<'a, bool, Ix2>,
-        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
-    >,
-    size: usize,
-}
-
-impl<'a> EdgesIterator<'a> {
-    /// Constructor.
-    #[inline]
-    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
-        Self {
-            g,
-            iter: g
-                .skeleton_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match f {
                     true => Some((i, j)),
@@ -269,6 +196,10 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
+//TODO: implement NeighboursIterator struct
+//TODO: implement AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
+
+//FIXME: be more specific about edge types
 impl Display for PartiallyDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
@@ -312,7 +243,7 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
         // Make the adjacent matrix symmetric.
         let adjacency_matrix = &self.undirected_adjacency_matrix
             | &self.directed_adjacency_matrix
-            | &self.directed_adjacency_matrix.t();
+            | self.directed_adjacency_matrix.t();
 
         Self::UndirectedGraph::try_from((self.labels.clone(), adjacency_matrix)).unwrap()
     }
@@ -735,6 +666,11 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
             self.skeleton_adjacency_matrix[[x, y]],
             self.skeleton_adjacency_matrix[[y, x]]
         );
+
+        debug_assert_eq!(
+            self.undirected_adjacency_matrix[[x, y]],
+            self.skeleton_adjacency_matrix[[x, y]]
+        );
         // Assert size counter and adjacency matrices are still consistent.
         debug_assert_eq!(
             self.size,
@@ -831,7 +767,211 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {}
+impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type Data = DenseAdjacencyMatrix;
+
+    type Direction = directions::PartiallyDirected;
+
+    type LabelsIter<'a> = LabelsIterator<'a>; //FIXME: maybe unused
+
+    type VerticesIter<'a> = Range<usize>; //FIXME: maybe unused
+
+    type EdgesIter<'a> = EdgesIterator<'a>;
+
+    type AdjacentsIter<'a> = AdjacentsIterator<'a>; //FIXME: maybe unused
+
+    fn new_spec<V, I, J>(vertices: I, undirected_edges: J, directed_edges: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, V)>,
+    {
+        // Remove duplicated vertices labels.
+        let mut labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+        // Map undirected edges iterator into edge list.
+        let undirected_edges: EdgeList<_> = undirected_edges
+            .into_iter()
+            .map(|(x, y)| (x.into(), y.into()))
+            .collect();
+        // Map undirected edges iterator into edge list.
+        let directed_edges: EdgeList<_> = directed_edges
+            .into_iter()
+            .map(|(x, y)| (x.into(), y.into()))
+            .collect();
+        // Add missing vertices from the edges.
+        labels.extend(
+            undirected_edges
+                .iter()
+                .cloned()
+                .flat_map(|(x, y)| [x, y])
+                .chain(directed_edges.iter().cloned().flat_map(|(x, y)| [x, y])),
+        );
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Map vertices labels to vertices indices.
+        let labels_indices: BiHashMap<_, _> = labels
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
+
+        // Initialize adjacency matrices given graph order.
+        let mut undirected_adjacency_matrix =
+            DenseAdjacencyMatrix::from_elem((order, order), false);
+        let mut directed_adjacency_matrix = undirected_adjacency_matrix.clone();
+        let mut skeleton_adjacency_matrix = undirected_adjacency_matrix.clone();
+
+        // Initialize the size.
+        let mut size = 0;
+        // Fill skeleton adjacency matrix given edge set.
+        for (x, y) in undirected_edges {
+            // Get associated vertices indices.
+            let (i, j) = (
+                *labels_indices.get_by_left(&x).unwrap(),
+                *labels_indices.get_by_left(&y).unwrap(),
+            );
+            // Set edge given indices.
+            if !skeleton_adjacency_matrix[[i, j]] {
+                // Add edge.
+                undirected_adjacency_matrix[[i, j]] = true;
+                undirected_adjacency_matrix[[j, i]] = true;
+                skeleton_adjacency_matrix[[i, j]] = true;
+                skeleton_adjacency_matrix[[j, i]] = true;
+                // Increment size.
+                size += 1;
+            }
+        }
+        for (x, y) in directed_edges {
+            // Get associated vertices indices.
+            let (i, j) = (
+                *labels_indices.get_by_left(&x).unwrap(),
+                *labels_indices.get_by_left(&y).unwrap(),
+            );
+            // Set edge given indices.
+            if !skeleton_adjacency_matrix[[i, j]] {
+                // Add edge.
+                directed_adjacency_matrix[[i, j]] = true;
+                skeleton_adjacency_matrix[[i, j]] = true;
+                skeleton_adjacency_matrix[[j, i]] = true;
+                // Increment size.
+                size += 1;
+            } else {
+                panic!("Multiple types of edges between two nodes is not allowed")
+            }
+        }
+
+        Self {
+            labels,
+            labels_indices,
+            undirected_adjacency_matrix,
+            directed_adjacency_matrix,
+            skeleton_adjacency_matrix,
+            size,
+        }
+    }
+
+    #[inline]
+    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_> {
+        match which {
+            'u' => Self::EdgesIter::new_undirected(self),
+            'd' => Self::EdgesIter::new_directed(self),
+            _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
+        }
+    }
+    #[inline]
+    fn size_of_type(&self, which: char) -> usize {
+        let size = match which {
+            'u' => self.edges_of_type('u').len(),
+            'd' => self.edges_of_type('d').len(),
+            _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
+        };
+        debug_assert!(size <= self.size());
+        size
+    }
+    #[inline]
+    fn type_of_edge(&self, x: usize, y: usize) -> Option<char> {
+        // If edge is not present:
+        if !self.skeleton_adjacency_matrix[[x, y]] {
+            return None;
+        }
+        // If edge is present...
+        match self.undirected_adjacency_matrix[[x, y]] {
+            // ... is undirected
+            true => Some('u'),
+            // ... is directed
+            _ => Some('d'),
+        }
+    }
+
+    fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool {
+        // If edge already exists ...
+        if self.skeleton_adjacency_matrix[[x, y]] {
+            debug_assert!(
+                self.skeleton_adjacency_matrix[[x, y]] == self.skeleton_adjacency_matrix[[y, x]]
+            );
+            // ... return early.
+            return false;
+        }
+
+        match which {
+            'u' => {
+                // Add edge.
+                self.undirected_adjacency_matrix[[x, y]] = true;
+                self.undirected_adjacency_matrix[[y, x]] = true;
+                self.skeleton_adjacency_matrix[[x, y]] = true;
+                self.skeleton_adjacency_matrix[[y, x]] = true;
+
+                // Increment size.
+                self.size += 1;
+
+                // Assert adjacency matrices are still consistent.
+                debug_assert_eq!(
+                    self.undirected_adjacency_matrix[[x, y]],
+                    self.undirected_adjacency_matrix[[y, x]]
+                );
+                debug_assert_eq!(
+                    self.undirected_adjacency_matrix[[x, y]],
+                    self.skeleton_adjacency_matrix[[x, y]]
+                );
+            }
+            'd' => {
+                // Add edge.
+                self.directed_adjacency_matrix[[x, y]] = true;
+                self.skeleton_adjacency_matrix[[x, y]] = true;
+                self.skeleton_adjacency_matrix[[y, x]] = true;
+
+                // Increment size.
+                self.size += 1;
+                debug_assert_eq!(
+                    self.directed_adjacency_matrix[[x, y]],
+                    self.skeleton_adjacency_matrix[[x, y]]
+                );
+            }
+            _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
+        }
+
+        // Assert adjacency matrices are still consistent.
+        debug_assert_eq!(
+            self.skeleton_adjacency_matrix[[x, y]],
+            self.skeleton_adjacency_matrix[[y, x]]
+        );
+        // Assert size counter and adjacency matrices are still consistent.
+        debug_assert_eq!(
+            self.size,
+            self.skeleton_adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum()
+        );
+
+        true
+    }
+}
 
 /* Implement DefaultGraph trait. */
 impl Default for PartiallyDenseAdjacencyMatrixGraph {
@@ -938,7 +1078,7 @@ impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
         let directed: bool = self
             .directed_adjacency_matrix
             .eq(&other.directed_adjacency_matrix);
-        debug_assert!(self.skeleton_adjacency_matrix == &other.skeleton_adjacency_matrix);
+        debug_assert!(self.skeleton_adjacency_matrix == other.skeleton_adjacency_matrix);
         labels && undirected && directed
     }
 }
