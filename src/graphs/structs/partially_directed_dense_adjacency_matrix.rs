@@ -1284,9 +1284,17 @@ impl PartialOrd for PartiallyDenseAdjacencyMatrixGraph {
                 partial_cmp_sets!(lhs, rhs).and_then(|directed_edges| {
                     // ... then return ordering
                     match (vertices, undirected_edges, directed_edges) {
-                        (x, y, z) if x.reverse()==z || y.reverse()==z => None,
-                        (x, y, _) if x==y => Some(directed_edges),
-                        (x, y, _) if x.reverse()!=y => Some(x.then(y)),
+                        (_, Ordering::Greater, Ordering::Less) => None,
+                        (_, Ordering::Less, Ordering::Greater) => None, 
+                        (Ordering::Greater, _, Ordering::Less) => None,
+                        (Ordering::Less, _, Ordering::Greater) => None, 
+                        (Ordering::Greater, Ordering::Greater, _) => Some(Ordering::Greater),
+                        (Ordering::Less, Ordering::Less, _) => Some(Ordering::Less),
+                        (Ordering::Equal, Ordering::Equal, _) => Some(directed_edges),
+                        (Ordering::Less, Ordering::Equal, _) => Some(Ordering::Less),
+                        (Ordering::Equal, Ordering::Less, _) => Some(Ordering::Less),
+                        (Ordering::Greater, Ordering::Equal, _) => Some(Ordering::Greater),
+                        (Ordering::Equal, Ordering::Greater, _) => Some(Ordering::Greater),
                         _ => None,
                     }
                 })
@@ -1297,7 +1305,7 @@ impl PartialOrd for PartiallyDenseAdjacencyMatrixGraph {
 
 impl PartialOrdGraph for PartiallyDenseAdjacencyMatrixGraph {}
 
-// TODO: From, TryFrom, Into traits specialized impl
+// TODO: From, TryFrom, Into traits specific impl
 // TODO: SubGraph trait impl
 // TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
 // TODO: UndirectedGraph, DirectedGraph traits impl
