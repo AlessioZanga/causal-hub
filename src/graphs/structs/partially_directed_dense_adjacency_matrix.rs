@@ -33,8 +33,8 @@ use crate::{
 pub struct PartiallyDenseAdjacencyMatrixGraph {
     labels: BTreeSet<String>,
     labels_indices: BiHashMap<String, usize>,
-    directed_adjacency_matrix: DenseAdjacencyMatrix,
     undirected_adjacency_matrix: DenseAdjacencyMatrix,
+    directed_adjacency_matrix: DenseAdjacencyMatrix,
     skeleton_adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
@@ -95,7 +95,7 @@ impl<'a> EdgesIterator<'a> {
             iter: g
                 .skeleton_adjacency_matrix
                 .indexed_iter()
-                .filter_map(|((i, j), &f)| match f {
+                .filter_map(|((i, j), &f)| match f && i <= j {
                     true => Some((i, j)),
                     false => None,
                 }),
@@ -288,7 +288,6 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
             .enumerate()
             .map(|(i, x)| (x, i))
             .collect();
-
         // Initialize skeleton adjacency matrix given graph order.
         let mut skeleton_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
@@ -316,7 +315,6 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
 
         // Instantiate empty directed adjacency matrix given graph order.
         let directed_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
-
         Self {
             labels,
             labels_indices,
@@ -1120,9 +1118,10 @@ where
     ) -> Result<Self, Self::Error> {
         // Remove duplicated vertices labels.
         let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
-
+        // Compute order
+        let order = labels.len();
         // Check if vertex set is not consistent with given adjacency matrix.
-        if labels.len() != adjacency_matrix.nrows() {
+        if order != adjacency_matrix.nrows() {
             return Err(E::InconsistentMatrix);
         }
         // Check if adjacency matrix is not square.
@@ -1147,7 +1146,7 @@ where
         Ok(Self {
             labels,
             labels_indices,
-            directed_adjacency_matrix: DenseAdjacencyMatrix::from_elem((size, size), false),
+            directed_adjacency_matrix: DenseAdjacencyMatrix::from_elem((order, order), false),
             undirected_adjacency_matrix: adjacency_matrix.clone(),
             skeleton_adjacency_matrix: adjacency_matrix,
             size,

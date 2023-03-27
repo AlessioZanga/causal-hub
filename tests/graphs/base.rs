@@ -1421,18 +1421,20 @@ mod partially_directed {
                     // Empty vertex set and adjacency matrix.
                     (
                         (vec![], Default::default()),
-                        r#"[a-zA-Z]+Graph \{ labels: \{\}, labels_indices: \{\}, adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, size: 0 \}"#,
+                        r#"[a-zA-Z]+Graph \{ labels: \{\}, labels_indices: \{\}, undirected_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, skeleton_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, size: 0 \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A"], array![[false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A"\}, labels_indices: \{"A" <> 0\}, adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, size: 0 \}"#,
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A"\}, labels_indices: \{"A" <> 0\}, undirected_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, skeleton_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, size: 0 \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A", "B"], array![[false, false], [false, false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{("A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0)\}, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
-                    ),
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,),
+                        (
+                            (vec!["A", "B"], array![[false, false], [true, false]]),
+                            r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 1 \}"#,),
                 ];
 
                 // Test for each scenario ...
