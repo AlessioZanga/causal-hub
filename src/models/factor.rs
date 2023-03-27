@@ -161,16 +161,8 @@ impl DiscreteFactor {
 
 impl Display for DiscreteFactor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // Create print table.
-        let mut table = Table::new();
-        // Add header to table.
-        table.set_titles(self.states.keys().chain([&"Values".to_string()]).collect());
-        // Construct iterator over states cartesian product.
-        let states = self.states.values().multi_cartesian_product();
-        // Add rows to table.
-        for (i, x) in states.zip(self.values.iter()) {
-            table.add_row(i.into_iter().chain([&x.to_string()]).collect());
-        }
+        // Convert to table.
+        let table: Table = self.clone().into();
         // Write table to formatter.
         write!(f, "{table}")
     }
@@ -291,6 +283,23 @@ impl PartialEq for DiscreteFactor {
 }
 
 impl Eq for DiscreteFactor {}
+
+impl From<DiscreteFactor> for Table {
+    fn from(other: DiscreteFactor) -> Table {
+        // Create print table.
+        let mut table = Table::new();
+        // Add header to table.
+        table.set_titles(other.states.keys().chain([&"Values".to_string()]).collect());
+        // Construct iterator over states cartesian product.
+        let states = other.states.values().multi_cartesian_product();
+        // Add rows to table.
+        for (i, x) in states.zip(other.values.iter()) {
+            table.add_row(i.into_iter().chain([&x.to_string()]).collect());
+        }
+
+        table
+    }
+}
 
 impl Factor for DiscreteFactor {
     type Phi = Self;
@@ -475,6 +484,12 @@ impl From<DiscreteJPD> for DiscreteFactor {
     }
 }
 
+impl From<DiscreteJPD> for Table {
+    fn from(other: DiscreteJPD) -> Table {
+        other.phi.into()
+    }
+}
+
 impl Factor for DiscreteJPD {
     type Phi = DiscreteFactor;
 
@@ -592,54 +607,8 @@ impl DiscreteCPD {
 
 impl Display for DiscreteCPD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // Create print table.
-        let mut table = Table::new();
-        // Get target, states and values.
-        let (s, v) = (&self.phi.states, &self.phi.values);
-        // Add first header to table. TODO: Add `with_hspan`if possible.
-        table.set_titles(
-            std::iter::repeat("")
-                .take(s.len() - 1)
-                .chain([self.x.as_str()])
-                .collect(),
-        );
-        // Add second header to table.
-        table.add_row(
-            s.keys()
-                .filter(|&x| !x.eq(&self.x))
-                .chain(s[&self.x].iter())
-                .collect(),
-        );
-        // If there are no conditioning variables ...
-        if s.len() == 1 {
-            // ... add only the row of marginal values.
-            table.add_row(v.iter().map(|x| x.to_string()).collect());
-            // Return table.
-            return write!(f, "{table}");
-        }
-        // Get target index.
-        let i = s
-            .get_index_of(&self.x)
-            .expect("Failed to get index of target variable");
-        // Construct iterator over states levels.
-        let states = s
-            .iter()
-            .filter_map(|(x, y)| match !x.eq(&self.x) {
-                true => Some(y),
-                false => None,
-            })
-            .multi_cartesian_product();
-        // Construct iterator over values.
-        let mut w = v.axis_iter(Axis(i)).map(|x| x.into_iter()).collect_vec();
-        // Add rows to table.
-        for s in states {
-            table.add_row(
-                s.into_iter()
-                    .cloned()
-                    .chain(w.iter_mut().map(|x| x.next().unwrap().to_string()))
-                    .collect(),
-            );
-        }
+        // Convert into table.
+        let table: Table = self.clone().into();
         // Write table to formatter.
         write!(f, "{table}")
     }
@@ -685,6 +654,61 @@ impl From<DiscreteCPD> for DiscreteFactor {
     #[inline]
     fn from(other: DiscreteCPD) -> Self {
         other.phi
+    }
+}
+
+impl From<DiscreteCPD> for Table {
+    fn from(other: DiscreteCPD) -> Table {
+        // Create print table.
+        let mut table = Table::new();
+        // Get target, states and values.
+        let (s, v) = (&other.phi.states, &other.phi.values);
+        // Add first header to table. TODO: Add `with_hspan`if possible.
+        table.set_titles(
+            std::iter::repeat("")
+                .take(s.len() - 1)
+                .chain([other.x.as_str()])
+                .collect(),
+        );
+        // Add second header to table.
+        table.add_row(
+            s.keys()
+                .filter(|&x| !x.eq(&other.x))
+                .chain(s[&other.x].iter())
+                .collect(),
+        );
+        // If there are no conditioning variables ...
+        if s.len() == 1 {
+            // ... add only the row of marginal values.
+            table.add_row(v.iter().map(|x| x.to_string()).collect());
+            // Return table.
+            return table;
+        }
+        // Get target index.
+        let i = s
+            .get_index_of(&other.x)
+            .expect("Failed to get index of target variable");
+        // Construct iterator over states levels.
+        let states = s
+            .iter()
+            .filter_map(|(x, y)| match !x.eq(&other.x) {
+                true => Some(y),
+                false => None,
+            })
+            .multi_cartesian_product();
+        // Construct iterator over values.
+        let mut w = v.axis_iter(Axis(i)).map(|x| x.into_iter()).collect_vec();
+        // Add rows to table.
+        for s in states {
+            table.add_row(
+                s.into_iter()
+                    .cloned()
+                    .chain(w.iter_mut().map(|x| x.next().unwrap().to_string()))
+                    .collect(),
+            );
+        }
+
+        table
     }
 }
 
