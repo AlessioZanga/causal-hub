@@ -1,4 +1,9 @@
 use std::iter::FusedIterator;
+use std::{
+    fmt::{Debug, Display},
+    hash::Hash,
+};
+use serde::{Deserialize, Serialize};
 
 use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 
@@ -536,4 +541,47 @@ pub trait IntoUndirectedGraph {
     /// ```
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph;
+}
+
+
+//TODO: define `PartiallyGraph` specific macros
+
+/// Partially directed graph trait.
+pub trait PartiallyGraph:
+    Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+{
+    /// Data type.
+    type Data;
+
+    /// Directional type.
+    type Direction;
+
+    /// Edges iterator type.
+    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
+    fn new_spec<V, I, J>(vertices: I, undirected_edges: J, directed_edges: J) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, V)>;
+
+    /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>; //TODO: create macro
+
+    /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn size_of_type(&self, which: char) -> usize;
+
+    /// Type of the edge. It returns `None` if such edge doesn't exist, an `Option<char>` on the contrary. `char` can be `u` for undirected or `d` for directed edge type.
+    fn type_of_edge(&self, x: usize, y: usize) -> Option<char>;
+
+    /// Specilized edge adder. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool;
+
+    /// Orient (or re-orient) an already present edge
+    fn orient_edge(&mut self, x: usize, y: usize) -> bool;
+
+    //TODO: Improve documentation
 }

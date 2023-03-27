@@ -742,3 +742,6 @@ mod directed {
         generic_tests!(DirectedDenseAdjacencyMatrixGraph);
     }
 }
+
+#[cfg(test)]
+mod partially_directed {} //TODO: test specific traits, Undirected trait and Directed Trait

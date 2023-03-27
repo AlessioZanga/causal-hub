@@ -17,8 +17,8 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
-        PartialOrdGraph, PartiallyGraph, PathGraph, SubGraph, UndirectedGraph,
+        direction::*, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
+        PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
     io::DOT,
     models::MoralGraph,
@@ -1078,7 +1078,7 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-
+//TODO: add more specific `From` and `Into`
 /* Implement TryFrom traits. */
 impl<V> From<EdgeList<V>> for PartiallyDenseAdjacencyMatrixGraph
 where
