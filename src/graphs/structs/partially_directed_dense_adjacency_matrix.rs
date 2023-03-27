@@ -1080,6 +1080,163 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
+
+/* Implement TryFrom traits. */
+impl<V> From<EdgeList<V>> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+{
+    #[inline]
+    fn from(edge_list: EdgeList<V>) -> Self {
+        Self::new([], edge_list)
+    }
+}
+
+impl<V> From<AdjacencyList<V>> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Clone + Into<String>,
+{
+    fn from(adjacency_list: AdjacencyList<V>) -> Self {
+        // Map into vertices.
+        let vertices = adjacency_list.keys().cloned().collect_vec();
+        // Map into edges.
+        let edges = adjacency_list
+            .into_iter()
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+
+        Self::new(vertices, edges)
+    }
+}
+
+impl<V, I> TryFrom<(I, DenseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+    I: IntoIterator<Item = V>,
+{
+    type Error = E;
+
+    fn try_from(
+        (vertices, adjacency_matrix): (I, DenseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
+        // Remove duplicated vertices labels.
+        let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+
+        // Check if vertex set is not consistent with given adjacency matrix.
+        if labels.len() != adjacency_matrix.nrows() {
+            return Err(E::InconsistentMatrix);
+        }
+        // Check if adjacency matrix is not square.
+        if !adjacency_matrix.is_square() {
+            return Err(E::NonSquareMatrix);
+        }
+
+        // Map vertices labels to vertices indices.
+        let labels_indices = labels
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
+
+        // Cast to standard memory layout (i.e. C layout), if not already.
+        let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
+
+        // Compute size.
+        let size = adjacency_matrix.mapv(|f| f as usize).sum();
+
+        Ok(Self {
+            labels,
+            labels_indices,
+            directed_adjacency_matrix: DenseAdjacencyMatrix::from_elem((size, size), false),
+            undirected_adjacency_matrix: adjacency_matrix.clone(),
+            skeleton_adjacency_matrix: adjacency_matrix,
+            size,
+        })
+    }
+}
+
+impl<V, I> TryFrom<(I, SparseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+    I: IntoIterator<Item = V>,
+{
+    type Error = E;
+
+    fn try_from(
+        (vertices, adjacency_matrix): (I, SparseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
+        // Allocate dense adjacency matrix.
+        let mut dense_adjacency_matrix =
+            DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
+        // Fill dense adjacency matrix from sparse triplets.
+        for (&f, (i, j)) in adjacency_matrix.triplet_iter() {
+            dense_adjacency_matrix[[i, j]] = f;
+        }
+        // Delegate constructor to dense adjacency matrix constructor.
+        Self::try_from((vertices, dense_adjacency_matrix))
+    }
+}
+
+/* Implement Into traits. */
+
+#[allow(clippy::from_over_into)]
+impl Into<EdgeList<String>> for PartiallyDenseAdjacencyMatrixGraph {
+    fn into(self) -> EdgeList<String> {
+        E!(self)
+            .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
+            .collect()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<AdjacencyList<String>> for PartiallyDenseAdjacencyMatrixGraph {
+    fn into(self) -> AdjacencyList<String> {
+        V!(self)
+            .map(|x| {
+                (
+                    self.label(x).into(),
+                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                )
+            })
+            .collect()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix) {
+        (self.labels, self.skeleton_adjacency_matrix)
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph {
+    fn into(self) -> (BTreeSet<String>, SparseAdjacencyMatrix) {
+        // Get upper bound capacity.
+        let size = self.size * 2;
+        // Allocate triplets indices.
+        let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
+        // Build triplets indices.
+        for ((i, j), &f) in self.skeleton_adjacency_matrix.indexed_iter() {
+            if f {
+                rows.push(i);
+                cols.push(j);
+            }
+        }
+        // Shrink triplets indices to actual capacity.
+        rows.shrink_to_fit();
+        cols.shrink_to_fit();
+        // Build data vector.
+        let data = std::iter::repeat(true).take(rows.len()).collect_vec();
+        // Construct sparse adjacency matrix.
+        let sparse_adjacency_matrix =
+            SparseAdjacencyMatrix::from_triplets(self.skeleton_adjacency_matrix.dim(), rows, cols, data);
+
+        (self.labels, sparse_adjacency_matrix)
+    }
+}
+
 /* Implement PartialOrdGraph trait. */
 impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
