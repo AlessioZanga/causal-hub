@@ -22,7 +22,7 @@ pub mod directions {
     pub struct PartiallyDirected;
 }
 
-/// Neighbors iterator.
+/// Neighbors iterator for undirected graphs.
 ///
 /// Return the vertex iterator representing $Ne(\mathcal{G}, X)$.
 ///
@@ -30,6 +30,26 @@ pub mod directions {
 macro_rules! Ne {
     ($g:expr, $x:expr) => {
         $g.neighbors($x)
+    };
+}
+/// Undirected edges iterator for partially directed graphs.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are undirected as an iterator.///
+#[macro_export]
+macro_rules! uE {
+    ($g:expr) => {
+        $g.edges_of_type('u')
+    };
+}
+
+/// Directed edges iterator for partially directed graphs.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are directed as an iterator.
+///
+#[macro_export]
+macro_rules! dE {
+    ($g:expr) => {
+        $g.edges_of_type('d')
     };
 }
 
