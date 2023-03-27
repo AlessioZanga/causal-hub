@@ -7,9 +7,6 @@ pub mod structs;
 mod base;
 pub use base::*;
 
-mod partially;
-pub use partially::*;
-
 mod default;
 pub use default::*;
 
