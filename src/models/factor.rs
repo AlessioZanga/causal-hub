@@ -668,6 +668,7 @@ impl From<DiscreteCPD> for Table {
             std::iter::repeat("")
                 .take(s.len() - 1)
                 .chain([other.x.as_str()])
+                .chain(std::iter::repeat("").take(s[&other.x].len() - 1))
                 .collect(),
         );
         // Add second header to table.
