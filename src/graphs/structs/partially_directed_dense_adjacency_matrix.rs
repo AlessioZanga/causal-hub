@@ -15,15 +15,18 @@ use serde::{Deserialize, Serialize};
 
 use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
+    dE,
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        direction::*, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
+        direction::*,
+        BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
     io::DOT,
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
+    uE,
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
 };
@@ -241,12 +244,7 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn to_undirected(&self) -> Self::UndirectedGraph {
-        // Make the adjacent matrix symmetric.
-        let adjacency_matrix = &self.undirected_adjacency_matrix
-            | &self.directed_adjacency_matrix
-            | self.directed_adjacency_matrix.t();
-
-        Self::UndirectedGraph::try_from((self.labels.clone(), adjacency_matrix)).unwrap()
+        Self::UndirectedGraph::try_from((self.labels.clone(), self.skeleton_adjacency_matrix.clone())).unwrap()
     }
 }
 
@@ -1229,8 +1227,12 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for PartiallyDenseAdjacency
         // Build data vector.
         let data = std::iter::repeat(true).take(rows.len()).collect_vec();
         // Construct sparse adjacency matrix.
-        let sparse_adjacency_matrix =
-            SparseAdjacencyMatrix::from_triplets(self.skeleton_adjacency_matrix.dim(), rows, cols, data);
+        let sparse_adjacency_matrix = SparseAdjacencyMatrix::from_triplets(
+            self.skeleton_adjacency_matrix.dim(),
+            rows,
+            cols,
+            data,
+        );
 
         (self.labels, sparse_adjacency_matrix)
     }
@@ -1255,8 +1257,47 @@ impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
 
 impl Eq for PartiallyDenseAdjacencyMatrixGraph {}
 
-// TODO: From, TryFrom, Into traits impl
-// TODO: PartialOrd, PartialOrdGraph traits impl
+impl PartialOrd for PartiallyDenseAdjacencyMatrixGraph {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Compare vertices sets.
+        let lhs: HashSet<_> = V!(self).map(|x| self.label(x)).collect();
+        let rhs: HashSet<_> = V!(other).map(|x| other.label(x)).collect();
+        // If the vertices sets are comparable ...
+        partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
+            // ... compare undirected edges sets.
+            let lhs: HashSet<_> = uE!(self)
+                .map(|(x, y)| (self.label(x), self.label(y)))
+                .collect();
+            let rhs: HashSet<_> = uE!(other)
+                .map(|(x, y)| (other.label(x), other.label(y)))
+                .collect();
+            // If the undirected edges sets are comparable ...
+            partial_cmp_sets!(lhs, rhs).and_then(|undirected_edges| {
+                // ... compare directed edges sets.
+                let lhs: HashSet<_> = dE!(self)
+                    .map(|(x, y)| (self.label(x), self.label(y)))
+                    .collect();
+                let rhs: HashSet<_> = dE!(other)
+                    .map(|(x, y)| (other.label(x), other.label(y)))
+                    .collect();
+                // If also the directed edges sets are comparable ...
+                partial_cmp_sets!(lhs, rhs).and_then(|directed_edges| {
+                    // ... then return ordering
+                    match (vertices, undirected_edges, directed_edges) {
+                        (x, y, z) if x.reverse()==z || y.reverse()==z => None,
+                        (x, y, _) if x==y => Some(directed_edges),
+                        (x, y, _) if x.reverse()!=y => Some(x.then(y)),
+                        _ => None,
+                    }
+                })
+            })
+        })
+    }
+}
+
+impl PartialOrdGraph for PartiallyDenseAdjacencyMatrixGraph {}
+
+// TODO: From, TryFrom, Into traits specialized impl
 // TODO: SubGraph trait impl
 // TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
 // TODO: UndirectedGraph, DirectedGraph traits impl
