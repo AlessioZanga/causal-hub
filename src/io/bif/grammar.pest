@@ -67,7 +67,24 @@ probability_table = { TABLE_VALUES ~ floating_point_list ~ ";" }
 floating_point_list = _{ FLOATING_POINT_LITERAL+ }
 
 WORD = @{ LETTER+ }
-LETTER = @{ ("+" | "-" | "." | "/" | "<" | "=" | ">" | "_" | ASCII_ALPHANUMERIC) }
+LETTER = @{ (
+    "!" |
+    "*" |
+    "+" |
+    "-" |
+    "." |
+    "/" |
+    "<" |
+    "=" |
+    ">" |
+    "?" |
+    "^" |
+    "\\"|
+    "_" |
+    "|" |
+    "~" |
+    ASCII_ALPHANUMERIC
+) }
 DIGIT = @{ ASCII_DIGIT }
 
 DECIMAL_LITERAL = _{ ASCII_DIGIT+ }
