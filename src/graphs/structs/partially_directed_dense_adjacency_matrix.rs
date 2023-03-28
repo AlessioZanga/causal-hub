@@ -212,7 +212,23 @@ impl Display for PartiallyDenseAdjacencyMatrixGraph {
                 .map(|x| format!("\"{}\"", self.label(x)))
                 .join(", ")
         )?;
-        // Write edge set.
+        // Write undirected edge set.
+        write!(
+            f,
+            "Undirected E = {{{}}}",
+            uE!(self)
+                .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
+                .join(", ")
+        )?;
+        // Write directed edge set.
+        write!(
+            f,
+            "Directed E = {{{}}}",
+            dE!(self)
+                .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
+                .join(", ")
+        )?;
+        // Write all edge set.
         write!(
             f,
             "E = {{{}}}",
