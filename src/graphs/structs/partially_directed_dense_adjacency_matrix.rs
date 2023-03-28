@@ -231,7 +231,7 @@ impl Display for PartiallyDenseAdjacencyMatrixGraph {
         // Write undirected edge set.
         write!(
             f,
-            "Undirected E = {{{}}}",
+            "Undirected E = {{{}}}, ",
             uE!(self)
                 .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
                 .join(", ")
@@ -239,7 +239,7 @@ impl Display for PartiallyDenseAdjacencyMatrixGraph {
         // Write directed edge set.
         write!(
             f,
-            "Directed E = {{{}}}",
+            "Directed E = {{{}}}, ",
             dE!(self)
                 .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
                 .join(", ")
@@ -936,6 +936,10 @@ where
         if !adjacency_matrix.is_square() {
             return Err(E::NonSquareMatrix);
         }
+        // Check if adjacency matrix is symmetric
+        if adjacency_matrix!=adjacency_matrix.t() {
+            return Err(E::InconsistentMatrix);
+        }
 
         // Map vertices labels to vertices indices.
         let labels_indices = labels
@@ -947,6 +951,7 @@ where
 
         // Cast to standard memory layout (i.e. C layout), if not already.
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
+
 
         // Compute size.
         let size = adjacency_matrix.mapv(|f| f as usize).sum();
@@ -1047,6 +1052,11 @@ where
         if undirected_adjacency_matrix.dim() != directed_adjacency_matrix.dim() {
             return Err(E::InconsistentMatrix);
         }
+        // Check if undirected adjacency matrix is symmetric.
+        if &undirected_adjacency_matrix != &undirected_adjacency_matrix.t()
+        {
+            return Err(E::InconsistentMatrix);
+        }
 
         // Check if adjacency matrices don't overlap.
         if (&undirected_adjacency_matrix & &directed_adjacency_matrix)
@@ -1055,6 +1065,8 @@ where
         {
             return Err(E::MultipleTypesEdges);
         }
+
+        
 
         // Map vertices labels to vertices indices.
         let labels_indices = labels

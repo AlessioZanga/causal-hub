@@ -1431,10 +1431,13 @@ mod partially_directed {
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A", "B"], array![[false, false], [false, false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,),
-                        (
-                            (vec!["A", "B"], array![[false, false], [true, false]]),
-                            r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 1 \}"#,),
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
+                    ),
+                    // Non-empty vertex set and non-empty adjacency matrix.
+                    (
+                        (vec!["A", "B"], array![[false, true], [true, false]]),
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, true\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, true\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 1 \}"#,
+                    ),
                 ];
 
                 // Test for each scenario ...
@@ -1453,17 +1456,23 @@ mod partially_directed {
                     // Empty vertex set and adjacency matrix.
                     (
                         (vec![], Default::default()),
-                        r#"[a-zA-Z]+Graph \{ V = \{\}, E = \{\} \}"#,
+                        r#"[a-zA-Z]+Graph \{ V = \{\}, Undirected E = \{\}, Directed E = \{\}, E = \{\} \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A"], array![[false]]),
-                        r#"[a-zA-Z]+Graph \{ V = \{"A"\}, E = \{\} \}"#,
+                        r#"[a-zA-Z]+Graph \{ V = \{"A"\}, Undirected E = \{\}, Directed E = \{\}, E = \{\} \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A", "B"], array![[false, false], [false, false]]),
-                        r#"[a-zA-Z]+Graph \{ V = \{"A", "B"\}, E = \{\} \}"#,
+                        r#"[a-zA-Z]+Graph \{ V = \{"A", "B"\}, Undirected E = \{\}, Directed E = \{\}, E = \{\} \}"#,
+                    ),
+
+                    // Non-empty vertex set and non-empty adjacency matrix.
+                    (
+                        (vec!["A", "B"], array![[false, true], [true, false]]),
+                        r#"[a-zA-Z]+Graph \{ V = \{"A", "B"\}, Undirected E = \{\("A", "B"\)\}, Directed E = \{\}, E = \{\("A", "B"\)\} \}"#,
                     ),
                 ];
 
