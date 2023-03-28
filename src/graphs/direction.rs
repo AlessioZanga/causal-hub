@@ -564,8 +564,7 @@ pub trait IntoUndirectedGraph {
 }
 
 
-//TODO: define `PartiallyGraph` specific macros
-
+//TODO: Improve documentation
 /// Partially directed graph trait.
 pub trait PartiallyGraph:
     Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
@@ -580,16 +579,19 @@ pub trait PartiallyGraph:
     type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
+    
+    type Error;
 
     /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
-    fn new_spec<V, I, J>(vertices: I, undirected_edges: J, directed_edges: J) -> Self
+    fn new_spec<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, Self::Error>
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
-        J: IntoIterator<Item = (V, V)>;
+        J: IntoIterator<Item = (V, V)>,
+        K: IntoIterator<Item = (V, V)>;
 
     /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>; //TODO: create macro
+    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>;
 
     /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
     fn size_of_type(&self, which: char) -> usize;
@@ -602,6 +604,4 @@ pub trait PartiallyGraph:
 
     /// Orient (or re-orient) an already present edge
     fn orient_edge(&mut self, x: usize, y: usize) -> bool;
-
-    //TODO: Improve documentation
 }
