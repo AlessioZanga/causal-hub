@@ -722,7 +722,7 @@ impl Into<AdjacencyList<String>> for DirectedDenseAdjacencyMatrixGraph {
             .map(|x| {
                 (
                     self.label(x).into(),
-                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                    Ch!(self, x).map(|y| self.label(y).into()).collect(),
                 )
             })
             .collect()
