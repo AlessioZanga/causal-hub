@@ -28,7 +28,7 @@ use crate::{
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
     uE,
     utils::partial_cmp_sets,
-    Adj, Ch, Pa, E, V,
+    Adj, Ch, Ne, Pa, E, V,
 };
 
 /// Mixed graph struct based on a couple of dense adjacency matrix data structures.
@@ -1209,17 +1209,24 @@ impl Into<(EdgeList<String>, EdgeList<String>)> for PartiallyDenseAdjacencyMatri
 #[allow(clippy::from_over_into)]
 impl Into<(AdjacencyList<String>, AdjacencyList<String>)> for PartiallyDenseAdjacencyMatrixGraph {
     fn into(self) -> (AdjacencyList<String>, AdjacencyList<String>) {
-        /*
-        V!(self)
+        let ch_map = V!(self)
             .map(|x| {
                 (
                     self.label(x).into(),
-                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                    Ch!(self, x).map(|y| self.label(y).into()).collect(),
                 )
             })
-            .collect()
-        */
-        todo!(); //TODO: First implement Ch! and Ne! for Partially directed graph struct
+            .collect();
+
+        let ne_map = V!(self)
+            .map(|x| {
+                (
+                    self.label(x).into(),
+                    Ne!(self, x).map(|y| self.label(y).into()).collect(),
+                )
+            })
+            .collect();
+        (ch_map, ne_map)
     }
 }
 
@@ -2009,11 +2016,9 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
-// TODO: impl UndirectedGraph, DirectedGraph traits
 // TODO: Write tests for all implemented traits
-//          (especially: UnidrectedGraph, DirectedGraph, PartiallyGraph, ...)
+//          (especially: UndirectedGraph, DirectedGraph, PartiallyGraph, ...)
 
-// TODO: impl PathGraph trait
+// TODO: (impl PathGraph trait)
 // TODO: (impl MoralGraph trait)
-// TODO: From<DOT> trait
+// TODO: (From<DOT> trait)
