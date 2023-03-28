@@ -169,7 +169,6 @@ pub struct AdjacentsIterator<'a> {
     >,
 }
 
-// TODO: add: new_undirected, new_directed
 impl<'a> AdjacentsIterator<'a> {
     /// Constructor.
     #[inline]
@@ -200,10 +199,7 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
-//TODO: implement NeighboursIterator struct
-//TODO: implement AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
-
-//FIXME: be more specific about edge types
+//TODO: be more specific about edge types
 impl Display for PartiallyDenseAdjacencyMatrixGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
@@ -244,7 +240,11 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn to_undirected(&self) -> Self::UndirectedGraph {
-        Self::UndirectedGraph::try_from((self.labels.clone(), self.skeleton_adjacency_matrix.clone())).unwrap()
+        Self::UndirectedGraph::try_from((
+            self.labels.clone(),
+            self.skeleton_adjacency_matrix.clone(),
+        ))
+        .unwrap()
     }
 }
 
@@ -784,11 +784,14 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     type EdgesIter<'a> = EdgesIterator<'a>;
 
-    fn new_spec<V, I, J>(vertices: I, undirected_edges: J, directed_edges: J) -> Self
+    type Error = E;
+
+    fn new_spec<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, E>
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
         J: IntoIterator<Item = (V, V)>,
+        K: IntoIterator<Item = (V, V)>,
     {
         // Remove duplicated vertices labels.
         let mut labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
@@ -861,19 +864,21 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 skeleton_adjacency_matrix[[j, i]] = true;
                 // Increment size.
                 size += 1;
+                
             } else {
-                panic!("Multiple types of edges between two nodes is not allowed")
+                // Panic if edges lists overlap
+                return Err(E::MultipleTypesEdges);
             }
         }
 
-        Self {
+        Ok(Self {
             labels,
             labels_indices,
             undirected_adjacency_matrix,
             directed_adjacency_matrix,
             skeleton_adjacency_matrix,
             size,
-        }
+        })
     }
 
     #[inline]
@@ -1076,8 +1081,7 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-//TODO: add more specific `From` and `Into`
-/* Implement TryFrom traits. */
+/* Implement generic TryFrom traits. */
 impl<V> From<EdgeList<V>> for PartiallyDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
@@ -1174,7 +1178,126 @@ where
     }
 }
 
-/* Implement Into traits. */
+/* Implement specific TryFrom traits. */
+impl<V> From<(EdgeList<V>, EdgeList<V>)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+{
+    #[inline]
+    fn from((undirected_edges, directed_edges):(EdgeList<V>, EdgeList<V>)) -> Self {
+        Self::new_spec([], undirected_edges, directed_edges).unwrap()
+    }
+}
+
+impl<V> From<(AdjacencyList<V>, AdjacencyList<V>)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Clone + Into<String>,
+{
+    fn from((undirected_adjacency_list, directed_adjacency_list):(AdjacencyList<V>, AdjacencyList<V>)) -> Self {
+        // Map into vertices.
+        let mut vertices = undirected_adjacency_list.keys().cloned().collect_vec();
+        vertices.append(&mut directed_adjacency_list.keys().cloned().collect_vec());
+        // Map into edges.
+        let undirected_edges = undirected_adjacency_list
+            .into_iter()
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+        let directed_edges = directed_adjacency_list
+            .into_iter()
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+
+        Self::new_spec(vertices, undirected_edges, directed_edges).unwrap()
+    }
+}
+
+impl<V, I> TryFrom<(I, DenseAdjacencyMatrix, DenseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+    I: IntoIterator<Item = V>,
+{
+    type Error = E;
+
+    fn try_from(
+        (vertices, undirected_adjacency_matrix, directed_adjacency_matrix): (I, DenseAdjacencyMatrix, DenseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
+
+        // Remove duplicated vertices labels.
+        let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+        // Compute order
+        let order = labels.len();
+        // Check if vertex set is not consistent with given undirected adjacency matrix.
+        if order != undirected_adjacency_matrix.nrows() {
+            return Err(E::InconsistentMatrix);
+        }
+        // Check if undirected adjacency matrix is not square.
+        if !undirected_adjacency_matrix.is_square() {
+            return Err(E::NonSquareMatrix);
+        }
+        // Check if adjacency matrices have consistent dimensions.
+        if undirected_adjacency_matrix.dim()!=directed_adjacency_matrix.dim(){
+            return Err(E::InconsistentMatrix);
+        }
+
+        // Check if adjacency matrices don't overlap.
+        if (&undirected_adjacency_matrix & &directed_adjacency_matrix).iter().any(|x| *x){
+            return Err(E::MultipleTypesEdges);
+        }
+
+        // Map vertices labels to vertices indices.
+        let labels_indices = labels
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, x)| (x, i))
+            .collect();
+
+        // Cast to standard memory layout (i.e. C layout), if not already.
+        let skeleton_adjacency_matrix = &undirected_adjacency_matrix | &directed_adjacency_matrix | &directed_adjacency_matrix.t();
+        let undirected_adjacency_matrix = undirected_adjacency_matrix.as_standard_layout().into_owned();
+        let directed_adjacency_matrix = directed_adjacency_matrix.as_standard_layout().into_owned();
+
+
+        // Compute size.
+        let size = skeleton_adjacency_matrix.indexed_iter().map(|((i, j), &f)| if i<=j {f as usize} else {0}).sum();
+
+        Ok(Self {
+            labels,
+            labels_indices,
+            directed_adjacency_matrix,
+            undirected_adjacency_matrix,
+            skeleton_adjacency_matrix,
+            size,
+        })
+    }
+}
+
+impl<V, I> TryFrom<(I, SparseAdjacencyMatrix, SparseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph
+where
+    V: Into<String>,
+    I: IntoIterator<Item = V>,
+{
+    type Error = E;
+
+    fn try_from(
+        (vertices, undirected_adjacency_matrix, directed_adjacency_matrix): (I, SparseAdjacencyMatrix, SparseAdjacencyMatrix),
+    ) -> Result<Self, Self::Error> {
+        // Allocate dense adjacency matrices.
+        let mut undirected_dense_adjacency_matrix =
+            DenseAdjacencyMatrix::from_elem(undirected_adjacency_matrix.shape(), false);
+            let mut directed_dense_adjacency_matrix =
+            DenseAdjacencyMatrix::from_elem(directed_adjacency_matrix.shape(), false);
+        // Fill dense adjacency matrices from sparse triplets.
+        for (&f, (i, j)) in undirected_adjacency_matrix.triplet_iter() {
+            undirected_dense_adjacency_matrix[[i, j]] = f;
+        }
+        for (&f, (i, j)) in directed_adjacency_matrix.triplet_iter() {
+            directed_dense_adjacency_matrix[[i, j]] = f;
+        }
+        // Delegate constructor to dense adjacency matrix constructor.
+        Self::try_from((vertices, undirected_dense_adjacency_matrix, directed_dense_adjacency_matrix))
+    }
+}
+
+/* Implement generic Into traits. */
 
 #[allow(clippy::from_over_into)]
 impl Into<EdgeList<String>> for PartiallyDenseAdjacencyMatrixGraph {
@@ -1238,6 +1361,48 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for PartiallyDenseAdjacency
     }
 }
 
+/* Implement specific Into traits. */
+
+#[allow(clippy::from_over_into)]
+impl Into<(EdgeList<String>, EdgeList<String>)> for PartiallyDenseAdjacencyMatrixGraph {
+    fn into(self) -> (EdgeList<String>, EdgeList<String>) {
+        (uE!(self)
+            .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
+            .collect(), uE!(self)
+            .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
+            .collect()
+    )
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(AdjacencyList<String>, AdjacencyList<String>)> for PartiallyDenseAdjacencyMatrixGraph {
+    
+    fn into(self) -> (AdjacencyList<String>, AdjacencyList<String>) {
+        /*
+        V!(self)
+            .map(|x| {
+                (
+                    self.label(x).into(),
+                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                )
+            })
+            .collect()
+        */
+            todo!(); //TODO: First implement Ch! and Ne! for Partially directed graph struct
+        }
+    
+    
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<(BTreeSet<String>, DenseAdjacencyMatrix, DenseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix, DenseAdjacencyMatrix) {
+        (self.labels, self.undirected_adjacency_matrix, self.directed_adjacency_matrix)
+    }
+}
+
 /* Implement PartialOrdGraph trait. */
 impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
@@ -1285,9 +1450,9 @@ impl PartialOrd for PartiallyDenseAdjacencyMatrixGraph {
                     // ... then return ordering
                     match (vertices, undirected_edges, directed_edges) {
                         (_, Ordering::Greater, Ordering::Less) => None,
-                        (_, Ordering::Less, Ordering::Greater) => None, 
+                        (_, Ordering::Less, Ordering::Greater) => None,
                         (Ordering::Greater, _, Ordering::Less) => None,
-                        (Ordering::Less, _, Ordering::Greater) => None, 
+                        (Ordering::Less, _, Ordering::Greater) => None,
                         (Ordering::Greater, Ordering::Greater, _) => Some(Ordering::Greater),
                         (Ordering::Less, Ordering::Less, _) => Some(Ordering::Less),
                         (Ordering::Equal, Ordering::Equal, _) => Some(directed_edges),
@@ -1305,10 +1470,185 @@ impl PartialOrd for PartiallyDenseAdjacencyMatrixGraph {
 
 impl PartialOrdGraph for PartiallyDenseAdjacencyMatrixGraph {}
 
-// TODO: From, TryFrom, Into traits specific impl
-// TODO: SubGraph trait impl
+/* Implement SubGraph trait. */
+impl SubGraph for PartiallyDenseAdjacencyMatrixGraph {
+    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+        // Add the required vertices.
+        for x in vertices {
+            indices[x] = true;
+        }
+
+        // Initialize a new skeleton adjacency matrix.
+        let mut skeleton_adjacency_matrix =
+            Self::Data::from_elem(self.skeleton_adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix.
+        for (x, y) in edges {
+            // Add the edge.
+            skeleton_adjacency_matrix[[x, y]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect_vec();
+
+        // Get minor of matrix.
+        let skeleton_adjacency_matrix = skeleton_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // Initialize undirected and directed adjacences submatrices ...
+        let mut undirected_adjacency_matrix = self
+            .undirected_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        let mut directed_adjacency_matrix = self
+            .directed_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // ... and filter their elements based on skeleton adjacency matrix
+        undirected_adjacency_matrix = undirected_adjacency_matrix & skeleton_adjacency_matrix.clone();
+        directed_adjacency_matrix = directed_adjacency_matrix & skeleton_adjacency_matrix.clone();
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(vertices.len(), skeleton_adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(skeleton_adjacency_matrix.is_square());
+        // Assert matrix dimensions are still consistent
+        debug_assert!(undirected_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+        debug_assert!(directed_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, undirected_adjacency_matrix, directed_adjacency_matrix)).unwrap()
+    }
+
+    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        // Remove duplicated vertices identifiers.
+        let indices: BTreeSet<_> = vertices.into_iter().collect();
+        // Cast to vector of indices.
+        let indices = indices.into_iter().collect_vec();
+
+        // Get minor of matrices.
+        let undirected_adjacency_matrix = self
+            .undirected_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+        let directed_adjacency_matrix = self
+            .directed_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+        let skeleton_adjacency_matrix = self
+            .skeleton_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+         // Assert vertex set is still consistent with adjacency matrix shape.
+         debug_assert_eq!(vertices.len(), skeleton_adjacency_matrix.nrows());
+         // Assert adjacency matrix is still square.
+         debug_assert!(skeleton_adjacency_matrix.is_square());
+         // Assert matrix dimensions are still consistent
+         debug_assert!(undirected_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+         debug_assert!(directed_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, undirected_adjacency_matrix, directed_adjacency_matrix)).unwrap()
+    }
+
+    fn subgraph_by_edges<J>(&self, edges: J) -> Self
+    where
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        // Initialize new indices.
+        let mut indices = vec![false; self.order()];
+
+        // Initialize a new adjacency matrix.
+        let mut skeleton_adjacency_matrix = Self::Data::from_elem(self.skeleton_adjacency_matrix.dim(), false);
+        // Fill the adjacency matrix.
+        for (x, y) in edges {
+            // Add the edge.
+            skeleton_adjacency_matrix[[x, y]] = true;
+            // Add the vertices.
+            indices[x] = true;
+            indices[y] = true;
+        }
+
+        // Map the indices.
+        let indices = indices
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, f)| match f {
+                true => Some(i),
+                false => None,
+            })
+            .collect_vec();
+
+        // Get minor of matrix.
+        let skeleton_adjacency_matrix = skeleton_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // Initialize undirected and directed adjacences submatrices ...
+        let mut undirected_adjacency_matrix = self
+            .undirected_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        let mut directed_adjacency_matrix = self
+            .directed_adjacency_matrix
+            .select(Axis(0), &indices)
+            .select(Axis(1), &indices);
+
+        // ... and filter their elements based on skeleton adjacency matrix
+        undirected_adjacency_matrix = undirected_adjacency_matrix & skeleton_adjacency_matrix.clone();
+        directed_adjacency_matrix = directed_adjacency_matrix & skeleton_adjacency_matrix.clone();
+
+        // Get vertices labels.
+        let vertices = indices.into_iter().map(|x| self.label(x));
+
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(vertices.len(), skeleton_adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(skeleton_adjacency_matrix.is_square());
+        // Assert matrix dimensions are still consistent
+        debug_assert!(undirected_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+        debug_assert!(directed_adjacency_matrix.dim() == skeleton_adjacency_matrix.dim());
+
+        // Build subgraph from vertices and adjacency matrix.
+        Self::try_from((vertices, undirected_adjacency_matrix, directed_adjacency_matrix)).unwrap()
+    }
+}
+
 // TODO: AncestorsIterator, ParentsIterator, ChildrenIterator, DescendantsIterator structs
-// TODO: UndirectedGraph, DirectedGraph traits impl
-// TODO: PathGraph trait impl
-// TODO: MoralGraph trait impl
-// TODO: From<DOT> trait impl
+// TODO: impl UndirectedGraph, DirectedGraph traits
+// TODO: Write tests for all implemented traits
+//          (especially: UnidrectedGraph, DirectedGraph, PartiallyGraph, ...)
+
+// TODO: impl PathGraph trait
+// TODO: (impl MoralGraph trait)
+// TODO: From<DOT> trait

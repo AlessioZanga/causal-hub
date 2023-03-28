@@ -580,6 +580,7 @@ pub trait PartiallyGraph:
     where
         Self: 'a;
     
+    /// Error type
     type Error;
 
     /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
