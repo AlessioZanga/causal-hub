@@ -696,7 +696,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         debug_assert_eq!(
@@ -707,7 +707,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         true
@@ -762,7 +762,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         debug_assert_eq!(
@@ -773,7 +773,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         true
@@ -1525,6 +1525,264 @@ impl UndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
+/* Implement DirectedGraph trait. */
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct AncestorsIterator<'a> {
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
+        fn((usize, bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> AncestorsIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            g,
+            iter: {
+                // Get underlying directed adjacency matrix.
+                let directed_adjacency_matrix = &g.directed_adjacency_matrix;
+                // Initialize previous solution.
+                let mut prev = Array1::from_elem((directed_adjacency_matrix.ncols(),), false);
+                // Get current ancestors set, i.e. parents set.
+                let mut curr = directed_adjacency_matrix.column(x).to_owned();
+
+                // Check stopping criterion.
+                while curr != prev {
+                    // Update previous.
+                    prev.assign(&curr);
+                    // Select current parents.
+                    let next = directed_adjacency_matrix & &curr;
+                    // Collapse new parents.
+                    let next = next.fold_axis(Axis(1), false, |acc, f| acc | f);
+                    // Accumulate new parents.
+                    curr = curr | next;
+                }
+
+                curr.into_iter().enumerate().filter_map(|(x, f)| match f {
+                    true => Some(x),
+                    false => None,
+                })
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for AncestorsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for AncestorsIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct ParentsIterator<'a> {
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
+        fn((usize, &bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> ParentsIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            g,
+            iter: g
+                .directed_adjacency_matrix
+                .column(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, &f)| match f {
+                    true => Some(i),
+                    false => None,
+                }),
+        }
+    }
+}
+
+impl<'a> Iterator for ParentsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for ParentsIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct ChildrenIterator<'a> {
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
+        fn((usize, &bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> ChildrenIterator<'a> {
+    /// Constructor.
+    #[inline]
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            g,
+            iter: g
+                .directed_adjacency_matrix
+                .row(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, &f)| match f {
+                    true => Some(i),
+                    false => None,
+                }),
+        }
+    }
+}
+
+impl<'a> Iterator for ChildrenIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for ChildrenIterator<'a> {}
+
+#[allow(dead_code, clippy::type_complexity)]
+pub struct DescendantsIterator<'a> {
+    g: &'a PartiallyDenseAdjacencyMatrixGraph,
+    iter: FilterMap<
+        Enumerate<<ArrayBase<OwnedRepr<bool>, Dim<[usize; 1]>> as IntoIterator>::IntoIter>,
+        fn((usize, bool)) -> Option<usize>,
+    >,
+}
+
+impl<'a> DescendantsIterator<'a> {
+    /// Constructor.
+    pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            g,
+            iter: {
+                // Get underlying directed adjacency matrix.
+                let directed_adjacency_matrix = &g.directed_adjacency_matrix;
+                // Initialize previous solution.
+                let mut prev = Array1::from_elem((directed_adjacency_matrix.ncols(),), false);
+                // Get current ancestors set, i.e. parents set.
+                let mut curr = directed_adjacency_matrix.row(x).to_owned();
+
+                // Check stopping criterion.
+                while curr != prev {
+                    // Update previous.
+                    prev.assign(&curr);
+                    // Select current parents.
+                    let next = &directed_adjacency_matrix.t() & &curr;
+                    // Collapse new parents.
+                    let next = next.fold_axis(Axis(1), false, |acc, f| acc | f);
+                    // Accumulate new parents.
+                    curr = curr | next;
+                }
+
+                curr.into_iter().enumerate().filter_map(|(x, f)| match f {
+                    true => Some(x),
+                    false => None,
+                })
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for DescendantsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> FusedIterator for DescendantsIterator<'a> {}
+
+impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type AncestorsIter<'a> = AncestorsIterator<'a>;
+
+    type ParentsIter<'a> = ParentsIterator<'a>;
+
+    type ChildrenIter<'a> = ChildrenIterator<'a>;
+
+    type DescendantsIter<'a> = DescendantsIterator<'a>;
+
+    #[inline]
+    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_> {
+        Self::AncestorsIter::new(self, x)
+    }
+
+    #[inline]
+    fn parents(&self, x: usize) -> Self::ParentsIter<'_> {
+        Self::ParentsIter::new(self, x)
+    }
+
+    #[inline]
+    fn is_parent(&self, x: usize, y: usize) -> bool {
+        self.directed_adjacency_matrix[[y, x]]
+    }
+
+    #[inline]
+    fn children(&self, x: usize) -> Self::ChildrenIter<'_> {
+        Self::ChildrenIter::new(self, x)
+    }
+
+    #[inline]
+    fn is_child(&self, x: usize, y: usize) -> bool {
+        self.directed_adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
+    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_> {
+        Self::DescendantsIter::new(self, x)
+    }
+
+    #[inline]
+    fn in_degree(&self, x: usize) -> usize {
+        // Compute in-degree.
+        let d = self
+            .directed_adjacency_matrix
+            .column(x)
+            .mapv(|f| f as usize)
+            .sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Pa!(self, x).count(), d);
+
+        d
+    }
+
+    #[inline]
+    fn out_degree(&self, x: usize) -> usize {
+        // Compute out-degree.
+        let d = self
+            .directed_adjacency_matrix
+            .row(x)
+            .mapv(|f| f as usize)
+            .sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Ch!(self, x).count(), d);
+
+        d
+    }
+}
+
 /* Implement PartiallyGraph trait. */
 impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
@@ -1736,7 +1994,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         true
