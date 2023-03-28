@@ -170,13 +170,29 @@ pub struct AdjacentsIterator<'a> {
 }
 
 impl<'a> AdjacentsIterator<'a> {
-    /// Constructor.
+    /// General constructor.
     #[inline]
     pub fn new(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
         Self {
             g,
             iter: g
                 .skeleton_adjacency_matrix
+                .row(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, &f)| match f {
+                    true => Some(i),
+                    false => None,
+                }),
+        }
+    }
+    /// Neighbours constructor.
+    #[inline]
+    pub fn new_undirected(g: &'a PartiallyDenseAdjacencyMatrixGraph, x: usize) -> Self {
+        Self {
+            g,
+            iter: g
+                .undirected_adjacency_matrix
                 .row(x)
                 .into_iter()
                 .enumerate()
@@ -790,6 +806,36 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
 
         f
+    }
+}
+
+/* Implement UndirectedGraph trait. */
+impl UndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
+
+    #[inline]
+    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_> {
+        Self::NeighborsIter::new_undirected(self, x)
+    }
+
+    #[inline]
+    fn is_neighbor(&self, x: usize, y: usize) -> bool {
+        self.undirected_adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
+    fn degree(&self, x: usize) -> usize {
+        // Compute degree.
+        let d = self
+            .undirected_adjacency_matrix
+            .row(x)
+            .mapv(|f| f as usize)
+            .sum();
+
+        // Check iterator consistency.
+        debug_assert_eq!(Adj!(self, x).count(), d);
+
+        d
     }
 }
 
