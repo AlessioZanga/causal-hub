@@ -1,8 +1,9 @@
-use std::iter::FusedIterator;
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
+    iter::FusedIterator,
 };
+
 use serde::{Deserialize, Serialize};
 
 use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
@@ -563,7 +564,6 @@ pub trait IntoUndirectedGraph {
     fn to_undirected(&self) -> Self::UndirectedGraph;
 }
 
-
 //TODO: Improve documentation
 /// Partially directed graph trait.
 pub trait PartiallyGraph:
@@ -579,12 +579,16 @@ pub trait PartiallyGraph:
     type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
-    
+
     /// Error type
     type Error;
 
     /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
-    fn new_spec<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, Self::Error>
+    fn new_spec<V, I, J, K>(
+        vertices: I,
+        undirected_edges: J,
+        directed_edges: K,
+    ) -> Result<Self, Self::Error>
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
