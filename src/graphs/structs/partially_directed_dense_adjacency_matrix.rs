@@ -937,7 +937,7 @@ where
             return Err(E::NonSquareMatrix);
         }
         // Check if adjacency matrix is symmetric
-        if adjacency_matrix!=adjacency_matrix.t() {
+        if adjacency_matrix != adjacency_matrix.t() {
             return Err(E::InconsistentMatrix);
         }
 
@@ -951,7 +951,6 @@ where
 
         // Cast to standard memory layout (i.e. C layout), if not already.
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
-
 
         // Compute size.
         let size = adjacency_matrix.mapv(|f| f as usize).sum();
@@ -1053,8 +1052,7 @@ where
             return Err(E::InconsistentMatrix);
         }
         // Check if undirected adjacency matrix is symmetric.
-        if &undirected_adjacency_matrix != &undirected_adjacency_matrix.t()
-        {
+        if undirected_adjacency_matrix != undirected_adjacency_matrix.t() {
             return Err(E::InconsistentMatrix);
         }
 
@@ -1065,8 +1063,6 @@ where
         {
             return Err(E::MultipleTypesEdges);
         }
-
-        
 
         // Map vertices labels to vertices indices.
         let labels_indices = labels

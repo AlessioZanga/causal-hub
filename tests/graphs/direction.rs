@@ -1487,5 +1487,336 @@ mod partially_directed {
             generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
         }
     }
-    
+
+    mod partially {
+        macro_rules! generic_tests {
+            ($G: ident) => {
+                use causal_hub::prelude::*;
+                use is_sorted::IsSorted;
+                use ndarray::prelude::*;
+
+                #[test]
+                fn new_spec() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![],
+                            (0, 0, vec![], vec![], vec![], vec![]),
+                        ),
+                        // ... one vertex and zero edges,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![],
+                            (1, 0, vec!["0"], vec![], vec![], vec![]),
+                        ),
+                        // ... zero vertices and one undirected edge,
+                        (
+                            vec![],
+                            vec![("0", "0")],
+                            vec![],
+                            (1, 1, vec!["0"], vec![("0", "0")], vec![], vec![("0", "0")]),
+                        ),
+                        // ... zero vertices and one directed edge,
+                        (
+                            vec![],
+                            vec![],
+                            vec![("0", "0")],
+                            (1, 1, vec!["0"], vec![], vec![("0", "0")], vec![("0", "0")]),
+                        ),
+                        // ... one vertex and one undirected edge,
+                        (
+                            vec!["0"],
+                            vec![("0", "0")],
+                            vec![],
+                            (1, 1, vec!["0"], vec![("0", "0")], vec![], vec![("0", "0")]),
+                        ),
+                        // ... one vertex and one directed edge,
+                        (
+                            vec!["0"],
+                            vec![],
+                            vec![("0", "0")],
+                            (1, 1, vec!["0"], vec![], vec![("0", "0")], vec![("0", "0")]),
+                        ),
+                        // ... multiple vertices and zero edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![],
+                            (4, 0, vec!["0", "1", "2", "3"], vec![], vec![], vec![]),
+                        ),
+                        // ... zero vertices and multiple undirected edges,
+                        (
+                            vec![],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![],
+                            (
+                                4,
+                                3,
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                        ),
+                        // ... zero vertices and multiple directed edges,
+                        (
+                            vec![],
+                            vec![],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            (
+                                4,
+                                3,
+                                vec!["0", "1", "2", "3"],
+                                vec![],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                        ),
+                        // ... zero vertices and multiple edges of different types,
+                        (
+                            vec![],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("6", "5"), ("4", "5")],
+                            (
+                                7,
+                                5,
+                                vec!["0", "1", "2", "3", "4", "5", "6"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![("4", "5"), ("6", "5")],
+                                vec![("0", "1"), ("1", "2"), ("2", "3"), ("4", "5"), ("5", "6")],
+                            ),
+                        ),
+                        // ... multiple vertices and one undirected edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1")],
+                            vec![],
+                            (
+                                4,
+                                1,
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1")],
+                                vec![],
+                                vec![("0", "1")],
+                            ),
+                        ),
+                        // ... multiple vertices and one directed edge,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![("0", "1")],
+                            (
+                                4,
+                                1,
+                                vec!["0", "1", "2", "3"],
+                                vec![],
+                                vec![("0", "1")],
+                                vec![("0", "1")],
+                            ),
+                        ),
+                        // ... multiple vertices and multiple undirected edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![],
+                            (
+                                4,
+                                3,
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                        ),
+                        // ... multiple vertices and multiple directed edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            (
+                                4,
+                                3,
+                                vec!["0", "1", "2", "3"],
+                                vec![],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            ),
+                        ),
+                        // ... multiple vertices and multiple edges of different types,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("1", "3"), ("3", "0")],
+                            (
+                                4,
+                                5,
+                                vec!["0", "1", "2", "3"],
+                                vec![("0", "1"), ("1", "2"), ("2", "3")],
+                                vec![("1", "3"), ("3", "0")],
+                                vec![("0", "1"), ("0", "3"), ("1", "2"), ("1", "3"), ("2", "3")],
+                            ),
+                        ),
+                        // ... random vertices and undirected edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![],
+                            (
+                                5,
+                                4,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                                vec![],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                        ),
+                        // ... random vertices and directed edges,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            (
+                                5,
+                                4,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![],
+                                vec![("1", "58"), ("3", "75"), ("58", "3"), ("71", "1")],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                        ),
+                        // ... random vertices and edges of different types,
+                        (
+                            vec!["71", "1", "58", "3", "75"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![("75", "1"), ("1", "3")],
+                            (
+                                5,
+                                6,
+                                vec!["1", "3", "58", "71", "75"],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                                vec![("1", "3"), ("75", "1")],
+                                vec![
+                                    ("1", "3"),
+                                    ("1", "58"),
+                                    ("1", "71"),
+                                    ("1", "75"),
+                                    ("3", "58"),
+                                    ("3", "75"),
+                                ],
+                            ),
+                        ),
+                        // ... random non-overlapping vertices and undirected edges,
+                        (
+                            vec!["35", "62", "99", "29", "100", "18"],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![],
+                            (
+                                11,
+                                4,
+                                vec![
+                                    "1", "100", "18", "29", "3", "35", "58", "62", "71", "75", "99",
+                                ],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                                vec![],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                        ),
+                        // ... random non-overlapping vertices and directed edges,
+                        (
+                            vec!["35", "62", "99", "29", "100", "18"],
+                            vec![],
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            (
+                                11,
+                                4,
+                                vec![
+                                    "1", "100", "18", "29", "3", "35", "58", "62", "71", "75", "99",
+                                ],
+                                vec![],
+                                vec![("1", "58"), ("3", "75"), ("58", "3"), ("71", "1")],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                            ),
+                        ),
+                        // ... random non-overlapping vertices and edges of different types,
+                        (
+                            vec!["35", "62", "99", "29", "100", "18"],
+                            vec![
+                                ("71", "1"),
+                                ("75", "3"),
+                                ("1", "58"),
+                                ("58", "3"),
+                                ("3", "75"),
+                            ],
+                            vec![
+                                ("62", "99"),
+                                ("18", "36"),
+                                ("101", "42"),
+                                ("1", "60"),
+                                ("1", "60"),
+                            ],
+                            (
+                                15,
+                                8,
+                                vec![
+                                    "1", "100", "101", "18", "29", "3", "35", "36", "42", "58",
+                                    "60", "62", "71", "75", "99",
+                                ],
+                                vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                                vec![("1", "60"), ("101", "42"), ("18", "36"), ("62", "99")],
+                                vec![
+                                    ("1", "58"),
+                                    ("1", "60"),
+                                    ("1", "71"),
+                                    ("101", "42"),
+                                    ("18", "36"),
+                                    ("3", "58"),
+                                    ("3", "75"),
+                                    ("62", "99"),
+                                ],
+                            ),
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j, k, (o, s, v, ue, de, e)) in data {
+                        let g = $G::new_spec(i, j, k).unwrap();
+                        assert_eq!(g.order(), o);
+                        assert_eq!(g.size(), s);
+                        assert!(V!(g).is_sorted());
+                        assert!(uE!(g).is_sorted());
+                        assert!(dE!(g).is_sorted());
+                        assert!(E!(g).is_sorted());
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
+                        assert!(uE!(g).eq(ue.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        assert!(dE!(g).eq(de.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                    }
+                }
+
+                #[test]
+                fn edges_of_type() {
+                    todo!()
+                }
+
+                #[test]
+                fn size_of_type() {
+                    todo!()
+                }
+
+                #[test]
+                fn type_of_edge() {
+                    todo!()
+                }
+            };
+        }
+        #[allow(unstable_name_collisions)]
+        mod partially_dense_matrix {
+            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
+            generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+        }
+    }
 }
