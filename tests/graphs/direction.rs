@@ -1796,46 +1796,53 @@ mod partially_directed {
                         assert!(dE!(g).eq(de.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                         assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                         // Test for `size_of_type` function
-                        assert!(g.size_of_type('u')==ue.len());
-                        assert!(g.size_of_type('d')==de.len());
+                        assert!(g.size_of_type('u') == ue.len());
+                        assert!(g.size_of_type('d') == de.len());
                     }
                 }
                 #[test]
                 fn new_incostintent() {
-                    let data = [(vec!["0", "1", "2"], vec![("1","2")], vec![("1", "0"), ("1", "2")]),
-                    (vec!["0", "1", "2"], vec![("1","2")], vec![("1", "0"), ("2", "1")])];
+                    let data = [
+                        (
+                            vec!["0", "1", "2"],
+                            vec![("1", "2")],
+                            vec![("1", "0"), ("1", "2")],
+                        ),
+                        (
+                            vec!["0", "1", "2"],
+                            vec![("1", "2")],
+                            vec![("1", "0"), ("2", "1")],
+                        ),
+                    ];
                     for (i, j, k) in data {
                         let g = $G::new_spec(i, j, k);
                         assert!(g.is_err());
                     }
-
                 }
-
 
                 #[test]
                 fn type_of_edge() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1","2")], vec![("0", "1")]);
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_spec(i, j, k).unwrap();
                     // Test for undirected edges
-                    assert!(g.type_of_edge(1, 2)==Some('u'));
-                    assert!(g.type_of_edge(2, 1)==Some('u'));
+                    assert!(g.type_of_edge(1, 2) == Some('u'));
+                    assert!(g.type_of_edge(2, 1) == Some('u'));
                     // Test for directed edges
-                    assert!(g.type_of_edge(0, 1)==Some('d'));
-                    assert!(g.type_of_edge(1, 0)==Some('d'));
+                    assert!(g.type_of_edge(0, 1) == Some('d'));
+                    assert!(g.type_of_edge(1, 0) == Some('d'));
                     // Test for non-present edges
-                    assert!(g.type_of_edge(0, 2)==None);
-                    assert!(g.type_of_edge(2, 0)==None);
+                    assert!(g.type_of_edge(0, 2) == None);
+                    assert!(g.type_of_edge(2, 0) == None);
                 }
 
                 #[test]
                 #[should_panic]
                 fn type_of_edge_should_panic() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1","2")], vec![("0", "1")]);
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_spec(i, j, k).unwrap();
 
                     g.type_of_edge(0, 3);
                     g.type_of_edge(7, 3);
-
                 }
             };
         }
