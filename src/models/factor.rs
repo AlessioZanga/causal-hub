@@ -618,6 +618,8 @@ impl DiscreteCPD {
         let phi = self
             .phi
             .values
+            // Align values axis [X, Z] to [Z, X] as states.
+            .reversed_axes()
             .permuted_axes(axes)
             .as_standard_layout()
             .to_owned()
