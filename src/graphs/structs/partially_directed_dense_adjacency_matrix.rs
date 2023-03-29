@@ -2092,9 +2092,6 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
             Some('u') => {
                 // Delete edge
                 self.del_edge(x, y);
-                // Update sizes
-                self.undirected_size -= 1;
-                self.directed_size += 1;
             }
             Some('d') => {
                 // Delete edge
@@ -2107,6 +2104,11 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
 
         // Check if sizes are still consistent
         debug_assert!(self.size == (self.undirected_size + self.directed_size));
+
+        // Check if directed adjacency matrix is built correctly
+        debug_assert!(self.directed_adjacency_matrix[[x, y]]);
+        debug_assert!(!self.directed_adjacency_matrix[[y, x]]);
+
         true
     }
 }
