@@ -1800,6 +1800,7 @@ mod partially_directed {
                         assert!(g.size_of_type('d') == de.len());
                     }
                 }
+
                 #[test]
                 fn new_incostintent() {
                     let data = [
@@ -1818,6 +1819,24 @@ mod partially_directed {
                         let g = $G::new_spec(i, j, k);
                         assert!(g.is_err());
                     }
+                }
+
+                #[test]
+                #[should_panic]
+                fn edges_of_type() {
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
+                    let g = $G::new_spec(i, j, k).unwrap();
+                    // Test for undefined type of edge
+                    g.edges_of_type('a');
+                }
+
+                #[test]
+                #[should_panic]
+                fn size_of_type_should_panic() {
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
+                    let g = $G::new_spec(i, j, k).unwrap();
+                    // Test for undefined type of edge
+                    g.size_of_type('a');
                 }
 
                 #[test]
@@ -1840,12 +1859,67 @@ mod partially_directed {
                 fn type_of_edge_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_spec(i, j, k).unwrap();
-
+                    // Test with a non-present vertex
                     g.type_of_edge(0, 3);
-                    g.type_of_edge(7, 3);
+                }
+
+                #[test]
+                fn add_edge_of_type() {
+                    let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
+                    let mut g = $G::new_spec(i, j, k).unwrap();
+                    // Test for added edges
+                    g.add_edge_of_type(0, 3, 'u');
+                    g.add_edge_of_type(3, 2, 'd');
+                    assert!(g.type_of_edge(0, 3) == Some('u'));
+                    assert!(g.type_of_edge(2, 3) == Some('d'));
+                    assert!(g.size() == 4);
+                    // Test for already present edges
+                    assert!(g.add_edge_of_type(0, 1, 'u') == false);
+                    assert!(g.add_edge_of_type(0, 1, 'd') == false);
+                    assert!(g.add_edge_of_type(1, 0, 'd') == false);
+                    assert!(g.add_edge_of_type(1, 2, 'd') == false);
+                    assert!(g.size_of_type('u') == 2);
+                    assert!(g.size_of_type('d') == 2);
+                    assert!(g.size() == 4);
+                }
+
+                #[test]
+                #[should_panic]
+                fn add_edge_of_type_should_panic() {
+                    let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
+                    let mut g = $G::new_spec(i, j, k).unwrap();
+                    // Test with a non-present vertex
+                    g.add_edge_of_type(0, 4, 'u');
+                }
+
+                #[test]
+                fn orient_edge() {
+                    let (i, j, k) = (
+                        vec!["0", "1", "2", "3"],
+                        vec![("1", "2")],
+                        vec![("0", "1"), ("0", "3")],
+                    );
+                    let mut g = $G::new_spec(i, j, k).unwrap();
+
+                    g.orient_edge(0, 1);
+                    g.orient_edge(3, 0);
+                    g.orient_edge(2, 1);
+                    // Test for type of edges
+                    assert!(g.type_of_edge(0, 1) == Some('d'));
+                    assert!(g.type_of_edge(3, 0) == Some('d'));
+                    assert!(g.type_of_edge(2, 1) == Some('d'));
+                    // Test for sizes
+                    assert!(g.size_of_type('u') == 0);
+                    assert!(g.size_of_type('d') == 3);
+                    assert!(g.size_of_type('u') == 0);
+                    assert!(g.size_of_type('d') == 3);
+                    assert!(g.size() == 3);
+                    // Test when orienting a non-existing edge
+                    assert!(g.orient_edge(2, 3) == false);
                 }
             };
         }
+
         #[allow(unstable_name_collisions)]
         mod partially_dense_matrix {
             use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
