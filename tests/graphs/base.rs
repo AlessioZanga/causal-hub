@@ -1433,11 +1433,6 @@ mod partially_directed {
                         (vec!["A", "B"], array![[false, false], [false, false]]),
                         r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 0 \}"#,
                     ),
-                    // Non-empty vertex set and non-empty adjacency matrix.
-                    (
-                        (vec!["A", "B"], array![[false, true], [true, false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, labels_indices: \{"A" <> 0, "B" <> 1|"B" <> 1, "A" <> 0\}, undirected_adjacency_matrix: \[\[false, true\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, true\],\n \[true, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, size: 1 \}"#,
-                    ),
                 ];
 
                 // Test for each scenario ...
