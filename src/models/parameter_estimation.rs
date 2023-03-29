@@ -105,10 +105,8 @@ impl<const PARALLEL: bool>
                 true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
                 false => ConditionalCountMatrix::<false>::new(d, x, &z).into(),
             };
-            // Add pseudo counts. // TODO: Generalize to non-uniform distributions.
-            let n = n + 1;
-            // Cast to float.
-            let n = n.mapv(|n| n as f64);
+            // Cast to float and add pseudo counts. // TODO: Generalize to non-uniform distributions.
+            let n = n.mapv(|n| n as f64) + 1. / n.len() as f64;
             // Compute marginal sums.
             let n_i = n.sum_axis(Axis(1)).insert_axis(Axis(1));
             // Check that at least one configuration for each parent set is observed.
