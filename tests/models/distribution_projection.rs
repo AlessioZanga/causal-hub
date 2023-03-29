@@ -25,7 +25,7 @@ mod variable_elimination {
         let mut q = p.graph().clone();
         q.del_edge(q.vertex("asia"), q.vertex("tub"));
         // Fit modified graph with maximum likelihood estimator.
-        let q = MLE::call(&d, &q);
+        let q = MLE::fit(&d, &q);
         // Project P onto Q using variable elimination as estimator.
         let p = estimator.project_onto(&q);
 

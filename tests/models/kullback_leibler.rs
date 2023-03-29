@@ -22,7 +22,7 @@ mod tests {
         let mut q = p.graph().clone();
         q.del_edge(q.vertex("bronc"), q.vertex("dysp"));
         // Fit modified graph with maximum likelihood estimator.
-        let q = MLE::call(&d, &q);
+        let q = MLE::fit(&d, &q);
         // Project P onto Q using variable elimination as estimator.
         let p = VE::new(&p).project_onto(&q);
 

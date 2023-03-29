@@ -603,6 +603,29 @@ impl DiscreteCPD {
     pub fn target(&self) -> &str {
         self.x.as_str()
     }
+
+    /// Convert underlying CPD factor to matrix.
+    pub fn into_matrix(self) -> Array2<f64> {
+        // Get axes.
+        let mut axes = self.phi.states().values().map(|x| x.len()).collect_vec();
+        // Map [Z_0, ..., X, ..., Z_n] as [X, Z_0, ..., Z_n].
+        let index = self.states().get_index_of(&self.x).unwrap();
+        axes.remove(index);
+        axes.insert(index, 0);
+        // Compute new shape.
+        let shape = [axes[0], axes.iter().skip(1).product()];
+        // Permute axes.
+        let phi = self
+            .phi
+            .values
+            .permuted_axes(axes)
+            .as_standard_layout()
+            .to_owned()
+            .into_shape(shape)
+            .expect("Failed to reshape values");
+
+        phi
+    }
 }
 
 impl Display for DiscreteCPD {

@@ -73,7 +73,7 @@ mod maximum_likelihood_estimation {
         let b: DiscreteBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: DiscreteBayesianNetwork = MLE::call(&d, &b.graph());
+        let c: DiscreteBayesianNetwork = MLE::fit(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());
@@ -155,7 +155,7 @@ mod maximum_likelihood_estimation {
         let b: DiscreteBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: DiscreteBayesianNetwork = ParallelMLE::call(&d, &b.graph());
+        let c: DiscreteBayesianNetwork = ParallelMLE::fit(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());
@@ -261,7 +261,7 @@ mod bayesian_estimation {
         let b: DiscreteBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: DiscreteBayesianNetwork = BE::call(&d, &b.graph());
+        let c: DiscreteBayesianNetwork = BE::fit(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());
@@ -359,7 +359,7 @@ mod bayesian_estimation {
         let b: DiscreteBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: DiscreteBayesianNetwork = ParallelBE::call(&d, &b.graph());
+        let c: DiscreteBayesianNetwork = ParallelBE::fit(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());
