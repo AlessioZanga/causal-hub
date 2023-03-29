@@ -39,6 +39,8 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
     undirected_adjacency_matrix: DenseAdjacencyMatrix,
     directed_adjacency_matrix: DenseAdjacencyMatrix,
     skeleton_adjacency_matrix: DenseAdjacencyMatrix,
+    undirected_size: usize,
+    directed_size: usize,
     size: usize,
 }
 
@@ -118,7 +120,7 @@ impl<'a> EdgesIterator<'a> {
                     true => Some((i, j)),
                     false => None,
                 }),
-            size: g.size,
+            size: g.undirected_size,
         }
     }
     /// Directed edges constructor.
@@ -133,7 +135,7 @@ impl<'a> EdgesIterator<'a> {
                     true => Some((i, j)),
                     false => None,
                 }),
-            size: g.size,
+            size: g.directed_size,
         }
     }
 }
@@ -338,6 +340,8 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
             undirected_adjacency_matrix,
             directed_adjacency_matrix,
             skeleton_adjacency_matrix,
+            undirected_size: size,
+            directed_size: 0,
             size,
         }
     }
@@ -352,7 +356,9 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         self.undirected_adjacency_matrix = Default::default();
         self.directed_adjacency_matrix = Default::default();
         self.skeleton_adjacency_matrix = Default::default();
-        // Clear the size.
+        // Clear the sizes.
+        self.undirected_size = 0;
+        self.directed_size = 0;
         self.size = 0;
     }
 
@@ -670,8 +676,9 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         self.skeleton_adjacency_matrix[[x, y]] = true;
         self.skeleton_adjacency_matrix[[y, x]] = true;
 
-        // Increment size.
+        // Increment sizes.
         self.size += 1;
+        self.undirected_size += 1;
 
         // Assert adjacency matrices are still consistent.
         debug_assert_eq!(
@@ -689,13 +696,21 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         );
         // Assert size counter and adjacency matrices are still consistent.
         debug_assert_eq!(
-            self.size,
+            self.undirected_size,
             self.undirected_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match i <= j {
                     true => Some(f as usize),
                     false => None,
                 })
+                .sum::<usize>()
+        );
+
+        debug_assert_eq!(
+            self.directed_size,
+            self.directed_adjacency_matrix
+                .iter()
+                .map(|&f| f as usize)
                 .sum::<usize>()
         );
 
@@ -715,18 +730,25 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
-        // If edge does not exists ...
-        if !self.skeleton_adjacency_matrix[[x, y]] {
-            // ... return early.
-            return false;
-        }
+        match self.type_of_edge(x, y) {
+            Some('u') => {
+                // Remove edge from undirected adjacency matrix.
+                self.undirected_adjacency_matrix[[x, y]] = false;
+                self.undirected_adjacency_matrix[[y, x]] = false;
+                // Decrement undirected size.
+                self.undirected_size -= 1;
+            }
+            Some('d') => {
+                // Remove edge from directed adjacency matrix.
+                self.directed_adjacency_matrix[[x, y]] = false;
+                self.directed_adjacency_matrix[[y, x]] = false;
+                // Decrement directed size.
+                self.directed_size -= 1;
+            }
+            _ => return false,
+        };
 
-        // Remove edge.
-        self.undirected_adjacency_matrix[[x, y]] = false;
-        self.undirected_adjacency_matrix[[y, x]] = false;
-
-        self.directed_adjacency_matrix[[x, y]] = false;
-        self.directed_adjacency_matrix[[y, x]] = false;
+        // Remove edge from skeleton matrix.
 
         self.skeleton_adjacency_matrix[[x, y]] = false;
         self.skeleton_adjacency_matrix[[y, x]] = false;
@@ -755,13 +777,21 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         );
         // Assert size counter and adjacency matrices are still consistent.
         debug_assert_eq!(
-            self.size,
+            self.undirected_size,
             self.undirected_adjacency_matrix
                 .indexed_iter()
                 .filter_map(|((i, j), &f)| match i <= j {
                     true => Some(f as usize),
                     false => None,
                 })
+                .sum::<usize>()
+        );
+
+        debug_assert_eq!(
+            self.directed_size,
+            self.directed_adjacency_matrix
+                .iter()
+                .map(|&f| f as usize)
                 .sum::<usize>()
         );
 
@@ -806,6 +836,8 @@ impl Default for PartiallyDenseAdjacencyMatrixGraph {
             undirected_adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
             directed_adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
             skeleton_adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
+            undirected_size: 0,
+            directed_size: 0,
             size: 0,
         }
     }
@@ -840,6 +872,8 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
             undirected_adjacency_matrix,
             directed_adjacency_matrix,
             skeleton_adjacency_matrix,
+            undirected_size: 0,
+            directed_size: 0,
             size: 0,
         }
     }
@@ -882,6 +916,8 @@ impl DefaultGraph for PartiallyDenseAdjacencyMatrixGraph {
             undirected_adjacency_matrix,
             directed_adjacency_matrix,
             skeleton_adjacency_matrix,
+            undirected_size: size,
+            directed_size: 0,
             size,
         }
     }
@@ -961,6 +997,8 @@ where
             directed_adjacency_matrix: DenseAdjacencyMatrix::from_elem((order, order), false),
             undirected_adjacency_matrix: adjacency_matrix.clone(),
             skeleton_adjacency_matrix: adjacency_matrix,
+            undirected_size: size,
+            directed_size: 0,
             size,
         })
     }
@@ -1081,7 +1119,15 @@ where
             .into_owned();
         let directed_adjacency_matrix = directed_adjacency_matrix.as_standard_layout().into_owned();
 
-        // Compute size.
+        // Compute sizes.
+        let undirected_size = undirected_adjacency_matrix
+            .indexed_iter()
+            .map(|((i, j), &f)| if i <= j { f as usize } else { 0 })
+            .sum();
+        let directed_size = directed_adjacency_matrix
+            .iter()
+            .map(|&f| f as usize)
+            .sum::<usize>();
         let size = skeleton_adjacency_matrix
             .indexed_iter()
             .map(|((i, j), &f)| if i <= j { f as usize } else { 0 })
@@ -1093,6 +1139,8 @@ where
             directed_adjacency_matrix,
             undirected_adjacency_matrix,
             skeleton_adjacency_matrix,
+            undirected_size,
+            directed_size,
             size,
         })
     }
@@ -1865,8 +1913,10 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         let mut directed_adjacency_matrix = undirected_adjacency_matrix.clone();
         let mut skeleton_adjacency_matrix = undirected_adjacency_matrix.clone();
 
-        // Initialize the size.
+        // Initialize the sizes.
         let mut size = 0;
+        let mut undirected_size = 0;
+        let mut directed_size = 0;
         // Fill skeleton adjacency matrix given edge set.
         for (x, y) in undirected_edges {
             // Get associated vertices indices.
@@ -1881,7 +1931,8 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 undirected_adjacency_matrix[[j, i]] = true;
                 skeleton_adjacency_matrix[[i, j]] = true;
                 skeleton_adjacency_matrix[[j, i]] = true;
-                // Increment size.
+                // Increment sizes.
+                undirected_size += 1;
                 size += 1;
             }
         }
@@ -1898,6 +1949,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 skeleton_adjacency_matrix[[i, j]] = true;
                 skeleton_adjacency_matrix[[j, i]] = true;
                 // Increment size.
+                directed_size += 1;
                 size += 1;
             } else {
                 // Panic if edges lists overlap
@@ -1911,6 +1963,8 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
             undirected_adjacency_matrix,
             directed_adjacency_matrix,
             skeleton_adjacency_matrix,
+            undirected_size,
+            directed_size,
             size,
         })
     }
@@ -1926,8 +1980,8 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn size_of_type(&self, which: char) -> usize {
         let size = match which {
-            'u' => self.edges_of_type('u').len(),
-            'd' => self.edges_of_type('d').len(),
+            'u' => self.undirected_size,
+            'd' => self.directed_size,
             _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
         };
         debug_assert!(size <= self.size());
@@ -1943,7 +1997,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         match self.undirected_adjacency_matrix[[x, y]] {
             // ... is undirected
             true => Some('u'),
-            // ... is directed
+            // ... is directed (we're only interested in presence, not direction)
             _ => Some('d'),
         }
     }
@@ -1966,7 +2020,8 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 self.skeleton_adjacency_matrix[[x, y]] = true;
                 self.skeleton_adjacency_matrix[[y, x]] = true;
 
-                // Increment size.
+                // Increment sizes.
+                self.undirected_size += 1;
                 self.size += 1;
 
                 // Assert adjacency matrices are still consistent.
@@ -1986,6 +2041,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 self.skeleton_adjacency_matrix[[y, x]] = true;
 
                 // Increment size.
+                self.directed_size += 1;
                 self.size += 1;
                 debug_assert_eq!(
                     self.directed_adjacency_matrix[[x, y]],
@@ -2002,6 +2058,23 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         );
         // Assert size counter and adjacency matrices are still consistent.
         debug_assert_eq!(
+            self.undirected_size,
+            self.undirected_adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
+            self.directed_size,
+            self.directed_adjacency_matrix
+                .iter()
+                .map(|&f| f as usize)
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
             self.size,
             self.skeleton_adjacency_matrix
                 .indexed_iter()
@@ -2015,11 +2088,25 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         true
     }
     fn orient_edge(&mut self, x: usize, y: usize) -> bool {
-        if !self.has_edge(x, y) {
-            return false;
+        match self.type_of_edge(x, y) {
+            Some('u') => {
+                // Delete edge
+                self.del_edge(x, y);
+                // Update sizes
+                self.undirected_size -= 1;
+                self.directed_size += 1;
+            }
+            Some('d') => {
+                // Delete edge
+                self.del_edge(x, y);
+            }
+            _ => return false,
         }
-        self.del_edge(x, y);
+        // Add directed edge
         self.add_edge_of_type(x, y, 'd');
+
+        // Check if sizes are still consistent
+        debug_assert!(self.size == (self.undirected_size + self.directed_size));
         true
     }
 }
