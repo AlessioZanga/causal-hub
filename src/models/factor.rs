@@ -607,13 +607,13 @@ impl DiscreteCPD {
     /// Convert underlying CPD factor to matrix.
     pub fn into_matrix(self) -> Array2<f64> {
         // Get axes.
-        let mut axes = self.phi.states().values().map(|x| x.len()).collect_vec();
+        let mut axes = (0..self.phi.states().len()).collect_vec();
         // Map [Z_0, ..., X, ..., Z_n] as [X, Z_0, ..., Z_n].
-        let index = self.states().get_index_of(&self.x).unwrap();
+        let (index, _, states) = self.phi.states().get_full(&self.x).unwrap();
         axes.remove(index);
         axes.insert(index, 0);
-        // Compute new shape.
-        let shape = [axes[0], axes.iter().skip(1).product()];
+        // Compute new shape as [|X|, \Prod_i |Z_i|].
+        let shape = [states.len(), self.phi.values().len() / states.len()];
         // Permute axes.
         let phi = self
             .phi
