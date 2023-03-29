@@ -1493,10 +1493,10 @@ mod partially_directed {
             ($G: ident) => {
                 use causal_hub::prelude::*;
                 use is_sorted::IsSorted;
-                use ndarray::prelude::*;
 
+                // Test for `new_spec`, `edges_of_type`, `size_of_type` functions in `PartiallyGraph` trait
                 #[test]
-                fn new_spec() {
+                fn new_edges_size() {
                     // Test for ...
                     let data = [
                         // ... zero vertices and zero edges,
@@ -1783,6 +1783,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, k, (o, s, v, ue, de, e)) in data {
+                        // Test for `new_spec` and `edges_of_type` (in `uE` and `dE` macros) function
                         let g = $G::new_spec(i, j, k).unwrap();
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
@@ -1791,25 +1792,50 @@ mod partially_directed {
                         assert!(dE!(g).is_sorted());
                         assert!(E!(g).is_sorted());
                         assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
-                        assert!(uE!(g).eq(ue.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
-                        assert!(dE!(g).eq(de.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        assert!(uE!(g).eq(ue.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        assert!(dE!(g).eq(de.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
                         assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        // Test for `size_of_type` function
+                        assert!(g.size_of_type('u')==ue.len());
+                        assert!(g.size_of_type('d')==de.len());
                     }
                 }
-
                 #[test]
-                fn edges_of_type() {
-                    todo!()
+                fn new_incostintent() {
+                    let data = [(vec!["0", "1", "2"], vec![("1","2")], vec![("1", "0"), ("1", "2")]),
+                    (vec!["0", "1", "2"], vec![("1","2")], vec![("1", "0"), ("2", "1")])];
+                    for (i, j, k) in data {
+                        let g = $G::new_spec(i, j, k);
+                        assert!(g.is_err());
+                    }
+
                 }
 
-                #[test]
-                fn size_of_type() {
-                    todo!()
-                }
 
                 #[test]
                 fn type_of_edge() {
-                    todo!()
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1","2")], vec![("0", "1")]);
+                    let g = $G::new_spec(i, j, k).unwrap();
+                    // Test for undirected edges
+                    assert!(g.type_of_edge(1, 2)==Some('u'));
+                    assert!(g.type_of_edge(2, 1)==Some('u'));
+                    // Test for directed edges
+                    assert!(g.type_of_edge(0, 1)==Some('d'));
+                    assert!(g.type_of_edge(1, 0)==Some('d'));
+                    // Test for non-present edges
+                    assert!(g.type_of_edge(0, 2)==None);
+                    assert!(g.type_of_edge(2, 0)==None);
+                }
+
+                #[test]
+                #[should_panic]
+                fn type_of_edge_should_panic() {
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1","2")], vec![("0", "1")]);
+                    let g = $G::new_spec(i, j, k).unwrap();
+
+                    g.type_of_edge(0, 3);
+                    g.type_of_edge(7, 3);
+
                 }
             };
         }
