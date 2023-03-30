@@ -22,7 +22,7 @@ use crate::{
         BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
-    io::DOT,
+    io::{dot::*, DOT},
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
@@ -1246,8 +1246,6 @@ impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for PartiallyDenseAdjacency
     }
 }
 
-/* Implement Into traits. */
-
 #[allow(clippy::from_over_into)]
 impl Into<(EdgeList<String>, EdgeList<String>)> for PartiallyDenseAdjacencyMatrixGraph {
     fn into(self) -> (EdgeList<String>, EdgeList<String>) {
@@ -2113,9 +2111,37 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: Write tests for all implemented traits
-//          (especially: UndirectedGraph, DirectedGraph, PartiallyGraph, ...)
+impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn from(other: DOT) -> Self {
+        // Assert graph type.
+        assert_eq!(
+            other.graph_type, "digraph",
+            "DOT graph type must match direction"
+        );
+
+        let undirected_edges: Vec<_> = other
+            .edges
+            .iter()
+            .filter_map(|(t, e)| match !e.attributes.is_empty() {
+                true => Some((*t).clone()),
+                _ => None,
+            })
+            .collect();
+
+        let directed_edges: Vec<_> = other
+            .edges
+            .iter()
+            .filter_map(|(t, e)| match e.attributes.is_empty() {
+                true => Some((*t).clone()),
+                _ => None,
+            })
+            .collect();
+
+        Self::new_spec(other.vertices.into_keys(), undirected_edges, directed_edges).unwrap()
+    }
+}
 
 // TODO: (impl PathGraph trait)
 // TODO: (impl MoralGraph trait)
-// TODO: (From<DOT> trait)
+// TODO: (impl Into<(BTreeSet<String>, SparseAdjacencyMatrix, SparseAdjacencyMatrix)>)

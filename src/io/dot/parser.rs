@@ -13,12 +13,16 @@ use super::{
     Format, Layout,
 };
 use crate::{
+    dE,
     graphs::{
-        structs::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph},
-        BaseGraph, PartiallyGraph, 
+        structs::{
+            DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
+            UndirectedDenseAdjacencyMatrixGraph,
+        },
+        BaseGraph, PartiallyGraph,
     },
     io::File,
-    uE, dE, E, V,
+    uE, E, V,
 };
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
@@ -672,13 +676,17 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
         // Construct the undirected edge set.
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
-        let mut edges: BTreeMap<_,_> = uE!(g)
+        let mut edges: BTreeMap<_, _> = uE!(g)
             .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
-            .map(|(x, y)| Edge{id: (x, y), op: "->".into(), attributes: undirected_arrowhead.clone()})
+            .map(|(x, y)| Edge {
+                id: (x, y),
+                op: "->".into(),
+                attributes: undirected_arrowhead.clone(),
+            })
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the directed edge set.
-        let mut directed_edges: BTreeMap<_,_> = dE!(g)
+        let mut directed_edges: BTreeMap<_, _> = dE!(g)
             .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
