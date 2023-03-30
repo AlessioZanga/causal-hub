@@ -611,7 +611,7 @@ impl DiscreteCPD {
         // Map [Z_0, ..., X, ..., Z_n] as [X, Z_0, ..., Z_n].
         let (index, _, states) = self.phi.states().get_full(&self.x).unwrap();
         axes.remove(index);
-        axes.insert(index, 0);
+        axes.insert(0, index);
         // Compute new shape as [|X|, \Prod_i |Z_i|].
         let shape = [states.len(), self.phi.values().len() / states.len()];
         // Permute axes.
