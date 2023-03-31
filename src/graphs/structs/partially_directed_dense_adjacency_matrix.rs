@@ -13,7 +13,7 @@ use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
 use serde::{Deserialize, Serialize};
 
-use super::UndirectedDenseAdjacencyMatrixGraph;
+use super::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph};
 use crate::{
     dE,
     graphs::{
@@ -45,6 +45,16 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
 }
 
 /* Implement BaseGraph trait. */
+
+impl Deref for PartiallyDenseAdjacencyMatrixGraph {
+    type Target = DenseAdjacencyMatrix;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.skeleton_adjacency_matrix
+    }
+}
+
 pub struct LabelsIterator<'a> {
     graph: &'a PartiallyDenseAdjacencyMatrixGraph,
     iter: Range<usize>,
@@ -334,6 +344,10 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
 
         // Instantiate empty directed adjacency matrix given graph order.
         let directed_adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+
+        // Assert if undirected adjacency matrix and skeleton matrix are symmetric
+        debug_assert_eq!(undirected_adjacency_matrix, undirected_adjacency_matrix.t());
+        debug_assert_eq!(skeleton_adjacency_matrix, skeleton_adjacency_matrix.t());
         Self {
             labels,
             labels_indices,
@@ -950,6 +964,28 @@ where
     }
 }
 
+impl From<UndirectedDenseAdjacencyMatrixGraph> for PartiallyDenseAdjacencyMatrixGraph {
+    fn from(undirected_graph: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+        let vertices: Vec<_> = undirected_graph.labels().collect();
+        let edges: EdgeList<_> = undirected_graph
+            .edges()
+            .map(|(x, y)| (undirected_graph.label(x), undirected_graph.label(y)))
+            .collect();
+        Self::new(vertices, edges)
+    }
+}
+
+impl From<DirectedDenseAdjacencyMatrixGraph> for PartiallyDenseAdjacencyMatrixGraph {
+    fn from(directed_graph: DirectedDenseAdjacencyMatrixGraph) -> Self {
+        let vertices: Vec<_> = directed_graph.labels().collect();
+        let edges: EdgeList<_> = directed_graph
+            .edges()
+            .map(|(x, y)| (directed_graph.label(x), directed_graph.label(y)))
+            .collect();
+        Self::new_spec(vertices, [], edges).unwrap()
+    }
+}
+
 impl<V, I> TryFrom<(I, DenseAdjacencyMatrix)> for PartiallyDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
@@ -974,7 +1010,7 @@ where
         }
         // Check if adjacency matrix is symmetric
         if adjacency_matrix != adjacency_matrix.t() {
-            return Err(E::InconsistentMatrix);
+            return Err(E::NonSymmetricMatrix);
         }
 
         // Map vertices labels to vertices indices.
@@ -1091,7 +1127,7 @@ where
         }
         // Check if undirected adjacency matrix is symmetric.
         if undirected_adjacency_matrix != undirected_adjacency_matrix.t() {
-            return Err(E::InconsistentMatrix);
+            return Err(E::NonSymmetricMatrix);
         }
 
         // Check if adjacency matrices don't overlap.
@@ -1954,6 +1990,10 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
                 return Err(E::MultipleTypesEdges);
             }
         }
+        // Assert if undirected adjacency matrix and skeleton matrix are symmetric
+
+        debug_assert_eq!(undirected_adjacency_matrix, undirected_adjacency_matrix.t());
+        debug_assert_eq!(skeleton_adjacency_matrix, skeleton_adjacency_matrix.t());
 
         Ok(Self {
             labels,
@@ -1965,6 +2005,15 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
             directed_size,
             size,
         })
+    }
+
+    #[inline]
+    fn deref_of_type(&self, which: char) -> &Self::Data {
+        match which {
+            'u' => &self.undirected_adjacency_matrix,
+            'd' => &self.directed_adjacency_matrix,
+            _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
+        }
     }
 
     #[inline]

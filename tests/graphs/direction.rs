@@ -1491,8 +1491,11 @@ mod partially_directed {
     mod partially {
         macro_rules! generic_tests {
             ($G: ident) => {
+                use std::ops::Deref;
+
                 use causal_hub::prelude::*;
                 use is_sorted::IsSorted;
+                use ndarray::prelude::*;
 
                 // Test for `new_spec`, `edges_of_type`, `size_of_type` functions in `PartiallyGraph` trait
                 #[test]
@@ -1802,6 +1805,60 @@ mod partially_directed {
                 }
 
                 #[test]
+                fn deref_of_type() {
+                    // Test for ...
+                    let data = [
+                        // ... zero vertices and zero edges,
+                        (vec![], Default::default()),
+                        // ... one vertex and one edge,
+                        (vec!["0"], array![[true]]),
+                        // ... multiple vertices and one edge,
+                        (vec!["0", "1"], array![[false, true], [true, false]]),
+                        // ... multiple vertices and multiple edges,
+                        (
+                            vec!["0", "1", "2", "3"],
+                            array![
+                                [false, true, false, false],
+                                [true, false, true, false],
+                                [false, true, false, true],
+                                [false, false, true, false]
+                            ],
+                        ),
+                        // ... random vertices and edges,
+                        (
+                            vec!["1", "3", "58", "71", "75"],
+                            array![
+                                [false, false, true, true, false],
+                                [false, false, true, false, true],
+                                [true, true, false, false, false],
+                                [true, false, false, false, false],
+                                [false, true, false, false, false]
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (v, a) in data {
+                        let order = v.len();
+                        let empty_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+
+                        // Test for undirected graph
+                        let g_undirected =
+                            $G::try_from((v.clone(), a.clone(), empty_matrix.clone())).unwrap();
+                        assert!(g_undirected.deref_of_type('u') == &a);
+                        assert!(g_undirected.deref_of_type('d') == &empty_matrix);
+                        assert!(g_undirected.deref() == &a);
+
+                        // Test for directed graph
+                        let g_directed =
+                            $G::try_from((v.clone(), empty_matrix.clone(), a.clone())).unwrap();
+                        assert!(g_directed.deref_of_type('u') == &empty_matrix);
+                        assert!(g_directed.deref_of_type('d') == &a);
+                        assert!(g_directed.deref() == &a);
+                    }
+                }
+
+                #[test]
                 fn new_incostintent() {
                     let data = [
                         (
@@ -1922,7 +1979,10 @@ mod partially_directed {
 
         #[allow(unstable_name_collisions)]
         mod partially_dense_matrix {
-            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
+            use causal_hub::graphs::structs::{
+                DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
+                UndirectedDenseAdjacencyMatrixGraph,
+            };
             generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
         }
     }

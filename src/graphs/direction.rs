@@ -595,6 +595,9 @@ pub trait PartiallyGraph:
         J: IntoIterator<Item = (V, V)>,
         K: IntoIterator<Item = (V, V)>;
 
+    /// Specialized deferencing
+    fn deref_of_type(&self, which: char) -> &Self::Data;
+
     /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
     fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>;
 
