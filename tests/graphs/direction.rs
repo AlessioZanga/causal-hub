@@ -1979,10 +1979,7 @@ mod partially_directed {
 
         #[allow(unstable_name_collisions)]
         mod partially_dense_matrix {
-            use causal_hub::graphs::structs::{
-                DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
-                UndirectedDenseAdjacencyMatrixGraph,
-            };
+            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
             generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
         }
     }
