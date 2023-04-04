@@ -1072,6 +1072,7 @@ where
     }
 }
 
+// FIXME: 
 impl<V> From<(AdjacencyList<V>, AdjacencyList<V>)> for PartiallyDenseAdjacencyMatrixGraph
 where
     V: Clone + Into<String>,
@@ -1236,7 +1237,7 @@ impl Into<AdjacencyList<String>> for PartiallyDenseAdjacencyMatrixGraph {
             .map(|x| {
                 (
                     self.label(x).into(),
-                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                    iter_set::union(Ne!(self, x), Ch!(self, x)).map(|y| self.label(y).into()).collect(),
                 )
             })
             .collect()
