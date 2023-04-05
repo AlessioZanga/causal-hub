@@ -1424,6 +1424,7 @@ impl SubGraph for PartiallyDenseAdjacencyMatrixGraph {
         for (x, y) in edges {
             // Add the edge.
             skeleton_adjacency_matrix[[x, y]] = true;
+            skeleton_adjacency_matrix[[y, x]] = true;
             // Add the vertices.
             indices[x] = true;
             indices[y] = true;
@@ -1537,6 +1538,7 @@ impl SubGraph for PartiallyDenseAdjacencyMatrixGraph {
         for (x, y) in edges {
             // Add the edge.
             skeleton_adjacency_matrix[[x, y]] = true;
+            skeleton_adjacency_matrix[[y, x]] = true;
             // Add the vertices.
             indices[x] = true;
             indices[y] = true;

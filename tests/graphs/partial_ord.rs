@@ -774,7 +774,6 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    dbg!(i.clone());
                     let g = $G::new_spec(i, ue, de).unwrap();
                     for (i, ue, de, f) in k {
                         let h = $G::new_spec(i, ue, de).unwrap();
@@ -1055,7 +1054,6 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    dbg!(i.clone());
                     let g = $G::new_spec(i, ue, de).unwrap();
                     for (i, ue, de, f) in k {
                         let h = $G::new_spec(i, ue, de).unwrap();
