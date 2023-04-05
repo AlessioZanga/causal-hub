@@ -15,8 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, PathGraph, SubGraph,
-        UndirectedGraph,
+        directions, BaseGraph, DefaultGraph, PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
     io::DOT,
     prelude::BFS,
@@ -670,30 +669,26 @@ where
     }
 }
 
-impl<I, V> TryFrom<(I, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
+impl<I, V> From<(I, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
 where
     I: IntoIterator<Item = V>,
     V: Into<String>,
 {
-    type Error = E;
-
-    fn try_from(
-        (labels, adjacency_matrix): (I, DenseAdjacencyMatrix),
-    ) -> Result<Self, Self::Error> {
+    fn from((labels, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Self {
         // Remove duplicated vertices labels.
         let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
 
         // Check if vertex set is not consistent with given adjacency matrix.
         if labels.len() != adjacency_matrix.nrows() {
-            return Err(E::InconsistentMatrix);
+            panic!("Matrix must be consistent with inputs");
         }
         // Check if adjacency matrix is not square.
         if !adjacency_matrix.is_square() {
-            return Err(E::NonSquareMatrix);
+            panic!("Matrix must be square");
         }
         // Check if adjacency matrix is not symmetric.
         if adjacency_matrix != adjacency_matrix.t() {
-            return Err(E::NonSymmetricMatrix);
+            panic!("Matrix must be symmetric");
         }
 
         // Map vertices labels to vertices indices.
@@ -712,12 +707,12 @@ where
         let size = size + adjacency_matrix.diag().mapv(|f| f as usize).sum();
         let size = size / 2;
 
-        Ok(Self {
+        Self {
             labels,
             labels_indices,
             adjacency_matrix,
             size,
-        })
+        }
     }
 }
 

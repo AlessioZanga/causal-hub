@@ -16,8 +16,8 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
-        PartialOrdGraph, PathGraph, SubGraph,
+        directions, BaseGraph, DefaultGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph,
+        PathGraph, SubGraph,
     },
     io::DOT,
     models::MoralGraph,
@@ -641,26 +641,22 @@ where
     }
 }
 
-impl<V, I> TryFrom<(I, DenseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph
+impl<V, I> From<(I, DenseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph
 where
     V: Into<String>,
     I: IntoIterator<Item = V>,
 {
-    type Error = E;
-
-    fn try_from(
-        (vertices, adjacency_matrix): (I, DenseAdjacencyMatrix),
-    ) -> Result<Self, Self::Error> {
+    fn from((vertices, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Self {
         // Remove duplicated vertices labels.
         let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
 
         // Check if vertex set is not consistent with given adjacency matrix.
         if labels.len() != adjacency_matrix.nrows() {
-            return Err(E::InconsistentMatrix);
+            panic!("Matrix must be consistent with inputs");
         }
         // Check if adjacency matrix is not square.
         if !adjacency_matrix.is_square() {
-            return Err(E::NonSquareMatrix);
+            panic!("Matrix must be square");
         }
 
         // Map vertices labels to vertices indices.
@@ -677,12 +673,12 @@ where
         // Compute size.
         let size = adjacency_matrix.mapv(|f| f as usize).sum();
 
-        Ok(Self {
+        Self {
             labels,
             labels_indices,
             adjacency_matrix,
             size,
-        })
+        }
     }
 }
 
