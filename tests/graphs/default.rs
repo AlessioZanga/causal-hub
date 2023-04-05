@@ -2,8 +2,6 @@
 mod undirected {
     macro_rules! generic_tests {
         ($G: ident) => {
-            use std::ops::Deref;
-
             use causal_hub::prelude::*;
             use ndarray::prelude::*;
 
@@ -269,104 +267,6 @@ mod undirected {
             fn try_from_dense_adjacency_matrix_should_panic() {
                 $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
             }
-
-            #[test]
-            fn try_from_sparse_adjacency_matrix() {
-                // Test for ...
-                let data = [
-                    // ... zero vertices and zero edges,
-                    ((vec![], vec![]), (vec![], Default::default())),
-                    // ... one vertex and one edge,
-                    ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
-                    // ... multiple vertices and one edge,
-                    (
-                        (vec!["0", "1"], vec![("0", "1")]),
-                        (vec!["0", "1"], array![[false, true], [true, false]]),
-                    ),
-                    // ... multiple vertices and multiple edges,
-                    (
-                        (
-                            vec!["0", "1", "2", "3"],
-                            vec![("0", "1"), ("1", "2"), ("2", "3")],
-                        ),
-                        (
-                            vec!["0", "1", "2", "3"],
-                            array![
-                                [false, true, false, false],
-                                [true, false, true, false],
-                                [false, true, false, true],
-                                [false, false, true, false]
-                            ],
-                        ),
-                    ),
-                    // ... random vertices and edges,
-                    (
-                        (
-                            vec!["1", "3", "58", "71", "75"],
-                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
-                        ),
-                        (
-                            vec!["1", "3", "58", "71", "75"],
-                            array![
-                                [false, false, true, true, false],
-                                [false, false, true, false, true],
-                                [true, true, false, false, false],
-                                [true, false, false, false, false],
-                                [false, true, false, false, false]
-                            ],
-                        ),
-                    ),
-                ];
-
-                // Test for each scenario.
-                for ((i, j), (v, a)) in data {
-                    let a = {
-                        let (mut rows, mut cols) = (vec![], vec![]);
-                        for ((i, j), &f) in a.indexed_iter() {
-                            if f {
-                                rows.push(i);
-                                cols.push(j);
-                            }
-                        }
-                        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                        SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
-                    };
-                    let g = $G::try_from((v.clone(), a)).unwrap();
-
-                    assert!(V!(g).eq(i.iter().map(|x| g.get_vertex_index(x))));
-                    assert!(E!(g).eq(j
-                        .iter()
-                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
-
-                    let a = g.deref();
-                    let a = {
-                        let (mut rows, mut cols) = (vec![], vec![]);
-                        for ((i, j), &f) in a.indexed_iter() {
-                            if f {
-                                rows.push(i);
-                                cols.push(j);
-                            }
-                        }
-                        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                        SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
-                    };
-
-                    let (u, b): (_, SparseAdjacencyMatrix) = g.into();
-
-                    assert!(u.into_iter().eq(v.into_iter()));
-                    assert_eq!(b, a);
-                }
-            }
-
-            #[test]
-            #[should_panic]
-            fn try_from_sparse_adjacency_matrix_should_panic() {
-                $G::try_from((
-                    vec!["0", "1"],
-                    SparseAdjacencyMatrix::from_triplets((1, 1), vec![0], vec![0], vec![true]),
-                ))
-                .unwrap();
-            }
         };
     }
 
@@ -380,8 +280,6 @@ mod undirected {
 mod directed {
     macro_rules! generic_tests {
         ($G: ident) => {
-            use std::ops::Deref;
-
             use causal_hub::prelude::*;
             use ndarray::prelude::*;
 
@@ -657,104 +555,6 @@ mod directed {
             #[should_panic]
             fn try_from_dense_adjacency_matrix_should_panic() {
                 $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
-            }
-
-            #[test]
-            fn try_from_sparse_adjacency_matrix() {
-                // Test for ...
-                let data = [
-                    // ... zero vertices and zero edges,
-                    ((vec![], vec![]), (vec![], Default::default())),
-                    // ... one vertex and one edge,
-                    ((vec!["0"], vec![("0", "0")]), (vec!["0"], array![[true]])),
-                    // ... multiple vertices and one edge,
-                    (
-                        (vec!["0", "1"], vec![("0", "1")]),
-                        (vec!["0", "1"], array![[false, true], [false, false]]),
-                    ),
-                    // ... multiple vertices and multiple edges,
-                    (
-                        (
-                            vec!["0", "1", "2", "3"],
-                            vec![("0", "1"), ("1", "2"), ("2", "3")],
-                        ),
-                        (
-                            vec!["0", "1", "2", "3"],
-                            array![
-                                [false, true, false, false],
-                                [false, false, true, false],
-                                [false, false, false, true],
-                                [false, false, false, false]
-                            ],
-                        ),
-                    ),
-                    // ... random vertices and edges,
-                    (
-                        (
-                            vec!["1", "3", "58", "71", "75"],
-                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
-                        ),
-                        (
-                            vec!["1", "3", "58", "71", "75"],
-                            array![
-                                [false, false, true, true, false],
-                                [false, false, true, false, true],
-                                [false, false, false, false, false],
-                                [false, false, false, false, false],
-                                [false, false, false, false, false]
-                            ],
-                        ),
-                    ),
-                ];
-
-                // Test for each scenario.
-                for ((i, j), (v, a)) in data {
-                    let a = {
-                        let (mut rows, mut cols) = (vec![], vec![]);
-                        for ((i, j), &f) in a.indexed_iter() {
-                            if f {
-                                rows.push(i);
-                                cols.push(j);
-                            }
-                        }
-                        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                        SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
-                    };
-                    let g = $G::try_from((v.clone(), a)).unwrap();
-
-                    assert!(V!(g).eq(i.iter().map(|x| g.get_vertex_index(x))));
-                    assert!(E!(g).eq(j
-                        .iter()
-                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
-
-                    let a = g.deref();
-                    let a = {
-                        let (mut rows, mut cols) = (vec![], vec![]);
-                        for ((i, j), &f) in a.indexed_iter() {
-                            if f {
-                                rows.push(i);
-                                cols.push(j);
-                            }
-                        }
-                        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-                        SparseAdjacencyMatrix::from_triplets(a.dim(), rows, cols, data)
-                    };
-
-                    let (u, b): (_, SparseAdjacencyMatrix) = g.into();
-
-                    assert!(u.into_iter().eq(v.into_iter()));
-                    assert_eq!(b, a);
-                }
-            }
-
-            #[test]
-            #[should_panic]
-            fn try_from_sparse_adjacency_matrix_should_panic() {
-                $G::try_from((
-                    vec!["0", "1"],
-                    SparseAdjacencyMatrix::from_triplets((1, 1), vec![0], vec![0], vec![true]),
-                ))
-                .unwrap();
             }
         };
     }

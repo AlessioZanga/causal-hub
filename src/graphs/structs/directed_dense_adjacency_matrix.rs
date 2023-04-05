@@ -22,7 +22,7 @@ use crate::{
     io::DOT,
     models::MoralGraph,
     prelude::BFS,
-    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
+    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList},
     utils::partial_cmp_sets,
     Adj, Ch, Pa, E, V,
 };
@@ -686,28 +686,6 @@ where
     }
 }
 
-impl<V, I> TryFrom<(I, SparseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph
-where
-    V: Into<String>,
-    I: IntoIterator<Item = V>,
-{
-    type Error = E;
-
-    fn try_from(
-        (vertices, adjacency_matrix): (I, SparseAdjacencyMatrix),
-    ) -> Result<Self, Self::Error> {
-        // Allocate dense adjacency matrix.
-        let mut dense_adjacency_matrix =
-            DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
-        // Fill dense adjacency matrix from sparse triplets.
-        for (&f, (i, j)) in adjacency_matrix.triplet_iter() {
-            dense_adjacency_matrix[[i, j]] = f;
-        }
-        // Delegate constructor to dense adjacency matrix constructor.
-        Self::try_from((vertices, dense_adjacency_matrix))
-    }
-}
-
 /* Implement Into traits. */
 
 #[allow(clippy::from_over_into)]
@@ -745,33 +723,6 @@ impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for DirectedDenseAdjacencyMa
     #[inline]
     fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix) {
         (self.labels, self.adjacency_matrix)
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for DirectedDenseAdjacencyMatrixGraph {
-    fn into(self) -> (BTreeSet<String>, SparseAdjacencyMatrix) {
-        // Get upper bound capacity.
-        let size = self.size * 2;
-        // Allocate triplets indices.
-        let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
-        // Build triplets indices.
-        for ((i, j), &f) in self.adjacency_matrix.indexed_iter() {
-            if f {
-                rows.push(i);
-                cols.push(j);
-            }
-        }
-        // Shrink triplets indices to actual capacity.
-        rows.shrink_to_fit();
-        cols.shrink_to_fit();
-        // Build data vector.
-        let data = std::iter::repeat(true).take(rows.len()).collect_vec();
-        // Construct sparse adjacency matrix.
-        let sparse_adjacency_matrix =
-            SparseAdjacencyMatrix::from_triplets(self.adjacency_matrix.dim(), rows, cols, data);
-
-        (self.labels, sparse_adjacency_matrix)
     }
 }
 
