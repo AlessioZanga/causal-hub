@@ -329,7 +329,7 @@ mod directed {
 }
 
 #[cfg(test)]
-mod partially {
+mod partially_directed{
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;
@@ -400,7 +400,7 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, (v, e)) in data {
-                    let g = $G::new_spec(i.clone(), ue, de).unwrap();
+                    let g = $G::new_partial(i.clone(), ue, de).unwrap();
 
                     let h = g.subgraph(v.clone(), e.clone());
                     dbg!(i.clone());
@@ -464,7 +464,7 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, v) in data {
-                    let g = $G::new_spec(i, ue, de).unwrap();
+                    let g = $G::new_partial(i, ue, de).unwrap();
 
                     let h = g.subgraph_by_vertices(v.clone());
 
@@ -538,7 +538,7 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, e) in data {
-                    let g = $G::new_spec(i, ue, de).unwrap();
+                    let g = $G::new_partial(i, ue, de).unwrap();
 
                     let h = g.subgraph_by_edges(e.clone());
                     dbg!(iter_set::union(uE!(h), dE!(h))

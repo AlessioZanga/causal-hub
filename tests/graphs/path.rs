@@ -205,7 +205,7 @@ mod directed {
 }
 
 #[cfg(test)]
-mod partially {
+mod partially_directed{
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;
@@ -289,7 +289,7 @@ mod partially {
 
                 // Test for each scenario.
                 for (v, ue, de, x, y, f) in data {
-                    let g = $G::new_spec(v.clone(), ue.clone(), de.clone()).unwrap();
+                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone()).unwrap();
 
                     assert_eq!(
                         g.has_path(g.vertex(x), g.vertex(y)),
@@ -369,7 +369,7 @@ mod partially {
 
                 // Test for each scenario.
                 for (v, ue, de, f) in data {
-                    let g = $G::new_spec(v.clone(), ue.clone(), de.clone()).unwrap();
+                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone()).unwrap();
 
                     assert_eq!(g.is_acyclic(), f, "(({:?}, {:?}, {:?}), {})", v, ue, de, f);
                 }

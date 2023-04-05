@@ -560,14 +560,14 @@ pub trait IntoUndirectedGraph {
 
 //TODO: Improve documentation
 /// Partially directed graph trait.
-pub trait PartiallyGraph:
+pub trait PartiallyDirectedGraph:
     BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
 {
     /// Error type
     type Error;
 
     /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
-    fn new_spec<V, I, J, K>(
+    fn new_partial<V, I, J, K>(
         vertices: I,
         undirected_edges: J,
         directed_edges: K,

@@ -983,7 +983,7 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for PartiallyDenseAdjacencyMatrixGr
             .edges()
             .map(|(x, y)| (directed_graph.label(x), directed_graph.label(y)))
             .collect();
-        Self::new_spec(vertices, [], edges).unwrap()
+        Self::new_partial(vertices, [], edges).unwrap()
     }
 }
 
@@ -1069,7 +1069,7 @@ where
 {
     #[inline]
     fn from((undirected_edges, directed_edges): (EdgeList<V>, EdgeList<V>)) -> Self {
-        Self::new_spec([], undirected_edges, directed_edges).unwrap()
+        Self::new_partial([], undirected_edges, directed_edges).unwrap()
     }
 }
 
@@ -1091,7 +1091,7 @@ where
             .into_iter()
             .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
 
-        Self::new_spec(vertices, undirected_edges, directed_edges).unwrap()
+        Self::new_partial(vertices, undirected_edges, directed_edges).unwrap()
     }
 }
 
@@ -1884,7 +1884,7 @@ impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-/* Implement PartiallyGraph trait. */
+/* Implement PartiallyDirectedGraph trait. */
 impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
 
@@ -1898,10 +1898,10 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
+impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Error = E;
 
-    fn new_spec<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, E>
+    fn new_partial<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, E>
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -2220,7 +2220,7 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
             })
             .collect();
 
-        Self::new_spec(other.vertices.into_keys(), undirected_edges, directed_edges).unwrap()
+        Self::new_partial(other.vertices.into_keys(), undirected_edges, directed_edges).unwrap()
     }
 }
 

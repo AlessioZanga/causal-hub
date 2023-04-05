@@ -2,7 +2,7 @@ use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, PartiallyGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -235,7 +235,7 @@ impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Directed> wh
 
 impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::PartiallyDirected>
 where
-    G: PartiallyGraph<Direction = directions::PartiallyDirected>,
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
 {
     type Item = usize;
 
@@ -279,7 +279,7 @@ where
 }
 
 impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::PartiallyDirected> where
-    G: PartiallyGraph<Direction = directions::PartiallyDirected>
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>
 {
 }
 

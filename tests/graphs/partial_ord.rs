@@ -497,7 +497,7 @@ mod directed {
 }
 
 #[cfg(test)]
-mod partially {
+mod partially_directed{
     macro_rules! generic_tests {
         ($G: ident) => {
             use std::cmp::Ordering;
@@ -774,9 +774,9 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    let g = $G::new_spec(i, ue, de).unwrap();
+                    let g = $G::new_partial(i, ue, de).unwrap();
                     for (i, ue, de, f) in k {
-                        let h = $G::new_spec(i, ue, de).unwrap();
+                        let h = $G::new_partial(i, ue, de).unwrap();
                         assert_eq!(g.eq(&h), f);
                     }
                 }
@@ -1054,9 +1054,9 @@ mod partially {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    let g = $G::new_spec(i, ue, de).unwrap();
+                    let g = $G::new_partial(i, ue, de).unwrap();
                     for (i, ue, de, f) in k {
-                        let h = $G::new_spec(i, ue, de).unwrap();
+                        let h = $G::new_partial(i, ue, de).unwrap();
                         assert!(g.partial_cmp(&h).eq(&f));
                     }
                 }

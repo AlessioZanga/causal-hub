@@ -5,7 +5,7 @@ use std::{
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, PartiallyGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -231,7 +231,7 @@ where
 
 impl<'a, G> Iterator for DepthFirstSearch<'a, G, directions::PartiallyDirected>
 where
-    G: PartiallyGraph<Direction = directions::PartiallyDirected>,
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
 {
     type Item = usize;
 

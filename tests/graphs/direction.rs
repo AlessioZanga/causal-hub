@@ -938,7 +938,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(An!(g, x).is_sorted());
                         assert!(An!(g, x).eq(f));
@@ -998,7 +998,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(f.iter().all(|&y| g.is_ancestor(x, y)));
                     }
@@ -1057,7 +1057,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(Pa!(g, x).is_sorted());
                         assert!(Pa!(g, x).eq(f));
@@ -1117,7 +1117,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(f.iter().all(|&y| g.is_parent(x, y)));
                     }
@@ -1176,7 +1176,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(Ch!(g, x).is_sorted());
                         assert!(Ch!(g, x).eq(f));
@@ -1236,7 +1236,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(f.iter().all(|&y| g.is_child(x, y)));
                     }
@@ -1295,7 +1295,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(De!(g, x).is_sorted());
                         assert!(De!(g, x).eq(f));
@@ -1355,7 +1355,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert!(f.iter().all(|&y| g.is_descendant(x, y)));
                     }
@@ -1410,7 +1410,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert_eq!(g.in_degree(x), f);
                     }
@@ -1465,7 +1465,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_spec(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j).unwrap();
 
                         assert_eq!(g.out_degree(x), f);
                     }
@@ -1488,7 +1488,7 @@ mod partially_directed {
         }
     }
 
-    mod partially {
+    mod partially_directed{
         macro_rules! generic_tests {
             ($G: ident) => {
                 use std::ops::Deref;
@@ -1497,7 +1497,7 @@ mod partially_directed {
                 use is_sorted::IsSorted;
                 use ndarray::prelude::*;
 
-                // Test for `new_spec`, `edges_of_type`, `size_of_type` functions in `PartiallyGraph` trait
+                // Test for `new_partial`, `edges_of_type`, `size_of_type` functions in `PartiallyDirectedGraph` trait
                 #[test]
                 fn new_edges_size() {
                     // Test for ...
@@ -1786,8 +1786,8 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, k, (o, s, v, ue, de, e)) in data {
-                        // Test for `new_spec` and `edges_of_type` (in `uE` and `dE` macros) function
-                        let g = $G::new_spec(i, j, k).unwrap();
+                        // Test for `new_partial` and `edges_of_type` (in `uE` and `dE` macros) function
+                        let g = $G::new_partial(i, j, k).unwrap();
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
                         assert!(V!(g).is_sorted());
@@ -1873,7 +1873,7 @@ mod partially_directed {
                         ),
                     ];
                     for (i, j, k) in data {
-                        let g = $G::new_spec(i, j, k);
+                        let g = $G::new_partial(i, j, k);
                         assert!(g.is_err());
                     }
                 }
@@ -1882,7 +1882,7 @@ mod partially_directed {
                 #[should_panic]
                 fn edges_of_type() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_spec(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k).unwrap();
                     // Test for undefined type of edge
                     g.edges_of_type('a');
                 }
@@ -1891,7 +1891,7 @@ mod partially_directed {
                 #[should_panic]
                 fn size_of_type_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_spec(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k).unwrap();
                     // Test for undefined type of edge
                     g.size_of_type('a');
                 }
@@ -1899,7 +1899,7 @@ mod partially_directed {
                 #[test]
                 fn type_of_edge() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_spec(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k).unwrap();
                     // Test for undirected edges
                     assert!(g.type_of_edge(1, 2) == Some('u'));
                     assert!(g.type_of_edge(2, 1) == Some('u'));
@@ -1915,7 +1915,7 @@ mod partially_directed {
                 #[should_panic]
                 fn type_of_edge_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_spec(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k).unwrap();
                     // Test with a non-present vertex
                     g.type_of_edge(0, 3);
                 }
@@ -1923,7 +1923,7 @@ mod partially_directed {
                 #[test]
                 fn add_edge_of_type() {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_spec(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k).unwrap();
                     // Test for added edges
                     g.add_edge_of_type(0, 3, 'u');
                     g.add_edge_of_type(3, 2, 'd');
@@ -1945,7 +1945,7 @@ mod partially_directed {
                 #[should_panic]
                 fn add_edge_of_type_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_spec(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k).unwrap();
                     // Test with a non-present vertex
                     g.add_edge_of_type(0, 4, 'u');
                 }
@@ -1957,7 +1957,7 @@ mod partially_directed {
                         vec![("1", "2"), ("1", "4")],
                         vec![("0", "1"), ("0", "3")],
                     );
-                    let mut g = $G::new_spec(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k).unwrap();
 
                     g.orient_edge(0, 1);
                     g.orient_edge(3, 0);
