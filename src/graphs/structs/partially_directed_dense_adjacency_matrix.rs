@@ -21,7 +21,7 @@ use crate::{
         BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
-    io::{DOT},
+    io::DOT,
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
@@ -1349,7 +1349,6 @@ impl PartialEq for PartiallyDenseAdjacencyMatrixGraph {
         let directed: bool = self
             .directed_adjacency_matrix
             .eq(&other.directed_adjacency_matrix);
-        debug_assert!(self.skeleton_adjacency_matrix == other.skeleton_adjacency_matrix);
         labels && undirected && directed
     }
 }
