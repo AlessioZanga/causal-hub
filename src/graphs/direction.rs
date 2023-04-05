@@ -1,10 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-    hash::Hash,
-    iter::FusedIterator,
-};
-
-use serde::{Deserialize, Serialize};
+use std::iter::FusedIterator;
 
 use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
 
@@ -567,19 +561,8 @@ pub trait IntoUndirectedGraph {
 //TODO: Improve documentation
 /// Partially directed graph trait.
 pub trait PartiallyGraph:
-    Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+    BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
 {
-    /// Data type.
-    type Data;
-
-    /// Directional type.
-    type Direction;
-
-    /// Edges iterator type.
-    type EdgesIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
-    where
-        Self: 'a;
-
     /// Error type
     type Error;
 

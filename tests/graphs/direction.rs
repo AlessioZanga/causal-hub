@@ -1905,7 +1905,7 @@ mod partially_directed {
                     assert!(g.type_of_edge(2, 1) == Some('u'));
                     // Test for directed edges
                     assert!(g.type_of_edge(0, 1) == Some('d'));
-                    assert!(g.type_of_edge(1, 0) == Some('d'));
+                    assert!(g.type_of_edge(1, 0) == None);
                     // Test for non-present edges
                     assert!(g.type_of_edge(0, 2) == None);
                     assert!(g.type_of_edge(2, 0) == None);
@@ -1928,13 +1928,14 @@ mod partially_directed {
                     g.add_edge_of_type(0, 3, 'u');
                     g.add_edge_of_type(3, 2, 'd');
                     assert!(g.type_of_edge(0, 3) == Some('u'));
-                    assert!(g.type_of_edge(2, 3) == Some('d'));
+                    assert!(g.type_of_edge(3, 0) == Some('u'));
+                    assert!(g.type_of_edge(3, 2) == Some('d'));
+                    assert!(g.type_of_edge(2, 3) == None);
                     assert!(g.size() == 4);
                     // Test for already present edges
                     assert!(g.add_edge_of_type(0, 1, 'u') == false);
                     assert!(g.add_edge_of_type(0, 1, 'd') == false);
                     assert!(g.add_edge_of_type(1, 0, 'd') == false);
-                    assert!(g.add_edge_of_type(1, 2, 'd') == false);
                     assert!(g.size_of_type('u') == 2);
                     assert!(g.size_of_type('d') == 2);
                     assert!(g.size() == 4);
@@ -1952,8 +1953,8 @@ mod partially_directed {
                 #[test]
                 fn orient_edge() {
                     let (i, j, k) = (
-                        vec!["0", "1", "2", "3"],
-                        vec![("1", "2")],
+                        vec!["0", "1", "2", "3", "4"],
+                        vec![("1", "2"), ("1", "4")],
                         vec![("0", "1"), ("0", "3")],
                     );
                     let mut g = $G::new_spec(i, j, k).unwrap();
@@ -1963,14 +1964,17 @@ mod partially_directed {
                     g.orient_edge(2, 1);
                     // Test for type of edges
                     assert!(g.type_of_edge(0, 1) == Some('d'));
+                    assert!(g.type_of_edge(1, 0) == None);
                     assert!(g.type_of_edge(3, 0) == Some('d'));
+                    assert!(g.type_of_edge(0, 3) == None);
                     assert!(g.type_of_edge(2, 1) == Some('d'));
+                    assert!(g.type_of_edge(1, 2) == None);
+                    assert!(g.type_of_edge(1, 4) == Some('u'));
+                    assert!(g.type_of_edge(4, 1) == Some('u'));
                     // Test for sizes
-                    assert!(g.size_of_type('u') == 0);
+                    assert!(g.size_of_type('u') == 1);
                     assert!(g.size_of_type('d') == 3);
-                    assert!(g.size_of_type('u') == 0);
-                    assert!(g.size_of_type('d') == 3);
-                    assert!(g.size() == 3);
+                    assert!(g.size() == 4);
                     // Test when orienting a non-existing edge
                     assert!(g.orient_edge(2, 3) == false);
                 }

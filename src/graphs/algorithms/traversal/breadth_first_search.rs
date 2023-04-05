@@ -2,7 +2,7 @@ use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DirectedGraph, PartiallyGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -230,6 +230,56 @@ where
 
 impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::Directed> where
     G: DirectedGraph<Direction = directions::Directed>
+{
+}
+
+impl<'a, G> Iterator for BreadthFirstSearch<'a, G, directions::PartiallyDirected>
+where
+    G: PartiallyGraph<Direction = directions::PartiallyDirected>,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the current algorithm is set to Forest
+        // and there are no more vertices in the queue ...
+        if self.queue.is_empty() {
+            // ... but there is at least one vertex ...
+            while let Some(x) = self.vertices.pop_front() {
+                // ... that was not visited.
+                if self.distance[x] == usize::MAX {
+                    // Push such vertex into the visiting queue.
+                    self.queue.push_front(x);
+                    // Set the distance of new root.
+                    self.distance[x] = 0;
+                    // Continue search visit.
+                    break;
+                }
+            }
+        }
+        // If there are still vertices to be visited.
+        self.queue.pop_front().map(|x| {
+            // Get predecessor distance.
+            let distance_x = self.distance[x];
+            // Iterate over the reachable vertices of the popped vertex.
+            for y in iter_set::union(Ne!(self.g, x), Ch!(self.g, x)) {
+                // If the vertex was never seen before.
+                if self.distance[y] == usize::MAX {
+                    // Push it into the to-be-visited queue.
+                    self.queue.push_back(y);
+                    // Compute the distance from its predecessor.
+                    self.distance[y] = distance_x + 1;
+                    // Set its predecessor.
+                    self.predecessor[y] = x;
+                }
+            }
+
+            x
+        })
+    }
+}
+
+impl<'a, G> FusedIterator for BreadthFirstSearch<'a, G, directions::PartiallyDirected> where
+    G: PartiallyGraph<Direction = directions::PartiallyDirected>
 {
 }
 

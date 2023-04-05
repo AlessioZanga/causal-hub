@@ -1,10 +1,9 @@
-#![allow(unused_imports, dead_code)] // FIXME: remove this line
 use std::{
     cmp::Ordering,
     collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
-    iter::{Chain, Enumerate, FilterMap, FusedIterator},
+    iter::{Enumerate, FilterMap, FusedIterator},
     ops::{Deref, Range},
 };
 
@@ -22,7 +21,7 @@ use crate::{
         BaseGraph, DefaultGraph, DirectedGraph, ErrorGraph as E, IntoUndirectedGraph,
         PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
-    io::{dot::*, DOT},
+    io::{DOT},
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
@@ -744,6 +743,9 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
+        if !self.has_edge(x, y) {
+            return false;
+        }
         match self.type_of_edge(x, y) {
             Some('u') => {
                 // Remove edge from undirected adjacency matrix.
@@ -752,14 +754,13 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
                 // Decrement undirected size.
                 self.undirected_size -= 1;
             }
-            Some('d') => {
+            _ => {
                 // Remove edge from directed adjacency matrix.
                 self.directed_adjacency_matrix[[x, y]] = false;
                 self.directed_adjacency_matrix[[y, x]] = false;
                 // Decrement directed size.
                 self.directed_size -= 1;
             }
-            _ => return false,
         };
 
         // Remove edge from skeleton matrix.
@@ -1072,7 +1073,6 @@ where
     }
 }
 
-// FIXME: 
 impl<V> From<(AdjacencyList<V>, AdjacencyList<V>)> for PartiallyDenseAdjacencyMatrixGraph
 where
     V: Clone + Into<String>,
@@ -1237,7 +1237,9 @@ impl Into<AdjacencyList<String>> for PartiallyDenseAdjacencyMatrixGraph {
             .map(|x| {
                 (
                     self.label(x).into(),
-                    iter_set::union(Ne!(self, x), Ch!(self, x)).map(|y| self.label(y).into()).collect(),
+                    iter_set::union(Ne!(self, x), Ch!(self, x))
+                        .map(|y| self.label(y).into())
+                        .collect(),
                 )
             })
             .collect()
@@ -1896,12 +1898,6 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 }
 
 impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
-    type Data = DenseAdjacencyMatrix;
-
-    type Direction = directions::PartiallyDirected;
-
-    type EdgesIter<'a> = EdgesIterator<'a>;
-
     type Error = E;
 
     fn new_spec<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, E>
@@ -2037,7 +2033,7 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
     #[inline]
     fn type_of_edge(&self, x: usize, y: usize) -> Option<char> {
-        // If edge is not present:
+        // If edge is not present or is reversed:
         if !self.skeleton_adjacency_matrix[[x, y]] {
             return None;
         }
@@ -2045,8 +2041,13 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         match self.undirected_adjacency_matrix[[x, y]] {
             // ... is undirected
             true => Some('u'),
-            // ... is directed (we're only interested in presence, not direction)
-            _ => Some('d'),
+            // ... is directed ...
+            _ => match self.directed_adjacency_matrix[[x, y]] {
+                // ... in the right sense
+                true => Some('d'),
+                // ... in the opposite sense
+                _ => None,
+            },
         }
     }
 
@@ -2136,17 +2137,12 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         true
     }
     fn orient_edge(&mut self, x: usize, y: usize) -> bool {
-        match self.type_of_edge(x, y) {
-            Some('u') => {
-                // Delete edge
-                self.del_edge(x, y);
-            }
-            Some('d') => {
-                // Delete edge
-                self.del_edge(x, y);
-            }
-            _ => return false,
+        if !self.has_edge(x, y) {
+            return false;
         }
+
+        self.del_edge(x, y);
+
         // Add directed edge
         self.add_edge_of_type(x, y, 'd');
 
@@ -2158,6 +2154,41 @@ impl PartiallyGraph for PartiallyDenseAdjacencyMatrixGraph {
         debug_assert!(!self.directed_adjacency_matrix[[y, x]]);
 
         true
+    }
+}
+
+/* Implement PathGraph */
+impl PathGraph for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn has_path(&self, x: usize, y: usize) -> bool {
+        let has_edge = self.type_of_edge(x, y).is_some();
+        dbg!(has_edge);
+        has_edge || BFS::from((self, x)).skip(1).any(|z| z == y)
+    }
+
+    #[inline]
+    fn is_acyclic(&self) -> bool {
+        !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
+    }
+}
+
+impl MoralGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
+
+    #[inline]
+    fn moral(&self) -> Self::MoralGraph {
+        // Make an undirected copy of the current graph.
+        let mut h = self.to_undirected();
+        // For each vertex ...
+        for x in V!(self) {
+            // ... for each pair of parents ...
+            for e in Pa!(self, x).combinations(2) {
+                // ... add an edge between them.
+                h.add_edge(e[0], e[1]);
+            }
+        }
+
+        h
     }
 }
 
@@ -2192,6 +2223,4 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: (impl PathGraph trait)
-// TODO: (impl MoralGraph trait)
 // TODO: (impl Into<(BTreeSet<String>, SparseAdjacencyMatrix, SparseAdjacencyMatrix)>)
