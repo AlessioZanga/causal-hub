@@ -193,8 +193,8 @@ mod undirected {
                     assert_eq!(g.size(), s);
                     assert!(V!(g).is_sorted());
                     assert!(E!(g).is_sorted());
-                    assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
-                    assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                    assert!(V!(g).eq(v.into_iter().map(|x| g.get_vertex_index(x))));
+                    assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                 }
             }
 
@@ -236,7 +236,7 @@ mod undirected {
             }
 
             #[test]
-            fn labels() {
+            fn get_vertices() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -262,7 +262,7 @@ mod undirected {
             }
 
             #[test]
-            fn vertices() {
+            fn get_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -282,7 +282,7 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new(i, []);
                     assert!(V!(g).is_sorted());
-                    assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
+                    assert!(V!(g).eq(j.iter().map(|x| g.get_vertex_index(x))));
                 }
             }
 
@@ -308,7 +308,7 @@ mod undirected {
             }
 
             #[test]
-            fn has_vertex() {
+            fn has_vertex_by_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -324,7 +324,7 @@ mod undirected {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let g = $G::empty(i);
-                    assert_eq!(g.has_vertex(x), f);
+                    assert_eq!(g.has_vertex_by_index(x), f);
                 }
             }
 
@@ -350,7 +350,7 @@ mod undirected {
             }
 
             #[test]
-            fn del_vertex() {
+            fn del_vertex_by_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -366,12 +366,12 @@ mod undirected {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let mut g = $G::empty(i);
-                    assert_eq!(g.del_vertex(x), f);
+                    assert_eq!(g.del_vertex_by_index(x), f);
                 }
             }
 
             #[test]
-            fn edges() {
+            fn get_edges_index() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -394,7 +394,7 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new(vec![], i);
                     assert!(E!(g).is_sorted());
-                    assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                    assert!(E!(g).eq(j.iter().map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                 }
             }
 
@@ -420,7 +420,7 @@ mod undirected {
             }
 
             #[test]
-            fn has_edge() {
+            fn has_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -449,8 +449,8 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.has_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.has_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -459,11 +459,11 @@ mod undirected {
             #[should_panic]
             fn has_edge_should_panic() {
                 let g = $G::null();
-                g.has_edge(0, 0);
+                g.has_edge_by_index(0, 0);
             }
 
             #[test]
-            fn add_edge() {
+            fn add_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -492,8 +492,8 @@ mod undirected {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.add_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.add_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -502,11 +502,11 @@ mod undirected {
             #[should_panic]
             fn add_edge_should_panic() {
                 let mut g = $G::null();
-                g.add_edge(0, 0);
+                g.add_edge_by_index(0, 0);
             }
 
             #[test]
-            fn del_edge() {
+            fn del_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -535,8 +535,8 @@ mod undirected {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.del_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.del_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -545,11 +545,11 @@ mod undirected {
             #[should_panic]
             fn del_edge_should_panic() {
                 let mut g = $G::null();
-                g.del_edge(0, 0);
+                g.del_edge_by_index(0, 0);
             }
 
             #[test]
-            fn adjacents() {
+            fn get_adjacents_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -623,9 +623,9 @@ mod undirected {
                 for (i, j, k) in data {
                     let g = $G::new(i, j);
                     for (x, ys) in k {
-                        let x = g.vertex(x);
+                        let x = g.get_vertex_index(x);
                         assert!(Adj!(g, x).is_sorted());
-                        assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
+                        assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.get_vertex_index(y))));
                     }
                 }
             }
@@ -638,7 +638,7 @@ mod undirected {
             }
 
             #[test]
-            fn is_adjacent() {
+            fn is_adjacent_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -667,8 +667,8 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.is_adjacent(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.is_adjacent_by_index(x, y), f);
                     }
                 }
             }
@@ -677,7 +677,7 @@ mod undirected {
             #[should_panic]
             fn is_adjacent_should_panic() {
                 let g = $G::null();
-                g.is_adjacent(0, 0);
+                g.is_adjacent_by_index(0, 0);
             }
         };
     }
@@ -879,8 +879,8 @@ mod directed {
                     assert_eq!(g.size(), s);
                     assert!(V!(g).is_sorted());
                     assert!(E!(g).is_sorted());
-                    assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
-                    assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                    assert!(V!(g).eq(v.into_iter().map(|x| g.get_vertex_index(x))));
+                    assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                 }
             }
 
@@ -922,7 +922,7 @@ mod directed {
             }
 
             #[test]
-            fn labels() {
+            fn get_vertices() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -948,7 +948,7 @@ mod directed {
             }
 
             #[test]
-            fn vertices() {
+            fn get_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -968,7 +968,7 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::empty(i);
                     assert!(V!(g).is_sorted());
-                    assert!(V!(g).eq(j.iter().map(|x| g.vertex(x))));
+                    assert!(V!(g).eq(j.iter().map(|x| g.get_vertex_index(x))));
                 }
             }
 
@@ -994,7 +994,7 @@ mod directed {
             }
 
             #[test]
-            fn has_vertex() {
+            fn has_vertex_by_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -1010,7 +1010,7 @@ mod directed {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let g = $G::empty(i);
-                    assert_eq!(g.has_vertex(x), f);
+                    assert_eq!(g.has_vertex_by_index(x), f);
                 }
             }
 
@@ -1036,7 +1036,7 @@ mod directed {
             }
 
             #[test]
-            fn del_vertex() {
+            fn del_vertex_by_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices,
@@ -1052,12 +1052,12 @@ mod directed {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let mut g = $G::empty(i);
-                    assert_eq!(g.del_vertex(x), f);
+                    assert_eq!(g.del_vertex_by_index(x), f);
                 }
             }
 
             #[test]
-            fn edges() {
+            fn get_edges_index() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -1080,7 +1080,7 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::new(vec![], i);
                     assert!(E!(g).is_sorted());
-                    assert!(E!(g).eq(j.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                    assert!(E!(g).eq(j.iter().map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                 }
             }
 
@@ -1106,7 +1106,7 @@ mod directed {
             }
 
             #[test]
-            fn has_edge() {
+            fn has_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -1135,8 +1135,8 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.has_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.has_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -1145,11 +1145,11 @@ mod directed {
             #[should_panic]
             fn has_edge_should_panic() {
                 let g = $G::null();
-                g.has_edge(0, 0);
+                g.has_edge_by_index(0, 0);
             }
 
             #[test]
-            fn add_edge() {
+            fn add_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -1178,8 +1178,8 @@ mod directed {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.add_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.add_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -1188,11 +1188,11 @@ mod directed {
             #[should_panic]
             fn add_edge_should_panic() {
                 let mut g = $G::null();
-                g.add_edge(0, 0);
+                g.add_edge_by_index(0, 0);
             }
 
             #[test]
-            fn del_edge() {
+            fn del_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -1221,8 +1221,8 @@ mod directed {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.del_edge(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.del_edge_by_index(x, y), f);
                     }
                 }
             }
@@ -1231,11 +1231,11 @@ mod directed {
             #[should_panic]
             fn del_edge_should_panic() {
                 let mut g = $G::null();
-                g.del_edge(0, 0);
+                g.del_edge_by_index(0, 0);
             }
 
             #[test]
-            fn adjacents() {
+            fn get_adjacents_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -1309,9 +1309,9 @@ mod directed {
                 for (i, j, k) in data {
                     let g = $G::new(i, j);
                     for (x, ys) in k {
-                        let x = g.vertex(x);
+                        let x = g.get_vertex_index(x);
                         assert!(Adj!(g, x).is_sorted());
-                        assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.vertex(y))));
+                        assert!(Adj!(g, x).eq(ys.into_iter().map(|y| g.get_vertex_index(y))));
                     }
                 }
             }
@@ -1324,7 +1324,7 @@ mod directed {
             }
 
             #[test]
-            fn is_adjacent() {
+            fn is_adjacent_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -1357,8 +1357,8 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.vertex(x), g.vertex(y));
-                        assert_eq!(g.is_adjacent(x, y), f);
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.is_adjacent_by_index(x, y), f);
                     }
                 }
             }
@@ -1368,7 +1368,7 @@ mod directed {
             fn is_adjacent_should_panic() {
                 let g = $G::null();
 
-                g.is_adjacent(0, 0);
+                g.is_adjacent_by_index(0, 0);
             }
         };
     }

@@ -5,7 +5,7 @@ mod undirected {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path() {
+            fn has_path_by_index() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -47,7 +47,7 @@ mod undirected {
                     let g = $G::new(v.clone(), e.clone());
 
                     assert_eq!(
-                        g.has_path(g.vertex(x), g.vertex(y)),
+                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
                         f,
                         "(({:?}, {:?}, {}, {}), {})",
                         v,
@@ -108,7 +108,7 @@ mod directed {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path() {
+            fn has_path_by_index() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -150,7 +150,7 @@ mod directed {
                     let g = $G::new(v.clone(), e.clone());
 
                     assert_eq!(
-                        g.has_path(g.vertex(x), g.vertex(y)),
+                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
                         f,
                         "(({:?}, {:?}, {}, {}), {})",
                         v,

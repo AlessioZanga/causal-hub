@@ -19,7 +19,7 @@ mod tests {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(L!(d));
+        let g = DiGraph::empty(d.labels());
 
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(&d);
@@ -27,9 +27,9 @@ mod tests {
         let pcorr = PartialCorrelation::from(sigma);
 
         for (x, y, z, r) in data {
-            let x = g.vertex(&x);
-            let y = g.vertex(&y);
-            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let x = g.get_vertex_index(&x);
+            let y = g.get_vertex_index(&y);
+            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
 
             assert_relative_eq!(pcorr.call(x, y, &z), r, max_relative = 1e-8);
         }

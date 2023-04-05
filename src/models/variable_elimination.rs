@@ -95,7 +95,12 @@ where
         let mut queue: FxIndexSet<_> = z.into_iter().collect();
         // Clone the associated adjacencies.
         let mut g: FxIndexMap<_, FxIndexSet<_>> = V!(g)
-            .map(|x| (g.label(x), Adj!(g, x).map(|x| g.label(x)).collect()))
+            .map(|x| {
+                (
+                    g.get_vertex_by_index(x),
+                    Adj!(g, x).map(|x| g.get_vertex_by_index(x)).collect(),
+                )
+            })
             .collect();
         // While there are still variables to be ordered.
         while !queue.is_empty() {
@@ -193,7 +198,12 @@ where
         // Project P parameters onto Q structure.
         let theta = V!(g_q)
             // Get the parents of each vertex.
-            .map(|x| (g_q.label(x), Pa!(g_q, x).map(|z| g_q.label(z))))
+            .map(|x| {
+                (
+                    g_q.get_vertex_by_index(x),
+                    Pa!(g_q, x).map(|z| g_q.get_vertex_by_index(z)),
+                )
+            })
             // Project P parameters onto Q structure.
             .map(|(x, z)| self.conditional(x, z));
         // Construct projection of P given projected parameters.

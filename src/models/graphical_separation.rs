@@ -126,7 +126,7 @@ where
             .flat_map(|z| Ne!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph.
         for (z, w) in e_z {
-            h.del_edge(z, w);
+            h.del_edge_by_index(z, w);
         }
 
         // Initialize union-find.
@@ -208,7 +208,7 @@ where
             .flat_map(|s| Adj!(self.g, s).flat_map(move |t| [(s, t), (t, s)]));
         // Disconnect vertices in V \ S from the rest of the graph, i.e. compute the upward closure.
         for (s, t) in e_s {
-            h.del_edge(s, t);
+            h.del_edge_by_index(s, t);
         }
 
         // Compute the set of out-going edges of Z.
@@ -217,7 +217,7 @@ where
             .flat_map(|z| Ch!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph, i.e. compute the moral graph.
         for (z, w) in e_z {
-            h.del_edge(z, w);
+            h.del_edge_by_index(z, w);
         }
 
         // Initialize union-find.

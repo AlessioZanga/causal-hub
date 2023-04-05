@@ -68,7 +68,7 @@ impl<'a> Iterator for LabelsIterator<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|x| self.graph.label(x))
+        self.iter.next().map(|x| self.graph.get_vertex_by_index(x))
     }
 
     #[inline]
@@ -178,7 +178,7 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
             f,
             "V = {{{}}}, ",
             V!(self)
-                .map(|x| format!("\"{}\"", self.label(x)))
+                .map(|x| format!("\"{}\"", self.get_vertex_by_index(x)))
                 .join(", ")
         )?;
         // Write edge set.
@@ -186,7 +186,11 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
             f,
             "E = {{{}}}",
             E!(self)
-                .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
+                .map(|(x, y)| format!(
+                    "(\"{}\", \"{}\")",
+                    self.get_vertex_by_index(x),
+                    self.get_vertex_by_index(y)
+                ))
                 .join(", ")
         )?;
         // Write ending character.
@@ -207,13 +211,13 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     type Direction = directions::Undirected;
 
-    type LabelsIter<'a> = LabelsIterator<'a>;
+    type VerticesIter<'a> = LabelsIterator<'a>;
 
-    type VerticesIter<'a> = Range<usize>;
+    type VerticesIndexIter<'a> = Range<usize>;
 
-    type EdgesIter<'a> = EdgesIterator<'a>;
+    type EdgesIndexIter<'a> = EdgesIterator<'a>;
 
-    type AdjacentsIter<'a> = AdjacentsIterator<'a>;
+    type AdjacentsIndexIter<'a> = AdjacentsIterator<'a>;
 
     fn new<V, I, J>(vertices: I, edges: J) -> Self
     where
@@ -283,19 +287,19 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn label(&self, x: usize) -> &str {
+    fn get_vertex_by_index(&self, x: usize) -> &str {
         self.labels_indices
             .get_by_right(&x)
             .unwrap_or_else(|| panic!("No vertex with label `{x}`"))
     }
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
-        Self::LabelsIter::new(self)
+    fn get_vertices(&self) -> Self::VerticesIter<'_> {
+        Self::VerticesIter::new(self)
     }
 
     #[inline]
-    fn vertex(&self, x: &str) -> usize {
+    fn get_vertex_index(&self, x: &str) -> usize {
         *self
             .labels_indices
             .get_by_left(x)
@@ -303,7 +307,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn vertices(&self) -> Self::VerticesIter<'_> {
+    fn get_vertices_index(&self) -> Self::VerticesIndexIter<'_> {
         // Assert vertex set and vertices map are consistent.
         debug_assert_eq!(self.labels.len(), self.labels_indices.len());
 
@@ -325,7 +329,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn has_vertex(&self, x: usize) -> bool {
+    fn has_vertex_by_index(&self, x: usize) -> bool {
         // Check vertex existence.
         let f = self.labels_indices.contains_right(&x);
 
@@ -347,7 +351,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         // If vertex was already present ...
         if !self.labels.insert(x.clone()) {
             // ... return early.
-            return self.vertex(&x);
+            return self.get_vertex_index(&x);
         }
 
         // Get vertex identifier.
@@ -402,7 +406,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         i
     }
 
-    fn del_vertex(&mut self, x: usize) -> bool {
+    fn del_vertex_by_index(&mut self, x: usize) -> bool {
         // Get vertex label and identifier.
         let x_i = self.labels_indices.remove_by_right(&x);
 
@@ -467,8 +471,8 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn edges(&self) -> Self::EdgesIter<'_> {
-        Self::EdgesIter::new(self)
+    fn get_edges_index(&self) -> Self::EdgesIndexIter<'_> {
+        Self::EdgesIndexIter::new(self)
     }
 
     #[inline]
@@ -480,12 +484,12 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge_by_index(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[x, y]]
     }
 
     #[inline]
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge_by_index(&mut self, x: usize, y: usize) -> bool {
         // If edge already exists ...
         if self.adjacency_matrix[[x, y]] {
             // ... return early.
@@ -516,7 +520,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge_by_index(&mut self, x: usize, y: usize) -> bool {
         // If edge does not exists ...
         if !self.adjacency_matrix[[x, y]] {
             // ... return early.
@@ -547,14 +551,14 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
-        Self::AdjacentsIter::new(self, x)
+    fn get_adjacents_index(&self, x: usize) -> Self::AdjacentsIndexIter<'_> {
+        Self::AdjacentsIndexIter::new(self, x)
     }
 
     #[inline]
-    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+    fn is_adjacent_by_index(&self, x: usize, y: usize) -> bool {
         // Check using has_edge.
-        let f = self.has_edge(x, y);
+        let f = self.has_edge_by_index(x, y);
 
         // Check iterator consistency.
         debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
@@ -746,7 +750,12 @@ impl Into<EdgeList<String>> for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn into(self) -> EdgeList<String> {
         E!(self)
-            .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    self.get_vertex_by_index(x).into(),
+                    self.get_vertex_by_index(y).into(),
+                )
+            })
             .collect()
     }
 }
@@ -757,8 +766,10 @@ impl Into<AdjacencyList<String>> for UndirectedDenseAdjacencyMatrixGraph {
         V!(self)
             .map(|x| {
                 (
-                    self.label(x).into(),
-                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                    self.get_vertex_by_index(x).into(),
+                    Adj!(self, x)
+                        .map(|y| self.get_vertex_by_index(y).into())
+                        .collect(),
                 )
             })
             .collect()
@@ -814,16 +825,16 @@ impl Eq for UndirectedDenseAdjacencyMatrixGraph {}
 impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let lhs: HashSet<_> = V!(self).map(|x| self.label(x)).collect();
-        let rhs: HashSet<_> = V!(other).map(|x| other.label(x)).collect();
+        let lhs: HashSet<_> = V!(self).map(|x| self.get_vertex_by_index(x)).collect();
+        let rhs: HashSet<_> = V!(other).map(|x| other.get_vertex_by_index(x)).collect();
         // If the vertices sets are comparable ...
         partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
             // ... compare edges sets.
             let lhs: HashSet<_> = E!(self)
-                .map(|(x, y)| (self.label(x), self.label(y)))
+                .map(|(x, y)| (self.get_vertex_by_index(x), self.get_vertex_by_index(y)))
                 .collect();
             let rhs: HashSet<_> = E!(other)
-                .map(|(x, y)| (other.label(x), other.label(y)))
+                .map(|(x, y)| (other.get_vertex_by_index(x), other.get_vertex_by_index(y)))
                 .collect();
             // If the edges sets are comparable ...
             partial_cmp_sets!(lhs, rhs).and_then(|edges| {
@@ -887,7 +898,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -909,7 +920,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -950,7 +961,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -959,20 +970,20 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
 
 /* Implement UndirectedGraph trait. */
 impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
-    type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
+    type NeighborsIndexIter<'a> = Self::AdjacentsIndexIter<'a>;
 
     #[inline]
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_> {
-        Self::NeighborsIter::new(self, x)
+    fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_> {
+        Self::NeighborsIndexIter::new(self, x)
     }
 
     #[inline]
-    fn is_neighbor(&self, x: usize, y: usize) -> bool {
+    fn is_neighbor_by_index(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[x, y]]
     }
 
     #[inline]
-    fn degree(&self, x: usize) -> usize {
+    fn get_degree_by_index(&self, x: usize) -> usize {
         // Compute degree.
         let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
 
@@ -986,8 +997,8 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
 /* Implement PathGraph */
 impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
-    fn has_path(&self, x: usize, y: usize) -> bool {
-        self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
+    fn has_path_by_index(&self, x: usize, y: usize) -> bool {
+        self.has_edge_by_index(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
     #[inline]

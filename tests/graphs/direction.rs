@@ -6,7 +6,7 @@ mod undirected {
             use is_sorted::IsSorted;
 
             #[test]
-            fn neighbors() {
+            fn get_neighbors_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -54,7 +54,7 @@ mod undirected {
             }
 
             #[test]
-            fn is_neighbor() {
+            fn is_neighbor_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -88,7 +88,7 @@ mod undirected {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_neighbor(x, y)));
+                    assert!(f.iter().all(|&y| g.is_neighbor_by_index(x, y)));
                 }
             }
 
@@ -97,11 +97,11 @@ mod undirected {
             fn is_neighbor_should_panic() {
                 let g = $G::null();
 
-                g.is_neighbor(0, 0);
+                g.is_neighbor_by_index(0, 0);
             }
 
             #[test]
-            fn degree() {
+            fn get_degree_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -121,7 +121,7 @@ mod undirected {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let g = $G::new([], i);
-                    assert_eq!(g.degree(x), f);
+                    assert_eq!(g.get_degree_by_index(x), f);
                 }
             }
 
@@ -129,7 +129,7 @@ mod undirected {
             #[should_panic]
             fn degree_should_panic() {
                 let g = $G::null();
-                g.degree(0);
+                g.get_degree_by_index(0);
             }
         };
     }
@@ -149,7 +149,7 @@ mod directed {
             use is_sorted::IsSorted;
 
             #[test]
-            fn ancestors() {
+            fn get_ancestors_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -209,7 +209,7 @@ mod directed {
             }
 
             #[test]
-            fn is_ancestor() {
+            fn is_ancestor_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -255,7 +255,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_ancestor(x, y)));
+                    assert!(f.iter().all(|&y| g.is_ancestor_by_index(x, y)));
                 }
             }
 
@@ -264,11 +264,11 @@ mod directed {
             fn is_ancestor_should_panic() {
                 let g = $G::null();
 
-                g.is_ancestor(0, 0);
+                g.is_ancestor_by_index(0, 0);
             }
 
             #[test]
-            fn parents() {
+            fn get_parents_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -328,7 +328,7 @@ mod directed {
             }
 
             #[test]
-            fn is_parent() {
+            fn is_parent_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -374,7 +374,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_parent(x, y)));
+                    assert!(f.iter().all(|&y| g.is_parent_by_index(x, y)));
                 }
             }
 
@@ -383,11 +383,11 @@ mod directed {
             fn is_parent_should_panic() {
                 let g = $G::null();
 
-                g.is_parent(0, 0);
+                g.is_parent_by_index(0, 0);
             }
 
             #[test]
-            fn children() {
+            fn get_children_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -447,7 +447,7 @@ mod directed {
             }
 
             #[test]
-            fn is_child() {
+            fn is_child_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -493,7 +493,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_child(x, y)));
+                    assert!(f.iter().all(|&y| g.is_child_by_index(x, y)));
                 }
             }
 
@@ -502,11 +502,11 @@ mod directed {
             fn is_child_should_panic() {
                 let g = $G::null();
 
-                g.is_child(0, 0);
+                g.is_child_by_index(0, 0);
             }
 
             #[test]
-            fn descendants() {
+            fn get_descendants_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -566,7 +566,7 @@ mod directed {
             }
 
             #[test]
-            fn is_descendant() {
+            fn is_descendant_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -612,7 +612,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_descendant(x, y)));
+                    assert!(f.iter().all(|&y| g.is_descendant_by_index(x, y)));
                 }
             }
 
@@ -621,11 +621,11 @@ mod directed {
             fn is_descendant_should_panic() {
                 let g = $G::null();
 
-                g.is_descendant(0, 0);
+                g.is_descendant_by_index(0, 0);
             }
 
             #[test]
-            fn in_degree() {
+            fn get_in_degree_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -667,7 +667,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.in_degree(x), f);
+                    assert_eq!(g.get_in_degree_by_index(x), f);
                 }
             }
 
@@ -676,11 +676,11 @@ mod directed {
             fn in_degree_should_panic() {
                 let g = $G::null();
 
-                g.in_degree(0);
+                g.get_in_degree_by_index(0);
             }
 
             #[test]
-            fn out_degree() {
+            fn get_out_degree_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -722,7 +722,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.out_degree(x), f);
+                    assert_eq!(g.get_out_degree_by_index(x), f);
                 }
             }
 
@@ -731,7 +731,7 @@ mod directed {
             fn out_degree_should_panic() {
                 let g = $G::null();
 
-                g.out_degree(0);
+                g.get_out_degree_by_index(0);
             }
         };
     }
