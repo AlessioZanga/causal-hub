@@ -145,7 +145,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .mapv(|x| x as usize);
 
         // Get variables as set of strings.
-        let labels: BTreeSet<_> = df.get_column_names_owned().into_iter().collect();
+        let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
 
         // Get variables states.
         let states: FxIndexMap<_, _> = df
@@ -271,7 +271,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
-        let labels = df.get_column_names_owned().into_iter().collect();
+        let labels = df.get_column_names_owned().into_iter().map_into().collect();
 
         Self { labels, values }
     }
