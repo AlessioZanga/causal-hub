@@ -225,7 +225,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         J: IntoIterator<Item = (V, V)>,
     {
         // Remove duplicated vertices labels.
-        let mut labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+        let mut labels: BTreeSet<_> = vertices.into_iter().map_into().collect();
         // Map edges iterator into edge list.
         let edges: EdgeList<_> = edges
             .into_iter()
@@ -586,7 +586,7 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         I: IntoIterator<Item = V>,
     {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
+        let labels: BTreeSet<_> = labels.into_iter().map_into().collect();
 
         // Compute new graph order.
         let order = labels.len();
@@ -614,7 +614,7 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         I: IntoIterator<Item = V>,
     {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
+        let labels: BTreeSet<_> = labels.into_iter().map_into().collect();
 
         // Compute new graph order.
         let order = labels.len();
@@ -676,7 +676,7 @@ where
 {
     fn from((labels, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Self {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
+        let labels: BTreeSet<String> = labels.into_iter().map_into().collect();
 
         // Check if vertex set is not consistent with given adjacency matrix.
         if labels.len() != adjacency_matrix.nrows() {

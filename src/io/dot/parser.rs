@@ -54,7 +54,7 @@ impl From<VertexAttributes> for String {
     fn from(attributes: VertexAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -93,7 +93,7 @@ impl From<EdgeAttributes> for String {
     fn from(attributes: EdgeAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -132,7 +132,7 @@ impl From<GraphAttributes> for String {
     fn from(attributes: GraphAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -540,7 +540,7 @@ impl From<DOT> for String {
         dot += "{\n";
 
         // Add local attributes.
-        for (key, value) in value.attributes.into_iter().map(|x| x.into()) {
+        for (key, value) in value.attributes.into_iter().map_into() {
             dot += &format!("\t{key} = {value};\n");
         }
         // Get global attributes.
@@ -572,7 +572,7 @@ impl TryFrom<String> for DOT {
         // Parse the given string.
         let out = Self::parse(Rule::file, string.trim())?;
         // Match inner rules. TODO: Match more than one graph.
-        let out: Self = out.map(|x| x.into()).next().unwrap();
+        let out: Self = out.map_into().next().unwrap();
 
         Ok(out)
     }

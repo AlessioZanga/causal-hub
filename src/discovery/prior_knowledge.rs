@@ -1,6 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 
 use bimap::BiHashMap;
+use itertools::Itertools;
 
 /// Prior knowledge trait
 pub trait PriorKnowledge: Sync {
@@ -50,7 +51,7 @@ impl ForbiddenRequired {
         V: Into<String>,
     {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+        let labels: BTreeSet<_> = vertices.into_iter().map_into().collect();
         // Map vertices labels to vertices indices.
         let labels_indices: BiHashMap<_, _> = labels
             .iter()
