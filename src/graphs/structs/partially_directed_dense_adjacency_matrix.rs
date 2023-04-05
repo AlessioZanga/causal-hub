@@ -1901,7 +1901,11 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     type Error = E;
 
-    fn new_partial<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Result<Self, E>
+    fn new_partial<V, I, J, K>(
+        vertices: I,
+        undirected_edges: J,
+        directed_edges: K,
+    ) -> Result<Self, E>
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,

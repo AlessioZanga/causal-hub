@@ -329,7 +329,7 @@ mod directed {
 }
 
 #[cfg(test)]
-mod partially_directed{
+mod partially_directed {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;

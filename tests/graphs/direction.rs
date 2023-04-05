@@ -1488,7 +1488,7 @@ mod partially_directed {
         }
     }
 
-    mod partially_directed{
+    mod partially_directed {
         macro_rules! generic_tests {
             ($G: ident) => {
                 use std::ops::Deref;
