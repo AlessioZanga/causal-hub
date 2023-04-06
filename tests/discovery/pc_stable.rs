@@ -36,7 +36,7 @@ mod discrete {
         let test = ChiSquared::new(&d).with_significance_level(alpha);
 
         // Perform skeleton discovery
-        let skel = skeleton(&test, complete_graph);
+        let skel = skeleton(&test, complete_graph).0;
 
         assert_eq!(skel, true_skel);
     }
