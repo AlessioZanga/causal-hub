@@ -14,7 +14,6 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 
 [dependencies]
 approx = "^0.5"
-bimap = { version = "^0.6", features = [ "serde" ] }
 indexmap = { version = "^1.9", features = [ "rayon", "serde" ] }
 is_sorted = "^0.1"
 iter-set = "^2.0"
