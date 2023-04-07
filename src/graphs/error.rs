@@ -12,4 +12,7 @@ pub enum ErrorGraph {
     /// Non-symmetric matrix error variant.
     #[error("Matrix must be symmetric")]
     NonSymmetricMatrix,
+    /// Multiple types of edges between nodes
+    #[error("Multiple types of edges between two nodes are not allowed")]
+    MultipleTypesEdges,
 }

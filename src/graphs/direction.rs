@@ -11,9 +11,13 @@ pub mod directions {
     /// Directed pseudo-enumerator for generics algorithms.
     #[derive(Clone, Copy, Debug)]
     pub struct Directed;
+
+    /// Partially directed pseudo-enumerator for generics algorithms.
+    #[derive(Clone, Copy, Debug)]
+    pub struct PartiallyDirected;
 }
 
-/// Neighbors iterator.
+/// Neighbors iterator for undirected graphs.
 ///
 /// Return the vertex iterator representing $Ne(\mathcal{G}, X)$.
 ///
@@ -21,6 +25,26 @@ pub mod directions {
 macro_rules! Ne {
     ($g:expr, $x:expr) => {
         $g.neighbors($x)
+    };
+}
+/// Undirected edges iterator for partially directed graphs.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are undirected as an iterator.///
+#[macro_export]
+macro_rules! uE {
+    ($g:expr) => {
+        $g.edges_of_type('u')
+    };
+}
+
+/// Directed edges iterator for partially directed graphs.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are directed as an iterator.
+///
+#[macro_export]
+macro_rules! dE {
+    ($g:expr) => {
+        $g.edges_of_type('d')
     };
 }
 
@@ -532,4 +556,43 @@ pub trait IntoUndirectedGraph {
     /// ```
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph;
+}
+
+//TODO: Improve documentation
+/// Partially directed graph trait.
+pub trait PartiallyDirectedGraph:
+    BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
+{
+    /// Error type
+    type Error;
+
+    /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
+    fn new_partial<V, I, J, K>(
+        vertices: I,
+        undirected_edges: J,
+        directed_edges: K,
+    ) -> Result<Self, Self::Error>
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, V)>,
+        K: IntoIterator<Item = (V, V)>;
+
+    /// Specialized deferencing
+    fn deref_of_type(&self, which: char) -> &Self::Data;
+
+    /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>;
+
+    /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn size_of_type(&self, which: char) -> usize;
+
+    /// Type of the edge. It returns `None` if such edge doesn't exist, an `Option<char>` on the contrary. `char` can be `u` for undirected or `d` for directed edge type.
+    fn type_of_edge(&self, x: usize, y: usize) -> Option<char>;
+
+    /// Specilized edge adder. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
+    fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool;
+
+    /// Orient (or re-orient) an already present edge
+    fn orient_edge(&mut self, x: usize, y: usize) -> bool;
 }

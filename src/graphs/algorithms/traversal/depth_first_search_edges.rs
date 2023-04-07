@@ -2,7 +2,7 @@ use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -153,12 +153,12 @@ where
                 // traversal order and neighborhood order the same.
                 self.stack.extend(queue);
 
-                // Filter the base case.
+                // Filter the base case (root node).
                 if x == usize::MAX {
                     continue;
                 }
 
-                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                // discovery[x] < discovery[y] < finish[y] < finish[x].
                 return Some(DFSEdge::Tree(x, y));
             }
 
@@ -296,6 +296,104 @@ where
 
 impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Directed> where
     G: DirectedGraph<Direction = directions::Directed>
+{
+}
+
+impl<'a, G> Iterator for DepthFirstSearchEdges<'a, G, directions::PartiallyDirected>
+where
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    type Item = DFSEdge;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If there are still vertices to be visited.
+        while let Some(&(x, y)) = self.stack.last() {
+            // Check if vertex is WHITE (i.e. was not seen before).
+            if self.discovery_time[y] == usize::MAX {
+                // Set its discover time (as GRAY).
+                self.discovery_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+
+                // Initialize visiting queue.
+                let mut queue = VecDeque::new();
+
+                // Iterate over reachable vertices.
+                for z in iter_set::union(Ne!(self.g, y), Ch!(self.g, y)) {
+                    // Filter incoming edge.
+                    if self.predecessor[y] != z {
+                        // Add to queue.
+                        queue.push_front((y, z));
+                    }
+                    // Filter already visited vertices (as GRAY).
+                    if self.discovery_time[z] == usize::MAX {
+                        // Set predecessor.
+                        self.predecessor[z] = y;
+                    }
+                }
+
+                // Push vertices onto the stack in reverse order, this makes
+                // traversal order and neighborhood order the same.
+                self.stack.extend(queue);
+
+                // Filter the base case.
+                if x == usize::MAX {
+                    continue;
+                }
+
+                // discovery[x] < discovery[y] && finish[x] < finish[y].
+                return Some(DFSEdge::Tree(x, y));
+            }
+
+            // If the vertex is NOT WHITE, remove it from stack.
+            self.stack.pop();
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+            // Check if it is GRAY (not BLACK).
+            if self.finish_time[y] == usize::MAX
+                && (predecessor_y == usize::MAX || predecessor_y == x)
+            {
+                // Set its finish time (as BLACK).
+                self.finish_time[y] = self.time;
+                // Increment time.
+                self.time += 1;
+            }
+
+            // Filter the base case.
+            if x == usize::MAX {
+                continue;
+            }
+
+            // Get X discovery time.
+            let discovery_x = self.discovery_time[x];
+            // Get Y discovery time.
+            let discovery_y = self.discovery_time[y];
+            // Get Y finish time.
+            let finish_y = self.finish_time[y];
+            // Get Y predecessor.
+            let predecessor_y = self.predecessor[y];
+
+            // discovery[x] > discovery[y] ...
+            if discovery_x >= discovery_y {
+                // ... && discovery[x] < finish[y], or ...
+                if discovery_x < finish_y && finish_y != usize::MAX {
+                    return Some(DFSEdge::Back(x, y));
+                }
+                // ... && discovery[x] > finish[y], or ...
+                return Some(DFSEdge::Cross(x, y));
+            }
+            // ... it is a forward edge.
+            if predecessor_y != x && predecessor_y != usize::MAX {
+                return Some(DFSEdge::Forward(x, y));
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::PartiallyDirected> where
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>
 {
 }
 

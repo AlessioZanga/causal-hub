@@ -5,7 +5,7 @@ use std::{
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, UndirectedGraph},
+    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -198,6 +198,56 @@ where
                 let mut queue = VecDeque::new();
                 // Iterate over reachable vertices.
                 for y in Ch!(self.g, x) {
+                    // Filter already visited vertices (as GRAY).
+                    if !self.discovery_time.contains_key(&y) {
+                        // Set predecessor.
+                        self.predecessor.insert(y, x);
+                        // Add to queue.
+                        queue.push_front(y);
+                    }
+                }
+                // Push vertices onto the stack in reverse order, this makes
+                // traversal order and neighborhood order the same.
+                self.stack.extend(queue);
+                // Return vertex in pre-order.
+                return Some(x);
+            // If the vertex is NOT WHITE.
+            } else {
+                // Remove it from stack.
+                self.stack.pop();
+                // Check if it is GRAY (not BLACK).
+                if let Entry::Vacant(e) = self.finish_time.entry(x) {
+                    // Set its finish time (as BLACK).
+                    e.insert(self.time);
+                    // Increment time.
+                    self.time += 1;
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a, G> Iterator for DepthFirstSearch<'a, G, directions::PartiallyDirected>
+where
+    G: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If there are still vertices to be visited.
+        while let Some(&x) = self.stack.last() {
+            // Check if vertex is WHITE (i.e. was not seen before).
+            if let Entry::Vacant(e) = self.discovery_time.entry(x) {
+                // Set its discover time (as GRAY).
+                e.insert(self.time);
+                // Increment time.
+                self.time += 1;
+                // Initialize visiting queue.
+                let mut queue = VecDeque::new();
+                // Iterate over reachable vertices.
+                for y in iter_set::union(Ne!(self.g, x), Ch!(self.g, x)) {
                     // Filter already visited vertices (as GRAY).
                     if !self.discovery_time.contains_key(&y) {
                         // Set predecessor.
