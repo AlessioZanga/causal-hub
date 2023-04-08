@@ -15,7 +15,7 @@ pub type EdgeList<V> = BTreeSet<(V, V)>;
 pub type AdjacencyList<V> = BTreeMap<V, BTreeSet<V>>;
 
 /// Separation sets type.
-pub type SepSet = HashMap<(usize, usize), Vec<usize>>;
+pub type SepSets = HashMap<(usize, usize), Vec<usize>>;
 
 /// Dense adjacency matrix type.
 pub type DenseAdjacencyMatrix = Matrix<bool>;

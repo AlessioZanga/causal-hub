@@ -5,14 +5,14 @@ use itertools::Itertools;
 use crate::prelude::*;
 
 /// Skeleton function, as part of PC-Stable algorithm.
-/// Inputs: test over data and a complete graph over data nodes.
-pub fn skeleton<T, G>(test: &T, mut g: G) -> (G, SepSet, HashSet<(usize, usize, usize)>)
+/// `g` must be a complete undirected graph.
+pub fn skeleton<T, G>(test: &T, mut g: G) -> (G, SepSets, HashSet<(usize, usize, usize)>)
 where
     T: ConditionalIndependenceTest,
     G: BaseGraph<Direction = directions::Undirected>,
 {
     // Initialize set of separating sets
-    let mut sepsets: SepSet = HashMap::new();
+    let mut sepsets: SepSets = HashMap::new();
     // Initialize stopping criterion
     let mut flag = true;
     // Initialize size of conditioning set
@@ -29,7 +29,7 @@ where
                 Adj!(g, x).filter(|&v| v != y).combinations(c),
                 Adj!(g, y).filter(|&v| v != x).combinations(c),
             );
-            // If there is at least of set ...
+            // If there is at least one set ...
             for z in adj {
                 // ... continue
                 flag = true;
@@ -66,3 +66,27 @@ where
 
     (g, sepsets, triples)
 }
+
+/// Orient v-structures of an undirected graph
+pub fn orient_vstructures<D, G, P>(
+    g: G,
+    sepsets: SepSets,
+    triples: HashSet<(usize, usize, usize)>,
+) -> P
+where
+    G: BaseGraph<Data = D, Direction = directions::Undirected> + Into<P>,
+    P: PartiallyDirectedGraph<Data = D, Direction = directions::PartiallyDirected>,
+{
+    let mut g: P = g.into();
+    // For every unshielded triple ...
+    for (x, y, z) in triples.into_iter() {
+        // ... if `y` doesn't d-separates `(x, y)` ...
+        if !sepsets.get(&(x, z)).unwrap().iter().any(|&v| v == y) {
+            // ... the triple is a v-structure
+            g.orient_edge(x, y);
+            g.orient_edge(z, y);
+        }
+    }
+    g
+}
+

@@ -45,7 +45,7 @@ mod parser {
     #[test]
     fn from_partiallydirectedgraph() {
         let dot = DOT::read("tests/assets/dot/1999.dot").unwrap();
-        let g = PaGraph::from(dot);
+        let g = PDGraph::from(dot);
         assert!(L!(g).eq(["0", "1", "2", "3", "4"]));
     }
 }
