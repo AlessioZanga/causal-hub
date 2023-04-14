@@ -178,6 +178,12 @@ mod directed {
                     (vec!["0", "1", "2"], vec![("0", "1")], true),
                     // ... multiple vertices and multiple edges,
                     (vec!["0", "1", "2"], vec![("0", "1"), ("1", "2")], true),
+                    (vec!["0", "1", "2"], vec![("0", "1"), ("1", "0")], false),
+                    (
+                        vec!["0", "1", "2"],
+                        vec![("0", "1"), ("1", "2"), ("2", "1")],
+                        false,
+                    ),
                     // ... multiple vertices and multiple edges,
                     (
                         vec!["0", "1", "2"],
