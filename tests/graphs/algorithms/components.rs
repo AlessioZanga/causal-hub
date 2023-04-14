@@ -2,9 +2,8 @@
 mod undirected {
     macro_rules! generic_tests {
         ($G: ident) => {
-            use std::collections::BTreeSet;
-
             use causal_hub::prelude::*;
+            use itertools::Itertools;
 
             #[test]
             fn connected_components() {
@@ -50,9 +49,7 @@ mod undirected {
 
                     let cc = CC::from(&g);
 
-                    assert!(cc.eq(ccs
-                        .into_iter()
-                        .map(|c| c.into_iter().collect::<BTreeSet<_>>())));
+                    assert!(cc.eq(ccs.into_iter().map(|c| c.into_iter().collect_vec())));
                 }
             }
         };

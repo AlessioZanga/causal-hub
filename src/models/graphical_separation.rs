@@ -1,9 +1,10 @@
-use std::{collections::BTreeSet, fmt::Debug};
+use std::fmt::Debug;
 
 use super::{GeneralizedIndependence, Independence, MoralGraph};
 use crate::{
     graphs::directions,
     prelude::{BaseGraph, DirectedGraph, UndirectedGraph, CC},
+    types::FxIndexSet,
     utils::UnionFind,
     Adj, An, Ch, Ne, V,
 };
@@ -99,19 +100,19 @@ where
         K: IntoIterator<Item = usize>,
     {
         // Check that X and Y are non-empty.
-        let x: BTreeSet<_> = x.into_iter().collect();
-        let y: BTreeSet<_> = y.into_iter().collect();
+        let x: FxIndexSet<_> = x.into_iter().collect();
+        let y: FxIndexSet<_> = y.into_iter().collect();
         assert!(!x.is_empty() && !y.is_empty(), "X and Y must be non-empty");
 
         // Check that X, Y and Z are disjoint, if not panic.
-        let z: BTreeSet<_> = z.into_iter().collect();
+        let z: FxIndexSet<_> = z.into_iter().collect();
         assert!(
             x.is_disjoint(&y) && y.is_disjoint(&z) && z.is_disjoint(&x),
             "X, Y and Z must be disjoint sets"
         );
 
         // Check that X, Y and Z are in V, if not panic.
-        let v: BTreeSet<_> = V!(self.g).collect();
+        let v: FxIndexSet<_> = V!(self.g).collect();
         assert!(
             x.is_subset(&v) && y.is_subset(&v) && z.is_subset(&v),
             "X, Y and Z must be subsets of V"
@@ -176,12 +177,12 @@ where
         K: IntoIterator<Item = usize>,
     {
         // Check that X and Y are non-empty.
-        let x: BTreeSet<_> = x.into_iter().collect();
-        let y: BTreeSet<_> = y.into_iter().collect();
+        let x: FxIndexSet<_> = x.into_iter().collect();
+        let y: FxIndexSet<_> = y.into_iter().collect();
         assert!(!x.is_empty() && !y.is_empty(), "X and Y must be non-empty");
 
         // Check that X, Y and Z are disjoint, if not panic.
-        let z: BTreeSet<_> = z.into_iter().collect();
+        let z: FxIndexSet<_> = z.into_iter().collect();
         assert!(
             x.is_disjoint(&y) && y.is_disjoint(&z) && z.is_disjoint(&x),
             "X, Y and Z must be disjoint sets"
@@ -191,14 +192,14 @@ where
         let s = &(&x | &y) | &z;
 
         // Check that X, Y and Z are in V, if not panic.
-        let v: BTreeSet<_> = V!(self.g).collect();
+        let v: FxIndexSet<_> = V!(self.g).collect();
         assert!(s.is_subset(&v), "X, Y and Z must be subsets of V");
 
         // Clone current graph.
         let mut h = self.g.to_undirected();
 
         // Compute the ancestors of S.
-        let an_s = s.iter().flat_map(|&s| An!(self.g, s)).collect();
+        let an_s: FxIndexSet<_> = s.iter().flat_map(|&s| An!(self.g, s)).collect();
         // Compute the ancestral set of S.
         let an_s = &s | &an_s;
 
