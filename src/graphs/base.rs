@@ -52,7 +52,7 @@ macro_rules! Adj {
 
 /// Base graph trait.
 pub trait BaseGraph:
-    Clone + Debug + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone + Debug + Default + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
 {
     /// Data type.
     type Data;
@@ -108,6 +108,81 @@ pub trait BaseGraph:
         V: Into<String>,
         I: IntoIterator<Item = V>,
         J: IntoIterator<Item = (V, V)>;
+
+    /// Null constructor.
+    ///
+    /// Let be $\mathcal{G}$ a graph type. The null constructor of $\mathcal{G}$
+    /// returns a null graph $\mathcal{G}$ (i.e. both $\mathbf{V}$ and $\mathbf{E}$ are empty).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a null graph.
+    /// let g = Graph::null();
+    ///
+    /// // The vertex set is empty.
+    /// assert_eq!(g.order(), 0);
+    ///
+    /// // The edge set is also empty.
+    /// assert_eq!(g.size(), 0);
+    /// ```
+    ///
+    #[inline]
+    fn null() -> Self {
+        Default::default()
+    }
+
+    /// Empty constructor.
+    ///
+    /// Let be $\mathcal{G}$ a graph type. The empty constructor of $\mathcal{G}$
+    /// returns an empty graph $\mathcal{G}$ (i.e. $\mathbf{E}$ is empty).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build an empty graph.
+    /// let g = Graph::empty(["A", "B", "C"]);
+    ///
+    /// // The vertex set is not empty.
+    /// assert_eq!(g.order(), 3);
+    ///
+    /// // The edge set is also empty.
+    /// assert_eq!(g.size(), 0);
+    /// ```
+    ///
+    fn empty<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>;
+
+    /// Complete constructor.
+    ///
+    /// Let be $\mathcal{G}$ a graph type. The complete constructor of $\mathcal{G}$
+    /// returns an complete graph $\mathcal{G}$ (i.e. $\mathbf{E}$ is $V \times V$).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Build a complete graph.
+    /// let g = DiGraph::complete(["A", "B", "C"]);
+    ///
+    /// // The vertex set is not empty.
+    /// assert_eq!(g.order(), 3);
+    ///
+    /// // The edge set is also not empty.
+    /// assert_eq!(g.size(), 6);
+    /// ```
+    ///
+    fn complete<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>;
 
     /// Clears the graph.
     ///

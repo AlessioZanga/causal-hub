@@ -1,6 +1,6 @@
 use std::iter::FusedIterator;
 
-use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
+use super::{BaseGraph, PartialOrdGraph, SubGraph};
 
 /// Directions pseudo-enumerator for generics algorithms.
 pub mod directions {
@@ -25,7 +25,7 @@ macro_rules! Ne {
 }
 
 /// Undirected graph trait.
-pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
+pub trait UndirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
     /// Neighbors iterator type.
     type NeighborsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
@@ -170,7 +170,7 @@ macro_rules! De {
 }
 
 /// Directed graph trait.
-pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
+pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
     /// Ancestors iterator type.
     type AncestorsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where

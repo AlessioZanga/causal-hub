@@ -15,8 +15,8 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph,
-        PathGraph, SubGraph,
+        directions, BaseGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph, PathGraph,
+        SubGraph,
     },
     io::DOT,
     models::MoralGraph,
@@ -169,6 +169,17 @@ impl Hash for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
+impl Default for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            labels: Default::default(),
+            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
+            size: 0,
+        }
+    }
+}
+
 impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
     type Data = DenseAdjacencyMatrix;
 
@@ -219,6 +230,69 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
             // Increment size.
             size += 1;
         }
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        Self {
+            labels,
+            adjacency_matrix,
+            size,
+        }
+    }
+
+    fn empty<V, I>(vertices: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Initialize adjacency matrix given graph order.
+        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        Self {
+            labels,
+            adjacency_matrix,
+            size: 0,
+        }
+    }
+
+    fn complete<V, I>(vertices: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Initialize adjacency matrix given graph order.
+        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
+        // Remove self loops.
+        adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
+
+        // Compute size.
+        let size = order * (order.saturating_sub(1));
 
         // Assert vertex set is still sorted.
         debug_assert!(labels.iter().is_sorted());
@@ -452,83 +526,6 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
 
         f
-    }
-}
-
-/* Implement DefaultGraph trait. */
-impl Default for DirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            labels: Default::default(),
-            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
-            size: 0,
-        }
-    }
-}
-
-impl DefaultGraph for DirectedDenseAdjacencyMatrixGraph {
-    fn empty<V, I>(vertices: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
-        // Sort labels.
-        labels.sort();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Initialize adjacency matrix given graph order.
-        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
-
-        // Assert vertex set is still sorted.
-        debug_assert!(labels.iter().is_sorted());
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(adjacency_matrix.is_square());
-
-        Self {
-            labels,
-            adjacency_matrix,
-            size: 0,
-        }
-    }
-
-    fn complete<V, I>(vertices: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
-        // Sort labels.
-        labels.sort();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Initialize adjacency matrix given graph order.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
-        // Remove self loops.
-        adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
-
-        // Compute size.
-        let size = order * (order.saturating_sub(1));
-
-        // Assert vertex set is still sorted.
-        debug_assert!(labels.iter().is_sorted());
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(adjacency_matrix.is_square());
-
-        Self {
-            labels,
-            adjacency_matrix,
-            size,
-        }
     }
 }
 
