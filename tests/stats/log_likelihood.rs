@@ -117,7 +117,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(L!(d));
+        let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
         let score = LL::new();
@@ -132,8 +132,8 @@ mod discrete {
         );
 
         for (x, z, s) in data {
-            let x = g.vertex(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let x = g.get_vertex_index(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
 
             assert_relative_eq!(
                 DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),
@@ -157,7 +157,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(L!(d));
+        let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
         let score = ParallelLL::new();
@@ -172,8 +172,8 @@ mod discrete {
         );
 
         for (x, z, s) in data {
-            let x = g.vertex(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let x = g.get_vertex_index(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
 
             assert_relative_eq!(
                 DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),
@@ -204,7 +204,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(L!(d));
+        let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
         let score = LL::new();
@@ -219,8 +219,8 @@ mod gaussian {
         );
 
         for (x, z, s) in data {
-            let x = g.vertex(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let x = g.get_vertex_index(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
 
             assert_relative_eq!(
                 DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),
@@ -244,7 +244,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(L!(d));
+        let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
         let score = ParallelLL::new();
@@ -259,8 +259,8 @@ mod gaussian {
         );
 
         for (x, z, s) in data {
-            let x = g.vertex(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.vertex(&z)).collect();
+            let x = g.get_vertex_index(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
 
             assert_relative_eq!(
                 DecomposableScoringCriterion::<_, DiGraph>::call(&score, &d, x, &z),

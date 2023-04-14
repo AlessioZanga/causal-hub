@@ -30,7 +30,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(L!(d), [], []);
+        let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
         let s = BIC::new();
@@ -70,7 +70,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(L!(d), [], []);
+        let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
         let s = BIC::new();
@@ -111,7 +111,7 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(L!(d), [], []);
+        let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
         let s = BIC::new();
@@ -236,7 +236,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(L!(d), [], []);
+        let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
         let s = BIC::new();
@@ -355,7 +355,7 @@ mod gaussian {
         let d = ContinuousDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(L!(d), [], []);
+        let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
         let s = BIC::new();

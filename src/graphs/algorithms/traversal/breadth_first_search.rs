@@ -96,7 +96,7 @@ where
         // If no source vertex is given, choose the first in the vertex set.
         if let Some(x) = x.or_else(|| V!(g).next()) {
             // ... assert that source vertex is in graph.
-            assert!(g.has_vertex(x));
+            assert!(g.has_vertex_by_index(x));
             // Push the source vertex into the queue.
             queue.push_front(x);
             // Set its distance to zero.

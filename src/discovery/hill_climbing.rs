@@ -114,11 +114,11 @@ where
     fn apply(mut g: G, x: usize, y: usize, a: usize) -> G {
         // Apply operation.
         match a {
-            Op::ADD => assert!(g.add_edge(x, y)),
-            Op::DEL => assert!(g.del_edge(x, y)),
+            Op::ADD => assert!(g.add_edge_by_index(x, y)),
+            Op::DEL => assert!(g.del_edge_by_index(x, y)),
             Op::REV => {
-                assert!(g.del_edge(x, y));
-                assert!(g.add_edge(y, x));
+                assert!(g.del_edge_by_index(x, y));
+                assert!(g.add_edge_by_index(y, x));
             }
             _ => panic!("Unknown operation code"),
         };
@@ -132,8 +132,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.label(x),
-            g.label(y),
+            g.get_vertex_by_index(x),
+            g.get_vertex_by_index(y),
         );
 
         g
@@ -202,17 +202,17 @@ where
             // If initial graph is provided ...
             Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.
-            None => G::empty(L!(d)),
+            None => G::empty(d.labels()),
         };
 
         // Check coherence with data set ...
         assert!(
-            L!(g).eq(L!(d)),
+            L!(g).eq(d.labels()),
             "Graph labels must be equal to data set labels"
         );
         // Check coherence of graph and prior knowledge.
         assert!(
-            L!(g).eq(L!(k)),
+            L!(g).eq(k.labels()),
             "Graph labels must be equal to prior knowledge labels"
         );
 
@@ -225,13 +225,13 @@ where
         assert!(k
             .required()
             .iter()
-            .all(|&(x, y)| g.has_edge(x, y) || g.add_edge(x, y)));
+            .all(|&(x, y)| g.has_edge_by_index(x, y) || g.add_edge_by_index(x, y)));
 
         // Check acyclicity.
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
         // Get number of variables.
-        let n = L!(d).len();
+        let n = d.labels().len();
         // Get columns index.
         let mut n = (0..n).collect_vec();
         // Check if random number generator has been set.
@@ -243,7 +243,7 @@ where
             // Log shuffled columns.
             debug!(
                 "Seed is set, shuffled columns as: [{}]",
-                n.iter().map(|&x| g.label(x)).format(", ")
+                n.iter().map(|&x| g.get_vertex_by_index(x)).format(", ")
             );
         }
 
@@ -275,7 +275,7 @@ where
         // Check validity depending on operation.
         let is_valid = match OP {
             // (X, Y) not in F, pi(Y, X) not in G.
-            Op::ADD => !g.has_edge(y, x) && !g.has_path(y, x),
+            Op::ADD => !g.has_edge_by_index(y, x) && !g.has_path_by_index(y, x),
             // (X, Y) in R.
             Op::DEL => true,
             // (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
@@ -297,8 +297,8 @@ where
                     Op::REV => "Rev",
                     _ => panic!("Unknown operation code"),
                 },
-                g.label(x),
-                g.label(y),
+                g.get_vertex_by_index(x),
+                g.get_vertex_by_index(y),
             );
         }
 
@@ -397,8 +397,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.label(x),
-            g.label(y),
+            g.get_vertex_by_index(x),
+            g.get_vertex_by_index(y),
             delta_star
         );
 
@@ -555,7 +555,7 @@ where
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.add_edge(x, y);
+                g_star.add_edge_by_index(x, y);
                 // Compute delta score and merge cache.
                 let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
                 // Accumulate cache updates.
@@ -566,7 +566,7 @@ where
             Op::DEL => {
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.del_edge(x, y);
+                g_star.del_edge_by_index(x, y);
                 // Compute delta score and merge cache.
                 let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
                 // Merge cache updates.
@@ -577,8 +577,8 @@ where
             Op::REV => {
                 // Reverse X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.del_edge(x, y);
-                g_star.add_edge(y, x);
+                g_star.del_edge_by_index(x, y);
+                g_star.add_edge_by_index(y, x);
                 // Compute delta score and merge cache.
                 let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
                 // Merge cache updates.
@@ -598,8 +598,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.label(x),
-            g.label(y),
+            g.get_vertex_by_index(x),
+            g.get_vertex_by_index(y),
             delta_star
         );
 

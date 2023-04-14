@@ -33,13 +33,13 @@ impl DiscreteDataMatrix {
         K: IntoIterator<Item = V>,
     {
         // Construct the labels set.
-        let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
+        let labels: BTreeSet<String> = labels.into_iter().map_into().collect();
         // Check labels consistency.
         assert_eq!(values.ncols(), labels.len());
         // Construct the states map.
         let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
-            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Check states consistency.
@@ -77,7 +77,7 @@ impl DiscreteDataMatrix {
         // Accumulate states.
         let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
-            .map(|(k, v)| (k.into(), v.into_iter().map(|v| v.into()).sorted().collect()))
+            .map(|(k, v)| (k.into(), v.into_iter().map_into().sorted().collect()))
             .sorted_by(|(a, _), (b, _)| a.cmp(b))
             .collect();
 
@@ -145,7 +145,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .mapv(|x| x as usize);
 
         // Get variables as set of strings.
-        let labels: BTreeSet<_> = df.get_column_names_owned().into_iter().collect();
+        let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
 
         // Get variables states.
         let states: FxIndexMap<_, _> = df
@@ -178,7 +178,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
                 }
                 RevMapping::Local(states) => {
                     // Cast to vector of states.
-                    let states = states.values_iter().map(|s| s.into()).collect();
+                    let states = states.values_iter().map_into().collect();
 
                     (label, states)
                 }
@@ -271,7 +271,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
-        let labels = df.get_column_names_owned().into_iter().collect();
+        let labels = df.get_column_names_owned().into_iter().map_into().collect();
 
         Self { labels, values }
     }

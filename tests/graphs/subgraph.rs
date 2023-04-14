@@ -38,12 +38,14 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -58,7 +60,7 @@ mod undirected {
             }
 
             #[test]
-            fn subgraph_by_vertices() {
+            fn subgraph_by_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -91,8 +93,8 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -140,8 +142,10 @@ mod undirected {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -203,12 +207,14 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -223,7 +229,7 @@ mod directed {
             }
 
             #[test]
-            fn subgraph_by_vertices() {
+            fn subgraph_by_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -256,8 +262,8 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -305,8 +311,10 @@ mod directed {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }

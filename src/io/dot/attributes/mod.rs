@@ -1,9 +1,8 @@
 // Automatically generated on: 2023-02-01 07:56:16.127273 .
 
-use std::{
-    collections::{hash_set, HashSet},
-    hash::{Hash, Hasher},
-};
+use std::hash::{Hash, Hasher};
+
+use crate::types::FxIndexSet;
 
 /// Quote string if necessary.
 fn quote(s: &str) -> String {
@@ -577,7 +576,7 @@ impl From<Attribute> for (String, String) {
 /// Graph attributes.
 #[derive(Clone, Debug, Default)]
 pub struct GraphAttributes {
-    attributes: HashSet<Attribute>,
+    attributes: FxIndexSet<Attribute>,
 }
 
 impl GraphAttributes {
@@ -2569,7 +2568,7 @@ impl GraphAttributes {
 impl IntoIterator for GraphAttributes {
     type Item = Attribute;
 
-    type IntoIter = hash_set::IntoIter<Attribute>;
+    type IntoIter = indexmap::set::IntoIter<Attribute>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -2580,7 +2579,7 @@ impl IntoIterator for GraphAttributes {
 /// Vertex attributes.
 #[derive(Clone, Debug, Default)]
 pub struct VertexAttributes {
-    attributes: HashSet<Attribute>,
+    attributes: FxIndexSet<Attribute>,
 }
 
 impl VertexAttributes {
@@ -3546,7 +3545,7 @@ impl VertexAttributes {
 impl IntoIterator for VertexAttributes {
     type Item = Attribute;
 
-    type IntoIter = hash_set::IntoIter<Attribute>;
+    type IntoIter = indexmap::set::IntoIter<Attribute>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -3557,7 +3556,7 @@ impl IntoIterator for VertexAttributes {
 /// Cluster attributes.
 #[derive(Clone, Debug, Default)]
 pub struct ClusterAttributes {
-    attributes: HashSet<Attribute>,
+    attributes: FxIndexSet<Attribute>,
 }
 
 impl ClusterAttributes {
@@ -4181,7 +4180,7 @@ impl ClusterAttributes {
 impl IntoIterator for ClusterAttributes {
     type Item = Attribute;
 
-    type IntoIter = hash_set::IntoIter<Attribute>;
+    type IntoIter = indexmap::set::IntoIter<Attribute>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -4192,7 +4191,7 @@ impl IntoIterator for ClusterAttributes {
 /// Edge attributes.
 #[derive(Clone, Debug, Default)]
 pub struct EdgeAttributes {
-    attributes: HashSet<Attribute>,
+    attributes: FxIndexSet<Attribute>,
 }
 
 impl EdgeAttributes {
@@ -5481,7 +5480,7 @@ impl EdgeAttributes {
 impl IntoIterator for EdgeAttributes {
     type Item = Attribute;
 
-    type IntoIter = hash_set::IntoIter<Attribute>;
+    type IntoIter = indexmap::set::IntoIter<Attribute>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -5492,7 +5491,7 @@ impl IntoIterator for EdgeAttributes {
 /// Subgraph attributes.
 #[derive(Clone, Debug, Default)]
 pub struct SubgraphAttributes {
-    attributes: HashSet<Attribute>,
+    attributes: FxIndexSet<Attribute>,
 }
 
 impl SubgraphAttributes {
@@ -5565,7 +5564,7 @@ impl SubgraphAttributes {
 impl IntoIterator for SubgraphAttributes {
     type Item = Attribute;
 
-    type IntoIter = hash_set::IntoIter<Attribute>;
+    type IntoIter = indexmap::set::IntoIter<Attribute>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {

@@ -1,13 +1,12 @@
 use std::{
     cmp::Ordering,
-    collections::{BTreeSet, HashSet},
     fmt::Display,
     hash::{Hash, Hasher},
-    iter::{Enumerate, FilterMap, FusedIterator},
+    iter::{Enumerate, FilterMap, FusedIterator, Map},
     ops::{Deref, Range},
 };
 
-use bimap::BiHashMap;
+use is_sorted::IsSorted;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -15,21 +14,18 @@ use serde::{Deserialize, Serialize};
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DefaultGraph, ErrorGraph as E, PartialOrdGraph, PathGraph, SubGraph,
-        UndirectedGraph,
+        directions, BaseGraph, PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
     io::DOT,
     prelude::BFS,
-    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, SparseAdjacencyMatrix},
-    utils::partial_cmp_sets,
+    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
     Adj, E, V,
 };
 
 /// Undirected graph struct based on dense adjacency matrix data structure.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UndirectedDenseAdjacencyMatrixGraph {
-    labels: BTreeSet<String>,
-    labels_indices: BiHashMap<String, usize>,
+    labels: FxIndexSet<String>,
     adjacency_matrix: DenseAdjacencyMatrix,
     size: usize,
 }
@@ -43,43 +39,6 @@ impl Deref for UndirectedDenseAdjacencyMatrixGraph {
         &self.adjacency_matrix
     }
 }
-
-pub struct LabelsIterator<'a> {
-    graph: &'a UndirectedDenseAdjacencyMatrixGraph,
-    iter: Range<usize>,
-}
-
-impl<'a> LabelsIterator<'a> {
-    /// Constructor.
-    #[inline]
-    pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
-        Self {
-            graph: g,
-            iter: Range {
-                start: 0,
-                end: g.labels.len(),
-            },
-        }
-    }
-}
-
-impl<'a> Iterator for LabelsIterator<'a> {
-    type Item = &'a str;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|x| self.graph.label(x))
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
-
-impl<'a> ExactSizeIterator for LabelsIterator<'a> {}
-
-impl<'a> FusedIterator for LabelsIterator<'a> {}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
@@ -178,7 +137,7 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
             f,
             "V = {{{}}}, ",
             V!(self)
-                .map(|x| format!("\"{}\"", self.label(x)))
+                .map(|x| format!("\"{}\"", self.get_vertex_by_index(x)))
                 .join(", ")
         )?;
         // Write edge set.
@@ -186,7 +145,11 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
             f,
             "E = {{{}}}",
             E!(self)
-                .map(|(x, y)| format!("(\"{}\", \"{}\")", self.label(x), self.label(y)))
+                .map(|(x, y)| format!(
+                    "(\"{}\", \"{}\")",
+                    self.get_vertex_by_index(x),
+                    self.get_vertex_by_index(y)
+                ))
                 .join(", ")
         )?;
         // Write ending character.
@@ -197,8 +160,19 @@ impl Display for UndirectedDenseAdjacencyMatrixGraph {
 impl Hash for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.labels.hash(state);
+        self.labels.iter().for_each(|x| x.hash(state));
         self.adjacency_matrix.hash(state);
+    }
+}
+
+impl Default for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            labels: Default::default(),
+            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
+            size: 0,
+        }
     }
 }
 
@@ -207,13 +181,13 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     type Direction = directions::Undirected;
 
-    type LabelsIter<'a> = LabelsIterator<'a>;
+    type VerticesIter<'a> = Map<indexmap::set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
-    type VerticesIter<'a> = Range<usize>;
+    type VerticesIndexIter<'a> = Range<usize>;
 
-    type EdgesIter<'a> = EdgesIterator<'a>;
+    type EdgesIndexIter<'a> = EdgesIterator<'a>;
 
-    type AdjacentsIter<'a> = AdjacentsIterator<'a>;
+    type AdjacentsIndexIter<'a> = AdjacentsIterator<'a>;
 
     fn new<V, I, J>(vertices: I, edges: J) -> Self
     where
@@ -222,24 +196,19 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         J: IntoIterator<Item = (V, V)>,
     {
         // Remove duplicated vertices labels.
-        let mut labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
+        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
         // Map edges iterator into edge list.
-        let edges: EdgeList<_> = edges
+        let edges: FxIndexSet<_> = edges
             .into_iter()
             .map(|(x, y)| (x.into(), y.into()))
             .collect();
         // Add missing vertices from the edges.
         labels.extend(edges.iter().cloned().flat_map(|(x, y)| [x, y]));
+        // Sort labels.
+        labels.sort();
 
         // Compute new graph order.
         let order = labels.len();
-        // Map vertices labels to vertices indices.
-        let labels_indices: BiHashMap<_, _> = labels
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(i, x)| (x, i))
-            .collect();
         // Initialize adjacency matrix given graph order.
         let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
@@ -249,8 +218,8 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         for (x, y) in edges {
             // Get associated vertices indices.
             let (i, j) = (
-                *labels_indices.get_by_left(&x).unwrap(),
-                *labels_indices.get_by_left(&y).unwrap(),
+                labels.get_index_of(&x).unwrap(),
+                labels.get_index_of(&y).unwrap(),
             );
             // Set edge given indices.
             if !adjacency_matrix[[i, j]] {
@@ -264,7 +233,69 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
         Self {
             labels,
-            labels_indices,
+            adjacency_matrix,
+            size,
+        }
+    }
+
+    fn empty<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let mut labels: FxIndexSet<_> = labels.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Initialize adjacency matrix given graph order.
+        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        Self {
+            labels,
+            adjacency_matrix,
+            size: 0,
+        }
+    }
+
+    fn complete<V, I>(labels: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Remove duplicated vertices labels.
+        let mut labels: FxIndexSet<_> = labels.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
+
+        // Compute new graph order.
+        let order = labels.len();
+        // Initialize adjacency matrix given graph order.
+        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
+        // Remove self loops.
+        adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
+
+        // Compute size.
+        let size = (order * (order.saturating_sub(1))) / 2;
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        Self {
+            labels,
             adjacency_matrix,
             size,
         }
@@ -272,10 +303,8 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn clear(&mut self) {
-        // Clear the vertices.
-        self.labels.clear();
         // Clear the vertices map.
-        self.labels_indices.clear();
+        self.labels.clear();
         // Clear the adjacency matrix.
         self.adjacency_matrix = Default::default();
         // Clear the size.
@@ -283,41 +312,11 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn label(&self, x: usize) -> &str {
-        self.labels_indices
-            .get_by_right(&x)
-            .unwrap_or_else(|| panic!("No vertex with label `{x}`"))
-    }
-
-    #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
-        Self::LabelsIter::new(self)
-    }
-
-    #[inline]
-    fn vertex(&self, x: &str) -> usize {
-        *self
-            .labels_indices
-            .get_by_left(x)
-            .unwrap_or_else(|| panic!("No vertex with identifier `{x}`"))
-    }
-
-    #[inline]
-    fn vertices(&self) -> Self::VerticesIter<'_> {
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(self.labels.len(), self.labels_indices.len());
-
-        0..self.labels.len()
-    }
-
-    #[inline]
     fn order(&self) -> usize {
         // Check iterator consistency.
         debug_assert_eq!(V!(self).len(), self.labels.len());
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(self.labels.len(), self.labels_indices.len());
         // Assert vertex set is consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels_indices.len(), self.adjacency_matrix.nrows());
+        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is square.
         debug_assert!(self.adjacency_matrix.is_square());
 
@@ -325,16 +324,15 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn has_vertex(&self, x: usize) -> bool {
-        // Check vertex existence.
-        let f = self.labels_indices.contains_right(&x);
+    fn get_vertices(&self) -> Self::VerticesIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
+    }
 
-        // Check iterator consistency.
-        debug_assert_eq!(V!(self).any(|y| y == x), f);
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(x < self.order(), f);
-
-        f
+    #[inline]
+    fn get_vertex_by_index(&self, x: usize) -> &str {
+        self.labels
+            .get_index(x)
+            .unwrap_or_else(|| panic!("No vertex with label `{x}`"))
     }
 
     fn add_vertex<V>(&mut self, x: V) -> usize
@@ -343,22 +341,25 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     {
         // Cast vertex label.
         let x = x.into();
+        // Try to insert vertex label.
+        let (i, f) = self.labels.insert_full(x.clone());
 
         // If vertex was already present ...
-        if !self.labels.insert(x.clone()) {
+        if !f {
             // ... return early.
-            return self.vertex(&x);
+            return i;
         }
 
-        // Get vertex identifier.
-        let i = self.labels.iter().position(|y| y == &x).unwrap();
+        // Sort labels.
+        self.labels.sort();
 
-        // Update the vertices map after the added vertex.
-        for (j, y) in self.labels.iter().skip(i).enumerate() {
-            // Add the given vertex and increment subsequent ones by overwriting the entries.
-            self.labels_indices.insert(y.clone(), i + j);
-        }
+        // Assert vertex has been added.
+        debug_assert!(self.labels.contains(&x));
+        // Assert vertex set is still sorted.
+        debug_assert!(self.labels.iter().is_sorted());
 
+        // Get vertex index.
+        let i = self.labels.get_index_of(&x).unwrap();
         // Compute the new size of adjacency matrix.
         let n = self.adjacency_matrix.nrows();
         // Allocate new adjacency matrix.
@@ -375,54 +376,54 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Replace old with new adjacency matrix.
         self.adjacency_matrix = adjacency_matrix;
 
-        // Assert vertex has been added.
-        debug_assert!(self.labels.contains(&x));
-        debug_assert!(self.labels_indices.contains_left(&x));
-        // Assert vertex set is still consistent with vertices map.
-        debug_assert!(self
-            .labels
-            .iter()
-            .eq(self.labels_indices.left_values().sorted()));
-        // Assert vertices labels are still associated to an ordered and
-        // contiguous sequence of integers starting from zero, i.e in [0, n).
-        debug_assert!(self
-            .labels_indices
-            .right_values()
-            .cloned()
-            .sorted()
-            .eq(0..self.labels_indices.len()));
         // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels_indices.len(), self.adjacency_matrix.nrows());
+        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
-        // Assert adjacency matrix is still symmetric.
-        debug_assert_eq!(self.adjacency_matrix, self.adjacency_matrix.t());
 
-        // Return new vertex.
+        // Return new vertex index.
         i
     }
 
-    fn del_vertex(&mut self, x: usize) -> bool {
+    #[inline]
+    fn get_vertices_index(&self) -> Self::VerticesIndexIter<'_> {
+        0..self.labels.len()
+    }
+
+    #[inline]
+    fn get_vertex_index(&self, x: &str) -> usize {
+        self.labels
+            .get_index_of(x)
+            .unwrap_or_else(|| panic!("No vertex with identifier `{x}`"))
+    }
+
+    #[inline]
+    fn has_vertex_by_index(&self, x: usize) -> bool {
+        // Check vertex existence.
+        let f = self.labels.get_index(x).is_some();
+
+        // Check iterator consistency.
+        debug_assert_eq!(V!(self).any(|y| y == x), f);
+        // Assert vertex set and vertices map are consistent.
+        debug_assert_eq!(x < self.order(), f);
+
+        f
+    }
+
+    fn del_vertex_by_index(&mut self, x: usize) -> bool {
         // Get vertex label and identifier.
-        let x_i = self.labels_indices.remove_by_right(&x);
+        let (x, i) = (self.labels.shift_remove_index(x), x);
 
         // If vertex was not present ...
-        if x_i.is_none() {
+        if x.is_none() {
             // ... then return early.
             return false;
         }
 
-        // Get vertex label and identifier.
-        let (x, i) = x_i.unwrap();
-
-        // Remove vertex label.
-        self.labels.remove(&x);
-
-        // Update the vertices map after the removed vertex.
-        for (j, y) in self.labels.iter().skip(i).enumerate() {
-            // Decrement subsequent ones by overwriting the entries.
-            self.labels_indices.insert(y.clone(), i + j);
-        }
+        // Assert vertex has been removed.
+        debug_assert!(!self.labels.contains(&x.unwrap()));
+        // Assert vertex set is still sorted.
+        debug_assert!(self.labels.iter().is_sorted());
 
         // Compute the new size of adjacency matrix.
         let n = self.adjacency_matrix.nrows();
@@ -440,35 +441,12 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Replace old with new adjacency matrix.
         self.adjacency_matrix = adjacency_matrix;
 
-        // Assert vertex has been removed.
-        debug_assert!(!self.labels.contains(&x));
-        debug_assert!(!self.labels_indices.contains_left(&x));
-        // Assert vertex set is still consistent with vertices map.
-        debug_assert!(self
-            .labels
-            .iter()
-            .eq(self.labels_indices.left_values().sorted()));
-        // Assert vertices labels are still associated to an ordered and
-        // contiguous sequence of integers starting from zero, i.e in [0, n).
-        debug_assert!(self
-            .labels_indices
-            .right_values()
-            .cloned()
-            .sorted()
-            .eq(0..self.labels_indices.len()));
         // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels_indices.len(), self.adjacency_matrix.nrows());
+        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
         // Assert adjacency matrix is still square.
         debug_assert!(self.adjacency_matrix.is_square());
-        // Assert adjacency matrix is still symmetric.
-        debug_assert_eq!(self.adjacency_matrix, self.adjacency_matrix.t());
 
         true
-    }
-
-    #[inline]
-    fn edges(&self) -> Self::EdgesIter<'_> {
-        Self::EdgesIter::new(self)
     }
 
     #[inline]
@@ -480,12 +458,17 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn get_edges_index(&self) -> Self::EdgesIndexIter<'_> {
+        Self::EdgesIndexIter::new(self)
+    }
+
+    #[inline]
+    fn has_edge_by_index(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[x, y]]
     }
 
     #[inline]
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge_by_index(&mut self, x: usize, y: usize) -> bool {
         // If edge already exists ...
         if self.adjacency_matrix[[x, y]] {
             // ... return early.
@@ -516,7 +499,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge_by_index(&mut self, x: usize, y: usize) -> bool {
         // If edge does not exists ...
         if !self.adjacency_matrix[[x, y]] {
             // ... return early.
@@ -547,95 +530,19 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
-        Self::AdjacentsIter::new(self, x)
+    fn get_adjacents_index(&self, x: usize) -> Self::AdjacentsIndexIter<'_> {
+        Self::AdjacentsIndexIter::new(self, x)
     }
 
     #[inline]
-    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+    fn is_adjacent_by_index(&self, x: usize, y: usize) -> bool {
         // Check using has_edge.
-        let f = self.has_edge(x, y);
+        let f = self.has_edge_by_index(x, y);
 
         // Check iterator consistency.
         debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
 
         f
-    }
-}
-
-/* Implement DefaultGraph trait. */
-impl Default for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            labels: Default::default(),
-            labels_indices: Default::default(),
-            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
-            size: 0,
-        }
-    }
-}
-
-impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
-    fn empty<V, I>(labels: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Map vertices labels to vertices indices.
-        let labels_indices = labels
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(i, x)| (x, i))
-            .collect();
-        // Initialize adjacency matrix given graph order.
-        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
-
-        Self {
-            labels,
-            labels_indices,
-            adjacency_matrix,
-            size: 0,
-        }
-    }
-
-    fn complete<V, I>(labels: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = labels.into_iter().map(|x| x.into()).collect();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Map vertices labels to vertices indices.
-        let labels_indices = labels
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(i, x)| (x, i))
-            .collect();
-        // Initialize adjacency matrix given graph order.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
-        // Remove self loops.
-        adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
-
-        // Compute size.
-        let size = (order * (order.saturating_sub(1))) / 2;
-
-        Self {
-            labels,
-            labels_indices,
-            adjacency_matrix,
-            size,
-        }
     }
 }
 
@@ -666,39 +573,29 @@ where
     }
 }
 
-impl<I, V> TryFrom<(I, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
+impl<I, V> From<(I, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
 where
     I: IntoIterator<Item = V>,
     V: Into<String>,
 {
-    type Error = E;
-
-    fn try_from(
-        (labels, adjacency_matrix): (I, DenseAdjacencyMatrix),
-    ) -> Result<Self, Self::Error> {
+    fn from((labels, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Self {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<String> = labels.into_iter().map(|x| x.into()).collect();
+        let mut labels: FxIndexSet<String> = labels.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
 
         // Check if vertex set is not consistent with given adjacency matrix.
         if labels.len() != adjacency_matrix.nrows() {
-            return Err(E::InconsistentMatrix);
+            panic!("Matrix must be consistent with inputs");
         }
         // Check if adjacency matrix is not square.
         if !adjacency_matrix.is_square() {
-            return Err(E::NonSquareMatrix);
+            panic!("Matrix must be square");
         }
         // Check if adjacency matrix is not symmetric.
         if adjacency_matrix != adjacency_matrix.t() {
-            return Err(E::NonSymmetricMatrix);
+            panic!("Matrix must be symmetric");
         }
-
-        // Map vertices labels to vertices indices.
-        let labels_indices = labels
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(i, x)| (x, i))
-            .collect();
 
         // Cast to standard memory layout (i.e. C layout), if not already.
         let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
@@ -708,34 +605,18 @@ where
         let size = size + adjacency_matrix.diag().mapv(|f| f as usize).sum();
         let size = size / 2;
 
-        Ok(Self {
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
+        Self {
             labels,
-            labels_indices,
             adjacency_matrix,
             size,
-        })
-    }
-}
-
-impl<I, V> TryFrom<(I, SparseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
-where
-    I: IntoIterator<Item = V>,
-    V: Into<String>,
-{
-    type Error = E;
-
-    fn try_from(
-        (vertices, adjacency_matrix): (I, SparseAdjacencyMatrix),
-    ) -> Result<Self, Self::Error> {
-        // Allocate dense adjacency matrix.
-        let mut dense_adjacency_matrix =
-            DenseAdjacencyMatrix::from_elem(adjacency_matrix.shape(), false);
-        // Fill dense adjacency matrix from sparse triplets.
-        for (&f, (i, j)) in adjacency_matrix.triplet_iter() {
-            dense_adjacency_matrix[[i, j]] = f;
         }
-        // Delegate constructor to dense adjacency matrix constructor.
-        Self::try_from((vertices, dense_adjacency_matrix))
     }
 }
 
@@ -746,7 +627,12 @@ impl Into<EdgeList<String>> for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn into(self) -> EdgeList<String> {
         E!(self)
-            .map(|(x, y)| (self.label(x).into(), self.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    self.get_vertex_by_index(x).into(),
+                    self.get_vertex_by_index(y).into(),
+                )
+            })
             .collect()
     }
 }
@@ -757,8 +643,10 @@ impl Into<AdjacencyList<String>> for UndirectedDenseAdjacencyMatrixGraph {
         V!(self)
             .map(|x| {
                 (
-                    self.label(x).into(),
-                    Adj!(self, x).map(|y| self.label(y).into()).collect(),
+                    self.get_vertex_by_index(x).into(),
+                    Adj!(self, x)
+                        .map(|y| self.get_vertex_by_index(y).into())
+                        .collect(),
                 )
             })
             .collect()
@@ -766,37 +654,10 @@ impl Into<AdjacencyList<String>> for UndirectedDenseAdjacencyMatrixGraph {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<(BTreeSet<String>, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
+impl Into<(FxIndexSet<String>, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
-    fn into(self) -> (BTreeSet<String>, DenseAdjacencyMatrix) {
+    fn into(self) -> (FxIndexSet<String>, DenseAdjacencyMatrix) {
         (self.labels, self.adjacency_matrix)
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<(BTreeSet<String>, SparseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
-    fn into(self) -> (BTreeSet<String>, SparseAdjacencyMatrix) {
-        // Get upper bound capacity.
-        let size = self.size * 2;
-        // Allocate triplets indices.
-        let (mut rows, mut cols) = (Vec::with_capacity(size), Vec::with_capacity(size));
-        // Build triplets indices.
-        for ((i, j), &f) in self.adjacency_matrix.indexed_iter() {
-            if f {
-                rows.push(i);
-                cols.push(j);
-            }
-        }
-        // Shrink triplets indices to actual capacity.
-        rows.shrink_to_fit();
-        cols.shrink_to_fit();
-        // Build data vector.
-        let data: Vec<_> = std::iter::repeat(true).take(rows.len()).collect();
-        // Construct sparse adjacency matrix.
-        let sparse_adjacency_matrix =
-            SparseAdjacencyMatrix::from_triplets(self.adjacency_matrix.dim(), rows, cols, data);
-
-        (self.labels, sparse_adjacency_matrix)
     }
 }
 
@@ -814,19 +675,20 @@ impl Eq for UndirectedDenseAdjacencyMatrixGraph {}
 impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare vertices sets.
-        let lhs: HashSet<_> = V!(self).map(|x| self.label(x)).collect();
-        let rhs: HashSet<_> = V!(other).map(|x| other.label(x)).collect();
+        let partial_cmp = iter_set::cmp(
+            V!(self).map(|x| self.get_vertex_by_index(x)),
+            V!(other).map(|x| other.get_vertex_by_index(x)),
+        );
         // If the vertices sets are comparable ...
-        partial_cmp_sets!(lhs, rhs).and_then(|vertices| {
+        partial_cmp.and_then(|vertices| {
             // ... compare edges sets.
-            let lhs: HashSet<_> = E!(self)
-                .map(|(x, y)| (self.label(x), self.label(y)))
-                .collect();
-            let rhs: HashSet<_> = E!(other)
-                .map(|(x, y)| (other.label(x), other.label(y)))
-                .collect();
+            let partial_cmp = iter_set::cmp(
+                E!(self).map(|(x, y)| (self.get_vertex_by_index(x), self.get_vertex_by_index(y))),
+                E!(other)
+                    .map(|(x, y)| (other.get_vertex_by_index(x), other.get_vertex_by_index(y))),
+            );
             // If the edges sets are comparable ...
-            partial_cmp_sets!(lhs, rhs).and_then(|edges| {
+            partial_cmp.and_then(|edges| {
                 // ... then return ordering.
                 match (vertices, edges) {
                     // If vertices and edges are the same, then ordering is determined.
@@ -887,7 +749,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -898,7 +760,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
         I: IntoIterator<Item = usize>,
     {
         // Remove duplicated vertices identifiers.
-        let indices: BTreeSet<_> = vertices.into_iter().collect();
+        let indices: FxIndexSet<_> = vertices.into_iter().collect();
         // Cast to vector of indices.
         let indices: Vec<_> = indices.into_iter().collect();
 
@@ -909,7 +771,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -950,7 +812,7 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
             .select(Axis(1), &indices);
 
         // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.label(x));
+        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
 
         // Build subgraph from vertices and adjacency matrix.
         Self::try_from((vertices, adjacency_matrix)).unwrap()
@@ -959,20 +821,20 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
 
 /* Implement UndirectedGraph trait. */
 impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
-    type NeighborsIter<'a> = Self::AdjacentsIter<'a>;
+    type NeighborsIndexIter<'a> = Self::AdjacentsIndexIter<'a>;
 
     #[inline]
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_> {
-        Self::NeighborsIter::new(self, x)
+    fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_> {
+        Self::NeighborsIndexIter::new(self, x)
     }
 
     #[inline]
-    fn is_neighbor(&self, x: usize, y: usize) -> bool {
+    fn is_neighbor_by_index(&self, x: usize, y: usize) -> bool {
         self.adjacency_matrix[[x, y]]
     }
 
     #[inline]
-    fn degree(&self, x: usize) -> usize {
+    fn get_degree_by_index(&self, x: usize) -> usize {
         // Compute degree.
         let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
 
@@ -986,8 +848,8 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
 /* Implement PathGraph */
 impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
-    fn has_path(&self, x: usize, y: usize) -> bool {
-        self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
+    fn has_path_by_index(&self, x: usize, y: usize) -> bool {
+        self.has_edge_by_index(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
     #[inline]
