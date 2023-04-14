@@ -1141,6 +1141,25 @@ mod directed {
                 assert_eq!(search.next(), None);
 
                 // Build a trivial graph.
+                let g = $G::new([], [("0", "1"), ("1", "0")]);
+                // Build a search object.
+                let mut search = DFSEdges::from(&g);
+                // Yields some results.
+                assert_eq!(search.next(), Some(DFSEdge::Tree(0, 1)));
+                assert_eq!(search.next(), Some(DFSEdge::Back(1, 0)));
+                assert_eq!(search.next(), None);
+
+                // Build a trivial graph.
+                let g = $G::new([], [("0", "1"), ("1", "2"), ("2", "1")]);
+                // Build a search object.
+                let mut search = DFSEdges::from(&g);
+                // Yields some results.
+                assert_eq!(search.next(), Some(DFSEdge::Tree(0, 1)));
+                assert_eq!(search.next(), Some(DFSEdge::Tree(1, 2)));
+                assert_eq!(search.next(), Some(DFSEdge::Back(2, 1)));
+                assert_eq!(search.next(), None);
+
+                // Build a trivial graph.
                 let g = $G::new([], [("0", "1"), ("1", "2"), ("2", "0"), ("1", "3")]);
                 // Build a search object.
                 let mut search = DFSEdges::from(&g);
