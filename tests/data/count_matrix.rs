@@ -84,7 +84,8 @@ mod tests {
             .expect("Failed to read from CSV file");
         let d = DiscreteDataMatrix::from(d);
 
-        let m: FxHashMap<_, _> = L!(d)
+        let m: FxHashMap<_, _> = d
+            .labels()
             .iter()
             .cloned()
             .enumerate()

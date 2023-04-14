@@ -20,7 +20,7 @@ mod tests {
 
         // Construct modified graph.
         let mut q = p.graph().clone();
-        q.del_edge(q.vertex("bronc"), q.vertex("dysp"));
+        q.del_edge_by_index(q.get_vertex_index("bronc"), q.get_vertex_index("dysp"));
         // Fit modified graph with maximum likelihood estimator.
         let q = MLE::fit(&d, &q);
         // Project P onto Q using variable elimination as estimator.

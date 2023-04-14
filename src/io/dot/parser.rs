@@ -54,7 +54,7 @@ impl From<VertexAttributes> for String {
     fn from(attributes: VertexAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -93,7 +93,7 @@ impl From<EdgeAttributes> for String {
     fn from(attributes: EdgeAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -132,7 +132,7 @@ impl From<GraphAttributes> for String {
     fn from(attributes: GraphAttributes) -> Self {
         attributes
             .into_iter()
-            .map(|x| x.into())
+            .map_into()
             .map(|(key, value)| format!("{key} = {value};"))
             .join(" ")
     }
@@ -540,7 +540,7 @@ impl From<DOT> for String {
         dot += "{\n";
 
         // Add local attributes.
-        for (key, value) in value.attributes.into_iter().map(|x| x.into()) {
+        for (key, value) in value.attributes.into_iter().map_into() {
             dot += &format!("\t{key} = {value};\n");
         }
         // Get global attributes.
@@ -572,7 +572,7 @@ impl TryFrom<String> for DOT {
         // Parse the given string.
         let out = Self::parse(Rule::file, string.trim())?;
         // Match inner rules. TODO: Match more than one graph.
-        let out: Self = out.map(|x| x.into()).next().unwrap();
+        let out: Self = out.map_into().next().unwrap();
 
         Ok(out)
     }
@@ -613,13 +613,18 @@ impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
         let graph_type = "graph".into();
         // Construct the vertex set.
         let vertices = V!(g)
-            .map(|x| g.label(x).into())
+            .map(|x| g.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
         let edges = E!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
             .map(|(x, y)| Edge::new((x, y), "--".into()))
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -639,13 +644,18 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(g)
-            .map(|x| g.label(x).into())
+            .map(|x| g.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
         let edges = E!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
             .collect();

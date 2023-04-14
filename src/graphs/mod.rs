@@ -7,14 +7,8 @@ pub mod structs;
 mod base;
 pub use base::*;
 
-mod default;
-pub use default::*;
-
 mod direction;
 pub use direction::*;
-
-mod error;
-pub use error::*;
 
 mod partial_ord;
 pub use partial_ord::*;

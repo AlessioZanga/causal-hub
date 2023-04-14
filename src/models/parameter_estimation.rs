@@ -39,7 +39,7 @@ impl<const PARALLEL: bool>
 {
     fn call(d: &DiscreteDataMatrix, g: &DirectedDenseAdjacencyMatrixGraph) -> Vec<DiscreteCPD> {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(L!(d)));
+        assert!(L!(g).eq(d.labels()));
 
         // Estimate parameters of a given variable.
         let eval = |x: usize| {
@@ -60,9 +60,11 @@ impl<const PARALLEL: bool>
                 "At least one configuration for each parent set must be observed"
             );
             // Get target label and states.
-            let (x, y) = (g.label(x), d.states()[x].clone());
+            let (x, y) = (g.get_vertex_by_index(x), d.states()[x].clone());
             // Get conditioning variables labels and states.
-            let z = z.into_iter().map(|z| (g.label(z), d.states()[z].clone()));
+            let z = z
+                .into_iter()
+                .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
             DiscreteCPD::new((x, y), z, n / n_i)
         };
@@ -106,7 +108,7 @@ impl<const PARALLEL: bool>
 {
     fn call(d: &DiscreteDataMatrix, g: &DirectedDenseAdjacencyMatrixGraph) -> Vec<DiscreteCPD> {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(L!(d)));
+        assert!(L!(g).eq(d.labels()));
 
         // Estimate parameters of a given variable.
         let eval = |x: usize| {
@@ -122,9 +124,11 @@ impl<const PARALLEL: bool>
             // Compute marginal sums.
             let n_i = n.sum_axis(Axis(1)).insert_axis(Axis(1));
             // Get target label and states.
-            let (x, y) = (g.label(x), d.states()[x].clone());
+            let (x, y) = (g.get_vertex_by_index(x), d.states()[x].clone());
             // Get conditioning variables labels and states.
-            let z = z.into_iter().map(|z| (g.label(z), d.states()[z].clone()));
+            let z = z
+                .into_iter()
+                .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
             DiscreteCPD::new((x, y), z, n / n_i)
         };

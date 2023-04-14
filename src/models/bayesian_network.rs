@@ -140,7 +140,7 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
                 .zip(theta.values())
                 .all(|((i, x), t)| {
                     Pa!(graph, i)
-                        .map(|y| graph.label(y))
+                        .map(|y| graph.get_vertex_by_index(y))
                         .eq(t.scope().filter(|&z| z != x))
                 }),
             "Graph and parameters must induce the same structure"

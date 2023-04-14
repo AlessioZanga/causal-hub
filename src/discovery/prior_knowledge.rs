@@ -1,11 +1,11 @@
-use std::collections::{BTreeSet, HashSet};
+use itertools::Itertools;
 
-use bimap::BiHashMap;
+use crate::types::FxIndexSet;
 
 /// Prior knowledge trait
 pub trait PriorKnowledge: Sync {
     /// Get the set of forbidden edges.
-    fn forbidden(&self) -> &HashSet<(usize, usize)>;
+    fn forbidden(&self) -> &FxIndexSet<(usize, usize)>;
 
     /// Checks if edge is forbidden.
     fn has_forbidden(&self, x: usize, y: usize) -> bool;
@@ -17,7 +17,7 @@ pub trait PriorKnowledge: Sync {
     fn del_forbidden(&mut self, x: usize, y: usize) -> bool;
 
     /// Get the set of required edges.
-    fn required(&self) -> &HashSet<(usize, usize)>;
+    fn required(&self) -> &FxIndexSet<(usize, usize)>;
 
     /// Checks if edge is required.
     fn has_required(&self, x: usize, y: usize) -> bool;
@@ -28,16 +28,16 @@ pub trait PriorKnowledge: Sync {
     /// Delete edge from the required set.
     fn del_required(&mut self, x: usize, y: usize) -> bool;
 
-    /// Get the set of varibles labels.
-    fn labels(&self) -> &BTreeSet<String>;
+    /// Get the set of variables labels.
+    fn labels(&self) -> &FxIndexSet<String>;
 }
 
 /// Forbidden and required sets.
 #[derive(Clone, Debug)]
 pub struct ForbiddenRequired {
-    forbidden: HashSet<(usize, usize)>,
-    required: HashSet<(usize, usize)>,
-    labels: BTreeSet<String>,
+    forbidden: FxIndexSet<(usize, usize)>,
+    required: FxIndexSet<(usize, usize)>,
+    labels: FxIndexSet<String>,
 }
 
 impl ForbiddenRequired {
@@ -50,40 +50,35 @@ impl ForbiddenRequired {
         V: Into<String>,
     {
         // Remove duplicated vertices labels.
-        let labels: BTreeSet<_> = vertices.into_iter().map(|x| x.into()).collect();
-        // Map vertices labels to vertices indices.
-        let labels_indices: BiHashMap<_, _> = labels
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(i, x)| (x, i))
-            .collect();
+        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
+        // Sort labels.
+        labels.sort();
         // Map forbidden edges to vertices indices.
-        let forbidden: HashSet<_> = forbidden
+        let forbidden: FxIndexSet<_> = forbidden
             .into_iter()
             .map(|(x, y)| (x.into(), y.into()))
             .map(|(x, y)| {
                 (
-                    *labels_indices
-                        .get_by_left(&x)
+                    labels
+                        .get_index_of(&x)
                         .unwrap_or_else(|| panic!("No vertex with label `{x}`")),
-                    *labels_indices
-                        .get_by_left(&y)
+                    labels
+                        .get_index_of(&y)
                         .unwrap_or_else(|| panic!("No vertex with label `{y}`")),
                 )
             })
             .collect();
         // Map required edges to vertices indices.
-        let required: HashSet<_> = required
+        let required: FxIndexSet<_> = required
             .into_iter()
             .map(|(x, y)| (x.into(), y.into()))
             .map(|(x, y)| {
                 (
-                    *labels_indices
-                        .get_by_left(&x)
+                    labels
+                        .get_index_of(&x)
                         .unwrap_or_else(|| panic!("No vertex with label `{x}`")),
-                    *labels_indices
-                        .get_by_left(&y)
+                    labels
+                        .get_index_of(&y)
                         .unwrap_or_else(|| panic!("No vertex with label `{y}`")),
                 )
             })
@@ -105,7 +100,7 @@ impl ForbiddenRequired {
 
 impl PriorKnowledge for ForbiddenRequired {
     #[inline]
-    fn forbidden(&self) -> &HashSet<(usize, usize)> {
+    fn forbidden(&self) -> &FxIndexSet<(usize, usize)> {
         &self.forbidden
     }
 
@@ -131,7 +126,7 @@ impl PriorKnowledge for ForbiddenRequired {
     }
 
     #[inline]
-    fn required(&self) -> &HashSet<(usize, usize)> {
+    fn required(&self) -> &FxIndexSet<(usize, usize)> {
         &self.required
     }
 
@@ -157,7 +152,7 @@ impl PriorKnowledge for ForbiddenRequired {
     }
 
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
+    fn labels(&self) -> &FxIndexSet<String> {
         &self.labels
     }
 }
