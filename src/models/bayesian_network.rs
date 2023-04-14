@@ -11,7 +11,7 @@ use super::{
     JointProbabilityDistribution,
 };
 use crate::{
-    graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
+    graphs::{directions, DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
     prelude::{
         algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataMatrix, PathGraph,

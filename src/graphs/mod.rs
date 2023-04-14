@@ -1,8 +1,8 @@
 /// Algorithms on graphs.
 pub mod algorithms;
 
-/// Structures on graphs.
-pub mod structs;
+mod structs;
+pub use structs::*;
 
 mod base;
 pub use base::*;

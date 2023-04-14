@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use super::DiscreteBayesianNetwork;
 use crate::{
     data::{DataSet, DiscreteDataMatrix},
-    graphs::{structs::DirectedDenseAdjacencyMatrixGraph, BaseGraph, DirectedGraph},
+    graphs::{BaseGraph, DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix},
     Pa, L, V,
 };

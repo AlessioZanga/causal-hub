@@ -707,7 +707,7 @@ mod undirected {
     }
 
     mod undirected_dense_matrix {
-        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::UndirectedDenseAdjacencyMatrixGraph;
         generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
     }
 }
@@ -1388,7 +1388,7 @@ mod directed {
     }
 
     mod directed_dense_matrix {
-        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
+        use causal_hub::graphs::DirectedDenseAdjacencyMatrixGraph;
         generic_tests!(DirectedDenseAdjacencyMatrixGraph);
     }
 }

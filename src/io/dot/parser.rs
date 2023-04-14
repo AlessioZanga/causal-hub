@@ -15,11 +15,8 @@ use super::{
 use crate::{
     dE,
     graphs::{
-        structs::{
-            DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
-            UndirectedDenseAdjacencyMatrixGraph,
-        },
-        BaseGraph, DirectedGraph, UndirectedGraph,
+        BaseGraph, DirectedDenseAdjacencyMatrixGraph, DirectedGraph,
+        PartiallyDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph, UndirectedGraph,
     },
     io::File,
     uE, E, V,
