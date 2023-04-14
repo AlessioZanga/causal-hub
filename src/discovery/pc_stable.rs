@@ -90,3 +90,101 @@ where
     g
 }
 
+/// Meek's rule 1
+pub fn meek_1<P>(g: &mut P) -> bool
+where
+    P: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    // Flag returning `false` if some orientation takes place
+    let mut is_closed = true;
+    for x in V!(g).collect::<Vec<_>>() {
+        if Pa!(g, x).next().is_none() {continue}
+        for z in Ne!(g, x).collect::<Vec<_>>() {
+            if iter_set::intersection(Adj!(g, z), Pa!(g, x))
+                    .next()
+                    .is_none()
+            {
+                g.orient_edge(x, z);
+                is_closed = false;
+            }
+        }
+    }
+    is_closed
+}
+
+/// Meek's rule 2
+pub fn meek_2<P>(g: &mut P) -> bool
+where
+    P: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    // Flag returning `false` if some orientation takes place
+    let mut is_closed = true;
+    for x in V!(g).collect::<Vec<_>>() {
+        if Pa!(g, x).next().is_none() {continue}
+        for z in Ch!(g, x).collect::<Vec<_>>() {
+            for y in iter_set::intersection(Ne!(g, z), Pa!(g, x)).collect::<Vec<_>>() {
+                g.orient_edge(y, z);
+                is_closed = false;
+            }
+        }
+    }
+    is_closed
+}
+
+/// Meek's rule 3
+pub fn meek_3<P>(g: &mut P) -> bool
+where
+    P: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    // Flag returning `false` if some orientation takes place
+    let mut is_closed = true;
+    for x in V!(g).collect::<Vec<_>>() {
+        for z in Ne!(g, x).collect::<Vec<_>>() {
+            if iter_set::intersection(Ne!(g, z), Pa!(g, x)).count() >= 2 {
+                g.orient_edge(z, x);
+                is_closed = false;
+            }
+        }
+    }
+    is_closed
+}
+
+/// Meek's rule 4
+pub fn meek_4<P>(g: &mut P) -> bool
+where
+    P: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    // Flag returning `false` if some orientation takes place
+    let mut is_closed = true;
+    for x in V!(g).collect::<Vec<_>>() {
+        if Pa!(g, x).next().is_none() {continue}
+        for z in Ne!(g, x).collect::<Vec<_>>() {
+            if iter_set::intersection(Adj!(g, z), Pa!(g, x))
+                .next()
+                .is_some()
+                && iter_set::intersection(Ne!(g, z), Pa!(g, x).flat_map(|parent| Pa!(g, parent)))
+                    .next()
+                    .is_some()
+            {
+                g.orient_edge(z, x);
+                is_closed = false;
+            }
+        }
+    }
+    is_closed
+}
+
+/// Meek's procedure
+pub fn meek_procedure<P>(mut g: P) -> P
+where
+    P: PartiallyDirectedGraph<Direction = directions::PartiallyDirected>,
+{
+    let mut is_closed = false;
+    while !is_closed {
+        is_closed = meek_1(&mut g);
+        is_closed &= meek_2(&mut g);
+        is_closed &= meek_3(&mut g);
+        is_closed &= meek_4(&mut g);
+    }
+    g
+}
