@@ -217,7 +217,7 @@ mod partially_directed {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path() {
+            fn has_path_by_index() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -295,10 +295,10 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (v, ue, de, x, y, f) in data {
-                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone()).unwrap();
+                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone());
 
                     assert_eq!(
-                        g.has_path(g.vertex(x), g.vertex(y)),
+                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
                         f,
                         "(({:?}, {:?}, {:?}, {}, {}), {})",
                         v,
@@ -375,7 +375,7 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (v, ue, de, f) in data {
-                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone()).unwrap();
+                    let g = $G::new_partial(v.clone(), ue.clone(), de.clone());
 
                     assert_eq!(g.is_acyclic(), f, "(({:?}, {:?}, {:?}), {})", v, ue, de, f);
                 }

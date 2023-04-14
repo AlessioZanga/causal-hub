@@ -561,17 +561,10 @@ pub trait IntoUndirectedGraph {
 //TODO: Improve documentation
 /// Partially directed graph trait.
 pub trait PartiallyDirectedGraph:
-    BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
+    BaseGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
 {
-    /// Error type
-    type Error;
-
     /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
-    fn new_partial<V, I, J, K>(
-        vertices: I,
-        undirected_edges: J,
-        directed_edges: K,
-    ) -> Result<Self, Self::Error>
+    fn new_partial<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -582,7 +575,7 @@ pub trait PartiallyDirectedGraph:
     fn deref_of_type(&self, which: char) -> &Self::Data;
 
     /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>;
+    fn edges_of_type(&self, which: char) -> Self::EdgesIndexIter<'_>;
 
     /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
     fn size_of_type(&self, which: char) -> usize;

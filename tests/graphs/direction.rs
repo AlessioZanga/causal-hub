@@ -127,7 +127,7 @@ mod undirected {
 
             #[test]
             #[should_panic]
-            fn degree_should_panic() {
+            fn get_degree_by_index_should_panic() {
                 let g = $G::null();
                 g.get_degree_by_index(0);
             }
@@ -202,7 +202,7 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn ancestors_should_panic() {
+            fn get_ancestors_by_index_should_panic() {
                 let g = $G::null();
 
                 An!(g, 0);
@@ -321,7 +321,7 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn parents_should_panic() {
+            fn get_parents_by_index_should_panic() {
                 let g = $G::null();
 
                 Pa!(g, 0);
@@ -752,7 +752,7 @@ mod partially_directed {
                 use is_sorted::IsSorted;
 
                 #[test]
-                fn neighbors() {
+                fn get_neighbors_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -800,7 +800,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn is_neighbor() {
+                fn is_neighbor_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -834,20 +834,20 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new(i, j);
 
-                        assert!(f.iter().all(|&y| g.is_neighbor(x, y)));
+                        assert!(f.iter().all(|&y| g.is_neighbor_by_index(x, y)));
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn is_neighbor_should_panic() {
+                fn is_neighbor_by_index_should_panic() {
                     let g = $G::null();
 
-                    g.is_neighbor(0, 0);
+                    g.is_neighbor_by_index(0, 0);
                 }
 
                 #[test]
-                fn degree() {
+                fn get_degree_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -867,15 +867,15 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, (x, f)) in data {
                         let g = $G::new([], i);
-                        assert_eq!(g.degree(x), f);
+                        assert_eq!(g.get_degree_by_index(x), f);
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn degree_should_panic() {
+                fn get_degree_by_index_should_panic() {
                     let g = $G::null();
-                    g.degree(0);
+                    g.get_degree_by_index(0);
                 }
             };
         }
@@ -894,7 +894,7 @@ mod partially_directed {
                 use is_sorted::IsSorted;
 
                 #[test]
-                fn ancestors() {
+                fn get_ancestors_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -938,7 +938,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
                         assert!(An!(g, x).is_sorted());
                         assert!(An!(g, x).eq(f));
@@ -947,7 +947,7 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn ancestors_should_panic() {
+                fn get_ancestors_by_index_should_panic() {
                     let g = $G::null();
 
                     An!(g, 0);
@@ -998,9 +998,9 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_ancestor(x, y)));
+                        assert!(f.iter().all(|&y| g.is_ancestor_by_index(x, y)));
                     }
                 }
 
@@ -1009,11 +1009,11 @@ mod partially_directed {
                 fn is_ancestor_should_panic() {
                     let g = $G::null();
 
-                    g.is_ancestor(0, 0);
+                    g.is_ancestor_by_index(0, 0);
                 }
 
                 #[test]
-                fn parents() {
+                fn get_parents_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1057,7 +1057,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
                         assert!(Pa!(g, x).is_sorted());
                         assert!(Pa!(g, x).eq(f));
@@ -1066,14 +1066,14 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn parents_should_panic() {
+                fn get_parents_by_index_should_panic() {
                     let g = $G::null();
 
                     Pa!(g, 0);
                 }
 
                 #[test]
-                fn is_parent() {
+                fn is_parent_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1117,22 +1117,22 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_parent(x, y)));
+                        assert!(f.iter().all(|&y| g.is_parent_by_index(x, y)));
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn is_parent_should_panic() {
+                fn is_parent_by_index_should_panic() {
                     let g = $G::null();
 
-                    g.is_parent(0, 0);
+                    g.is_parent_by_index(0, 0);
                 }
 
                 #[test]
-                fn children() {
+                fn get_children_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1176,7 +1176,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
                         assert!(Ch!(g, x).is_sorted());
                         assert!(Ch!(g, x).eq(f));
@@ -1192,7 +1192,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn is_child() {
+                fn is_child_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1236,9 +1236,9 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_child(x, y)));
+                        assert!(f.iter().all(|&y| g.is_child_by_index(x, y)));
                     }
                 }
 
@@ -1247,11 +1247,11 @@ mod partially_directed {
                 fn is_child_should_panic() {
                     let g = $G::null();
 
-                    g.is_child(0, 0);
+                    g.is_child_by_index(0, 0);
                 }
 
                 #[test]
-                fn descendants() {
+                fn get_descendants_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1295,7 +1295,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
                         assert!(De!(g, x).is_sorted());
                         assert!(De!(g, x).eq(f));
@@ -1355,9 +1355,9 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_descendant(x, y)));
+                        assert!(f.iter().all(|&y| g.is_descendant_by_index(x, y)));
                     }
                 }
 
@@ -1366,11 +1366,11 @@ mod partially_directed {
                 fn is_descendant_should_panic() {
                     let g = $G::null();
 
-                    g.is_descendant(0, 0);
+                    g.is_descendant_by_index(0, 0);
                 }
 
                 #[test]
-                fn in_degree() {
+                fn get_in_degree_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1410,9 +1410,9 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert_eq!(g.in_degree(x), f);
+                        assert_eq!(g.get_in_degree_by_index(x), f);
                     }
                 }
 
@@ -1421,11 +1421,11 @@ mod partially_directed {
                 fn in_degree_should_panic() {
                     let g = $G::null();
 
-                    g.in_degree(0);
+                    g.get_in_degree_by_index(0);
                 }
 
                 #[test]
-                fn out_degree() {
+                fn get_out_degree_by_index() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1465,9 +1465,9 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j).unwrap();
+                        let g = $G::new_partial(i, [], j);
 
-                        assert_eq!(g.out_degree(x), f);
+                        assert_eq!(g.get_out_degree_by_index(x), f);
                     }
                 }
 
@@ -1476,7 +1476,7 @@ mod partially_directed {
                 fn out_degree_should_panic() {
                     let g = $G::null();
 
-                    g.out_degree(0);
+                    g.get_out_degree_by_index(0);
                 }
             };
         }
@@ -1787,17 +1787,23 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j, k, (o, s, v, ue, de, e)) in data {
                         // Test for `new_partial` and `edges_of_type` (in `uE` and `dE` macros) function
-                        let g = $G::new_partial(i, j, k).unwrap();
+                        let g = $G::new_partial(i, j, k);
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
                         assert!(V!(g).is_sorted());
                         assert!(uE!(g).is_sorted());
                         assert!(dE!(g).is_sorted());
                         assert!(E!(g).is_sorted());
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.vertex(x))));
-                        assert!(uE!(g).eq(ue.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
-                        assert!(dE!(g).eq(de.iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
-                        assert!(E!(g).eq(e.into_iter().map(|(x, y)| (g.vertex(x), g.vertex(y)))));
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.get_vertex_index(x))));
+                        assert!(uE!(g).eq(ue
+                            .iter()
+                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                        assert!(dE!(g).eq(de
+                            .iter()
+                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                        assert!(E!(g).eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                         // Test for `size_of_type` function
                         assert!(g.size_of_type('u') == ue.len());
                         assert!(g.size_of_type('d') == de.len());
@@ -1843,15 +1849,13 @@ mod partially_directed {
                         let empty_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
                         // Test for undirected graph
-                        let g_undirected =
-                            $G::try_from((v.clone(), a.clone(), empty_matrix.clone())).unwrap();
+                        let g_undirected = $G::from((v.clone(), a.clone(), empty_matrix.clone()));
                         assert!(g_undirected.deref_of_type('u') == &a);
                         assert!(g_undirected.deref_of_type('d') == &empty_matrix);
                         assert!(g_undirected.deref() == &a);
 
                         // Test for directed graph
-                        let g_directed =
-                            $G::try_from((v.clone(), empty_matrix.clone(), a.clone())).unwrap();
+                        let g_directed = $G::from((v.clone(), empty_matrix.clone(), a.clone()));
                         assert!(g_directed.deref_of_type('u') == &empty_matrix);
                         assert!(g_directed.deref_of_type('d') == &a);
                         assert!(g_directed.deref() == &a);
@@ -1859,30 +1863,22 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn new_incostintent() {
-                    let data = [
-                        (
-                            vec!["0", "1", "2"],
-                            vec![("1", "2")],
-                            vec![("1", "0"), ("1", "2")],
-                        ),
-                        (
-                            vec!["0", "1", "2"],
-                            vec![("1", "2")],
-                            vec![("1", "0"), ("2", "1")],
-                        ),
-                    ];
-                    for (i, j, k) in data {
-                        let g = $G::new_partial(i, j, k);
-                        assert!(g.is_err());
-                    }
+                #[should_panic]
+                fn new_partial_should_panic() {
+                    let (i, j, k) = (
+                        vec!["0", "1", "2"],
+                        vec![("1", "2")],
+                        vec![("1", "0"), ("1", "2")],
+                    );
+
+                    $G::new_partial(i, j, k);
                 }
 
                 #[test]
                 #[should_panic]
                 fn edges_of_type() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k);
                     // Test for undefined type of edge
                     g.edges_of_type('a');
                 }
@@ -1891,7 +1887,7 @@ mod partially_directed {
                 #[should_panic]
                 fn size_of_type_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k);
                     // Test for undefined type of edge
                     g.size_of_type('a');
                 }
@@ -1899,7 +1895,7 @@ mod partially_directed {
                 #[test]
                 fn type_of_edge() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k);
                     // Test for undirected edges
                     assert!(g.type_of_edge(1, 2) == Some('u'));
                     assert!(g.type_of_edge(2, 1) == Some('u'));
@@ -1915,7 +1911,7 @@ mod partially_directed {
                 #[should_panic]
                 fn type_of_edge_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k).unwrap();
+                    let g = $G::new_partial(i, j, k);
                     // Test with a non-present vertex
                     g.type_of_edge(0, 3);
                 }
@@ -1923,7 +1919,7 @@ mod partially_directed {
                 #[test]
                 fn add_edge_of_type() {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_partial(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k);
                     // Test for added edges
                     g.add_edge_of_type(0, 3, 'u');
                     g.add_edge_of_type(3, 2, 'd');
@@ -1945,7 +1941,7 @@ mod partially_directed {
                 #[should_panic]
                 fn add_edge_of_type_should_panic() {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_partial(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k);
                     // Test with a non-present vertex
                     g.add_edge_of_type(0, 4, 'u');
                 }
@@ -1957,7 +1953,7 @@ mod partially_directed {
                         vec![("1", "2"), ("1", "4")],
                         vec![("0", "1"), ("0", "3")],
                     );
-                    let mut g = $G::new_partial(i, j, k).unwrap();
+                    let mut g = $G::new_partial(i, j, k);
 
                     g.orient_edge(0, 1);
                     g.orient_edge(3, 0);

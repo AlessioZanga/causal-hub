@@ -679,7 +679,7 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(g)
-            .map(|x| g.label(x).into())
+            .map(|x| g.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -687,7 +687,12 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
         let mut edges: BTreeMap<_, _> = uE!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
             .map(|(x, y)| Edge {
                 id: (x, y),
                 op: "->".into(),
@@ -697,7 +702,12 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
             .collect();
         // Construct the directed edge set.
         let mut directed_edges: BTreeMap<_, _> = dE!(g)
-            .map(|(x, y)| (g.label(x).into(), g.label(y).into()))
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
             .collect();
