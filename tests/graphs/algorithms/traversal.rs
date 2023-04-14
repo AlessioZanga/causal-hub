@@ -36,7 +36,7 @@ mod undirected {
 
                 // Add an edge.
                 g.add_vertex("B");
-                assert!(g.add_edge(0, 1));
+                assert!(g.add_edge_by_index(0, 1));
 
                 // Execute BFS for the non-trivial graph.
                 let mut search = BFS::from((&g, 0));
@@ -171,7 +171,7 @@ mod undirected {
 
                 // Add an edge.
                 g.add_vertex("B");
-                assert!(g.add_edge(0, 1));
+                assert!(g.add_edge_by_index(0, 1));
 
                 // Execute DFS for the non-trivial graph.
                 let mut search = DFS::from((&g, 0));
@@ -747,7 +747,7 @@ mod directed {
 
                 // Add an edge.
                 g.add_vertex("1");
-                g.add_edge(0, 1);
+                g.add_edge_by_index(0, 1);
                 // Execute BFS for the non-trivial graph.
                 let mut search = BFS::from((&g, 0));
                 // Collect the vertex in pre-order.
@@ -938,7 +938,7 @@ mod directed {
 
                 // Add an edge.
                 g.add_vertex("1");
-                assert!(g.add_edge(0, 1));
+                assert!(g.add_edge_by_index(0, 1));
                 // Execute DFS for the non-trivial graph.
                 let mut search = DFS::from((&g, 0));
                 // Collect the vertex in pre-order.

@@ -100,7 +100,7 @@ impl DiscreteFactor {
         // Collect states.
         let mut states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
-            .map(|(x, ys)| (x.into(), ys.into_iter().map(|y| y.into()).collect()))
+            .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
             .collect();
         // Compute factor values shape as given in input.
         let shape = states.values().map(|x| x.len()).collect_vec();
