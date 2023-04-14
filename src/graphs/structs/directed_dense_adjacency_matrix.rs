@@ -220,7 +220,12 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
             size += 1;
         }
 
-        // FIXME: Add `debug_assert`.
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,
@@ -478,7 +483,12 @@ impl DefaultGraph for DirectedDenseAdjacencyMatrixGraph {
         // Initialize adjacency matrix given graph order.
         let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
-        // FIXME: Add `debug_assert`.
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,
@@ -507,7 +517,12 @@ impl DefaultGraph for DirectedDenseAdjacencyMatrixGraph {
         // Compute size.
         let size = order * (order.saturating_sub(1));
 
-        // FIXME: Add `debug_assert`.
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,
@@ -570,7 +585,12 @@ where
         // Compute size.
         let size = adjacency_matrix.mapv(|f| f as usize).sum();
 
-        // FIXME: Add `debug_assert`.
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,

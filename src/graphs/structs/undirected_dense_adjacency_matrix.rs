@@ -500,6 +500,13 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
         // Initialize adjacency matrix given graph order.
         let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
 
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
+
         Self {
             labels,
             adjacency_matrix,
@@ -526,6 +533,13 @@ impl DefaultGraph for UndirectedDenseAdjacencyMatrixGraph {
 
         // Compute size.
         let size = (order * (order.saturating_sub(1))) / 2;
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,
@@ -593,6 +607,13 @@ where
         let size = adjacency_matrix.mapv(|f| f as usize).sum();
         let size = size + adjacency_matrix.diag().mapv(|f| f as usize).sum();
         let size = size / 2;
+
+        // Assert vertex set is still sorted.
+        debug_assert!(labels.iter().is_sorted());
+        // Assert vertex set is still consistent with adjacency matrix shape.
+        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
+        // Assert adjacency matrix is still square.
+        debug_assert!(adjacency_matrix.is_square());
 
         Self {
             labels,
