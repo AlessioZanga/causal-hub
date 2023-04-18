@@ -25,9 +25,6 @@ pub use kullback_leibler::*;
 /// Alias for Kullback-Leibler divergence.
 pub type KL<'a, P, Q> = KullbackLeiblerDivergence<'a, P, Q>;
 
-mod moral;
-pub use moral::*;
-
 mod parameter_estimation;
 pub use parameter_estimation::*;
 

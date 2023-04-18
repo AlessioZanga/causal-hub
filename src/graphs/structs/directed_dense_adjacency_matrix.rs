@@ -15,11 +15,9 @@ use super::UndirectedDenseAdjacencyMatrixGraph;
 use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph, PathGraph,
-        SubGraph,
+        directions, BaseGraph, DirectedGraph, IntoUndirected, PartialOrdGraph, PathGraph, SubGraph,
     },
     io::DOT,
-    models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
     Adj, Ch, Pa, E, V,
@@ -1095,35 +1093,15 @@ impl PathGraph for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl IntoUndirectedGraph for DirectedDenseAdjacencyMatrixGraph {
+impl IntoUndirected for DirectedDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
 
     #[inline]
-    fn to_undirected(&self) -> Self::UndirectedGraph {
+    fn into_undirected(self) -> Self::UndirectedGraph {
         // Make the adjacent matrix symmetric.
         let adjacency_matrix = &self.adjacency_matrix | &self.adjacency_matrix.t();
 
         Self::UndirectedGraph::from((self.labels.clone(), adjacency_matrix))
-    }
-}
-
-impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
-    type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
-
-    #[inline]
-    fn moral(&self) -> Self::MoralGraph {
-        // Make an undirected copy of the current graph.
-        let mut h = self.to_undirected();
-        // For each vertex ...
-        for x in V!(self) {
-            // ... for each pair of parents ...
-            for e in Pa!(self, x).combinations(2) {
-                // ... add an edge between them.
-                h.add_edge_by_index(e[0], e[1]);
-            }
-        }
-
-        h
     }
 }
 

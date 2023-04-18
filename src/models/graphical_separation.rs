@@ -1,9 +1,9 @@
 use std::fmt::Debug;
 
-use super::{GeneralizedIndependence, Independence, MoralGraph};
+use super::{GeneralizedIndependence, Independence};
 use crate::{
-    graphs::directions,
-    prelude::{BaseGraph, DirectedGraph, UndirectedGraph, CC},
+    graphs::{algorithms::components::CC, directions, BaseGraph, DirectedGraph, UndirectedGraph},
+    prelude::IntoUndirected,
     types::FxIndexSet,
     utils::UnionFind,
     Adj, An, Ch, Ne, V,
@@ -156,7 +156,7 @@ where
 /* Implement d-separation */
 impl<'a, G> Independence for GraphicalSeparation<'a, G, directions::Directed>
 where
-    G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
+    G: DirectedGraph<Direction = directions::Directed> + IntoUndirected,
 {
     #[inline]
     fn is_independent(&self, x: usize, y: usize, z: &[usize]) -> bool {
@@ -167,7 +167,7 @@ where
 
 impl<'a, G> GeneralizedIndependence for GraphicalSeparation<'a, G, directions::Directed>
 where
-    G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
+    G: DirectedGraph<Direction = directions::Directed> + IntoUndirected,
 {
     /// Checks whether $\mathbf{X} \mathrlap{\thinspace\perp}{\perp}_{\mathcal{G}} \mathbf{Y} \mid \mathbf{Z}$ holds or not.
     fn are_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
@@ -196,7 +196,7 @@ where
         assert!(s.is_subset(&v), "X, Y and Z must be subsets of V");
 
         // Clone current graph.
-        let mut h = self.g.to_undirected();
+        let mut h = self.g.clone().into_undirected();
 
         // Compute the ancestors of S.
         let an_s: FxIndexSet<_> = s.iter().flat_map(|&s| An!(self.g, s)).collect();

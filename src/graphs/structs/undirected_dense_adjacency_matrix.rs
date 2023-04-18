@@ -496,7 +496,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         true
@@ -527,7 +527,7 @@ impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
                     true => Some(f as usize),
                     false => None,
                 })
-                .sum()
+                .sum::<usize>()
         );
 
         true

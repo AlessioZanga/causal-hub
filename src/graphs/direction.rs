@@ -570,7 +570,7 @@ pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
 }
 
 /// Convert to undirected graph trait.
-pub trait IntoUndirectedGraph {
+pub trait IntoUndirected {
     /// Associated undirected graph type.
     type UndirectedGraph: UndirectedGraph<Direction = directions::Undirected>;
 
@@ -588,7 +588,7 @@ pub trait IntoUndirectedGraph {
     /// );
     ///
     /// // Get an undirected copy.
-    /// let h = g.to_undirected();
+    /// let h = g.clone().into_undirected();
     ///
     /// // The undirected copy has the same vertex set.
     /// assert_eq!(V!(g), V!(h));
@@ -598,7 +598,7 @@ pub trait IntoUndirectedGraph {
     ///
     /// ```
     ///
-    fn to_undirected(&self) -> Self::UndirectedGraph;
+    fn into_undirected(self) -> Self::UndirectedGraph;
 }
 
 //TODO: Improve documentation with examples and panics

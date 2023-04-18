@@ -17,11 +17,10 @@ use crate::{
     graphs::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
         direction::*,
-        BaseGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph, PathGraph, SubGraph,
+        BaseGraph, DirectedGraph, IntoUndirected, PartialOrdGraph, PathGraph, SubGraph,
         UndirectedGraph,
     },
     io::DOT,
-    models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
     uE, Adj, Ch, Ne, Pa, E, V,
@@ -1822,12 +1821,12 @@ impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 }
 
 /* Implement PartiallyDirectedGraph trait. */
-impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+impl IntoUndirected for PartiallyDenseAdjacencyMatrixGraph {
     type UndirectedGraph = UndirectedDenseAdjacencyMatrixGraph;
 
     #[inline]
-    fn to_undirected(&self) -> Self::UndirectedGraph {
-        Self::UndirectedGraph::from((self.labels.clone(), self.adjacency_matrix.clone()))
+    fn into_undirected(self) -> Self::UndirectedGraph {
+        Self::UndirectedGraph::from((self.labels, self.adjacency_matrix))
     }
 }
 
@@ -1963,26 +1962,6 @@ impl PathGraph for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
-    }
-}
-
-impl MoralGraph for PartiallyDenseAdjacencyMatrixGraph {
-    type MoralGraph = UndirectedDenseAdjacencyMatrixGraph;
-
-    #[inline]
-    fn moral(&self) -> Self::MoralGraph {
-        // Make an undirected copy of the current graph.
-        let mut h = self.to_undirected();
-        // For each vertex ...
-        for x in V!(self) {
-            // ... for each pair of parents ...
-            for e in Pa!(self, x).combinations(2) {
-                // ... add an edge between them.
-                h.add_edge_by_index(e[0], e[1]);
-            }
-        }
-
-        h
     }
 }
 

@@ -2341,13 +2341,13 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn to_undirected() {
+                fn into_undirected() {
                     let g = $G::new_pagraph(
                         vec![],
                         vec![],
                         vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
                     );
-                    let g_to_undirected = g.to_undirected();
+                    let g_to_undirected = g.into_undirected();
                     let g_to_undirected: PartiallyDenseAdjacencyMatrixGraph =
                         g_to_undirected.into();
                     assert!(g_to_undirected.size_of_maximal_directed_subgraph() == 0);
