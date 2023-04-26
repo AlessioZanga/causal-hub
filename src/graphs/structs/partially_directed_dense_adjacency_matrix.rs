@@ -6,6 +6,7 @@ use std::{
     ops::{Deref, Range},
 };
 
+use is_sorted::IsSorted;
 use itertools::{iproduct, Itertools};
 use ndarray::{iter::IndexedIter, prelude::*, OwnedRepr};
 use serde::{Deserialize, Serialize};
@@ -455,7 +456,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         // Assert vertex has been added.
         debug_assert!(self.labels.contains(&x));
         // Assert vertex set is still sorted.
-        //debug_assert!(self.labels.iter().is_sorted()); //FIXME:
+        debug_assert!(self.labels.iter().is_sorted());
 
         // Get vertex index.
         let i = self.labels.get_index_of(&x).unwrap();
@@ -557,7 +558,7 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         // Assert vertex has been removed.
         debug_assert!(!self.labels.contains(&x.unwrap()));
         // Assert vertex set is still sorted.
-        //debug_assert!(self.labels.iter().is_sorted()); //FIXME:
+        debug_assert!(self.labels.iter().is_sorted());
 
         // Compute the new size of adjacency matrix.
         let n = self.adjacency_matrix.nrows();
@@ -1953,7 +1954,8 @@ impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 impl PathGraph for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn has_path_by_index(&self, x: usize, y: usize) -> bool {
-        let has_edge = self.has_undirected_edge_by_index(x, y) || self.has_directed_edge_by_index(x, y);
+        let has_edge =
+            self.has_undirected_edge_by_index(x, y) || self.has_directed_edge_by_index(x, y);
         has_edge || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
