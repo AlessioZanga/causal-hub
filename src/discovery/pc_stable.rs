@@ -6,7 +6,7 @@ use crate::prelude::*;
 
 /// Skeleton function, as part of PC-Stable algorithm.
 /// `g` must be a complete undirected graph.
-pub fn skeleton<T, G>(test: &T, mut g: G) -> (G, SepSets, HashSet<(usize, usize, usize)>)
+pub fn skeleton<T, G>(test: &T, mut g: G) -> (G, SepSets)
 where
     T: ConditionalIndependenceTest,
     G: BaseGraph<Direction = directions::Undirected>,
@@ -37,6 +37,8 @@ where
                 if test.call(x, y, &z) {
                     // ... remove the edge
                     e_prime.push((x, y));
+                    //
+                    let z: HashSet<_> = z.into_iter().collect();
                     // Collect `(x, y)` separation set
                     sepsets.insert((x, y), z.clone());
                     sepsets.insert((y, x), z);
@@ -52,7 +54,18 @@ where
         // Increase size of conditioning set
         c += 1;
     }
-    // Create a set with `g` unshielded triples
+    (g, sepsets)
+}
+
+/// Orient v-structures of an undirected graph
+pub fn orient_vstructures<D, G, P>(g: G, sepsets: SepSets) -> P
+where
+    G: BaseGraph<Data = D, Direction = directions::Undirected> + Into<P>,
+    P: PartiallyDirectedGraph<Data = D, Direction = directions::PartiallyDirected>,
+{
+    // Cast `g` to partially directed graph
+    let mut g: P = g.into();
+    // Create the set of unshielded triples
     let mut triples: HashSet<(usize, usize, usize)> = HashSet::new();
     for y in V!(g) {
         for (x, z) in Adj!(g, y)
@@ -63,25 +76,10 @@ where
             triples.insert((x, y, z));
         }
     }
-
-    (g, sepsets, triples)
-}
-
-/// Orient v-structures of an undirected graph
-pub fn orient_vstructures<D, G, P>(
-    g: G,
-    sepsets: SepSets,
-    triples: HashSet<(usize, usize, usize)>,
-) -> P
-where
-    G: BaseGraph<Data = D, Direction = directions::Undirected> + Into<P>,
-    P: PartiallyDirectedGraph<Data = D, Direction = directions::PartiallyDirected>,
-{
-    let mut g: P = g.into();
     // For every unshielded triple ...
     for (x, y, z) in triples.into_iter() {
         // ... if `y` doesn't d-separates `(x, y)` ...
-        if !sepsets.get(&(x, z)).unwrap().iter().any(|&v| v == y) {
+        if !sepsets[&(x, z)].contains(&y) {
             // ... the triple is a v-structure
             g.orient_edge(x, y);
             g.orient_edge(z, y);
@@ -98,11 +96,13 @@ where
     // Flag returning `false` if some orientation takes place
     let mut is_closed = true;
     for x in V!(g).collect::<Vec<_>>() {
-        if Pa!(g, x).next().is_none() {continue}
+        if Pa!(g, x).next().is_none() {
+            continue;
+        }
         for z in Ne!(g, x).collect::<Vec<_>>() {
             if iter_set::intersection(Adj!(g, z), Pa!(g, x))
-                    .next()
-                    .is_none()
+                .next()
+                .is_none()
             {
                 g.orient_edge(x, z);
                 is_closed = false;
@@ -120,7 +120,9 @@ where
     // Flag returning `false` if some orientation takes place
     let mut is_closed = true;
     for x in V!(g).collect::<Vec<_>>() {
-        if Pa!(g, x).next().is_none() {continue}
+        if Pa!(g, x).next().is_none() {
+            continue;
+        }
         for z in Ch!(g, x).collect::<Vec<_>>() {
             for y in iter_set::intersection(Ne!(g, z), Pa!(g, x)).collect::<Vec<_>>() {
                 g.orient_edge(y, z);
@@ -140,7 +142,12 @@ where
     let mut is_closed = true;
     for x in V!(g).collect::<Vec<_>>() {
         for z in Ne!(g, x).collect::<Vec<_>>() {
-            if iter_set::intersection(Ne!(g, z), Pa!(g, x)).count() >= 2 {
+            let intersection = iter_set::intersection(Ne!(g, z), Pa!(g, x));
+            // Look for a non-adjacent couple of parents of `x`
+            if intersection
+                .combinations(2)
+                .any(|ab| !g.is_adjacent(ab[0], ab[1]))
+            {
                 g.orient_edge(z, x);
                 is_closed = false;
             }
@@ -157,14 +164,13 @@ where
     // Flag returning `false` if some orientation takes place
     let mut is_closed = true;
     for x in V!(g).collect::<Vec<_>>() {
-        if Pa!(g, x).next().is_none() {continue}
+        if Pa!(g, x).next().is_none() {
+            continue;
+        }
         for z in Ne!(g, x).collect::<Vec<_>>() {
-            if iter_set::intersection(Adj!(g, z), Pa!(g, x))
+            if iter_set::intersection(Ne!(g, z), Pa!(g, x).flat_map(|parent| Pa!(g, parent).filter(|&y| !g.is_parent(y, x))))
                 .next()
                 .is_some()
-                && iter_set::intersection(Ne!(g, z), Pa!(g, x).flat_map(|parent| Pa!(g, parent)))
-                    .next()
-                    .is_some()
             {
                 g.orient_edge(z, x);
                 is_closed = false;
