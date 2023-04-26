@@ -33,7 +33,7 @@ macro_rules! Ne {
 #[macro_export]
 macro_rules! uE {
     ($g:expr) => {
-        $g.edges_of_type('u')
+        $g.get_undirected_edges_index()
     };
 }
 
@@ -44,7 +44,7 @@ macro_rules! uE {
 #[macro_export]
 macro_rules! dE {
     ($g:expr) => {
-        $g.edges_of_type('d')
+        $g.get_directed_edges_index()
     };
 }
 
@@ -558,12 +558,23 @@ pub trait IntoUndirectedGraph {
     fn to_undirected(&self) -> Self::UndirectedGraph;
 }
 
-//TODO: Improve documentation
+//TODO: Improve documentation with examples and panics
 /// Partially directed graph trait.
 pub trait PartiallyDirectedGraph:
     BaseGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
 {
-    /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
+    /// Edges iterator type.
+    type PartiallyEdgesIndexIter<'a>: Iterator<Item = (usize, usize)>
+        + ExactSizeIterator
+        + FusedIterator
+    where
+        Self: 'a;
+
+    /// Partially directed graph constructor.
+    ///
+    /// # Pay attention: multiple types of edges between two nodes are not allowed.
+    ///
+    ///
     fn new_partial<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
     where
         V: Into<String>,
@@ -574,17 +585,33 @@ pub trait PartiallyDirectedGraph:
     /// Specialized deferencing
     fn deref_of_type(&self, which: char) -> &Self::Data;
 
-    /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn edges_of_type(&self, which: char) -> Self::EdgesIndexIter<'_>;
+    /// Undirected edges iterator
+    fn get_undirected_edges_index(&self) -> Self::PartiallyEdgesIndexIter<'_>;
 
-    /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn size_of_type(&self, which: char) -> usize;
+    /// Directed edges iterator
+    fn get_directed_edges_index(&self) -> Self::PartiallyEdgesIndexIter<'_>;
 
-    /// Type of the edge. It returns `None` if such edge doesn't exist, an `Option<char>` on the contrary. `char` can be `u` for undirected or `d` for directed edge type.
-    fn type_of_edge(&self, x: usize, y: usize) -> Option<char>;
+    /// Size of the undirected subgraph.
+    fn size_of_undirected_subgraph(&self) -> usize;
 
-    /// Specilized edge adder. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool;
+    /// Size of the directed subgraph.
+    fn size_of_directed_subgraph(&self) -> usize;
+
+    /// Checks whether the graph has a given undirected edge or not.
+    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
+        uE!(self).any(|z| z == (x, y) || z == (y, x))
+    }
+
+    /// Checks whether the graph has a given directed edge or not.
+    fn has_directed_edge_by_index(&self, x: usize, y: usize) -> bool {
+        dE!(self).any(|z| z == (x, y))
+    }
+
+    /// Undirected edge adder.
+    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool;
+
+    /// Directed edge adder.
+    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool;
 
     /// Orient (or re-orient) an already present edge
     fn orient_edge(&mut self, x: usize, y: usize) -> bool;

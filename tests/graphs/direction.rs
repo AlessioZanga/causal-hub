@@ -1805,8 +1805,8 @@ mod partially_directed {
                             .into_iter()
                             .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                         // Test for `size_of_type` function
-                        assert!(g.size_of_type('u') == ue.len());
-                        assert!(g.size_of_type('d') == de.len());
+                        assert!(g.size_of_undirected_subgraph() == ue.len());
+                        assert!(g.size_of_directed_subgraph() == de.len());
                     }
                 }
 
@@ -1875,45 +1875,23 @@ mod partially_directed {
                 }
 
                 #[test]
-                #[should_panic]
-                fn edges_of_type() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k);
-                    // Test for undefined type of edge
-                    g.edges_of_type('a');
-                }
-
-                #[test]
-                #[should_panic]
-                fn size_of_type_should_panic() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k);
-                    // Test for undefined type of edge
-                    g.size_of_type('a');
-                }
-
-                #[test]
                 fn type_of_edge() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_partial(i, j, k);
                     // Test for undirected edges
-                    assert!(g.type_of_edge(1, 2) == Some('u'));
-                    assert!(g.type_of_edge(2, 1) == Some('u'));
+                    assert!(g.has_undirected_edge_by_index(1, 2) == true);
+                    assert!(g.has_undirected_edge_by_index(2, 1) == true);
+                    assert!(g.has_directed_edge_by_index(1, 2) == false);
+                    assert!(g.has_directed_edge_by_index(2, 1) == false);
                     // Test for directed edges
-                    assert!(g.type_of_edge(0, 1) == Some('d'));
-                    assert!(g.type_of_edge(1, 0) == None);
+                    assert!(g.has_directed_edge_by_index(0, 1) == true);
+                    assert!(g.has_directed_edge_by_index(1, 0) == false);
+                    assert!(g.has_undirected_edge_by_index(0, 1) == false);
                     // Test for non-present edges
-                    assert!(g.type_of_edge(0, 2) == None);
-                    assert!(g.type_of_edge(2, 0) == None);
-                }
-
-                #[test]
-                #[should_panic]
-                fn type_of_edge_should_panic() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k);
-                    // Test with a non-present vertex
-                    g.type_of_edge(0, 3);
+                    assert!(g.has_undirected_edge_by_index(0, 2) == false);
+                    assert!(g.has_undirected_edge_by_index(2, 0) == false);
+                    assert!(g.has_directed_edge_by_index(0, 2) == false);
+                    assert!(g.has_directed_edge_by_index(2, 0) == false);
                 }
 
                 #[test]
@@ -1921,19 +1899,19 @@ mod partially_directed {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
                     let mut g = $G::new_partial(i, j, k);
                     // Test for added edges
-                    g.add_edge_of_type(0, 3, 'u');
-                    g.add_edge_of_type(3, 2, 'd');
-                    assert!(g.type_of_edge(0, 3) == Some('u'));
-                    assert!(g.type_of_edge(3, 0) == Some('u'));
-                    assert!(g.type_of_edge(3, 2) == Some('d'));
-                    assert!(g.type_of_edge(2, 3) == None);
+                    g.add_undirected_edge_by_index(0, 3);
+                    g.add_directed_edge_by_index(3, 2);
+                    assert!(g.has_undirected_edge_by_index(0, 3) == true);
+                    assert!(g.has_undirected_edge_by_index(3, 0) == true);
+                    assert!(g.has_directed_edge_by_index(3, 2) == true);
+                    assert!(g.has_undirected_edge_by_index(2, 3) == false);
                     assert!(g.size() == 4);
                     // Test for already present edges
-                    assert!(g.add_edge_of_type(0, 1, 'u') == false);
-                    assert!(g.add_edge_of_type(0, 1, 'd') == false);
-                    assert!(g.add_edge_of_type(1, 0, 'd') == false);
-                    assert!(g.size_of_type('u') == 2);
-                    assert!(g.size_of_type('d') == 2);
+                    assert!(g.add_undirected_edge_by_index(0, 1) == false);
+                    assert!(g.add_directed_edge_by_index(0, 1) == false);
+                    assert!(g.add_directed_edge_by_index(1, 0) == false);
+                    assert!(g.size_of_undirected_subgraph() == 2);
+                    assert!(g.size_of_directed_subgraph() == 2);
                     assert!(g.size() == 4);
                 }
 
@@ -1943,7 +1921,7 @@ mod partially_directed {
                     let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
                     let mut g = $G::new_partial(i, j, k);
                     // Test with a non-present vertex
-                    g.add_edge_of_type(0, 4, 'u');
+                    g.add_undirected_edge_by_index(0, 4);
                 }
 
                 #[test]
@@ -1959,17 +1937,17 @@ mod partially_directed {
                     g.orient_edge(3, 0);
                     g.orient_edge(2, 1);
                     // Test for type of edges
-                    assert!(g.type_of_edge(0, 1) == Some('d'));
-                    assert!(g.type_of_edge(1, 0) == None);
-                    assert!(g.type_of_edge(3, 0) == Some('d'));
-                    assert!(g.type_of_edge(0, 3) == None);
-                    assert!(g.type_of_edge(2, 1) == Some('d'));
-                    assert!(g.type_of_edge(1, 2) == None);
-                    assert!(g.type_of_edge(1, 4) == Some('u'));
-                    assert!(g.type_of_edge(4, 1) == Some('u'));
+                    assert!(g.has_directed_edge_by_index(0, 1) == true);
+                    assert!(g.has_undirected_edge_by_index(1, 0) == false);
+                    assert!(g.has_directed_edge_by_index(3, 0) == true);
+                    assert!(g.has_undirected_edge_by_index(0, 3) == false);
+                    assert!(g.has_directed_edge_by_index(2, 1) == true);
+                    assert!(g.has_undirected_edge_by_index(1, 2) == false);
+                    assert!(g.has_undirected_edge_by_index(1, 4) == true);
+                    assert!(g.has_undirected_edge_by_index(4, 1) == true);
                     // Test for sizes
-                    assert!(g.size_of_type('u') == 1);
-                    assert!(g.size_of_type('d') == 3);
+                    assert!(g.size_of_undirected_subgraph() == 1);
+                    assert!(g.size_of_directed_subgraph() == 3);
                     assert!(g.size() == 4);
                     // Test when orienting a non-existing edge
                     assert!(g.orient_edge(2, 3) == false);

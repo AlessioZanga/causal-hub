@@ -26,7 +26,7 @@ mod undirected {
                 // Test for each scenario ...
                 for (vertices, adjacency_matrix) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert_eq!(g, g.clone());
                 }
@@ -56,7 +56,7 @@ mod undirected {
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_debug) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_debug).unwrap().is_match(&*format!("{:?}", g)));
                 }
@@ -86,7 +86,7 @@ mod undirected {
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_display) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_display).unwrap().is_match(&*format!("{}", g)));
                 }
@@ -392,7 +392,7 @@ mod undirected {
             }
 
             #[test]
-            fn try_from_dense_adjacency_matrix() {
+            fn from_dense_adjacency_matrix() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -441,7 +441,7 @@ mod undirected {
 
                 // Test for each scenario.
                 for ((i, j), (v, a)) in data {
-                    let g = $G::try_from((v.clone(), a.clone())).unwrap();
+                    let g = $G::from((v.clone(), a.clone()));
 
                     assert!(V!(g).eq(i.iter().map(|x| g.get_vertex_index(x))));
                     assert!(E!(g).eq(j
@@ -457,8 +457,9 @@ mod undirected {
 
             #[test]
             #[should_panic]
-            fn try_from_dense_adjacency_matrix_should_panic() {
-                $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
+            #[allow(unused)]
+            fn from_dense_adjacency_matrix_should_panic() {
+                $G::from((vec!["0", "1"], array![[false]]));
             }
 
             #[test]
@@ -981,7 +982,7 @@ mod directed {
                 // Test for each scenario ...
                 for (vertices, adjacency_matrix) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert_eq!(g, g.clone());
                 }
@@ -1011,7 +1012,7 @@ mod directed {
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_debug) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_debug).unwrap().is_match(&*format!("{:?}", g)));
                 }
@@ -1041,7 +1042,7 @@ mod directed {
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_display) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_display).unwrap().is_match(&*format!("{}", g)));
                 }
@@ -1352,7 +1353,7 @@ mod directed {
             }
 
             #[test]
-            fn try_from_dense_adjacency_matrix() {
+            fn from_dense_adjacency_matrix() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -1401,7 +1402,7 @@ mod directed {
 
                 // Test for each scenario.
                 for ((i, j), (v, a)) in data {
-                    let g = $G::try_from((v.clone(), a.clone())).unwrap();
+                    let g = $G::from((v.clone(), a.clone()));
 
                     assert!(V!(g).eq(i.iter().map(|x| g.get_vertex_index(x))));
                     assert!(E!(g).eq(j
@@ -1417,8 +1418,9 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn try_from_dense_adjacency_matrix_should_panic() {
-                $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
+            #[allow(unused)]
+            fn from_dense_adjacency_matrix_should_panic() {
+                $G::from((vec!["0", "1"], array![[false]]));
             }
 
             #[test]
@@ -1945,7 +1947,7 @@ mod partially_directed {
                 // Test for each scenario ...
                 for (vertices, adjacency_matrix) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert_eq!(g, g.clone());
                 }
@@ -1958,24 +1960,24 @@ mod partially_directed {
                     // Empty vertex set and adjacency matrix.
                     (
                         (vec![], Default::default()),
-                        r#"[a-zA-Z]+Graph \{ labels: \{\}, undirected_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, skeleton_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
+                        r#"[a-zA-Z]+Graph \{ labels: \{\}, undirected_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, adjacency_matrix: \[\[\]\], shape=\[0, 0\], strides=\[0, 0\], layout=CFcf \(0xf\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A"], array![[false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A"\}, undirected_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, skeleton_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A"\}, undirected_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, directed_adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, adjacency_matrix: \[\[false\]\], shape=\[1, 1\], strides=\[1, 1\], layout=CFcf \(0xf\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
                     ),
                     // Non-empty vertex set and non-empty adjacency matrix.
                     (
                         (vec!["A", "B"], array![[false, false], [false, false]]),
-                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, skeleton_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
+                        r#"[a-zA-Z]+Graph \{ labels: \{"A", "B"\}, undirected_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, directed_adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, adjacency_matrix: \[\[false, false\],\n \[false, false\]\], shape=\[2, 2\], strides=\[2, 1\], layout=Cc \(0x5\), const ndim=2, undirected_size: 0, directed_size: 0, size: 0 \}"#,
                     ),
                 ];
 
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_debug) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_debug).unwrap().is_match(&*format!("{:?}", g)));
                 }
@@ -2011,7 +2013,7 @@ mod partially_directed {
                 // Test for each scenario ...
                 for ((vertices, adjacency_matrix), test_display) in data {
                     // ... construct the graph ...
-                    let g = $G::try_from((vertices, adjacency_matrix)).unwrap();
+                    let g = $G::from((vertices, adjacency_matrix));
                     // ... assert result.
                     assert!(Regex::new(test_display).unwrap().is_match(&*format!("{}", g)));
                 }
@@ -2363,7 +2365,7 @@ mod partially_directed {
                                     g_partially_directed.get_vertices().collect::<Vec<_>>()
                                 );
                                 // Test matrices
-                                assert_eq!(0, g_partially_directed.size_of_type('d'));
+                                assert_eq!(0, g_partially_directed.size_of_directed_subgraph());
                                 assert_eq!(g.deref(), g_partially_directed.deref_of_type('u'));
                                 assert_eq!(g.deref(), g_partially_directed.deref());
                             }
@@ -2414,14 +2416,15 @@ mod partially_directed {
                                     g_partially_directed.get_vertices().collect::<Vec<_>>()
                                 );
                                 // Test matrices
-                                assert_eq!(0, g_partially_directed.size_of_type('u'));
+                                assert_eq!(0, g_partially_directed.size_of_undirected_subgraph());
                                 assert_eq!(g.deref(), g_partially_directed.deref_of_type('d'));
                                 assert_eq!(g.to_undirected().deref(), g_partially_directed.deref());
                             }
                         }
 
                         #[test]
-                        fn try_from_dense_adjacency_matrix() {
+                        #[allow(unused)]
+                        fn from_dense_adjacency_matrix() {
                             // Test for ...
                             let data = [
                                 // ... zero vertices and zero edges,
@@ -2470,7 +2473,7 @@ mod partially_directed {
 
                             // Test for each scenario.
                             for ((i, j), (v, a)) in data {
-                                let g = $G::try_from((v.clone(), a.clone())).unwrap();
+                                let g = $G::from((v.clone(), a.clone()));
 
                                 assert!(V!(g).eq(i.iter().map(|x| g.get_vertex_index(x))));
                                 assert!(E!(g).eq(j.iter().map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
@@ -2484,14 +2487,16 @@ mod partially_directed {
 
                         #[test]
                         #[should_panic]
-                        fn try_from_dense_adjacency_matrix_should_panic_for_dimensions() {
-                            $G::try_from((vec!["0", "1"], array![[false]])).unwrap();
+                        #[allow(unused)]
+                        fn from_dense_adjacency_matrix_should_panic_for_dimensions() {
+                            $G::from((vec!["0", "1"], array![[false]]));
                         }
 
                         #[test]
                         #[should_panic]
-                        fn try_from_dense_adjacency_matrix_should_panic_for_symmetry() {
-                            $G::try_from((
+                        #[allow(unused)]
+                        fn from_dense_adjacency_matrix_should_panic_for_symmetry() {
+                            $G::from((
                                 vec!["0", "1", "2", "3"],
                                 array![
                                     [false, false, false, false],
@@ -2500,7 +2505,7 @@ mod partially_directed {
                                     [false, false, true, false]
                                 ],
                             ))
-                            .unwrap();
+                            ;
                         }
 
 
@@ -2817,7 +2822,7 @@ mod partially_directed {
             }
 
             #[test]
-            fn del_edge() {
+            fn del_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
