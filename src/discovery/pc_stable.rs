@@ -164,15 +164,19 @@ where
     // Flag returning `false` if some orientation takes place
     let mut is_closed = true;
     for x in V!(g).collect::<Vec<_>>() {
+        dbg!(x);
         if Pa!(g, x).next().is_none() {
+            dbg!("continue");
             continue;
         }
         for z in Ne!(g, x).collect::<Vec<_>>() {
-            if iter_set::intersection(Ne!(g, z), Pa!(g, x).flat_map(|parent| Pa!(g, parent).filter(|&y| !g.is_parent(y, x))))
+            dbg!(z);
+            if iter_set::intersection(Ne!(g, z), Pa!(g, x).flat_map(|parent| Pa!(g, parent).filter(|&y| !g.is_adjacent(y, x))))
                 .next()
                 .is_some()
             {
                 g.orient_edge(z, x);
+                dbg!("oriented");
                 is_closed = false;
             }
         }
