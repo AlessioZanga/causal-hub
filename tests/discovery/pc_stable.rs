@@ -96,15 +96,24 @@ mod discrete {
     #[test]
     fn meek_1_general_case() {
         let mut g = PDGraph::new_partial(
-            vec![], 
-            vec![("0", "2"), ("0", "3"), ("0", "4"), ("1", "4"), ("4", "5"), ("3", "5"), ],
-            vec![("1", "0")]).unwrap();
+            vec![],
+            vec![
+                ("1", "2"),
+                ("0", "3"),
+                ("0", "4"),
+                ("1", "4"),
+                ("4", "5"),
+                ("3", "5"),
+            ],
+            vec![("1", "0")],
+        )
+        .unwrap();
         meek_1(&mut g);
         // Test for undirected edges
         assert!(g.type_of_edge(0, 4) == Some('u'));
         assert!(g.type_of_edge(4, 1) == Some('u'));
+        assert!(g.type_of_edge(1, 2) == Some('u'));
         // Test for directed edges
-        assert!(g.type_of_edge(0, 2) == Some('d'));
         assert!(g.type_of_edge(0, 3) == Some('d'));
         assert!(g.type_of_edge(3, 5) == Some('d'));
         assert!(g.type_of_edge(5, 4) == Some('d'));
@@ -123,15 +132,17 @@ mod discrete {
     #[test]
     fn meek_2_general_case() {
         let mut g = PDGraph::new_partial(
-            vec![], 
-            vec![("2", "3"), ("1", "4"),("4", "2")],
-            vec![("4", "0"), ("0", "1"), ("0", "2"), ("0", "3"),]).unwrap();
+            vec![],
+            vec![("1", "2"), ("1", "3"), ("4", "0")],
+            vec![("1", "0"), ("0", "2"), ("4", "2"), ("2", "3")],
+        )
+        .unwrap();
         meek_2(&mut g);
         // Test for undirected edges
-        assert!(g.type_of_edge(2, 3) == Some('u'));
+        assert!(g.type_of_edge(0, 4) == Some('u'));
         // Test for directed edges
-        assert!(g.type_of_edge(4, 1) == Some('d'));
-        assert!(g.type_of_edge(4, 2) == Some('d'));
+        assert!(g.type_of_edge(1, 2) == Some('d'));
+        assert!(g.type_of_edge(1, 3) == Some('d'));
     }
 
     #[test]
@@ -143,14 +154,28 @@ mod discrete {
         )
         .unwrap();
         meek_3(&mut g);
+        // Test for undirected edges
         assert!(g.type_of_edge(0, 1) == Some('u'));
         assert!(g.type_of_edge(0, 3) == Some('u'));
-
-        assert!(g.type_of_edge(1, 3) == None);
-
+        // Test for directed edges
         assert!(g.type_of_edge(0, 2) == Some('d'));
         assert!(g.type_of_edge(1, 2) == Some('d'));
         assert!(g.type_of_edge(3, 2) == Some('d'));
+    }
+
+    #[test]
+    fn meek_3_general_case() {
+        let mut g = PDGraph::new_partial(vec![], 
+            vec![("0", "1"), ("0", "4"), ("0", "5"), ("6", "5"), ("6", "2"), ("2", "5"), ("3", "1"), ("2", "1"), ("4", "1"), ("6", "4"), ], 
+            vec![("2", "0"), ("3", "0"), ("6", "0"), ])
+            .unwrap();
+        meek_3(&mut g);
+        // Test for undirected edges
+        assert!(g.type_of_edge(5, 0) == Some('u'));
+        // Test for directed edges
+        assert!(g.type_of_edge(1, 0) == Some('d'));
+        assert!(g.type_of_edge(4, 0) == Some('d'));
+
     }
 
     #[test]
@@ -170,14 +195,28 @@ mod discrete {
         for (v, ue, de) in data {
             let mut g = PDGraph::new_partial(v, ue, de).unwrap();
             meek_4(&mut g);
-            dbg!("ciao");
+            // Test for undirected edges
             assert!(g.type_of_edge(0, 3) == Some('u'));
-
-            assert!(g.type_of_edge(0, 2) == None);
-
+            // Test for directed edges
             assert!(g.type_of_edge(0, 1) == Some('d'));
             assert!(g.type_of_edge(1, 2) == Some('d'));
             assert!(g.type_of_edge(3, 2) == Some('d'));
         }
+    }
+
+    #[test]
+    fn meek_4_general_case() {
+        let mut g = PDGraph::new_partial(
+            vec![], 
+            vec![("0", "5"), ("0", "2"), ("2", "5"), ("0", "7"), ("0", "3"), ("6", "7"), ("3", "4"), ], 
+            vec![("1", "0"), ("2", "1"), ("4", "1"), ("3", "7"), ("6", "3"), ])
+            .unwrap();
+        meek_4(&mut g);
+        // Test for undirected edges
+        assert!(g.type_of_edge(5, 0) == Some('u'));
+        // Test for directed edges
+        assert!(g.type_of_edge(7, 0) == Some('d'));
+        assert!(g.type_of_edge(3, 0) == Some('d'));
+
     }
 }
