@@ -2167,7 +2167,6 @@ impl PathGraph for PartiallyDenseAdjacencyMatrixGraph {
     #[inline]
     fn has_path(&self, x: usize, y: usize) -> bool {
         let has_edge = self.type_of_edge(x, y).is_some();
-        dbg!(has_edge);
         has_edge || BFS::from((self, x)).skip(1).any(|z| z == y)
     }
 
@@ -2228,4 +2227,105 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
     }
 }
 
-// TODO: (impl Into<(BTreeSet<String>, SparseAdjacencyMatrix, SparseAdjacencyMatrix)>)
+impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
+    fn meek_1(&mut self) -> bool {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+        for x in V!(self).collect::<Vec<_>>() {
+            if Pa!(self, x).next().is_none() {
+                continue;
+            }
+            for z in Ne!(self, x).collect::<Vec<_>>() {
+                if iter_set::intersection(Adj!(self, z), Pa!(self, x))
+                    .next()
+                    .is_none()
+                {
+                    self.orient_edge(x, z);
+                    is_closed = false;
+                }
+            }
+        }
+        is_closed
+    }
+
+    fn meek_2(&mut self) -> bool {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+        for x in V!(self).collect::<Vec<_>>() {
+            if Pa!(self, x).next().is_none() {
+                continue;
+            }
+            for z in Ch!(self, x).collect::<Vec<_>>() {
+                for y in iter_set::intersection(Ne!(self, z), Pa!(self, x)).collect::<Vec<_>>() {
+                    self.orient_edge(y, z);
+                    is_closed = false;
+                }
+            }
+        }
+        is_closed
+    }
+
+    fn meek_3(&mut self) -> bool {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+        for x in V!(self).collect::<Vec<_>>() {
+            for z in Ne!(self, x).collect::<Vec<_>>() {
+                let intersection = iter_set::intersection(Ne!(self, z), Pa!(self, x));
+                // Look for a non-adjacent couple of parents of `x`
+                if intersection
+                    .combinations(2)
+                    .any(|ab| !self.is_adjacent(ab[0], ab[1]))
+                {
+                    self.orient_edge(z, x);
+                    is_closed = false;
+                }
+            }
+        }
+        is_closed
+    }
+
+    fn meek_4(&mut self) -> bool {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+        for x in V!(self).collect::<Vec<_>>() {
+            if Pa!(self, x).next().is_none() {
+                continue;
+            }
+            for z in Ne!(self, x).collect::<Vec<_>>() {
+                if iter_set::intersection(
+                    Ne!(self, z),
+                    Pa!(self, x)
+                        .flat_map(|parent| Pa!(self, parent).filter(|&y| !self.is_adjacent(y, x))),
+                )
+                .next()
+                .is_some()
+                {
+                    self.orient_edge(z, x);
+                    is_closed = false;
+                }
+            }
+        }
+        is_closed
+    }
+
+    fn meek_procedure_until_3(mut self) -> Self {
+        let mut is_closed = false;
+        while !is_closed {
+            is_closed = self.meek_1();
+            is_closed &= self.meek_2();
+            is_closed &= self.meek_3();
+        }
+        self
+    }
+
+    fn meek_procedure_until_4(mut self) -> Self {
+        let mut is_closed = false;
+        while !is_closed {
+            is_closed = self.meek_1();
+            is_closed &= self.meek_2();
+            is_closed &= self.meek_3();
+            is_closed &= self.meek_4();
+        }
+        self
+    }
+}

@@ -1,4 +1,4 @@
-use std::f64::consts::FRAC_1_SQRT_2;
+use std::{collections::BTreeSet, f64::consts::FRAC_1_SQRT_2};
 
 use libm::erfc;
 
@@ -11,16 +11,17 @@ use crate::{
 
 /// Fisher's Z conditional independence test.
 #[derive(Clone, Debug)]
-pub struct FisherZ {
+pub struct FisherZ<'a> {
     rho: PartialCorrelation,
     alpha: f64,
     n: usize,
+    labels: &'a BTreeSet<String>,
 }
 
-impl FisherZ {
+impl<'a, 'b: 'a> FisherZ<'a> {
     /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &ContinuousDataMatrix) -> Self {
+    pub fn new(d: &'b ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -30,18 +31,19 @@ impl FisherZ {
             rho,
             alpha: 0.05,
             n: d.values().nrows(),
+            labels: d.labels(),
         }
     }
 }
 
-impl From<&ContinuousDataMatrix> for FisherZ {
+impl<'a, 'b: 'a> From<&'b ContinuousDataMatrix> for FisherZ<'a> {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &'b ContinuousDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl ConditionalIndependenceTest for FisherZ {
+impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for FisherZ<'a> {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -65,6 +67,11 @@ impl ConditionalIndependenceTest for FisherZ {
         let pval = erfc(f64::abs(stat) * FRAC_1_SQRT_2);
 
         (dof, stat, pval)
+    }
+    #[inline]
+
+    fn labels(&self) -> &'b BTreeSet<String> {
+        self.labels
     }
 
     #[inline]

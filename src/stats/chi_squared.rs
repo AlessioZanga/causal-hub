@@ -1,9 +1,11 @@
+use std::collections::BTreeSet;
+
 use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
 
 use crate::{
     data::{DiscreteDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
-    prelude::ConditionalIndependenceTest,
+    prelude::{ConditionalIndependenceTest, DataSet},
     utils::nan_to_zero,
 };
 
@@ -12,24 +14,29 @@ use crate::{
 pub struct ChiSquared<'a> {
     d: &'a DiscreteDataMatrix,
     alpha: f64,
+    labels: &'a BTreeSet<String>,
 }
 
-impl<'a> ChiSquared<'a> {
+impl<'a, 'b: 'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub const fn new(d: &'a DiscreteDataMatrix) -> Self {
-        Self { d, alpha: 0.05 }
+    pub fn new(d: &'b DiscreteDataMatrix) -> Self {
+        Self {
+            d,
+            alpha: 0.05,
+            labels: d.labels(),
+        }
     }
 }
 
-impl<'a> From<&'a DiscreteDataMatrix> for ChiSquared<'a> {
+impl<'a, 'b: 'a> From<&'b DiscreteDataMatrix> for ChiSquared<'a> {
     #[inline]
-    fn from(d: &'a DiscreteDataMatrix) -> Self {
+    fn from(d: &'b DiscreteDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
+impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for ChiSquared<'a> {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Get cardinalities.
@@ -87,5 +94,9 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         self.alpha = alpha;
 
         self
+    }
+    #[inline]
+    fn labels(&self) -> &'b BTreeSet<String> {
+        self.labels
     }
 }

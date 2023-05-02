@@ -1,14 +1,10 @@
 #[cfg(test)]
 mod discrete {
-    use causal_hub::prelude::{skeleton, *};
+    use causal_hub::prelude::*;
     use polars::prelude::*;
 
     #[test]
-    fn call_skel() {
-        // Set labels
-        let labels = [
-            "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
-        ];
+    fn call_skeleton() {
         // Set true graph
         let true_g = PDGraph::new_partial(
             ["asia", "xray"],
@@ -22,9 +18,6 @@ mod discrete {
         )
         .unwrap();
 
-        // Set complete graph
-        let complete_graph = Graph::complete(labels);
-
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/asia.csv")
             .unwrap()
@@ -33,11 +26,13 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Create ChiSquared conditional independence test
-        let alpha = 0.05;
-        let test = ChiSquared::new(&d).with_significance_level(alpha);
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
 
         // Perform skeleton discovery
-        let skel = skeleton(&test, complete_graph).0;
+        let skel = pcs.call_skeleton();
 
         // Perform test
         assert_eq!(skel, true_g.to_undirected());
@@ -45,10 +40,6 @@ mod discrete {
 
     #[test]
     fn call_orient_vstructures() {
-        // Set labels
-        let labels = [
-            "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
-        ];
         // Set true graph
         let true_g = PDGraph::new_partial(
             ["asia", "xray"],
@@ -62,9 +53,6 @@ mod discrete {
         )
         .unwrap();
 
-        // Set complete graph
-        let complete_graph = Graph::complete(labels);
-
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/asia.csv")
             .unwrap()
@@ -73,14 +61,13 @@ mod discrete {
         let d = DiscreteDataMatrix::from(d);
 
         // Create ChiSquared conditional independence test
-        let alpha = 0.05;
-        let test = ChiSquared::new(&d).with_significance_level(alpha);
+        let test = ChiSquared::new(&d);
 
-        // Perform skeleton discovery
-        let (skel, sepsets) = skeleton(&test, complete_graph);
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
 
-        // Orient v-structures
-        let g: PDGraph = orient_vstructures(skel, sepsets);
+        // Perform discovery
+        let g = pcs.call();
 
         // Perform test
         assert_eq!(g, true_g);
@@ -88,7 +75,7 @@ mod discrete {
     #[test]
     fn meek_1_base_case() {
         let mut g = PDGraph::new_partial(vec![], vec![("1", "2")], vec![("0", "1")]).unwrap();
-        meek_1(&mut g);
+        g.meek_1();
         assert!(g.type_of_edge(1, 2) == Some('d'));
         assert!(g.type_of_edge(0, 1) == Some('d'))
     }
@@ -108,7 +95,7 @@ mod discrete {
             vec![("1", "0")],
         )
         .unwrap();
-        meek_1(&mut g);
+        g.meek_1();
         // Test for undirected edges
         assert!(g.type_of_edge(0, 4) == Some('u'));
         assert!(g.type_of_edge(4, 1) == Some('u'));
@@ -123,7 +110,7 @@ mod discrete {
     fn meek_2_base_case() {
         let mut g =
             PDGraph::new_partial(vec![], vec![("0", "2")], vec![("0", "1"), ("1", "2")]).unwrap();
-        meek_2(&mut g);
+        g.meek_2();
         assert!(g.type_of_edge(0, 2) == Some('d'));
         assert!(g.type_of_edge(0, 1) == Some('d'));
         assert!(g.type_of_edge(1, 2) == Some('d'));
@@ -137,7 +124,7 @@ mod discrete {
             vec![("1", "0"), ("0", "2"), ("4", "2"), ("2", "3")],
         )
         .unwrap();
-        meek_2(&mut g);
+        g.meek_2();
         // Test for undirected edges
         assert!(g.type_of_edge(0, 4) == Some('u'));
         // Test for directed edges
@@ -153,7 +140,7 @@ mod discrete {
             vec![("1", "2"), ("3", "2")],
         )
         .unwrap();
-        meek_3(&mut g);
+        g.meek_3();
         // Test for undirected edges
         assert!(g.type_of_edge(0, 1) == Some('u'));
         assert!(g.type_of_edge(0, 3) == Some('u'));
@@ -165,17 +152,29 @@ mod discrete {
 
     #[test]
     fn meek_3_general_case() {
-        let mut g = PDGraph::new_partial(vec![], 
-            vec![("0", "1"), ("0", "4"), ("0", "5"), ("6", "5"), ("6", "2"), ("2", "5"), ("3", "1"), ("2", "1"), ("4", "1"), ("6", "4"), ], 
-            vec![("2", "0"), ("3", "0"), ("6", "0"), ])
-            .unwrap();
-        meek_3(&mut g);
+        let mut g = PDGraph::new_partial(
+            vec![],
+            vec![
+                ("0", "1"),
+                ("0", "4"),
+                ("0", "5"),
+                ("6", "5"),
+                ("6", "2"),
+                ("2", "5"),
+                ("3", "1"),
+                ("2", "1"),
+                ("4", "1"),
+                ("6", "4"),
+            ],
+            vec![("2", "0"), ("3", "0"), ("6", "0")],
+        )
+        .unwrap();
+        g.meek_3();
         // Test for undirected edges
         assert!(g.type_of_edge(5, 0) == Some('u'));
         // Test for directed edges
         assert!(g.type_of_edge(1, 0) == Some('d'));
         assert!(g.type_of_edge(4, 0) == Some('d'));
-
     }
 
     #[test]
@@ -194,7 +193,7 @@ mod discrete {
         ];
         for (v, ue, de) in data {
             let mut g = PDGraph::new_partial(v, ue, de).unwrap();
-            meek_4(&mut g);
+            g.meek_4();
             // Test for undirected edges
             assert!(g.type_of_edge(0, 3) == Some('u'));
             // Test for directed edges
@@ -207,16 +206,24 @@ mod discrete {
     #[test]
     fn meek_4_general_case() {
         let mut g = PDGraph::new_partial(
-            vec![], 
-            vec![("0", "5"), ("0", "2"), ("2", "5"), ("0", "7"), ("0", "3"), ("6", "7"), ("3", "4"), ], 
-            vec![("1", "0"), ("2", "1"), ("4", "1"), ("3", "7"), ("6", "3"), ])
-            .unwrap();
-        meek_4(&mut g);
+            vec![],
+            vec![
+                ("0", "5"),
+                ("0", "2"),
+                ("2", "5"),
+                ("0", "7"),
+                ("0", "3"),
+                ("6", "7"),
+                ("3", "4"),
+            ],
+            vec![("1", "0"), ("2", "1"), ("4", "1"), ("3", "7"), ("6", "3")],
+        )
+        .unwrap();
+        g.meek_4();
         // Test for undirected edges
         assert!(g.type_of_edge(5, 0) == Some('u'));
         // Test for directed edges
         assert!(g.type_of_edge(7, 0) == Some('d'));
         assert!(g.type_of_edge(3, 0) == Some('d'));
-
     }
 }
