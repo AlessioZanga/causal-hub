@@ -1823,8 +1823,7 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn to_undirected(&self) -> Self::UndirectedGraph {
-        Self::UndirectedGraph::try_from((self.labels.clone(), self.adjacency_matrix.clone()))
-            .unwrap()
+        Self::UndirectedGraph::from((self.labels.clone(), self.adjacency_matrix.clone()))
     }
 }
 

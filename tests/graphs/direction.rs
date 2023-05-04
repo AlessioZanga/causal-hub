@@ -2339,6 +2339,20 @@ mod partially_directed {
                     // Test when orienting a non-existing edge
                     assert!(g.orient_edge(2, 3) == false);
                 }
+
+                #[test]
+                fn to_undirected() {
+                    let g = $G::new_pagraph(
+                        vec![],
+                        vec![],
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                    );
+                    let g_to_undirected = g.to_undirected();
+                    let g_to_undirected: PartiallyDenseAdjacencyMatrixGraph =
+                        g_to_undirected.into();
+                    assert!(g_to_undirected.size_of_maximal_directed_subgraph() == 0);
+                    assert!(g_to_undirected.size_of_maximal_undirected_subgraph() == 4);
+                }
             };
         }
 
