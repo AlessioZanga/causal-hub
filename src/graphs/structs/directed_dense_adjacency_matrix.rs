@@ -995,6 +995,8 @@ impl<'a> Iterator for DescendantsIterator<'a> {
 impl<'a> FusedIterator for DescendantsIterator<'a> {}
 
 impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
+    type DirectedEdgesIndexIter<'a> = EdgesIterator<'a>;
+
     type AncestorsIndexIter<'a> = AncestorsIterator<'a>;
 
     type ParentsIndexIter<'a> = ParentsIterator<'a>;
@@ -1002,6 +1004,16 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     type ChildrenIndexIter<'a> = ChildrenIterator<'a>;
 
     type DescendantsIndexIter<'a> = DescendantsIterator<'a>;
+
+    #[inline]
+    fn size_of_maximal_directed_subgraph(&self) -> usize {
+        self.size()
+    }
+
+    #[inline]
+    fn get_directed_edges_index(&self) -> Self::DirectedEdgesIndexIter<'_> {
+        self.get_edges_index()
+    }
 
     #[inline]
     fn get_ancestors_by_index(&self, x: usize) -> Self::AncestorsIndexIter<'_> {
@@ -1034,6 +1046,11 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
+    fn has_directed_edge_by_index(&self, x: usize, y: usize) -> bool {
+        self.adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
     fn get_in_degree_by_index(&self, x: usize) -> usize {
         // Compute in-degree.
         let d = self.adjacency_matrix.column(x).mapv(|f| f as usize).sum();
@@ -1053,6 +1070,11 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Ch!(self, x).count(), d);
 
         d
+    }
+
+    #[inline]
+    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool {
+        self.add_edge_by_index(x, y)
     }
 }
 

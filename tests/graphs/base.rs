@@ -721,7 +721,7 @@ mod undirected {
 
             #[test]
             #[should_panic]
-            fn has_edge_should_panic() {
+            fn has_edge_by_index_should_panic() {
                 let g = $G::null();
                 g.has_edge_by_index(0, 0);
             }
@@ -1682,7 +1682,7 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn has_edge_should_panic() {
+            fn has_edge_by_index_should_panic() {
                 let g = $G::null();
                 g.has_edge_by_index(0, 0);
             }
@@ -1924,7 +1924,6 @@ mod partially_directed {
     macro_rules! generic_tests {
         ($G: ident) => {
             use causal_hub::prelude::*;
-            use std::ops::Deref;
             use std::collections::HashSet;
             use is_sorted::IsSorted;
             use ndarray::prelude::*;
@@ -2365,9 +2364,10 @@ mod partially_directed {
                                     g_partially_directed.get_vertices().collect::<Vec<_>>()
                                 );
                                 // Test matrices
-                                assert_eq!(0, g_partially_directed.size_of_directed_subgraph());
-                                assert_eq!(g.deref(), g_partially_directed.deref_of_type('u'));
-                                assert_eq!(g.deref(), g_partially_directed.deref());
+                                assert_eq!(0, g_partially_directed.size_of_maximal_directed_subgraph());
+                                // Test edges
+                                assert_eq!(0, g_partially_directed.size_of_maximal_directed_subgraph());
+                                assert_eq!(g.get_undirected_edges_index().collect::<Vec<_>>(), g_partially_directed.get_undirected_edges_index().collect::<Vec<_>>());
                             }
                         }
 
@@ -2415,10 +2415,9 @@ mod partially_directed {
                                     g.get_vertices().collect::<Vec<_>>(),
                                     g_partially_directed.get_vertices().collect::<Vec<_>>()
                                 );
-                                // Test matrices
-                                assert_eq!(0, g_partially_directed.size_of_undirected_subgraph());
-                                assert_eq!(g.deref(), g_partially_directed.deref_of_type('d'));
-                                assert_eq!(g.to_undirected().deref(), g_partially_directed.deref());
+                                // Test edges
+                                assert_eq!(0, g_partially_directed.size_of_maximal_undirected_subgraph());
+                                assert_eq!(g.get_directed_edges_index().collect::<Vec<_>>(), g_partially_directed.get_directed_edges_index().collect::<Vec<_>>());
                             }
                         }
 
@@ -2736,7 +2735,7 @@ mod partially_directed {
             }
 
             #[test]
-            fn has_edge() {
+            fn has_edge_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -2773,7 +2772,7 @@ mod partially_directed {
 
             #[test]
             #[should_panic]
-            fn has_edge_should_panic() {
+            fn has_edge_by_index_should_panic() {
                 let g = $G::null();
                 g.has_edge_by_index(0, 0);
             }

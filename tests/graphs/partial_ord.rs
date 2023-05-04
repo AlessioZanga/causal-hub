@@ -774,9 +774,9 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    let g = $G::new_partial(i, ue, de);
+                    let g = $G::new_pagraph(i, ue, de);
                     for (i, ue, de, f) in k {
-                        let h = $G::new_partial(i, ue, de);
+                        let h = $G::new_pagraph(i, ue, de);
                         assert_eq!(g.eq(&h), f);
                     }
                 }
@@ -1054,9 +1054,9 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (i, ue, de, k) in data {
-                    let g = $G::new_partial(i, ue, de);
+                    let g = $G::new_pagraph(i, ue, de);
                     for (i, ue, de, f) in k {
-                        let h = $G::new_partial(i, ue, de);
+                        let h = $G::new_pagraph(i, ue, de);
                         assert!(g.partial_cmp(&h).eq(&f));
                     }
                 }

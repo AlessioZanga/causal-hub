@@ -6,6 +6,56 @@ mod undirected {
             use is_sorted::IsSorted;
 
             #[test]
+            fn size_of_maximal_undirected_subgraph() {
+                // Test for ...
+                let data = [
+                    // ... zero edges,
+                    (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], 1),
+                    // ... multiple edges,
+                    (vec![("0", "1"), ("1", "2"), ("2", "3")], 3),
+                    // ... random edges,
+                    (vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")], 4),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new([], i);
+                    assert_eq!(g.size_of_maximal_undirected_subgraph(), j);
+                }
+            }
+            #[test]
+            fn get_undirected_edges_index() {
+                // Test for ...
+                let data = [
+                    // ... zero edges,
+                    (vec![], vec![]),
+                    // ... one edge,
+                    (vec![("0", "0")], vec![("0", "0")]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new(vec![], i);
+                    assert!(uE!(g).is_sorted());
+                    assert!(uE!(g).eq(j
+                        .iter()
+                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                }
+            }
+
+            #[test]
             fn get_neighbors_by_index() {
                 // Test for ...
                 let data = [
@@ -101,6 +151,49 @@ mod undirected {
             }
 
             #[test]
+            fn has_undirected_edge_by_index() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero edges,
+                    // (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], vec![(("0", "0"), true)]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![(("0", "1"), true), (("1", "0"), true), (("1", "3"), false)],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![
+                            (("71", "1"), true),
+                            (("1", "58"), true),
+                            (("58", "1"), true),
+                            (("71", "71"), false),
+                        ],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new([], i);
+                    for ((x, y), f) in j {
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.has_undirected_edge_by_index(x, y), f);
+                    }
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn has_undirected_edge_by_index_should_panic() {
+                let g = $G::null();
+                g.has_undirected_edge_by_index(0, 0);
+            }
+
+            #[test]
             fn get_degree_by_index() {
                 // Test for ...
                 let data = [
@@ -131,6 +224,48 @@ mod undirected {
                 let g = $G::null();
                 g.get_degree_by_index(0);
             }
+
+            #[test]
+            fn add_undirected_edge_by_index() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero edges,
+                    // (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], vec![(("0", "0"), false)]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![(("0", "1"), false), (("1", "0"), false), (("1", "3"), true)],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![
+                            (("71", "1"), false),
+                            (("1", "58"), false),
+                            (("58", "1"), false),
+                            (("71", "75"), true),
+                        ],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let mut g = $G::new([], i);
+                    for ((x, y), f) in j {
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.add_undirected_edge_by_index(x, y), f);
+                    }
+                }
+            }
+            #[test]
+            #[should_panic]
+            fn add_undirected_edge_by_index_should_panic() {
+                let mut g = $G::null();
+                g.add_undirected_edge_by_index(0, 0);
+            }
         };
     }
 
@@ -147,6 +282,57 @@ mod directed {
         ($G: ident) => {
             use causal_hub::prelude::*;
             use is_sorted::IsSorted;
+
+            #[test]
+            fn size_of_maximal_directed_subgraph() {
+                // Test for ...
+                let data = [
+                    // ... zero edges,
+                    (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], 1),
+                    // ... multiple edges,
+                    (vec![("0", "1"), ("1", "2"), ("2", "3")], 3),
+                    // ... random edges,
+                    (vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")], 4),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new([], i);
+                    assert_eq!(g.size_of_maximal_directed_subgraph(), j);
+                }
+            }
+
+            #[test]
+            fn get_directed_edges_index() {
+                // Test for ...
+                let data = [
+                    // ... zero edges,
+                    (vec![], vec![]),
+                    // ... one edge,
+                    (vec![("0", "0")], vec![("0", "0")]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![("1", "58"), ("3", "75"), ("58", "3"), ("71", "1")],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new(vec![], i);
+                    assert!(dE!(g).is_sorted());
+                    assert!(dE!(g).eq(j
+                        .iter()
+                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                }
+            }
 
             #[test]
             fn get_ancestors_by_index() {
@@ -623,6 +809,46 @@ mod directed {
 
                 g.is_descendant_by_index(0, 0);
             }
+            
+            #[test]
+            fn has_directed_edge_by_index() {
+                // Test for ...
+                let data = [
+                    // ... one edge,
+                    (vec![("0", "0")], vec![(("0", "0"), true)]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![(("0", "1"), true), (("1", "0"), false), (("1", "3"), false)],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![
+                            (("71", "1"), true),
+                            (("1", "58"), true),
+                            (("58", "1"), false),
+                            (("71", "71"), false),
+                        ],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let g = $G::new([], i);
+                    for ((x, y), f) in j {
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.has_directed_edge_by_index(x, y), f);
+                    }
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn has_directed_edge_by_index_should_panic() {
+                let g = $G::null();
+                g.has_directed_edge_by_index(0, 0);
+            }
 
             #[test]
             fn get_in_degree_by_index() {
@@ -733,6 +959,49 @@ mod directed {
 
                 g.get_out_degree_by_index(0);
             }
+
+            #[test]
+            fn add_directed_edge_by_index() {
+                // Test for ...
+                let data = [
+                    // NOTE: This would panic!
+                    // ... zero edges,
+                    // (vec![], 0),
+                    // ... one edge,
+                    (vec![("0", "0")], vec![(("0", "0"), false)]),
+                    // ... multiple edges,
+                    (
+                        vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        vec![(("0", "1"), false), (("1", "0"), true), (("1", "3"), true)],
+                    ),
+                    // ... random edges,
+                    (
+                        vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                        vec![
+                            (("71", "1"), false),
+                            (("1", "58"), false),
+                            (("58", "1"), true),
+                            (("71", "71"), true),
+                        ],
+                    ),
+                ];
+
+                // Test for each scenario.
+                for (i, j) in data {
+                    let mut g = $G::new([], i);
+                    for ((x, y), f) in j {
+                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                        assert_eq!(g.add_directed_edge_by_index(x, y), f);
+                    }
+                }
+            }
+
+            #[test]
+            #[should_panic]
+            fn add_directed_edge_by_index_should_panic() {
+                let mut g = $G::null();
+                g.add_directed_edge_by_index(0, 0);
+            }
         };
     }
 
@@ -750,6 +1019,57 @@ mod partially_directed {
             ($G: ident) => {
                 use causal_hub::prelude::*;
                 use is_sorted::IsSorted;
+
+                #[test]
+                fn size_of_maximal_undirected_subgraph() {
+                    // Test for ...
+                    let data = [
+                        // ... zero edges,
+                        (vec![], 0),
+                        // ... one edge,
+                        (vec![("0", "0")], 1),
+                        // ... multiple edges,
+                        (vec![("0", "1"), ("1", "2"), ("2", "3")], 3),
+                        // ... random edges,
+                        (vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")], 4),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let g = $G::new([], i);
+                        assert_eq!(g.size_of_maximal_undirected_subgraph(), j);
+                    }
+                }
+
+                #[test]
+                fn get_undirected_edges_index() {
+                    // Test for ...
+                    let data = [
+                        // ... zero edges,
+                        (vec![], vec![]),
+                        // ... one edge,
+                        (vec![("0", "0")], vec![("0", "0")]),
+                        // ... multiple edges,
+                        (
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
+                        // ... random edges,
+                        (
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![("1", "58"), ("1", "71"), ("3", "58"), ("3", "75")],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let g = $G::new(vec![], i);
+                        assert!(uE!(g).is_sorted());
+                        assert!(uE!(g).eq(j
+                            .iter()
+                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                    }
+                }
 
                 #[test]
                 fn get_neighbors_by_index() {
@@ -847,6 +1167,26 @@ mod partially_directed {
                 }
 
                 #[test]
+                fn has_undirected_edge_by_index() {
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
+                    let g = $G::new_pagraph(i, j, k);
+                    // Test for undirected edges
+                    assert!(g.has_undirected_edge_by_index(1, 2) == true);
+                    assert!(g.has_undirected_edge_by_index(2, 1) == true);
+                    assert!(g.has_undirected_edge_by_index(0, 1) == false);
+                    // Test for non-present edges
+                    assert!(g.has_undirected_edge_by_index(0, 2) == false);
+                    assert!(g.has_undirected_edge_by_index(2, 0) == false);
+                }
+
+                #[test]
+                #[should_panic]
+                fn has_undirected_edge_by_index_should_panic() {
+                    let g = $G::null();
+                    g.has_undirected_edge_by_index(0, 0);
+                }
+
+                #[test]
                 fn get_degree_by_index() {
                     // Test for ...
                     let data = [
@@ -877,6 +1217,41 @@ mod partially_directed {
                     let g = $G::null();
                     g.get_degree_by_index(0);
                 }
+
+                #[test]
+                fn add_undirected_edge_by_index() {
+                    // Test for ...
+                    let data = [
+                        // NOTE: This would panic!
+                        // ... zero edges,
+                        // (vec![], 0),
+                        // ... one edge,
+                        (vec![("0", "0")], vec![(("0", "0"), false)]),
+                        // ... multiple edges,
+                        (
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![(("0", "1"), false), (("1", "3"), true)],
+                        ),
+                        // ... random edges,
+                        (
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (("71", "1"), false),
+                                (("1", "58"), false),
+                                (("71", "75"), true),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let mut g = $G::new([], i);
+                        for ((x, y), f) in j {
+                            let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                            assert_eq!(g.add_undirected_edge_by_index(x, y), f);
+                        }
+                    }
+                }
             };
         }
 
@@ -892,6 +1267,57 @@ mod partially_directed {
             ($G: ident) => {
                 use causal_hub::prelude::*;
                 use is_sorted::IsSorted;
+
+                #[test]
+                fn size_of_maximal_directed_subgraph() {
+                    // Test for ...
+                    let data = [
+                        // ... zero edges,
+                        (vec![], 0),
+                        // ... one edge,
+                        (vec![("0", "0")], 1),
+                        // ... multiple edges,
+                        (vec![("0", "1"), ("1", "2"), ("2", "3")], 3),
+                        // ... random edges,
+                        (vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")], 4),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let g = $G::new_pagraph(vec![], vec![], i);
+                        assert_eq!(g.size_of_maximal_directed_subgraph(), j);
+                    }
+                }
+
+                #[test]
+                fn get_directed_edges_index() {
+                    // Test for ...
+                    let data = [
+                        // ... zero edges,
+                        (vec![], vec![]),
+                        // ... one edge,
+                        (vec![("0", "0")], vec![("0", "0")]),
+                        // ... multiple edges,
+                        (
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                        ),
+                        // ... random edges,
+                        (
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![("1", "58"), ("3", "75"), ("58", "3"), ("71", "1")],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let g = $G::new_pagraph(vec![], vec![], i);
+                        assert!(dE!(g).is_sorted());
+                        assert!(dE!(g).eq(j
+                            .iter()
+                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                    }
+                }
 
                 #[test]
                 fn get_ancestors_by_index() {
@@ -938,7 +1364,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(An!(g, x).is_sorted());
                         assert!(An!(g, x).eq(f));
@@ -998,7 +1424,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(f.iter().all(|&y| g.is_ancestor_by_index(x, y)));
                     }
@@ -1057,7 +1483,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(Pa!(g, x).is_sorted());
                         assert!(Pa!(g, x).eq(f));
@@ -1117,7 +1543,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(f.iter().all(|&y| g.is_parent_by_index(x, y)));
                     }
@@ -1176,7 +1602,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(Ch!(g, x).is_sorted());
                         assert!(Ch!(g, x).eq(f));
@@ -1236,7 +1662,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(f.iter().all(|&y| g.is_child_by_index(x, y)));
                     }
@@ -1295,7 +1721,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(De!(g, x).is_sorted());
                         assert!(De!(g, x).eq(f));
@@ -1355,7 +1781,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert!(f.iter().all(|&y| g.is_descendant_by_index(x, y)));
                     }
@@ -1367,6 +1793,27 @@ mod partially_directed {
                     let g = $G::null();
 
                     g.is_descendant_by_index(0, 0);
+                }
+
+                #[test]
+                fn has_directed_edge_by_index() {
+                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
+                    let g = $G::new_pagraph(i, j, k);
+                    // Test for directed edges
+                    assert!(g.has_directed_edge_by_index(1, 2) == false);
+                    assert!(g.has_directed_edge_by_index(2, 1) == false);
+                    assert!(g.has_directed_edge_by_index(0, 1) == true);
+                    assert!(g.has_directed_edge_by_index(1, 0) == false);
+                    // Test for non-present edges
+                    assert!(g.has_directed_edge_by_index(0, 2) == false);
+                    assert!(g.has_directed_edge_by_index(2, 0) == false);
+                }
+
+                #[test]
+                #[should_panic]
+                fn has_directed_edge_by_index_should_panic() {
+                    let g = $G::null();
+                    g.has_directed_edge_by_index(0, 0);
                 }
 
                 #[test]
@@ -1410,7 +1857,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert_eq!(g.get_in_degree_by_index(x), f);
                     }
@@ -1465,7 +1912,7 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, (x, f)) in data {
-                        let g = $G::new_partial(i, [], j);
+                        let g = $G::new_pagraph(i, [], j);
 
                         assert_eq!(g.get_out_degree_by_index(x), f);
                     }
@@ -1477,6 +1924,51 @@ mod partially_directed {
                     let g = $G::null();
 
                     g.get_out_degree_by_index(0);
+                }
+
+                #[test]
+                fn add_directed_edge_by_index() {
+                    // Test for ...
+                    let data = [
+                        // NOTE: This would panic!
+                        // ... zero edges,
+                        // (vec![], 0),
+                        // ... one edge,
+                        (vec![("0", "0")], vec![(("0", "0"), false)]),
+                        // ... multiple edges,
+                        (
+                            vec![("0", "1"), ("1", "2"), ("2", "3")],
+                            vec![(("0", "1"), false), (("1", "3"), true)],
+                        ),
+                        // ... random edges,
+                        (
+                            vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
+                            vec![
+                                (("71", "1"), false),
+                                (("1", "58"), false),
+                                (("58", "1"), false),
+                                (("71", "71"), true),
+                            ],
+                        ),
+                    ];
+
+                    // Test for each scenario.
+                    for (i, j) in data {
+                        let mut g = $G::new_pagraph(vec![], vec![], i);
+                        dbg!(g.clone());
+                        dbg!(j.clone());
+                        for ((x, y), f) in j {
+                            let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
+                            assert_eq!(g.add_directed_edge_by_index(x, y), f);
+                        }
+                    }
+                }
+
+                #[test]
+                #[should_panic]
+                fn add_directed_edge_by_index_should_panic() {
+                    let mut g = $G::null();
+                    g.add_directed_edge_by_index(0, 0);
                 }
             };
         }
@@ -1491,15 +1983,12 @@ mod partially_directed {
     mod partially_directed {
         macro_rules! generic_tests {
             ($G: ident) => {
-                use std::ops::Deref;
-
                 use causal_hub::prelude::*;
                 use is_sorted::IsSorted;
-                use ndarray::prelude::*;
 
-                // Test for `new_partial`, `edges_of_type`, `size_of_type` functions in `PartiallyDirectedGraph` trait
+                // Multiple general tests
                 #[test]
-                fn new_edges_size() {
+                fn general_tests() {
                     // Test for ...
                     let data = [
                         // ... zero vertices and zero edges,
@@ -1786,8 +2275,8 @@ mod partially_directed {
 
                     // Test for each scenario.
                     for (i, j, k, (o, s, v, ue, de, e)) in data {
-                        // Test for `new_partial` and `edges_of_type` (in `uE` and `dE` macros) function
-                        let g = $G::new_partial(i, j, k);
+                        // Test for `new_pagraph` and `edges_of_type` (in `uE` and `dE` macros) function
+                        let g = $G::new_pagraph(i, j, k);
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
                         assert!(V!(g).is_sorted());
@@ -1805,123 +2294,21 @@ mod partially_directed {
                             .into_iter()
                             .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                         // Test for `size_of_type` function
-                        assert!(g.size_of_undirected_subgraph() == ue.len());
-                        assert!(g.size_of_directed_subgraph() == de.len());
-                    }
-                }
-
-                #[test]
-                fn deref_of_type() {
-                    // Test for ...
-                    let data = [
-                        // ... zero vertices and zero edges,
-                        (vec![], Default::default()),
-                        // ... one vertex and one edge,
-                        (vec!["0"], array![[true]]),
-                        // ... multiple vertices and one edge,
-                        (vec!["0", "1"], array![[false, true], [true, false]]),
-                        // ... multiple vertices and multiple edges,
-                        (
-                            vec!["0", "1", "2", "3"],
-                            array![
-                                [false, true, false, false],
-                                [true, false, true, false],
-                                [false, true, false, true],
-                                [false, false, true, false]
-                            ],
-                        ),
-                        // ... random vertices and edges,
-                        (
-                            vec!["1", "3", "58", "71", "75"],
-                            array![
-                                [false, false, true, true, false],
-                                [false, false, true, false, true],
-                                [true, true, false, false, false],
-                                [true, false, false, false, false],
-                                [false, true, false, false, false]
-                            ],
-                        ),
-                    ];
-
-                    // Test for each scenario.
-                    for (v, a) in data {
-                        let order = v.len();
-                        let empty_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
-
-                        // Test for undirected graph
-                        let g_undirected = $G::from((v.clone(), a.clone(), empty_matrix.clone()));
-                        assert!(g_undirected.deref_of_type('u') == &a);
-                        assert!(g_undirected.deref_of_type('d') == &empty_matrix);
-                        assert!(g_undirected.deref() == &a);
-
-                        // Test for directed graph
-                        let g_directed = $G::from((v.clone(), empty_matrix.clone(), a.clone()));
-                        assert!(g_directed.deref_of_type('u') == &empty_matrix);
-                        assert!(g_directed.deref_of_type('d') == &a);
-                        assert!(g_directed.deref() == &a);
+                        assert!(g.size_of_maximal_undirected_subgraph() == ue.len());
+                        assert!(g.size_of_maximal_directed_subgraph() == de.len());
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn new_partial_should_panic() {
+                fn new_pagraph_should_panic() {
                     let (i, j, k) = (
                         vec!["0", "1", "2"],
                         vec![("1", "2")],
                         vec![("1", "0"), ("1", "2")],
                     );
 
-                    $G::new_partial(i, j, k);
-                }
-
-                #[test]
-                fn type_of_edge() {
-                    let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
-                    let g = $G::new_partial(i, j, k);
-                    // Test for undirected edges
-                    assert!(g.has_undirected_edge_by_index(1, 2) == true);
-                    assert!(g.has_undirected_edge_by_index(2, 1) == true);
-                    assert!(g.has_directed_edge_by_index(1, 2) == false);
-                    assert!(g.has_directed_edge_by_index(2, 1) == false);
-                    // Test for directed edges
-                    assert!(g.has_directed_edge_by_index(0, 1) == true);
-                    assert!(g.has_directed_edge_by_index(1, 0) == false);
-                    assert!(g.has_undirected_edge_by_index(0, 1) == false);
-                    // Test for non-present edges
-                    assert!(g.has_undirected_edge_by_index(0, 2) == false);
-                    assert!(g.has_undirected_edge_by_index(2, 0) == false);
-                    assert!(g.has_directed_edge_by_index(0, 2) == false);
-                    assert!(g.has_directed_edge_by_index(2, 0) == false);
-                }
-
-                #[test]
-                fn add_edge_of_type() {
-                    let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_partial(i, j, k);
-                    // Test for added edges
-                    g.add_undirected_edge_by_index(0, 3);
-                    g.add_directed_edge_by_index(3, 2);
-                    assert!(g.has_undirected_edge_by_index(0, 3) == true);
-                    assert!(g.has_undirected_edge_by_index(3, 0) == true);
-                    assert!(g.has_directed_edge_by_index(3, 2) == true);
-                    assert!(g.has_undirected_edge_by_index(2, 3) == false);
-                    assert!(g.size() == 4);
-                    // Test for already present edges
-                    assert!(g.add_undirected_edge_by_index(0, 1) == false);
-                    assert!(g.add_directed_edge_by_index(0, 1) == false);
-                    assert!(g.add_directed_edge_by_index(1, 0) == false);
-                    assert!(g.size_of_undirected_subgraph() == 2);
-                    assert!(g.size_of_directed_subgraph() == 2);
-                    assert!(g.size() == 4);
-                }
-
-                #[test]
-                #[should_panic]
-                fn add_edge_of_type_should_panic() {
-                    let (i, j, k) = (vec!["0", "1", "2", "3"], vec![("1", "2")], vec![("0", "1")]);
-                    let mut g = $G::new_partial(i, j, k);
-                    // Test with a non-present vertex
-                    g.add_undirected_edge_by_index(0, 4);
+                    $G::new_pagraph(i, j, k);
                 }
 
                 #[test]
@@ -1931,7 +2318,7 @@ mod partially_directed {
                         vec![("1", "2"), ("1", "4")],
                         vec![("0", "1"), ("0", "3")],
                     );
-                    let mut g = $G::new_partial(i, j, k);
+                    let mut g = $G::new_pagraph(i, j, k);
 
                     g.orient_edge(0, 1);
                     g.orient_edge(3, 0);
@@ -1946,8 +2333,8 @@ mod partially_directed {
                     assert!(g.has_undirected_edge_by_index(1, 4) == true);
                     assert!(g.has_undirected_edge_by_index(4, 1) == true);
                     // Test for sizes
-                    assert!(g.size_of_undirected_subgraph() == 1);
-                    assert!(g.size_of_directed_subgraph() == 3);
+                    assert!(g.size_of_maximal_undirected_subgraph() == 1);
+                    assert!(g.size_of_maximal_directed_subgraph() == 3);
                     assert!(g.size() == 4);
                     // Test when orienting a non-existing edge
                     assert!(g.orient_edge(2, 3) == false);

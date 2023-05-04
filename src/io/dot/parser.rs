@@ -19,7 +19,7 @@ use crate::{
             DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
             UndirectedDenseAdjacencyMatrixGraph,
         },
-        BaseGraph, PartiallyDirectedGraph,
+        BaseGraph, DirectedGraph, UndirectedGraph,
     },
     io::File,
     uE, E, V,

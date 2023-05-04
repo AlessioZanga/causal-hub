@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
     hash::{Hash, Hasher},
     iter::{Enumerate, FilterMap, FusedIterator, Map},
-    ops::{Deref, Range},
+    ops::Range,
 };
 
 use is_sorted::IsSorted;
@@ -40,14 +40,6 @@ pub struct PartiallyDenseAdjacencyMatrixGraph {
 }
 
 /* Implement BaseGraph trait. */
-impl Deref for PartiallyDenseAdjacencyMatrixGraph {
-    type Target = DenseAdjacencyMatrix;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.adjacency_matrix
-    }
-}
 
 #[allow(dead_code, clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
@@ -75,6 +67,7 @@ impl<'a> EdgesIterator<'a> {
             size: g.size,
         }
     }
+
     /// Undirected edges constructor.
     #[inline]
     pub fn new_undirected(g: &'a PartiallyDenseAdjacencyMatrixGraph) -> Self {
@@ -864,7 +857,7 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for PartiallyDenseAdjacencyMatrixGr
                 )
             })
             .collect();
-        Self::new_partial(vertices, [], edges)
+        Self::new_pagraph(vertices, [], edges)
     }
 }
 
@@ -917,7 +910,7 @@ where
 {
     #[inline]
     fn from((undirected_edges, directed_edges): (EdgeList<V>, EdgeList<V>)) -> Self {
-        Self::new_partial([], undirected_edges, directed_edges)
+        Self::new_pagraph([], undirected_edges, directed_edges)
     }
 }
 
@@ -939,7 +932,7 @@ where
             .into_iter()
             .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
 
-        Self::new_partial(vertices, undirected_edges, directed_edges)
+        Self::new_pagraph(vertices, undirected_edges, directed_edges)
     }
 }
 
@@ -1392,7 +1385,18 @@ impl SubGraph for PartiallyDenseAdjacencyMatrixGraph {
 
 /* Implement UndirectedGraph trait. */
 impl UndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type UndirectedEdgesIndexIter<'a> = EdgesIterator<'a>;
     type NeighborsIndexIter<'a> = Self::AdjacentsIndexIter<'a>;
+
+    #[inline]
+    fn size_of_maximal_undirected_subgraph(&self) -> usize {
+        self.undirected_size
+    }
+
+    #[inline]
+    fn get_undirected_edges_index(&self) -> Self::UndirectedEdgesIndexIter<'_> {
+        Self::UndirectedEdgesIndexIter::new_undirected(self)
+    }
 
     #[inline]
     fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_> {
@@ -1401,6 +1405,11 @@ impl UndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 
     #[inline]
     fn is_neighbor_by_index(&self, x: usize, y: usize) -> bool {
+        self.undirected_adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
+    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
         self.undirected_adjacency_matrix[[x, y]]
     }
 
@@ -1417,6 +1426,66 @@ impl UndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Adj!(self, x).count(), d);
 
         d
+    }
+    #[inline]
+    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool {
+        // If edge already exists ...
+        if self.adjacency_matrix[[x, y]] {
+            debug_assert!(self.adjacency_matrix[[x, y]] == self.adjacency_matrix[[y, x]]);
+            // ... return early.
+            return false;
+        }
+        // Add edge.
+        self.undirected_adjacency_matrix[[x, y]] = true;
+        self.undirected_adjacency_matrix[[y, x]] = true;
+        self.adjacency_matrix[[x, y]] = true;
+        self.adjacency_matrix[[y, x]] = true;
+
+        // Increment sizes.
+        self.undirected_size += 1;
+        self.size += 1;
+
+        // Assert adjacency matrices are still consistent.
+        debug_assert_eq!(
+            self.undirected_adjacency_matrix[[x, y]],
+            self.undirected_adjacency_matrix[[y, x]]
+        );
+        debug_assert_eq!(
+            self.undirected_adjacency_matrix[[x, y]],
+            self.adjacency_matrix[[x, y]]
+        );
+        // Assert adjacency matrices are still consistent.
+        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
+        // Assert size counter and adjacency matrices are still consistent.
+        debug_assert_eq!(
+            self.undirected_size,
+            self.undirected_adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
+            self.directed_size,
+            self.directed_adjacency_matrix
+                .iter()
+                .map(|&f| f as usize)
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
+            self.size,
+            self.adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum::<usize>()
+        );
+
+        true
     }
 }
 
@@ -1609,6 +1678,8 @@ impl<'a> Iterator for DescendantsIterator<'a> {
 impl<'a> FusedIterator for DescendantsIterator<'a> {}
 
 impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
+    type DirectedEdgesIndexIter<'a> = EdgesIterator<'a>;
+
     type AncestorsIndexIter<'a> = AncestorsIterator<'a>;
 
     type ParentsIndexIter<'a> = ParentsIterator<'a>;
@@ -1616,6 +1687,16 @@ impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     type ChildrenIndexIter<'a> = ChildrenIterator<'a>;
 
     type DescendantsIndexIter<'a> = DescendantsIterator<'a>;
+
+    #[inline]
+    fn size_of_maximal_directed_subgraph(&self) -> usize {
+        self.directed_size
+    }
+
+    #[inline]
+    fn get_directed_edges_index(&self) -> Self::DirectedEdgesIndexIter<'_> {
+        Self::DirectedEdgesIndexIter::new_directed(self)
+    }
 
     #[inline]
     fn get_ancestors_by_index(&self, x: usize) -> Self::AncestorsIndexIter<'_> {
@@ -1648,6 +1729,11 @@ impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
+    fn has_directed_edge_by_index(&self, x: usize, y: usize) -> bool {
+        self.directed_adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
     fn get_in_degree_by_index(&self, x: usize) -> usize {
         // Compute in-degree.
         let d = self
@@ -1676,6 +1762,59 @@ impl DirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 
         d
     }
+
+    #[inline]
+    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool {
+        // If edge already exists ...
+        if self.adjacency_matrix[[x, y]] {
+            debug_assert!(self.adjacency_matrix[[x, y]] == self.adjacency_matrix[[y, x]]);
+            // ... return early.
+            return false;
+        } // Add edge.
+        self.directed_adjacency_matrix[[x, y]] = true;
+        self.adjacency_matrix[[x, y]] = true;
+        self.adjacency_matrix[[y, x]] = true;
+
+        // Increment size.
+        self.directed_size += 1;
+        self.size += 1;
+        debug_assert_eq!(
+            self.directed_adjacency_matrix[[x, y]],
+            self.adjacency_matrix[[x, y]]
+        );
+        // Assert adjacency matrices are still consistent.
+        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
+        // Assert size counter and adjacency matrices are still consistent.
+        debug_assert_eq!(
+            self.undirected_size,
+            self.undirected_adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
+            self.directed_size,
+            self.directed_adjacency_matrix
+                .iter()
+                .map(|&f| f as usize)
+                .sum::<usize>()
+        );
+        debug_assert_eq!(
+            self.size,
+            self.adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((i, j), &f)| match i <= j {
+                    true => Some(f as usize),
+                    false => None,
+                })
+                .sum::<usize>()
+        );
+
+        true
+    }
 }
 
 /* Implement PartiallyDirectedGraph trait. */
@@ -1690,8 +1829,9 @@ impl IntoUndirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
 }
 
 impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
-    type PartiallyEdgesIndexIter<'a> = EdgesIterator<'a>;
-    fn new_partial<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
+    type EdgesIndexIter<'a> = EdgesIterator<'a>;
+
+    fn new_pagraph<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -1787,148 +1927,6 @@ impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
         }
     }
 
-    #[inline]
-    fn deref_of_type(&self, which: char) -> &Self::Data {
-        match which {
-            'u' => &self.undirected_adjacency_matrix,
-            'd' => &self.directed_adjacency_matrix,
-            _ => panic!("Invalid edge type. Types: 'u' for undirected and 'd' for directed."),
-        }
-    }
-
-    #[inline]
-    fn get_undirected_edges_index(&self) -> Self::PartiallyEdgesIndexIter<'_> {
-        Self::EdgesIndexIter::new_undirected(self)
-    }
-
-    #[inline]
-    fn get_directed_edges_index(&self) -> Self::PartiallyEdgesIndexIter<'_> {
-        Self::EdgesIndexIter::new_directed(self)
-    }
-    #[inline]
-    fn size_of_undirected_subgraph(&self) -> usize {
-        self.undirected_size
-    }
-
-    #[inline]
-    fn size_of_directed_subgraph(&self) -> usize {
-        self.directed_size
-    }
-
-    #[inline]
-    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool {
-        // If edge already exists ...
-        if self.adjacency_matrix[[x, y]] {
-            debug_assert!(self.adjacency_matrix[[x, y]] == self.adjacency_matrix[[y, x]]);
-            // ... return early.
-            return false;
-        }
-        // Add edge.
-        self.undirected_adjacency_matrix[[x, y]] = true;
-        self.undirected_adjacency_matrix[[y, x]] = true;
-        self.adjacency_matrix[[x, y]] = true;
-        self.adjacency_matrix[[y, x]] = true;
-
-        // Increment sizes.
-        self.undirected_size += 1;
-        self.size += 1;
-
-        // Assert adjacency matrices are still consistent.
-        debug_assert_eq!(
-            self.undirected_adjacency_matrix[[x, y]],
-            self.undirected_adjacency_matrix[[y, x]]
-        );
-        debug_assert_eq!(
-            self.undirected_adjacency_matrix[[x, y]],
-            self.adjacency_matrix[[x, y]]
-        );
-        // Assert adjacency matrices are still consistent.
-        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
-        // Assert size counter and adjacency matrices are still consistent.
-        debug_assert_eq!(
-            self.undirected_size,
-            self.undirected_adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
-        );
-        debug_assert_eq!(
-            self.directed_size,
-            self.directed_adjacency_matrix
-                .iter()
-                .map(|&f| f as usize)
-                .sum::<usize>()
-        );
-        debug_assert_eq!(
-            self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
-        );
-
-        true
-    }
-
-    #[inline]
-    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool {
-        // If edge already exists ...
-        if self.adjacency_matrix[[x, y]] {
-            debug_assert!(self.adjacency_matrix[[x, y]] == self.adjacency_matrix[[y, x]]);
-            // ... return early.
-            return false;
-        } // Add edge.
-        self.directed_adjacency_matrix[[x, y]] = true;
-        self.adjacency_matrix[[x, y]] = true;
-        self.adjacency_matrix[[y, x]] = true;
-
-        // Increment size.
-        self.directed_size += 1;
-        self.size += 1;
-        debug_assert_eq!(
-            self.directed_adjacency_matrix[[x, y]],
-            self.adjacency_matrix[[x, y]]
-        );
-        // Assert adjacency matrices are still consistent.
-        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
-        // Assert size counter and adjacency matrices are still consistent.
-        debug_assert_eq!(
-            self.undirected_size,
-            self.undirected_adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
-        );
-        debug_assert_eq!(
-            self.directed_size,
-            self.directed_adjacency_matrix
-                .iter()
-                .map(|&f| f as usize)
-                .sum::<usize>()
-        );
-        debug_assert_eq!(
-            self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
-        );
-
-        true
-    }
-
     fn orient_edge(&mut self, x: usize, y: usize) -> bool {
         if !self.has_edge_by_index(x, y) {
             return false;
@@ -2012,6 +2010,6 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
             })
             .collect();
 
-        Self::new_partial(other.vertices.into_keys(), undirected_edges, directed_edges)
+        Self::new_pagraph(other.vertices.into_keys(), undirected_edges, directed_edges)
     }
 }

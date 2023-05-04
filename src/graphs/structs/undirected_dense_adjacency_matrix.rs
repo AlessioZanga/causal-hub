@@ -821,7 +821,18 @@ impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
 
 /* Implement UndirectedGraph trait. */
 impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
+    type UndirectedEdgesIndexIter<'a> = EdgesIterator<'a>;
     type NeighborsIndexIter<'a> = Self::AdjacentsIndexIter<'a>;
+
+    #[inline]
+    fn size_of_maximal_undirected_subgraph(&self) -> usize {
+        self.size()
+    }
+
+    #[inline]
+    fn get_undirected_edges_index(&self) -> Self::UndirectedEdgesIndexIter<'_> {
+        self.get_edges_index()
+    }
 
     #[inline]
     fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_> {
@@ -834,6 +845,11 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
     }
 
     #[inline]
+    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
+        self.adjacency_matrix[[x, y]]
+    }
+
+    #[inline]
     fn get_degree_by_index(&self, x: usize) -> usize {
         // Compute degree.
         let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
@@ -842,6 +858,11 @@ impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
         debug_assert_eq!(Adj!(self, x).count(), d);
 
         d
+    }
+
+    #[inline]
+    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool {
+        self.add_edge_by_index(x, y)
     }
 }
 
