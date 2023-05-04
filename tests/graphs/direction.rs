@@ -809,7 +809,7 @@ mod directed {
 
                 g.is_descendant_by_index(0, 0);
             }
-            
+
             #[test]
             fn has_directed_edge_by_index() {
                 // Test for ...
