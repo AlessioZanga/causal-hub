@@ -27,8 +27,8 @@ use crate::{
 ///
 /// // Assert previous parents are connected.
 /// for x in V!(g) {
-///     for (y, z) in Pa!(g, x).tuple_windows() {
-///         assert!(h.has_edge_by_index(y, z));
+///     for e in Pa!(g, x).combinations(2) {
+///         assert!(h.has_edge_by_index(e[0], e[1]));
 ///     }
 /// }
 /// ```
