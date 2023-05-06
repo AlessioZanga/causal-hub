@@ -1,3 +1,5 @@
+/// Chordal algorithms.
+pub mod chordal;
 /// Components algorithms.
 pub mod components;
 /// Structural metrics.
