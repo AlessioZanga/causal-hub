@@ -1,5 +1,7 @@
 /// Chordal algorithms.
 pub mod chordal;
+/// Clique algorithms.
+pub mod clique;
 /// Components algorithms.
 pub mod components;
 /// Structural metrics.

@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use itertools::Itertools;
 
 use crate::{
@@ -7,14 +9,16 @@ use crate::{
 };
 
 /// Maximum Cardinality Search (MCS).
-pub struct MaximumCardinalitySearch;
+pub struct MaximumCardinalitySearch<G> {
+    _g: PhantomData<G>,
+}
 
-impl MaximumCardinalitySearch {
+impl<G> MaximumCardinalitySearch<G>
+where
+    G: UndirectedGraph<Direction = directions::Undirected> + PathGraph,
+{
     /// Compute a perfect elimination order and triangulate the graph.
-    pub fn call<G>(mut g: G) -> (Vec<usize>, G)
-    where
-        G: UndirectedGraph<Direction = directions::Undirected> + PathGraph,
-    {
+    pub fn call(mut g: G) -> (Vec<usize>, G) {
         // Get the associated fill-in.
         let (a, f) = Self::fill_in(&g);
         // Apply the fill-in.
@@ -27,10 +31,7 @@ impl MaximumCardinalitySearch {
     }
 
     /// Compute an elimination order by indices.
-    pub fn elimination_order<G>(g: &G) -> Vec<usize>
-    where
-        G: UndirectedGraph<Direction = directions::Undirected> + PathGraph,
-    {
+    pub fn elimination_order(g: &G) -> Vec<usize> {
         // Initialize the elimination order.
         let mut a: FxIndexSet<_> = Default::default();
 
@@ -50,10 +51,7 @@ impl MaximumCardinalitySearch {
     }
 
     /// Compute a perfect elimination order and a fill-in edge set by indices.
-    pub fn fill_in<G>(g: &G) -> (Vec<usize>, Vec<(usize, usize)>)
-    where
-        G: UndirectedGraph<Direction = directions::Undirected> + PathGraph,
-    {
+    pub fn fill_in(g: &G) -> (Vec<usize>, Vec<(usize, usize)>) {
         // Initialize the elimination order.
         let mut a: FxIndexSet<_> = Default::default();
         // Initialize the fill-in edge set.
@@ -90,4 +88,4 @@ impl MaximumCardinalitySearch {
 }
 
 /// Alias for the Maximum Cardinality Search algorithm.
-pub type MCS = MaximumCardinalitySearch;
+pub type MCS<G> = MaximumCardinalitySearch<G>;
