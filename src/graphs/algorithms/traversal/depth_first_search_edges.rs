@@ -80,7 +80,7 @@ where
         // If no source vertex is given, choose the first in the vertex set.
         if let Some(x) = x.or_else(|| V!(g).next()) {
             // ... assert that source vertex is in graph.
-            assert!(g.has_vertex(x));
+            assert!(g.has_vertex_by_index(x));
             // Push source vertex onto the stack.
             stack.push((usize::MAX, x));
         };
@@ -278,7 +278,7 @@ where
             // discovery[x] > discovery[y] ...
             if discovery_x >= discovery_y {
                 // ... && discovery[x] < finish[y], or ...
-                if discovery_x < finish_y && finish_y != usize::MAX {
+                if discovery_x < finish_y {
                     return Some(DFSEdge::Back(x, y));
                 }
                 // ... && discovery[x] > finish[y], or ...
@@ -376,7 +376,7 @@ where
             // discovery[x] > discovery[y] ...
             if discovery_x >= discovery_y {
                 // ... && discovery[x] < finish[y], or ...
-                if discovery_x < finish_y && finish_y != usize::MAX {
+                if discovery_x < finish_y {
                     return Some(DFSEdge::Back(x, y));
                 }
                 // ... && discovery[x] > finish[y], or ...

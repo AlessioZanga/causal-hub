@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::VecDeque;
 
 use crate::{
     graphs::{directions, UndirectedGraph},
@@ -12,7 +12,7 @@ where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
     g: &'a G,
-    queue: BTreeSet<usize>,
+    queue: VecDeque<usize>,
 }
 
 impl<'a, G> ConnectedComponents<'a, G>
@@ -24,8 +24,6 @@ where
     /// # Examples
     ///
     /// ```
-    /// use std::collections::BTreeSet;
-    ///
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new undirected graph.
@@ -44,9 +42,9 @@ where
     /// // Assert connected components.
     /// assert!(
     ///     cc.eq([
-    ///         BTreeSet::from([0, 1, 2]),
-    ///         BTreeSet::from([3, 4]),
-    ///         BTreeSet::from([5]),
+    ///         vec![0, 1, 2],
+    ///         vec![3, 4],
+    ///         vec![5],
     ///     ])
     /// );
     /// ```
@@ -63,15 +61,17 @@ impl<'a, G> Iterator for ConnectedComponents<'a, G>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
-    type Item = BTreeSet<usize>;
+    type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Check if there is still a vertex to be visited.
-        self.queue.pop_first().map(|x| {
+        self.queue.pop_front().map(|x| {
             // Perform BFS Tree visit starting from the vertex.
             let component = BFS::from((self.g, x)).collect();
             // Remove visited vertices from the to-be-visited set.
-            self.queue = &self.queue - &component;
+            self.queue = iter_set::difference(&self.queue, &component)
+                .cloned()
+                .collect();
 
             component
         })

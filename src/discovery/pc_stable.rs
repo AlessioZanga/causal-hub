@@ -66,7 +66,7 @@ where
             }
             // Remove edges of current iteration
             for (x, y) in e_prime {
-                g.del_edge(x, y);
+                g.del_edge_by_index(x, y);
             }
             // Increase size of conditioning set
             c += 1;
@@ -92,7 +92,7 @@ where
             for (x, z) in Adj!(g, y)
                 .combinations(2)
                 .map(|xz| (xz[0], xz[1]))
-                .filter(|(x, z)| !g.has_edge(*x, *z))
+                .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
             {
                 triples.insert((x, y, z));
             }

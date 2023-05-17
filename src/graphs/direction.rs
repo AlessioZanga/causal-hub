@@ -1,6 +1,6 @@
 use std::iter::FusedIterator;
 
-use super::{BaseGraph, DefaultGraph, PartialOrdGraph, SubGraph};
+use super::{BaseGraph, PartialOrdGraph, SubGraph};
 
 /// Directions pseudo-enumerator for generics algorithms.
 pub mod directions {
@@ -17,43 +17,57 @@ pub mod directions {
     pub struct PartiallyDirected;
 }
 
-/// Neighbors iterator for undirected graphs.
+/// Neighbors iterator.
 ///
 /// Return the vertex iterator representing $Ne(\mathcal{G}, X)$.
 ///
 #[macro_export]
 macro_rules! Ne {
     ($g:expr, $x:expr) => {
-        $g.neighbors($x)
+        $g.get_neighbors_by_index($x)
     };
 }
-/// Undirected edges iterator for partially directed graphs.
+/// Undirected edges iterator.
 ///
 /// Return the $E(\mathcal{G}, X)$ subset where edges are undirected as an iterator.///
 #[macro_export]
 macro_rules! uE {
     ($g:expr) => {
-        $g.edges_of_type('u')
+        $g.get_undirected_edges_index()
     };
 }
 
-/// Directed edges iterator for partially directed graphs.
+/// Directed edges iterator.
 ///
 /// Return the $E(\mathcal{G}, X)$ subset where edges are directed as an iterator.
 ///
 #[macro_export]
 macro_rules! dE {
     ($g:expr) => {
-        $g.edges_of_type('d')
+        $g.get_directed_edges_index()
     };
 }
 
 /// Undirected graph trait.
-pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
-    /// Neighbors iterator type.
-    type NeighborsIter<'a>: Iterator<Item = usize> + FusedIterator
+pub trait UndirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
+    /// Edges iterator type.
+    type UndirectedEdgesIndexIter<'a>: Iterator<Item = (usize, usize)>
+        + ExactSizeIterator
+        + FusedIterator
     where
         Self: 'a;
+
+    /// Neighbors iterator type.
+    type NeighborsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
+    where
+        Self: 'a;
+
+    /// Size of the undirected subgraph.
+    fn size_of_maximal_undirected_subgraph(&self) -> usize;
+
+    /// Undirected edges iterator
+    fn get_undirected_edges_index(&self)
+        -> <Self as UndirectedGraph>::UndirectedEdgesIndexIter<'_>;
 
     /// Neighbors iterator.
     ///
@@ -75,16 +89,16 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph
     /// let g = Graph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Use the neighbors iterator.
-    /// assert!(g.neighbors(x).eq([0, 1, 2]));
+    /// assert!(g.get_neighbors_by_index(x).eq([0, 1, 2]));
     ///
     /// // Use the associated macro 'Ne!'.
-    /// assert!(g.neighbors(x).eq(Ne!(g, x)));
+    /// assert!(g.get_neighbors_by_index(x).eq(Ne!(g, x)));
     /// ```
     ///
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_>;
+    fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_>;
 
     /// Checks neighbor vertices in the graph.
     ///
@@ -106,15 +120,20 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph
     /// let g = Graph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.vertex("A"), g.vertex("B"));
+    /// let (x, y) = (g.get_vertex_index("A"), g.get_vertex_index("B"));
     ///
     /// // Check edge.
-    /// assert!(g.is_neighbor(x, y));
+    /// assert!(g.is_neighbor_by_index(x, y));
     /// assert!(Ne!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_neighbor(&self, x: usize, y: usize) -> bool {
+    fn is_neighbor_by_index(&self, x: usize, y: usize) -> bool {
         Ne!(self, x).any(|z| z == y)
+    }
+
+    /// Checks whether the graph has a given undirected edge or not.
+    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
+        uE!(self).any(|z| z == (x, y) || z == (y, x))
     }
 
     /// Degree of a vertex.
@@ -137,16 +156,19 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph
     /// let mut g = Graph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Check degree.
-    /// assert_eq!(g.degree(x), 3);
-    /// assert_eq!(g.degree(x), Ne!(g, x).count());
+    /// assert_eq!(g.get_degree_by_index(x), 3);
+    /// assert_eq!(g.get_degree_by_index(x), Ne!(g, x).count());
     /// ```
     ///
-    fn degree(&self, x: usize) -> usize {
+    fn get_degree_by_index(&self, x: usize) -> usize {
         Ne!(self, x).count()
     }
+
+    /// Undirected edge adder.
+    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool;
 }
 
 /// Ancestors iterator.
@@ -156,7 +178,7 @@ pub trait UndirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph
 #[macro_export]
 macro_rules! An {
     ($g:expr, $x:expr) => {
-        $g.ancestors($x)
+        $g.get_ancestors_by_index($x)
     };
 }
 
@@ -167,7 +189,7 @@ macro_rules! An {
 #[macro_export]
 macro_rules! Pa {
     ($g:expr, $x:expr) => {
-        $g.parents($x)
+        $g.get_parents_by_index($x)
     };
 }
 
@@ -178,7 +200,7 @@ macro_rules! Pa {
 #[macro_export]
 macro_rules! Ch {
     ($g:expr, $x:expr) => {
-        $g.children($x)
+        $g.get_children_by_index($x)
     };
 }
 
@@ -189,31 +211,44 @@ macro_rules! Ch {
 #[macro_export]
 macro_rules! De {
     ($g:expr, $x:expr) => {
-        $g.descendants($x)
+        $g.get_descendants_by_index($x)
     };
 }
 
 /// Directed graph trait.
-pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
+pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
+    /// Edges iterator type.
+    type DirectedEdgesIndexIter<'a>: Iterator<Item = (usize, usize)>
+        + ExactSizeIterator
+        + FusedIterator
+    where
+        Self: 'a;
+
     /// Ancestors iterator type.
-    type AncestorsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type AncestorsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Parents iterator type.
-    type ParentsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type ParentsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Children iterator type.
-    type ChildrenIter<'a>: Iterator<Item = usize> + FusedIterator
+    type ChildrenIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
     /// Descendants iterator type.
-    type DescendantsIter<'a>: Iterator<Item = usize> + FusedIterator
+    type DescendantsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
+
+    /// Size of the directed subgraph.
+    fn size_of_maximal_directed_subgraph(&self) -> usize;
+
+    /// Directed edges iterator
+    fn get_directed_edges_index(&self) -> Self::DirectedEdgesIndexIter<'_>;
 
     /// Ancestors iterator.
     ///
@@ -235,16 +270,16 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.vertex("B");
+    /// let x = g.get_vertex_index("B");
     ///
     /// // Use the ancestors iterator.
-    /// assert!(g.ancestors(x).eq([0, 2]));
+    /// assert!(g.get_ancestors_by_index(x).eq([0, 2]));
     ///
     /// // Use the associated macro 'An!'.
-    /// assert!(g.ancestors(x).eq(An!(g, x)));
+    /// assert!(g.get_ancestors_by_index(x).eq(An!(g, x)));
     /// ```
     ///
-    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_>;
+    fn get_ancestors_by_index(&self, x: usize) -> Self::AncestorsIndexIter<'_>;
 
     /// Checks ancestor vertices in the graph.
     ///
@@ -266,14 +301,14 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.vertex("A"), g.vertex("C"));
+    /// let (x, y) = (g.get_vertex_index("A"), g.get_vertex_index("C"));
     ///
     /// // Check edge.
-    /// assert!(g.is_ancestor(x, y));
+    /// assert!(g.is_ancestor_by_index(x, y));
     /// assert!(An!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_ancestor(&self, x: usize, y: usize) -> bool {
+    fn is_ancestor_by_index(&self, x: usize, y: usize) -> bool {
         An!(self, x).any(|z| z == y)
     }
 
@@ -297,16 +332,16 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Use the parents iterator.
-    /// assert!(g.parents(x).eq([0, 2]));
+    /// assert!(g.get_parents_by_index(x).eq([0, 2]));
     ///
     /// // Use the associated macro 'Pa!'.
-    /// assert!(g.parents(x).eq(Pa!(g, x)));
+    /// assert!(g.get_parents_by_index(x).eq(Pa!(g, x)));
     /// ```
     ///
-    fn parents(&self, x: usize) -> Self::ParentsIter<'_>;
+    fn get_parents_by_index(&self, x: usize) -> Self::ParentsIndexIter<'_>;
 
     /// Checks parent vertices in the graph.
     ///
@@ -328,14 +363,14 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.vertex("A"), g.vertex("C"));
+    /// let (x, y) = (g.get_vertex_index("A"), g.get_vertex_index("C"));
     ///
     /// // Check edge.
-    /// assert!(g.is_parent(x, y));
+    /// assert!(g.is_parent_by_index(x, y));
     /// assert!(Pa!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_parent(&self, x: usize, y: usize) -> bool {
+    fn is_parent_by_index(&self, x: usize, y: usize) -> bool {
         Pa!(self, x).any(|z| z == y)
     }
 
@@ -359,16 +394,16 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Use the children iterator.
-    /// assert!(g.children(x).eq([0, 1]));
+    /// assert!(g.get_children_by_index(x).eq([0, 1]));
     ///
     /// // Use the associated macro 'Ch!'.
-    /// assert!(g.children(x).eq(Ch!(g, x)));
+    /// assert!(g.get_children_by_index(x).eq(Ch!(g, x)));
     /// ```
     ///
-    fn children(&self, x: usize) -> Self::ChildrenIter<'_>;
+    fn get_children_by_index(&self, x: usize) -> Self::ChildrenIndexIter<'_>;
 
     /// Checks children vertices in the graph.
     ///
@@ -390,14 +425,14 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.vertex("C"), g.vertex("A"));
+    /// let (x, y) = (g.get_vertex_index("C"), g.get_vertex_index("A"));
     ///
     /// // Check edge.
-    /// assert!(g.is_child(x, y));
+    /// assert!(g.is_child_by_index(x, y));
     /// assert!(Ch!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_child(&self, x: usize, y: usize) -> bool {
+    fn is_child_by_index(&self, x: usize, y: usize) -> bool {
         Ch!(self, x).any(|z| z == y)
     }
 
@@ -421,16 +456,16 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose vertex.
-    /// let x = g.vertex("C");
+    /// let x = g.get_vertex_index("C");
     ///
     /// // Use the descendants iterator.
-    /// assert!(g.descendants(x).eq([0, 1]));
+    /// assert!(g.get_descendants_by_index(x).eq([0, 1]));
     ///
     /// // Use the associated macro 'De!'.
-    /// assert!(g.descendants(x).eq(De!(g, x)));
+    /// assert!(g.get_descendants_by_index(x).eq(De!(g, x)));
     /// ```
     ///
-    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_>;
+    fn get_descendants_by_index(&self, x: usize) -> Self::DescendantsIndexIter<'_>;
 
     /// Checks descendant vertices in the graph.
     ///
@@ -452,15 +487,20 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let g = DiGraph::from(e);
     ///
     /// // Choose an edge.
-    /// let (x, y) = (g.vertex("C"), g.vertex("A"));
+    /// let (x, y) = (g.get_vertex_index("C"), g.get_vertex_index("A"));
     ///
     /// // Check edge.
-    /// assert!(g.is_descendant(x, y));
+    /// assert!(g.is_descendant_by_index(x, y));
     /// assert!(De!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_descendant(&self, x: usize, y: usize) -> bool {
+    fn is_descendant_by_index(&self, x: usize, y: usize) -> bool {
         De!(self, x).any(|z| z == y)
+    }
+
+    /// Checks whether the graph has a given directed edge or not.
+    fn has_directed_edge_by_index(&self, x: usize, y: usize) -> bool {
+        dE!(self).any(|z| z == (x, y))
     }
 
     /// In-degree of a given vertex.
@@ -483,14 +523,14 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let mut g = DiGraph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Check degree.
-    /// assert_eq!(g.in_degree(x), 2);
-    /// assert_eq!(g.in_degree(x), Pa!(g, x).count());
+    /// assert_eq!(g.get_in_degree_by_index(x), 2);
+    /// assert_eq!(g.get_in_degree_by_index(x), Pa!(g, x).count());
     /// ```
     ///
-    fn in_degree(&self, x: usize) -> usize {
+    fn get_in_degree_by_index(&self, x: usize) -> usize {
         Pa!(self, x).count()
     }
 
@@ -514,16 +554,19 @@ pub trait DirectedGraph: BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph {
     /// let mut g = DiGraph::from(e);
     ///
     /// // Choose a vertex.
-    /// let x = g.vertex("A");
+    /// let x = g.get_vertex_index("A");
     ///
     /// // Check degree.
-    /// assert_eq!(g.out_degree(x), 2);
-    /// assert_eq!(g.out_degree(x), Ch!(g, x).count());
+    /// assert_eq!(g.get_out_degree_by_index(x), 2);
+    /// assert_eq!(g.get_out_degree_by_index(x), Ch!(g, x).count());
     /// ```
     ///
-    fn out_degree(&self, x: usize) -> usize {
+    fn get_out_degree_by_index(&self, x: usize) -> usize {
         Ch!(self, x).count()
     }
+
+    /// Directed edge adder.
+    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool;
 }
 
 /// Convert to undirected graph trait.
@@ -551,47 +594,35 @@ pub trait IntoUndirectedGraph {
     /// assert_eq!(V!(g), V!(h));
     ///
     /// // The vertices are still connected.
-    /// assert!(h.has_edge(0, 1));
+    /// assert!(h.has_edge_by_index(0, 1));
     ///
     /// ```
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph;
 }
 
-//TODO: Improve documentation
+//TODO: Improve documentation with examples and panics
 /// Partially directed graph trait.
 pub trait PartiallyDirectedGraph:
-    BaseGraph + DefaultGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
+    BaseGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
 {
-    /// Error type
-    type Error;
+    /// Edges iterator type.
+    type EdgesIndexIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
 
-    /// Specilized new constructor. Pay attention: multiple types of edges between two nodes is not allowed
-    fn new_partial<V, I, J, K>(
-        vertices: I,
-        undirected_edges: J,
-        directed_edges: K,
-    ) -> Result<Self, Self::Error>
+    /// Partially directed graph constructor.
+    ///
+    /// # Pay attention:
+    /// multiple types of edges between two nodes are not allowed.
+    ///
+    ///
+    fn new_pagraph<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
         J: IntoIterator<Item = (V, V)>,
         K: IntoIterator<Item = (V, V)>;
-
-    /// Specialized deferencing
-    fn deref_of_type(&self, which: char) -> &Self::Data;
-
-    /// Specilized edge iterator. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn edges_of_type(&self, which: char) -> Self::EdgesIter<'_>;
-
-    /// Specialized size of the graph. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn size_of_type(&self, which: char) -> usize;
-
-    /// Type of the edge. It returns `None` if such edge doesn't exist, an `Option<char>` on the contrary. `char` can be `u` for undirected or `d` for directed edge type.
-    fn type_of_edge(&self, x: usize, y: usize) -> Option<char>;
-
-    /// Specilized edge adder. Parameter `which` can be either `u` for undirected or `d` for directed edge type.
-    fn add_edge_of_type(&mut self, x: usize, y: usize, which: char) -> bool;
 
     /// Orient (or re-orient) an already present edge
     fn orient_edge(&mut self, x: usize, y: usize) -> bool;

@@ -30,7 +30,7 @@ pub trait MoralGraph: IntoUndirectedGraph {
     /// // Assert previous parents are connected.
     /// for x in V!(g) {
     ///     for (y, z) in Pa!(g, x).tuple_windows() {
-    ///         assert!(h.has_edge(y, z));
+    ///         assert!(h.has_edge_by_index(y, z));
     ///     }
     /// }
     /// ```

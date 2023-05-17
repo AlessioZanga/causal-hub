@@ -38,12 +38,14 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -58,7 +60,7 @@ mod undirected {
             }
 
             #[test]
-            fn subgraph_by_vertices() {
+            fn subgraph_by_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -91,8 +93,8 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -140,8 +142,10 @@ mod undirected {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -203,12 +207,14 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -223,7 +229,7 @@ mod directed {
             }
 
             #[test]
-            fn subgraph_by_vertices() {
+            fn subgraph_by_vertices_index() {
                 // Test for ...
                 let data = [
                     // ... zero vertices and zero edges,
@@ -256,8 +262,8 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -305,8 +311,10 @@ mod directed {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -400,18 +408,19 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (i, ue, de, (v, e)) in data {
-                    let g = $G::new_partial(i.clone(), ue, de).unwrap();
+                    let g = $G::new_pagraph(i.clone(), ue, de);
 
                     let h = g.subgraph(v.clone(), e.clone());
-                    dbg!(i.clone());
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -464,14 +473,14 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (i, ue, de, v) in data {
-                    let g = $G::new_partial(i, ue, de).unwrap();
+                    let g = $G::new_pagraph(i, ue, de);
 
                     let h = g.subgraph_by_vertices(v.clone());
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.label(x))
-                        .eq(v.into_iter().map(|x| g.label(x))));
+                        .map(|x| h.get_vertex_by_index(x))
+                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -538,22 +547,15 @@ mod partially_directed {
 
                 // Test for each scenario.
                 for (i, ue, de, e) in data {
-                    let g = $G::new_partial(i, ue, de).unwrap();
+                    let g = $G::new_pagraph(i, ue, de);
 
                     let h = g.subgraph_by_edges(e.clone());
-                    dbg!(iter_set::union(uE!(h), dE!(h))
-                        .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .collect::<Vec<_>>());
-                    dbg!(e
-                        .clone()
-                        .into_iter()
-                        .map(|(x, y)| (g.label(x), g.label(y)))
-                        .collect::<Vec<_>>());
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.label(x), h.label(y)))
-                        .eq(e.into_iter().map(|(x, y)| (g.label(x), g.label(y)))));
+                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .eq(e
+                            .into_iter()
+                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
 
                     assert!(h.is_subgraph(&g));
 

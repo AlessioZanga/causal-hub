@@ -26,7 +26,7 @@ mod tests {
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(L!(data).into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -68,7 +68,7 @@ mod tests {
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(L!(data).into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -117,7 +117,7 @@ mod tests {
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(L!(data).into_iter().eq(&["X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
         }
     }
 }
