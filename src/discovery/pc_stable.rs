@@ -19,9 +19,7 @@ where
 {
     /// Construct a new PC-Stable functor.
     pub fn new(test: &'a T) -> Self {
-        Self {
-            test,
-        }
+        Self { test }
     }
 
     /// Private function. It performs skeleton discovery given a test.

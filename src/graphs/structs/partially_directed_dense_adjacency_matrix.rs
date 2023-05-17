@@ -2080,8 +2080,9 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
             for z in Ne!(self, x).collect::<Vec<_>>() {
                 if iter_set::intersection(
                     Ne!(self, z),
-                    Pa!(self, x)
-                        .flat_map(|parent| Pa!(self, parent).filter(|&y| !self.is_adjacent_by_index(y, x))),
+                    Pa!(self, x).flat_map(|parent| {
+                        Pa!(self, parent).filter(|&y| !self.is_adjacent_by_index(y, x))
+                    }),
                 )
                 .next()
                 .is_some()
