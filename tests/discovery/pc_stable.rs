@@ -39,7 +39,7 @@ mod discrete {
     }
 
     #[test]
-    fn call_orient_vstructures() {
+    fn call() {
         // Set true graph
         let true_g = PDGraph::new_partial(
             ["asia", "xray"],
