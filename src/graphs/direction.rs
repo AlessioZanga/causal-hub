@@ -11,6 +11,10 @@ pub mod directions {
     /// Directed pseudo-enumerator for generics algorithms.
     #[derive(Clone, Copy, Debug)]
     pub struct Directed;
+
+    /// Partially directed pseudo-enumerator for generics algorithms.
+    #[derive(Clone, Copy, Debug)]
+    pub struct PartiallyDirected;
 }
 
 /// Neighbors iterator.
@@ -23,13 +27,47 @@ macro_rules! Ne {
         $g.get_neighbors_by_index($x)
     };
 }
+/// Undirected edges iterator.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are undirected as an iterator.///
+#[macro_export]
+macro_rules! uE {
+    ($g:expr) => {
+        $g.get_undirected_edges_index()
+    };
+}
+
+/// Directed edges iterator.
+///
+/// Return the $E(\mathcal{G}, X)$ subset where edges are directed as an iterator.
+///
+#[macro_export]
+macro_rules! dE {
+    ($g:expr) => {
+        $g.get_directed_edges_index()
+    };
+}
 
 /// Undirected graph trait.
 pub trait UndirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
+    /// Edges iterator type.
+    type UndirectedEdgesIndexIter<'a>: Iterator<Item = (usize, usize)>
+        + ExactSizeIterator
+        + FusedIterator
+    where
+        Self: 'a;
+
     /// Neighbors iterator type.
     type NeighborsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
+
+    /// Size of the undirected subgraph.
+    fn size_of_maximal_undirected_subgraph(&self) -> usize;
+
+    /// Undirected edges iterator
+    fn get_undirected_edges_index(&self)
+        -> <Self as UndirectedGraph>::UndirectedEdgesIndexIter<'_>;
 
     /// Neighbors iterator.
     ///
@@ -93,6 +131,11 @@ pub trait UndirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
         Ne!(self, x).any(|z| z == y)
     }
 
+    /// Checks whether the graph has a given undirected edge or not.
+    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
+        uE!(self).any(|z| z == (x, y) || z == (y, x))
+    }
+
     /// Degree of a vertex.
     ///
     /// Computes the degree of a given vertex, i.e. $|Ne(\mathcal{G}, X)|$.
@@ -123,6 +166,9 @@ pub trait UndirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
     fn get_degree_by_index(&self, x: usize) -> usize {
         Ne!(self, x).count()
     }
+
+    /// Undirected edge adder.
+    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool;
 }
 
 /// Ancestors iterator.
@@ -171,6 +217,13 @@ macro_rules! De {
 
 /// Directed graph trait.
 pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
+    /// Edges iterator type.
+    type DirectedEdgesIndexIter<'a>: Iterator<Item = (usize, usize)>
+        + ExactSizeIterator
+        + FusedIterator
+    where
+        Self: 'a;
+
     /// Ancestors iterator type.
     type AncestorsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
@@ -190,6 +243,12 @@ pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
     type DescendantsIndexIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
+
+    /// Size of the directed subgraph.
+    fn size_of_maximal_directed_subgraph(&self) -> usize;
+
+    /// Directed edges iterator
+    fn get_directed_edges_index(&self) -> Self::DirectedEdgesIndexIter<'_>;
 
     /// Ancestors iterator.
     ///
@@ -439,6 +498,11 @@ pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
         De!(self, x).any(|z| z == y)
     }
 
+    /// Checks whether the graph has a given directed edge or not.
+    fn has_directed_edge_by_index(&self, x: usize, y: usize) -> bool {
+        dE!(self).any(|z| z == (x, y))
+    }
+
     /// In-degree of a given vertex.
     ///
     /// Computes the in-degree of a given vertex, i.e. $|Pa(\mathcal{G}, X)|$.
@@ -500,6 +564,9 @@ pub trait DirectedGraph: BaseGraph + PartialOrdGraph + SubGraph {
     fn get_out_degree_by_index(&self, x: usize) -> usize {
         Ch!(self, x).count()
     }
+
+    /// Directed edge adder.
+    fn add_directed_edge_by_index(&mut self, x: usize, y: usize) -> bool;
 }
 
 /// Convert to undirected graph trait.
@@ -532,4 +599,31 @@ pub trait IntoUndirectedGraph {
     /// ```
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph;
+}
+
+//TODO: Improve documentation with examples and panics
+/// Partially directed graph trait.
+pub trait PartiallyDirectedGraph:
+    BaseGraph + PartialOrdGraph + SubGraph + DirectedGraph + UndirectedGraph
+{
+    /// Edges iterator type.
+    type EdgesIndexIter<'a>: Iterator<Item = (usize, usize)> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Partially directed graph constructor.
+    ///
+    /// # Pay attention:
+    /// multiple types of edges between two nodes are not allowed.
+    ///
+    ///
+    fn new_pagraph<V, I, J, K>(vertices: I, undirected_edges: J, directed_edges: K) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+        J: IntoIterator<Item = (V, V)>,
+        K: IntoIterator<Item = (V, V)>;
+
+    /// Orient (or re-orient) an already present edge
+    fn orient_edge(&mut self, x: usize, y: usize) -> bool;
 }

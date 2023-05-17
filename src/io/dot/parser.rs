@@ -13,12 +13,16 @@ use super::{
     Format, Layout,
 };
 use crate::{
+    dE,
     graphs::{
-        structs::{DirectedDenseAdjacencyMatrixGraph, UndirectedDenseAdjacencyMatrixGraph},
-        BaseGraph,
+        structs::{
+            DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
+            UndirectedDenseAdjacencyMatrixGraph,
+        },
+        BaseGraph, DirectedGraph, UndirectedGraph,
     },
     io::File,
-    E, V,
+    uE, E, V,
 };
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
@@ -659,6 +663,56 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
             .collect();
+
+        Self {
+            graph_type,
+            vertices,
+            edges,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
+    fn from(g: PartiallyDenseAdjacencyMatrixGraph) -> Self {
+        // Set graph type.
+        let graph_type = "digraph".into();
+        // Construct the vertex set.
+        let vertices = V!(g)
+            .map(|x| g.get_vertex_by_index(x).into())
+            .map(Vertex::new)
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the undirected edge set.
+        let mut undirected_arrowhead = EdgeAttributes::default();
+        undirected_arrowhead.insert_raw_parts("dir", "none");
+        let mut edges: BTreeMap<_, _> = uE!(g)
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
+            .map(|(x, y)| Edge {
+                id: (x, y),
+                op: "->".into(),
+                attributes: undirected_arrowhead.clone(),
+            })
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Construct the directed edge set.
+        let mut directed_edges: BTreeMap<_, _> = dE!(g)
+            .map(|(x, y)| {
+                (
+                    g.get_vertex_by_index(x).into(),
+                    g.get_vertex_by_index(y).into(),
+                )
+            })
+            .map(|(x, y)| Edge::new((x, y), "->".into()))
+            .map(|x| (x.id.clone(), x))
+            .collect();
+        // Append undirected and directed edges sets
+        edges.append(&mut directed_edges);
 
         Self {
             graph_type,
