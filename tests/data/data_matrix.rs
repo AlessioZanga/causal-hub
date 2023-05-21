@@ -92,6 +92,78 @@ mod tests {
 
             assert_eq!(data.cardinality(), &vec![8, 2, 3, 3]);
         }
+
+        #[test]
+        fn sample() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            let sample = data.sample(&mut rng, 2);
+            // Assert labels, states, cardinalities and values.
+            assert_eq!(data.labels(), sample.labels());
+            assert_eq!(data.states(), sample.states());
+            assert_eq!(data.cardinality(), sample.cardinality());
+            assert_eq!(data.values().ncols(), sample.values().ncols());
+            assert!(data.values().nrows() > sample.values().nrows());
+            assert_eq!(sample.values().nrows(), 2);
+        }
+
+        #[test]
+        #[should_panic]
+        fn sample_should_panic() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            data.sample(&mut rng, 4);
+        }
+
+        #[test]
+        fn sample_with_replacement() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            let sample = data.sample_with_replacement(&mut rng, 4);
+            // Assert labels, states, cardinalities and values.
+            assert_eq!(data.labels(), sample.labels());
+            assert_eq!(data.states(), sample.states());
+            assert_eq!(data.cardinality(), sample.cardinality());
+            assert_eq!(data.values().ncols(), sample.values().ncols());
+            assert!(data.values().nrows() < sample.values().nrows());
+            assert_eq!(sample.values().nrows(), 4);
+        }
     }
 
     mod continuous {
@@ -118,6 +190,74 @@ mod tests {
             );
 
             assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
+        }
+
+        #[test]
+        fn sample() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = ContinuousDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            let sample = data.sample(&mut rng, 2);
+            // Assert labels and values.
+            assert_eq!(data.labels(), sample.labels());
+            assert_eq!(data.values().ncols(), sample.values().ncols());
+            assert!(data.values().nrows() > sample.values().nrows());
+            assert_eq!(sample.values().nrows(), 2);
+        }
+
+        #[test]
+        #[should_panic]
+        fn sample_should_panic() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = ContinuousDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            data.sample(&mut rng, 4);
+        }
+
+        #[test]
+        fn sample_with_replacement() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = ContinuousDataMatrix::from(df);
+
+            // Define random number generator.
+            let mut rng = rand::thread_rng();
+            // Sample from the data set.
+            let sample = data.sample_with_replacement(&mut rng, 4);
+            // Assert labels and values.
+            assert_eq!(data.labels(), sample.labels());
+            assert_eq!(data.values().ncols(), sample.values().ncols());
+            assert!(data.values().nrows() < sample.values().nrows());
+            assert_eq!(sample.values().nrows(), 4);
         }
     }
 }

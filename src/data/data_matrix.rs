@@ -7,6 +7,7 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
+use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
@@ -225,10 +226,57 @@ impl DataSet for DiscreteDataMatrix {
         &self.labels
     }
 
-    /// Get reference to underlying values.
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Check if there are enough samples.
+        assert!(
+            self.values.nrows() >= n,
+            "Sample size is higher than the total number of samples in the data set."
+        );
+
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let mut idx = (0..self.values.nrows()).collect_vec();
+        // Shuffle the rows index.
+        idx.shuffle(rng);
+        // Fill new dataset.
+        idx.into_iter()
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            states: self.states.clone(),
+            cardinality: self.cardinality.clone(),
+            values,
+        }
+    }
+
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let idx = Uniform::new(0, self.values.nrows());
+        // Fill new dataset.
+        rng.sample_iter(idx)
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            states: self.states.clone(),
+            cardinality: self.cardinality.clone(),
+            values,
+        }
     }
 }
 
@@ -288,5 +336,49 @@ impl DataSet for ContinuousDataMatrix {
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Check if there are enough samples.
+        assert!(
+            self.values.nrows() >= n,
+            "Sample size is higher than the total number of samples in the data set."
+        );
+
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let mut idx = (0..self.values.nrows()).collect_vec();
+        // Shuffle the rows index.
+        idx.shuffle(rng);
+        // Fill new dataset.
+        idx.into_iter()
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
+    }
+
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let idx = Uniform::new(0, self.values.nrows());
+        // Fill new dataset.
+        rng.sample_iter(idx)
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
     }
 }
