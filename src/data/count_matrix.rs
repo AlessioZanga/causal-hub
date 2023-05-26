@@ -24,7 +24,7 @@ impl MarginalCountMatrix {
         // Fill count matrix.
         for row in d.values().rows() {
             // Increment at given index.
-            n[row[x]] += 1;
+            n[row[x] as usize] += 1;
         }
 
         Self { n }
@@ -54,7 +54,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     pub(crate) fn eval(
         shape: (usize, usize),
         rmi: &RavelMultiIndex,
-        d: ArrayView2<usize>,
+        d: ArrayView2<u16>,
         x: usize,
         z: &[usize],
     ) -> Array2<usize> {
@@ -63,11 +63,11 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Fill count matrix.
         for row in d.rows() {
             // Get multi index.
-            let row_z = z.iter().map(|&z| row[z]);
+            let row_z = z.iter().map(|&z| row[z] as usize);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
-            n[[row_z, row[x]]] += 1;
+            n[[row_z, row[x] as usize]] += 1;
         }
 
         n
@@ -133,7 +133,7 @@ impl JointCountMatrix {
         // Fill count matrix.
         for row in d.values().rows() {
             // Increment at given index.
-            n[[row[x], row[y]]] += 1;
+            n[[row[x] as usize, row[y] as usize]] += 1;
         }
 
         Self { n }
@@ -176,11 +176,11 @@ impl JointConditionalCountMatrix {
         // Fill count matrix.
         for row in d.values().rows() {
             // Get multi index.
-            let row_z = z.iter().map(|&z| row[z]);
+            let row_z = z.iter().map(|&z| row[z] as usize);
             // Ravel multi index.
             let row_z = rmi.call(row_z);
             // Increment at given index.
-            n[[row_z, row[x], row[y]]] += 1;
+            n[[row_z, row[x] as usize, row[y] as usize]] += 1;
         }
 
         Self { n }
