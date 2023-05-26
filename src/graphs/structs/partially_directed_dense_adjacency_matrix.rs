@@ -317,6 +317,10 @@ impl BaseGraph for PartiallyDenseAdjacencyMatrixGraph {
         }
     }
 
+    fn null() -> Self {
+        Default::default()
+    }
+
     fn empty<V, I>(labels: I) -> Self
     where
         V: Into<String>,

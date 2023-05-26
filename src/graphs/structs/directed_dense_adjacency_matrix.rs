@@ -245,6 +245,10 @@ impl BaseGraph for DirectedDenseAdjacencyMatrixGraph {
         }
     }
 
+    fn null() -> Self {
+        Default::default()
+    }
+
     fn empty<V, I>(vertices: I) -> Self
     where
         V: Into<String>,
