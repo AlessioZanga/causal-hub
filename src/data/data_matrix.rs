@@ -21,12 +21,12 @@ pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<usize>,
-    values: Array2<usize>,
+    values: Array2<u16>,
 }
 
 impl DiscreteDataMatrix {
     /// Construct a new discrete data matrix given data encoding, labels and states.
-    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<usize>) -> Self
+    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<u16>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -46,7 +46,12 @@ impl DiscreteDataMatrix {
         // Check states consistency.
         assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect();
+        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         Self {
             labels,
@@ -92,7 +97,7 @@ impl DiscreteDataMatrix {
             // Align values encodings.
             self.values.column_mut(i).map_inplace(|x| {
                 // Set new location w.r.t. previous state.
-                *x = v.get_index_of(&s_v[*x]).unwrap();
+                *x = v.get_index_of(&s_v[*x as usize]).unwrap() as u16;
             });
             // Set new states.
             self.states[&k] = v;
@@ -100,6 +105,11 @@ impl DiscreteDataMatrix {
 
         // Compute cardinalities.
         self.cardinality = self.states.values().map(|x| x.len()).collect();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            self.cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         self
     }
@@ -143,7 +153,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
         let mut values = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
-            .mapv(|x| x as usize);
+            .mapv(|x| x as u16);
 
         // Get variables as set of strings.
         let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
@@ -194,7 +204,9 @@ impl From<DataFrame> for DiscreteDataMatrix {
                     let mut indices = (0..states.len()).collect_vec();
                     indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
-                    values.column_mut(i).mapv_inplace(|x| indices[x]);
+                    values
+                        .column_mut(i)
+                        .mapv_inplace(|x| indices[x as usize] as u16);
                     // Sort the labels.
                     states.sort();
                 }
@@ -207,7 +219,12 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .collect();
 
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect();
+        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         Self {
             labels,
@@ -219,7 +236,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
 }
 
 impl DataSet for DiscreteDataMatrix {
-    type Data = Array2<usize>;
+    type Data = Array2<u16>;
 
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
