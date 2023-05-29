@@ -34,7 +34,11 @@ After opening a pull request:
 
 ### Building
 
-To build the crate, run the following `cargo` command:
+To build the crate, first install required and suggested dependencies:
+```
+sudo apt-get install -y build-essential libopenblas-dev graphviz
+```
+Then run the following `cargo` command:
 
     cargo build
 
