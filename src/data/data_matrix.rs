@@ -7,6 +7,7 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use polars::prelude::*;
+use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
@@ -20,12 +21,12 @@ pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<usize>,
-    values: Array2<usize>,
+    values: Array2<u16>,
 }
 
 impl DiscreteDataMatrix {
     /// Construct a new discrete data matrix given data encoding, labels and states.
-    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<usize>) -> Self
+    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<u16>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -45,7 +46,12 @@ impl DiscreteDataMatrix {
         // Check states consistency.
         assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect();
+        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         Self {
             labels,
@@ -91,7 +97,7 @@ impl DiscreteDataMatrix {
             // Align values encodings.
             self.values.column_mut(i).map_inplace(|x| {
                 // Set new location w.r.t. previous state.
-                *x = v.get_index_of(&s_v[*x]).unwrap();
+                *x = v.get_index_of(&s_v[*x as usize]).unwrap() as u16;
             });
             // Set new states.
             self.states[&k] = v;
@@ -99,6 +105,11 @@ impl DiscreteDataMatrix {
 
         // Compute cardinalities.
         self.cardinality = self.states.values().map(|x| x.len()).collect();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            self.cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         self
     }
@@ -142,7 +153,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
         let mut values = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
-            .mapv(|x| x as usize);
+            .mapv(|x| x as u16);
 
         // Get variables as set of strings.
         let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
@@ -193,7 +204,9 @@ impl From<DataFrame> for DiscreteDataMatrix {
                     let mut indices = (0..states.len()).collect_vec();
                     indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
-                    values.column_mut(i).mapv_inplace(|x| indices[x]);
+                    values
+                        .column_mut(i)
+                        .mapv_inplace(|x| indices[x as usize] as u16);
                     // Sort the labels.
                     states.sort();
                 }
@@ -206,7 +219,12 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .collect();
 
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect();
+        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
+        // Assert cardinalities are less then u16::MAX.
+        assert!(
+            cardinality.iter().all(|&c| c < u16::MAX as usize),
+            "Max number of allowed states for each variable is u16::MAX"
+        );
 
         Self {
             labels,
@@ -218,17 +236,64 @@ impl From<DataFrame> for DiscreteDataMatrix {
 }
 
 impl DataSet for DiscreteDataMatrix {
-    type Data = Array2<usize>;
+    type Data = Array2<u16>;
 
     #[inline]
     fn labels(&self) -> &BTreeSet<String> {
         &self.labels
     }
 
-    /// Get reference to underlying values.
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Check if there are enough samples.
+        assert!(
+            self.values.nrows() >= n,
+            "Sample size is higher than the total number of samples in the data set."
+        );
+
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let mut idx = (0..self.values.nrows()).collect_vec();
+        // Shuffle the rows index.
+        idx.shuffle(rng);
+        // Fill new dataset.
+        idx.into_iter()
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            states: self.states.clone(),
+            cardinality: self.cardinality.clone(),
+            values,
+        }
+    }
+
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let idx = Uniform::new(0, self.values.nrows());
+        // Fill new dataset.
+        rng.sample_iter(idx)
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            states: self.states.clone(),
+            cardinality: self.cardinality.clone(),
+            values,
+        }
     }
 }
 
@@ -288,5 +353,49 @@ impl DataSet for ContinuousDataMatrix {
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Check if there are enough samples.
+        assert!(
+            self.values.nrows() >= n,
+            "Sample size is higher than the total number of samples in the data set."
+        );
+
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let mut idx = (0..self.values.nrows()).collect_vec();
+        // Shuffle the rows index.
+        idx.shuffle(rng);
+        // Fill new dataset.
+        idx.into_iter()
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
+    }
+
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
+        // Allocate the new data set.
+        let mut values = Array2::zeros((n, self.values.ncols()));
+        // Define the new rows index.
+        let idx = Uniform::new(0, self.values.nrows());
+        // Fill new dataset.
+        rng.sample_iter(idx)
+            // Take only n samples.
+            .take(n)
+            .enumerate()
+            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
     }
 }

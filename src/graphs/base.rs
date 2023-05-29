@@ -129,10 +129,7 @@ pub trait BaseGraph:
     /// assert_eq!(g.size(), 0);
     /// ```
     ///
-    #[inline]
-    fn null() -> Self {
-        Default::default()
-    }
+    fn null() -> Self;
 
     /// Empty constructor.
     ///
@@ -229,9 +226,7 @@ pub trait BaseGraph:
     /// assert_eq!(g.order(), 5);
     /// ```
     ///
-    fn order(&self) -> usize {
-        V!(self).len()
-    }
+    fn order(&self) -> usize;
 
     /// Labels iterator.
     ///
@@ -377,9 +372,7 @@ pub trait BaseGraph:
     /// assert!(!g.has_vertex_by_index(z));
     /// ```
     ///
-    fn has_vertex_by_index(&self, x: usize) -> bool {
-        V!(self).any(|y| y == x)
-    }
+    fn has_vertex_by_index(&self, x: usize) -> bool;
 
     /// Deletes vertex from the graph.
     ///
@@ -430,9 +423,7 @@ pub trait BaseGraph:
     /// assert_eq!(g.size(), 5);
     /// ```
     ///
-    fn size(&self) -> usize {
-        E!(self).len()
-    }
+    fn size(&self) -> usize;
 
     /// Edge iterator.
     ///
@@ -489,9 +480,7 @@ pub trait BaseGraph:
     /// assert!(g.has_edge_by_index(x, y));
     /// ```
     ///
-    fn has_edge_by_index(&self, x: usize, y: usize) -> bool {
-        E!(self).any(|z| z == (x, y))
-    }
+    fn has_edge_by_index(&self, x: usize, y: usize) -> bool;
 
     /// Adds edge to the graph.
     ///
@@ -620,7 +609,5 @@ pub trait BaseGraph:
     /// assert!(Adj!(g, x).any(|z| z == y))
     /// ```
     ///
-    fn is_adjacent_by_index(&self, x: usize, y: usize) -> bool {
-        Adj!(self, x).any(|z| z == y)
-    }
+    fn is_adjacent_by_index(&self, x: usize, y: usize) -> bool;
 }
