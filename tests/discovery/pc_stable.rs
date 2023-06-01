@@ -3,8 +3,9 @@ mod discrete {
     use causal_hub::prelude::*;
     use polars::prelude::*;
 
+    
     #[test]
-    fn call_skeleton() {
+    fn pcstable_asia() {
         // Set true graph
         let true_g = PDGraph::new_pagraph(
             ["asia", "xray"],
@@ -33,26 +34,29 @@ mod discrete {
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
 
-        // Perform test
+        // Perform discovery
+        let g = pcs.call();
+
+        // Perform tests
         assert_eq!(skel, true_g.to_undirected());
+        assert_eq!(g, true_g);
     }
 
     #[test]
-    fn call() {
+    fn pcstable_alarm() {
+        // Set dataset name
+        let db_name: String = "alarm".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
         // Set true graph
-        let true_g = PDGraph::new_pagraph(
-            ["asia", "xray"],
-            [("bronc", "dysp")],
-            [
-                ("bronc", "smoke"),
-                ("lung", "smoke"),
-                ("lung", "either"),
-                ("tub", "either"),
-            ],
-        );
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path("./tests/assets/asia.csv")
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -64,12 +68,232 @@ mod discrete {
         // Create PC-Stable functor
         let pcs = PCStable::new(&test);
 
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
         // Perform discovery
         let g = pcs.call();
 
-        // Perform test
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
+
+    #[test]
+    fn pcstable_cancer() {
+        // Set dataset name
+        let db_name: String = "cancer".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
+        // Set true graph
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call();
+
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
+    #[test]
+    fn pcstable_child() {
+        // Set dataset name
+        let db_name: String = "child".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
+        // Set true graph
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call();
+
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
+    #[test]
+    fn pcstable_earthquake() {
+        // Set dataset name
+        let db_name: String = "earthquake".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
+        // Set true graph
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call();
+
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
+    #[test]
+    fn pcstable_sachs() {
+        // Set dataset name
+        let db_name: String = "sachs".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
+        // Set true graph
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call();
+
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
+    #[test]
+    fn pcstable_survey() {
+        // Set dataset name
+        let db_name: String = "survey".into();
+        // Set dataset base path
+        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+
+        // Set true skeleton
+        let true_skel = Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+
+        // Set true graph
+        let true_g = PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call();
+
+        // Plot found skeleton
+        /*DOT::from(skel.clone())
+            .plot("./alarm_skel.pdf")
+            .unwrap();*/
+
+        // Perform tests
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
     #[test]
     fn meek_1_base_case() {
         let mut g = PDGraph::new_pagraph(vec![], vec![("1", "2")], vec![("0", "1")]);
