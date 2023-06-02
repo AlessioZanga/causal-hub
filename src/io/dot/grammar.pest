@@ -28,7 +28,7 @@ statements = { statement* }
 
 statement = _{ (attribute | global_attributes | subgraph | path | vertex) ~ ";"? }
 
-global_attributes = { (graph_type | vertex_type | path_type) ~ attributes }
+global_attributes = { (graph_type | vertex_type) ~ attributes }
 
 subgraph_type = { ^"subgraph" }
 
@@ -50,7 +50,7 @@ path_id = { (vertex_id | subgraph) ~ (path_direction ~ (vertex_id | subgraph))+ 
 
 path_direction = { ("->" | "--") }
 
-path = { path_id ~ attributes? }
+path = {path_type ~ attributes? ~ path_id}
 
 WHITESPACE = _{ (" " | "\t" | NEWLINE) }
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/"  | "//" ~ (!"\n" ~ ANY)* | "#" ~ (!"\n" ~ ANY)*) }
