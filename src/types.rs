@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet},
     hash::BuildHasherDefault,
 };
 
@@ -14,7 +14,7 @@ pub type EdgeList<V> = BTreeSet<(V, V)>;
 pub type AdjacencyList<V> = BTreeMap<V, BTreeSet<V>>;
 
 /// Separation sets type.
-pub type SepSets = HashMap<(usize, usize), HashSet<usize>>;
+pub type SepSets = BTreeMap<(usize, usize), BTreeSet<usize>>;
 
 /// Dense adjacency matrix type.
 pub type DenseAdjacencyMatrix = Matrix<bool>;

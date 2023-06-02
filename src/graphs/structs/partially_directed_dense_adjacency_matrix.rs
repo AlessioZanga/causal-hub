@@ -1931,23 +1931,25 @@ impl PartiallyDirectedGraph for PartiallyDenseAdjacencyMatrixGraph {
     }
 
     fn orient_edge(&mut self, x: usize, y: usize) -> bool {
-        if !self.has_edge_by_index(x, y) {
-            return false;
+        // If such edge exists and it is undirected
+        if self.has_undirected_edge_by_index(x, y) {
+            // Delete edge
+            self.del_edge_by_index(x, y);
+
+            // Add directed edge
+            self.add_directed_edge_by_index(x, y);
+
+            // Check if sizes are still consistent
+            debug_assert!(self.size == (self.undirected_size + self.directed_size));
+
+            // Check if directed adjacency matrix is built correctly
+            debug_assert!(self.directed_adjacency_matrix[[x, y]]);
+            debug_assert!(!self.directed_adjacency_matrix[[y, x]]);
+
+            return true;
         }
 
-        self.del_edge_by_index(x, y);
-
-        // Add directed edge
-        self.add_directed_edge_by_index(x, y);
-
-        // Check if sizes are still consistent
-        debug_assert!(self.size == (self.undirected_size + self.directed_size));
-
-        // Check if directed adjacency matrix is built correctly
-        debug_assert!(self.directed_adjacency_matrix[[x, y]]);
-        debug_assert!(!self.directed_adjacency_matrix[[y, x]]);
-
-        true
+        false
     }
 }
 
@@ -1998,8 +2000,14 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
         let undirected_edges: Vec<_> = other
             .edges
             .iter()
-            .filter_map(|(t, e)| match !e.attributes.is_empty() {
-                true => Some((*t).clone()),
+            .filter_map(|(t, e)| match e.attributes.get_edge_dir() {
+                Some(x) => {
+                    if x.as_str() == "none" {
+                        Some((*t).clone())
+                    } else {
+                        None
+                    }
+                }
                 _ => None,
             })
             .collect();
@@ -2007,9 +2015,15 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
         let directed_edges: Vec<_> = other
             .edges
             .iter()
-            .filter_map(|(t, e)| match e.attributes.is_empty() {
-                true => Some((*t).clone()),
-                _ => None,
+            .filter_map(|(t, e)| match e.attributes.get_edge_dir() {
+                Some(x) => {
+                    if x.as_str() == "none" {
+                        None
+                    } else {
+                        Some((*t).clone())
+                    }
+                }
+                _ => Some((*t).clone()),
             })
             .collect();
 

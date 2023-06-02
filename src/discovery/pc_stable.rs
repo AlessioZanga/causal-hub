@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use itertools::Itertools;
 
@@ -27,7 +27,7 @@ where
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
-        let mut sepsets: SepSets = HashMap::new();
+        let mut sepsets: SepSets = BTreeMap::new();
         // Initialize stopping criterion
         let mut flag = true;
         // Initialize size of conditioning set
@@ -44,7 +44,7 @@ where
                     Adj!(g, x).filter(|&v| v != y).combinations(c),
                     Adj!(g, y).filter(|&v| v != x).combinations(c),
                 );
-                // If there is at least one set ...
+                // If there is at least one set with cardinality `c` ...
                 for z in adj {
                     // ... continue
                     flag = true;
@@ -53,7 +53,7 @@ where
                         // ... remove the edge
                         e_prime.push((x, y));
                         //
-                        let z: HashSet<_> = z.into_iter().collect();
+                        let z: BTreeSet<_> = z.into_iter().collect();
                         // Collect `(x, y)` separation set
                         sepsets.insert((x, y), z.clone());
                         sepsets.insert((y, x), z);
@@ -85,7 +85,7 @@ where
         // Cast it to a partially directed graph
         let mut g: PDGraph = g.into();
         // Create the set of unshielded triples
-        let mut triples: HashSet<(usize, usize, usize)> = HashSet::new();
+        let mut triples: BTreeSet<(usize, usize, usize)> = BTreeSet::new();
         for y in V!(g) {
             for (x, z) in Adj!(g, y)
                 .combinations(2)
@@ -95,11 +95,16 @@ where
                 triples.insert((x, y, z));
             }
         }
+
         // For every unshielded triple ...
         for (x, y, z) in triples.into_iter() {
             // ... if `y` doesn't d-separates `(x, y)` ...
             if !sepsets[&(x, z)].contains(&y) {
-                // ... the triple is a v-structure
+                // and both edges are undirected ...
+                if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(y, z) {
+                    continue;
+                }
+                // ... then the triple is a v-structure
                 g.orient_edge(x, y);
                 g.orient_edge(z, y);
             }
