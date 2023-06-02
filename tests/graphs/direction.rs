@@ -1955,8 +1955,6 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let mut g = $G::new_pagraph(vec![], vec![], i);
-                        dbg!(g.clone());
-                        dbg!(j.clone());
                         for ((x, y), f) in j {
                             let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
                             assert_eq!(g.add_directed_edge_by_index(x, y), f);
