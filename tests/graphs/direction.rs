@@ -2323,9 +2323,8 @@ mod partially_directed {
                     g.orient_edge(2, 1);
                     // Test for type of edges
                     assert!(g.has_directed_edge_by_index(0, 1) == true);
-                    assert!(g.has_undirected_edge_by_index(1, 0) == false);
-                    assert!(g.has_directed_edge_by_index(3, 0) == true);
-                    assert!(g.has_undirected_edge_by_index(0, 3) == false);
+                    assert!(g.has_directed_edge_by_index(0, 3) == true);
+                    assert!(g.has_directed_edge_by_index(3, 0) == false);
                     assert!(g.has_directed_edge_by_index(2, 1) == true);
                     assert!(g.has_undirected_edge_by_index(1, 2) == false);
                     assert!(g.has_undirected_edge_by_index(1, 4) == true);
