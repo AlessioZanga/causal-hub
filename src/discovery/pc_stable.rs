@@ -23,6 +23,7 @@ where
     }
 
     /// Private function. It performs skeleton discovery given a test.
+    #[inline]
     fn skeleton(&self) -> (Graph, SepSets) {
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
@@ -73,12 +74,14 @@ where
     }
 
     /// Perform skeleton discovery given test.
+    #[inline]
     pub fn call_skeleton(&self) -> Graph {
         self.skeleton().0
     }
 
     /// Perform discovery given a test.
     /// Firstly, it performs skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
+    #[inline]
     pub fn call(&self) -> PDGraph {
         // Perform skeleton discovery
         let (g, sepsets) = self.skeleton();

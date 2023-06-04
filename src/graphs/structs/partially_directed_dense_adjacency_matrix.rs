@@ -2032,6 +2032,7 @@ impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
 }
 
 impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
+    #[inline]
     fn meek_1(&mut self) -> bool {
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
@@ -2052,6 +2053,7 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
         is_closed
     }
 
+    #[inline]
     fn meek_2(&mut self) -> bool {
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
@@ -2069,6 +2071,7 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
         is_closed
     }
 
+    #[inline]
     fn meek_3(&mut self) -> bool {
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
@@ -2088,6 +2091,7 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
         is_closed
     }
 
+    #[inline]
     fn meek_4(&mut self) -> bool {
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
@@ -2113,6 +2117,7 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
         is_closed
     }
 
+    #[inline]
     fn meek_procedure_until_3(mut self) -> Self {
         let mut is_closed = false;
         while !is_closed {
@@ -2123,6 +2128,7 @@ impl MeekRules for PartiallyDenseAdjacencyMatrixGraph {
         self
     }
 
+    #[inline]
     fn meek_procedure_until_4(mut self) -> Self {
         let mut is_closed = false;
         while !is_closed {
