@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 use ndarray::prelude::*;
 use ndarray_linalg::least_squares::*;
 
-use super::{ConditionalLogLikelihood, LogLikelihood, MarginalLogLikelihood};
+use super::LogLikelihood;
 use crate::{
     data::ContinuousDataMatrix,
     discovery::DecomposableScoringCriterion,
@@ -11,9 +11,9 @@ use crate::{
     prelude::DataSet,
 };
 
-impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL> {
+impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL> {
     #[inline]
-    pub(crate) fn eval(x: ArrayView1<f64>, n: usize) -> (Array1<f64>, f64) {
+    pub(crate) fn marginal_eval(x: ArrayView1<f64>, n: usize) -> (Array1<f64>, f64) {
         // Compute the mean.
         let mean = x.sum() / n as f64;
         // Compute residuals.
@@ -26,12 +26,12 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL>
 
     /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
     #[inline]
-    pub fn call(d: &ContinuousDataMatrix, x: usize) -> f64 {
+    pub fn marginal(&self, x: usize) -> f64 {
         // Get the variable and sample size.
-        let (x, n) = (d.values().column(x), d.values().nrows());
+        let (x, n) = (self.d.values().column(x), self.d.values().nrows());
 
         // Compute residuals and standard deviation. TODO: Parallelize over mean and variance.
-        let (residuals, std) = Self::eval(x, n);
+        let (residuals, std) = Self::marginal_eval(x, n);
 
         // Compute the (marginal) log-likelihood. TODO: Parallelize over log-likelihood.
         (residuals / std)
@@ -40,11 +40,9 @@ impl<const PARALLEL: bool> MarginalLogLikelihood<ContinuousDataMatrix, PARALLEL>
             // Sum each term.
             .sum()
     }
-}
 
-impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALLEL> {
     #[inline]
-    pub(crate) fn eval(
+    pub(crate) fn conditional_eval(
         x: ArrayView1<f64>,
         z: ArrayView2<f64>,
         n: usize,
@@ -75,9 +73,9 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
 
     /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
-    pub fn call(d: &ContinuousDataMatrix, x: usize, z: &[usize]) -> f64 {
+    pub fn conditional(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
-        let d = d.values();
+        let d = self.d.values();
         // Get sample size and number of conditioning variables.
         let (n, m) = (d.nrows(), z.len());
         // Get a copy of the variable.
@@ -91,7 +89,7 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
         }
 
         // Compute residuals and standard deviation.
-        let (residuals, std) = Self::eval(x, z_.view(), n, m + 1);
+        let (residuals, std) = Self::conditional_eval(x, z_.view(), n, m + 1);
 
         // Compute the (conditional) log-likelihood. TODO: Parallelize over log-likelihood.
         (residuals / std)
@@ -102,16 +100,16 @@ impl<const PARALLEL: bool> ConditionalLogLikelihood<ContinuousDataMatrix, PARALL
     }
 }
 
-impl<G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<ContinuousDataMatrix, PARALLEL>
+impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataMatrix, G>
+    for LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &ContinuousDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => MarginalLogLikelihood::<ContinuousDataMatrix, PARALLEL>::call(d, x),
-            false => ConditionalLogLikelihood::<ContinuousDataMatrix, PARALLEL>::call(d, x, z),
+            true => self.marginal(x),
+            false => self.conditional(x, z),
         }
     }
 }

@@ -6,22 +6,22 @@ use crate::{
     stats::LogLikelihood,
 };
 
-impl<G, const RESCALED: bool, const PARALLEL: bool>
+impl<'a, G, const RESCALED: bool, const PARALLEL: bool>
     DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for AkaikeInformationCriterion<ContinuousDataMatrix, RESCALED, PARALLEL>
+    for AkaikeInformationCriterion<'a, ContinuousDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &ContinuousDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the number of parameters.
         // NOTE: Intercept, standard deviation and regression coefficient per parent.
         let theta = (2 + z.len()) as f64;
 
         // Initialize the log-likelihood functor.
-        let s = LogLikelihood::<_, PARALLEL>::new();
+        let s = LogLikelihood::<_, PARALLEL>::new(self.d);
         // Compute the log-likelihood.
-        let s = DecomposableScoringCriterion::<ContinuousDataMatrix, G>::call(&s, d, x, z);
+        let s = DecomposableScoringCriterion::<ContinuousDataMatrix, G>::call(&s, x, z);
 
         // Check if AIC must be scaled.
         match RESCALED {

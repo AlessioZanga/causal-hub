@@ -317,7 +317,7 @@ where
 {
     /// Compute delta score, if not already in cache, returning cache update.
     #[inline]
-    fn cache(&self, c: &C<KE>, d: &D, x: usize, z: &[usize]) -> (f64, CU<KE>) {
+    fn cache(&self, c: &C<KE>, x: usize, z: &[usize]) -> (f64, CU<KE>) {
         // Construct the key.
         let key = (x, z.to_vec());
         // Check if score is already in cache.
@@ -327,7 +327,7 @@ where
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = self.s.call(d, x, z);
+                let s = self.s.call(x, z);
 
                 (s, CU::from_iter([(key, s)]))
             }
@@ -336,10 +336,10 @@ where
 
     /// Evaluate delta score of edge operation on given graph.
     #[inline]
-    fn eval<const OP: usize>(&self, c: &C<KE>, d: &D, g: &G, x: usize, y: usize) -> (f64, CU<KE>) {
+    fn eval<const OP: usize>(&self, c: &C<KE>, g: &G, x: usize, y: usize) -> (f64, CU<KE>) {
         // Get current Y score.
         let mut pa_y = Pa!(g, y).collect_vec();
-        let (s_y, mut c_y) = self.cache(c, d, y, &pa_y);
+        let (s_y, mut c_y) = self.cache(c, y, &pa_y);
         // Compute delta score depending on operation.
         let (delta_star, c_star) = match OP {
             Op::ADD => {
@@ -347,7 +347,7 @@ where
                 let i = pa_y.binary_search(&x).unwrap_err();
                 pa_y.insert(i, x);
                 // Compute delta score and merge cache.
-                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
                 // Accumulate cache updates.
                 c_y.extend(c_y_star.into_iter());
 
@@ -358,7 +358,7 @@ where
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
                 // Compute delta score and merge cache.
-                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
                 // Merge cache updates.
                 c_y.extend(c_y_star.into_iter());
 
@@ -367,19 +367,19 @@ where
             Op::REV => {
                 // Get current X score.
                 let mut pa_x = Pa!(g, x).collect_vec();
-                let (s_x, c_x) = self.cache(c, d, x, &pa_x);
+                let (s_x, c_x) = self.cache(c, x, &pa_x);
                 // Merge cache updates.
                 c_y.extend(c_x.into_iter());
                 // Add Y in-place by leveraging Pa(G, X) order.
                 let i = pa_x.binary_search(&y).unwrap_err();
                 pa_x.insert(i, y);
-                let (s_x_star, c_x_star) = self.cache(c, d, x, &pa_x);
+                let (s_x_star, c_x_star) = self.cache(c, x, &pa_x);
                 // Merge cache updates.
                 c_y.extend(c_x_star.into_iter());
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
-                let (s_y_star, c_y_star) = self.cache(c, d, y, &pa_y);
+                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
                 // Merge cache updates.
                 c_y.extend(c_y_star.into_iter());
 
@@ -411,7 +411,6 @@ where
         &self,
         (op, delta): (A, f64),
         mut c: C<KE>,
-        d: &D,
         g: &G,
         edges: &E,
     ) -> (A, f64, C<KE>) {
@@ -439,14 +438,14 @@ where
                 // Check if operation is valid.
                 .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
                 // Compute current operation delta score and cache updates.
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
                 // Check if operation improves current solution.
                 .reduce(|| (op, (delta, CU::default())), best_merge),
             // Same as before but sequentially.
             false => edges
                 .iter()
                 .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
                 .fold((op, (delta, CU::default())), best_merge),
         };
 
@@ -470,7 +469,7 @@ where
                 // Get vertex parents.
                 let z = Pa!(g, x).collect_vec();
                 // Compute vertex score.
-                let s = self.s.call(d, x, &z);
+                let s = self.s.call(x, &z);
                 // Insert into the cache.
                 c.insert((x, z), s);
 
@@ -495,11 +494,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, d, &g, &add);
+            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
             // For each possible edge deletion ...
-            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, d, &g, &del);
+            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
             // For each possible edge reversal ...
-            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, d, &g, &rev);
+            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {
@@ -530,7 +529,7 @@ where
 {
     /// Compute delta score, if not already in cache, returning cache update.
     #[inline]
-    fn cache(&self, c: &C<G>, d: &D, g: &G) -> (f64, CU<G>) {
+    fn cache(&self, c: &C<G>, g: &G) -> (f64, CU<G>) {
         // Check if score is already in cache.
         match c.get(g) {
             // If so, return cached values.
@@ -538,7 +537,7 @@ where
             // If not, then ...
             None => {
                 // Compute vertex score.
-                let s = self.s.call(d, g);
+                let s = self.s.call(g);
 
                 (s, CU::from_iter([(g.clone(), s)]))
             }
@@ -547,9 +546,9 @@ where
 
     /// Evaluate delta score of edge operation on given graph.
     #[inline]
-    fn eval<const OP: usize>(&self, c: &C<G>, d: &D, g: &G, x: usize, y: usize) -> (f64, CU<G>) {
+    fn eval<const OP: usize>(&self, c: &C<G>, g: &G, x: usize, y: usize) -> (f64, CU<G>) {
         // Get current Y score.
-        let (s_g, mut c_g) = self.cache(c, d, g);
+        let (s_g, mut c_g) = self.cache(c, g);
         // Compute delta score depending on operation.
         let (delta_star, c_star) = match OP {
             Op::ADD => {
@@ -557,7 +556,7 @@ where
                 let mut g_star = g.clone();
                 g_star.add_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
+                let (s_g_star, c_g_star) = self.cache(c, &g_star);
                 // Accumulate cache updates.
                 c_g.extend(c_g_star.into_iter());
 
@@ -568,7 +567,7 @@ where
                 let mut g_star = g.clone();
                 g_star.del_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
+                let (s_g_star, c_g_star) = self.cache(c, &g_star);
                 // Merge cache updates.
                 c_g.extend(c_g_star.into_iter());
 
@@ -580,7 +579,7 @@ where
                 g_star.del_edge_by_index(x, y);
                 g_star.add_edge_by_index(y, x);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, d, &g_star);
+                let (s_g_star, c_g_star) = self.cache(c, &g_star);
                 // Merge cache updates.
                 c_g.extend(c_g_star.into_iter());
 
@@ -612,7 +611,6 @@ where
         &self,
         (op, delta): (A, f64),
         mut c: C<G>,
-        d: &D,
         g: &G,
         edges: &E,
     ) -> (A, f64, C<G>) {
@@ -640,14 +638,14 @@ where
                 // Check if operation is valid.
                 .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
                 // Compute current operation delta score and cache updates.
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
                 // Check if operation improves current solution.
                 .reduce(|| (op, (delta, CU::default())), best_merge),
             // Same as before but sequentially.
             false => edges
                 .iter()
                 .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, d, g, *x, *y)))
+                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
                 .fold((op, (delta, CU::default())), best_merge),
         };
 
@@ -665,7 +663,7 @@ where
         // Initialize graph from D and K.
         let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
         // Compute the initial score.
-        let mut s_g = self.s.call(d, &g);
+        let mut s_g = self.s.call(&g);
         // Update cache.
         c.insert(g.clone(), s_g);
 
@@ -685,11 +683,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, d, &g, &add);
+            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
             // For each possible edge deletion ...
-            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, d, &g, &del);
+            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
             // For each possible edge reversal ...
-            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, d, &g, &rev);
+            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {

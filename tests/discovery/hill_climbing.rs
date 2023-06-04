@@ -33,7 +33,7 @@ mod discrete {
         let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
-        let s = BIC::new();
+        let s = BIC::new(&d);
 
         // Initialize discovery functor.
         let hc = HC::new(&s);
@@ -73,7 +73,7 @@ mod discrete {
         let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
-        let s = BIC::new();
+        let s = BIC::new(&d);
 
         // Initialize discovery functor.
         let hc = ParallelHC::new(&s);
@@ -114,7 +114,7 @@ mod discrete {
         let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
-        let s = BIC::new();
+        let s = BIC::new(&d);
 
         // Initialize discovery functor.
         let hc = HC::new(&s).with_shuffle(42);
@@ -239,7 +239,7 @@ mod gaussian {
         let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
-        let s = BIC::new();
+        let s = BIC::new(&d);
 
         // Initialize discovery functor.
         let hc = HC::new(&s);
@@ -358,7 +358,7 @@ mod gaussian {
         let k = FR::new(d.labels(), [], []);
 
         // Initialize score functor.
-        let s = BIC::new();
+        let s = BIC::new(&d);
 
         // Initialize discovery functor.
         let hc = ParallelHC::new(&s);

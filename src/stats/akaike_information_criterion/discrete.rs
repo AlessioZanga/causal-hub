@@ -6,16 +6,16 @@ use crate::{
     stats::LogLikelihood,
 };
 
-impl<G, const RESCALED: bool, const PARALLEL: bool>
+impl<'a, G, const RESCALED: bool, const PARALLEL: bool>
     DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<DiscreteDataMatrix, RESCALED, PARALLEL>
+    for AkaikeInformationCriterion<'a, DiscreteDataMatrix, RESCALED, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
-    fn call(&self, d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Get the cardinality.
-        let cards = d.cardinality();
+        let cards = self.d.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
         let (card_x, card_z) = (cards[x], z.iter().map(|&z| cards[z]).product::<usize>());
@@ -23,9 +23,9 @@ where
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Initialize the log-likelihood functor.
-        let s = LogLikelihood::<_, PARALLEL>::new();
+        let s = LogLikelihood::<_, PARALLEL>::new(self.d);
         // Compute the log-likelihood.
-        let s = DecomposableScoringCriterion::<DiscreteDataMatrix, G>::call(&s, d, x, z);
+        let s = DecomposableScoringCriterion::<DiscreteDataMatrix, G>::call(&s, x, z);
 
         // Check if AIC must be scaled.
         match RESCALED {

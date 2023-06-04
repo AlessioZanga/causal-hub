@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 /// Akaike Information Criterion (AIC) functor.
 ///
 /// # Generics
@@ -8,21 +6,18 @@ use std::marker::PhantomData;
 /// - `PARALLEL`: Enables parallel computation of conditional count matrix and log-likelihood.
 ///
 #[derive(Clone, Debug)]
-pub struct AkaikeInformationCriterion<D, const RESCALED: bool, const PARALLEL: bool> {
-    _d: PhantomData<D>,
+pub struct AkaikeInformationCriterion<'a, D, const RESCALED: bool, const PARALLEL: bool> {
+    pub(crate) d: &'a D,
     pub(crate) k: f64,
 }
 
-impl<D, const RESCALED: bool, const PARALLEL: bool>
-    AkaikeInformationCriterion<D, RESCALED, PARALLEL>
+impl<'a, D, const RESCALED: bool, const PARALLEL: bool>
+    AkaikeInformationCriterion<'a, D, RESCALED, PARALLEL>
 {
     /// Constructor for AIC functor.
     #[inline]
-    pub const fn new() -> Self {
-        Self {
-            _d: PhantomData,
-            k: 1.,
-        }
+    pub const fn new(d: &'a D) -> Self {
+        Self { d, k: 1. }
     }
 
     /// Sets penalty coefficient.
@@ -35,16 +30,7 @@ impl<D, const RESCALED: bool, const PARALLEL: bool>
     }
 }
 
-impl<D, const RESCALED: bool, const PARALLEL: bool> Default
-    for AkaikeInformationCriterion<D, RESCALED, PARALLEL>
-{
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Alias for (rescaled) single-thread AIC functor.
-pub type AIC<D> = AkaikeInformationCriterion<D, true, false>;
+pub type AIC<'a, D> = AkaikeInformationCriterion<'a, D, true, false>;
 /// Alias for (rescaled) multi-thread AIC functor.
-pub type ParallelAIC<D> = AkaikeInformationCriterion<D, true, true>;
+pub type ParallelAIC<'a, D> = AkaikeInformationCriterion<'a, D, true, true>;
