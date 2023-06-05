@@ -22,18 +22,18 @@ pub trait ScoringCriterion<D, G>: Clone + Debug + Sync {
 
     /// Computes the score value for the given data set $\mathbf{D}$ and graph $\mathcal{G}$.
     fn call(&self, g: &G) -> f64;
-
-    /// Returns the maximum number of parents that can be added to increase the score.
-    #[inline]
-    fn max_parents_hint(&self) -> Option<usize> {
-        None
-    }
 }
 
 /// Decomposable scoring criterion trait.
 pub trait DecomposableScoringCriterion<D, G>: Clone + Debug + Sync {
     /// Computes the score value for the given data set $\mathbf{D}$, vertex $X$ and parents $\mathbf{Z}$.
     fn call(&self, x: usize, z: &[usize]) -> f64;
+
+    /// Returns the maximum number of parents that can be added to increase the score.
+    #[inline]
+    fn max_parents_hint(&self) -> Option<usize> {
+        None
+    }
 }
 
 /* Blanket implementation for Decomposable Scoring Criterion */
