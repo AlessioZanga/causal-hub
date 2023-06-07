@@ -47,21 +47,22 @@ type A = Option<(usize, usize, usize)>;
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
-pub struct HillClimbing<'a, D, K, G, S, ST, const PARALLEL: bool>
+pub struct HillClimbing<'a, D, K, G, S, T, const PARALLEL: bool>
 where
-    S: ScoringCriterion<D, G, ScoreType = ST>,
+    S: ScoringCriterion<D, G, T>,
 {
     max_iter: usize,
     seed: Option<u64>,
     _d: PhantomData<D>,
     _k: PhantomData<K>,
+    _t: PhantomData<T>,
     g: Option<G>,
     s: &'a S,
 }
 
-impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
 where
-    S: ScoringCriterion<D, G, ScoreType = ST>,
+    S: ScoringCriterion<D, G, T>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
     #[inline]
@@ -71,6 +72,7 @@ where
             seed: None,
             _d: PhantomData,
             _k: PhantomData,
+            _t: PhantomData,
             g: None,
             s,
         }
@@ -104,10 +106,10 @@ where
     }
 }
 
-impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
 where
     G: BaseGraph,
-    S: ScoringCriterion<D, G, ScoreType = ST>,
+    S: ScoringCriterion<D, G, T>,
 {
     /// Apply edge operation to given graph.
     #[inline]
@@ -188,12 +190,12 @@ where
     }
 }
 
-impl<'a, D, K, G, S, ST, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, ST, PARALLEL>
+impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
 where
     D: DataSet,
     K: PriorKnowledge,
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
-    S: ScoringCriterion<D, G, ScoreType = ST>,
+    S: ScoringCriterion<D, G, T>,
 {
     #[inline]
     fn init(&self, d: &D, k: &K) -> (G, ES) {
@@ -525,7 +527,7 @@ where
     D: DataSet,
     K: PriorKnowledge,
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
-    S: ScoringCriterion<D, G, ScoreType = score_types::NonDecomposable>,
+    S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
     /// Compute delta score, if not already in cache, returning cache update.
     #[inline]
@@ -708,6 +710,6 @@ where
 }
 
 /// Alias for the single-thread Hill-Climbing algorithm.
-pub type HC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, false>;
+pub type HC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, false>;
 /// Alias for the multi-thread Hill-Climbing algorithm.
-pub type ParallelHC<'a, D, K, G, S, ST> = HillClimbing<'a, D, K, G, S, ST, true>;
+pub type ParallelHC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, true>;
