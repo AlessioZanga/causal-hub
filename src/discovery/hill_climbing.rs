@@ -6,20 +6,21 @@ use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 
-use super::{score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion};
+use super::{
+    score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion,
+    ScoringCriterionCache as C,
+};
 use crate::{
     data::DataSet,
     graphs::PathGraph,
-    prelude::{directions, BaseGraph, DirectedGraph, FxIndexMap, FxIndexSet, BFS},
+    prelude::{directions, BaseGraph, DirectedGraph, FxIndexSet, BFS},
     Ch, Pa, E, L, V,
 };
 
-/// Local cache type.
-type C<K> = FxIndexMap<K, f64>;
 /// Local cache update type.
 type CU<K> = Vec<(K, f64)>;
 /// Local edge key cache type.
-type KE = (usize, Vec<usize>);
+type KE = Option<(usize, Vec<usize>)>;
 
 /// Local edge space type
 type E = FxIndexSet<(usize, usize)>;
@@ -36,14 +37,15 @@ struct Op;
 /// Set value of constants.
 impl Op {
     /// Add edge operation.
-    const ADD: usize = 0;
+    const ADD: u8 = 0;
     /// Delete edge operation.
-    const DEL: usize = 1;
+    const DEL: u8 = 1;
     /// Reverse edge operation.
-    const REV: usize = 2;
+    const REV: u8 = 2;
 }
+
 /// Local action (operation, edge) type.
-type A = Option<(usize, usize, usize)>;
+type A = (usize, usize, u8);
 
 #[derive(Clone, Debug)]
 /// Hill-climbing functor.
@@ -113,7 +115,7 @@ where
 {
     /// Apply edge operation to given graph.
     #[inline]
-    fn apply(mut g: G, x: usize, y: usize, a: usize) -> G {
+    fn apply(mut g: G, x: usize, y: usize, a: u8) -> G {
         // Apply operation.
         match a {
             Op::ADD => assert!(g.add_edge_by_index(x, y)),
@@ -143,7 +145,7 @@ where
 
     /// Update edge space for each edge operation.
     #[inline]
-    fn update((mut add, mut del, mut rev): ES, x: usize, y: usize, a: usize) -> ES {
+    fn update((mut add, mut del, mut rev): ES, x: usize, y: usize, a: u8) -> ES {
         // Apply operation.
         match a {
             Op::ADD => {
@@ -260,20 +262,22 @@ where
         let del: E = e
             .clone()
             .into_iter()
+            // Remove any edge in the required list.
             .filter(|(x, y)| !k.has_required(*x, *y))
-            .collect(); // Remove any edge in the required list.
-                        // Initialize potential edges to be reversed.
+            .collect();
+        // Initialize potential edges to be reversed.
         let rev: E = e
             .into_iter()
+            // Remove any reversed edge in the forbidden list.
             .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
-            .collect(); // Remove any reversed edge in the forbidden list.
+            .collect();
 
         (g, (add, del, rev))
     }
 
     /// Check if edge operation is consistent with prior knowledge and acyclicity.
     #[inline]
-    fn is_valid<const OP: usize>(g: &G, x: usize, y: usize) -> bool {
+    fn is_valid<const OP: u8>(g: &G, x: usize, y: usize) -> bool {
         // Check validity depending on operation.
         let is_valid = match OP {
             // (X, Y) not in F, pi(Y, X) not in G.
@@ -317,75 +321,59 @@ where
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: DecomposableScoringCriterion<D, G>,
 {
-    /// Compute delta score, if not already in cache, returning cache update.
-    #[inline]
-    fn cache(&self, c: &C<KE>, x: usize, z: &[usize]) -> (f64, CU<KE>) {
-        // Construct the key.
-        let key = (x, z.to_vec());
-        // Check if score is already in cache.
-        match c.get(&key) {
-            // If so, return cached values.
-            Some(s) => (*s, CU::default()),
-            // If not, then ...
-            None => {
-                // Compute vertex score.
-                let s = self.s.call(x, z);
-
-                (s, CU::from_iter([(key, s)]))
-            }
-        }
-    }
-
     /// Evaluate delta score of edge operation on given graph.
     #[inline]
-    fn eval<const OP: usize>(&self, c: &C<KE>, g: &G, x: usize, y: usize) -> (f64, CU<KE>) {
-        // Get current Y score.
+    fn eval<const OP: u8>(
+        &self,
+        c: &C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        g: &G,
+        x: usize,
+        y: usize,
+    ) -> ((A, f64), CU<KE>) {
+        // Get current Y score.s
         let mut pa_y = Pa!(g, y).collect_vec();
-        let (s_y, mut c_y) = self.cache(c, y, &pa_y);
+        let s_y = c.call(y, &pa_y);
         // Compute delta score depending on operation.
-        let (delta_star, c_star) = match OP {
+        let (delta_star, s_star) = match OP {
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap_err();
                 pa_y.insert(i, x);
-                // Compute delta score and merge cache.
-                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
-                // Accumulate cache updates.
-                c_y.extend(c_y_star.into_iter());
+                // Compute score.
+                let s_y_star = c.call(y, &pa_y);
 
-                (s_y_star - s_y, c_y)
+                (s_y_star.1 - s_y.1, vec![s_y_star, s_y])
             }
             Op::DEL => {
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
-                // Compute delta score and merge cache.
-                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
-                // Merge cache updates.
-                c_y.extend(c_y_star.into_iter());
+                // Compute score.
+                let s_y_star = c.call(y, &pa_y);
 
-                (s_y_star - s_y, c_y)
+                (s_y_star.1 - s_y.1, vec![s_y_star, s_y])
             }
             Op::REV => {
                 // Get current X score.
                 let mut pa_x = Pa!(g, x).collect_vec();
-                let (s_x, c_x) = self.cache(c, x, &pa_x);
-                // Merge cache updates.
-                c_y.extend(c_x.into_iter());
+                let s_x = c.call(x, &pa_x);
+
                 // Add Y in-place by leveraging Pa(G, X) order.
                 let i = pa_x.binary_search(&y).unwrap_err();
                 pa_x.insert(i, y);
-                let (s_x_star, c_x_star) = self.cache(c, x, &pa_x);
-                // Merge cache updates.
-                c_y.extend(c_x_star.into_iter());
+                // Compute score.
+                let s_x_star = c.call(x, &pa_x);
+
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
-                let (s_y_star, c_y_star) = self.cache(c, y, &pa_y);
-                // Merge cache updates.
-                c_y.extend(c_y_star.into_iter());
+                // Compute score.
+                let s_y_star = c.call(y, &pa_y);
 
-                ((s_x_star - s_x) + (s_y_star - s_y), c_y)
+                (
+                    (s_x_star.1 - s_x.1) + (s_y_star.1 - s_y.1),
+                    vec![s_x_star, s_x, s_y_star, s_y],
+                )
             }
             _ => panic!("Unknown operation code"),
         };
@@ -404,63 +392,104 @@ where
             delta_star
         );
 
-        (delta_star, c_star)
+        (((x, y, OP), delta_star), s_star)
     }
 
     /// Search for best operation given current graph and edges space.
     #[inline]
-    fn search<const OP: usize>(
+    fn search<const OP: u8>(
         &self,
-        (op, delta): (A, f64),
-        mut c: C<KE>,
+        (op, delta): (Option<A>, f64),
+        mut c: C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
         g: &G,
         edges: &E,
-    ) -> (A, f64, C<KE>) {
+    ) -> (
+        (Option<A>, f64),
+        C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+    ) {
         // Select operation with best delta score, while merging cache updates.
-        let best_merge =
-            |(op, (delta, mut u_star)): (A, (f64, CU<KE>)),
-             (op_star, (delta_star, c_star)): (A, (f64, CU<KE>))| {
-                // Merge cache updates.
-                u_star.extend(c_star.into_iter());
-                // Check if difference is meaningful.
-                let diff = delta_star - delta;
-                let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-                // Return best operation.
-                match diff.is_sign_positive() && !sign {
-                    true => (op_star, (delta_star, u_star)),
-                    false => (op, (delta, u_star)),
-                }
-            };
-
-        // For each possible edge operation ...
-        let (op, (delta, u)) = match PARALLEL {
-            // Search in parallel.
-            true => edges
-                .par_iter()
-                // Check if operation is valid.
-                .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                // Compute current operation delta score and cache updates.
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
-                // Check if operation improves current solution.
-                .reduce(|| (op, (delta, CU::default())), best_merge),
-            // Same as before but sequentially.
-            false => edges
-                .iter()
-                .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
-                .fold((op, (delta, CU::default())), best_merge),
+        let best_op_delta = |(op, delta): (A, f64), (op_star, delta_star): (A, f64)| {
+            // Check if difference is meaningful.
+            let diff = delta_star - delta;
+            let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
+            // Return best operation.
+            match diff.is_sign_positive() && !sign {
+                true => (op_star, delta_star),
+                false => (op, delta),
+            }
         };
 
-        // Merge cache updates.
-        c.extend(u.into_iter());
+        // For each possible edge operation ...
+        let (op, delta) = match PARALLEL {
+            // Search in parallel.
+            true => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
+                    .par_iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                c.par_extend(
+                    fragments
+                        .into_par_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score ...
+                ops_deltas
+                    .into_par_iter()
+                    .reduce_with(best_op_delta)
+                    // ... and compare with default operation.
+                    .map_or((op, delta), |(op_star, delta_star)| {
+                        match delta_star > delta {
+                            true => (Some(op_star), delta_star),
+                            false => (op, delta),
+                        }
+                    })
+            }
+            // Same as before but sequentially.
+            false => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
+                    .iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                c.extend(
+                    fragments
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score.
+                ops_deltas
+                    .into_iter()
+                    .reduce(best_op_delta)
+                    // ... and compare with default operation.
+                    .map_or((op, delta), |(op_star, delta_star)| {
+                        match delta_star > delta {
+                            true => (Some(op_star), delta_star),
+                            false => (op, delta),
+                        }
+                    })
+            }
+        };
 
-        (op, delta, c)
+        ((op, delta), c)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
-        let mut c = C::<KE>::default();
+        let mut c = C::new(self.s);
 
         // Initialize graph from D and K.
         let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
@@ -473,7 +502,7 @@ where
                 // Compute vertex score.
                 let s = self.s.call(x, &z);
                 // Insert into the cache.
-                c.insert((x, z), s);
+                c.extend([((x, z), s)]);
 
                 s
             })
@@ -496,11 +525,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
+            ((op, delta), c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
             // For each possible edge deletion ...
-            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
+            ((op, delta), c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
             // For each possible edge reversal ...
-            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
+            ((op, delta), c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {
@@ -529,51 +558,36 @@ where
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
-    /// Compute delta score, if not already in cache, returning cache update.
-    #[inline]
-    fn cache(&self, c: &C<G>, g: &G) -> (f64, CU<G>) {
-        // Check if score is already in cache.
-        match c.get(g) {
-            // If so, return cached values.
-            Some(s) => (*s, CU::default()),
-            // If not, then ...
-            None => {
-                // Compute vertex score.
-                let s = self.s.call(g);
-
-                (s, CU::from_iter([(g.clone(), s)]))
-            }
-        }
-    }
-
     /// Evaluate delta score of edge operation on given graph.
     #[inline]
-    fn eval<const OP: usize>(&self, c: &C<G>, g: &G, x: usize, y: usize) -> (f64, CU<G>) {
+    fn eval<const OP: u8>(
+        &self,
+        c: &C<'a, D, G, S, score_types::NonDecomposable, G>,
+        g: &G,
+        x: usize,
+        y: usize,
+    ) -> ((A, f64), CU<Option<G>>) {
         // Get current Y score.
-        let (s_g, mut c_g) = self.cache(c, g);
+        let s_g = c.call(g);
         // Compute delta score depending on operation.
-        let (delta_star, c_star) = match OP {
+        let (delta_star, s_star) = match OP {
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
                 g_star.add_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, &g_star);
-                // Accumulate cache updates.
-                c_g.extend(c_g_star.into_iter());
+                let s_g_star = c.call(&g_star);
 
-                (s_g_star - s_g, c_g)
+                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
             Op::DEL => {
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
                 g_star.del_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, &g_star);
-                // Merge cache updates.
-                c_g.extend(c_g_star.into_iter());
+                let s_g_star = c.call(&g_star);
 
-                (s_g_star - s_g, c_g)
+                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
             Op::REV => {
                 // Reverse X in-place by leveraging Pa(G, Y) order.
@@ -581,11 +595,9 @@ where
                 g_star.del_edge_by_index(x, y);
                 g_star.add_edge_by_index(y, x);
                 // Compute delta score and merge cache.
-                let (s_g_star, c_g_star) = self.cache(c, &g_star);
-                // Merge cache updates.
-                c_g.extend(c_g_star.into_iter());
+                let s_g_star = c.call(&g_star);
 
-                (s_g_star - s_g, c_g)
+                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
             _ => panic!("Unknown operation code"),
         };
@@ -604,70 +616,111 @@ where
             delta_star
         );
 
-        (delta_star, c_star)
+        (((x, y, OP), delta_star), s_star)
     }
 
     /// Search for best operation given current graph and edges space.
     #[inline]
-    fn search<const OP: usize>(
+    fn search<const OP: u8>(
         &self,
-        (op, delta): (A, f64),
-        mut c: C<G>,
+        (op, delta): (Option<A>, f64),
+        mut c: C<'a, D, G, S, score_types::NonDecomposable, G>,
         g: &G,
         edges: &E,
-    ) -> (A, f64, C<G>) {
+    ) -> (
+        (Option<A>, f64),
+        C<'a, D, G, S, score_types::NonDecomposable, G>,
+    ) {
         // Select operation with best delta score, while merging cache updates.
-        let best_merge =
-            |(op, (delta, mut u_star)): (A, (f64, CU<G>)),
-             (op_star, (delta_star, c_star)): (A, (f64, CU<G>))| {
-                // Merge cache updates.
-                u_star.extend(c_star.into_iter());
-                // Check if difference is meaningful.
-                let diff = delta_star - delta;
-                let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-                // Return best operation.
-                match diff.is_sign_positive() && !sign {
-                    true => (op_star, (delta_star, u_star)),
-                    false => (op, (delta, u_star)),
-                }
-            };
-
-        // For each possible edge operation ...
-        let (op, (delta, u)) = match PARALLEL {
-            // Search in parallel.
-            true => edges
-                .par_iter()
-                // Check if operation is valid.
-                .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                // Compute current operation delta score and cache updates.
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
-                // Check if operation improves current solution.
-                .reduce(|| (op, (delta, CU::default())), best_merge),
-            // Same as before but sequentially.
-            false => edges
-                .iter()
-                .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                .map(|(x, y)| (Some((*x, *y, OP)), self.eval::<OP>(&c, g, *x, *y)))
-                .fold((op, (delta, CU::default())), best_merge),
+        let best_op_delta = |(op, delta): (A, f64), (op_star, delta_star): (A, f64)| {
+            // Check if difference is meaningful.
+            let diff = delta_star - delta;
+            let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
+            // Return best operation.
+            match diff.is_sign_positive() && !sign {
+                true => (op_star, delta_star),
+                false => (op, delta),
+            }
         };
 
-        // Merge cache updates.
-        c.extend(u.into_iter());
+        // For each possible edge operation ...
+        let (op, delta) = match PARALLEL {
+            // Search in parallel.
+            true => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
+                    .par_iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                c.par_extend(
+                    fragments
+                        .into_par_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score ...
+                ops_deltas
+                    .into_par_iter()
+                    .reduce_with(best_op_delta)
+                    // ... and compare with default operation.
+                    .map_or((op, delta), |(op_star, delta_star)| {
+                        match delta_star > delta {
+                            true => (Some(op_star), delta_star),
+                            false => (op, delta),
+                        }
+                    })
+            }
+            // Same as before but sequentially.
+            false => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
+                    .iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                c.extend(
+                    fragments
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score.
+                ops_deltas
+                    .into_iter()
+                    .reduce(best_op_delta)
+                    // ... and compare with default operation.
+                    .map_or((op, delta), |(op_star, delta_star)| {
+                        match delta_star > delta {
+                            true => (Some(op_star), delta_star),
+                            false => (op, delta),
+                        }
+                    })
+            }
+        };
 
-        (op, delta, c)
+        ((op, delta), c)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
-        let mut c = C::<G>::default();
+        let mut c = C::new(self.s);
 
         // Initialize graph from D and K.
         let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
         // Compute the initial score.
         let mut s_g = self.s.call(&g);
         // Update cache.
-        c.insert(g.clone(), s_g);
+        c.extend([(g.clone(), s_g)]);
 
         // Initialize iterations counter.
         let mut i = 0;
@@ -685,11 +738,11 @@ where
             let (mut op, mut delta) = (None, 0.);
 
             // For each possible edge addition ...
-            (op, delta, c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
+            ((op, delta), c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
             // For each possible edge deletion ...
-            (op, delta, c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
+            ((op, delta), c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
             // For each possible edge reversal ...
-            (op, delta, c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
+            ((op, delta), c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
 
             // If best operation exists.
             if let Some((x, y, a)) = op {
