@@ -312,6 +312,101 @@ where
     }
 }
 
+/// Search hill-climbing edge space.
+macro_rules! search {
+    (
+        $PARALLEL: ident,
+        $OP: ident,
+        $self: ident,
+        $op: ident,
+        $delta: ident,
+        $c: ident,
+        $g: ident,
+        $e: ident
+    ) => {
+        match $PARALLEL {
+            // Search in parallel.
+            true => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $e
+                    .par_iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<$OP>($g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| $self.eval::<$OP>(&$c, $g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                $c.par_extend(
+                    fragments
+                        .into_par_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score ...
+                ops_deltas
+                    .into_par_iter()
+                    .reduce_with(|(op, delta), (op_star, delta_star)| {
+                        // Check if difference is meaningful.
+                        let diff = delta_star - delta;
+                        let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
+                        // Return best operation.
+                        match diff.is_sign_positive() && !sign {
+                            true => (op_star, delta_star),
+                            false => (op, delta),
+                        }
+                    })
+                    // ... and compare with default operation.
+                    .map_or(($op, $delta), |(op_star, delta_star)| {
+                        match delta_star > $delta {
+                            true => (Some(op_star), delta_star),
+                            false => ($op, $delta),
+                        }
+                    })
+            }
+            // Same as before but sequentially.
+            false => {
+                // Compute operations deltas and cache fragments
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $e
+                    .iter()
+                    // Check if operation is valid.
+                    .filter(|(x, y)| Self::is_valid::<$OP>($g, *x, *y))
+                    // Compute current operation delta score and cache fragments.
+                    .map(|(x, y)| $self.eval::<$OP>(&$c, $g, *x, *y))
+                    // Unzip OPs and cache fragments.
+                    .unzip();
+                // Merge cache updates.
+                $c.extend(
+                    fragments
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|(k, v)| k.map(|k| (k, v))),
+                );
+                // Get operation with highest delta score.
+                ops_deltas
+                    .into_iter()
+                    .reduce(|(op, delta), (op_star, delta_star)| {
+                        // Check if difference is meaningful.
+                        let diff = delta_star - delta;
+                        let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
+                        // Return best operation.
+                        match diff.is_sign_positive() && !sign {
+                            true => (op_star, delta_star),
+                            false => (op, delta),
+                        }
+                    })
+                    // ... and compare with default operation.
+                    .map_or(($op, $delta), |(op_star, delta_star)| {
+                        match delta_star > $delta {
+                            true => (Some(op_star), delta_star),
+                            false => ($op, $delta),
+                        }
+                    })
+            }
+        }
+    };
+}
+
 /* Implement Hill-Climbing for Decomposable Scoring Criteria */
 impl<'a, D, K, G, S, const PARALLEL: bool>
     HillClimbing<'a, D, K, G, S, score_types::Decomposable, PARALLEL>
@@ -402,86 +497,13 @@ where
         (op, delta): (Option<A>, f64),
         mut c: C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
         g: &G,
-        edges: &E,
+        e: &E,
     ) -> (
         (Option<A>, f64),
         C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
     ) {
-        // Select operation with best delta score, while merging cache updates.
-        let best_op_delta = |(op, delta): (A, f64), (op_star, delta_star): (A, f64)| {
-            // Check if difference is meaningful.
-            let diff = delta_star - delta;
-            let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-            // Return best operation.
-            match diff.is_sign_positive() && !sign {
-                true => (op_star, delta_star),
-                false => (op, delta),
-            }
-        };
-
         // For each possible edge operation ...
-        let (op, delta) = match PARALLEL {
-            // Search in parallel.
-            true => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
-                    .par_iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                c.par_extend(
-                    fragments
-                        .into_par_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
-                // Get operation with highest delta score ...
-                ops_deltas
-                    .into_par_iter()
-                    .reduce_with(best_op_delta)
-                    // ... and compare with default operation.
-                    .map_or((op, delta), |(op_star, delta_star)| {
-                        match delta_star > delta {
-                            true => (Some(op_star), delta_star),
-                            false => (op, delta),
-                        }
-                    })
-            }
-            // Same as before but sequentially.
-            false => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
-                    .iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                c.extend(
-                    fragments
-                        .into_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
-                // Get operation with highest delta score.
-                ops_deltas
-                    .into_iter()
-                    .reduce(best_op_delta)
-                    // ... and compare with default operation.
-                    .map_or((op, delta), |(op_star, delta_star)| {
-                        match delta_star > delta {
-                            true => (Some(op_star), delta_star),
-                            false => (op, delta),
-                        }
-                    })
-            }
-        };
+        let (op, delta) = search!(PARALLEL, OP, self, op, delta, c, g, e);
 
         ((op, delta), c)
     }
@@ -626,86 +648,13 @@ where
         (op, delta): (Option<A>, f64),
         mut c: C<'a, D, G, S, score_types::NonDecomposable, G>,
         g: &G,
-        edges: &E,
+        e: &E,
     ) -> (
         (Option<A>, f64),
         C<'a, D, G, S, score_types::NonDecomposable, G>,
     ) {
-        // Select operation with best delta score, while merging cache updates.
-        let best_op_delta = |(op, delta): (A, f64), (op_star, delta_star): (A, f64)| {
-            // Check if difference is meaningful.
-            let diff = delta_star - delta;
-            let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-            // Return best operation.
-            match diff.is_sign_positive() && !sign {
-                true => (op_star, delta_star),
-                false => (op, delta),
-            }
-        };
-
         // For each possible edge operation ...
-        let (op, delta) = match PARALLEL {
-            // Search in parallel.
-            true => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
-                    .par_iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                c.par_extend(
-                    fragments
-                        .into_par_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
-                // Get operation with highest delta score ...
-                ops_deltas
-                    .into_par_iter()
-                    .reduce_with(best_op_delta)
-                    // ... and compare with default operation.
-                    .map_or((op, delta), |(op_star, delta_star)| {
-                        match delta_star > delta {
-                            true => (Some(op_star), delta_star),
-                            false => (op, delta),
-                        }
-                    })
-            }
-            // Same as before but sequentially.
-            false => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = edges
-                    .iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<OP>(g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| self.eval::<OP>(&c, g, *x, *y))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                c.extend(
-                    fragments
-                        .into_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
-                // Get operation with highest delta score.
-                ops_deltas
-                    .into_iter()
-                    .reduce(best_op_delta)
-                    // ... and compare with default operation.
-                    .map_or((op, delta), |(op_star, delta_star)| {
-                        match delta_star > delta {
-                            true => (Some(op_star), delta_star),
-                            false => (op, delta),
-                        }
-                    })
-            }
-        };
+        let (op, delta) = search!(PARALLEL, OP, self, op, delta, c, g, e);
 
         ((op, delta), c)
     }
