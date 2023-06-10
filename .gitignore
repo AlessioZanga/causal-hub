@@ -3,3 +3,4 @@
 /Cargo.lock
 lcov.info
 *.pdf
+heaptrack*
