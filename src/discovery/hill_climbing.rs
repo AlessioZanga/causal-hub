@@ -53,13 +53,14 @@ pub struct HillClimbing<'a, D, K, G, S, T, const PARALLEL: bool>
 where
     S: ScoringCriterion<D, G, T>,
 {
+    max_in_degree: usize,
     max_iter: usize,
     seed: Option<u64>,
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     _t: PhantomData<T>,
     g: Option<G>,
-    s: &'a S,
+    scoring_criterion: &'a S,
 }
 
 impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
@@ -68,15 +69,19 @@ where
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
     #[inline]
-    pub const fn new(s: &'a S) -> Self {
+    pub fn new(scoring_criterion: &'a S) -> Self {
+        // Get max in-degree or default to maximum in-degree.
+        let max_in_degree = scoring_criterion.max_in_degree_hint().unwrap_or(usize::MAX);
+
         Self {
+            max_in_degree,
             max_iter: usize::MAX,
             seed: None,
             _d: PhantomData,
             _k: PhantomData,
             _t: PhantomData,
             g: None,
-            s,
+            scoring_criterion,
         }
     }
 
@@ -85,6 +90,15 @@ where
     pub fn with_initial_graph(mut self, g: G) -> Self {
         // Set initial graph.
         self.g = Some(g);
+
+        self
+    }
+
+    /// Set max in-degree.
+    #[inline]
+    pub const fn with_max_in_degree(mut self, max_in_degree: usize) -> Self {
+        // Set hyper parameter.
+        self.max_in_degree = max_in_degree;
 
         self
     }
@@ -115,14 +129,22 @@ where
 {
     /// Apply edge operation to given graph.
     #[inline]
-    fn apply(mut g: G, x: usize, y: usize, a: u8) -> G {
+    fn apply(in_degree: &mut [usize], mut g: G, x: usize, y: usize, a: u8) -> G {
         // Apply operation.
         match a {
-            Op::ADD => assert!(g.add_edge_by_index(x, y)),
-            Op::DEL => assert!(g.del_edge_by_index(x, y)),
+            Op::ADD => {
+                assert!(g.add_edge_by_index(x, y));
+                in_degree[y] += 1;
+            }
+            Op::DEL => {
+                assert!(g.del_edge_by_index(x, y));
+                in_degree[y] -= 1;
+            }
             Op::REV => {
                 assert!(g.del_edge_by_index(x, y));
+                in_degree[y] -= 1;
                 assert!(g.add_edge_by_index(y, x));
+                in_degree[x] += 1;
             }
             _ => panic!("Unknown operation code"),
         };
@@ -200,7 +222,7 @@ where
     S: ScoringCriterion<D, G, T>,
 {
     #[inline]
-    fn init(&self, d: &D, k: &K) -> (ES, G) {
+    fn init(&self, d: &D, k: &K) -> (ES, Vec<usize>, G) {
         // Check if initial graph has been provided.
         let mut g = match self.g.as_ref() {
             // If initial graph is provided ...
@@ -272,22 +294,32 @@ where
             .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect();
 
-        ((add, del, rev), g)
+        // Compute current in-degree.
+        let in_degree = V!(g).map(|x| g.get_in_degree_by_index(x)).collect();
+
+        ((add, del, rev), in_degree, g)
     }
 
     /// Check if edge operation is consistent with prior knowledge and acyclicity.
     #[inline]
-    fn is_valid<const OP: u8>(g: &G, x: usize, y: usize) -> bool {
+    fn is_valid<const OP: u8>(&self, in_degree: &[usize], g: &G, x: usize, y: usize) -> bool {
         // Check validity depending on operation.
         let is_valid = match OP {
-            // (X, Y) not in F, pi(Y, X) not in G.
-            Op::ADD => !g.has_edge_by_index(y, x) && !g.has_path_by_index(y, x),
+            // |Pa(G, X)| < max_Pa, (X, Y) not in F, pi(Y, X) not in G.
+            Op::ADD => {
+                in_degree[y] < self.max_in_degree
+                    && !g.has_edge_by_index(y, x)
+                    && !g.has_path_by_index(y, x)
+            }
             // (X, Y) in R.
             Op::DEL => true,
-            // (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
-            Op::REV => !Ch!(g, x)
-                .filter(|&z| z != y)
-                .any(|z| BFS::from((g, z)).any(|w| w == y)),
+            // |Pa(G, X)| < max_Pa, (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
+            Op::REV => {
+                in_degree[x] < self.max_in_degree
+                    && !Ch!(g, x)
+                        .filter(|&z| z != y)
+                        .any(|z| BFS::from((g, z)).any(|w| w == y))
+            }
             // Unknown operation code.
             _ => panic!("Unknown operation code"),
         };
@@ -320,7 +352,8 @@ macro_rules! search {
         $add: ident,
         $del: ident,
         $rev: ident,
-        $c: ident,
+        $cache: ident,
+        $in_degree: ident,
         $g: ident
     ) => {
         match $PARALLEL {
@@ -330,23 +363,23 @@ macro_rules! search {
                 let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .par_iter()
                     // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<{ Op::ADD }>($g, *x, *y))
+                    .filter(|(x, y)| $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y))
                     // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
+                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y))
                     .chain(
                         $del.par_iter()
-                            .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
+                            .filter(|(x, y)| $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y))
+                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
                     )
                     .chain(
                         $rev.par_iter()
-                            .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
+                            .filter(|(x, y)| $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y))
+                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
                     )
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
-                $c.par_extend(
+                $cache.par_extend(
                     fragments
                         .into_par_iter()
                         .flatten()
@@ -364,23 +397,23 @@ macro_rules! search {
                 let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .iter()
                     // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<{ Op::ADD }>($g, *x, *y))
+                    .filter(|(x, y)| $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y))
                     // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
+                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y))
                     .chain(
                         $del.iter()
-                            .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
+                            .filter(|(x, y)| $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y))
+                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
                     )
                     .chain(
                         $rev.iter()
-                            .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
+                            .filter(|(x, y)| $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y))
+                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
                     )
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
-                $c.extend(
+                $cache.extend(
                     fragments
                         .into_iter()
                         .flatten()
@@ -409,14 +442,14 @@ where
     #[inline]
     fn eval<const OP: u8>(
         &self,
-        c: &C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        cache: &C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
         g: &G,
         x: usize,
         y: usize,
     ) -> ((A, f64), CU<KE>) {
         // Get current Y score.s
         let mut pa_y = Pa!(g, y).collect_vec();
-        let s_y = c.call(y, &pa_y);
+        let s_y = cache.call(y, &pa_y);
         // Compute delta score depending on operation.
         let (delta_star, s_star) = match OP {
             Op::ADD => {
@@ -424,7 +457,7 @@ where
                 let i = pa_y.binary_search(&x).unwrap_err();
                 pa_y.insert(i, x);
                 // Compute score.
-                let s_y_star = c.call(y, &pa_y);
+                let s_y_star = cache.call(y, &pa_y);
 
                 (s_y_star.1 - s_y.1, vec![s_y_star, s_y])
             }
@@ -433,26 +466,26 @@ where
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
                 // Compute score.
-                let s_y_star = c.call(y, &pa_y);
+                let s_y_star = cache.call(y, &pa_y);
 
                 (s_y_star.1 - s_y.1, vec![s_y_star, s_y])
             }
             Op::REV => {
                 // Get current X score.
                 let mut pa_x = Pa!(g, x).collect_vec();
-                let s_x = c.call(x, &pa_x);
+                let s_x = cache.call(x, &pa_x);
 
                 // Add Y in-place by leveraging Pa(G, X) order.
                 let i = pa_x.binary_search(&y).unwrap_err();
                 pa_x.insert(i, y);
                 // Compute score.
-                let s_x_star = c.call(x, &pa_x);
+                let s_x_star = cache.call(x, &pa_x);
 
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let i = pa_y.binary_search(&x).unwrap();
                 pa_y.remove(i);
                 // Compute score.
-                let s_y_star = c.call(y, &pa_y);
+                let s_y_star = cache.call(y, &pa_y);
 
                 (
                     (s_x_star.1 - s_x.1) + (s_y_star.1 - s_y.1),
@@ -484,19 +517,20 @@ where
     fn search(
         &self,
         (add, del, rev): (&E, &E, &E),
-        c: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        cache: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
-        search!(PARALLEL, self, add, del, rev, c, g)
+        search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
-        let mut c = C::new(self.s);
+        let mut cache = C::new(self.scoring_criterion);
 
         // Initialize graph from D and K.
-        let ((mut add, mut del, mut rev), mut g) = self.init(d, k);
+        let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
         // Compute the initial score.
         let mut s_g: f64 = V!(g)
             // For each vertex.
@@ -504,9 +538,9 @@ where
                 // Get vertex parents.
                 let z = Pa!(g, x).collect_vec();
                 // Compute vertex score.
-                let s = self.s.call(x, &z);
+                let s = self.scoring_criterion.call(x, &z);
                 // Insert into the cache.
-                c.extend([((x, z), s)]);
+                cache.extend([((x, z), s)]);
 
                 s
             })
@@ -526,12 +560,12 @@ where
             debug!("i: {}, max_iter: {}", i, self.max_iter);
 
             // For each possible edge operation ...
-            let op_delta = self.search((&add, &del, &rev), &mut c, &g);
+            let op_delta = self.search((&add, &del, &rev), &mut cache, &in_degree, &g);
 
             // If best operation exists.
             if let Some(((x, y, a), delta)) = op_delta {
                 // Apply operation to current solution.
-                (g, s_g) = (Self::apply(g, x, y, a), s_g + delta);
+                (g, s_g) = (Self::apply(&mut in_degree, g, x, y, a), s_g + delta);
                 // Update search space.
                 (add, del, rev) = Self::update((add, del, rev), x, y, a);
                 // Set the flag.
@@ -559,13 +593,13 @@ where
     #[inline]
     fn eval<const OP: u8>(
         &self,
-        c: &C<'a, D, G, S, score_types::NonDecomposable, G>,
+        cache: &C<'a, D, G, S, score_types::NonDecomposable, G>,
         g: &G,
         x: usize,
         y: usize,
     ) -> ((A, f64), CU<Option<G>>) {
         // Get current Y score.
-        let s_g = c.call(g);
+        let s_g = cache.call(g);
         // Compute delta score depending on operation.
         let (delta_star, s_star) = match OP {
             Op::ADD => {
@@ -573,7 +607,7 @@ where
                 let mut g_star = g.clone();
                 g_star.add_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let s_g_star = c.call(&g_star);
+                let s_g_star = cache.call(&g_star);
 
                 (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
@@ -582,7 +616,7 @@ where
                 let mut g_star = g.clone();
                 g_star.del_edge_by_index(x, y);
                 // Compute delta score and merge cache.
-                let s_g_star = c.call(&g_star);
+                let s_g_star = cache.call(&g_star);
 
                 (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
@@ -592,7 +626,7 @@ where
                 g_star.del_edge_by_index(x, y);
                 g_star.add_edge_by_index(y, x);
                 // Compute delta score and merge cache.
-                let s_g_star = c.call(&g_star);
+                let s_g_star = cache.call(&g_star);
 
                 (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
             }
@@ -621,23 +655,24 @@ where
     fn search(
         &self,
         (add, del, rev): (&E, &E, &E),
-        c: &mut C<'a, D, G, S, score_types::NonDecomposable, G>,
+        cache: &mut C<'a, D, G, S, score_types::NonDecomposable, G>,
+        in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
-        search!(PARALLEL, self, add, del, rev, c, g)
+        search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
-        let mut c = C::new(self.s);
+        let mut cache = C::new(self.scoring_criterion);
 
         // Initialize graph from D and K.
-        let ((mut add, mut del, mut rev), mut g) = self.init(d, k);
+        let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
         // Compute the initial score.
-        let mut s_g = self.s.call(&g);
+        let mut s_g = self.scoring_criterion.call(&g);
         // Update cache.
-        c.extend([(g.clone(), s_g)]);
+        cache.extend([(g.clone(), s_g)]);
 
         // Initialize iterations counter.
         let mut i = 0;
@@ -652,12 +687,12 @@ where
             debug!("i: {}, max_iter: {}", i, self.max_iter);
 
             // For each possible edge operation ...
-            let op_delta = self.search((&add, &del, &rev), &mut c, &g);
+            let op_delta = self.search((&add, &del, &rev), &mut cache, &in_degree, &g);
 
             // If best operation exists.
             if let Some(((x, y, a), delta)) = op_delta {
                 // Apply operation to current solution.
-                (g, s_g) = (Self::apply(g, x, y, a), s_g + delta);
+                (g, s_g) = (Self::apply(&mut in_degree, g, x, y, a), s_g + delta);
                 // Update search space.
                 (add, del, rev) = Self::update((add, del, rev), x, y, a);
                 // Set the flag.

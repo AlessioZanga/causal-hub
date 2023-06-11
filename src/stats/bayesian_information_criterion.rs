@@ -53,7 +53,7 @@ where
     }
 
     #[inline]
-    fn max_parents_hint(&self) -> Option<usize> {
+    fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
         let n = self.ll.d.values().nrows() as f64;
 
@@ -86,7 +86,7 @@ where
     }
 
     #[inline]
-    fn max_parents_hint(&self) -> Option<usize> {
+    fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
         let n = self.ll.d.values().nrows() as f64;
 

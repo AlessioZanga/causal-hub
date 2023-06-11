@@ -23,6 +23,12 @@ pub mod score_types {
 pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
     /// Computes the score value for the given data set $\mathbf{D}$ and graph $\mathcal{G}$.
     fn call(&self, g: &G) -> f64;
+
+    /// Returns the maximum in-degree that can be reached while increasing the score.
+    #[inline]
+    fn max_in_degree_hint(&self) -> Option<usize> {
+        None
+    }
 }
 
 /// Decomposable scoring criterion trait.
@@ -30,9 +36,9 @@ pub trait DecomposableScoringCriterion<D, G>: Clone + Debug + Sync {
     /// Computes the score value for the given data set $\mathbf{D}$, vertex $X$ and parents $\mathbf{Z}$.
     fn call(&self, x: usize, z: &[usize]) -> f64;
 
-    /// Returns the maximum number of parents that can be added to increase the score.
+    /// Returns the maximum in-degree that can be reached while increasing the score.
     #[inline]
-    fn max_parents_hint(&self) -> Option<usize> {
+    fn max_in_degree_hint(&self) -> Option<usize> {
         None
     }
 }
@@ -49,6 +55,11 @@ where
             .map(|x| (x, Pa!(g, x).collect_vec()))
             .map(|(x, z)| self.call(x, &z))
             .sum()
+    }
+
+    #[inline]
+    fn max_in_degree_hint(&self) -> Option<usize> {
+        DecomposableScoringCriterion::max_in_degree_hint(self)
     }
 }
 
@@ -172,9 +183,9 @@ where
     }
 
     #[inline]
-    fn max_parents_hint(&self) -> Option<usize> {
+    fn max_in_degree_hint(&self) -> Option<usize> {
         // Delegate call to inner member.
-        self.scoring_criterion.max_parents_hint()
+        self.scoring_criterion.max_in_degree_hint()
     }
 }
 
