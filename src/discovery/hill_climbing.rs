@@ -200,7 +200,7 @@ where
     S: ScoringCriterion<D, G, T>,
 {
     #[inline]
-    fn init(&self, d: &D, k: &K) -> (G, ES) {
+    fn init(&self, d: &D, k: &K) -> (ES, G) {
         // Check if initial graph has been provided.
         let mut g = match self.g.as_ref() {
             // If initial graph is provided ...
@@ -272,7 +272,7 @@ where
             .filter(|(x, y)| !k.has_required(*x, *y) && !k.has_forbidden(*y, *x))
             .collect();
 
-        (g, (add, del, rev))
+        ((add, del, rev), g)
     }
 
     /// Check if edge operation is consistent with prior knowledge and acyclicity.
@@ -335,16 +335,12 @@ macro_rules! search {
                     .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
                     .chain(
                         $del.par_iter()
-                            // Check if operation is valid.
                             .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
-                            // Compute current operation delta score and cache fragments.
                             .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
                     )
                     .chain(
                         $rev.par_iter()
-                            // Check if operation is valid.
                             .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
-                            // Compute current operation delta score and cache fragments.
                             .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
                     )
                     // Unzip OPs and cache fragments.
@@ -373,16 +369,12 @@ macro_rules! search {
                     .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
                     .chain(
                         $del.iter()
-                            // Check if operation is valid.
                             .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
-                            // Compute current operation delta score and cache fragments.
                             .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
                     )
                     .chain(
                         $rev.iter()
-                            // Check if operation is valid.
                             .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
-                            // Compute current operation delta score and cache fragments.
                             .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
                     )
                     // Unzip OPs and cache fragments.
@@ -504,7 +496,7 @@ where
         let mut c = C::new(self.s);
 
         // Initialize graph from D and K.
-        let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
+        let ((mut add, mut del, mut rev), mut g) = self.init(d, k);
         // Compute the initial score.
         let mut s_g: f64 = V!(g)
             // For each vertex.
@@ -641,7 +633,7 @@ where
         let mut c = C::new(self.s);
 
         // Initialize graph from D and K.
-        let (mut g, (mut add, mut del, mut rev)) = self.init(d, k);
+        let ((mut add, mut del, mut rev), mut g) = self.init(d, k);
         // Compute the initial score.
         let mut s_g = self.s.call(&g);
         // Update cache.
