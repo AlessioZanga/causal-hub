@@ -75,7 +75,7 @@ where
 
     /// Private function. It performs parallel skeleton discovery given a test.
     #[inline]
-    fn skeleton_parallel(&self) -> (Graph, SepSets) {
+    fn parallel_skeleton(&self) -> (Graph, SepSets) {
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
@@ -162,8 +162,8 @@ where
 
     /// Perform parallel skeleton discovery given test.
     #[inline]
-    pub fn call_skeleton_parallel(&self) -> Graph {
-        self.skeleton_parallel().0
+    pub fn parallel_call_skeleton(&self) -> Graph {
+        self.parallel_skeleton().0
     }
 
     /// Perform discovery given a test.
@@ -172,7 +172,7 @@ where
     pub fn call(&self) -> PDGraph {
         // Perform skeleton discovery
         let (g, sepsets) = self.skeleton();
-        // Cast it to a partially directed graph
+        // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
         // Create the set of unshielded triples
         let mut triples: BTreeSet<(usize, usize, usize)> = BTreeSet::new();
@@ -190,7 +190,7 @@ where
         for (x, y, z) in triples.into_iter() {
             // ... if `y` doesn't d-separates `(x, y)` ...
             if !sepsets[&(x, z)].contains(&y) {
-                // and both edges are undirected ...
+                // ... and both edges are undirected ...
                 if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(y, z) {
                     continue;
                 }
@@ -205,29 +205,33 @@ where
     /// Perform parallel discovery given a test.
     /// Firstly, it performs parallel skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
     #[inline]
-    pub fn call_parallel(&self) -> PDGraph {
-        //TODO: parallelize after `.skeleton_parallel()`
+    pub fn parallel_call(&self) -> PDGraph {
         // Perform skeleton discovery
-        let (g, sepsets) = self.skeleton_parallel();
-        // Cast it to a partially directed graph
+        let (g, sepsets) = self.parallel_skeleton();
+        // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
-        // Create the set of unshielded triples
-        let mut triples: BTreeSet<(usize, usize, usize)> = BTreeSet::new();
-        for y in V!(g) {
-            for (x, z) in Adj!(g, y)
-                .combinations(2)
-                .map(|xz| (xz[0], xz[1]))
-                .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
-            {
-                triples.insert((x, y, z));
-            }
-        }
+
+        let triples: BTreeSet<(usize, usize, usize)> = V!(g)
+            .collect::<Vec<usize>>()
+            .into_par_iter()
+            .flat_map(|y| {
+                // Create the set of unshielded triples
+                let triples_y = Adj!(g, y)
+                    .combinations(2)
+                    .collect::<Vec<Vec<usize>>>()
+                    .into_par_iter()
+                    .map(|xz| (xz[0], xz[1]))
+                    .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
+                    .map(move |(x, z)| (x, y, z));
+                triples_y
+            })
+            .collect();
 
         // For every unshielded triple ...
         for (x, y, z) in triples.into_iter() {
             // ... if `y` doesn't d-separates `(x, y)` ...
             if !sepsets[&(x, z)].contains(&y) {
-                // and both edges are undirected ...
+                // ... and both edges are undirected ...
                 if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(y, z) {
                     continue;
                 }
