@@ -316,24 +316,37 @@ where
 macro_rules! search {
     (
         $PARALLEL: ident,
-        $OP: ident,
         $self: ident,
-        $op: ident,
-        $delta: ident,
+        $add: ident,
+        $del: ident,
+        $rev: ident,
         $c: ident,
-        $g: ident,
-        $e: ident
+        $g: ident
     ) => {
         match $PARALLEL {
             // Search in parallel.
             true => {
                 // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $e
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .par_iter()
                     // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<$OP>($g, *x, *y))
+                    .filter(|(x, y)| Self::is_valid::<{ Op::ADD }>($g, *x, *y))
                     // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<$OP>(&$c, $g, *x, *y))
+                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
+                    .chain(
+                        $del.par_iter()
+                            // Check if operation is valid.
+                            .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
+                            // Compute current operation delta score and cache fragments.
+                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
+                    )
+                    .chain(
+                        $rev.par_iter()
+                            // Check if operation is valid.
+                            .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
+                            // Compute current operation delta score and cache fragments.
+                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
+                    )
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
@@ -343,36 +356,35 @@ macro_rules! search {
                         .flatten()
                         .filter_map(|(k, v)| k.map(|k| (k, v))),
                 );
-                // Get operation with highest delta score ...
+                // Get operation with highest delta score, if any.
                 ops_deltas
                     .into_par_iter()
-                    .reduce_with(|(op, delta), (op_star, delta_star)| {
-                        // Check if difference is meaningful.
-                        let diff = delta_star - delta;
-                        let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-                        // Return best operation.
-                        match diff.is_sign_positive() && !sign {
-                            true => (op_star, delta_star),
-                            false => (op, delta),
-                        }
-                    })
-                    // ... and compare with default operation.
-                    .map_or(($op, $delta), |(op_star, delta_star)| {
-                        match delta_star > $delta {
-                            true => (Some(op_star), delta_star),
-                            false => ($op, $delta),
-                        }
-                    })
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
+                    .filter(|(_, delta)| delta.is_sign_positive())
             }
             // Same as before but sequentially.
             false => {
                 // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $e
+                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .iter()
                     // Check if operation is valid.
-                    .filter(|(x, y)| Self::is_valid::<$OP>($g, *x, *y))
+                    .filter(|(x, y)| Self::is_valid::<{ Op::ADD }>($g, *x, *y))
                     // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<$OP>(&$c, $g, *x, *y))
+                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$c, $g, *x, *y))
+                    .chain(
+                        $del.iter()
+                            // Check if operation is valid.
+                            .filter(|(x, y)| Self::is_valid::<{ Op::DEL }>($g, *x, *y))
+                            // Compute current operation delta score and cache fragments.
+                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$c, $g, *x, *y)),
+                    )
+                    .chain(
+                        $rev.iter()
+                            // Check if operation is valid.
+                            .filter(|(x, y)| Self::is_valid::<{ Op::REV }>($g, *x, *y))
+                            // Compute current operation delta score and cache fragments.
+                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$c, $g, *x, *y)),
+                    )
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
@@ -385,23 +397,8 @@ macro_rules! search {
                 // Get operation with highest delta score.
                 ops_deltas
                     .into_iter()
-                    .reduce(|(op, delta), (op_star, delta_star)| {
-                        // Check if difference is meaningful.
-                        let diff = delta_star - delta;
-                        let sign = f64::abs(diff) < f64::sqrt(f64::EPSILON);
-                        // Return best operation.
-                        match diff.is_sign_positive() && !sign {
-                            true => (op_star, delta_star),
-                            false => (op, delta),
-                        }
-                    })
-                    // ... and compare with default operation.
-                    .map_or(($op, $delta), |(op_star, delta_star)| {
-                        match delta_star > $delta {
-                            true => (Some(op_star), delta_star),
-                            false => ($op, $delta),
-                        }
-                    })
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
+                    .filter(|(_, delta)| delta.is_sign_positive())
             }
         }
     };
@@ -492,20 +489,13 @@ where
 
     /// Search for best operation given current graph and edges space.
     #[inline]
-    fn search<const OP: u8>(
+    fn search(
         &self,
-        (op, delta): (Option<A>, f64),
-        mut c: C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        (add, del, rev): (&E, &E, &E),
+        c: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
         g: &G,
-        e: &E,
-    ) -> (
-        (Option<A>, f64),
-        C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
-    ) {
-        // For each possible edge operation ...
-        let (op, delta) = search!(PARALLEL, OP, self, op, delta, c, g, e);
-
-        ((op, delta), c)
+    ) -> Option<(A, f64)> {
+        search!(PARALLEL, self, add, del, rev, c, g)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -543,18 +533,11 @@ where
             // Log current iteration.
             debug!("i: {}, max_iter: {}", i, self.max_iter);
 
-            // Initialize current best operation.
-            let (mut op, mut delta) = (None, 0.);
-
-            // For each possible edge addition ...
-            ((op, delta), c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
-            // For each possible edge deletion ...
-            ((op, delta), c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
-            // For each possible edge reversal ...
-            ((op, delta), c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
+            // For each possible edge operation ...
+            let op_delta = self.search((&add, &del, &rev), &mut c, &g);
 
             // If best operation exists.
-            if let Some((x, y, a)) = op {
+            if let Some(((x, y, a), delta)) = op_delta {
                 // Apply operation to current solution.
                 (g, s_g) = (Self::apply(g, x, y, a), s_g + delta);
                 // Update search space.
@@ -643,20 +626,13 @@ where
 
     /// Search for best operation given current graph and edges space.
     #[inline]
-    fn search<const OP: u8>(
+    fn search(
         &self,
-        (op, delta): (Option<A>, f64),
-        mut c: C<'a, D, G, S, score_types::NonDecomposable, G>,
+        (add, del, rev): (&E, &E, &E),
+        c: &mut C<'a, D, G, S, score_types::NonDecomposable, G>,
         g: &G,
-        e: &E,
-    ) -> (
-        (Option<A>, f64),
-        C<'a, D, G, S, score_types::NonDecomposable, G>,
-    ) {
-        // For each possible edge operation ...
-        let (op, delta) = search!(PARALLEL, OP, self, op, delta, c, g, e);
-
-        ((op, delta), c)
+    ) -> Option<(A, f64)> {
+        search!(PARALLEL, self, add, del, rev, c, g)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -683,18 +659,11 @@ where
             // Log current iteration.
             debug!("i: {}, max_iter: {}", i, self.max_iter);
 
-            // Initialize current best operation.
-            let (mut op, mut delta) = (None, 0.);
-
-            // For each possible edge addition ...
-            ((op, delta), c) = self.search::<{ Op::ADD }>((op, delta), c, &g, &add);
-            // For each possible edge deletion ...
-            ((op, delta), c) = self.search::<{ Op::DEL }>((op, delta), c, &g, &del);
-            // For each possible edge reversal ...
-            ((op, delta), c) = self.search::<{ Op::REV }>((op, delta), c, &g, &rev);
+            // For each possible edge operation ...
+            let op_delta = self.search((&add, &del, &rev), &mut c, &g);
 
             // If best operation exists.
-            if let Some((x, y, a)) = op {
+            if let Some(((x, y, a), delta)) = op_delta {
                 // Apply operation to current solution.
                 (g, s_g) = (Self::apply(g, x, y, a), s_g + delta);
                 // Update search space.
