@@ -6,23 +6,25 @@ mod discrete {
     // Set ChiSquared significance level
     const ALPHA: f64 = 0.05;
 
+    // Set base path
+    const BASE_PATH: &str = "./tests/assets/PC-Stable/";
+
     #[test]
     fn pcstable_cancer() {
         // Set dataset name
         let db_name: String = "cancer".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -41,7 +43,7 @@ mod discrete {
         let mut g = pcs.call();
         g = g.meek_procedure_until_3();
 
-        // Plot found skeleton
+        // Plot found skeletonPC-Stable/
         DOT::from(g.clone()).plot("./cancer.pdf").unwrap();
 
         // Perform tests
@@ -53,19 +55,18 @@ mod discrete {
     fn pcstable_earthquake() {
         // Set dataset name
         let db_name: String = "earthquake".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -98,19 +99,18 @@ mod discrete {
     fn pcstable_asia() {
         // Set dataset name
         let db_name: String = "asia".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -141,19 +141,18 @@ mod discrete {
     fn pcstable_survey() {
         // Set dataset name
         let db_name: String = "survey".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -184,19 +183,18 @@ mod discrete {
     fn pcstable_sachs() {
         // Set dataset name
         let db_name: String = "sachs".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -227,19 +225,18 @@ mod discrete {
     fn pcstable_child() {
         // Set dataset name
         let db_name: String = "child".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -270,19 +267,18 @@ mod discrete {
     fn pcstable_alarm() {
         // Set dataset name
         let db_name: String = "alarm".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -313,19 +309,18 @@ mod discrete {
     fn pcstable_win95pts() {
         // Set dataset name
         let db_name: String = "win95pts".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
@@ -356,19 +351,18 @@ mod discrete {
     fn pcstable_insurance() {
         // Set dataset name
         let db_name: String = "insurance".into();
-        // Set dataset base path
-        let base_path: String = format!("./tests/assets/PC-Stable/{}/", db_name);
+        
 
         // Set true skeleton
         let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", base_path, db_name)).unwrap());
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Set true graph
         let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", base_path, db_name)).unwrap());
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
 
         // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", base_path, db_name))
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
             .unwrap()
             .finish()
             .unwrap();
