@@ -6,8 +6,8 @@ pub mod discrete {
     // Set ChiSquared significance level
     const ALPHA: f64 = 0.05;
 
-    // PC-Stable cpdag `cancer` benchmark
-    fn cpdag_cancer(c: &mut Criterion) {
+    // PC-Stable `cancer` benchmark
+    fn cancer(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/cancer.csv")
             .unwrap()
@@ -22,11 +22,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_cancer", |b| b.iter(|| pcs.call()));
+        c.bench_function("cancer", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `earthquake` benchmark
-    fn cpdag_earthquake(c: &mut Criterion) {
+    // PC-Stable parallel `cancer` benchmark
+    fn par_cancer(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/cancer.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_cancer", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `earthquake` benchmark
+    fn earthquake(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/earthquake.csv")
             .unwrap()
@@ -41,11 +62,34 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_earthquake", |b| b.iter(|| pcs.call()));
+        c.bench_function("earthquake", |b| {
+            b.iter(|| pcs.call().meek_procedure_until_3())
+        });
     }
 
-    // PC-Stable cpdag `asia` benchmark
-    fn cpdag_asia(c: &mut Criterion) {
+    // PC-Stable parallel `earthquake` benchmark
+    fn par_earthquake(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/earthquake.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_earthquake", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `asia` benchmark
+    fn asia(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/asia.csv")
             .unwrap()
@@ -60,11 +104,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_asia", |b| b.iter(|| pcs.call()));
+        c.bench_function("asia", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `survey` benchmark
-    fn cpdag_survey(c: &mut Criterion) {
+    // PC-Stable parallel `asia` benchmark
+    fn par_asia(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/asia.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_asia", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `survey` benchmark
+    fn survey(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/survey.csv")
             .unwrap()
@@ -79,11 +144,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_survey", |b| b.iter(|| pcs.call()));
+        c.bench_function("survey", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `sachs` benchmark
-    fn cpdag_sachs(c: &mut Criterion) {
+    // PC-Stable parallel `survey` benchmark
+    fn par_survey(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/survey.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_survey", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `sachs` benchmark
+    fn sachs(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/sachs.csv")
             .unwrap()
@@ -98,11 +184,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_sachs", |b| b.iter(|| pcs.call()));
+        c.bench_function("sachs", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `child` benchmark
-    fn cpdag_child(c: &mut Criterion) {
+    // PC-Stable parallel `sachs` benchmark
+    fn par_sachs(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/sachs.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_sachs", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `child` benchmark
+    fn child(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/child.csv")
             .unwrap()
@@ -117,11 +224,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_child", |b| b.iter(|| pcs.call()));
+        c.bench_function("child", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `alarm` benchmark
-    fn cpdag_alarm(c: &mut Criterion) {
+    // PC-Stable parallel `child` benchmark
+    fn par_child(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/child.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_child", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `alarm` benchmark
+    fn alarm(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/alarm.csv")
             .unwrap()
@@ -136,11 +264,32 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_alarm", |b| b.iter(|| pcs.call()));
+        c.bench_function("alarm", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
     }
 
-    // PC-Stable cpdag `win95pts` benchmark
-    fn cpdag_win95pts(c: &mut Criterion) {
+    // PC-Stable parallel `alarm` benchmark
+    fn par_alarm(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/alarm.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_alarm", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `win95pts` benchmark
+    fn win95pts(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/win95pts.csv")
             .unwrap()
@@ -155,11 +304,34 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_win95pts", |b| b.iter(|| pcs.call()));
+        c.bench_function("win95pts", |b| {
+            b.iter(|| pcs.call().meek_procedure_until_3())
+        });
     }
 
-    // PC-Stable cpdag `insurance` benchmark
-    fn cpdag_insurance(c: &mut Criterion) {
+    // PC-Stable parallel `win95pts` benchmark
+    fn par_win95pts(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/win95pts.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_win95pts", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable `insurance` benchmark
+    fn insurance(c: &mut Criterion) {
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/PC-Stable/insurance.csv")
             .unwrap()
@@ -174,19 +346,51 @@ pub mod discrete {
         let pcs = PCStable::new(&test);
 
         // Benchmark
-        c.bench_function("cpdag_insurance", |b| b.iter(|| pcs.call()));
+        c.bench_function("insurance", |b| {
+            b.iter(|| pcs.call().meek_procedure_until_3())
+        });
+    }
+
+    // PC-Stable parallel `insurance` benchmark
+    fn par_insurance(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/insurance.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_insurance", |b| {
+            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+        });
     }
 
     criterion_group!(
         discrete,
-        cpdag_cancer,
-        cpdag_earthquake,
-        cpdag_asia,
-        cpdag_survey,
-        cpdag_sachs,
-        cpdag_child,
-        cpdag_alarm,
-        cpdag_win95pts,
-        cpdag_insurance,
+        cancer,
+        par_cancer,
+        earthquake,
+        par_earthquake,
+        asia,
+        par_asia,
+        survey,
+        par_survey,
+        sachs,
+        par_sachs,
+        child,
+        par_child,
+        alarm,
+        par_alarm,
+        win95pts,
+        par_win95pts,
+        insurance,
+        par_insurance
     );
 }

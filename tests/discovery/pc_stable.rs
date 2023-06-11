@@ -10,10 +10,9 @@ mod discrete {
     const BASE_PATH: &str = "./tests/assets/PC-Stable/";
 
     #[test]
-    fn pcstable_cancer() {
+    fn cancer() {
         // Set dataset name
         let db_name: String = "cancer".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -38,24 +37,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeletonPC-Stable/
-        DOT::from(g.clone()).plot("./cancer.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-cancer.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_earthquake() {
+    fn earthquake() {
         // Set dataset name
         let db_name: String = "earthquake".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -80,26 +82,29 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
+        // Plot found cpdag
         DOT::from(skel.clone())
             .plot("./skel_earthquake.pdf")
             .unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_asia() {
+    fn asia() {
         // Set dataset name
         let db_name: String = "asia".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -124,24 +129,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(skel.clone()).plot("./skel_asia.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-asia.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_survey() {
+    fn survey() {
         // Set dataset name
         let db_name: String = "survey".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -166,24 +174,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(g.clone()).plot("./survey.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-survey.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_sachs() {
+    fn sachs() {
         // Set dataset name
         let db_name: String = "sachs".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -208,24 +219,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(skel.clone()).plot("./skel_sachs.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-sachs.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_child() {
+    fn child() {
         // Set dataset name
         let db_name: String = "child".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -250,24 +264,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(skel.clone()).plot("./skel_child.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-child.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_alarm() {
+    fn alarm() {
         // Set dataset name
         let db_name: String = "alarm".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -292,24 +309,26 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
-
-        // Plot found skeleton
-        DOT::from(skel.clone()).plot("./skel_alarm.pdf").unwrap();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-alarm.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_win95pts() {
+    fn win95pts() {
         // Set dataset name
         let db_name: String = "win95pts".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -334,24 +353,27 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(g.clone()).plot("./win95pts.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-win95pts.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
 
     #[test]
-    fn pcstable_insurance() {
+    fn insurance() {
         // Set dataset name
         let db_name: String = "insurance".into();
-        
 
         // Set true skeleton
         let true_skel =
@@ -376,15 +398,19 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
+        let par_skel = pcs.parallel_call_skeleton();
 
         // Perform discovery
-        let mut g = pcs.call();
-        g = g.meek_procedure_until_3();
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.parallel_call().meek_procedure_until_3();
 
-        // Plot found skeleton
-        DOT::from(g.clone()).plot("./insurance.pdf").unwrap();
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-insurance.pdf").unwrap();
 
         // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
         assert_eq!(skel, true_skel);
         assert_eq!(g, true_g);
     }
