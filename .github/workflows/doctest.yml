@@ -9,12 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # NOTE: rustdoc link each doctest separately. On GitHub,
-        # MacOS runners have three cores, while Ubuntu and Windows
-        # have two cores. To decrease workflow times (due to `polars`),
-        # we run doctests on MacOS only, while unit/integration test
-        # run on every platform and every compiler channel.
-        os: [macos-latest] # [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest] # FIXME: , macos-latest, windows-latest]
         env: ["stable", "beta", "nightly"]
     steps:
       - uses: actions/checkout@v3
