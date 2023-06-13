@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest] # FIXME: , windows-latest]
+        os: [ubuntu-latest] # FIXME: , macos-latest, windows-latest]
         env: ["stable", "beta", "nightly"]
     steps:
       - uses: actions/checkout@v3

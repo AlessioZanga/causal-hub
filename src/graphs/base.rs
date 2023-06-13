@@ -52,7 +52,7 @@ macro_rules! Adj {
 
 /// Base graph trait.
 pub trait BaseGraph:
-    Clone + Debug + Default + Display + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone + Debug + Default + Display + Eq + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
 {
     /// Data type.
     type Data;
