@@ -24,5 +24,21 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.env }}
+      - name: Dependencies (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libopenblas-dev \
+            graphviz
+      - name: Dependencies (MacOS)
+        if: ${{ runner.os == 'MacOS' }}
+        run: |
+          brew install openblas
+          brew install graphviz
+      - name: Dependencies (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          echo "FIXME: Fix LAPACK build in VCPKG"
       - name: Doctest
         run: cargo +${{ matrix.env }} test --doc -v
