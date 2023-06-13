@@ -13,7 +13,7 @@ use crate::{
 ///
 #[derive(Clone, Debug)]
 pub struct BayesianInformationCriterion<'a, D, const PARALLEL: bool> {
-    ll: LogLikelihood<'a, D, PARALLEL>,
+    log_likelihood: LogLikelihood<'a, D, PARALLEL>,
 }
 
 impl<'a, D, const PARALLEL: bool> BayesianInformationCriterion<'a, D, PARALLEL> {
@@ -21,9 +21,9 @@ impl<'a, D, const PARALLEL: bool> BayesianInformationCriterion<'a, D, PARALLEL> 
     #[inline]
     pub const fn new(d: &'a D) -> Self {
         // Initialize the log-likelihood functor.
-        let ll = LogLikelihood::new(d);
+        let log_likelihood = LogLikelihood::new(d);
 
-        Self { ll }
+        Self { log_likelihood }
     }
 }
 
@@ -36,12 +36,12 @@ where
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
-        let ll = DecomposableScoringCriterion::<_, G>::call(&self.ll, x, z);
+        let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the sample size.
-        let n = self.ll.d.values().nrows() as f64;
+        let n = self.log_likelihood.d.values().nrows() as f64;
         // Get the cardinality.
-        let cards = self.ll.d.cardinality();
+        let cards = self.log_likelihood.d.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
         let (card_x, card_z) = (cards[x], z.iter().map(|&z| cards[z]).product::<usize>());
@@ -49,13 +49,13 @@ where
         let theta = ((card_x - 1) * card_z) as f64;
 
         // Compute the BIC.
-        ll - 0.5 * theta * f64::ln(n)
+        log_likelihood - 0.5 * theta * f64::ln(n)
     }
 
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
-        let n = self.ll.d.values().nrows() as f64;
+        let n = self.log_likelihood.d.values().nrows() as f64;
 
         // Compute the maximum number of parents given the sample size.
         let n = f64::ceil(1. + f64::log2(n) - f64::log2(f64::ln(n)));
@@ -73,22 +73,22 @@ where
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
-        let ll = DecomposableScoringCriterion::<_, G>::call(&self.ll, x, z);
+        let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the sample size.
-        let n = self.ll.d.values().nrows() as f64;
+        let n = self.log_likelihood.d.values().nrows() as f64;
         // Compute the number of parameters as intercept, standard deviation
         // and each regression coefficient per parent.
         let theta = (2 + z.len()) as f64;
 
         // Compute the BIC.
-        ll - 0.5 * theta * f64::ln(n)
+        log_likelihood - 0.5 * theta * f64::ln(n)
     }
 
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
-        let n = self.ll.d.values().nrows() as f64;
+        let n = self.log_likelihood.d.values().nrows() as f64;
 
         // Compute the maximum number of parents given the sample size.
         let n = f64::ceil(1. + f64::log2(n) - f64::log2(f64::ln(n)));
