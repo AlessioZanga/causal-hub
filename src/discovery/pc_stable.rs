@@ -101,7 +101,7 @@ where
 
                     // Assign each subset a flag indicating if it d-separates `(x, y)`
                     let sepset_results: Vec<(Vec<usize>, bool)> = adj
-                        .into_par_iter()
+                        .into_iter()
                         .map(|z| match self.test.call(x, y, &z) {
                             // If such set d-separates `(x, y)` return (x, y) and its sepset
                             true => (z, true),
@@ -115,15 +115,16 @@ where
                     }
 
                     // Take first separating subset, if any
-                    let sepset = sepset_results
-                        .into_par_iter()
-                        .find_map_first(|(z, sep_flag)| match sep_flag {
-                            true => {
-                                let z: BTreeSet<usize> = z.into_iter().collect();
-                                Some(z)
-                            }
-                            _ => None,
-                        });
+                    let sepset =
+                        sepset_results
+                            .into_iter()
+                            .find_map(|(z, sep_flag)| match sep_flag {
+                                true => {
+                                    let z: BTreeSet<usize> = z.into_iter().collect();
+                                    Some(z)
+                                }
+                                _ => None,
+                            });
 
                     (x, y, sepset, edge_flag)
                 })
@@ -214,12 +215,10 @@ where
         let triples: BTreeSet<(usize, usize, usize)> = V!(g)
             .collect::<Vec<usize>>()
             .into_par_iter()
-            .flat_map(|y| {
+            .flat_map_iter(|y| {
                 // Create the set of unshielded triples
                 let triples_y = Adj!(g, y)
                     .combinations(2)
-                    .collect::<Vec<Vec<usize>>>()
-                    .into_par_iter()
                     .map(|xz| (xz[0], xz[1]))
                     .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
                     .map(move |(x, z)| (x, y, z));
