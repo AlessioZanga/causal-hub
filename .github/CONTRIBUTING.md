@@ -34,7 +34,9 @@ After opening a pull request:
 
 ### Building
 
-To build the crate, run the following `cargo` command:
+To build the crate, first install dependencies: `sudo apt-get install -y build-essential`, or equivalent.
+
+Then run the following `cargo` command:
 
     cargo build
 
@@ -45,7 +47,7 @@ Before writing tests, read the [How to Write Tests](https://doc.rust-lang.org/bo
 In `Rust` projects, tests are split into unit, integration and doc tests. While it is true that unit tests are usually written in the same file of the code to be tested, here unit tests are placed along integration tests in the `tests` folder. Please, note that some tests may require assets to be executed, therefore, decompress them before the execution:
 
 - Unzip assets with `unzip -o tests/assets -d tests`,
-- Install dependencies (e.g. `sudo apt-get install -y libopenblas-dev graphviz` or equivalent),
+- Install dependencies: `sudo apt-get install -y libopenblas-dev pkg-config libssl-dev graphviz`, or equivalent,
 - To execute all tests, run the `cargo test` command,
 - To execute only unit/integration tests, run `cargo test --tests`,
 - To execute only doc tests, run `cargo test --doc`.

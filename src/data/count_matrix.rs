@@ -54,7 +54,7 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     pub(crate) fn eval(
         shape: (usize, usize),
         rmi: &RavelMultiIndex,
-        d: ArrayView2<u16>,
+        d: ArrayView2<u8>,
         x: usize,
         z: &[usize],
     ) -> Array2<usize> {
