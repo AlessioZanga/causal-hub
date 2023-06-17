@@ -9,8 +9,8 @@ mod discrete {
         // Initialize random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Read BN from BIF.
-        let bn: DiscreteBN = BIF::read("./tests/assets/bif/asia.bif").unwrap().into();
+        let true_b: DiscreteBN = BIF::read("./tests/assets/bif/asia.bif").unwrap().into();
         // Sample using forward sampling.
-        bn.sample(&mut rng, 1000);
+        true_b.sample(&mut rng, 1e3 as usize);
     }
 }
