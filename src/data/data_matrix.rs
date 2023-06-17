@@ -244,6 +244,28 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
+impl From<DiscreteDataMatrix> for DataFrame {
+    fn from(data: DiscreteDataMatrix) -> Self {
+        // Map columns to series.
+        let series = data
+            .states
+            .into_iter()
+            .zip(data.values.columns())
+            .map(|((name, states), column)| {
+                Series::new(
+                    &name,
+                    column
+                        .into_iter()
+                        .map(|&x| states[x as usize].to_string())
+                        .collect_vec(),
+                )
+            })
+            .collect_vec();
+
+        DataFrame::new(series).unwrap()
+    }
+}
+
 impl DataSet for DiscreteDataMatrix {
     type Data = Array2<u8>;
 
@@ -348,6 +370,20 @@ impl From<DataFrame> for ContinuousDataMatrix {
         let labels = df.get_column_names_owned().into_iter().map_into().collect();
 
         Self { labels, values }
+    }
+}
+
+impl From<ContinuousDataMatrix> for DataFrame {
+    fn from(data: ContinuousDataMatrix) -> Self {
+        // Map columns to series.
+        let series = data
+            .labels
+            .into_iter()
+            .zip(data.values.columns())
+            .map(|(name, column)| Series::new(&name, column.to_vec()))
+            .collect_vec();
+
+        DataFrame::new(series).unwrap()
     }
 }
 

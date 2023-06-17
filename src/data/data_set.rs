@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// Data set trait.
 pub trait DataSet:
-    Clone + Debug + From<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone + Debug + From<DataFrame> + Into<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
 {
     /// Data set underlying data structure.
     type Data;

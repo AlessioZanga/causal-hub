@@ -47,6 +47,25 @@ mod tests {
         }
 
         #[test]
+        fn into() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\nA,A,A\nA,B,B\nA,A,C\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let true_df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(true_df.clone());
+
+            // Cast datamatrix to dataframe.
+            let pred_df: DataFrame = data.into();
+
+            assert_eq!(pred_df, true_df);
+        }
+
+        #[test]
         fn with_states() {
             // Set in-memory sample data file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
@@ -190,6 +209,25 @@ mod tests {
             );
 
             assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
+        }
+
+        #[test]
+        fn into() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let true_df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = ContinuousDataMatrix::from(true_df.clone());
+
+            // Cast datamatrix to dataframe.
+            let pred_df: DataFrame = data.into();
+
+            assert_eq!(pred_df, true_df);
         }
 
         #[test]
