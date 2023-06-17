@@ -26,7 +26,7 @@ mod tests {
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -87,7 +87,7 @@ mod tests {
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -130,7 +130,7 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample(&mut rng, 2);
             // Assert labels, states, cardinalities and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
@@ -176,7 +176,7 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample_with_replacement(&mut rng, 4);
             // Assert labels, states, cardinalities and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
@@ -208,7 +208,7 @@ mod tests {
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["X", "Y", "Z"]));
         }
 
         #[test]
@@ -248,7 +248,7 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample(&mut rng, 2);
             // Assert labels and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
             assert!(data.values().nrows() > sample.values().nrows());
             assert_eq!(sample.values().nrows(), 2);
@@ -292,7 +292,7 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample_with_replacement(&mut rng, 4);
             // Assert labels and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
             assert!(data.values().nrows() < sample.values().nrows());
             assert_eq!(sample.values().nrows(), 4);

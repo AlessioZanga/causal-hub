@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Debug};
+use std::{fmt::Debug, iter::FusedIterator};
 
 use polars::prelude::*;
 use rand::Rng;
@@ -11,8 +11,13 @@ pub trait DataSet:
     /// Data set underlying data structure.
     type Data;
 
+    /// Labels iterator type.
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
     /// Get the set of variables labels.
-    fn labels(&self) -> &BTreeSet<String>;
+    fn labels(&self) -> Self::LabelsIter<'_>;
 
     /// Get reference to underlying values.
     fn values(&self) -> &Self::Data;

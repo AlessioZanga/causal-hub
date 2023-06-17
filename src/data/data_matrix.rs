@@ -1,5 +1,6 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{btree_set, BTreeMap, BTreeSet},
+    iter::Map,
     ops::Deref,
 };
 
@@ -18,46 +19,38 @@ use crate::types::{FxIndexMap, FxIndexSet};
 /// Data matrix for discrete data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataMatrix {
-    labels: BTreeSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<u8>,
     values: Array2<u8>,
 }
 
 impl DiscreteDataMatrix {
-    /// Construct a new discrete data matrix given data encoding, labels and states.
-    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<u8>) -> Self
+    /// Construct a new discrete data matrix given data and states.
+    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
     where
         V: Into<String>,
-        I: IntoIterator<Item = V>,
-        J: IntoIterator<Item = (V, K)>,
-        K: IntoIterator<Item = V>,
+        I: IntoIterator<Item = (V, J)>,
+        J: IntoIterator<Item = V>,
     {
-        // Construct the labels set.
-        let labels: BTreeSet<String> = labels.into_iter().map_into().collect();
-        // Check labels consistency.
-        assert_eq!(values.ncols(), labels.len());
         // Construct the states map.
         let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
-        // Check states consistency.
-        assert!(labels.iter().eq(states.keys()));
+        // Check labels consistency.
+        assert_eq!(values.ncols(), states.len());
         // Compute cardinalities from states.
-        let cardinality = labels
-            .iter()
-            .map(|l| {
-                states[l]
-                    .len()
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
                     .try_into()
                     .expect("Max number of allowed states for each variable is u8::MAX")
             })
             .collect_vec();
 
         Self {
-            labels,
             states,
             cardinality,
             values,
@@ -161,9 +154,6 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as u8);
 
-        // Get variables as set of strings.
-        let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
-
         // Get variables states.
         let states: FxIndexMap<_, _> = df
             // Iterate over the columns.
@@ -225,18 +215,16 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .collect();
 
         // Compute cardinalities from states.
-        let cardinality = labels
-            .iter()
-            .map(|l| {
-                states[l]
-                    .len()
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
                     .try_into()
                     .expect("Max number of allowed states for each variable is u8::MAX")
             })
             .collect_vec();
 
         Self {
-            labels,
             states,
             cardinality,
             values,
@@ -269,9 +257,12 @@ impl From<DiscreteDataMatrix> for DataFrame {
 impl DataSet for DiscreteDataMatrix {
     type Data = Array2<u8>;
 
+    type LabelsIter<'a> =
+        Map<indexmap::map::Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
+
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.states.keys().map(|x| x.as_str())
     }
 
     #[inline]
@@ -300,7 +291,6 @@ impl DataSet for DiscreteDataMatrix {
             .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
 
         Self {
-            labels: self.labels.clone(),
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
@@ -320,7 +310,6 @@ impl DataSet for DiscreteDataMatrix {
             .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
 
         Self {
-            labels: self.labels.clone(),
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
@@ -333,8 +322,8 @@ impl DataSet for DiscreteDataMatrix {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataMatrix {
-    values: Array2<f64>,
     labels: BTreeSet<String>,
+    values: Array2<f64>,
 }
 
 impl From<DataFrame> for ContinuousDataMatrix {
@@ -390,9 +379,11 @@ impl From<ContinuousDataMatrix> for DataFrame {
 impl DataSet for ContinuousDataMatrix {
     type Data = Array2<f64>;
 
+    type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 
     #[inline]

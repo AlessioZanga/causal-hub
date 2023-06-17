@@ -149,11 +149,7 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
         }
 
         // Return sampled data set.
-        Self::Data::new(
-            self.theta.keys(),
-            self.theta.iter().map(|(k, v)| (k, &v.states()[k])),
-            values,
-        )
+        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
     }
 }
 
