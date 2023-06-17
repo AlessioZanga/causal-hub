@@ -35,7 +35,9 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         // Get cardinalities.
         let cards = self.d.cardinality();
         // Compute the degree of freedom as (|X| - 1) * (|Y| - 1) * \Pi(|Z|).
-        let dof = (cards[x] - 1) * (cards[y] - 1) * z.iter().map(|&z| cards[z]).product::<usize>();
+        let dof = (cards[x] as usize - 1)
+            * (cards[y] as usize - 1)
+            * z.iter().map(|&z| cards[z] as usize).product::<usize>();
 
         // Compute the joint contingency table.
         let n_ijk = match z.is_empty() {

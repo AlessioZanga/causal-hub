@@ -17,7 +17,7 @@ impl MarginalCountMatrix {
         let cards = d.cardinality();
 
         // Set count matrix shape.
-        let shape = (cards[x],);
+        let shape = (cards[x] as usize,);
 
         // Allocate count matrix.
         let mut n = Array1::zeros(shape);
@@ -79,9 +79,9 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Get cardinalities.
         let cards = d.cardinality();
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z] as usize));
         // Set count matrix shape.
-        let shape = (rmi.len(), cards[x]);
+        let shape = (rmi.len(), cards[x] as usize);
 
         // Check if parallelization is enabled.
         let n = match PARALLEL {
@@ -126,7 +126,7 @@ impl JointCountMatrix {
         let cards = d.cardinality();
 
         // Set count matrix shape.
-        let shape = (cards[x], cards[y]);
+        let shape = (cards[x] as usize, cards[y] as usize);
 
         // Allocate count matrix.
         let mut n = Array2::zeros(shape);
@@ -166,10 +166,10 @@ impl JointConditionalCountMatrix {
         let cards = d.cardinality();
 
         // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z]));
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z] as usize));
 
         // Set count matrix shape.
-        let shape = (rmi.len(), cards[x], cards[y]);
+        let shape = (rmi.len(), cards[x] as usize, cards[y] as usize);
 
         // Allocate count matrix.
         let mut n = Array3::zeros(shape);

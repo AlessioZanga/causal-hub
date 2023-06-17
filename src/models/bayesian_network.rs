@@ -2,6 +2,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 use is_sorted::IsSorted;
 use itertools::Itertools;
+use ndarray::{prelude::*, SliceInfoElem as SIE};
+use rand::{distributions::WeightedIndex, prelude::*};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -11,7 +13,9 @@ use super::{
 use crate::{
     graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
-    prelude::{BaseGraph, PathGraph},
+    prelude::{
+        algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataMatrix, PathGraph,
+    },
     types::FxIndexMap,
     Pa, L, V,
 };
@@ -25,6 +29,8 @@ pub trait ProbabilisticGraphicalModel:
     + for<'a> Deserialize<'a>
     + Into<(Self::Graph, FxIndexMap<String, Self::Parameter>)>
 {
+    /// Associated data set type.
+    type Data: DataSet;
     /// Underlying directed graph associated type. TODO: Generalize this bound.
     type Graph: DirectedGraph<Direction = directions::Directed>;
     /// Parameter associated type.
@@ -40,6 +46,9 @@ pub trait ProbabilisticGraphicalModel:
 
     /// Reference to the parameters.
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
+
+    /// Draw `n` samples.
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data;
 }
 
 /// Bayesian Network $\mathcal{B}$ trait.
@@ -86,6 +95,8 @@ impl From<DiscreteBayesianNetwork>
 }
 
 impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
+    type Data = DiscreteDataMatrix;
+
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 
     type Parameter = DiscreteCPD;
@@ -105,6 +116,40 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
         debug_assert!(self.theta.keys().is_sorted());
 
         &self.theta
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data {
+        // Allocate the new data set values.
+        let mut values = Array2::<u8>::zeros((n, self.graph.order()));
+        // Get topological sort of the underlying graph.
+        let order = TopologicalSort::new(&self.graph);
+
+        // For each vertex in the graph ...
+        for x in order {
+            // Get Pa(X).
+            let pa_x = Pa!(self.graph, x).collect_vec();
+            // Compute insertion index to align X in Pa(X) vector.
+            let in_x = pa_x.binary_search(&x).unwrap_err();
+            // Get the factor Phi(X).
+            let phi_x = &self.theta[x];
+            // For each sample ...
+            for i in 0..n {
+                // Get Pa(X) values.
+                let indices = pa_x.iter().map(|&z| values[[i, z]]);
+                // Set P(X | Pa(X)) indices.
+                let mut indices = indices.map(|z| SIE::Index(z as isize)).collect_vec();
+                indices.insert(in_x, (..).into());
+                // Get P(X | Pa(X)) values.
+                let weights = phi_x.values().slice(indices.as_slice());
+                // Sample from P(X | Pa(X)).
+                let sample = WeightedIndex::new(&weights).unwrap().sample(rng);
+                // Assign sampled values.
+                values[[i, x]] = sample.try_into().unwrap();
+            }
+        }
+
+        // Return sampled data set.
+        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
     }
 }
 

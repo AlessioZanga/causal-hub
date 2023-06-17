@@ -26,7 +26,7 @@ mod tests {
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -44,6 +44,25 @@ mod tests {
                     && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
             assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
+        }
+
+        #[test]
+        fn into() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\nA,A,A\nA,B,B\nA,A,C\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let true_df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = DiscreteDataMatrix::from(true_df.clone());
+
+            // Cast datamatrix to dataframe.
+            let pred_df: DataFrame = data.into();
+
+            assert_eq!(pred_df, true_df);
         }
 
         #[test]
@@ -68,7 +87,7 @@ mod tests {
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(&["W", "X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -111,12 +130,12 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample(&mut rng, 2);
             // Assert labels, states, cardinalities and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() > sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 2);
+            assert!(data.sample_size() > sample.sample_size());
+            assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
@@ -157,12 +176,12 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample_with_replacement(&mut rng, 4);
             // Assert labels, states, cardinalities and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() < sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 4);
+            assert!(data.sample_size() < sample.sample_size());
+            assert_eq!(sample.sample_size(), 4);
         }
     }
 
@@ -189,7 +208,26 @@ mod tests {
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data.labels().into_iter().eq(&["X", "Y", "Z"]));
+            assert!(data.labels().into_iter().eq(["X", "Y", "Z"]));
+        }
+
+        #[test]
+        fn into() {
+            // Set in-memory sample data file.
+            let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
+            // Initialize an file cursor over the string.
+            let file = std::io::Cursor::new(&file);
+            // Parse the CSV file into a dataframe.
+            let true_df = CsvReader::new(file)
+                .finish()
+                .expect("Failed to read from CSV file");
+            // Cast dataframe to datamatrix.
+            let data = ContinuousDataMatrix::from(true_df.clone());
+
+            // Cast datamatrix to dataframe.
+            let pred_df: DataFrame = data.into();
+
+            assert_eq!(pred_df, true_df);
         }
 
         #[test]
@@ -210,10 +248,10 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample(&mut rng, 2);
             // Assert labels and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() > sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 2);
+            assert!(data.sample_size() > sample.sample_size());
+            assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
@@ -254,10 +292,10 @@ mod tests {
             // Sample from the data set.
             let sample = data.sample_with_replacement(&mut rng, 4);
             // Assert labels and values.
-            assert_eq!(data.labels(), sample.labels());
+            assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() < sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 4);
+            assert!(data.sample_size() < sample.sample_size());
+            assert_eq!(sample.sample_size(), 4);
         }
     }
 }
