@@ -42,7 +42,10 @@ where
         let cards = self.log_likelihood.d.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
-        let (card_x, card_z) = (cards[x], z.iter().map(|&z| cards[z]).product::<usize>());
+        let (card_x, card_z) = (
+            cards[x] as usize,
+            z.iter().map(|&z| cards[z] as usize).product::<usize>(),
+        );
         // Compute the number of parameters.
         let theta = ((card_x - 1) * card_z) as f64;
 

@@ -20,7 +20,7 @@ use crate::types::{FxIndexMap, FxIndexSet};
 pub struct DiscreteDataMatrix {
     labels: BTreeSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
-    cardinality: Vec<usize>,
+    cardinality: Vec<u8>,
     values: Array2<u8>,
 }
 
@@ -46,12 +46,15 @@ impl DiscreteDataMatrix {
         // Check states consistency.
         assert!(labels.iter().eq(states.keys()));
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        let cardinality = labels
+            .iter()
+            .map(|l| {
+                states[l]
+                    .len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         Self {
             labels,
@@ -104,19 +107,22 @@ impl DiscreteDataMatrix {
         });
 
         // Compute cardinalities.
-        self.cardinality = self.states.values().map(|x| x.len()).collect();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            self.cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        self.cardinality = self
+            .states
+            .values()
+            .map(|x| {
+                x.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         self
     }
 
     /// Gets the vector of variables cardinalities.
     #[inline]
-    pub fn cardinality(&self) -> &Vec<usize> {
+    pub fn cardinality(&self) -> &Vec<u8> {
         &self.cardinality
     }
 }
@@ -219,12 +225,15 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .collect();
 
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        let cardinality = labels
+            .iter()
+            .map(|l| {
+                states[l]
+                    .len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         Self {
             labels,
