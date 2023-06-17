@@ -6,14 +6,14 @@
 ///
 #[derive(Clone, Debug)]
 pub struct LogLikelihood<'a, D, const PARALLEL: bool> {
-    pub(crate) d: &'a D,
+    pub(crate) data: &'a D,
 }
 
 impl<'a, D, const PARALLEL: bool> LogLikelihood<'a, D, PARALLEL> {
     /// Constructor for LL functor.
     #[inline]
-    pub const fn new(d: &'a D) -> Self {
-        Self { d }
+    pub const fn new(data: &'a D) -> Self {
+        Self { data }
     }
 }
 

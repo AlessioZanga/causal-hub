@@ -29,7 +29,7 @@ impl FisherZ {
         Self {
             rho,
             alpha: 0.05,
-            n: d.values().nrows(),
+            n: d.sample_size(),
         }
     }
 }

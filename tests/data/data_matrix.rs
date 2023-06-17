@@ -134,8 +134,8 @@ mod tests {
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() > sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 2);
+            assert!(data.sample_size() > sample.sample_size());
+            assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
@@ -180,8 +180,8 @@ mod tests {
             assert_eq!(data.states(), sample.states());
             assert_eq!(data.cardinality(), sample.cardinality());
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() < sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 4);
+            assert!(data.sample_size() < sample.sample_size());
+            assert_eq!(sample.sample_size(), 4);
         }
     }
 
@@ -250,8 +250,8 @@ mod tests {
             // Assert labels and values.
             assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() > sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 2);
+            assert!(data.sample_size() > sample.sample_size());
+            assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
@@ -294,8 +294,8 @@ mod tests {
             // Assert labels and values.
             assert!(data.labels().eq(sample.labels()));
             assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.values().nrows() < sample.values().nrows());
-            assert_eq!(sample.values().nrows(), 4);
+            assert!(data.sample_size() < sample.sample_size());
+            assert_eq!(sample.sample_size(), 4);
         }
     }
 }

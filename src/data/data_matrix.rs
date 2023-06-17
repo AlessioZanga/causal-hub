@@ -270,6 +270,11 @@ impl DataSet for DiscreteDataMatrix {
         &self.values
     }
 
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
+    }
+
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
         // Check if there are enough samples.
         assert!(
@@ -389,6 +394,11 @@ impl DataSet for ContinuousDataMatrix {
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {

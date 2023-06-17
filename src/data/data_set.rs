@@ -22,6 +22,9 @@ pub trait DataSet:
     /// Get reference to underlying values.
     fn values(&self) -> &Self::Data;
 
+    /// Get sample size.
+    fn sample_size(&self) -> usize;
+
     /// Draw `n` samples without replacement.
     ///
     /// # Panics

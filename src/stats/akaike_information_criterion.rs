@@ -39,7 +39,7 @@ where
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the cardinality.
-        let cards = self.log_likelihood.d.cardinality();
+        let cards = self.log_likelihood.data.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
         let (card_x, card_z) = (
