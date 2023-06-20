@@ -29,7 +29,7 @@ where
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
-        let mut sepsets: SepSets = BTreeMap::new();
+        let mut sepsets = SepSets::default();
         // Initialize stopping criterion
         let mut flag = true;
         // Initialize size of conditioning set
@@ -55,7 +55,7 @@ where
                         // ... remove the edge
                         e_prime.push((x, y));
                         // Collect `(x, y)` separation set
-                        let z: BTreeSet<_> = z.into_iter().collect();
+                        let z: FxIndexSet<_> = z.into_iter().collect();
                         sepsets.insert((x, y), z.clone());
                         sepsets.insert((y, x), z);
                         // Change edge
@@ -79,7 +79,7 @@ where
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
-        let mut sepsets: SepSets = BTreeMap::new();
+        let mut sepsets = SepSets::default();
         // Initialize size of conditioning set
         let mut c = 0;
 
@@ -88,53 +88,30 @@ where
             // 1. The edge
             // 2. Its separation set (if any)
             // 3. A flag indicating if exists at least one set of adjacents with cardinality `c`
-            let to_be_removed: Vec<(usize, usize, Option<BTreeSet<usize>>, bool)> = E!(g)
-                .collect::<Vec<(usize, usize)>>()
-                .into_par_iter()
+            let to_be_removed: Vec<(usize, usize, Option<FxIndexSet<usize>>, bool)> = E!(g)
+                .par_bridge()
                 .map(|(x, y)| {
+                    // If there exists at least one candidate sepset.
+                    let mut flag = false;
+
                     // Take superset of adjacents with cardinality `c`
-                    let adj: Vec<_> = iter_set::union(
+                    let sepset = iter_set::union(
                         Adj!(g, x).filter(|&v| v != y).combinations(c),
                         Adj!(g, y).filter(|&v| v != x).combinations(c),
                     )
-                    .collect();
-
                     // Assign each subset a flag indicating if it d-separates `(x, y)`
-                    let sepset_results: Vec<(Vec<usize>, bool)> = adj
-                        .into_iter()
-                        .map(|z| match self.test.call(x, y, &z) {
-                            // If such set d-separates `(x, y)` return (x, y) and its sepset
-                            true => (z, true),
-                            _ => (z, false),
-                        })
-                        .collect();
+                    .inspect(|_| flag = true)
+                    .find_map(|z| match self.test.call(x, y, &z) {
+                        true => Some(z.into_iter().collect()),
+                        _ => None,
+                    });
 
-                    let mut edge_flag = true;
-                    if sepset_results == vec![] {
-                        edge_flag = false
-                    }
-
-                    // Take first separating subset, if any
-                    let sepset =
-                        sepset_results
-                            .into_iter()
-                            .find_map(|(z, sep_flag)| match sep_flag {
-                                true => {
-                                    let z: BTreeSet<usize> = z.into_iter().collect();
-                                    Some(z)
-                                }
-                                _ => None,
-                            });
-
-                    (x, y, sepset, edge_flag)
+                    (x, y, sepset, flag)
                 })
                 .collect();
 
             // If there are no adjacents with cardinality `c`, then break the iteration
-            if to_be_removed
-                .par_iter()
-                .all(|(_, _, _, edge_flag)| edge_flag == &false)
-            {
+            if to_be_removed.par_iter().all(|(_, _, _, flag)| !*flag) {
                 break 'a;
             }
 
@@ -149,6 +126,7 @@ where
                     _ => continue,
                 }
             }
+
             // Increase size of conditioning set
             c += 1;
         }
@@ -176,19 +154,14 @@ where
         // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
         // Create the set of unshielded triples
-        let mut triples: BTreeSet<(usize, usize, usize)> = BTreeSet::new();
-        for y in V!(g) {
-            for (x, z) in Adj!(g, y)
-                .combinations(2)
-                .map(|xz| (xz[0], xz[1]))
-                .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
-            {
-                triples.insert((x, y, z));
-            }
-        }
+        let triples = V!(g)
+            .flat_map(|y| std::iter::repeat(y).zip(Adj!(g, y).combinations(2)))
+            .map(|(y, xz)| (xz[0], y, xz[1]))
+            .filter(|(x, _, z)| !g.has_edge_by_index(*x, *z))
+            .collect_vec();
 
         // For every unshielded triple ...
-        for (x, y, z) in triples.into_iter() {
+        for (x, y, z) in triples {
             // ... if `y` doesn't d-separates `(x, y)` ...
             if !sepsets[&(x, z)].contains(&y) {
                 // ... and both edges are undirected ...
@@ -212,33 +185,33 @@ where
         // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
 
-        let triples: BTreeSet<(usize, usize, usize)> = V!(g)
-            .collect::<Vec<usize>>()
-            .into_par_iter()
-            .flat_map_iter(|y| {
-                // Create the set of unshielded triples
-                let triples_y = Adj!(g, y)
-                    .combinations(2)
-                    .map(|xz| (xz[0], xz[1]))
-                    .filter(|(x, z)| !g.has_edge_by_index(*x, *z))
-                    .map(move |(x, z)| (x, y, z));
-                triples_y
+        // Create the set of unshielded triples
+        let triples: Vec<_> = V!(g)
+            .par_bridge()
+            .flat_map(|y| {
+                std::iter::repeat(y)
+                    .zip(Adj!(g, y).combinations(2))
+                    .map(|(y, xz)| (xz[0], y, xz[1]))
+                    .par_bridge()
+                    .filter(|&(x, y, z)| {
+                        // TODO: // ... if `y` d-separates `(x, z)` ...
+                        !g.has_edge_by_index(x, z) && !sepsets[&(x, z)].contains(&y)
+                    })
             })
             .collect();
 
         // For every unshielded triple ...
-        for (x, y, z) in triples.into_iter() {
-            // ... if `y` doesn't d-separates `(x, y)` ...
-            if !sepsets[&(x, z)].contains(&y) {
-                // ... and both edges are undirected ...
-                if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(y, z) {
-                    continue;
-                }
-                // ... then the triple is a v-structure
-                g.orient_edge(x, y);
-                g.orient_edge(z, y);
+        for (x, y, z) in triples {
+            // ... if one of the edges is already directed ...
+            if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(z, y) {
+                // ... skip this triple.
+                continue;
             }
+            // Otherwise, the triple is a v-structure.
+            g.orient_edge(x, y);
+            g.orient_edge(z, y);
         }
+
         g
     }
 }
