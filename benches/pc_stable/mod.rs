@@ -42,7 +42,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_cancer", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -84,7 +84,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_earthquake", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -124,7 +124,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_asia", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -164,7 +164,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_survey", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -204,7 +204,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_sachs", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -244,7 +244,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_child", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -284,7 +284,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_alarm", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -326,7 +326,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_win95pts", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 
@@ -368,7 +368,7 @@ pub mod discrete {
 
         // Benchmark
         c.bench_function("par_insurance", |b| {
-            b.iter(|| pcs.parallel_call().meek_procedure_until_3())
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
         });
     }
 

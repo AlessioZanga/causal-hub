@@ -1,5 +1,3 @@
-use std::collections::{BTreeMap, BTreeSet};
-
 use itertools::Itertools;
 use rayon::prelude::*;
 
@@ -75,7 +73,7 @@ where
 
     /// Private function. It performs parallel skeleton discovery given a test.
     #[inline]
-    fn parallel_skeleton(&self) -> (Graph, SepSets) {
+    fn par_skeleton(&self) -> (Graph, SepSets) {
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
@@ -141,8 +139,8 @@ where
 
     /// Perform parallel skeleton discovery given test.
     #[inline]
-    pub fn parallel_call_skeleton(&self) -> Graph {
-        self.parallel_skeleton().0
+    pub fn par_call_skeleton(&self) -> Graph {
+        self.par_skeleton().0
     }
 
     /// Perform discovery given a test.
@@ -179,9 +177,9 @@ where
     /// Perform parallel discovery given a test.
     /// Firstly, it performs parallel skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
     #[inline]
-    pub fn parallel_call(&self) -> PDGraph {
+    pub fn par_call(&self) -> PDGraph {
         // Perform skeleton discovery
-        let (g, sepsets) = self.parallel_skeleton();
+        let (g, sepsets) = self.par_skeleton();
         // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
 

@@ -45,7 +45,7 @@ mod discrete {
     }
 
     #[test]
-    fn parallel_log_likelihood() {
+    fn par_log_likelihood() {
         // Read test database from file.
         let data = std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
@@ -132,7 +132,7 @@ mod gaussian {
     }
 
     #[test]
-    fn parallel_log_likelihood() {
+    fn par_log_likelihood() {
         // Read test database from file.
         let data = std::fs::read_to_string("./tests/assets/log_likelihood/gaussian.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();

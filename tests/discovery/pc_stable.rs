@@ -37,11 +37,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-cancer.pdf").unwrap();
@@ -82,11 +82,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(skel.clone())
@@ -129,11 +129,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-asia.pdf").unwrap();
@@ -174,11 +174,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-survey.pdf").unwrap();
@@ -219,11 +219,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-sachs.pdf").unwrap();
@@ -264,11 +264,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-child.pdf").unwrap();
@@ -309,11 +309,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-alarm.pdf").unwrap();
 
@@ -353,11 +353,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-win95pts.pdf").unwrap();
@@ -398,11 +398,11 @@ mod discrete {
 
         // Perform skeleton discovery
         let skel = pcs.call_skeleton();
-        let par_skel = pcs.parallel_call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
 
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.parallel_call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
 
         // Plot found cpdag
         DOT::from(g.clone()).plot("./cpdag-insurance.pdf").unwrap();
