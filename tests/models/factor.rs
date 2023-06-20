@@ -8,12 +8,6 @@ mod discrete_factor {
     fn display() {
         // Initialize factor.
         let phi = DiscreteFactor::new(
-            [
-                ("A", vec!["a0", "a1"]),
-                ("B", vec!["b0", "b1"]),
-                ("C", vec!["c0", "c1"]),
-                ("D", vec!["d0", "d1"]),
-            ],
             array![
                 0.0416560212390167,
                 0.0416560212390167,
@@ -31,6 +25,12 @@ mod discrete_factor {
                 0.013885340413005565,
                 0.013885340413005565,
                 0.013885340413005565
+            ],
+            [
+                ("A", vec!["a0", "a1"]),
+                ("B", vec!["b0", "b1"]),
+                ("C", vec!["c0", "c1"]),
+                ("D", vec!["d0", "d1"]),
             ],
         );
 
@@ -80,12 +80,12 @@ mod discrete_factor {
     fn add() {
         // Initialize factors.
         let lhs = DiscreteFactor::new(
-            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
+            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
         );
         let rhs = DiscreteFactor::new(
-            [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
+            [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
         );
         // Compute factor sum.
         let out = lhs + rhs;
@@ -93,7 +93,7 @@ mod discrete_factor {
         assert!(out.states().keys().eq(&["A", "B", "C"]));
         // Assert values and shapes of factor product.
         assert_relative_eq!(
-            out.values(),
+            out.data(),
             &array![
                 [[1.0, 1.2], [0.9, 1.0]],
                 [[0.6, 0.8], [0.1, 0.2]],
@@ -107,12 +107,12 @@ mod discrete_factor {
     fn mul() {
         // Initialize factors.
         let lhs = DiscreteFactor::new(
-            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
+            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
         );
         let rhs = DiscreteFactor::new(
-            [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
+            [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
         );
         // Compute factor product.
         let out = lhs * rhs;
@@ -120,7 +120,7 @@ mod discrete_factor {
         assert!(out.states().keys().eq(&["A", "B", "C"]));
         // Assert values and shapes of factor product.
         assert_relative_eq!(
-            out.values(),
+            out.data(),
             &array![
                 [[0.25, 0.35], [0.08, 0.16]],
                 [[0.05, 0.07], [0., 0.]],
@@ -134,17 +134,17 @@ mod discrete_factor {
     fn div() {
         // Initialize factors.
         let lhs = DiscreteFactor::new(
-            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.2, 0., 0., 0.3, 0.45],
+            [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
         );
-        let rhs = DiscreteFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
+        let rhs = DiscreteFactor::new(array![0.8, 0., 0.6], [("A", vec!["a1", "a2", "a3"])]);
         // Compute factor division.
         let out = lhs / rhs;
         // Assert labels and states of factor division.
         assert!(out.states().keys().eq(&["A", "B"]));
         // Assert values and shapes of factor division.
         assert_relative_eq!(
-            out.values(),
+            out.data(),
             &array![[0.625, 0.25], [0., 0.], [0.5, 0.75]].into_dyn()
         );
     }
@@ -153,20 +153,20 @@ mod discrete_factor {
     fn normalize() {
         // Initialize factor.
         let phi = DiscreteFactor::new(
+            array![
+                300_000., 300_000., 300_000., 30., 500., 500., 5_000_000., 500., 100., 1_000_000.,
+                100., 100., 10., 100_000., 100_000., 100_000.
+            ],
             [
                 ("A", vec!["a0", "a1"]),
                 ("B", vec!["b0", "b1"]),
                 ("C", vec!["c0", "c1"]),
                 ("D", vec!["d0", "d1"]),
             ],
-            array![
-                300_000., 300_000., 300_000., 30., 500., 500., 5_000_000., 500., 100., 1_000_000.,
-                100., 100., 10., 100_000., 100_000., 100_000.
-            ],
         );
 
         assert_relative_eq!(
-            phi.normalize().values(),
+            phi.normalize().data(),
             &array![
                 0.0416560212390167,
                 0.0416560212390167,
@@ -195,16 +195,16 @@ mod discrete_factor {
     fn marginalize() {
         // Initialize factor.
         let phi = DiscreteFactor::new(
+            array![0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18],
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),
                 ("C", vec!["c1", "c2"]),
             ],
-            array![0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18],
         );
 
         assert_relative_eq!(
-            phi.marginalize(["B"]).values(),
+            phi.marginalize(["B"]).data(),
             &array![[0.33, 0.51], [0.05, 0.07], [0.24, 0.39]].into_dyn()
         );
     }
@@ -213,16 +213,16 @@ mod discrete_factor {
     fn reduce() {
         // Initialize factor.
         let phi = DiscreteFactor::new(
+            array![0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18],
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),
                 ("C", vec!["c1", "c2"]),
             ],
-            array![0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18],
         );
 
         assert_relative_eq!(
-            phi.reduce([("C", "c1")]).values(),
+            phi.reduce([("C", "c1")]).data(),
             &array![[[0.25], [0.08]], [[0.05], [0.0]], [[0.15], [0.09]]].into_dyn()
         );
     }
@@ -290,7 +290,7 @@ mod discrete_cpd {
         // Sum CPD.
         let out = cpd.clone() + cpd.clone();
 
-        assert_relative_eq!(out.values(), cpd.values());
+        assert_relative_eq!(out.data(), cpd.data());
     }
 
     #[test]
@@ -310,7 +310,7 @@ mod discrete_cpd {
             ],
         );
 
-        assert_relative_eq!(cpd.clone().values(), cpd.normalize().values());
+        assert_relative_eq!(cpd.clone().data(), cpd.normalize().data());
     }
 
     #[test]
@@ -331,7 +331,7 @@ mod discrete_cpd {
         );
 
         assert_relative_eq!(
-            cpd.marginalize(["Intelligence"]).values(),
+            cpd.marginalize(["Intelligence"]).data(),
             &array![[0.6, 0.24, 0.16], [0.275, 0.275, 0.45]].into_dyn()
         );
     }
@@ -354,7 +354,7 @@ mod discrete_cpd {
         );
 
         assert_relative_eq!(
-            cpd.reduce([("Intelligence", "i0")]).values(),
+            cpd.reduce([("Intelligence", "i0")]).data(),
             &array![[[0.3], [0.4], [0.3]], [[0.05], [0.25], [0.7]]].into_dyn()
         );
     }

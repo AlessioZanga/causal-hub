@@ -38,7 +38,7 @@ mod variable_elimination {
             // Assert relative equal by handling NaN values accordingly.
             assert!(true_query
                 .into_iter()
-                .zip(pred_query.values().into_iter())
+                .zip(pred_query.data().into_iter())
                 .all(|(x, y)| { x.relative_eq(y, 1e-16, 1e-15) || (x.is_nan() && y.is_nan()) }));
         }
     }
@@ -76,7 +76,7 @@ mod variable_elimination {
             // Assert relative equal by handling NaN values accordingly.
             assert!(true_query
                 .into_iter()
-                .zip(pred_query.values().into_iter())
+                .zip(pred_query.data().into_iter())
                 .all(|(x, y)| { x.relative_eq(y, 1e-16, 1e-15) || (x.is_nan() && y.is_nan()) }));
         }
     }

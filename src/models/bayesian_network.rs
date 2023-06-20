@@ -119,8 +119,8 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data {
-        // Allocate the new data set values.
-        let mut values = Array2::<u8>::zeros((n, self.graph.order()));
+        // Allocate the new data set data.
+        let mut data = Array2::<u8>::zeros((n, self.graph.order()));
         // Get topological sort of the underlying graph.
         let order = TopologicalSort::new(&self.graph);
 
@@ -134,22 +134,22 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
             let phi_x = &self.theta[x];
             // For each sample ...
             for i in 0..n {
-                // Get Pa(X) values.
-                let indices = pa_x.iter().map(|&z| values[[i, z]]);
+                // Get Pa(X) data.
+                let indices = pa_x.iter().map(|&z| data[[i, z]]);
                 // Set P(X | Pa(X)) indices.
                 let mut indices = indices.map(|z| SIE::Index(z as isize)).collect_vec();
                 indices.insert(in_x, (..).into());
                 // Get P(X | Pa(X)) values.
-                let weights = phi_x.values().slice(indices.as_slice());
+                let weights = phi_x.data().slice(indices.as_slice());
                 // Sample from P(X | Pa(X)).
                 let sample = WeightedIndex::new(&weights).unwrap().sample(rng);
-                // Assign sampled values.
-                values[[i, x]] = sample.try_into().unwrap();
+                // Assign sampled data.
+                data[[i, x]] = sample.try_into().unwrap();
             }
         }
 
         // Return sampled data set.
-        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
+        Self::Data::new(data, self.theta.iter().map(|(k, v)| (k, &v.states()[k])))
     }
 }
 

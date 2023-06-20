@@ -83,7 +83,7 @@ mod maximum_likelihood_estimation {
             // Assert same target variable.
             assert_eq!(x, y);
             // Assert same underlying values.
-            assert_relative_eq!(phi, psi.values());
+            assert_relative_eq!(phi, psi.data());
         }
     }
 
@@ -165,7 +165,7 @@ mod maximum_likelihood_estimation {
             // Assert same target variable.
             assert_eq!(x, y);
             // Assert same underlying values.
-            assert_relative_eq!(phi, psi.values());
+            assert_relative_eq!(phi, psi.data());
         }
     }
 }
@@ -271,7 +271,7 @@ mod bayesian_estimation {
             // Assert same target variable.
             assert_eq!(x, y);
             // Assert same underlying values.
-            assert_relative_eq!(phi, psi.values());
+            assert_relative_eq!(phi, psi.data());
         }
     }
 
@@ -369,7 +369,7 @@ mod bayesian_estimation {
             // Assert same target variable.
             assert_eq!(x, y);
             // Assert same underlying values.
-            assert_relative_eq!(phi, psi.values());
+            assert_relative_eq!(phi, psi.data());
         }
     }
 }

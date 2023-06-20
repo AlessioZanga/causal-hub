@@ -50,7 +50,7 @@ impl From<&ContinuousDataSet> for CovarianceMatrix {
     fn from(d: &ContinuousDataSet) -> Self {
         // Compute the (sample) covariance matrix.
         let sigma = d
-            .values()
+            .data()
             .t()
             .cov(1.)
             .expect("Failed to compute the correlation matrix");

@@ -52,12 +52,7 @@ impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesian
         // Compute the KL divergence leveraging local decomposition.
         V!(self.p.graph())
             // Get X parameters w.r.t. P and Q.
-            .map(|x| {
-                (
-                    self.p.parameters()[x].values(),
-                    self.q.parameters()[x].values(),
-                )
-            })
+            .map(|x| (self.p.parameters()[x].data(), self.q.parameters()[x].data()))
             // Compute the KL(P, Q) = \sum P(X | Z) * log( P(X | Z) / Q(X | Z) ),
             // with 0 * log 0 = 0 and 0 / 0 = 0, i.e. mapping NaNs to zeros.
             .map(|(p, q)| (p * (p / q).mapv(f64::ln)).mapv(nan_to_zero).sum())

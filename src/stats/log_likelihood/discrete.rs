@@ -28,7 +28,7 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataSet, PARALLEL> {
     #[inline]
     pub fn marginal(&self, x: usize) -> f64 {
         // Compute marginal contingency table.
-        let n_i = MarginalCountMatrix::new(self.data, x);
+        let n_i = MarginalCountMatrix::new(self.data_set, x);
 
         // Compute the log likelihood.
         Self::marginal_eval(n_i.values().view())
@@ -55,7 +55,7 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataSet, PARALLEL> {
     #[inline]
     pub fn conditional(&self, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
-        let n_ij = ConditionalCountMatrix::<PARALLEL>::new(self.data, x, z);
+        let n_ij = ConditionalCountMatrix::<PARALLEL>::new(self.data_set, x, z);
 
         // Iterate over chunks.
         let n_ij = n_ij

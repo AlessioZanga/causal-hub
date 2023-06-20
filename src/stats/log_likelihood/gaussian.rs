@@ -28,7 +28,7 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataSet, PARALLEL> {
     #[inline]
     pub fn marginal(&self, x: usize) -> f64 {
         // Get the variable and sample size.
-        let (x, n) = (self.data.values().column(x), self.data.sample_size());
+        let (x, n) = (self.data_set.data().column(x), self.data_set.sample_size());
 
         // Compute residuals and standard deviation. TODO: Parallelize over mean and variance.
         let (residuals, std) = Self::marginal_eval(x, n);
@@ -75,7 +75,7 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataSet, PARALLEL> {
     #[inline]
     pub fn conditional(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
-        let d = self.data.values();
+        let d = self.data_set.data();
         // Get sample size and number of conditioning variables.
         let (n, m) = (d.nrows(), z.len());
         // Get a copy of the variable.

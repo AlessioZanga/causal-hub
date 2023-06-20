@@ -45,14 +45,14 @@ pub trait Factor:
     /// Value type of the variables.
     type Value<'a>;
 
+    /// Get reference to underlying data.
+    fn data(&self) -> &ArrayD<f64>;
+
     /// Get the variables scope.
     fn scope(&self) -> Self::ScopeIter<'_>;
 
     /// Check whether a variable is in scope.
     fn in_scope(&self, x: &str) -> bool;
-
-    /// Get reference to underlying values.
-    fn values(&self) -> &ArrayD<f64>;
 
     /// Compute the factor normalization.
     fn normalize(self) -> Self;
@@ -84,12 +84,12 @@ pub trait ConditionalProbabilityDistribution: Factor {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteFactor {
     states: FxIndexMap<String, FxIndexSet<String>>,
-    values: ArrayD<f64>,
+    data: ArrayD<f64>,
 }
 
 impl DiscreteFactor {
-    /// Construct a new discrete factor given its values and states.
-    pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
+    /// Construct a new discrete factor given its data and states.
+    pub fn new<D, I, J, K, V>(data: Array<f64, D>, states: I) -> Self
     where
         D: Dimension,
         I: IntoIterator<Item = (K, J)>,
@@ -102,7 +102,7 @@ impl DiscreteFactor {
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
             .collect();
-        // Compute factor values shape as given in input.
+        // Compute factor data shape as given in input.
         let shape = states.values().map(|x| x.len()).collect_vec();
 
         // Sort axes according to sorted variables scope.
@@ -116,15 +116,15 @@ impl DiscreteFactor {
         // Sort variables scope.
         states.sort_keys();
         // Cast to n-dimensional array.
-        let values = values
-            // Reshape values to [X_0, X_1, ..., X_(n-1)].
+        let data = data
+            // Reshape data to [X_0, X_1, ..., X_(n-1)].
             .into_shape(shape)
-            .expect("Failed to reshape values")
+            .expect("Failed to reshape data")
             // Permute axes to align X axis w.r.t. sorted variables labels.
             .permuted_axes(axes)
             .into_dyn();
 
-        // Align axes values w.r.t. sorted variables states.
+        // Align axes data w.r.t. sorted variables states.
         let mut axes = states
             .values()
             .map(|x| (0..x.len()).collect_vec())
@@ -134,8 +134,8 @@ impl DiscreteFactor {
             .for_each(|(axis, state)| axis.sort_by_key(|&i| &state[i]));
         // Sort variables states.
         states.values_mut().for_each(|x| x.sort());
-        // Allocate new array for aligned values.
-        let mut aligned_values = ArrayD::<f64>::zeros(values.shape());
+        // Allocate new array for aligned data.
+        let mut aligned_data = ArrayD::<f64>::zeros(data.shape());
         // Compute `from` and `to` indices.
         let axes = axes.into_iter().multi_cartesian_product().zip(
             states
@@ -143,13 +143,13 @@ impl DiscreteFactor {
                 .map(|x| 0..x.len())
                 .multi_cartesian_product(),
         );
-        // Permute values positions w.r.t. sorted variables states.
-        axes.for_each(|(from, to)| aligned_values[to.as_slice()] = values[from.as_slice()]);
+        // Permute data positions w.r.t. sorted variables states.
+        axes.for_each(|(from, to)| aligned_data[to.as_slice()] = data[from.as_slice()]);
 
         // Cast to standard memory layout.
-        let values = aligned_values.as_standard_layout().to_owned();
+        let data = aligned_data.as_standard_layout().to_owned();
 
-        Self { states, values }
+        Self { data, states }
     }
 
     /// Get the set of variables states.
@@ -192,17 +192,17 @@ impl Add for DiscreteFactor {
             .collect_vec();
         // Apply broadcasting shapes.
         let lhs = self
-            .values
+            .data
             .into_shape(lhs)
-            .expect("Failed to broadcast LHS factor values to given shape");
+            .expect("Failed to broadcast LHS factor data to given shape");
         let rhs = phi
-            .values
+            .data
             .into_shape(rhs)
-            .expect("Failed to broadcast RHS factor values to given shape");
+            .expect("Failed to broadcast RHS factor data to given shape");
         // Compute factor sum.
-        let values = (lhs + rhs).into_dyn();
+        let data = (lhs + rhs).into_dyn();
 
-        Self { states, values }
+        Self { data, states }
     }
 }
 
@@ -230,17 +230,17 @@ impl Mul for DiscreteFactor {
             .collect_vec();
         // Apply broadcasting shapes.
         let lhs = self
-            .values
+            .data
             .into_shape(lhs)
-            .expect("Failed to broadcast LHS factor values to given shape");
+            .expect("Failed to broadcast LHS factor data to given shape");
         let rhs = phi
-            .values
+            .data
             .into_shape(rhs)
-            .expect("Failed to broadcast RHS factor values to given shape");
+            .expect("Failed to broadcast RHS factor data to given shape");
         // Compute factor product.
-        let values = (lhs * rhs).into_dyn();
+        let data = (lhs * rhs).into_dyn();
 
-        Self { states, values }
+        Self { data, states }
     }
 }
 
@@ -263,22 +263,22 @@ impl Div for DiscreteFactor {
             .collect_vec();
         // Apply broadcasting shapes.
         let rhs = phi
-            .values
+            .data
             .into_shape(rhs)
-            .expect("Failed to broadcast RHS factor values to given shape");
+            .expect("Failed to broadcast RHS factor data to given shape");
         // Compute factor division.
-        let values = (self.values / rhs)
+        let data = (self.data / rhs)
             // Map NaNs to zero.
             .mapv(nan_to_zero)
             .into_dyn();
 
-        Self { states, values }
+        Self { data, states }
     }
 }
 
 impl PartialEq for DiscreteFactor {
     fn eq(&self, other: &Self) -> bool {
-        self.states == other.states && self.values.relative_eq(&other.values, 1e-8, 1e-8)
+        self.states == other.states && self.data.relative_eq(&other.data, 1e-8, 1e-8)
     }
 }
 
@@ -293,7 +293,7 @@ impl From<DiscreteFactor> for Table {
         // Construct iterator over states cartesian product.
         let states = other.states.values().multi_cartesian_product();
         // Add rows to table.
-        for (i, x) in states.zip(other.values.iter()) {
+        for (i, x) in states.zip(other.data.iter()) {
             table.add_row(i.into_iter().chain([&x.to_string()]).collect());
         }
 
@@ -309,6 +309,11 @@ impl Factor for DiscreteFactor {
     type Value<'a> = &'a str;
 
     #[inline]
+    fn data(&self) -> &ArrayD<f64> {
+        &self.data
+    }
+
+    #[inline]
     fn scope(&self) -> Self::ScopeIter<'_> {
         self.states.keys().map(|x| x.as_str())
     }
@@ -319,17 +324,12 @@ impl Factor for DiscreteFactor {
     }
 
     #[inline]
-    fn values(&self) -> &ArrayD<f64> {
-        &self.values
-    }
-
-    #[inline]
     fn normalize(mut self) -> Self {
-        // Normalize values.
-        self.values /= self.values.sum();
+        // Normalize data.
+        self.data /= self.data.sum();
 
-        // Assert values are in [0, 1].
-        debug_assert!(self.values.iter().all(|x| (0. ..=1.).contains(x)));
+        // Assert data are in [0, 1].
+        debug_assert!(self.data.iter().all(|x| (0. ..=1.).contains(x)));
 
         self
     }
@@ -353,7 +353,7 @@ impl Factor for DiscreteFactor {
         // Sum in decreasing order to ensure correctness.
         for x in z.into_iter().rev() {
             // Sum given axis.
-            self.values = self.values.sum_axis(Axis(x));
+            self.data = self.data.sum_axis(Axis(x));
             // Remove associated state.
             self.states.swap_remove_index(x);
         }
@@ -390,7 +390,7 @@ impl Factor for DiscreteFactor {
         // For each (variable, state) index pairs.
         for (x, y) in z {
             // Reduce to given axis index.
-            self.values.collapse_axis(Axis(x), y);
+            self.data.collapse_axis(Axis(x), y);
             // Reduce to given state.
             let y = self.states[x]
                 .swap_remove_index(y)
@@ -411,8 +411,8 @@ pub struct DiscreteJPD {
 }
 
 impl DiscreteJPD {
-    /// Construct a new discrete JPD given its values and states.
-    pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
+    /// Construct a new discrete JPD given its data and states.
+    pub fn new<D, I, J, K, V>(data: Array<f64, D>, states: I) -> Self
     where
         D: Dimension,
         I: IntoIterator<Item = (K, J)>,
@@ -420,10 +420,10 @@ impl DiscreteJPD {
         K: Into<String>,
         V: Into<String>,
     {
-        // Check all values are normalized.
-        assert!(values.iter().all(|x| (0. ..=1.).contains(x)));
+        // Check all data are normalized.
+        assert!(data.iter().all(|x| (0. ..=1.).contains(x)));
         // Construct underlying factor.
-        let phi = DiscreteFactor::new(states, values);
+        let phi = DiscreteFactor::new(data, states);
 
         Self { phi }
     }
@@ -448,7 +448,7 @@ impl Add for DiscreteJPD {
     fn add(mut self, rhs: Self) -> Self::Output {
         // Compute factor addition.
         self.phi = self.phi + rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -460,7 +460,7 @@ impl Mul for DiscreteJPD {
     fn mul(mut self, rhs: Self) -> Self::Output {
         // Compute factor product.
         self.phi = self.phi * rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -472,7 +472,7 @@ impl Div for DiscreteJPD {
     fn div(mut self, rhs: Self) -> Self::Output {
         // Compute factor division.
         self.phi = self.phi / rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -498,6 +498,11 @@ impl Factor for DiscreteJPD {
     type Value<'a> = &'a str;
 
     #[inline]
+    fn data(&self) -> &ndarray::ArrayD<f64> {
+        self.phi.data()
+    }
+
+    #[inline]
     fn scope(&self) -> Self::ScopeIter<'_> {
         self.phi.scope()
     }
@@ -508,13 +513,8 @@ impl Factor for DiscreteJPD {
     }
 
     #[inline]
-    fn values(&self) -> &ndarray::ArrayD<f64> {
-        self.phi.values()
-    }
-
-    #[inline]
     fn normalize(mut self) -> Self {
-        // Normalize values.
+        // Normalize data.
         self.phi = self.phi.normalize();
 
         self
@@ -527,7 +527,7 @@ impl Factor for DiscreteJPD {
     {
         // Marginalize underlying factor.
         self.phi = self.phi.marginalize(z);
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 
@@ -538,7 +538,7 @@ impl Factor for DiscreteJPD {
     {
         // Reduce underlying factor.
         self.phi = self.phi.reduce(z);
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -563,8 +563,8 @@ pub struct DiscreteCPD {
 }
 
 impl DiscreteCPD {
-    /// Construct a new tabular CPD given its values and states.
-    pub fn new<I, J, K, V>((x, y): (K, J), z: I, values: Array2<f64>) -> Self
+    /// Construct a new tabular CPD given its data and states.
+    pub fn new<I, J, K, V>((x, y): (K, J), z: I, data: Array2<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
@@ -578,16 +578,16 @@ impl DiscreteCPD {
             .into_iter()
             .chain(z.into_iter().map(|(s, t)| (s.into(), t)));
         // Assert sum over target axis yields ones.
-        let values_sum = values.sum_axis(Axis(1));
+        let data_sum = data.sum_axis(Axis(1));
         assert!(
-            values_sum.iter().all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
+            data_sum.iter().all(|x| x.relative_eq(&1., 1e-8, 1e-8)),
             "CPD rows must sum to one: {}",
-            values_sum
+            data_sum
         );
-        // Align values axis [Z, X] to [X, Z] as states.
-        let values = values.reversed_axes();
+        // Align data axis [Z, X] to [X, Z] as states.
+        let data = data.reversed_axes();
         // Construct underlying factor.
-        let phi = DiscreteFactor::new(states, values);
+        let phi = DiscreteFactor::new(data, states);
 
         Self { x, phi }
     }
@@ -621,7 +621,7 @@ impl Add for DiscreteCPD {
     fn add(mut self, rhs: Self) -> Self::Output {
         // Compute factor addition.
         self.phi = self.phi + rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -633,7 +633,7 @@ impl Mul for DiscreteCPD {
     fn mul(mut self, rhs: Self) -> Self::Output {
         // Compute factor product.
         self.phi = self.phi * rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -645,7 +645,7 @@ impl Div for DiscreteCPD {
     fn div(mut self, rhs: Self) -> Self::Output {
         // Compute factor division.
         self.phi = self.phi / rhs.phi;
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -661,8 +661,8 @@ impl From<DiscreteCPD> for Table {
     fn from(other: DiscreteCPD) -> Table {
         // Create print table.
         let mut table = Table::new();
-        // Get target, states and values.
-        let (s, v) = (&other.phi.states, &other.phi.values);
+        // Get target, states and data.
+        let (s, v) = (&other.phi.states, &other.phi.data);
         // Add first header to table. TODO: Add `with_hspan`if possible.
         table.set_titles(
             std::iter::repeat("")
@@ -680,7 +680,7 @@ impl From<DiscreteCPD> for Table {
         );
         // If there are no conditioning variables ...
         if s.len() == 1 {
-            // ... add only the row of marginal values.
+            // ... add only the row of marginal data.
             table.add_row(v.iter().map(|x| x.to_string()).collect());
             // Return table.
             return table;
@@ -697,7 +697,7 @@ impl From<DiscreteCPD> for Table {
                 false => None,
             })
             .multi_cartesian_product();
-        // Construct iterator over values.
+        // Construct iterator over data.
         let mut w = v.axis_iter(Axis(i)).map(|x| x.into_iter()).collect_vec();
         // Add rows to table.
         for s in states {
@@ -721,6 +721,11 @@ impl Factor for DiscreteCPD {
     type Value<'a> = &'a str;
 
     #[inline]
+    fn data(&self) -> &ndarray::ArrayD<f64> {
+        self.phi.data()
+    }
+
+    #[inline]
     fn scope(&self) -> Self::ScopeIter<'_> {
         self.phi.scope()
     }
@@ -728,11 +733,6 @@ impl Factor for DiscreteCPD {
     #[inline]
     fn in_scope(&self, x: &str) -> bool {
         self.phi.in_scope(x)
-    }
-
-    #[inline]
-    fn values(&self) -> &ndarray::ArrayD<f64> {
-        self.phi.values()
     }
 
     #[inline]
@@ -745,10 +745,10 @@ impl Factor for DiscreteCPD {
             .expect("Failed to get target index");
 
         // Normalize over target axis.
-        self.phi.values /= &self.phi.values.sum_axis(Axis(x)).insert_axis(Axis(x));
+        self.phi.data /= &self.phi.data.sum_axis(Axis(x)).insert_axis(Axis(x));
 
-        // Assert values are in [0, 1].
-        debug_assert!(self.phi.values.iter().all(|x| (0. ..=1.).contains(x)));
+        // Assert data are in [0, 1].
+        debug_assert!(self.phi.data.iter().all(|x| (0. ..=1.).contains(x)));
 
         self
     }
@@ -762,7 +762,7 @@ impl Factor for DiscreteCPD {
         let z = z.into_iter().inspect(|&z| assert_ne!(z, self.x));
         // Marginalize underlying factor.
         self.phi = self.phi.marginalize(z);
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 
@@ -775,7 +775,7 @@ impl Factor for DiscreteCPD {
         let z = z.into_iter().inspect(|&(z, _)| assert_ne!(z, self.x));
         // Reduce underlying factor.
         self.phi = self.phi.reduce(z);
-        // Normalize values.
+        // Normalize data.
         self.normalize()
     }
 }
@@ -794,14 +794,14 @@ impl ConditionalProbabilityDistribution for DiscreteCPD {
             .get_index_of(&x)
             .expect("Failed to get target index");
         // Normalize over target axis.
-        phi.values /= &phi.values.sum_axis(Axis(i)).insert_axis(Axis(i));
-        // Assert values are in [0, 1].
+        phi.data /= &phi.data.sum_axis(Axis(i)).insert_axis(Axis(i));
+        // Assert data are in [0, 1].
         debug_assert!(
-            phi.values
+            phi.data
                 .iter()
                 .all(|x| (0. ..=1.).contains(x) || x.is_nan()),
             "{}",
-            phi.values
+            phi.data
         );
 
         Self { x, phi }

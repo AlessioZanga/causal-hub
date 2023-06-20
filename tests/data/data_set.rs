@@ -10,7 +10,7 @@ mod tests {
 
         #[test]
         fn from() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -19,14 +19,14 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(df);
+            let data_set = DiscreteDataSet::from(df);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(data_set.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -35,7 +35,7 @@ mod tests {
                 ("Z", vec!["A", "B", "C"].into_iter().collect()),
             ]);
 
-            assert!(data
+            assert!(data_set
                 .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
@@ -43,12 +43,12 @@ mod tests {
                 .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
                     && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
-            assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
+            assert_eq!(data_set.cardinality(), &vec![3, 1, 2, 3]);
         }
 
         #[test]
         fn into() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\nA,A,A\nA,B,B\nA,A,C\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -57,17 +57,17 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(true_df.clone());
+            let data_set = DiscreteDataSet::from(true_df.clone());
 
             // Cast DataSet to dataframe.
-            let pred_df: DataFrame = data.into();
+            let pred_df: DataFrame = data_set.into();
 
             assert_eq!(pred_df, true_df);
         }
 
         #[test]
         fn with_states() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -76,18 +76,18 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(df).with_states([
+            let data_set = DiscreteDataSet::from(df).with_states([
                 ("X", vec!["A", "B"]),
                 ("Y", vec!["A", "B", "C"]),
                 ("W", vec!["G", "H", "I", "J", "K", "L", "M", "N"]),
             ]);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(data.labels().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(data_set.labels().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -101,7 +101,7 @@ mod tests {
                 ("Z", vec!["A", "B", "C"].into_iter().collect()),
             ]);
 
-            assert!(data
+            assert!(data_set
                 .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
@@ -109,12 +109,12 @@ mod tests {
                 .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
                     && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
-            assert_eq!(data.cardinality(), &vec![8, 2, 3, 3]);
+            assert_eq!(data_set.cardinality(), &vec![8, 2, 3, 3]);
         }
 
         #[test]
         fn sample() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -123,25 +123,25 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(df);
+            let data_set = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            let sample = data.sample(&mut rng, 2);
+            // Sample from the data_set set.
+            let sample = data_set.sample(&mut rng, 2);
             // Assert labels, states, cardinalities and values.
-            assert!(data.labels().eq(sample.labels()));
-            assert_eq!(data.states(), sample.states());
-            assert_eq!(data.cardinality(), sample.cardinality());
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() > sample.sample_size());
+            assert!(data_set.labels().eq(sample.labels()));
+            assert_eq!(data_set.states(), sample.states());
+            assert_eq!(data_set.cardinality(), sample.cardinality());
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() > sample.sample_size());
             assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
         #[should_panic]
         fn sample_should_panic() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -150,17 +150,17 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(df);
+            let data_set = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            data.sample(&mut rng, 4);
+            // Sample from the data_set set.
+            data_set.sample(&mut rng, 4);
         }
 
         #[test]
         fn sample_with_replacement() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z,W\nA,A,A,I\nA,B,B,J\nA,A,C,K\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -169,18 +169,18 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = DiscreteDataSet::from(df);
+            let data_set = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            let sample = data.sample_with_replacement(&mut rng, 4);
+            // Sample from the data_set set.
+            let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels, states, cardinalities and values.
-            assert!(data.labels().eq(sample.labels()));
-            assert_eq!(data.states(), sample.states());
-            assert_eq!(data.cardinality(), sample.cardinality());
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() < sample.sample_size());
+            assert!(data_set.labels().eq(sample.labels()));
+            assert_eq!(data_set.states(), sample.states());
+            assert_eq!(data_set.cardinality(), sample.cardinality());
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() < sample.sample_size());
             assert_eq!(sample.sample_size(), 4);
         }
     }
@@ -192,7 +192,7 @@ mod tests {
 
         #[test]
         fn from() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -201,19 +201,19 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = ContinuousDataSet::from(df);
+            let data_set = ContinuousDataSet::from(df);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data.labels().into_iter().eq(["X", "Y", "Z"]));
+            assert!(data_set.labels().into_iter().eq(["X", "Y", "Z"]));
         }
 
         #[test]
         fn into() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -222,17 +222,17 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = ContinuousDataSet::from(true_df.clone());
+            let data_set = ContinuousDataSet::from(true_df.clone());
 
             // Cast DataSet to dataframe.
-            let pred_df: DataFrame = data.into();
+            let pred_df: DataFrame = data_set.into();
 
             assert_eq!(pred_df, true_df);
         }
 
         #[test]
         fn sample() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -241,23 +241,23 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = ContinuousDataSet::from(df);
+            let data_set = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            let sample = data.sample(&mut rng, 2);
+            // Sample from the data_set set.
+            let sample = data_set.sample(&mut rng, 2);
             // Assert labels and values.
-            assert!(data.labels().eq(sample.labels()));
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() > sample.sample_size());
+            assert!(data_set.labels().eq(sample.labels()));
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() > sample.sample_size());
             assert_eq!(sample.sample_size(), 2);
         }
 
         #[test]
         #[should_panic]
         fn sample_should_panic() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -266,17 +266,17 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = ContinuousDataSet::from(df);
+            let data_set = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            data.sample(&mut rng, 4);
+            // Sample from the data_set set.
+            data_set.sample(&mut rng, 4);
         }
 
         #[test]
         fn sample_with_replacement() {
-            // Set in-memory sample data file.
+            // Set in-memory sample data_set file.
             let file = "X,Y,Z\n1.0,1.0,1.0\n1.0,2.0,2.0\n1.0,1.0,3.0\n";
             // Initialize an file cursor over the string.
             let file = std::io::Cursor::new(&file);
@@ -285,16 +285,16 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to DataSet.
-            let data = ContinuousDataSet::from(df);
+            let data_set = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
-            // Sample from the data set.
-            let sample = data.sample_with_replacement(&mut rng, 4);
+            // Sample from the data_set set.
+            let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels and values.
-            assert!(data.labels().eq(sample.labels()));
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() < sample.sample_size());
+            assert!(data_set.labels().eq(sample.labels()));
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() < sample.sample_size());
             assert_eq!(sample.sample_size(), 4);
         }
     }

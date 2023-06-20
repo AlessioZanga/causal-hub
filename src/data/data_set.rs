@@ -26,11 +26,11 @@ pub trait DataSet:
     where
         Self: 'a;
 
+    /// Get reference to underlying data.
+    fn data(&self) -> &Self::Data;
+
     /// Get the set of variables labels.
     fn labels(&self) -> Self::LabelsIter<'_>;
-
-    /// Get reference to underlying values.
-    fn values(&self) -> &Self::Data;
 
     /// Get sample size.
     fn sample_size(&self) -> usize;
@@ -52,14 +52,14 @@ pub trait DataSet:
 /// Data matrix for discrete data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataSet {
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    data: Array2<u8>,
     cardinality: Vec<u8>,
-    values: Array2<u8>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
 }
 
 impl DiscreteDataSet {
     /// Construct a new discrete data matrix given data and states.
-    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
+    pub fn new<V, I, J>(data: Array2<u8>, states: I) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = (V, J)>,
@@ -72,7 +72,7 @@ impl DiscreteDataSet {
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Check labels consistency.
-        assert_eq!(values.ncols(), states.len());
+        assert_eq!(data.ncols(), states.len());
         // Compute cardinalities from states.
         let cardinality = states
             .values()
@@ -84,10 +84,16 @@ impl DiscreteDataSet {
             .collect_vec();
 
         Self {
-            states,
+            data,
             cardinality,
-            values,
+            states,
         }
+    }
+
+    /// Gets the vector of variables cardinalities.
+    #[inline]
+    pub fn cardinality(&self) -> &Vec<u8> {
+        &self.cardinality
     }
 
     /// Gets the map of variables to their states.
@@ -119,12 +125,12 @@ impl DiscreteDataSet {
         // Assert new states are superset of the existing ones.
         assert!(states.iter().all(|(k, v)| self.states[k].is_subset(v)));
 
-        // Update values encoding w.r.t. new states.
+        // Update data encoding w.r.t. new states.
         states.into_iter().for_each(|(k, v)| {
             // Get columns to be updated.
             let (i, _, s_v) = self.states.get_full(&k).unwrap();
-            // Align values encodings.
-            self.values.column_mut(i).map_inplace(|x| {
+            // Align data encodings.
+            self.data.column_mut(i).map_inplace(|x| {
                 // Set new location w.r.t. previous state.
                 *x = v.get_index_of(&s_v[*x as usize]).unwrap() as u8;
             });
@@ -145,17 +151,11 @@ impl DiscreteDataSet {
 
         self
     }
-
-    /// Gets the vector of variables cardinalities.
-    #[inline]
-    pub fn cardinality(&self) -> &Vec<u8> {
-        &self.cardinality
-    }
 }
 
 impl From<DataFrame> for DiscreteDataSet {
     fn from(df: DataFrame) -> Self {
-        // Check for missing values.
+        // Check for missing data.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
@@ -182,7 +182,7 @@ impl From<DataFrame> for DiscreteDataSet {
         let df: DataFrame = df.sorted_by(|a, b| a.name().cmp(b.name())).collect();
 
         // Get underlying data matrix.
-        let mut values = df
+        let mut data = df
             .to_ndarray::<UInt32Type>()
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as u8);
@@ -233,8 +233,7 @@ impl From<DataFrame> for DiscreteDataSet {
                     let mut indices = (0..states.len()).collect_vec();
                     indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
-                    values
-                        .column_mut(i)
+                    data.column_mut(i)
                         .mapv_inplace(|x| indices[x as usize] as u8);
                     // Sort the labels.
                     states.sort();
@@ -258,20 +257,20 @@ impl From<DataFrame> for DiscreteDataSet {
             .collect_vec();
 
         Self {
-            states,
+            data,
             cardinality,
-            values,
+            states,
         }
     }
 }
 
 impl From<DiscreteDataSet> for DataFrame {
-    fn from(data: DiscreteDataSet) -> Self {
+    fn from(data_set: DiscreteDataSet) -> Self {
         // Map columns to series.
-        let series = data
+        let series = data_set
             .states
             .into_iter()
-            .zip(data.values.columns())
+            .zip(data_set.data.columns())
             .map(|((name, states), column)| {
                 Series::new(
                     &name,
@@ -294,31 +293,31 @@ impl DataSet for DiscreteDataSet {
         Map<indexmap::map::Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     #[inline]
+    fn data(&self) -> &Self::Data {
+        &self.data
+    }
+
+    #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
         self.states.keys().map(|x| x.as_str())
     }
 
     #[inline]
-    fn values(&self) -> &Self::Data {
-        &self.values
-    }
-
-    #[inline]
     fn sample_size(&self) -> usize {
-        self.values.nrows()
+        self.data.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
         // Check if there are enough samples.
         assert!(
-            self.values.nrows() >= n,
+            self.data.nrows() >= n,
             "Sample size is higher than the total number of samples in the data set."
         );
 
         // Allocate the new data set.
-        let mut values = Array2::zeros((n, self.values.ncols()));
+        let mut data = Array2::zeros((n, self.data.ncols()));
         // Define the new rows index.
-        let mut idx = (0..self.values.nrows()).collect_vec();
+        let mut idx = (0..self.data.nrows()).collect_vec();
         // Shuffle the rows index.
         idx.shuffle(rng);
         // Fill new dataset.
@@ -326,31 +325,31 @@ impl DataSet for DiscreteDataSet {
             // Take only n samples.
             .take(n)
             .enumerate()
-            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+            .for_each(|(i, j)| data.row_mut(i).assign(&self.data.row(j)));
 
         Self {
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
-            values,
+            data,
         }
     }
 
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
         // Allocate the new data set.
-        let mut values = Array2::zeros((n, self.values.ncols()));
+        let mut data = Array2::zeros((n, self.data.ncols()));
         // Define the new rows index.
-        let idx = Uniform::new(0, self.values.nrows());
+        let idx = Uniform::new(0, self.data.nrows());
         // Fill new dataset.
         rng.sample_iter(idx)
             // Take only n samples.
             .take(n)
             .enumerate()
-            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+            .for_each(|(i, j)| data.row_mut(i).assign(&self.data.row(j)));
 
         Self {
-            states: self.states.clone(),
+            data,
             cardinality: self.cardinality.clone(),
-            values,
+            states: self.states.clone(),
         }
     }
 }
@@ -360,18 +359,18 @@ impl DataSet for DiscreteDataSet {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataSet {
+    data: Array2<f64>,
     labels: BTreeSet<String>,
-    values: Array2<f64>,
 }
 
 impl From<DataFrame> for ContinuousDataSet {
     fn from(df: DataFrame) -> Self {
-        // Check for missing values.
+        // Check for missing data.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
-                "DataSet must contain no missing values. ",
-                "Refer to `ContinuousDataSetWithMissing` to handle missing values properly."
+                "DataSet must contain no missing data. ",
+                "Refer to `ContinuousDataSetWithMissing` to handle missing data properly."
             )
         );
 
@@ -389,24 +388,24 @@ impl From<DataFrame> for ContinuousDataSet {
             .collect();
 
         // Get underlying data matrix.
-        let values = df
+        let data = df
             .to_ndarray::<Float64Type>()
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
         let labels = df.get_column_names_owned().into_iter().map_into().collect();
 
-        Self { labels, values }
+        Self { data, labels }
     }
 }
 
 impl From<ContinuousDataSet> for DataFrame {
-    fn from(data: ContinuousDataSet) -> Self {
+    fn from(data_set: ContinuousDataSet) -> Self {
         // Map columns to series.
-        let series = data
+        let series = data_set
             .labels
             .into_iter()
-            .zip(data.values.columns())
+            .zip(data_set.data.columns())
             .map(|(name, column)| Series::new(&name, column.to_vec()))
             .collect_vec();
 
@@ -420,31 +419,31 @@ impl DataSet for ContinuousDataSet {
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
+    fn data(&self) -> &Self::Data {
+        &self.data
+    }
+
+    #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
         self.labels.iter().map(|x| x.as_str())
     }
 
     #[inline]
-    fn values(&self) -> &Self::Data {
-        &self.values
-    }
-
-    #[inline]
     fn sample_size(&self) -> usize {
-        self.values.nrows()
+        self.data.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
         // Check if there are enough samples.
         assert!(
-            self.values.nrows() >= n,
+            self.data.nrows() >= n,
             "Sample size is higher than the total number of samples in the data set."
         );
 
         // Allocate the new data set.
-        let mut values = Array2::zeros((n, self.values.ncols()));
+        let mut data = Array2::zeros((n, self.data.ncols()));
         // Define the new rows index.
-        let mut idx = (0..self.values.nrows()).collect_vec();
+        let mut idx = (0..self.data.nrows()).collect_vec();
         // Shuffle the rows index.
         idx.shuffle(rng);
         // Fill new dataset.
@@ -452,29 +451,29 @@ impl DataSet for ContinuousDataSet {
             // Take only n samples.
             .take(n)
             .enumerate()
-            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+            .for_each(|(i, j)| data.row_mut(i).assign(&self.data.row(j)));
 
         Self {
+            data,
             labels: self.labels.clone(),
-            values,
         }
     }
 
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
         // Allocate the new data set.
-        let mut values = Array2::zeros((n, self.values.ncols()));
+        let mut data = Array2::zeros((n, self.data.ncols()));
         // Define the new rows index.
-        let idx = Uniform::new(0, self.values.nrows());
+        let idx = Uniform::new(0, self.data.nrows());
         // Fill new dataset.
         rng.sample_iter(idx)
             // Take only n samples.
             .take(n)
             .enumerate()
-            .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
+            .for_each(|(i, j)| data.row_mut(i).assign(&self.data.row(j)));
 
         Self {
+            data,
             labels: self.labels.clone(),
-            values,
         }
     }
 }

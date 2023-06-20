@@ -193,7 +193,7 @@ impl From<BIF> for String {
                         .multi_cartesian_product();
                     // Construct iterator over values.
                     let mut v = phi
-                        .values()
+                        .data()
                         .axis_iter(Axis(i))
                         .map(|x| x.into_iter())
                         .collect_vec();
@@ -217,7 +217,7 @@ impl From<BIF> for String {
                 // Format P(X).
                 false => {
                     // Format probability values.
-                    let v = phi.values().into_iter().map(|x| x.to_string()).join(", ");
+                    let v = phi.data().into_iter().map(|x| x.to_string()).join(", ");
                     // Format probability declaration.
                     bif += &format!("probability ( {x} ) {{\n  table {v};\n}}\n")
                 }
