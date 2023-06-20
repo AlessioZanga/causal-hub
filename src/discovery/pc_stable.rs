@@ -89,16 +89,16 @@ where
             let to_be_removed: Vec<(usize, usize, Option<FxIndexSet<usize>>, bool)> = E!(g)
                 .par_bridge()
                 .map(|(x, y)| {
-                    // If there exists at least one candidate sepset.
                     let mut flag = false;
 
-                    // Take superset of adjacents with cardinality `c`
+                    // Take set of adjacents with cardinality `c`
                     let sepset = iter_set::union(
                         Adj!(g, x).filter(|&v| v != y).combinations(c),
                         Adj!(g, y).filter(|&v| v != x).combinations(c),
                     )
-                    // Assign each subset a flag indicating if it d-separates `(x, y)`
+                    // If there exists at least one, set the flag to true
                     .inspect(|_| flag = true)
+                    // Assign each edge its related sepset
                     .find_map(|z| match self.test.call(x, y, &z) {
                         true => Some(z.into_iter().collect()),
                         _ => None,
@@ -151,26 +151,30 @@ where
         let (g, sepsets) = self.skeleton();
         // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
-        // Create the set of unshielded triples
-        let triples = V!(g)
-            .flat_map(|y| std::iter::repeat(y).zip(Adj!(g, y).combinations(2)))
-            .map(|(y, xz)| (xz[0], y, xz[1]))
-            .filter(|(x, _, z)| !g.has_edge_by_index(*x, *z))
-            .collect_vec();
+        // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
+        let triples: Vec<_> = V!(g)
+            .flat_map(|y| {
+                std::iter::repeat(y)
+                    .zip(Adj!(g, y).combinations(2))
+                    .map(|(y, xz)| (xz[0], y, xz[1]))
+                    .filter(|&(x, y, z)| {
+                        !g.has_edge_by_index(x, z) && !sepsets[&(x, z)].contains(&y)
+                    })
+            })
+            .collect();
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
-            // ... if `y` doesn't d-separates `(x, y)` ...
-            if !sepsets[&(x, z)].contains(&y) {
-                // ... and both edges are undirected ...
-                if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(y, z) {
-                    continue;
-                }
-                // ... then the triple is a v-structure
-                g.orient_edge(x, y);
-                g.orient_edge(z, y);
+            // ... if one of the edges is already directed ...
+            if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(z, y) {
+                // ... skip this triple.
+                continue;
             }
+            // Otherwise, the triple is a v-structure.
+            g.orient_edge(x, y);
+            g.orient_edge(z, y);
         }
+
         g
     }
 
@@ -183,7 +187,7 @@ where
         // Cast the graph to a partially directed graph
         let mut g: PDGraph = g.into();
 
-        // Create the set of unshielded triples
+        // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
             .par_bridge()
             .flat_map(|y| {
@@ -192,7 +196,6 @@ where
                     .map(|(y, xz)| (xz[0], y, xz[1]))
                     .par_bridge()
                     .filter(|&(x, y, z)| {
-                        // TODO: // ... if `y` d-separates `(x, z)` ...
                         !g.has_edge_by_index(x, z) && !sepsets[&(x, z)].contains(&y)
                     })
             })

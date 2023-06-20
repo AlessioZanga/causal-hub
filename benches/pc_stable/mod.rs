@@ -372,6 +372,46 @@ pub mod discrete {
         });
     }
 
+    // PC-Stable `andes` benchmark
+    fn andes(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/andes.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("andes", |b| b.iter(|| pcs.call().meek_procedure_until_3()));
+    }
+
+    // PC-Stable parallel `andes` benchmark
+    fn par_andes(c: &mut Criterion) {
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/PC-Stable/andes.csv")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Benchmark
+        c.bench_function("par_andes", |b| {
+            b.iter(|| pcs.par_call().meek_procedure_until_3())
+        });
+    }
+
     criterion_group!(
         discrete,
         cancer,
@@ -391,6 +431,8 @@ pub mod discrete {
         win95pts,
         par_win95pts,
         insurance,
-        par_insurance
+        par_insurance,
+        andes,
+        par_andes
     );
 }

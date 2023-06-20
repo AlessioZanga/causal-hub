@@ -416,6 +416,51 @@ mod discrete {
     }
 
     #[test]
+    fn andes() {
+        // Set dataset name
+        let db_name: String = "andes".into();
+
+        // Set true skeleton
+        let true_skel =
+            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
+
+        // Set true graph
+        let true_g =
+            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
+
+        // Load data set.
+        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
+            .unwrap()
+            .finish()
+            .unwrap();
+        let d = DiscreteDataMatrix::from(d);
+
+        // Create ChiSquared conditional independence test
+        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+
+        // Create PC-Stable functor
+        let pcs = PCStable::new(&test);
+
+        // Perform skeleton discovery
+        let skel = pcs.call_skeleton();
+        let par_skel = pcs.par_call_skeleton();
+
+        // Perform discovery
+        let g = pcs.call().meek_procedure_until_3();
+        let par_g = pcs.par_call().meek_procedure_until_3();
+
+        // Plot found cpdag
+        DOT::from(g.clone()).plot("./cpdag-andes.pdf").unwrap();
+
+        // Perform tests
+        assert_eq!(skel, par_skel);
+        assert_eq!(g, par_g);
+
+        assert_eq!(skel, true_skel);
+        assert_eq!(g, true_g);
+    }
+
+    #[test]
     fn meek_1_base_case() {
         let mut g = PDGraph::new_pagraph(vec![], vec![("1", "2")], vec![("0", "1")]);
         g.meek_1();
