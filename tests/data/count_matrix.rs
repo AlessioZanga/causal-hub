@@ -15,8 +15,8 @@ mod tests {
         let d = CsvReader::new(file)
             .finish()
             .expect("Failed to read from CSV file");
-        // Cast dataframe to datamatrix.
-        let d = DiscreteDataMatrix::from(d);
+        // Cast dataframe to DataSet.
+        let d = DiscreteDataSet::from(d);
 
         let n = MarginalCountMatrix::new(&d, 0);
         assert_eq!(n.values(), array![1, 1, 1]);
@@ -41,8 +41,8 @@ mod tests {
         let d = CsvReader::new(file)
             .finish()
             .expect("Failed to read from CSV file");
-        // Cast dataframe to datamatrix.
-        let d = DiscreteDataMatrix::from(d);
+        // Cast dataframe to DataSet.
+        let d = DiscreteDataSet::from(d);
 
         let n = ConditionalCountMatrix::<false>::new(&d, 1, &[2]);
         assert_eq!(n.values(), array![[2], [1]]);
@@ -82,7 +82,7 @@ mod tests {
             .expect("")
             .finish()
             .expect("Failed to read from CSV file");
-        let d = DiscreteDataMatrix::from(d);
+        let d = DiscreteDataSet::from(d);
 
         let m: FxHashMap<_, _> = d
             .labels()
@@ -108,8 +108,8 @@ mod tests {
         let d = CsvReader::new(file)
             .finish()
             .expect("Failed to read from CSV file");
-        // Cast dataframe to datamatrix.
-        let d = DiscreteDataMatrix::from(d);
+        // Cast dataframe to DataSet.
+        let d = DiscreteDataSet::from(d);
 
         let n = JointConditionalCountMatrix::new(&d, 1, 2, &[3]);
         assert_eq!(n.values(), array![[[1, 0]], [[0, 1]], [[1, 0]]]);

@@ -18,8 +18,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(df);
 
             assert_eq!(
                 data.values(),
@@ -56,10 +56,10 @@ mod tests {
             let true_df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(true_df.clone());
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(true_df.clone());
 
-            // Cast datamatrix to dataframe.
+            // Cast DataSet to dataframe.
             let pred_df: DataFrame = data.into();
 
             assert_eq!(pred_df, true_df);
@@ -75,8 +75,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df).with_states([
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(df).with_states([
                 ("X", vec!["A", "B"]),
                 ("Y", vec!["A", "B", "C"]),
                 ("W", vec!["G", "H", "I", "J", "K", "L", "M", "N"]),
@@ -122,8 +122,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -149,8 +149,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -168,8 +168,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = DiscreteDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -200,8 +200,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = ContinuousDataSet::from(df);
 
             assert_eq!(
                 data.values(),
@@ -221,10 +221,10 @@ mod tests {
             let true_df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(true_df.clone());
+            // Cast dataframe to DataSet.
+            let data = ContinuousDataSet::from(true_df.clone());
 
-            // Cast datamatrix to dataframe.
+            // Cast DataSet to dataframe.
             let pred_df: DataFrame = data.into();
 
             assert_eq!(pred_df, true_df);
@@ -240,8 +240,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -265,8 +265,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -284,8 +284,8 @@ mod tests {
             let df = CsvReader::new(file)
                 .finish()
                 .expect("Failed to read from CSV file");
-            // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            // Cast dataframe to DataSet.
+            let data = ContinuousDataSet::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();

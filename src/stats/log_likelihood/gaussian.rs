@@ -5,13 +5,13 @@ use ndarray_linalg::least_squares::*;
 
 use super::LogLikelihood;
 use crate::{
-    data::ContinuousDataMatrix,
+    data::ContinuousDataSet,
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     prelude::DataSet,
 };
 
-impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL> {
+impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataSet, PARALLEL> {
     #[inline]
     pub(crate) fn marginal_eval(x: ArrayView1<f64>, n: usize) -> (Array1<f64>, f64) {
         // Compute the mean.
@@ -100,8 +100,8 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
     }
 }
 
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
+impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataSet, G>
+    for LogLikelihood<'a, ContinuousDataSet, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {

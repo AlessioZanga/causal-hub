@@ -3,7 +3,7 @@ use std::f64::consts::FRAC_1_SQRT_2;
 use libm::erfc;
 
 use crate::{
-    data::ContinuousDataMatrix,
+    data::ContinuousDataSet,
     discovery::ConditionalIndependenceTest,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
@@ -20,7 +20,7 @@ pub struct FisherZ {
 impl FisherZ {
     /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &ContinuousDataMatrix) -> Self {
+    pub fn new(d: &ContinuousDataSet) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -34,9 +34,9 @@ impl FisherZ {
     }
 }
 
-impl From<&ContinuousDataMatrix> for FisherZ {
+impl From<&ContinuousDataSet> for FisherZ {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &ContinuousDataSet) -> Self {
         Self::new(d)
     }
 }

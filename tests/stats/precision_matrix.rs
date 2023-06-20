@@ -104,7 +104,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = ContinuousDataSet::from(d);
         // Compute a new covariance matrix.
         let sigma = CovarianceMatrix::from(&d);
         // Construct a new precision matrix.

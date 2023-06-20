@@ -3,7 +3,7 @@ use std::ops::Deref;
 use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
-use crate::data::{ContinuousDataMatrix, DataSet};
+use crate::data::{ContinuousDataSet, DataSet};
 
 /// (Sample) Covariance matrix $\Sigma$.
 #[derive(Clone, Debug)]
@@ -45,9 +45,9 @@ impl From<CovarianceMatrix> for Array2<f64> {
     }
 }
 
-impl From<&ContinuousDataMatrix> for CovarianceMatrix {
+impl From<&ContinuousDataSet> for CovarianceMatrix {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &ContinuousDataSet) -> Self {
         // Compute the (sample) covariance matrix.
         let sigma = d
             .values()

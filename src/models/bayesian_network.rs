@@ -14,7 +14,7 @@ use crate::{
     graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
     prelude::{
-        algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataMatrix, PathGraph,
+        algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataSet, PathGraph,
     },
     types::FxIndexMap,
     Pa, L, V,
@@ -95,7 +95,7 @@ impl From<DiscreteBayesianNetwork>
 }
 
 impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
-    type Data = DiscreteDataMatrix;
+    type Data = DiscreteDataSet;
 
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 

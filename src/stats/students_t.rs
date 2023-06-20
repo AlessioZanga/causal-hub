@@ -1,7 +1,7 @@
 use statrs::function::beta::beta_reg;
 
 use crate::{
-    data::ContinuousDataMatrix,
+    data::ContinuousDataSet,
     discovery::ConditionalIndependenceTest,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
@@ -18,7 +18,7 @@ pub struct StudentsT {
 impl StudentsT {
     /// Construct Students' T conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &ContinuousDataMatrix) -> Self {
+    pub fn new(d: &ContinuousDataSet) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -32,9 +32,9 @@ impl StudentsT {
     }
 }
 
-impl From<&ContinuousDataMatrix> for StudentsT {
+impl From<&ContinuousDataSet> for StudentsT {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &ContinuousDataSet) -> Self {
         Self::new(d)
     }
 }

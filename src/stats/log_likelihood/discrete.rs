@@ -3,13 +3,13 @@ use rayon::prelude::*;
 
 use super::LogLikelihood;
 use crate::{
-    data::{ConditionalCountMatrix, DiscreteDataMatrix, MarginalCountMatrix},
+    data::{ConditionalCountMatrix, DiscreteDataSet, MarginalCountMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     utils::{axis_chunks_size, nan_to_zero},
 };
 
-impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataMatrix, PARALLEL> {
+impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataSet, PARALLEL> {
     #[inline]
     pub(crate) fn marginal_eval(n_i: ArrayView1<usize>) -> f64 {
         // Sum over states and cast to floating point.
@@ -72,8 +72,8 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataMatrix, PARALLEL> {
     }
 }
 
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<'a, DiscreteDataMatrix, PARALLEL>
+impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataSet, G>
+    for LogLikelihood<'a, DiscreteDataSet, PARALLEL>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {

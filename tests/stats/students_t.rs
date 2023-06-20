@@ -16,7 +16,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = ContinuousDataSet::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -49,7 +49,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = ContinuousDataSet::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());

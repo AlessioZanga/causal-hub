@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn call() {
         // Load reference data.
-        let d: DiscreteDataMatrix = CsvReader::from_path("./tests/assets/asia.csv")
+        let d: DiscreteDataSet = CsvReader::from_path("./tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()

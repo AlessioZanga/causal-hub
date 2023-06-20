@@ -4,7 +4,7 @@ use rayon::prelude::*;
 
 use super::DiscreteBayesianNetwork;
 use crate::{
-    data::{DataSet, DiscreteDataMatrix},
+    data::{DataSet, DiscreteDataSet},
     graphs::{structs::DirectedDenseAdjacencyMatrixGraph, BaseGraph, DirectedGraph},
     prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix},
     Pa, L, V,
@@ -24,16 +24,10 @@ where
 pub struct MaximumLikelihoodEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
-    ParameterEstimation<
-        DiscreteDataMatrix,
-        DirectedDenseAdjacencyMatrixGraph,
-        DiscreteBayesianNetwork,
-    > for MaximumLikelihoodEstimation<PARALLEL>
+    ParameterEstimation<DiscreteDataSet, DirectedDenseAdjacencyMatrixGraph, DiscreteBayesianNetwork>
+    for MaximumLikelihoodEstimation<PARALLEL>
 {
-    fn call(
-        d: &DiscreteDataMatrix,
-        g: &DirectedDenseAdjacencyMatrixGraph,
-    ) -> DiscreteBayesianNetwork {
+    fn call(d: &DiscreteDataSet, g: &DirectedDenseAdjacencyMatrixGraph) -> DiscreteBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels()));
 
@@ -85,16 +79,10 @@ impl<const PARALLEL: bool>
 pub struct BayesianEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
-    ParameterEstimation<
-        DiscreteDataMatrix,
-        DirectedDenseAdjacencyMatrixGraph,
-        DiscreteBayesianNetwork,
-    > for BayesianEstimation<PARALLEL>
+    ParameterEstimation<DiscreteDataSet, DirectedDenseAdjacencyMatrixGraph, DiscreteBayesianNetwork>
+    for BayesianEstimation<PARALLEL>
 {
-    fn call(
-        d: &DiscreteDataMatrix,
-        g: &DirectedDenseAdjacencyMatrixGraph,
-    ) -> DiscreteBayesianNetwork {
+    fn call(d: &DiscreteDataSet, g: &DirectedDenseAdjacencyMatrixGraph) -> DiscreteBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels()));
 

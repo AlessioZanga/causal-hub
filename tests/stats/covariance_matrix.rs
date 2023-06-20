@@ -100,7 +100,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = ContinuousDataSet::from(d);
         // Construct a new covariance matrix.
         let pred_s = CovarianceMatrix::from(&d);
 
