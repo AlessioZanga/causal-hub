@@ -11,6 +11,13 @@ pub struct LogLikelihood<'a, D, const PARALLEL: bool> {
 
 impl<'a, D, const PARALLEL: bool> LogLikelihood<'a, D, PARALLEL> {
     /// Constructor for LL functor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn new(data: &'a D) -> Self {
         Self { data }

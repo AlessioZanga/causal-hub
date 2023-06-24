@@ -18,6 +18,13 @@ pub struct BayesianInformationCriterion<'a, D, const PARALLEL: bool> {
 
 impl<'a, D, const PARALLEL: bool> BayesianInformationCriterion<'a, D, PARALLEL> {
     /// Constructor for BIC functor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn new(d: &'a D) -> Self {
         // Initialize the log-likelihood functor.

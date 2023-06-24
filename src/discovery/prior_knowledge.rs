@@ -5,30 +5,93 @@ use crate::types::FxIndexSet;
 /// Prior knowledge trait
 pub trait PriorKnowledge: Sync {
     /// Get the set of forbidden edges.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn forbidden(&self) -> &FxIndexSet<(usize, usize)>;
 
     /// Checks if edge is forbidden.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn has_forbidden(&self, x: usize, y: usize) -> bool;
 
     /// Add edge to the forbidden set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn add_forbidden(&mut self, x: usize, y: usize) -> bool;
 
     /// Delete edge from the forbidden set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn del_forbidden(&mut self, x: usize, y: usize) -> bool;
 
     /// Get the set of required edges.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn required(&self) -> &FxIndexSet<(usize, usize)>;
 
     /// Checks if edge is required.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn has_required(&self, x: usize, y: usize) -> bool;
 
     /// Add edge to the required set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn add_required(&mut self, x: usize, y: usize) -> bool;
 
     /// Delete edge from the required set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn del_required(&mut self, x: usize, y: usize) -> bool;
 
     /// Get the set of variables labels.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn labels(&self) -> &FxIndexSet<String>;
 }
 
@@ -42,6 +105,13 @@ pub struct ForbiddenRequired {
 
 impl ForbiddenRequired {
     /// Constructor for the forbidden and required prior knowledge sets.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     pub fn new<V, I, J, K>(vertices: I, forbidden: J, required: K) -> Self
     where
         I: IntoIterator<Item = V>,

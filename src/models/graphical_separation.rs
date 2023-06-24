@@ -92,7 +92,6 @@ impl<'a, G> GeneralizedIndependence for GraphicalSeparation<'a, G, directions::U
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
-    /// Checks whether $\mathbf{X} \mathrlap{\thinspace\perp}{\perp}_{\mathcal{G}} \mathbf{Y} \mid \mathbf{Z}$ holds or not.
     fn are_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
@@ -169,7 +168,6 @@ impl<'a, G> GeneralizedIndependence for GraphicalSeparation<'a, G, directions::D
 where
     G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
-    /// Checks whether $\mathbf{X} \mathrlap{\thinspace\perp}{\perp}_{\mathcal{G}} \mathbf{Y} \mid \mathbf{Z}$ holds or not.
     fn are_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,

@@ -9,14 +9,35 @@ pub trait DistributionEstimation {
     type CPD: ConditionalProbabilityDistribution;
 
     /// Compute the marginal distribution $\mathcal{P}(X)$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn marginal(&self, x: &str) -> Self::JPD;
 
     /// Compute the joint distribution $\mathcal{P}(\mathbf{X})$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn joint<'a, X>(&self, x: X) -> Self::JPD
     where
         X: IntoIterator<Item = &'a str>;
 
     /// Compute the conditional distribution $\mathcal{P}(X \mid \mathbf{Z})$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn conditional<'a, Z>(&self, x: &'a str, z: Z) -> Self::CPD
     where
         Z: IntoIterator<Item = &'a str>;
@@ -28,5 +49,12 @@ pub trait DistributionProjection {
     type Projection;
 
     /// Projects $\mathcal{P}$ onto $\mathcal{Q}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn project_onto(&self, q: &Self::Projection) -> Self::Projection;
 }

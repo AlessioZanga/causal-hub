@@ -17,6 +17,13 @@ where
     G: BaseGraph,
 {
     /// Construct the model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn call(d: &D, g: &G) -> M;
 }
 

@@ -18,6 +18,13 @@ pub struct AkaikeInformationCriterion<'a, D, const PARALLEL: bool> {
 
 impl<'a, D, const PARALLEL: bool> AkaikeInformationCriterion<'a, D, PARALLEL> {
     /// Constructor for AIC functor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn new(d: &'a D) -> Self {
         // Initialize the log-likelihood functor.

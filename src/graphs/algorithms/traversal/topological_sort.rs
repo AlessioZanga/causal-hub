@@ -23,7 +23,15 @@ where
     ///
     /// Build a TopologicalSort[^1] iterator for a given directed graph.
     ///
-    /// If the graph is cyclic, this iterator returns an error while unrolling.
+    /// # Panics
+    ///
+    /// If the graph is cyclic, this iterator panics while unrolling.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
     ///
     /// [^1]: [Kahn, A. B. (1962). Topological sorting of large networks. Communications of the ACM, 5(11), 558-562.](https://scholar.google.com/scholar?q=Topological+sorting+of+large+networks)
     ///

@@ -11,6 +11,13 @@ pub struct MarginalCountMatrix {
 
 impl MarginalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize) -> Self {
         // Get cardinalities.
@@ -31,6 +38,13 @@ impl MarginalCountMatrix {
     }
 
     /// Get reference to underlying values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn values(&self) -> &Array1<usize> {
         &self.n
@@ -74,6 +88,13 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 
     /// Build new count matrix with given data matrix and indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
@@ -100,6 +121,13 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 
     /// Get reference to underlying values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -120,6 +148,13 @@ pub struct JointCountMatrix {
 
 impl JointCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize) -> Self {
         // Get cardinalities.
@@ -140,6 +175,13 @@ impl JointCountMatrix {
     }
 
     /// Get reference to underlying values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -160,6 +202,13 @@ pub struct JointConditionalCountMatrix {
 
 impl JointConditionalCountMatrix {
     /// Build new count matrix with given data matrix and indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(d: &DiscreteDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
@@ -187,6 +236,13 @@ impl JointConditionalCountMatrix {
     }
 
     /// Get reference to underlying values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn values(&self) -> &Array3<usize> {
         &self.n

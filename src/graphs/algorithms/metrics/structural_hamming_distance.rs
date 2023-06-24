@@ -1,6 +1,13 @@
 use crate::{graphs::BaseGraph, types::FxIndexSet, E};
 
 /// Structural Hamming Distance (SHD).
+///
+/// # Examples
+///
+/// ```
+/// todo!() // FIXME:
+/// ```
+///
 pub fn shd<G, H>(true_graph: &G, pred_graph: &H) -> f64
 where
     G: BaseGraph,

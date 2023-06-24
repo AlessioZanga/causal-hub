@@ -24,6 +24,13 @@ pub struct FisherZ {
 
 impl<'a> FisherZ {
     /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
+    ///  
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(d: &'a ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.

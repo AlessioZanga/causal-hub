@@ -42,12 +42,33 @@ pub trait ProbabilisticGraphicalModel:
     type CPD: ConditionalProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
 
     /// Reference to the underlying graph.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn graph(&self) -> &Self::Graph;
 
     /// Reference to the parameters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
 
     /// Draw `n` samples.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data;
 }
 
