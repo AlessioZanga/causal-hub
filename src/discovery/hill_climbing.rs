@@ -68,6 +68,13 @@ where
     S: ScoringCriterion<D, G, T>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn new(scoring_criterion: &'a S) -> Self {
         // Get max in-degree or default to maximum in-degree.
@@ -86,6 +93,13 @@ where
     }
 
     /// Set initial graph $\mathcal{G}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub fn with_initial_graph(mut self, g: G) -> Self {
         // Set initial graph.
@@ -95,6 +109,13 @@ where
     }
 
     /// Set max in-degree.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn with_max_in_degree(mut self, max_in_degree: usize) -> Self {
         // Set hyper parameter.
@@ -104,6 +125,13 @@ where
     }
 
     /// Set max iterations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn with_max_iter(mut self, max_iter: usize) -> Self {
         // Set hyper parameter.
@@ -113,6 +141,13 @@ where
     }
 
     /// Enables columns shuffling by setting the seed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
     pub const fn with_shuffle(mut self, seed: u64) -> Self {
         // Set random number generator seed.
@@ -385,11 +420,11 @@ macro_rules! search {
                         .flatten()
                         .filter_map(|(k, v)| k.map(|k| (k, v))),
                 );
-                // Get operation with highest delta score, if any.
+                // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_par_iter()
                     .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-                    .filter(|(_, delta)| delta.is_sign_positive())
+                    .filter(|(_, delta)| delta > &0.)
             }
             // Same as before but sequentially.
             false => {
@@ -419,11 +454,11 @@ macro_rules! search {
                         .flatten()
                         .filter_map(|(k, v)| k.map(|k| (k, v))),
                 );
-                // Get operation with highest delta score.
+                // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_iter()
                     .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-                    .filter(|(_, delta)| delta.is_sign_positive())
+                    .filter(|(_, delta)| delta > &0.)
             }
         }
     };
@@ -525,6 +560,13 @@ where
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
         let mut cache = C::new(self.scoring_criterion);
@@ -663,6 +705,13 @@ where
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
         let mut cache = C::new(self.scoring_criterion);
