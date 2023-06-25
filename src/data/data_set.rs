@@ -58,7 +58,7 @@ pub trait DataSet:
     /// todo!() // FIXME:
     /// ```
     ///
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self;
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 
     /// Draw `n` samples with replacement.
     ///
@@ -68,5 +68,5 @@ pub trait DataSet:
     /// todo!() // FIXME:
     /// ```
     ///
-    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self;
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 }
