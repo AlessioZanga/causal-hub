@@ -72,7 +72,21 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
@@ -97,7 +111,32 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Construct initial graph.
+    /// let init_graph = DiGraph::new(
+    ///     data_set.labels(),
+    ///     [
+    ///         ("bronc", "dysp"),
+    ///         ("either", "dysp"),
+    ///         ("either", "xray"),
+    ///     ]
+    /// );
+    ///
+    /// // Perform discovery with given initial graph.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_initial_graph(init_graph)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
@@ -113,7 +152,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with maximum in-degree of 3.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_max_in_degree(3)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
@@ -129,7 +183,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with maximum 10 iterations.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_max_iter(10)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
@@ -145,7 +214,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with initial shuffling of search space order.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_shuffle(42)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
@@ -564,7 +648,21 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     pub fn call(&self, d: &D, k: &K) -> G {
@@ -709,7 +807,21 @@ where
     /// # Examples
     ///
     /// ```
-    /// todo!() // FIXME:
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     pub fn call(&self, d: &D, k: &K) -> G {
