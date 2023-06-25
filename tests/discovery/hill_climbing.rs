@@ -90,11 +90,11 @@ mod discrete {
             ],
             [
                 ("bronc", "dysp"),
+                ("bronc", "smoke"),
                 ("either", "dysp"),
                 ("either", "xray"),
                 ("lung", "either"),
-                ("lung", "smoke"),
-                ("smoke", "bronc"),
+                ("smoke", "lung"),
                 ("tub", "either"),
             ],
         );
