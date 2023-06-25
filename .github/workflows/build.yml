@@ -16,10 +16,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo
-            target
-            vcpkg
+          path: target
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/build.yml') }}
       - name: Rust
         uses: dtolnay/rust-toolchain@master

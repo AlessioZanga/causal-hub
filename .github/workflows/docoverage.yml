@@ -11,9 +11,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo
-            target
+          path: target
           key: Linux-rust-nightly-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/docoverage.yml') }}
       - name: Rust
         uses: dtolnay/rust-toolchain@master
