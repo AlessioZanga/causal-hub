@@ -515,8 +515,8 @@ macro_rules! search {
                 // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_par_iter()
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
                     .filter(|(_, delta)| delta > &0.)
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
             }
             // Same as before but sequentially.
             false => {
@@ -554,8 +554,8 @@ macro_rules! search {
                 // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_iter()
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
                     .filter(|(_, delta)| delta > &0.)
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
             }
         }
     };
