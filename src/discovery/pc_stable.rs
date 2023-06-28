@@ -34,40 +34,41 @@ where
         let mut c = 0;
 
         while flag {
+            // Unset the flag.
             flag = false;
-            // For each iteration, initialize the list of to-be-removed edges
-            let mut e_prime = Vec::with_capacity(g.size());
-            // For every edge ...
-            for (x, y) in E!(g) {
-                // ... take sets of adjacents with cardinality `c`
-                let adj = iter_set::union(
-                    Adj!(g, x).filter(|&v| v != y).combinations(c),
-                    Adj!(g, y).filter(|&v| v != x).combinations(c),
-                );
-                // If there is at least one set with cardinality `c` ...
-                for z in adj {
-                    // ... continue
-                    flag = true;
-                    // If such set d-separates `(x, y)` ...
-                    if self.test.call(x, y, &z) {
-                        // ... remove the edge
-                        e_prime.push((x, y));
-                        // Collect `(x, y)` separation set
-                        let z: FxIndexSet<_> = z.into_iter().collect();
-                        sepsets.insert((x, y), z.clone());
-                        sepsets.insert((y, x), z);
-                        // Change edge
-                        break;
-                    }
-                }
-            }
-            // Remove edges of current iteration
-            for (x, y) in e_prime {
+
+            // Map and collect each edge in:
+            // 1. The edge
+            // 2. Its separation set (if any)
+            // 3. A flag indicating if exists at least one set of adjacents with cardinality `c`
+            let e_prime: Vec<(usize, usize, FxIndexSet<usize>)> = E!(g)
+                .filter_map(|(x, y)| {
+                    // Take set of adjacents with cardinality `c`
+                    iter_set::union(
+                        Adj!(g, x).filter(|&v| v != y).combinations(c),
+                        Adj!(g, y).filter(|&v| v != x).combinations(c),
+                    )
+                    // If there exists at least one, set the flag to true
+                    .inspect(|_| flag = true)
+                    // Assign each edge its related sepset
+                    .find_map(|z| match self.test.call(x, y, &z) {
+                        true => Some((x, y, z.into_iter().collect())),
+                        _ => None,
+                    })
+                })
+                .collect();
+
+            // Remove d-separated edges of current iteration and collect separation set
+            for (x, y, z) in e_prime {
+                sepsets.insert((x, y), z.clone());
+                sepsets.insert((y, x), z);
                 g.del_edge_by_index(x, y);
             }
+
             // Increase size of conditioning set
             c += 1;
         }
+
         (g, sepsets)
     }
 
@@ -78,56 +79,56 @@ where
         let mut g = Graph::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
+        // Initialize stopping criterion
+        let mut flag = true;
         // Initialize size of conditioning set
         let mut c = 0;
 
-        'a: loop {
+        while flag {
+            // Unset the flag.
+            flag = false;
+
             // Map and collect each edge in:
             // 1. The edge
             // 2. Its separation set (if any)
             // 3. A flag indicating if exists at least one set of adjacents with cardinality `c`
-            let to_be_removed: Vec<(usize, usize, Option<FxIndexSet<usize>>, bool)> = E!(g)
+            let e_prime: Vec<(Option<(usize, usize, FxIndexSet<usize>)>, bool)> = E!(g)
                 .par_bridge()
                 .map(|(x, y)| {
-                    let mut flag = false;
+                    // Unset the flag.
+                    let mut f = false;
 
                     // Take set of adjacents with cardinality `c`
-                    let sepset = iter_set::union(
+                    let xyz = iter_set::union(
                         Adj!(g, x).filter(|&v| v != y).combinations(c),
                         Adj!(g, y).filter(|&v| v != x).combinations(c),
                     )
                     // If there exists at least one, set the flag to true
-                    .inspect(|_| flag = true)
+                    .inspect(|_| f = true)
                     // Assign each edge its related sepset
                     .find_map(|z| match self.test.call(x, y, &z) {
-                        true => Some(z.into_iter().collect()),
+                        true => Some((x, y, z.into_iter().collect())),
                         _ => None,
                     });
 
-                    (x, y, sepset, flag)
+                    (xyz, f)
                 })
                 .collect();
 
-            // If there are no adjacents with cardinality `c`, then break the iteration
-            if to_be_removed.par_iter().all(|(_, _, _, flag)| !*flag) {
-                break 'a;
-            }
-
             // Remove d-separated edges of current iteration and collect separation set
-            for (x, y, z, _) in to_be_removed {
-                match z {
-                    Some(z) => {
-                        sepsets.insert((x, y), z.clone());
-                        sepsets.insert((y, x), z);
-                        g.del_edge_by_index(x, y);
-                    }
-                    _ => continue,
+            for (xyz, f) in e_prime {
+                if let Some((x, y, z)) = xyz {
+                    sepsets.insert((x, y), z.clone());
+                    sepsets.insert((y, x), z);
+                    g.del_edge_by_index(x, y);
                 }
+                flag |= f;
             }
 
             // Increase size of conditioning set
             c += 1;
         }
+
         (g, sepsets)
     }
 
