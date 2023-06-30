@@ -18,7 +18,7 @@ pub mod marginal {
             .into();
 
         // Repeat for different sample sizes.
-        for sample_size in [10, 100, 1_000, 10_000, 100_000].iter() {
+        for sample_size in [100, 1_000, 10_000].iter() {
             // Sample data set from reference model.
             let data_set = model.sample(&mut rng, *sample_size);
 

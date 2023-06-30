@@ -18,7 +18,7 @@ pub mod sample {
         let data_set: DiscreteDataMatrix = model.sample(&mut rng, 100_000);
 
         // Repeat for different sample sizes.
-        for sample_size in [10, 100, 1_000, 10_000, 100_000].iter() {
+        for sample_size in [100, 1_000, 10_000].iter() {
             // Set input dimension.
             group.throughput(Throughput::Elements(*sample_size as u64));
             // Benchmark function.
@@ -63,7 +63,7 @@ pub mod sample_with_replacement {
         let data_set: DiscreteDataMatrix = model.sample(&mut rng, 100_000);
 
         // Repeat for different sample sizes.
-        for sample_size in [10, 100, 1_000, 10_000, 100_000].iter() {
+        for sample_size in [100, 1_000, 10_000].iter() {
             // Set input dimension.
             group.throughput(Throughput::Elements(*sample_size as u64));
             // Benchmark function.
