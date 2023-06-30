@@ -59,11 +59,11 @@ impl From<MarginalCountMatrix> for Array1<usize> {
 }
 
 /// Two-dimensional conditional contingency table.
-pub struct ConditionalCountMatrix<const PARALLEL: bool> {
+pub struct ConditionalCountMatrix {
     n: Array2<usize>,
 }
 
-impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
+impl ConditionalCountMatrix {
     #[inline]
     pub(crate) fn eval(
         shape: (usize, usize),
@@ -104,18 +104,36 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
         // Set count matrix shape.
         let shape = (rmi.len(), cards[x] as usize);
 
-        // Check if parallelization is enabled.
-        let n = match PARALLEL {
-            // Count the given observations in parallel.
-            true => d
-                .values()
-                .axis_chunks_iter(Axis(0), axis_chunks_size(d.values()))
-                .into_par_iter()
-                .map(|d| Self::eval(shape, &rmi, d, x, z))
-                .reduce(|| Array2::zeros(shape), |acc, x| acc + x),
-            // Count the given observations.
-            false => Self::eval(shape, &rmi, d.values().view(), x, z),
-        };
+        // Count the given observations.
+        let n = Self::eval(shape, &rmi, d.values().view(), x, z);
+
+        Self { n }
+    }
+
+    /// Build new count matrix with given data matrix and indices in parallel.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
+    #[inline]
+    pub fn par_new(d: &DiscreteDataMatrix, x: usize, z: &[usize]) -> Self {
+        // Get cardinalities.
+        let cards = d.cardinality();
+        // Get cardinalities of conditional set.
+        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z] as usize));
+        // Set count matrix shape.
+        let shape = (rmi.len(), cards[x] as usize);
+
+        // Count the given observations in parallel.
+        let n = d
+            .values()
+            .axis_chunks_iter(Axis(0), axis_chunks_size(d.values()))
+            .into_par_iter()
+            .map(|d| Self::eval(shape, &rmi, d, x, z))
+            .reduce(|| Array2::zeros(shape), |acc, x| acc + x);
 
         Self { n }
     }
@@ -134,9 +152,9 @@ impl<const PARALLEL: bool> ConditionalCountMatrix<PARALLEL> {
     }
 }
 
-impl<const PARALLEL: bool> From<ConditionalCountMatrix<PARALLEL>> for Array2<usize> {
+impl From<ConditionalCountMatrix> for Array2<usize> {
     #[inline]
-    fn from(other: ConditionalCountMatrix<PARALLEL>) -> Array2<usize> {
+    fn from(other: ConditionalCountMatrix) -> Array2<usize> {
         other.n
     }
 }

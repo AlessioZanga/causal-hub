@@ -25,16 +25,10 @@ criterion_group!(
     // Statistics.
     stats::log_likelihood::marginal::asia,
     stats::log_likelihood::marginal::alarm,
-    stats::log_likelihood::par_marginal::asia,
-    stats::log_likelihood::par_marginal::alarm,
     stats::akaike_information_criterion::call::asia,
     stats::akaike_information_criterion::call::alarm,
-    stats::akaike_information_criterion::par_call::asia,
-    stats::akaike_information_criterion::par_call::alarm,
     stats::bayesian_information_criterion::call::asia,
     stats::bayesian_information_criterion::call::alarm,
-    stats::bayesian_information_criterion::par_call::asia,
-    stats::bayesian_information_criterion::par_call::alarm,
 );
 
 criterion_main!(benches);

@@ -6,17 +6,12 @@ use crate::{
 };
 
 /// Akaike Information Criterion (AIC) functor.
-///
-/// # Generics
-///
-/// - `PARALLEL`: Enables parallel computation of conditional count matrix and log-likelihood.
-///
 #[derive(Clone, Debug)]
-pub struct AkaikeInformationCriterion<'a, D, const PARALLEL: bool> {
-    log_likelihood: LogLikelihood<'a, D, PARALLEL>,
+pub struct AkaikeInformationCriterion<'a, D> {
+    log_likelihood: LogLikelihood<'a, D>,
 }
 
-impl<'a, D, const PARALLEL: bool> AkaikeInformationCriterion<'a, D, PARALLEL> {
+impl<'a, D> AkaikeInformationCriterion<'a, D> {
     /// Constructor for AIC functor.
     ///
     /// # Examples
@@ -26,17 +21,17 @@ impl<'a, D, const PARALLEL: bool> AkaikeInformationCriterion<'a, D, PARALLEL> {
     /// ```
     ///
     #[inline]
-    pub const fn new(d: &'a D) -> Self {
+    pub const fn new(data_set: &'a D) -> Self {
         // Initialize the log-likelihood functor.
-        let log_likelihood = LogLikelihood::new(d);
+        let log_likelihood = LogLikelihood::new(data_set);
 
         Self { log_likelihood }
     }
 }
 
 /* Implement AIC for discrete data. */
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<'a, DiscreteDataMatrix, PARALLEL>
+impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for AkaikeInformationCriterion<'a, DiscreteDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -46,7 +41,7 @@ where
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the cardinality.
-        let cards = self.log_likelihood.data.cardinality();
+        let cards = self.log_likelihood.data_set.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
         let (card_x, card_z) = (
@@ -62,8 +57,8 @@ where
 }
 
 /* Implement AIC for Gaussian data. */
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for AkaikeInformationCriterion<'a, ContinuousDataMatrix, PARALLEL>
+impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
+    for AkaikeInformationCriterion<'a, ContinuousDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -81,7 +76,5 @@ where
     }
 }
 
-/// Alias for single-thread AIC functor.
-pub type AIC<'a, D> = AkaikeInformationCriterion<'a, D, false>;
-/// Alias for multi-thread AIC functor.
-pub type ParallelAIC<'a, D> = AkaikeInformationCriterion<'a, D, true>;
+/// Alias for the AkaikeInformationCriterion functor.
+pub type AIC<'a, D> = AkaikeInformationCriterion<'a, D>;

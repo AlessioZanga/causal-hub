@@ -12,18 +12,13 @@ use crate::{
     utils::{axis_chunks_size, nan_to_zero},
 };
 
-/// Log-Likelihood (LL) functor.
-///
-/// # Generics
-///
-/// - `PARALLEL`: Enables parallel computation of conditional count matrix and log-likelihood.
-///
+/// Marginal Log-Likelihood functor.
 #[derive(Clone, Debug)]
-pub struct LogLikelihood<'a, D, const PARALLEL: bool> {
-    pub(crate) data: &'a D,
+pub struct MarginalLogLikelihood<'a, D> {
+    pub(crate) data_set: &'a D,
 }
 
-impl<'a, D, const PARALLEL: bool> LogLikelihood<'a, D, PARALLEL> {
+impl<'a, D> MarginalLogLikelihood<'a, D> {
     /// Constructor for LL functor.
     ///
     /// # Examples
@@ -33,19 +28,19 @@ impl<'a, D, const PARALLEL: bool> LogLikelihood<'a, D, PARALLEL> {
     /// ```
     ///
     #[inline]
-    pub const fn new(data: &'a D) -> Self {
-        Self { data }
+    pub const fn new(data_set: &'a D) -> Self {
+        Self { data_set }
     }
 }
 
-/* Implement Discrete LL */
+/* Discrete LL */
 
-impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataMatrix, PARALLEL> {
-    /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
+impl<'a> MarginalLogLikelihood<'a, DiscreteDataMatrix> {
+    /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
-    pub fn marginal(&self, x: usize) -> f64 {
+    pub fn call(&self, x: usize) -> f64 {
         // Compute marginal contingency table.
-        let n_i = MarginalCountMatrix::new(self.data, x);
+        let n_i = MarginalCountMatrix::new(self.data_set, x);
 
         // Get the underlying view.
         let n_i = n_i.values();
@@ -61,53 +56,19 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, DiscreteDataMatrix, PARALLEL> {
             // Sum each term.
             .sum()
     }
-
-    #[inline]
-    pub(crate) fn conditional_eval(n_ij: ArrayView2<usize>) -> f64 {
-        // Sum over states and cast to floating point.
-        let n_j = n_ij
-            .sum_axis(Axis(1))
-            .insert_axis(Axis(1))
-            .mapv(|j| j as f64);
-        let n_ij = n_ij.mapv(|i| i as f64);
-
-        // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
-        (&n_ij * (&n_ij / n_j).mapv(f64::ln))
-            // Map NaNs to zero.
-            .mapv(nan_to_zero)
-            // Sum each term.
-            .sum()
-    }
-
-    /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
-    #[inline]
-    pub fn conditional(&self, x: usize, z: &[usize]) -> f64 {
-        // Compute marginal contingency table.
-        let n_ij = ConditionalCountMatrix::<PARALLEL>::new(self.data, x, z);
-
-        // Iterate over chunks.
-        let n_ij = n_ij
-            .values()
-            .axis_chunks_iter(Axis(0), axis_chunks_size(n_ij.values()));
-
-        // Check if parallelization is enabled.
-        match PARALLEL {
-            // Map each chunk and sum over in parallel.
-            true => n_ij.into_par_iter().map(Self::conditional_eval).sum(),
-            // Map each chunk and sum over.
-            false => n_ij.map(Self::conditional_eval).sum(),
-        }
-    }
 }
 
-/* Implement Gaussian LL */
+/* Gaussian LL */
 
-impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL> {
-    /// Computes marginal log-likelihood given data set $\mathbf{D}$ and vertex $X$.
+impl<'a> MarginalLogLikelihood<'a, ContinuousDataMatrix> {
+    /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
-    pub fn marginal(&self, x: usize) -> f64 {
+    pub fn call(&self, x: usize) -> f64 {
         // Get the variable and sample size.
-        let (x, n) = (self.data.values().column(x), self.data.sample_size());
+        let (x, n) = (
+            self.data_set.values().column(x),
+            self.data_set.sample_size(),
+        );
 
         // Compute the mean.
         let mean = x.sum() / n as f64;
@@ -123,12 +84,96 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
             // Sum each term.
             .sum()
     }
+}
 
-    /// Computes conditional log-likelihood given data set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+/// Conditional Log-Likelihood functor.
+#[derive(Clone, Debug)]
+pub struct ConditionalLogLikelihood<'a, D> {
+    pub(crate) data_set: &'a D,
+}
+
+impl<'a, D> ConditionalLogLikelihood<'a, D> {
+    /// Constructor for LL functor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
     #[inline]
-    pub fn conditional(&self, x: usize, z: &[usize]) -> f64 {
+    pub const fn new(data_set: &'a D) -> Self {
+        Self { data_set }
+    }
+}
+
+/* Discrete LL */
+
+impl<'a> ConditionalLogLikelihood<'a, DiscreteDataMatrix> {
+    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
+    pub fn call(&self, x: usize, z: &[usize]) -> f64 {
+        // Compute marginal contingency table.
+        let n_ij = ConditionalCountMatrix::new(self.data_set, x, z);
+
+        // Get the underlying view.
+        let n_ij = n_ij.values();
+
+        // Sum over states and cast to floating point.
+        let n_j = n_ij
+            .sum_axis(Axis(1))
+            .insert_axis(Axis(1))
+            .mapv(|j| j as f64);
+        let n_ij = n_ij.mapv(|i| i as f64);
+
+        // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
+        (&n_ij * (&n_ij / n_j).mapv(f64::ln))
+            // Map NaNs to zero.
+            .mapv(nan_to_zero)
+            // Sum each term.
+            .sum()
+    }
+
+    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$ in parallel.
+    #[inline]
+    pub fn par_call(&self, x: usize, z: &[usize]) -> f64 {
+        // Compute marginal contingency table.
+        let n_ij = ConditionalCountMatrix::new(self.data_set, x, z);
+
+        // Get the underlying view.
+        let n_ij = n_ij.values();
+
+        // Iterate over chunks.
+        n_ij.axis_chunks_iter(Axis(0), axis_chunks_size(n_ij))
+            // Map each chunk and sum over in parallel.
+            .into_par_iter()
+            .map(|n_ij| {
+                // Sum over states and cast to floating point.
+                let n_j = n_ij
+                    .sum_axis(Axis(1))
+                    .insert_axis(Axis(1))
+                    .mapv(|j| j as f64);
+                let n_ij = n_ij.mapv(|i| i as f64);
+
+                // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
+                (&n_ij * (&n_ij / n_j).mapv(f64::ln))
+                    // Map NaNs to zero.
+                    .mapv(nan_to_zero)
+                    // Sum each term.
+                    .sum()
+            })
+            .sum()
+    }
+}
+
+/* Gaussian LL */
+
+impl<'a> ConditionalLogLikelihood<'a, ContinuousDataMatrix> {
+    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
+    #[inline]
+    pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
-        let d = self.data.values();
+        let d = self.data_set.values();
         // Get sample size and number of conditioning variables.
         let (n, m) = (d.nrows(), z.len());
         // Get a copy of the variable.
@@ -137,7 +182,7 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
         let mut z_ = Array2::ones((n, m + 1));
         // Fill with observed variables, skipping the intercept.
         for (i, &z) in z.iter().enumerate() {
-            // Copy data from column to column.
+            // Copy data_set from column to column.
             d.column(z).assign_to(z_.column_mut(i + 1));
         }
 
@@ -170,35 +215,54 @@ impl<'a, const PARALLEL: bool> LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
     }
 }
 
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<'a, ContinuousDataMatrix, PARALLEL>
+/// Log-Likelihood (LL) functor.
+#[derive(Clone, Debug)]
+pub struct LogLikelihood<'a, D> {
+    pub(crate) data_set: &'a D,
+}
+
+impl<'a, D> LogLikelihood<'a, D> {
+    /// Constructor for LL functor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// todo!() // FIXME:
+    /// ```
+    ///
+    #[inline]
+    pub const fn new(data_set: &'a D) -> Self {
+        Self { data_set }
+    }
+}
+
+impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
+    for LogLikelihood<'a, ContinuousDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => self.marginal(x),
-            false => self.conditional(x, z),
+            true => MarginalLogLikelihood::new(self.data_set).call(x),
+            false => ConditionalLogLikelihood::new(self.data_set).call(x, z),
         }
     }
 }
 
-impl<'a, G, const PARALLEL: bool> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<'a, DiscreteDataMatrix, PARALLEL>
+impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
+    for LogLikelihood<'a, DiscreteDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         match z.is_empty() {
-            true => self.marginal(x),
-            false => self.conditional(x, z),
+            true => MarginalLogLikelihood::new(self.data_set).call(x),
+            false => ConditionalLogLikelihood::new(self.data_set).call(x, z),
         }
     }
 }
 
-/// Alias for single-thread LL functor.
-pub type LL<'a, D> = LogLikelihood<'a, D, false>;
-/// Alias for multi-thread LL functor.
-pub type ParallelLL<'a, D> = LogLikelihood<'a, D, true>;
+/// Alias for the LogLikelihood functor.
+pub type LL<'a, D> = LogLikelihood<'a, D>;
