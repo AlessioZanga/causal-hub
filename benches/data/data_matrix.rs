@@ -15,7 +15,7 @@ pub mod sample {
             .unwrap()
             .into();
         // Load reference model.
-        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 100_000);
+        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 10000);
 
         // Repeat for different sample sizes.
         for sample_size in [100, 1_000, 10_000].iter() {
@@ -60,7 +60,7 @@ pub mod sample_with_replacement {
             .unwrap()
             .into();
         // Load reference model.
-        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 100_000);
+        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 10000);
 
         // Repeat for different sample sizes.
         for sample_size in [100, 1_000, 10_000].iter() {
