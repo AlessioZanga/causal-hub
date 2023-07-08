@@ -307,8 +307,11 @@ where
                 assert!(add.insert((x, y)));
                 // Remove performed action.
                 assert!(del.remove(&(x, y)));
-                // Del(X, Y) implies that Rev(X, Y) is not valid.
-                assert!(rev.remove(&(x, y)));
+                // If Add(Y, X) and Del(X, Y) are valid, then Rev(X, Y) is valid.
+                // Since Del(X, Y) is valid by construction, check only Add(Y, X).
+                if add.contains(&(y, x)) {
+                    assert!(rev.remove(&(x, y)));
+                }
             }
             Op::REV => {
                 // Remove performed action(s).
