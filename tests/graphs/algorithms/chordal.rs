@@ -28,7 +28,7 @@ mod tests {
                 for (v, e, true_a, true_f) in data {
                     let g = $G::new(v, e);
 
-                    let (pred_a, pred_f) = MCS::fill_in(&g);
+                    let (pred_a, pred_f) = MCS::new(&g).fill_in();
 
                     assert_eq!(pred_a, true_a);
                     assert_eq!(pred_f, true_f);

@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use is_sorted::IsSorted;
 
 use crate::{
@@ -8,29 +6,34 @@ use crate::{
 };
 
 /// Bron-Kerbosh (BK) algorithm with pivoting.
-pub struct BronKerboschWithPivoting<G> {
-    _g: PhantomData<G>,
+pub struct BronKerboschWithPivoting<'a, G> {
+    g: &'a G,
 }
 
-impl<G> BronKerboschWithPivoting<G>
+impl<'a, G> BronKerboschWithPivoting<'a, G>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
+    /// Construct a new Bron-Kerbosch Max Clique with pivoting functor.
+    pub const fn new(g: &'a G) -> Self {
+        Self { g }
+    }
+
     /// Find max-cliques of the given graph G.
     #[inline]
-    pub fn call(g: &G) -> Vec<Vec<usize>> {
-        Self::eval(g, vec![], V!(g).collect(), vec![])
+    pub fn call(&self) -> Vec<Vec<usize>> {
+        self.eval(vec![], V!(self.g).collect(), vec![])
     }
 
     /// Recursive call of Bron-Kerbosh algorithm.
-    fn eval(g: &G, r: Vec<usize>, mut p: Vec<usize>, mut x: Vec<usize>) -> Vec<Vec<usize>> {
+    fn eval(&self, r: Vec<usize>, mut p: Vec<usize>, mut x: Vec<usize>) -> Vec<Vec<usize>> {
         // Assert R, P and X are sorted.
         debug_assert!(r.iter().is_sorted());
         debug_assert!(p.iter().is_sorted());
         debug_assert!(x.iter().is_sorted());
 
         // If G is null ...
-        if g.order() == 0 {
+        if self.g.order() == 0 {
             // ... return.
             return vec![];
         }
@@ -43,21 +46,21 @@ where
 
         // Choose a pivot vertex u in P \cup X with maximum degree.
         let u = *iter_set::union(&p, &x)
-            .max_by_key(|&&y| g.get_degree_by_index(y))
+            .max_by_key(|&&y| self.g.get_degree_by_index(y))
             .unwrap();
 
         // Initialize the results.
         let mut q = vec![];
 
         // For each v in P \ Ne(g, u);
-        for v in iter_set::difference(p.clone(), Ne!(g, u)) {
+        for v in iter_set::difference(p.clone(), Ne!(self.g, u)) {
             // Compute R \cup {v}, P \cap Ne(g, v) and X \cap Ne(g, v).
             let r_prime = iter_set::union(r.clone(), [v]).collect();
-            let p_prime = iter_set::intersection(p.clone(), Ne!(g, v)).collect();
-            let x_prime = iter_set::intersection(x.clone(), Ne!(g, v)).collect();
+            let p_prime = iter_set::intersection(p.clone(), Ne!(self.g, v)).collect();
+            let x_prime = iter_set::intersection(x.clone(), Ne!(self.g, v)).collect();
 
             // Recursive call on R \cup {v}, P \cap Ne(g, v) and X \cap Ne(g, v).
-            q.extend(Self::eval(g, r_prime, p_prime, x_prime));
+            q.extend(self.eval(r_prime, p_prime, x_prime));
 
             // Compute P \ {v} and X \cup {v}.
             p.remove(p.binary_search(&v).unwrap());
@@ -69,4 +72,4 @@ where
 }
 
 /// Alias for the Bron-Kerbosh algorithm.
-pub type BK<G> = BronKerboschWithPivoting<G>;
+pub type BK<'a, G> = BronKerboschWithPivoting<'a, G>;

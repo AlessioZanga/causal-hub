@@ -46,7 +46,7 @@ mod tests {
                 for (v, e, true_c) in data {
                     let g = $G::new(v, e);
 
-                    let pred_c = BK::call(&g);
+                    let pred_c = BK::new(&g).call();
 
                     assert_eq!(pred_c, true_c);
                 }
