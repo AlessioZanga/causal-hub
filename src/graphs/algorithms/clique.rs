@@ -125,6 +125,9 @@ where
         debug_assert!(p.iter().is_sorted());
         debug_assert!(x.iter().is_sorted());
 
+        // FIXME:
+        println!("R: {:?}, P: {:?}, X: {:?}", r, p, x);
+
         // If P and X are empty ...
         if p.is_empty() && x.is_empty() {
             // ... return R.
@@ -146,8 +149,8 @@ where
         q.par_iter()
             .enumerate()
             .flat_map(|(i, v_i)| {
-                // Compute P \ Q[0..i] and X \cup Q[0..i].
-                let p_i = iter_set::difference(&p, &q[0..i]);
+                // Compute P \cup Q[(i + 1)..] and X \cup Q[0..i].
+                let p_i = iter_set::union(&p, &q[(i + 1)..]);
                 let x_i = iter_set::union(&x, &q[0..i]);
 
                 // Compute Ne(g, v).
