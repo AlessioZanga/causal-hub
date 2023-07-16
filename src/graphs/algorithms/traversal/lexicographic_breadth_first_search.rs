@@ -24,15 +24,17 @@ where
 {
     /// Build a LexBFS iterator.
     ///
-    /// Build a LexBFS[^1] iterator for a given undirected graph.
+    /// Build a LexBFS iterator for a given undirected graph.
     ///
     /// This will execute the [`Forest`](super::Traversal) variant of the algorithm.
-    ///
-    /// [^1]: [Bretscher, A., Corneil, D., Habib, M., & Paul, C. (2003, June). A simple linear time LexBFS cograph recognition algorithm.](https://scholar.google.com/scholar?q=+A+simple+linear+time+LexBFS+cograph+recognition+algorithm)
     ///
     /// # Panics
     ///
     /// Panics if the (optional) source vertex is not in the graph.
+    ///
+    /// # References
+    ///
+    /// - [Bretscher, A., Corneil, D., Habib, M., & Paul, C. (2003). A simple linear time LexBFS cograph recognition algorithm.](https://doi.org/10.1137/060664690)
     ///
     pub fn new(g: &'a G, x: Option<usize>) -> Self {
         // Initialize default search object.

@@ -21,11 +21,13 @@ where
 {
     /// Build a TopologicalSort iterator.
     ///
-    /// Build a TopologicalSort[^1] iterator for a given directed graph.
+    /// Build a topological sort iterator for a given directed graph.
     ///
     /// If the graph is cyclic, this iterator returns an error while unrolling.
     ///
-    /// [^1]: [Kahn, A. B. (1962). Topological sorting of large networks. Communications of the ACM, 5(11), 558-562.](https://scholar.google.com/scholar?q=Topological+sorting+of+large+networks)
+    /// # References
+    ///
+    /// - [Kahn, A. B. (1962). Topological sorting of large networks. Communications of the ACM, 5(11), 558-562.](https://doi.org/10.1145/368996.369025)
     ///
     pub fn new(g: &'a G) -> Self {
         // Initialize default search object.

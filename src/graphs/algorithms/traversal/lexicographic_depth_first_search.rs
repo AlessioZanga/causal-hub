@@ -29,11 +29,9 @@ where
 {
     /// Build a LexDFS iterator.
     ///
-    /// Build a LexDFS[^1] iterator for a given undirected graph.
+    /// Build a LexDFS iterator for a given undirected graph.
     ///
     /// This will execute the [`Forest`](super::Traversal) variant of the algorithm.
-    ///
-    /// [^1]: [Corneil, D. G., & Krueger, R. M. (2008). A unified view of graph searching.](https://scholar.google.com/scholar?q=A+unified+view+of+graph+searching)
     ///
     /// # Panics
     ///
@@ -73,6 +71,10 @@ where
     /// assert_eq!(search.predecessor[&3], 2);
     /// assert_eq!(search.predecessor[&4], 2);
     /// ```
+    ///
+    /// # References
+    ///
+    /// - [Corneil, D. G., & Krueger, R. M. (2008). A unified view of graph searching.](https://doi.org/10.1137/05062349)
     ///
     pub fn new(g: &'a G, x: Option<usize>) -> Self {
         // Initialize default search object.

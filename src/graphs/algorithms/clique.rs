@@ -9,8 +9,10 @@ use crate::{
 
 /// Bron-Kerbosh (BK) algorithm.
 ///
-/// Refer to
-/// ["Accelerating the Bron-Kerbosch Algorithm for Maximal Clique Enumeration Using GPUs"](https://doi.org/10.1109/TPDS.2021.3067053).
+/// # References
+///
+/// - [Apurba Das, Seyed-Vahid Sanei-Mehri, and Srikanta Tirthapura. (2020). Shared-memory Parallel Maximal Clique Enumeration from Static and Dynamic Graphs. ACM Trans. Parallel Comput.](https://doi.org/10.1145/3380936)
+/// - [Y. -W. Wei, W. -M. Chen and H. -H. Tsai, (2021), Accelerating the Bron-Kerbosch Algorithm for Maximal Clique Enumeration Using GPUs, in IEEE Transactions on Parallel and Distributed Systems](https://doi.org/10.1109/TPDS.2021.3067053)
 ///
 pub struct BronKerbosch<'a, G> {
     g: &'a G,
@@ -65,10 +67,9 @@ where
                 iter_set::intersection(&p, &ne_v).count()
             })
             .unwrap();
-        // Compute Ne(g, u).
-        let ne_u = Ne!(self.g, u).collect_vec();
+
         // Compute P \ Ne(g, u).
-        let q = iter_set::difference(&p, &ne_u).copied().collect_vec();
+        let q = iter_set::difference(p.iter().copied(), Ne!(self.g, u)).collect_vec();
 
         // For each v in P \ Ne(g, u);
         q.iter()
@@ -137,17 +138,16 @@ where
                 iter_set::intersection(&p, &ne_v).count()
             })
             .unwrap();
-        // Compute Ne(g, u).
-        let ne_u = Ne!(self.g, u).collect_vec();
+
         // Compute P \ Ne(g, u).
-        let q = iter_set::difference(&p, &ne_u).copied().collect_vec();
+        let q = iter_set::difference(p.iter().copied(), Ne!(self.g, u)).collect_vec();
 
         // For each v in Q ...
         q.par_iter()
             .enumerate()
             .flat_map(|(i, v_i)| {
-                // Compute Ne(g, u) \cup Q[(i + 1)..|Q|] and X \cup Q[0..i].
-                let p_i = iter_set::union(&ne_u, &q[(i + 1)..]);
+                // Compute P \ Q[0..i] and X \cup Q[0..i].
+                let p_i = iter_set::difference(&p, &q[0..i]);
                 let x_i = iter_set::union(&x, &q[0..i]);
 
                 // Compute Ne(g, v).
