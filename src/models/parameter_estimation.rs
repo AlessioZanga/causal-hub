@@ -6,7 +6,9 @@ use super::DiscreteBayesianNetwork;
 use crate::{
     data::{DataSet, DiscreteDataMatrix},
     graphs::{BaseGraph, DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
-    prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix},
+    prelude::{
+        ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix, ProbabilisticGraphicalModel,
+    },
     Pa, L, V,
 };
 
@@ -62,7 +64,7 @@ impl<const PARALLEL: bool>
                 .into_iter()
                 .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
-            DiscreteCPD::new((x, y), z, n / n_i)
+            (x, DiscreteCPD::new((x, y), z, n / n_i))
         };
 
         // Preallocate memory for parameters.
@@ -80,6 +82,11 @@ impl<const PARALLEL: bool>
         DiscreteBayesianNetwork::new(g.clone(), theta)
     }
 }
+
+/// Alias for the single-thread Maximum Likelihood Estimation algorithm.
+pub type MLE = MaximumLikelihoodEstimation<false>;
+/// Alias for the multi-thread Maximum Likelihood Estimation algorithm.
+pub type ParallelMLE = MaximumLikelihoodEstimation<true>;
 
 /// Bayesian Estimation (BE) functor.
 pub struct BayesianEstimation<const PARALLEL: bool> {}
@@ -125,7 +132,7 @@ impl<const PARALLEL: bool>
                 .into_iter()
                 .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
-            DiscreteCPD::new((x, y), z, n / n_i)
+            (x, DiscreteCPD::new((x, y), z, n / n_i))
         };
 
         // Preallocate memory for parameters.
@@ -143,3 +150,8 @@ impl<const PARALLEL: bool>
         DiscreteBayesianNetwork::new(g.clone(), theta)
     }
 }
+
+/// Alias for the single-thread Bayesian Estimation algorithm.
+pub type BE = BayesianEstimation<false>;
+/// Alias for the multi-thread Bayesian Estimation algorithm.
+pub type ParallelBE = BayesianEstimation<true>;

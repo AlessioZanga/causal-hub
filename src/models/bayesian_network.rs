@@ -6,63 +6,20 @@ use ndarray::{prelude::*, SliceInfoElem as SIE};
 use rand::{distributions::WeightedIndex, prelude::*};
 use serde::{Deserialize, Serialize};
 
-use super::{
-    ConditionalProbabilityDistribution, DiscreteCPD, DiscreteJPD, Factor,
-    JointProbabilityDistribution,
-};
+use super::{DiscreteCPD, DiscreteJPD, Factor, ProbabilisticGraphicalModel};
 use crate::{
-    graphs::{directions, DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
-    io::BIF,
-    prelude::{
-        algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataMatrix, PathGraph,
+    data::DiscreteDataMatrix,
+    graphs::{
+        algorithms::traversal::TopologicalSort, BaseGraph, DirectedDenseAdjacencyMatrixGraph,
+        DirectedGraph, PathGraph,
     },
+    io::BIF,
     types::FxIndexMap,
     Pa, L, V,
 };
 
-/// Probabilistic Graphical Model (PGM) trait.
-pub trait ProbabilisticGraphicalModel:
-    Clone
-    + Debug
-    + Display
-    + Serialize
-    + for<'a> Deserialize<'a>
-    + Into<(Self::Graph, FxIndexMap<String, Self::Parameter>)>
-{
-    /// Associated data set type.
-    type Data: DataSet;
-    /// Underlying directed graph associated type. TODO: Generalize this bound.
-    type Graph: DirectedGraph<Direction = directions::Directed>;
-    /// Parameter associated type.
-    type Parameter: Factor;
-
-    /// Joint distribution associated type.
-    type JPD: JointProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
-    /// Conditional distribution associated type.
-    type CPD: ConditionalProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
-
-    /// Reference to the underlying graph.
-    fn graph(&self) -> &Self::Graph;
-
-    /// Reference to the parameters.
-    fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
-
-    /// Draw `n` samples.
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data;
-}
-
 /// Bayesian Network $\mathcal{B}$ trait.
-pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
-    /// Constructor of $\mathcal{B} = (\mathcal{G}, \Theta)$.
-    fn new<I>(graph: Self::Graph, theta: I) -> Self
-    where
-        I: IntoIterator<Item = Self::Parameter>;
-
-    /// Construct $\mathcal{B}$ and the associated graph $\mathcal{G}$ given the parameters $\Theta$.
-    fn with_parameters<I>(theta: I) -> Self
-    where
-        I: IntoIterator<Item = Self::Parameter>;
-}
+pub trait BayesianNetwork: ProbabilisticGraphicalModel + From<BIF> {}
 
 /// Discrete Bayesian Network $\mathcal{B}$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -82,6 +39,14 @@ impl Display for DiscreteBayesianNetwork {
         Ok(())
     }
 }
+
+impl PartialEq for DiscreteBayesianNetwork {
+    fn eq(&self, other: &Self) -> bool {
+        self.graph == other.graph && self.theta == other.theta
+    }
+}
+
+impl Eq for DiscreteBayesianNetwork {}
 
 impl From<DiscreteBayesianNetwork>
     for (
@@ -104,6 +69,41 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     type JPD = DiscreteJPD;
 
     type CPD = DiscreteCPD;
+
+    fn new<I, V>(graph: Self::Graph, theta: I) -> Self
+    where
+        I: IntoIterator<Item = (V, Self::Parameter)>,
+        V: Into<String>,
+    {
+        // Get parameters target.
+        let theta: FxIndexMap<_, _> = theta
+            .into_iter()
+            .map(|(x, y)| (x.into(), y))
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
+            .collect();
+
+        // Assert graph and parameters must contain the same variables.
+        assert!(
+            L!(graph).eq(theta.keys()),
+            "Graph and parameters must contain the same variables"
+        );
+        // Assert graph and parameters must induce the same structure.
+        assert!(
+            V!(graph)
+                .zip(L!(graph))
+                .zip(theta.values())
+                .all(|((i, x), t)| {
+                    Pa!(graph, i)
+                        .map(|y| graph.get_vertex_by_index(y))
+                        .eq(t.scope().filter(|&z| z != x))
+                }),
+            "Graph and parameters must induce the same structure"
+        );
+        // Assert graph is acyclic.
+        assert!(graph.is_acyclic(), "Graph must be acyclic");
+
+        Self { graph, theta }
+    }
 
     #[inline]
     fn graph(&self) -> &Self::Graph {
@@ -153,63 +153,12 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     }
 }
 
-impl PartialEq for DiscreteBayesianNetwork {
-    fn eq(&self, other: &Self) -> bool {
-        self.graph == other.graph && self.theta == other.theta
-    }
-}
-
-impl Eq for DiscreteBayesianNetwork {}
-
-impl BayesianNetwork for DiscreteBayesianNetwork {
-    fn new<I>(graph: Self::Graph, theta: I) -> Self
-    where
-        I: IntoIterator<Item = Self::Parameter>,
-    {
-        // Get parameters target.
-        let theta: FxIndexMap<_, _> = theta
-            .into_iter()
-            .map(|theta| (theta.target().to_owned(), theta))
-            .sorted_by(|(x, _), (y, _)| x.cmp(y))
-            .collect();
-
-        // Assert graph and parameters must contain the same variables.
-        assert!(
-            L!(graph).eq(theta.keys()),
-            "Graph and parameters must contain the same variables"
-        );
-        // Assert graph and parameters must induce the same structure.
-        assert!(
-            V!(graph)
-                .zip(L!(graph))
-                .zip(theta.values())
-                .all(|((i, x), t)| {
-                    Pa!(graph, i)
-                        .map(|y| graph.get_vertex_by_index(y))
-                        .eq(t.scope().filter(|&z| z != x))
-                }),
-            "Graph and parameters must induce the same structure"
-        );
-        // Assert graph is acyclic.
-        assert!(graph.is_acyclic(), "Graph must be acyclic");
-
-        Self { graph, theta }
-    }
-
-    fn with_parameters<I>(theta: I) -> Self
-    where
-        I: IntoIterator<Item = Self::Parameter>,
-    {
-        // Get parameters target.
-        let theta: FxIndexMap<_, _> = theta
-            .into_iter()
-            .map(|theta| (theta.target().to_owned(), theta))
-            .sorted_by(|(x, _), (y, _)| x.cmp(y))
-            .collect();
+impl From<BIF> for DiscreteBayesianNetwork {
+    fn from(bif: BIF) -> Self {
         // Get vertices.
-        let vertices = theta.keys().map(|x| x.as_str());
+        let vertices = bif.theta.iter().map(|x| x.target());
         // Get edges.
-        let edges = theta.values().flat_map(|phi| {
+        let edges = bif.theta.iter().flat_map(|phi| {
             phi.states()
                 .keys()
                 .filter(|&z| z != phi.target())
@@ -217,14 +166,16 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
                 .zip(std::iter::repeat(phi.target()))
         });
         // Construct graph.
-        let graph = Self::Graph::new(vertices, edges);
+        let graph = DirectedDenseAdjacencyMatrixGraph::new(vertices, edges);
 
-        Self { graph, theta }
+        Self::new(
+            graph,
+            bif.theta.into_iter().map(|x| (x.target().to_owned(), x)),
+        )
     }
 }
 
-impl From<BIF> for DiscreteBayesianNetwork {
-    fn from(bif: BIF) -> Self {
-        Self::with_parameters(bif.theta)
-    }
-}
+impl BayesianNetwork for DiscreteBayesianNetwork {}
+
+/// Alias for discrete bayesian network.
+pub type DiscreteBN = DiscreteBayesianNetwork;

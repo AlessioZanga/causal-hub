@@ -243,3 +243,6 @@ where
         })
     }
 }
+
+/// Alias for graphical independence.
+pub type GSeparation<'a, G, D> = GraphicalSeparation<'a, G, D>;

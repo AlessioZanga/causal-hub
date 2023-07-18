@@ -65,3 +65,6 @@ impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesian
             .sum()
     }
 }
+
+/// Alias for Kullback-Leibler divergence.
+pub type KL<'a, P, Q> = KullbackLeiblerDivergence<'a, P, Q>;

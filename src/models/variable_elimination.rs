@@ -192,21 +192,26 @@ where
 
     fn project_onto(&self, q: &Self::Projection) -> Self::Projection {
         // Get underlying graphs of Q.
-        let g_q = q.graph();
+        let g = q.graph();
         // Assert P and Q labels are the same.
-        assert!(L!(self.model.graph()).eq(L!(g_q)));
+        assert!(L!(self.model.graph()).eq(L!(g)));
         // Project P parameters onto Q structure.
-        let theta = V!(g_q)
+        let theta = V!(g)
             // Get the parents of each vertex.
             .map(|x| {
                 (
-                    g_q.get_vertex_by_index(x),
-                    Pa!(g_q, x).map(|z| g_q.get_vertex_by_index(z)),
+                    g.get_vertex_by_index(x),
+                    Pa!(g, x).map(|z| g.get_vertex_by_index(z)),
                 )
             })
             // Project P parameters onto Q structure.
-            .map(|(x, z)| self.conditional(x, z));
+            .map(|(x, z)| (x, self.conditional(x, z)));
         // Construct projection of P given projected parameters.
-        Self::Projection::with_parameters(theta)
+        Self::Projection::new(g.clone(), theta)
     }
 }
+
+/// Alias for the single-thread Variable-Elimination algorithm.
+pub type VE<'a, M> = VariableElimination<'a, M, false>;
+/// Alias for the multi-thread Variable-Elimination algorithm.
+pub type ParallelVE<'a, M> = VariableElimination<'a, M, true>;
