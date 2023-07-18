@@ -1101,7 +1101,7 @@ impl IntoUndirected for DirectedDenseAdjacencyMatrixGraph {
         // Make the adjacent matrix symmetric.
         let adjacency_matrix = &self.adjacency_matrix | &self.adjacency_matrix.t();
 
-        Self::UndirectedGraph::from((self.labels.clone(), adjacency_matrix))
+        Self::UndirectedGraph::from((self.labels, adjacency_matrix))
     }
 }
 
