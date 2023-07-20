@@ -188,8 +188,12 @@ impl From<DataFrame> for DiscreteDataSet {
 
         // Get underlying data set.
         let mut data = data_frame
-            .to_ndarray::<UInt8Type>()
-            .expect("Fail to cast to ndarray matrix");
+            .to_ndarray::<UInt32Type>()
+            .expect("Fail to cast to ndarray matrix")
+            .mapv(|x| {
+                x.try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            });
 
         // Get variables states.
         let states: FxIndexMap<_, _> = data_frame

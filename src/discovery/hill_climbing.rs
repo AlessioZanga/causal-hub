@@ -77,7 +77,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -116,7 +116,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -157,7 +157,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -188,7 +188,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -219,7 +219,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -656,7 +656,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
@@ -815,7 +815,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// let data_set: DiscreteDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(data_set.labels(), [], []);
     ///
