@@ -2,6 +2,7 @@ use criterion::{criterion_group, criterion_main};
 
 mod data;
 mod discovery;
+mod models;
 mod stats;
 
 criterion_group!(
@@ -22,7 +23,12 @@ criterion_group!(
     discovery::hill_climbing::call::alarm,
     discovery::hill_climbing::par_call::asia,
     discovery::hill_climbing::par_call::alarm,
-    // Statistics.
+    // Models benchmarks.
+    models::bayesian_network::sample::asia,
+    models::bayesian_network::sample::alarm,
+    models::bayesian_network::par_sample::asia,
+    models::bayesian_network::par_sample::alarm,
+    // Statistics benchmarks.
     stats::log_likelihood::marginal::asia,
     stats::log_likelihood::marginal::alarm,
     stats::akaike_information_criterion::call::asia,
