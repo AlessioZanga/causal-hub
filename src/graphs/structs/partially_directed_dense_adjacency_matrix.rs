@@ -20,7 +20,6 @@ use crate::{
         BaseGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph, PathGraph, SubGraph,
         UndirectedGraph,
     },
-    io::DOT,
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
@@ -1985,49 +1984,6 @@ impl MoralGraph for PartiallyDenseAdjacencyMatrixGraph {
         }
 
         h
-    }
-}
-
-impl From<DOT> for PartiallyDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn from(other: DOT) -> Self {
-        // Assert graph type.
-        assert_eq!(
-            other.graph_type, "digraph",
-            "DOT graph type must match direction"
-        );
-
-        let undirected_edges: Vec<_> = other
-            .edges
-            .iter()
-            .filter_map(|(t, e)| match e.attributes.get_edge_dir() {
-                Some(x) => {
-                    if x.as_str() == "none" {
-                        Some((*t).clone())
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .collect();
-
-        let directed_edges: Vec<_> = other
-            .edges
-            .iter()
-            .filter_map(|(t, e)| match e.attributes.get_edge_dir() {
-                Some(x) => {
-                    if x.as_str() == "none" {
-                        None
-                    } else {
-                        Some((*t).clone())
-                    }
-                }
-                _ => Some((*t).clone()),
-            })
-            .collect();
-
-        Self::new_pagraph(other.vertices.into_keys(), undirected_edges, directed_edges)
     }
 }
 

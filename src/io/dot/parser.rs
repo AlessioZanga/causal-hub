@@ -343,8 +343,6 @@ impl<'a> From<Pairs<'a, Rule>> for _Path {
         let mut path = Self::default();
 
         // Match inner rules.
-        let _path_type = pairs.next().unwrap();
-        let attributes = pairs.next().map(|x| x.into()).unwrap_or_default();
         let path_id = pairs.next().unwrap();
         // Assert rule match.
         assert!(matches!(path_id.as_rule(), Rule::path_id));
@@ -375,6 +373,8 @@ impl<'a> From<Pairs<'a, Rule>> for _Path {
 
                 ((from, to), op)
             });
+        // Match inner rules.
+        let attributes = pairs.next().map(|x| x.into()).unwrap_or_default();
 
         // Insert edges.
         path.edges.extend(
@@ -461,7 +461,7 @@ pub struct DOT {
     pub global_attributes: GlobalAttributes,
     /// Map of vertices IDs to vertices attributes.
     pub vertices: BTreeMap<String, Vertex>,
-    /// Map of edges pairs to edges attributes.
+    /// Map of edges pairs to vertices attributes.
     pub edges: BTreeMap<(String, String), Edge>,
 }
 
@@ -575,9 +575,9 @@ impl TryFrom<String> for DOT {
     fn try_from(string: String) -> Result<Self, Self::Error> {
         // Parse the given string.
         let out = Self::parse(Rule::file, string.trim())?;
-
         // Match inner rules. TODO: Match more than one graph.
         let out: Self = out.map_into().next().unwrap();
+
         Ok(out)
     }
 }

@@ -74,6 +74,7 @@ where
 
     /// Private function. It performs parallel skeleton discovery given a test.
     #[inline]
+    #[allow(clippy::type_complexity)]
     fn par_skeleton(&self) -> (Graph, SepSets) {
         // Set complete graph
         let mut g = Graph::complete(self.test.labels());

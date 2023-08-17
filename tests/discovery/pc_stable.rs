@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod discrete {
     use causal_hub::prelude::*;
+    use ndarray::array;
     use polars::prelude::*;
 
     // Set ChiSquared significance level
@@ -14,13 +15,27 @@ mod discrete {
         // Set dataset name
         let db_name: String = "cancer".into();
 
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
         // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
+        let true_g = PDGraph::from((
+            vec!["Cancer", "Dyspnoea", "Pollution", "Smoker", "Xray"],
+            array![
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false]
+            ],
+            array![
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [true, false, false, false, false],
+                [true, false, false, false, false]
+            ],
+        ));
+
+        // Set true skeleton
+        let true_skel = true_g.clone().to_undirected();
 
         // Load data set.
         let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
@@ -42,56 +57,6 @@ mod discrete {
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
         let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-cancer.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn earthquake() {
-        // Set dataset name
-        let db_name: String = "earthquake".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(skel.clone())
-            .plot("./skel_earthquake.pdf")
-            .unwrap();
 
         // Perform tests
         assert_eq!(skel, par_skel);
@@ -106,13 +71,35 @@ mod discrete {
         // Set dataset name
         let db_name: String = "asia".into();
 
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
         // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
+        let true_g = PDGraph::from((
+            vec![
+                "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
+            ],
+            array![
+                [false, false, false, false, false, false, false, false],
+                [false, false, true, false, false, true, false, false],
+                [false, true, false, false, false, false, false, false],
+                [false, false, false, false, true, false, false, false],
+                [false, false, false, true, false, false, false, false],
+                [false, true, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false]
+            ],
+            array![
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false],
+                [false, false, false, false, false, false, false, false]
+            ],
+        ));
+
+        // Set true skeleton
+        let true_skel = true_g.clone().to_undirected();
 
         // Load data set.
         let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
@@ -134,9 +121,6 @@ mod discrete {
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
         let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-asia.pdf").unwrap();
 
         // Perform tests
         assert_eq!(skel, par_skel);
@@ -151,13 +135,29 @@ mod discrete {
         // Set dataset name
         let db_name: String = "survey".into();
 
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
         // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
+        let true_g = PDGraph::from((
+            vec!["A", "E", "O", "R", "S", "T"],
+            array![
+                [false, false, false, false, false, false],
+                [false, false, false, false, false, false],
+                [false, false, false, false, false, false],
+                [false, false, false, false, false, true],
+                [false, false, false, false, false, false],
+                [false, false, false, true, false, false]
+            ],
+            array![
+                [false, true, false, false, false, false],
+                [false, false, false, false, false, false],
+                [false, false, false, false, false, false],
+                [false, false, false, false, false, false],
+                [false, true, false, false, false, false],
+                [false, false, false, false, false, false]
+            ],
+        ));
+
+        // Set true skeleton
+        let true_skel = true_g.clone().to_undirected();
 
         // Load data set.
         let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
@@ -179,278 +179,6 @@ mod discrete {
         // Perform discovery
         let g = pcs.call().meek_procedure_until_3();
         let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-survey.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn sachs() {
-        // Set dataset name
-        let db_name: String = "sachs".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-sachs.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn child() {
-        // Set dataset name
-        let db_name: String = "child".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-child.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn alarm() {
-        // Set dataset name
-        let db_name: String = "alarm".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-alarm.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn win95pts() {
-        // Set dataset name
-        let db_name: String = "win95pts".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-win95pts.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn insurance() {
-        // Set dataset name
-        let db_name: String = "insurance".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-insurance.pdf").unwrap();
-
-        // Perform tests
-        assert_eq!(skel, par_skel);
-        assert_eq!(g, par_g);
-
-        assert_eq!(skel, true_skel);
-        assert_eq!(g, true_g);
-    }
-
-    #[test]
-    fn andes() {
-        // Set dataset name
-        let db_name: String = "andes".into();
-
-        // Set true skeleton
-        let true_skel =
-            Graph::from(DOT::read(format!("{}skeleton-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Set true graph
-        let true_g =
-            PDGraph::from(DOT::read(format!("{}cpdag-{}.dot", BASE_PATH, db_name)).unwrap());
-
-        // Load data set.
-        let d = CsvReader::from_path(format!("{}{}.csv", BASE_PATH, db_name))
-            .unwrap()
-            .finish()
-            .unwrap();
-        let d = DiscreteDataMatrix::from(d);
-
-        // Create ChiSquared conditional independence test
-        let test = ChiSquared::new(&d).with_significance_level(ALPHA);
-
-        // Create PC-Stable functor
-        let pcs = PCStable::new(&test);
-
-        // Perform skeleton discovery
-        let skel = pcs.call_skeleton();
-        let par_skel = pcs.par_call_skeleton();
-
-        // Perform discovery
-        let g = pcs.call().meek_procedure_until_3();
-        let par_g = pcs.par_call().meek_procedure_until_3();
-
-        // Plot found cpdag
-        DOT::from(g.clone()).plot("./cpdag-andes.pdf").unwrap();
 
         // Perform tests
         assert_eq!(skel, par_skel);

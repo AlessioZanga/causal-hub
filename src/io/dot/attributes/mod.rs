@@ -4468,17 +4468,6 @@ impl EdgeAttributes {
         self.attributes.remove(&item)
     }
 
-    /// Get [`Attribute::Dir`] attribute.
-    #[inline]
-    pub fn get_edge_dir(&self) -> Option<String> {
-        for att in &self.attributes {
-            if let Attribute::Dir(x) = att {
-                return Some(x.into());
-            }
-        }
-        None
-    }
-
     /// Set [`Attribute::Edgehref`] attribute. Returns whether the attribute was newly set.
     #[inline]
     pub fn set_edgehref(&mut self, s: &str) -> bool {
