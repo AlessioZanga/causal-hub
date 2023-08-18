@@ -150,7 +150,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
 
         // Get underlying data matrix.
         let mut values = df
-            .to_ndarray::<UInt32Type>()
+            .to_ndarray::<UInt32Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as u8);
 
@@ -357,7 +357,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
 
         // Get underlying data matrix.
         let values = df
-            .to_ndarray::<Float64Type>()
+            .to_ndarray::<Float64Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
