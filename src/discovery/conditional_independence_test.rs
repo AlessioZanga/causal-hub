@@ -19,7 +19,7 @@ pub trait ConditionalIndependenceTest<'a>: Clone + Debug + Sync {
     fn with_significance_level(self, alpha: f64) -> Self;
 
     /// Returns data labels
-    fn labels(&self) -> &'a BTreeSet<String>;
+    fn labels(&self) -> &BTreeSet<String>;
 }
 
 impl<'a, T> Independence for T

@@ -11,17 +11,17 @@ use crate::{
 
 /// Fisher's Z conditional independence test.
 #[derive(Clone, Debug)]
-pub struct FisherZ<'a> {
+pub struct FisherZ {
     rho: PartialCorrelation,
     alpha: f64,
     n: usize,
-    labels: &'a BTreeSet<String>,
+    labels: BTreeSet<String>,
 }
 
-impl<'a, 'b: 'a> FisherZ<'a> {
+impl<'a> FisherZ {
     /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &'b ContinuousDataMatrix) -> Self {
+    pub fn new(d: &'a ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -30,20 +30,20 @@ impl<'a, 'b: 'a> FisherZ<'a> {
         Self {
             rho,
             alpha: 0.05,
-            n: d.values().nrows(),
-            labels: d.labels(),
+            n: d.sample_size(),
+            labels: d.labels().map(|x| x.into()).collect(),
         }
     }
 }
 
-impl<'a, 'b: 'a> From<&'b ContinuousDataMatrix> for FisherZ<'a> {
+impl<'a> From<&'a ContinuousDataMatrix> for FisherZ {
     #[inline]
-    fn from(d: &'b ContinuousDataMatrix) -> Self {
+    fn from(d: &'a ContinuousDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for FisherZ<'a> {
+impl<'a> ConditionalIndependenceTest<'a> for FisherZ {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -68,11 +68,6 @@ impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for FisherZ<'a> {
 
         (dof, stat, pval)
     }
-    #[inline]
-
-    fn labels(&self) -> &'b BTreeSet<String> {
-        self.labels
-    }
 
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
@@ -90,5 +85,10 @@ impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for FisherZ<'a> {
         self.alpha = alpha;
 
         self
+    }
+
+    #[inline]
+    fn labels(&self) -> &BTreeSet<String> {
+        &self.labels
     }
 }

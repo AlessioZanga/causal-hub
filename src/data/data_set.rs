@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Debug};
+use std::{fmt::Debug, iter::FusedIterator};
 
 use polars::prelude::*;
 use rand::Rng;
@@ -6,16 +6,24 @@ use serde::{Deserialize, Serialize};
 
 /// Data set trait.
 pub trait DataSet:
-    Clone + Debug + From<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone + Debug + From<DataFrame> + Into<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
 {
     /// Data set underlying data structure.
     type Data;
 
+    /// Labels iterator type.
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
     /// Get the set of variables labels.
-    fn labels(&self) -> &BTreeSet<String>;
+    fn labels(&self) -> Self::LabelsIter<'_>;
 
     /// Get reference to underlying values.
     fn values(&self) -> &Self::Data;
+
+    /// Get sample size.
+    fn sample_size(&self) -> usize;
 
     /// Draw `n` samples without replacement.
     ///

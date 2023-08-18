@@ -16,9 +16,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo
-            target
+          path: target
           key: ${{ runner.os }}-rust-${{ matrix.env }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('.github/workflows/doctest.yml') }}
       - name: Rust
         uses: dtolnay/rust-toolchain@master
@@ -41,4 +39,6 @@ jobs:
         run: |
           echo "FIXME: Fix LAPACK build in VCPKG"
       - name: Doctest
-        run: cargo +${{ matrix.env }} test --doc -v
+        run: |
+          unzip -o ./tests/assets -d ./tests
+          cargo +${{ matrix.env }} test --doc -v

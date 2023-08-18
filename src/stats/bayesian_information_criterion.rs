@@ -39,12 +39,15 @@ where
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the sample size.
-        let n = self.log_likelihood.d.values().nrows() as f64;
+        let n = self.log_likelihood.data.sample_size() as f64;
         // Get the cardinality.
-        let cards = self.log_likelihood.d.cardinality();
+        let cards = self.log_likelihood.data.cardinality();
         // Get the cardinality of vertices.
         // NOTE: If Z is empty, then the product of an empty vector is still one.
-        let (card_x, card_z) = (cards[x], z.iter().map(|&z| cards[z]).product::<usize>());
+        let (card_x, card_z) = (
+            cards[x] as usize,
+            z.iter().map(|&z| cards[z] as usize).product::<usize>(),
+        );
         // Compute the number of parameters.
         let theta = ((card_x - 1) * card_z) as f64;
 
@@ -55,7 +58,7 @@ where
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
-        let n = self.log_likelihood.d.values().nrows() as f64;
+        let n = self.log_likelihood.data.sample_size() as f64;
 
         // Compute the maximum number of parents given the sample size.
         let n = f64::ceil(1. + f64::log2(n) - f64::log2(f64::ln(n)));
@@ -76,7 +79,7 @@ where
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
         // Get the sample size.
-        let n = self.log_likelihood.d.values().nrows() as f64;
+        let n = self.log_likelihood.data.sample_size() as f64;
         // Compute the number of parameters as intercept, standard deviation
         // and each regression coefficient per parent.
         let theta = (2 + z.len()) as f64;
@@ -88,7 +91,7 @@ where
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
-        let n = self.log_likelihood.d.values().nrows() as f64;
+        let n = self.log_likelihood.data.sample_size() as f64;
 
         // Compute the maximum number of parents given the sample size.
         let n = f64::ceil(1. + f64::log2(n) - f64::log2(f64::ln(n)));

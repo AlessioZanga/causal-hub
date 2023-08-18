@@ -86,10 +86,8 @@ mod tests {
 
         let m: FxHashMap<_, _> = d
             .labels()
-            .iter()
-            .cloned()
             .enumerate()
-            .map(|(i, x)| (x, i))
+            .map(|(i, x)| (x.to_string(), i))
             .collect();
 
         for (x, z, c) in data {

@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet};
 
 use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
@@ -14,35 +14,37 @@ use crate::{
 pub struct ChiSquared<'a> {
     d: &'a DiscreteDataMatrix,
     alpha: f64,
-    labels: &'a BTreeSet<String>,
+    labels: BTreeSet<String>,
 }
 
-impl<'a, 'b: 'a> ChiSquared<'a> {
+impl<'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &'b DiscreteDataMatrix) -> Self {
+    pub fn new(d: &'a DiscreteDataMatrix) -> Self {
         Self {
             d,
             alpha: 0.05,
-            labels: d.labels(),
+            labels: d.labels().map(|x| x.into()).collect(),
         }
     }
 }
 
-impl<'a, 'b: 'a> From<&'b DiscreteDataMatrix> for ChiSquared<'a> {
+impl<'a> From<&'a DiscreteDataMatrix> for ChiSquared<'a> {
     #[inline]
-    fn from(d: &'b DiscreteDataMatrix) -> Self {
+    fn from(d: &'a DiscreteDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for ChiSquared<'a> {
+impl<'a> ConditionalIndependenceTest<'a> for ChiSquared<'a> {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Get cardinalities.
         let cards = self.d.cardinality();
         // Compute the degree of freedom as (|X| - 1) * (|Y| - 1) * \Pi(|Z|).
-        let dof = (cards[x] - 1) * (cards[y] - 1) * z.iter().map(|&z| cards[z]).product::<usize>();
+        let dof = (cards[x] as usize - 1)
+            * (cards[y] as usize - 1)
+            * z.iter().map(|&z| cards[z] as usize).product::<usize>();
 
         // Compute the joint contingency table.
         let n_ijk = match z.is_empty() {
@@ -95,8 +97,9 @@ impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for ChiSquared<'a> {
 
         self
     }
+
     #[inline]
-    fn labels(&self) -> &'b BTreeSet<String> {
-        self.labels
+    fn labels(&self) -> &BTreeSet<String> {
+        &self.labels
     }
 }

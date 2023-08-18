@@ -68,6 +68,27 @@ where
     S: ScoringCriterion<D, G, T>,
 {
     /// Construct a new hill-climbing functor given the scoring criterion $\mathcal{S}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     #[inline]
     pub fn new(scoring_criterion: &'a S) -> Self {
         // Get max in-degree or default to maximum in-degree.
@@ -86,6 +107,38 @@ where
     }
 
     /// Set initial graph $\mathcal{G}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Construct initial graph.
+    /// let init_graph = DiGraph::new(
+    ///     data_set.labels(),
+    ///     [
+    ///         ("bronc", "dysp"),
+    ///         ("either", "dysp"),
+    ///         ("either", "xray"),
+    ///     ]
+    /// );
+    ///
+    /// // Perform discovery with given initial graph.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_initial_graph(init_graph)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     #[inline]
     pub fn with_initial_graph(mut self, g: G) -> Self {
         // Set initial graph.
@@ -95,6 +148,28 @@ where
     }
 
     /// Set max in-degree.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with maximum in-degree of 3.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_max_in_degree(3)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     #[inline]
     pub const fn with_max_in_degree(mut self, max_in_degree: usize) -> Self {
         // Set hyper parameter.
@@ -104,6 +179,28 @@ where
     }
 
     /// Set max iterations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with maximum 10 iterations.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_max_iter(10)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     #[inline]
     pub const fn with_max_iter(mut self, max_iter: usize) -> Self {
         // Set hyper parameter.
@@ -113,6 +210,28 @@ where
     }
 
     /// Enables columns shuffling by setting the seed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery with initial shuffling of search space order.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .with_shuffle(42)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     #[inline]
     pub const fn with_shuffle(mut self, seed: u64) -> Self {
         // Set random number generator seed.
@@ -188,8 +307,11 @@ where
                 assert!(add.insert((x, y)));
                 // Remove performed action.
                 assert!(del.remove(&(x, y)));
-                // Del(X, Y) implies that Rev(X, Y) is not valid.
-                assert!(rev.remove(&(x, y)));
+                // If Add(Y, X) and Del(X, Y) are valid, then Rev(X, Y) is valid.
+                // Since Del(X, Y) is valid by construction, check only Add(Y, X).
+                if add.contains(&(y, x)) {
+                    assert!(rev.remove(&(x, y)));
+                }
             }
             Op::REV => {
                 // Remove performed action(s).
@@ -385,11 +507,11 @@ macro_rules! search {
                         .flatten()
                         .filter_map(|(k, v)| k.map(|k| (k, v))),
                 );
-                // Get operation with highest delta score, if any.
+                // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_par_iter()
                     .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-                    .filter(|(_, delta)| delta.is_sign_positive())
+                    .filter(|(_, delta)| delta > &0.)
             }
             // Same as before but sequentially.
             false => {
@@ -419,11 +541,11 @@ macro_rules! search {
                         .flatten()
                         .filter_map(|(k, v)| k.map(|k| (k, v))),
                 );
-                // Get operation with highest delta score.
+                // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_iter()
                     .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-                    .filter(|(_, delta)| delta.is_sign_positive())
+                    .filter(|(_, delta)| delta > &0.)
             }
         }
     };
@@ -525,6 +647,27 @@ where
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
         let mut cache = C::new(self.scoring_criterion);
@@ -663,6 +806,27 @@ where
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use polars::prelude::*;
+    ///
+    /// // Load data set from CSV file.
+    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
+    /// let data_set: DiscreteDataMatrix = data_set.into();
+    /// // Initialize empty prior knowledge.
+    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    ///
+    /// // Initialize scoring criterion.
+    /// let scoring_criterion = BIC::new(&data_set);
+    ///
+    /// // Perform discovery.
+    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    ///     .call(&data_set, &prior_knowledge);
+    /// ```
+    ///
     pub fn call(&self, d: &D, k: &K) -> G {
         // Initialize delta scores cache.
         let mut cache = C::new(self.scoring_criterion);

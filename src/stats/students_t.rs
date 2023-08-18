@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet};
 
 use statrs::function::beta::beta_reg;
 
@@ -11,17 +11,17 @@ use crate::{
 
 /// Students' T conditional independence test.
 #[derive(Clone, Debug)]
-pub struct StudentsT<'a> {
+pub struct StudentsT {
     rho: PartialCorrelation,
     alpha: f64,
     n: usize,
-    labels: &'a BTreeSet<String>,
+    labels: BTreeSet<String>,
 }
 
-impl<'a, 'b: 'a> StudentsT<'a> {
+impl<'a> StudentsT {
     /// Construct Students' T conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &'b ContinuousDataMatrix) -> Self {
+    pub fn new(d: &'a ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -30,20 +30,20 @@ impl<'a, 'b: 'a> StudentsT<'a> {
         Self {
             rho,
             alpha: 0.05,
-            n: d.values().nrows(),
-            labels: d.labels(),
+            n: d.sample_size(),
+            labels: d.labels().map(|x| x.into()).collect(),
         }
     }
 }
 
-impl<'a, 'b: 'a> From<&'b ContinuousDataMatrix> for StudentsT<'a> {
+impl<'a> From<&'a ContinuousDataMatrix> for StudentsT {
     #[inline]
-    fn from(d: &'b ContinuousDataMatrix) -> Self {
+    fn from(d: &'a ContinuousDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for StudentsT<'a> {
+impl<'a> ConditionalIndependenceTest<'a> for StudentsT {
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -90,9 +90,9 @@ impl<'a: 'b, 'b> ConditionalIndependenceTest<'b> for StudentsT<'a> {
 
         self
     }
-    #[inline]
 
-    fn labels(&self) -> &'b BTreeSet<String> {
-        self.labels
+    #[inline]
+    fn labels(&self) -> &BTreeSet<String> {
+        &self.labels
     }
 }

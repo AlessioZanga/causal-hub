@@ -1,5 +1,6 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{btree_set, BTreeMap, BTreeSet},
+    iter::Map,
     ops::Deref,
 };
 
@@ -18,46 +19,43 @@ use crate::types::{FxIndexMap, FxIndexSet};
 /// Data matrix for discrete data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiscreteDataMatrix {
-    labels: BTreeSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
-    cardinality: Vec<usize>,
+    cardinality: Vec<u8>,
     values: Array2<u8>,
+    labels: BTreeSet<String>
 }
 
 impl DiscreteDataMatrix {
-    /// Construct a new discrete data matrix given data encoding, labels and states.
-    pub fn new<V, I, J, K>(labels: I, states: J, values: Array2<u8>) -> Self
+    /// Construct a new discrete data matrix given data and states.
+    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
     where
         V: Into<String>,
-        I: IntoIterator<Item = V>,
-        J: IntoIterator<Item = (V, K)>,
-        K: IntoIterator<Item = V>,
+        I: IntoIterator<Item = (V, J)>,
+        J: IntoIterator<Item = V>,
     {
-        // Construct the labels set.
-        let labels: BTreeSet<String> = labels.into_iter().map_into().collect();
-        // Check labels consistency.
-        assert_eq!(values.ncols(), labels.len());
         // Construct the states map.
         let states: FxIndexMap<String, FxIndexSet<String>> = states
             .into_iter()
             .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
-        // Check states consistency.
-        assert!(labels.iter().eq(states.keys()));
+        // Check labels consistency.
+        assert_eq!(values.ncols(), states.len());
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         Self {
-            labels,
             states,
             cardinality,
             values,
+            labels : Default::default()
         }
     }
 
@@ -104,19 +102,22 @@ impl DiscreteDataMatrix {
         });
 
         // Compute cardinalities.
-        self.cardinality = self.states.values().map(|x| x.len()).collect();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            self.cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        self.cardinality = self
+            .states
+            .values()
+            .map(|x| {
+                x.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         self
     }
 
     /// Gets the vector of variables cardinalities.
     #[inline]
-    pub fn cardinality(&self) -> &Vec<usize> {
+    pub fn cardinality(&self) -> &Vec<u8> {
         &self.cardinality
     }
 }
@@ -151,12 +152,9 @@ impl From<DataFrame> for DiscreteDataMatrix {
 
         // Get underlying data matrix.
         let mut values = df
-            .to_ndarray::<UInt32Type>()
+            .to_ndarray::<UInt32Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as u8);
-
-        // Get variables as set of strings.
-        let labels: BTreeSet<String> = df.get_column_names_owned().into_iter().map_into().collect();
 
         // Get variables states.
         let states: FxIndexMap<_, _> = df
@@ -219,33 +217,68 @@ impl From<DataFrame> for DiscreteDataMatrix {
             .collect();
 
         // Compute cardinalities from states.
-        let cardinality = labels.iter().map(|l| states[l].len()).collect_vec();
-        // Assert cardinalities are less then u8::MAX.
-        assert!(
-            cardinality.iter().all(|&c| c < u8::MAX as usize),
-            "Max number of allowed states for each variable is u8::MAX"
-        );
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
+
+        // Get variables as set of strings.
+        let labels = df.get_column_names_owned().into_iter().map_into().collect();
 
         Self {
-            labels,
             states,
             cardinality,
             values,
+            labels
         }
+    }
+}
+
+impl From<DiscreteDataMatrix> for DataFrame {
+    fn from(data: DiscreteDataMatrix) -> Self {
+        // Map columns to series.
+        let series = data
+            .states
+            .into_iter()
+            .zip(data.values.columns())
+            .map(|((name, states), column)| {
+                Series::new(
+                    &name,
+                    column
+                        .into_iter()
+                        .map(|&x| states[x as usize].to_string())
+                        .collect_vec(),
+                )
+            })
+            .collect_vec();
+
+        DataFrame::new(series).unwrap()
     }
 }
 
 impl DataSet for DiscreteDataMatrix {
     type Data = Array2<u8>;
 
+    type LabelsIter<'a> =
+    Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
@@ -269,10 +302,10 @@ impl DataSet for DiscreteDataMatrix {
             .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
 
         Self {
-            labels: self.labels.clone(),
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
+            labels: self.labels.clone(),
         }
     }
 
@@ -289,10 +322,10 @@ impl DataSet for DiscreteDataMatrix {
             .for_each(|(i, j)| values.row_mut(i).assign(&self.values.row(j)));
 
         Self {
-            labels: self.labels.clone(),
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
+            labels: self.labels.clone(),
         }
     }
 }
@@ -302,8 +335,8 @@ impl DataSet for DiscreteDataMatrix {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContinuousDataMatrix {
-    values: Array2<f64>,
     labels: BTreeSet<String>,
+    values: Array2<f64>,
 }
 
 impl From<DataFrame> for ContinuousDataMatrix {
@@ -332,7 +365,7 @@ impl From<DataFrame> for ContinuousDataMatrix {
 
         // Get underlying data matrix.
         let values = df
-            .to_ndarray::<Float64Type>()
+            .to_ndarray::<Float64Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
@@ -342,17 +375,38 @@ impl From<DataFrame> for ContinuousDataMatrix {
     }
 }
 
+impl From<ContinuousDataMatrix> for DataFrame {
+    fn from(data: ContinuousDataMatrix) -> Self {
+        // Map columns to series.
+        let series = data
+            .labels
+            .into_iter()
+            .zip(data.values.columns())
+            .map(|(name, column)| Series::new(&name, column.to_vec()))
+            .collect_vec();
+
+        DataFrame::new(series).unwrap()
+    }
+}
+
 impl DataSet for ContinuousDataMatrix {
     type Data = Array2<f64>;
 
+    type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 
     #[inline]
     fn values(&self) -> &Self::Data {
         &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self {
