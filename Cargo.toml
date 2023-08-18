@@ -26,7 +26,7 @@ ndarray-stats = "^0.5"
 page_size = "^0.5"
 pest = "^2.5"
 pest_derive = "^2.5"
-polars = { version = "0.30.0", path = "extern/polars-dynamic", package = "polars-dynamic" }
+polars = { version = "0.32.1", path = "extern/polars-dynamic", package = "polars-dynamic" }
 prettytable-rs = "^0.10"
 rand = "^0.8"
 rand_xoshiro = "^0.6"
