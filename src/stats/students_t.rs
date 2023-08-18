@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet};
+use std::collections::BTreeSet;
 
 use statrs::function::beta::beta_reg;
 

@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet};
+use std::collections::BTreeSet;
 
 use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
