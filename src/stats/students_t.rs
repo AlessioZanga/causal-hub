@@ -1,4 +1,7 @@
-use std::collections::BTreeSet;
+use std::{
+    collections::{btree_set, BTreeSet},
+    iter::Map,
+};
 
 use statrs::function::beta::beta_reg;
 
@@ -44,6 +47,8 @@ impl<'a> From<&'a ContinuousDataMatrix> for StudentsT {
 }
 
 impl<'a> ConditionalIndependenceTest<'a> for StudentsT {
+    type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
+
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -92,7 +97,7 @@ impl<'a> ConditionalIndependenceTest<'a> for StudentsT {
     }
 
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 }

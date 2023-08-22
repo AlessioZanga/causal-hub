@@ -1,4 +1,8 @@
-use std::{collections::BTreeSet, f64::consts::FRAC_1_SQRT_2};
+use std::{
+    collections::{btree_set, BTreeSet},
+    f64::consts::FRAC_1_SQRT_2,
+    iter::Map,
+};
 
 use libm::erfc;
 
@@ -44,6 +48,8 @@ impl<'a> From<&'a ContinuousDataMatrix> for FisherZ {
 }
 
 impl<'a> ConditionalIndependenceTest<'a> for FisherZ {
+    type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
+
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -88,7 +94,7 @@ impl<'a> ConditionalIndependenceTest<'a> for FisherZ {
     }
 
     #[inline]
-    fn labels(&self) -> &BTreeSet<String> {
-        &self.labels
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 }

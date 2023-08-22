@@ -22,7 +22,6 @@ pub struct DiscreteDataMatrix {
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<u8>,
     values: Array2<u8>,
-    labels: BTreeSet<String>,
 }
 
 impl DiscreteDataMatrix {
@@ -55,7 +54,6 @@ impl DiscreteDataMatrix {
             states,
             cardinality,
             values,
-            labels: Default::default(),
         }
     }
 
@@ -226,14 +224,10 @@ impl From<DataFrame> for DiscreteDataMatrix {
             })
             .collect_vec();
 
-        // Get variables as set of strings.
-        let labels = df.get_column_names_owned().into_iter().map_into().collect();
-
         Self {
             states,
             cardinality,
             values,
-            labels,
         }
     }
 }
@@ -263,11 +257,12 @@ impl From<DiscreteDataMatrix> for DataFrame {
 impl DataSet for DiscreteDataMatrix {
     type Data = Array2<u8>;
 
-    type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+    type LabelsIter<'a> =
+        Map<indexmap::map::Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
-        self.labels.iter().map(|x| x.as_str())
+        self.states.keys().map(|x| x.as_str())
     }
 
     #[inline]
@@ -304,7 +299,6 @@ impl DataSet for DiscreteDataMatrix {
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
-            labels: self.labels.clone(),
         }
     }
 
@@ -324,7 +318,6 @@ impl DataSet for DiscreteDataMatrix {
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
             values,
-            labels: self.labels.clone(),
         }
     }
 }
