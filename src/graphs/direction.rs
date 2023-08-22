@@ -638,8 +638,8 @@ pub trait MeekRules: PartiallyDirectedGraph {
     fn meek_3(&mut self) -> bool;
     /// Meek's rule 4
     fn meek_4(&mut self) -> bool;
-    /// Meek's procedure untile Meek's rule 3
+    /// Meek's procedure until Meek's rule 3
     fn meek_procedure_until_3(self) -> Self;
-    /// Meek's procedure untile Meek's rule 4
+    /// Meek's procedure until Meek's rule 4
     fn meek_procedure_until_4(self) -> Self;
 }
