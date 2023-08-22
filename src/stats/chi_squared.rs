@@ -1,9 +1,11 @@
+use std::iter::Map;
+
 use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
 
 use crate::{
     data::{DiscreteDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
-    prelude::ConditionalIndependenceTest,
+    prelude::{ConditionalIndependenceTest, DataSet, FxIndexSet},
     utils::nan_to_zero,
 };
 
@@ -17,7 +19,7 @@ pub struct ChiSquared<'a> {
 impl<'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub const fn new(d: &'a DiscreteDataMatrix) -> Self {
+    pub fn new(d: &'a DiscreteDataMatrix) -> Self {
         Self { d, alpha: 0.05 }
     }
 }
@@ -29,7 +31,10 @@ impl<'a> From<&'a DiscreteDataMatrix> for ChiSquared<'a> {
     }
 }
 
-impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
+impl<'a> ConditionalIndependenceTest<'a> for ChiSquared<'a> {
+    type LabelsIter<'b> =
+        Map<indexmap::map::Keys<'b, String, FxIndexSet<String>>, fn(&'b String) -> &'b str> where Self: 'b;
+
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Get cardinalities.
@@ -89,5 +94,10 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         self.alpha = alpha;
 
         self
+    }
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.d.labels()
     }
 }

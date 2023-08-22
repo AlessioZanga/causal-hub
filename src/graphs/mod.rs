@@ -26,4 +26,4 @@ pub type Graph = structs::UndirectedDenseAdjacencyMatrixGraph;
 pub type DiGraph = structs::DirectedDenseAdjacencyMatrixGraph;
 
 /// Default mixed graph implementation based on two dense adjacency matrices.
-pub type PaGraph = structs::PartiallyDenseAdjacencyMatrixGraph;
+pub type PDGraph = structs::PartiallyDenseAdjacencyMatrixGraph;

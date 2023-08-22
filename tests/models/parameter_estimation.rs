@@ -88,7 +88,7 @@ mod maximum_likelihood_estimation {
     }
 
     #[test]
-    fn parallel_call() {
+    fn par_call() {
         // Test cases.
         let data = [
             ("asia", array![0.9916, 0.0084].into_dyn()),
@@ -276,7 +276,7 @@ mod bayesian_estimation {
     }
 
     #[test]
-    fn parallel_call() {
+    fn par_call() {
         // Test cases.
         let data = [
             (

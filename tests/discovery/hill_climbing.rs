@@ -43,7 +43,7 @@ mod discrete {
     }
 
     #[test]
-    fn parallel_call() {
+    fn par_call() {
         // Set true graph.
         let true_g = DiGraph::new(
             [
@@ -248,7 +248,7 @@ mod gaussian {
     }
 
     #[test]
-    fn parallel_call() {
+    fn par_call() {
         // Set true graph.
         let true_g = DiGraph::new(
             [],

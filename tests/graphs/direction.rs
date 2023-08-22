@@ -1171,12 +1171,12 @@ mod partially_directed {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_pagraph(i, j, k);
                     // Test for undirected edges
-                    assert!(g.has_undirected_edge_by_index(1, 2) == true);
-                    assert!(g.has_undirected_edge_by_index(2, 1) == true);
-                    assert!(g.has_undirected_edge_by_index(0, 1) == false);
+                    assert!(g.has_undirected_edge_by_index(1, 2));
+                    assert!(g.has_undirected_edge_by_index(2, 1));
+                    assert!(!g.has_undirected_edge_by_index(0, 1));
                     // Test for non-present edges
-                    assert!(g.has_undirected_edge_by_index(0, 2) == false);
-                    assert!(g.has_undirected_edge_by_index(2, 0) == false);
+                    assert!(!g.has_undirected_edge_by_index(0, 2));
+                    assert!(!g.has_undirected_edge_by_index(2, 0));
                 }
 
                 #[test]
@@ -1800,13 +1800,13 @@ mod partially_directed {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_pagraph(i, j, k);
                     // Test for directed edges
-                    assert!(g.has_directed_edge_by_index(1, 2) == false);
-                    assert!(g.has_directed_edge_by_index(2, 1) == false);
-                    assert!(g.has_directed_edge_by_index(0, 1) == true);
-                    assert!(g.has_directed_edge_by_index(1, 0) == false);
+                    assert!(!g.has_directed_edge_by_index(1, 2));
+                    assert!(!g.has_directed_edge_by_index(2, 1));
+                    assert!(g.has_directed_edge_by_index(0, 1));
+                    assert!(!g.has_directed_edge_by_index(1, 0));
                     // Test for non-present edges
-                    assert!(g.has_directed_edge_by_index(0, 2) == false);
-                    assert!(g.has_directed_edge_by_index(2, 0) == false);
+                    assert!(!g.has_directed_edge_by_index(0, 2));
+                    assert!(!g.has_directed_edge_by_index(2, 0));
                 }
 
                 #[test]
@@ -1955,8 +1955,6 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let mut g = $G::new_pagraph(vec![], vec![], i);
-                        dbg!(g.clone());
-                        dbg!(j.clone());
                         for ((x, y), f) in j {
                             let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
                             assert_eq!(g.add_directed_edge_by_index(x, y), f);
@@ -2294,8 +2292,8 @@ mod partially_directed {
                             .into_iter()
                             .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
                         // Test for `size_of_type` function
-                        assert!(g.size_of_maximal_undirected_subgraph() == ue.len());
-                        assert!(g.size_of_maximal_directed_subgraph() == de.len());
+                        assert_eq!(g.size_of_maximal_undirected_subgraph(), ue.len());
+                        assert_eq!(g.size_of_maximal_directed_subgraph(), de.len());
                     }
                 }
 
@@ -2324,20 +2322,19 @@ mod partially_directed {
                     g.orient_edge(3, 0);
                     g.orient_edge(2, 1);
                     // Test for type of edges
-                    assert!(g.has_directed_edge_by_index(0, 1) == true);
-                    assert!(g.has_undirected_edge_by_index(1, 0) == false);
-                    assert!(g.has_directed_edge_by_index(3, 0) == true);
-                    assert!(g.has_undirected_edge_by_index(0, 3) == false);
-                    assert!(g.has_directed_edge_by_index(2, 1) == true);
-                    assert!(g.has_undirected_edge_by_index(1, 2) == false);
-                    assert!(g.has_undirected_edge_by_index(1, 4) == true);
-                    assert!(g.has_undirected_edge_by_index(4, 1) == true);
+                    assert!(g.has_directed_edge_by_index(0, 1));
+                    assert!(g.has_directed_edge_by_index(0, 3));
+                    assert!(!g.has_directed_edge_by_index(3, 0));
+                    assert!(g.has_directed_edge_by_index(2, 1));
+                    assert!(!g.has_undirected_edge_by_index(1, 2));
+                    assert!(g.has_undirected_edge_by_index(1, 4));
+                    assert!(g.has_undirected_edge_by_index(4, 1));
                     // Test for sizes
-                    assert!(g.size_of_maximal_undirected_subgraph() == 1);
-                    assert!(g.size_of_maximal_directed_subgraph() == 3);
-                    assert!(g.size() == 4);
+                    assert_eq!(g.size_of_maximal_undirected_subgraph(), 1);
+                    assert_eq!(g.size_of_maximal_directed_subgraph(), 3);
+                    assert_eq!(g.size(), 4);
                     // Test when orienting a non-existing edge
-                    assert!(g.orient_edge(2, 3) == false);
+                    assert!(!g.orient_edge(2, 3));
                 }
 
                 #[test]
@@ -2350,8 +2347,8 @@ mod partially_directed {
                     let g_to_undirected = g.to_undirected();
                     let g_to_undirected: PartiallyDenseAdjacencyMatrixGraph =
                         g_to_undirected.into();
-                    assert!(g_to_undirected.size_of_maximal_directed_subgraph() == 0);
-                    assert!(g_to_undirected.size_of_maximal_undirected_subgraph() == 4);
+                    assert_eq!(g_to_undirected.size_of_maximal_directed_subgraph(), 0);
+                    assert_eq!(g_to_undirected.size_of_maximal_undirected_subgraph(), 4);
                 }
             };
         }

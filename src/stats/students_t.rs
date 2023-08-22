@@ -1,3 +1,8 @@
+use std::{
+    collections::{btree_set, BTreeSet},
+    iter::Map,
+};
+
 use statrs::function::beta::beta_reg;
 
 use crate::{
@@ -13,12 +18,13 @@ pub struct StudentsT {
     rho: PartialCorrelation,
     alpha: f64,
     n: usize,
+    labels: BTreeSet<String>,
 }
 
-impl StudentsT {
+impl<'a> StudentsT {
     /// Construct Students' T conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &ContinuousDataMatrix) -> Self {
+    pub fn new(d: &'a ContinuousDataMatrix) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -28,18 +34,21 @@ impl StudentsT {
             rho,
             alpha: 0.05,
             n: d.sample_size(),
+            labels: d.labels().map(|x| x.into()).collect(),
         }
     }
 }
 
-impl From<&ContinuousDataMatrix> for StudentsT {
+impl<'a> From<&'a ContinuousDataMatrix> for StudentsT {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &'a ContinuousDataMatrix) -> Self {
         Self::new(d)
     }
 }
 
-impl ConditionalIndependenceTest for StudentsT {
+impl<'a> ConditionalIndependenceTest<'a> for StudentsT {
+    type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
+
     #[inline]
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
@@ -85,5 +94,10 @@ impl ConditionalIndependenceTest for StudentsT {
         self.alpha = alpha;
 
         self
+    }
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
     }
 }

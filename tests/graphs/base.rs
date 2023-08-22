@@ -2953,7 +2953,7 @@ mod partially_directed {
             }
 
             #[test]
-            fn is_adjacent() {
+            fn is_adjacent_by_index() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!

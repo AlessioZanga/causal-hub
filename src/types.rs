@@ -21,3 +21,6 @@ pub type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
 
 /// IndexMap with FxHasher.
 pub type FxIndexMap<K, V> = IndexMap<K, V, BuildHasherDefault<FxHasher>>;
+
+/// Separation sets type.
+pub type SepSets = FxIndexMap<(usize, usize), FxIndexSet<usize>>;

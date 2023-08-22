@@ -47,7 +47,7 @@ mod discrete {
     }
 
     #[test]
-    fn parallel_akaike_information_criterion() {
+    fn par_akaike_information_criterion() {
         // Read test database from file.
         let data =
             std::fs::read_to_string("./tests/assets/akaike_information_criterion/discrete.json")
@@ -138,7 +138,7 @@ mod gaussian {
     }
 
     #[test]
-    fn parallel_akaike_information_criterion() {
+    fn par_akaike_information_criterion() {
         // Read test database from file.
         let data =
             std::fs::read_to_string("./tests/assets/akaike_information_criterion/gaussian.json")

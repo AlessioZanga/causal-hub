@@ -44,7 +44,7 @@ mod variable_elimination {
     }
 
     #[test]
-    fn parallel_call() {
+    fn par_call() {
         // Load data from file.
         let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
             .expect("Failed to read file to string");

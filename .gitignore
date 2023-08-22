@@ -2,3 +2,5 @@
 /tests/assets
 Cargo.lock
 lcov.info
+*.pdf
+heaptrack*

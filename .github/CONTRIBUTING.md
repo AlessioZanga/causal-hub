@@ -54,6 +54,16 @@ In `Rust` projects, tests are split into unit, integration and doc tests. While 
 
 Beware that doc tests may require relevant amount of time and memory since each doc test is linked individually and the [polars](https://github.com/pola-rs/polars) dependency is huge. It could be easier to write unit/integration tests first and leave doc test at the end.
 
+### Profiling
+
+Benchmarking employs the [Criterion](https://github.com/bheisler/criterion.rs) crate. If [gnuplot](http://www.gnuplot.info/) is installed, generated plots are available into `./target/criterion/`.
+
+To execute the benches, run the following `cargo` command:
+
+```
+cargo bench
+```
+
 ### Coverage
 
 To compute the code coverage, run the following [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) command:
@@ -86,7 +96,3 @@ Also, if edited, formatting the `Cargo.toml` is required. To do this, run [cargo
 ### Documenting
 
 The `#![warn(missing_docs)]` lint has been enforced crate-wide to ensure high-quality documentation. This means that linting will fail if there is undocumented code.
-
-### Profiling
-
-Currently, there are no `benches` for code profiling.

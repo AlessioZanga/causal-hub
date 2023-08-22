@@ -71,7 +71,7 @@ mod tests {
     }
 
     #[test]
-    fn parallel_conditional_count_matrix() {
+    fn par_conditional_count_matrix() {
         // Test count matrix from Numpy library.
         let text = std::fs::read_to_string("./tests/assets/conditional_count_matrix.json")
             .expect("Failed to read file to string");
