@@ -8,7 +8,7 @@ mod discrete {
     const ALPHA: f64 = 0.05;
 
     // Set base path
-    const BASE_PATH: &str = "./tests/assets/PC-Stable/";
+    const BASE_PATH: &str = "./tests/assets/pc_stable/";
 
     #[test]
     fn cancer() {
