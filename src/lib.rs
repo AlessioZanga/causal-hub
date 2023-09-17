@@ -34,3 +34,6 @@ pub mod types;
 /// Crate-wide utils.
 #[allow(unused_imports)]
 pub mod utils;
+
+/// Re-export `polars` for compatibility.
+pub use polars;
