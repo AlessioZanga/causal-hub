@@ -2,6 +2,7 @@ use crate::{
     data::{CategoricalDataMatrix, GaussianDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
+    prelude::ZINBDataMatrix,
     stats::LogLikelihood,
 };
 
@@ -63,6 +64,26 @@ where
         // Compute the number of parameters as intercept, standard deviation
         // and each regression coefficient per parent.
         let theta = (2 + z.len()) as f64;
+
+        // Compute the AIC.
+        log_likelihood - theta
+    }
+}
+
+/* Implement AIC for ZINB data. */
+impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
+    for AkaikeInformationCriterion<'a, ZINBDataMatrix>
+where
+    G: DirectedGraph<Direction = directions::Directed>,
+{
+    #[inline]
+    fn call(&self, x: usize, z: &[usize]) -> f64 {
+        // Compute the log-likelihood.
+        let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
+
+        // Compute the number of parameters as intercept, standard deviation
+        // and each regression coefficient per parent.
+        let theta = (2 * z.len() + 3) as f64;
 
         // Compute the AIC.
         log_likelihood - theta
