@@ -8,9 +8,8 @@ mod variable_elimination {
     #[test]
     fn call() {
         // Load data from file.
-        let text =
-            std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
-                .expect("Failed to read file to string");
+        let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
+            .expect("Failed to read file to string");
         let data: Vec<(&str, Vec<&str>, Vec<usize>, Vec<Option<f64>>)> =
             serde_json::from_str(&text).expect("Failed to deserialize string to struct");
         // Initialize Bayesian network.
@@ -47,9 +46,8 @@ mod variable_elimination {
     #[test]
     fn par_call() {
         // Load data from file.
-        let text =
-            std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
-                .expect("Failed to read file to string");
+        let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
+            .expect("Failed to read file to string");
         let data: Vec<(&str, Vec<&str>, Vec<usize>, Vec<Option<f64>>)> =
             serde_json::from_str(&text).expect("Failed to deserialize string to struct");
         // Initialize Bayesian network.

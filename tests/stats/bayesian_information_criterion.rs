@@ -7,10 +7,9 @@ mod categorical {
     #[test]
     fn bayesian_information_criterion() {
         // Read test database from file.
-        let data = std::fs::read_to_string(
-            "./tests/assets/bayesian_information_criterion/discrete.json",
-        )
-        .unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/bayesian_information_criterion/discrete.json")
+                .unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -50,10 +49,9 @@ mod categorical {
     #[test]
     fn par_bayesian_information_criterion() {
         // Read test database from file.
-        let data = std::fs::read_to_string(
-            "./tests/assets/bayesian_information_criterion/discrete.json",
-        )
-        .unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/bayesian_information_criterion/discrete.json")
+                .unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
