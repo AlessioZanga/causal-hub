@@ -130,7 +130,6 @@ where
     /// # Panics
     ///
     /// Panics if $\mathbf{X}$ is not a subset of the scope of $\pmb{\Phi}$.
-    ///
     pub fn call<'b, X>(&self, x: X) -> <M::Parameter as Factor>::Phi
     where
         X: IntoIterator<Item = &'b str>,

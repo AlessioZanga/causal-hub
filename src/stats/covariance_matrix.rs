@@ -17,7 +17,6 @@ impl CovarianceMatrix {
     /// # Panics
     ///
     /// The matrix must be squared, symmetric and non-negative.
-    ///
     #[inline]
     pub fn new(sigma: Array2<f64>) -> Self {
         // Assert Sigma is square ...

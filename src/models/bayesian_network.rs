@@ -4,6 +4,7 @@ use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::{prelude::*, SliceInfoElem as SIE};
 use rand::{distributions::WeightedIndex, prelude::*};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -49,6 +50,9 @@ pub trait ProbabilisticGraphicalModel:
 
     /// Draw `n` samples.
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data;
+
+    /// Draw `n` samples in parallel.
+    fn par_sample<R: Rng + SeedableRng>(&self, rng: &mut R, n: usize) -> Self::Data;
 }
 
 /// Bayesian Network $\mathcal{B}$ trait.
@@ -132,20 +136,64 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
             let in_x = pa_x.binary_search(&x).unwrap_err();
             // Get the factor Phi(X).
             let phi_x = &self.theta[x];
+
             // For each sample ...
-            for i in 0..n {
-                // Get Pa(X) values.
-                let indices = pa_x.iter().map(|&z| values[[i, z]]);
+            values.rows_mut().into_iter().for_each(|mut row| {
+                // Allocate P(X | Pa(X)) indices.
+                let mut indices = Vec::with_capacity(self.graph.order());
                 // Set P(X | Pa(X)) indices.
-                let mut indices = indices.map(|z| SIE::Index(z as isize)).collect_vec();
+                indices.extend(pa_x.iter().map(|&z| SIE::Index(row[z] as isize)));
                 indices.insert(in_x, (..).into());
                 // Get P(X | Pa(X)) values.
                 let weights = phi_x.values().slice(indices.as_slice());
                 // Sample from P(X | Pa(X)).
                 let sample = WeightedIndex::new(&weights).unwrap().sample(rng);
                 // Assign sampled values.
-                values[[i, x]] = sample.try_into().unwrap();
-            }
+                row[x] = sample.try_into().unwrap();
+            });
+        }
+
+        // Return sampled data set.
+        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
+    }
+
+    fn par_sample<R: Rng + SeedableRng>(&self, rng: &mut R, n: usize) -> Self::Data {
+        // Allocate the new data set values.
+        let mut values = Array2::<u8>::zeros((n, self.graph.order()));
+        // Get topological sort of the underlying graph.
+        let order = TopologicalSort::new(&self.graph);
+
+        // For each vertex in the graph ...
+        for x in order {
+            // Get Pa(X).
+            let pa_x = Pa!(self.graph, x).collect_vec();
+            // Compute insertion index to align X in Pa(X) vector.
+            let in_x = pa_x.binary_search(&x).unwrap_err();
+            // Get the factor Phi(X).
+            let phi_x = &self.theta[x];
+
+            // Initialize seeds for parallel rngs.
+            let seeds = (0..n).map(|_| rng.next_u64()).collect_vec();
+
+            // For each sample ...
+            seeds
+                .into_par_iter()
+                .zip(values.axis_iter_mut(Axis(1)))
+                .for_each(|(seed, mut row)| {
+                    // Initialize local rng.
+                    let mut rng = R::seed_from_u64(seed);
+                    // Allocate P(X | Pa(X)) indices.
+                    let mut indices = Vec::with_capacity(self.graph.order());
+                    // Set P(X | Pa(X)) indices.
+                    indices.extend(pa_x.iter().map(|&z| SIE::Index(row[z] as isize)));
+                    indices.insert(in_x, (..).into());
+                    // Get P(X | Pa(X)) values.
+                    let weights = phi_x.values().slice(indices.as_slice());
+                    // Sample from P(X | Pa(X)).
+                    let sample = WeightedIndex::new(&weights).unwrap().sample(&mut rng);
+                    // Assign sampled values.
+                    row[x] = sample.try_into().unwrap();
+                });
         }
 
         // Return sampled data set.

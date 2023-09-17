@@ -30,9 +30,8 @@ pub trait DataSet:
     /// # Panics
     ///
     /// Panics if `n` is higher than the total number of samples in the data set.
-    ///
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self;
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 
     /// Draw `n` samples with replacement.
-    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self;
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 }

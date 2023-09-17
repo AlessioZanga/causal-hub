@@ -20,7 +20,6 @@ pub trait ConditionalIndependenceTest<'a>: Clone + Debug + Sync {
     /// # Panics
     ///
     /// If $\alpha$ is not in the (0, 1) interval.
-    ///
     fn with_significance_level(self, alpha: f64) -> Self;
 
     /// Returns data labels

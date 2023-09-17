@@ -262,7 +262,6 @@ impl Plot for DOT {
     /// # Panics
     ///
     /// Require <a href = "https://graphviz.org/" target = "_blank">Graphviz</a> to work.
-    ///
     fn plot<P>(self, path: P) -> Result<Self::Success, Self::Error>
     where
         P: Into<PathBuf>,

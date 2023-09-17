@@ -484,19 +484,24 @@ macro_rules! search {
                 // Compute operations deltas and cache fragments
                 let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .par_iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y))
+                    // Check if operation is valid, compute current operation delta score and cache fragments.
+                    .filter_map(|(x, y)| match $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y) {
+                        true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
+                        false => None,
+                    })
                     .chain(
                         $del.par_iter()
-                            .filter(|(x, y)| $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
+                                true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                                false => None,
+                            })
                     )
                     .chain(
                         $rev.par_iter()
-                            .filter(|(x, y)| $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
+                                true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                                false => None,
+                            })
                     )
                     // Unzip OPs and cache fragments.
                     .unzip();
@@ -510,27 +515,32 @@ macro_rules! search {
                 // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_par_iter()
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
                     .filter(|(_, delta)| delta > &0.)
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
             }
             // Same as before but sequentially.
             false => {
                 // Compute operations deltas and cache fragments
                 let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
                     .iter()
-                    // Check if operation is valid.
-                    .filter(|(x, y)| $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y))
-                    // Compute current operation delta score and cache fragments.
-                    .map(|(x, y)| $self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y))
+                    // Check if operation is valid, compute current operation delta score and cache fragments.
+                    .filter_map(|(x, y)| match $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y) {
+                        true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
+                        false => None,
+                    })
                     .chain(
                         $del.iter()
-                            .filter(|(x, y)| $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
+                                true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                                false => None,
+                            })
                     )
                     .chain(
                         $rev.iter()
-                            .filter(|(x, y)| $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y))
-                            .map(|(x, y)| $self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
+                                true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                                false => None,
+                            })
                     )
                     // Unzip OPs and cache fragments.
                     .unzip();
@@ -544,8 +554,8 @@ macro_rules! search {
                 // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_iter()
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
                     .filter(|(_, delta)| delta > &0.)
+                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
             }
         }
     };

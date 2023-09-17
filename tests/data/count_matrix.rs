@@ -44,19 +44,19 @@ mod tests {
         // Cast dataframe to datamatrix.
         let d = DiscreteDataMatrix::from(d);
 
-        let n = ConditionalCountMatrix::<false>::new(&d, 1, &[2]);
+        let n = ConditionalCountMatrix::new(&d, 1, &[2]);
         assert_eq!(n.values(), array![[2], [1]]);
 
-        let n = ConditionalCountMatrix::<false>::new(&d, 2, &[1]);
+        let n = ConditionalCountMatrix::new(&d, 2, &[1]);
         assert_eq!(n.values(), array![[2, 1]]);
 
-        let n = ConditionalCountMatrix::<false>::new(&d, 3, &[1]);
+        let n = ConditionalCountMatrix::new(&d, 3, &[1]);
         assert_eq!(n.values(), array![[1, 1, 1]]);
 
-        let n = ConditionalCountMatrix::<false>::new(&d, 1, &[2, 3]);
+        let n = ConditionalCountMatrix::new(&d, 1, &[2, 3]);
         assert_eq!(n.values(), array![[1], [0], [1], [0], [1], [0]]);
 
-        let n = ConditionalCountMatrix::<false>::new(&d, 0, &[1, 2, 3]);
+        let n = ConditionalCountMatrix::new(&d, 0, &[1, 2, 3]);
         assert_eq!(
             n.values(),
             array![
@@ -94,7 +94,7 @@ mod tests {
             let x = m[&x];
             let z: Vec<_> = z.into_iter().map(|z| m[&z]).collect();
 
-            assert_eq!(ConditionalCountMatrix::<true>::new(&d, x, &z).values(), c);
+            assert_eq!(ConditionalCountMatrix::par_new(&d, x, &z).values(), c);
         }
     }
 

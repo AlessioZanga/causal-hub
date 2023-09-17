@@ -65,7 +65,7 @@ mod discrete {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let s = ParallelBIC::new(&d);
+        let s = BIC::new(&d);
 
         // Compute global score.
         assert_relative_eq!(
@@ -156,7 +156,7 @@ mod gaussian {
         let g = DiGraph::empty(d.labels());
 
         // Initialize the default scoring criterion.
-        let s = ParallelBIC::new(&d);
+        let s = BIC::new(&d);
 
         // Compute global score.
         assert_relative_eq!(

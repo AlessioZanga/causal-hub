@@ -554,7 +554,7 @@ where
         // Map into edges.
         let edges = adjacency_list
             .into_iter()
-            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys));
 
         Self::new(vertices, edges)
     }

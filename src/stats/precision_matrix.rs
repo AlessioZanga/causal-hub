@@ -26,7 +26,6 @@ impl PrecisionMatrix {
     /// # Panics
     ///
     /// Matrix must be square and symmetric.
-    ///
     #[inline]
     pub fn new(omega: Array2<f64>) -> Self {
         // Assert Omega is squared ...

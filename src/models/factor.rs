@@ -173,12 +173,11 @@ impl Add for DiscreteFactor {
 
     fn add(self, phi: Self) -> Self::Output {
         // Compute scope of factor sum.
-        let states: FxIndexMap<_, _> = iter_set::union_by(
-            self.states.clone().into_iter(),
-            phi.states.clone().into_iter(),
-            |(x, _), (y, _)| x.cmp(&y),
-        )
-        .collect();
+        let states: FxIndexMap<_, _> =
+            iter_set::union_by(self.states.clone(), phi.states.clone(), |(x, _), (y, _)| {
+                x.cmp(&y)
+            })
+            .collect();
         // Compute broadcasting shapes.
         let lhs = states
             .keys()
@@ -211,12 +210,11 @@ impl Mul for DiscreteFactor {
 
     fn mul(self, phi: Self) -> Self::Output {
         // Compute scope of factor product.
-        let states: FxIndexMap<_, _> = iter_set::union_by(
-            self.states.clone().into_iter(),
-            phi.states.clone().into_iter(),
-            |(x, _), (y, _)| x.cmp(&y),
-        )
-        .collect();
+        let states: FxIndexMap<_, _> =
+            iter_set::union_by(self.states.clone(), phi.states.clone(), |(x, _), (y, _)| {
+                x.cmp(&y)
+            })
+            .collect();
         // Compute broadcasting shapes.
         let lhs = states
             .keys()
@@ -598,7 +596,7 @@ impl DiscreteCPD {
         self.phi.states()
     }
 
-    /// Get the target variable $X$ of the CPD $\mathcal(P)(X | \mathbf{Z})$
+    /// Get the target variable $X$ of the CPD $\mathcal(P)(X | \mathbf{Z})$.
     #[inline]
     pub fn target(&self) -> &str {
         self.x.as_str()

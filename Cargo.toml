@@ -14,16 +14,17 @@ categories = ["algorithms", "data-structures", "mathematics", "science"]
 
 [dependencies]
 approx = "^0.5"
-indexmap = { version = "^1.9", features = [ "rayon", "serde" ] }
+indexmap = { version = "^2.0", features = [ "rayon", "serde" ] }
 is_sorted = "^0.1"
 iter-set = "^2.0"
-itertools = "^0.10"
+itertools = "^0.11"
 libm = "^0.2"
 log = "^0.4"
 ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon", "serde" ] }
 ndarray-linalg = "^0.16"
+ndarray-rand = "^0.14"
 ndarray-stats = "^0.5"
-page_size = "^0.5"
+page_size = "^0.6"
 pest = "^2.5"
 pest_derive = "^2.5"
 polars = { version = "0.32.1", path = "extern/polars-dynamic", package = "polars-dynamic" }
@@ -38,7 +39,7 @@ statrs = "^0.16"
 tempfile = "^3.3"
 
 [dev-dependencies]
-criterion = { version = "0.4", features = ["html_reports"] }
+criterion = { version = "^0.5", features = [ "html_reports" ] }
 env_logger = "^0.10"
 ndarray = { version = "^0.15", features = [ "approx-0_5", "rayon", "serde" ] }
 ndarray-linalg = { version = "^0.16", features = [ "openblas-system" ] }
@@ -48,7 +49,7 @@ serde_json = "^1.0"
 test-log = "^0.2"
 
 [[bench]]
-name = "mod"
+name = "main"
 harness = false
 
 [package.metadata.docs.rs]

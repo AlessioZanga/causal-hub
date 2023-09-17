@@ -44,7 +44,7 @@ impl<const PARALLEL: bool>
             // Compute the absolute frequencies.
             let n = match z.is_empty() {
                 true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::<false>::new(d, x, &z).into(),
+                false => ConditionalCountMatrix::new(d, x, &z).into(),
             };
             // Cast to float.
             let n = n.mapv(|n| n as f64);
@@ -105,7 +105,7 @@ impl<const PARALLEL: bool>
             // Compute the absolute frequencies.
             let n = match z.is_empty() {
                 true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::<false>::new(d, x, &z).into(),
+                false => ConditionalCountMatrix::new(d, x, &z).into(),
             };
             // Add pseudo counts. // TODO: Generalize to non-uniform distributions.
             let n = n + 1;

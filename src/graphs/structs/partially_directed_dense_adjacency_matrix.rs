@@ -826,7 +826,7 @@ where
         // Map into edges.
         let edges = adjacency_list
             .into_iter()
-            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys));
 
         Self::new(vertices, edges)
     }
@@ -930,10 +930,10 @@ where
         // Map into edges.
         let undirected_edges = undirected_adjacency_list
             .into_iter()
-            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys));
         let directed_edges = directed_adjacency_list
             .into_iter()
-            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys.into_iter()));
+            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys));
 
         Self::new_pagraph(vertices, undirected_edges, directed_edges)
     }

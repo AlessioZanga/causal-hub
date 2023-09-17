@@ -146,7 +146,6 @@ where
     /// `extend` or `par_extend` over an iterator of such pairs.
     ///
     /// The idea here is to update the cache in batch after querying it.
-    ///
     pub fn call(&self, g: &G) -> (Option<G>, f64) {
         // Get value from cache ...
         self.cache
@@ -205,7 +204,6 @@ where
     /// `extend` or `par_extend` over an iterator of such pairs.
     ///
     /// The idea here is to update the cache in batch after querying it.
-    ///
     pub fn call(&self, x: usize, z: &[usize]) -> (Option<(usize, Vec<usize>)>, f64) {
         // Compute cache key.
         let k = (x, z.to_vec());

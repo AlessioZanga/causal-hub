@@ -33,7 +33,6 @@ where
     /// # Panics
     ///
     /// Panics if the (optional) source vertex is not in the graph.
-    ///
     pub fn new(g: &'a G, x: Option<usize>) -> Self {
         // Initialize default search object.
         let mut search = Self {
