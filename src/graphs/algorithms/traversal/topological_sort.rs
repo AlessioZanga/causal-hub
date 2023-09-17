@@ -26,13 +26,6 @@ where
     /// # Panics
     ///
     /// If the graph is cyclic, this iterator panics while unrolling.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     /// [^1]: [Kahn, A. B. (1962). Topological sorting of large networks. Communications of the ACM, 5(11), 558-562.](https://scholar.google.com/scholar?q=Topological+sorting+of+large+networks)
     ///
     pub fn new(g: &'a G) -> Self {

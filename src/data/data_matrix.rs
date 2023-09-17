@@ -27,13 +27,6 @@ pub struct DiscreteDataMatrix {
 
 impl DiscreteDataMatrix {
     /// Construct a new discrete data matrix given data and states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
     where
         V: Into<String>,
@@ -66,13 +59,6 @@ impl DiscreteDataMatrix {
     }
 
     /// Gets the map of variables to their states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
@@ -83,13 +69,6 @@ impl DiscreteDataMatrix {
     /// # Panics
     ///
     /// Panics if provided states are not a superset of the existing ones.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn with_states<I, J, K, V>(mut self, states: I) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -135,13 +114,6 @@ impl DiscreteDataMatrix {
     }
 
     /// Gets the vector of variables cardinalities.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn cardinality(&self) -> &Vec<u8> {
         &self.cardinality

@@ -236,13 +236,6 @@ impl From<Format> for String {
 
 impl DOT {
     /// Set [`Layout`] engine.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn with_layout(mut self, layout: Layout) -> Self {
         // Set layout engine.
         self.layout = layout;
@@ -251,13 +244,6 @@ impl DOT {
     }
 
     /// Set output [`Format`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn with_format(mut self, format: Format) -> Self {
         // Set output format.
         self.format = format;
@@ -276,13 +262,6 @@ impl Plot for DOT {
     /// # Panics
     ///
     /// Require <a href = "https://graphviz.org/" target = "_blank">Graphviz</a> to work.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn plot<P>(self, path: P) -> Result<Self::Success, Self::Error>
     where
         P: Into<PathBuf>,

@@ -18,13 +18,6 @@ pub struct ChiSquared<'a> {
 
 impl<'a> ChiSquared<'a> {
     /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn new(d: &'a DiscreteDataMatrix) -> Self {
         Self { d, alpha: 0.05 }

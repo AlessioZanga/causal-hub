@@ -13,13 +13,6 @@ pub struct AkaikeInformationCriterion<'a, D> {
 
 impl<'a, D> AkaikeInformationCriterion<'a, D> {
     /// Constructor for AIC functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         // Initialize the log-likelihood functor.

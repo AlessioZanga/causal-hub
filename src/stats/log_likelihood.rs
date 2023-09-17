@@ -20,13 +20,6 @@ pub struct MarginalLogLikelihood<'a, D> {
 
 impl<'a, D> MarginalLogLikelihood<'a, D> {
     /// Constructor for LL functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }
@@ -94,13 +87,6 @@ pub struct ConditionalLogLikelihood<'a, D> {
 
 impl<'a, D> ConditionalLogLikelihood<'a, D> {
     /// Constructor for LL functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }
@@ -223,13 +209,6 @@ pub struct LogLikelihood<'a, D> {
 
 impl<'a, D> LogLikelihood<'a, D> {
     /// Constructor for LL functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }

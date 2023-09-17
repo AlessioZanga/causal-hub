@@ -46,65 +46,23 @@ pub trait Factor:
     type Value<'a>;
 
     /// Get the variables scope.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn scope(&self) -> Self::ScopeIter<'_>;
 
     /// Check whether a variable is in scope.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn in_scope(&self, x: &str) -> bool;
 
     /// Get reference to underlying values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn values(&self) -> &ArrayD<f64>;
 
     /// Compute the factor normalization.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn normalize(self) -> Self;
 
     /// Compute the factor marginalization.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn marginalize<'a, Z>(self, z: Z) -> Self
     where
         Z: IntoIterator<Item = &'a str>;
 
     /// Compute the factor reduction.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn reduce<'a, Z>(self, z: Z) -> Self
     where
         Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
@@ -131,13 +89,6 @@ pub struct DiscreteFactor {
 
 impl DiscreteFactor {
     /// Construct a new discrete factor given its values and states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -202,13 +153,6 @@ impl DiscreteFactor {
     }
 
     /// Get the set of variables states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
@@ -230,8 +174,8 @@ impl Add for DiscreteFactor {
     fn add(self, phi: Self) -> Self::Output {
         // Compute scope of factor sum.
         let states: FxIndexMap<_, _> = iter_set::union_by(
-            self.states.clone().into_iter(),
-            phi.states.clone().into_iter(),
+            self.states.clone(),
+            phi.states.clone(),
             |(x, _), (y, _)| x.cmp(&y),
         )
         .collect();
@@ -268,8 +212,8 @@ impl Mul for DiscreteFactor {
     fn mul(self, phi: Self) -> Self::Output {
         // Compute scope of factor product.
         let states: FxIndexMap<_, _> = iter_set::union_by(
-            self.states.clone().into_iter(),
-            phi.states.clone().into_iter(),
+            self.states.clone(),
+            phi.states.clone(),
             |(x, _), (y, _)| x.cmp(&y),
         )
         .collect();
@@ -468,13 +412,6 @@ pub struct DiscreteJPD {
 
 impl DiscreteJPD {
     /// Construct a new discrete JPD given its values and states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -492,13 +429,6 @@ impl DiscreteJPD {
     }
 
     /// Get the set of variables states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         self.phi.states()
@@ -634,13 +564,6 @@ pub struct DiscreteCPD {
 
 impl DiscreteCPD {
     /// Construct a new tabular CPD given its values and states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn new<I, J, K, V>((x, y): (K, J), z: I, values: Array2<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -670,26 +593,12 @@ impl DiscreteCPD {
     }
 
     /// Get the set of variables states.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         self.phi.states()
     }
 
     /// Get the target variable $X$ of the CPD $\mathcal(P)(X | \mathbf{Z})$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn target(&self) -> &str {
         self.x.as_str()

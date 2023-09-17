@@ -108,13 +108,6 @@ impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
 
 impl ConfusionMatrix {
     /// Construct a new confusion matrix.
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn new(c: [f64; 4]) -> Self {
         // Check that all values are positives.
@@ -127,221 +120,102 @@ impl ConfusionMatrix {
     }
 
     /// Negative (N = TN + FP).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn negative(&self) -> f64 {
         self.true_negative() + self.false_positive()
     }
 
     /// True negative (TN).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn true_negative(&self) -> f64 {
         self.c[0]
     }
 
     /// False negative (FN).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_negative(&self) -> f64 {
         self.c[2]
     }
 
     /// True negative rate, i.e. specificity (TNR = TN / N).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn true_negative_rate(&self) -> f64 {
         self.true_negative() / self.negative()
     }
 
     /// False negative rate, i.e. miss-rate (FNR = FN / P).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_negative_rate(&self) -> f64 {
         self.false_negative() / self.positive()
     }
 
     /// Negative predictive values (NPV = TN / (TN + FN)).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn negative_predictive_value(&self) -> f64 {
         self.true_negative() / (self.true_negative() + self.false_negative())
     }
 
     /// False omission rate (FOR = FN / (FN + TN)).
-    ///   
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_omission_rate(&self) -> f64 {
         self.false_negative() / (self.false_negative() + self.true_negative())
     }
 
     /// Positive (P = TP + FN).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn positive(&self) -> f64 {
         self.true_positive() + self.false_negative()
     }
 
     /// True positive (TP).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn true_positive(&self) -> f64 {
         self.c[3]
     }
 
     /// False positive (FP).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_positive(&self) -> f64 {
         self.c[1]
     }
 
     /// True positive rate, i.e. sensitivity, recall, hit-rate (TPR = TP / P).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn true_positive_rate(&self) -> f64 {
         self.true_positive() / self.positive()
     }
 
     /// False positive rate, i.e. fall-out (FPR = FN / N).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_positive_rate(&self) -> f64 {
         self.false_positive() / self.positive()
     }
 
     /// Positive predictive value, i.e. precision (PPV = TP / (TP + FP)).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn positive_predictive_value(&self) -> f64 {
         self.true_positive() / (self.true_positive() + self.false_positive())
     }
 
     /// False discovery rate (FDR = FP / (FP + TP)).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn false_discovery_rate(&self) -> f64 {
         self.false_positive() / (self.false_positive() + self.true_positive())
     }
 
     /// Accuracy (A = (TP + TN) / (P + N)).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn accuracy(&self) -> f64 {
         (self.true_positive() + self.true_negative()) / (self.positive() + self.negative())
     }
 
     /// Balanced accuracy (BA = (TPR + TNR) / 2).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn balanced_accuracy(&self) -> f64 {
         (self.true_positive_rate() + self.true_negative_rate()) / 2.
     }
 
     /// F1-Score (F1 = (2 * TP) / (2 * TP + FP + FN)).
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn f1_score(&self) -> f64 {
         (2. * self.true_positive())

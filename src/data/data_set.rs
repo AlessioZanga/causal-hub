@@ -17,33 +17,12 @@ pub trait DataSet:
         Self: 'a;
 
     /// Get the set of variables labels.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn labels(&self) -> Self::LabelsIter<'_>;
 
     /// Get reference to underlying values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn values(&self) -> &Self::Data;
 
     /// Get sample size.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn sample_size(&self) -> usize;
 
     /// Draw `n` samples without replacement.
@@ -51,22 +30,8 @@ pub trait DataSet:
     /// # Panics
     ///
     /// Panics if `n` is higher than the total number of samples in the data set.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 
     /// Draw `n` samples with replacement.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self;
 }

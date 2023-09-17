@@ -11,13 +11,6 @@ pub struct PartialCorrelation {
 
 impl PartialCorrelation {
     /// Compute partial correlation of $X$ and $Y$ given $\mathbf{Z}$.
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn call(&self, x: usize, y: usize, z: &[usize]) -> f64 {
         // Get size of the sub-covariance matrix.
         let n = 2 + z.len();

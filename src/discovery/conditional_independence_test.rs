@@ -10,23 +10,9 @@ pub trait ConditionalIndependenceTest<'a>: Clone + Debug + Sync {
         Self: 'b;
 
     /// Compute (degree-of-freedom, statistic, p-value) of $X \mathrlap{\thinspace\perp}{\perp} \thinspace Y \mid \mathbf{Z}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64);
 
     /// Returns `true` whether $H_0: X \mathrlap{\thinspace\perp}{\perp}_{\mathcal{P}} \thinspace Y \mid \mathbf{Z}$ is not rejected.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 
     /// Set significance level $\alpha$.
@@ -34,13 +20,6 @@ pub trait ConditionalIndependenceTest<'a>: Clone + Debug + Sync {
     /// # Panics
     ///
     /// If $\alpha$ is not in the (0, 1) interval.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn with_significance_level(self, alpha: f64) -> Self;
 
     /// Returns data labels

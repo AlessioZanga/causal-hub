@@ -20,13 +20,6 @@ impl CorrelationMatrix {
     ///
     /// The matrix must be squared, symmetric, diagonal is +1 and
     /// all other values are in the [-1, +1] interval.
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub fn new(rho: Array2<f64>) -> Self {
         // Assert Rho is square ...

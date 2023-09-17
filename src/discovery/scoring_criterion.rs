@@ -22,23 +22,9 @@ pub mod score_types {
 /// Scoring criterion trait.
 pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
     /// Computes the score value for the given data set $\mathbf{D}$ and graph $\mathcal{G}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn call(&self, g: &G) -> f64;
 
     /// Returns the maximum in-degree that can be reached while increasing the score.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         None
@@ -48,23 +34,9 @@ pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
 /// Decomposable scoring criterion trait.
 pub trait DecomposableScoringCriterion<D, G>: Clone + Debug + Sync {
     /// Computes the score value for the given data set $\mathbf{D}$, vertex $X$ and parents $\mathbf{Z}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     fn call(&self, x: usize, z: &[usize]) -> f64;
 
     /// Returns the maximum in-degree that can be reached while increasing the score.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         None
@@ -103,13 +75,6 @@ pub struct ScoringCriterionCache<'a, D, G, S, T, K> {
 
 impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K> {
     /// Construct a new scoring criterion cache wrapper given the scoring criterion $\mathcal{S}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn new(scoring_criterion: &'a S) -> Self {
         Self {
             _d: PhantomData,
@@ -181,13 +146,6 @@ where
     /// `extend` or `par_extend` over an iterator of such pairs.
     ///
     /// The idea here is to update the cache in batch after querying it.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn call(&self, g: &G) -> (Option<G>, f64) {
         // Get value from cache ...
         self.cache
@@ -246,13 +204,6 @@ where
     /// `extend` or `par_extend` over an iterator of such pairs.
     ///
     /// The idea here is to update the cache in batch after querying it.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn call(&self, x: usize, z: &[usize]) -> (Option<(usize, Vec<usize>)>, f64) {
         // Compute cache key.
         let k = (x, z.to_vec());

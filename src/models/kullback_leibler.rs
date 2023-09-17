@@ -13,13 +13,6 @@ pub struct KullbackLeiblerDivergence<'a, P, Q> {
 
 impl<'a, P, Q> KullbackLeiblerDivergence<'a, P, Q> {
     /// Construct a new Kullback-Leibler Divergence functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     #[inline]
     pub const fn new(p: &'a P, q: &'a Q) -> Self {
         Self { p, q }
@@ -28,13 +21,6 @@ impl<'a, P, Q> KullbackLeiblerDivergence<'a, P, Q> {
 
 impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesianNetwork> {
     /// Compute the Kullback-Leibler divergence given two discrete Bayesian networks.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn call(&self) -> f64 {
         // Assert underlying graphs are the same.
         assert_eq!(

@@ -23,13 +23,6 @@ pub struct VariableElimination<'a, M, const PARALLEL: bool> {
 
 impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL> {
     /// Construct a new variable elimination functor.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub const fn new(model: &'a M) -> Self {
         Self { model }
     }
@@ -137,13 +130,6 @@ where
     /// # Panics
     ///
     /// Panics if $\mathbf{X}$ is not a subset of the scope of $\pmb{\Phi}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// todo!() // FIXME:
-    /// ```
-    ///
     pub fn call<'b, X>(&self, x: X) -> <M::Parameter as Factor>::Phi
     where
         X: IntoIterator<Item = &'b str>,
