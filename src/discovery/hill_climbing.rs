@@ -72,8 +72,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -111,8 +110,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -152,8 +150,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -183,8 +180,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -214,8 +210,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -661,8 +656,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -820,8 +814,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use causal_hub::prelude::*;
-    /// use polars::prelude::*;
+    /// use causal_hub::{prelude::*, polars::prelude::*};
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();

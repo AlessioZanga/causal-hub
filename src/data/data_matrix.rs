@@ -430,6 +430,20 @@ pub struct ZeroInflatedNegativeBinomialDataMatrix {
 /// Alias for `ZeroInflatedNegativeBinomialDataMatrix`.
 pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
 
+impl ZINBDataMatrix {
+    /// Construct a new zero-inflated negative binomial data matrix given data and labels.
+    pub fn new<V, I>(labels: I, values: Array2<f64>) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Get variables as set of strings.
+        let labels = labels.into_iter().map_into().collect();
+
+        Self { labels, values }
+    }
+}
+
 impl From<DataFrame> for ZINBDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.

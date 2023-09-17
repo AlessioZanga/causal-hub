@@ -368,3 +368,65 @@ mod gaussian {
         assert_eq!(pred_g, true_g);
     }
 }
+
+#[cfg(test)]
+mod zinb {
+    use causal_hub::prelude::*;
+    use polars::prelude::*;
+
+    #[test]
+    fn call() {
+        // Set true graph.
+        let true_g = DiGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
+
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/zinb.csv")
+            .unwrap()
+            .has_header(true)
+            .with_dtypes_slice(Some(&vec![DataType::Float64; 5]))
+            .finish()
+            .unwrap();
+        let d = ZINBDataMatrix::from(d);
+
+        // Initialize empty prior knowledge.
+        let k = FR::new(d.labels(), [], []);
+
+        // Initialize score functor.
+        let s = BIC::new(&d);
+
+        // Initialize discovery functor.
+        let hc = HC::new(&s);
+        // Perform discovery.
+        let pred_g: DiGraph = hc.call(&d, &k);
+
+        assert_eq!(pred_g, true_g);
+    }
+
+    #[test]
+    fn par_call() {
+        // Set true graph.
+        let true_g = DiGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
+
+        // Load data set.
+        let d = CsvReader::from_path("./tests/assets/zinb.csv")
+            .unwrap()
+            .has_header(true)
+            .with_dtypes_slice(Some(&vec![DataType::Float64; 5]))
+            .finish()
+            .unwrap();
+        let d = ZINBDataMatrix::from(d);
+
+        // Initialize empty prior knowledge.
+        let k = FR::new(d.labels(), [], []);
+
+        // Initialize score functor.
+        let s = BIC::new(&d);
+
+        // Initialize discovery functor.
+        let hc = ParallelHC::new(&s);
+        // Perform discovery.
+        let pred_g: DiGraph = hc.call(&d, &k);
+
+        assert_eq!(pred_g, true_g);
+    }
+}
