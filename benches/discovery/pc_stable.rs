@@ -12,7 +12,7 @@ pub fn cancer(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -33,7 +33,7 @@ pub fn par_cancer(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -54,7 +54,7 @@ pub fn asia(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -75,7 +75,7 @@ pub fn par_asia(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -96,7 +96,7 @@ pub fn survey(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -117,7 +117,7 @@ pub fn par_survey(c: &mut Criterion) {
         .unwrap()
         .finish()
         .unwrap();
-    let d = DiscreteDataMatrix::from(d);
+    let d = CategoricalDataMatrix::from(d);
 
     // Create ChiSquared conditional independence test
     let test = ChiSquared::new(&d).with_significance_level(ALPHA);

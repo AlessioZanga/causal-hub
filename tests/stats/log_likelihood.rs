@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use approx::*;
     use causal_hub::prelude::*;
     use polars::prelude::*;
@@ -7,7 +7,8 @@ mod discrete {
     #[test]
     fn log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -15,7 +16,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -47,7 +48,8 @@ mod discrete {
     #[test]
     fn par_log_likelihood() {
         // Read test database from file.
-        let data = std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
+        let data =
+            std::fs::read_to_string("./tests/assets/log_likelihood/discrete.json").unwrap();
         let data: Vec<(String, Vec<String>, f64)> = serde_json::from_str(&data).unwrap();
 
         // Load the data set from file.
@@ -55,7 +57,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -102,7 +104,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -142,7 +144,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());

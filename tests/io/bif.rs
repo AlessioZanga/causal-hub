@@ -18,7 +18,7 @@ mod parser {
                 bif.unwrap()
             })
             .for_each(|bif| {
-                let _: DiscreteBayesianNetwork = bif.into();
+                let _: CategoricalBayesianNetwork = bif.into();
             });
     }
 

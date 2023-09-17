@@ -80,15 +80,15 @@ pub trait ConditionalProbabilityDistribution: Factor {
     fn from_factor(x: &str, phi: Self::Phi) -> Self;
 }
 
-/// Discrete Factor $\phi(\mathbf{X})$.
+/// Categorical Factor $\phi(\mathbf{X})$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DiscreteFactor {
+pub struct CategoricalFactor {
     states: FxIndexMap<String, FxIndexSet<String>>,
     values: ArrayD<f64>,
 }
 
-impl DiscreteFactor {
-    /// Construct a new discrete factor given its values and states.
+impl CategoricalFactor {
+    /// Construct a new categorical factor given its values and states.
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -159,7 +159,7 @@ impl DiscreteFactor {
     }
 }
 
-impl Display for DiscreteFactor {
+impl Display for CategoricalFactor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Convert to table.
         let table: Table = self.clone().into();
@@ -168,7 +168,7 @@ impl Display for DiscreteFactor {
     }
 }
 
-impl Add for DiscreteFactor {
+impl Add for CategoricalFactor {
     type Output = Self;
 
     fn add(self, phi: Self) -> Self::Output {
@@ -205,7 +205,7 @@ impl Add for DiscreteFactor {
     }
 }
 
-impl Mul for DiscreteFactor {
+impl Mul for CategoricalFactor {
     type Output = Self;
 
     fn mul(self, phi: Self) -> Self::Output {
@@ -242,7 +242,7 @@ impl Mul for DiscreteFactor {
     }
 }
 
-impl Div for DiscreteFactor {
+impl Div for CategoricalFactor {
     type Output = Self;
 
     fn div(self, phi: Self) -> Self::Output {
@@ -274,16 +274,16 @@ impl Div for DiscreteFactor {
     }
 }
 
-impl PartialEq for DiscreteFactor {
+impl PartialEq for CategoricalFactor {
     fn eq(&self, other: &Self) -> bool {
         self.states == other.states && self.values.relative_eq(&other.values, 1e-8, 1e-8)
     }
 }
 
-impl Eq for DiscreteFactor {}
+impl Eq for CategoricalFactor {}
 
-impl From<DiscreteFactor> for Table {
-    fn from(other: DiscreteFactor) -> Table {
+impl From<CategoricalFactor> for Table {
+    fn from(other: CategoricalFactor) -> Table {
         // Create print table.
         let mut table = Table::new();
         // Add header to table.
@@ -299,7 +299,7 @@ impl From<DiscreteFactor> for Table {
     }
 }
 
-impl Factor for DiscreteFactor {
+impl Factor for CategoricalFactor {
     type Phi = Self;
 
     type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
@@ -401,15 +401,15 @@ impl Factor for DiscreteFactor {
     }
 }
 
-/// Discrete Joint Probability Distribution $\mathcal{P}(\mathbf{X})$ .
+/// Categorical Joint Probability Distribution $\mathcal{P}(\mathbf{X})$ .
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DiscreteJPD {
+pub struct CategoricalJPD {
     /// Underlying factor.
-    phi: DiscreteFactor,
+    phi: CategoricalFactor,
 }
 
-impl DiscreteJPD {
-    /// Construct a new discrete JPD given its values and states.
+impl CategoricalJPD {
+    /// Construct a new categorical JPD given its values and states.
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -421,7 +421,7 @@ impl DiscreteJPD {
         // Check all values are normalized.
         assert!(values.iter().all(|x| (0. ..=1.).contains(x)));
         // Construct underlying factor.
-        let phi = DiscreteFactor::new(states, values);
+        let phi = CategoricalFactor::new(states, values);
 
         Self { phi }
     }
@@ -433,13 +433,13 @@ impl DiscreteJPD {
     }
 }
 
-impl Display for DiscreteJPD {
+impl Display for CategoricalJPD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.phi, f)
     }
 }
 
-impl Add for DiscreteJPD {
+impl Add for CategoricalJPD {
     type Output = Self;
 
     #[inline]
@@ -451,7 +451,7 @@ impl Add for DiscreteJPD {
     }
 }
 
-impl Mul for DiscreteJPD {
+impl Mul for CategoricalJPD {
     type Output = Self;
 
     #[inline]
@@ -463,7 +463,7 @@ impl Mul for DiscreteJPD {
     }
 }
 
-impl Div for DiscreteJPD {
+impl Div for CategoricalJPD {
     type Output = Self;
 
     #[inline]
@@ -475,21 +475,21 @@ impl Div for DiscreteJPD {
     }
 }
 
-impl From<DiscreteJPD> for DiscreteFactor {
+impl From<CategoricalJPD> for CategoricalFactor {
     #[inline]
-    fn from(other: DiscreteJPD) -> Self {
+    fn from(other: CategoricalJPD) -> Self {
         other.phi
     }
 }
 
-impl From<DiscreteJPD> for Table {
-    fn from(other: DiscreteJPD) -> Table {
+impl From<CategoricalJPD> for Table {
+    fn from(other: CategoricalJPD) -> Table {
         other.phi.into()
     }
 }
 
-impl Factor for DiscreteJPD {
-    type Phi = DiscreteFactor;
+impl Factor for CategoricalJPD {
+    type Phi = CategoricalFactor;
 
     type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
@@ -541,7 +541,7 @@ impl Factor for DiscreteJPD {
     }
 }
 
-impl JointProbabilityDistribution for DiscreteJPD {
+impl JointProbabilityDistribution for CategoricalJPD {
     #[inline]
     fn from_factor(phi: Self::Phi) -> Self {
         // Normalize factor.
@@ -551,16 +551,16 @@ impl JointProbabilityDistribution for DiscreteJPD {
     }
 }
 
-/// Discrete Conditional Probability Distribution $\mathcal{P}(X \mid \mathbf{Z})$ .
+/// Categorical Conditional Probability Distribution $\mathcal{P}(X \mid \mathbf{Z})$ .
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DiscreteCPD {
+pub struct CategoricalCPD {
     /// Target variable,
     x: String,
     /// Underlying factor.
-    phi: DiscreteFactor,
+    phi: CategoricalFactor,
 }
 
-impl DiscreteCPD {
+impl CategoricalCPD {
     /// Construct a new tabular CPD given its values and states.
     pub fn new<I, J, K, V>((x, y): (K, J), z: I, values: Array2<f64>) -> Self
     where
@@ -585,7 +585,7 @@ impl DiscreteCPD {
         // Align values axis [Z, X] to [X, Z] as states.
         let values = values.reversed_axes();
         // Construct underlying factor.
-        let phi = DiscreteFactor::new(states, values);
+        let phi = CategoricalFactor::new(states, values);
 
         Self { x, phi }
     }
@@ -603,7 +603,7 @@ impl DiscreteCPD {
     }
 }
 
-impl Display for DiscreteCPD {
+impl Display for CategoricalCPD {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Convert into table.
         let table: Table = self.clone().into();
@@ -612,7 +612,7 @@ impl Display for DiscreteCPD {
     }
 }
 
-impl Add for DiscreteCPD {
+impl Add for CategoricalCPD {
     type Output = Self;
 
     #[inline]
@@ -624,7 +624,7 @@ impl Add for DiscreteCPD {
     }
 }
 
-impl Mul for DiscreteCPD {
+impl Mul for CategoricalCPD {
     type Output = Self;
 
     #[inline]
@@ -636,7 +636,7 @@ impl Mul for DiscreteCPD {
     }
 }
 
-impl Div for DiscreteCPD {
+impl Div for CategoricalCPD {
     type Output = Self;
 
     #[inline]
@@ -648,15 +648,15 @@ impl Div for DiscreteCPD {
     }
 }
 
-impl From<DiscreteCPD> for DiscreteFactor {
+impl From<CategoricalCPD> for CategoricalFactor {
     #[inline]
-    fn from(other: DiscreteCPD) -> Self {
+    fn from(other: CategoricalCPD) -> Self {
         other.phi
     }
 }
 
-impl From<DiscreteCPD> for Table {
-    fn from(other: DiscreteCPD) -> Table {
+impl From<CategoricalCPD> for Table {
+    fn from(other: CategoricalCPD) -> Table {
         // Create print table.
         let mut table = Table::new();
         // Get target, states and values.
@@ -711,8 +711,8 @@ impl From<DiscreteCPD> for Table {
     }
 }
 
-impl Factor for DiscreteCPD {
-    type Phi = DiscreteFactor;
+impl Factor for CategoricalCPD {
+    type Phi = CategoricalFactor;
 
     type ScopeIter<'a> = Map<Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
@@ -778,7 +778,7 @@ impl Factor for DiscreteCPD {
     }
 }
 
-impl ConditionalProbabilityDistribution for DiscreteCPD {
+impl ConditionalProbabilityDistribution for CategoricalCPD {
     #[inline]
     fn from_factor(x: &str, phi: Self::Phi) -> Self {
         // Compute P(X | Z) as  P(X U Z) / P(Z).

@@ -1,4 +1,4 @@
-use super::DiscreteBayesianNetwork;
+use super::CategoricalBayesianNetwork;
 use crate::{
     prelude::{BaseGraph, Factor, ProbabilisticGraphicalModel},
     utils::nan_to_zero,
@@ -19,8 +19,8 @@ impl<'a, P, Q> KullbackLeiblerDivergence<'a, P, Q> {
     }
 }
 
-impl<'a> KullbackLeiblerDivergence<'a, DiscreteBayesianNetwork, DiscreteBayesianNetwork> {
-    /// Compute the Kullback-Leibler divergence given two discrete Bayesian networks.
+impl<'a> KullbackLeiblerDivergence<'a, CategoricalBayesianNetwork, CategoricalBayesianNetwork> {
+    /// Compute the Kullback-Leibler divergence given two categorical Bayesian networks.
     pub fn call(&self) -> f64 {
         // Assert underlying graphs are the same.
         assert_eq!(

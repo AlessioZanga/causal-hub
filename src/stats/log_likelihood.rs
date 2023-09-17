@@ -5,7 +5,9 @@ use ndarray_linalg::least_squares::*;
 use rayon::prelude::*;
 
 use crate::{
-    data::{ConditionalCountMatrix, ContinuousDataMatrix, DiscreteDataMatrix, MarginalCountMatrix},
+    data::{
+        CategoricalDataMatrix, ConditionalCountMatrix, GaussianDataMatrix, MarginalCountMatrix,
+    },
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     prelude::DataSet,
@@ -26,9 +28,9 @@ impl<'a, D> MarginalLogLikelihood<'a, D> {
     }
 }
 
-/* Discrete LL */
+/* Categorical LL */
 
-impl<'a> MarginalLogLikelihood<'a, DiscreteDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
     /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
@@ -53,7 +55,7 @@ impl<'a> MarginalLogLikelihood<'a, DiscreteDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> MarginalLogLikelihood<'a, ContinuousDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
     /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
@@ -93,9 +95,9 @@ impl<'a, D> ConditionalLogLikelihood<'a, D> {
     }
 }
 
-/* Discrete LL */
+/* Categorical LL */
 
-impl<'a> ConditionalLogLikelihood<'a, DiscreteDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
     /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -154,7 +156,7 @@ impl<'a> ConditionalLogLikelihood<'a, DiscreteDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> ConditionalLogLikelihood<'a, ContinuousDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
     /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -215,8 +217,8 @@ impl<'a, D> LogLikelihood<'a, D> {
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<'a, ContinuousDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
+    for LogLikelihood<'a, GaussianDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -229,8 +231,8 @@ where
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<'a, DiscreteDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for LogLikelihood<'a, CategoricalDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {

@@ -1,5 +1,5 @@
 use crate::{
-    data::{ContinuousDataMatrix, DataSet, DiscreteDataMatrix},
+    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
@@ -22,9 +22,9 @@ impl<'a, D> BayesianInformationCriterion<'a, D> {
     }
 }
 
-/* Implement BIC for discrete data_set. */
-impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for BayesianInformationCriterion<'a, DiscreteDataMatrix>
+/* Implement BIC for categorical data_set. */
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for BayesianInformationCriterion<'a, CategoricalDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -63,8 +63,8 @@ where
 }
 
 /* Implement BIC for Gaussian data_set. */
-impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for BayesianInformationCriterion<'a, ContinuousDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
+    for BayesianInformationCriterion<'a, GaussianDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {

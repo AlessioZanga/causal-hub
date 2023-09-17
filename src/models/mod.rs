@@ -1,8 +1,8 @@
 mod bayesian_network;
 pub use bayesian_network::*;
 
-/// Alias for discrete bayesian network.
-pub type DiscreteBN = DiscreteBayesianNetwork;
+/// Alias for categorical bayesian network.
+pub type CategoricalBN = CategoricalBayesianNetwork;
 
 mod factor;
 pub use factor::*;

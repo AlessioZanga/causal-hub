@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use causal_hub::prelude::*;
     use polars::prelude::*;
 
@@ -26,7 +26,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(d.labels(), [], []);
@@ -65,7 +65,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(d.labels(), [], []);
@@ -104,7 +104,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(d.labels(), [], []);
@@ -231,7 +231,7 @@ mod gaussian {
             .unwrap()
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(d.labels(), [], []);
@@ -352,7 +352,7 @@ mod gaussian {
             .unwrap()
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(d.labels(), [], []);

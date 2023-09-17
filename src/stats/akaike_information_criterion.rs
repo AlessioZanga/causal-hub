@@ -1,5 +1,5 @@
 use crate::{
-    data::{ContinuousDataMatrix, DiscreteDataMatrix},
+    data::{CategoricalDataMatrix, GaussianDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
@@ -22,9 +22,9 @@ impl<'a, D> AkaikeInformationCriterion<'a, D> {
     }
 }
 
-/* Implement AIC for discrete data. */
-impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for AkaikeInformationCriterion<'a, DiscreteDataMatrix>
+/* Implement AIC for categorical data. */
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for AkaikeInformationCriterion<'a, CategoricalDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -50,8 +50,8 @@ where
 }
 
 /* Implement AIC for Gaussian data. */
-impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for AkaikeInformationCriterion<'a, ContinuousDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
+    for AkaikeInformationCriterion<'a, GaussianDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {

@@ -7,15 +7,15 @@ use pest_derive::Parser;
 
 use crate::{
     io::File,
-    models::DiscreteCPD,
-    prelude::{DiscreteBayesianNetwork, Factor, FxIndexMap, FxIndexSet},
+    models::CategoricalCPD,
+    prelude::{CategoricalBayesianNetwork, Factor, FxIndexMap, FxIndexSet},
 };
 
 #[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/bif/grammar.pest"]
 pub struct BIF {
     /// Parameters. TODO: Generalize to the continuous case.
-    pub theta: Vec<DiscreteCPD>,
+    pub theta: Vec<CategoricalCPD>,
 }
 
 impl<'a> From<Pairs<'a, Rule>> for BIF {
@@ -52,10 +52,10 @@ impl<'a> From<Pairs<'a, Rule>> for BIF {
                     let mut i = content.into_inner();
 
                     // Assert rule match.
-                    let discrete = i.next().unwrap();
-                    assert!(matches!(discrete.as_rule(), Rule::variable_discrete));
+                    let categorical = i.next().unwrap();
+                    assert!(matches!(categorical.as_rule(), Rule::variable_discrete));
                     // Match inner rules.
-                    let mut i = discrete.into_inner();
+                    let mut i = categorical.into_inner();
 
                     // Assert rule match.
                     let states = i.next().unwrap();
@@ -137,7 +137,7 @@ impl<'a> From<Pairs<'a, Rule>> for BIF {
                 // Normalized values.
                 let values = &values / values.sum_axis(Axis(1)).insert_axis(Axis(1));
                 // Construct associated parameter.
-                DiscreteCPD::new((x, y), z, values)
+                CategoricalCPD::new((x, y), z, values)
             })
             .collect();
 
@@ -270,8 +270,8 @@ impl File for BIF {
     }
 }
 
-impl From<DiscreteBayesianNetwork> for BIF {
-    fn from(b: DiscreteBayesianNetwork) -> Self {
+impl From<CategoricalBayesianNetwork> for BIF {
+    fn from(b: CategoricalBayesianNetwork) -> Self {
         // Get parameters.
         let (_, theta) = b.into();
         // Map to vector of parameters.

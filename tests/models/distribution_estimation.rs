@@ -8,12 +8,13 @@ mod variable_elimination {
     #[test]
     fn call() {
         // Load data from file.
-        let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
-            .expect("Failed to read file to string");
+        let text =
+            std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
+                .expect("Failed to read file to string");
         let data: Vec<(&str, Vec<&str>, Vec<usize>, Vec<Option<f64>>)> =
             serde_json::from_str(&text).expect("Failed to deserialize string to struct");
         // Initialize Bayesian network.
-        let b: DiscreteBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
+        let b: CategoricalBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Construct estimator.
         let estimator = VE::new(&b);
@@ -28,7 +29,7 @@ mod variable_elimination {
             // Construct factor values.
             let true_query = ArrayD::from_shape_vec(shape, values).unwrap();
             // Perform the specified query.
-            let pred_query: DiscreteFactor = match t {
+            let pred_query: CategoricalFactor = match t {
                 "marginal" => estimator.marginal(x[0]).into(),
                 "joint" => estimator.joint(x).into(),
                 "conditional" => estimator.conditional(x[0], x.into_iter().skip(1)).into(),
@@ -46,12 +47,13 @@ mod variable_elimination {
     #[test]
     fn par_call() {
         // Load data from file.
-        let text = std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
-            .expect("Failed to read file to string");
+        let text =
+            std::fs::read_to_string("./tests/assets/distribution_estimation/discrete.json")
+                .expect("Failed to read file to string");
         let data: Vec<(&str, Vec<&str>, Vec<usize>, Vec<Option<f64>>)> =
             serde_json::from_str(&text).expect("Failed to deserialize string to struct");
         // Initialize Bayesian network.
-        let b: DiscreteBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
+        let b: CategoricalBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Construct estimator.
         let estimator = ParallelVE::new(&b);
@@ -66,7 +68,7 @@ mod variable_elimination {
             // Construct factor values.
             let true_query = ArrayD::from_shape_vec(shape, values).unwrap();
             // Perform the specified query.
-            let pred_query: DiscreteFactor = match t {
+            let pred_query: CategoricalFactor = match t {
                 "marginal" => estimator.marginal(x[0]).into(),
                 "joint" => estimator.joint(x).into(),
                 "conditional" => estimator.conditional(x[0], x.into_iter().skip(1)).into(),

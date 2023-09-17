@@ -8,14 +8,15 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    ConditionalProbabilityDistribution, DiscreteCPD, DiscreteJPD, Factor,
+    CategoricalCPD, CategoricalJPD, ConditionalProbabilityDistribution, Factor,
     JointProbabilityDistribution,
 };
 use crate::{
     graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
     io::BIF,
     prelude::{
-        algorithms::traversal::TopologicalSort, BaseGraph, DataSet, DiscreteDataMatrix, PathGraph,
+        algorithms::traversal::TopologicalSort, BaseGraph, CategoricalDataMatrix, DataSet,
+        PathGraph,
     },
     types::FxIndexMap,
     Pa, L, V,
@@ -68,14 +69,14 @@ pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
         I: IntoIterator<Item = Self::Parameter>;
 }
 
-/// Discrete Bayesian Network $\mathcal{B}$.
+/// Categorical Bayesian Network $\mathcal{B}$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DiscreteBayesianNetwork {
+pub struct CategoricalBayesianNetwork {
     graph: DirectedDenseAdjacencyMatrixGraph,
-    theta: FxIndexMap<String, DiscreteCPD>,
+    theta: FxIndexMap<String, CategoricalCPD>,
 }
 
-impl Display for DiscreteBayesianNetwork {
+impl Display for CategoricalBayesianNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Iterate over the CPDs.
         for t in self.theta.values() {
@@ -87,27 +88,27 @@ impl Display for DiscreteBayesianNetwork {
     }
 }
 
-impl From<DiscreteBayesianNetwork>
+impl From<CategoricalBayesianNetwork>
     for (
         DirectedDenseAdjacencyMatrixGraph,
-        FxIndexMap<String, DiscreteCPD>,
+        FxIndexMap<String, CategoricalCPD>,
     )
 {
-    fn from(b: DiscreteBayesianNetwork) -> Self {
+    fn from(b: CategoricalBayesianNetwork) -> Self {
         (b.graph, b.theta)
     }
 }
 
-impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
-    type Data = DiscreteDataMatrix;
+impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
+    type Data = CategoricalDataMatrix;
 
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 
-    type Parameter = DiscreteCPD;
+    type Parameter = CategoricalCPD;
 
-    type JPD = DiscreteJPD;
+    type JPD = CategoricalJPD;
 
-    type CPD = DiscreteCPD;
+    type CPD = CategoricalCPD;
 
     #[inline]
     fn graph(&self) -> &Self::Graph {
@@ -201,15 +202,15 @@ impl ProbabilisticGraphicalModel for DiscreteBayesianNetwork {
     }
 }
 
-impl PartialEq for DiscreteBayesianNetwork {
+impl PartialEq for CategoricalBayesianNetwork {
     fn eq(&self, other: &Self) -> bool {
         self.graph == other.graph && self.theta == other.theta
     }
 }
 
-impl Eq for DiscreteBayesianNetwork {}
+impl Eq for CategoricalBayesianNetwork {}
 
-impl BayesianNetwork for DiscreteBayesianNetwork {
+impl BayesianNetwork for CategoricalBayesianNetwork {
     fn new<I>(graph: Self::Graph, theta: I) -> Self
     where
         I: IntoIterator<Item = Self::Parameter>,
@@ -271,7 +272,7 @@ impl BayesianNetwork for DiscreteBayesianNetwork {
     }
 }
 
-impl From<BIF> for DiscreteBayesianNetwork {
+impl From<BIF> for CategoricalBayesianNetwork {
     fn from(bif: BIF) -> Self {
         Self::with_parameters(bif.theta)
     }

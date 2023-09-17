@@ -11,11 +11,11 @@ pub mod sample {
         // Initialize random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load reference model.
-        let model: DiscreteBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
+        let model: CategoricalBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
             .unwrap()
             .into();
         // Load reference model.
-        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 10000);
+        let data_set: CategoricalDataMatrix = model.sample(&mut rng, 10000);
 
         // Repeat for different sample sizes.
         for sample_size in [100, 1_000, 10_000].iter() {
@@ -56,11 +56,11 @@ pub mod sample_with_replacement {
         // Initialize random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load reference model.
-        let model: DiscreteBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
+        let model: CategoricalBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
             .unwrap()
             .into();
         // Load reference model.
-        let data_set: DiscreteDataMatrix = model.sample(&mut rng, 10000);
+        let data_set: CategoricalDataMatrix = model.sample(&mut rng, 10000);
 
         // Repeat for different sample sizes.
         for sample_size in [100, 1_000, 10_000].iter() {

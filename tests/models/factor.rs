@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod discrete_factor {
+mod categorical_factor {
     use approx::*;
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
@@ -7,7 +7,7 @@ mod discrete_factor {
     #[test]
     fn display() {
         // Initialize factor.
-        let phi = DiscreteFactor::new(
+        let phi = CategoricalFactor::new(
             [
                 ("A", vec!["a0", "a1"]),
                 ("B", vec!["b0", "b1"]),
@@ -79,11 +79,11 @@ mod discrete_factor {
     #[test]
     fn add() {
         // Initialize factors.
-        let lhs = DiscreteFactor::new(
+        let lhs = CategoricalFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
         );
-        let rhs = DiscreteFactor::new(
+        let rhs = CategoricalFactor::new(
             [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
         );
@@ -106,11 +106,11 @@ mod discrete_factor {
     #[test]
     fn mul() {
         // Initialize factors.
-        let lhs = DiscreteFactor::new(
+        let lhs = CategoricalFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.8, 0.1, 0., 0.3, 0.9],
         );
-        let rhs = DiscreteFactor::new(
+        let rhs = CategoricalFactor::new(
             [("B", vec!["b1", "b2"]), ("C", vec!["c1", "c2"])],
             array![0.5, 0.7, 0.1, 0.2],
         );
@@ -133,11 +133,11 @@ mod discrete_factor {
     #[test]
     fn div() {
         // Initialize factors.
-        let lhs = DiscreteFactor::new(
+        let lhs = CategoricalFactor::new(
             [("A", vec!["a1", "a2", "a3"]), ("B", vec!["b1", "b2"])],
             array![0.5, 0.2, 0., 0., 0.3, 0.45],
         );
-        let rhs = DiscreteFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
+        let rhs = CategoricalFactor::new([("A", vec!["a1", "a2", "a3"])], array![0.8, 0., 0.6]);
         // Compute factor division.
         let out = lhs / rhs;
         // Assert labels and states of factor division.
@@ -152,7 +152,7 @@ mod discrete_factor {
     #[test]
     fn normalize() {
         // Initialize factor.
-        let phi = DiscreteFactor::new(
+        let phi = CategoricalFactor::new(
             [
                 ("A", vec!["a0", "a1"]),
                 ("B", vec!["b0", "b1"]),
@@ -194,7 +194,7 @@ mod discrete_factor {
     #[test]
     fn marginalize() {
         // Initialize factor.
-        let phi = DiscreteFactor::new(
+        let phi = CategoricalFactor::new(
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),
@@ -212,7 +212,7 @@ mod discrete_factor {
     #[test]
     fn reduce() {
         // Initialize factor.
-        let phi = DiscreteFactor::new(
+        let phi = CategoricalFactor::new(
             [
                 ("A", vec!["a1", "a2", "a3"]),
                 ("B", vec!["b1", "b2"]),
@@ -228,7 +228,7 @@ mod discrete_factor {
     }
 }
 
-mod discrete_cpd {
+mod categorical_cpd {
     use approx::*;
     use causal_hub::prelude::*;
     use ndarray::prelude::*;
@@ -236,7 +236,7 @@ mod discrete_cpd {
     #[test]
     fn display() {
         // Initialize CPD.
-        let cpd = DiscreteCPD::new(
+        let cpd = CategoricalCPD::new(
             ("Grade", vec!["g0", "g1", "g2"]),
             [
                 ("Difficulty", vec!["d0", "d1"]),
@@ -273,7 +273,7 @@ mod discrete_cpd {
     #[test]
     fn add() {
         // Initialize CPD.
-        let cpd = DiscreteCPD::new(
+        let cpd = CategoricalCPD::new(
             ("Grade", vec!["g0", "g1", "g2"]),
             [
                 ("Difficulty", vec!["d0", "d1"]),
@@ -296,7 +296,7 @@ mod discrete_cpd {
     #[test]
     fn normalize() {
         // Initialize CPD.
-        let cpd = DiscreteCPD::new(
+        let cpd = CategoricalCPD::new(
             ("Grade", vec!["g0", "g1", "g2"]),
             [
                 ("Difficulty", vec!["d0", "d1"]),
@@ -316,7 +316,7 @@ mod discrete_cpd {
     #[test]
     fn marginalize() {
         // Initialize CPD.
-        let cpd = DiscreteCPD::new(
+        let cpd = CategoricalCPD::new(
             ("Grade", vec!["g0", "g1", "g2"]),
             [
                 ("Difficulty", vec!["d0", "d1"]),
@@ -339,7 +339,7 @@ mod discrete_cpd {
     #[test]
     fn reduce() {
         // Initialize CPD.
-        let cpd = DiscreteCPD::new(
+        let cpd = CategoricalCPD::new(
             ("Grade", vec!["g0", "g1", "g2"]),
             [
                 ("Difficulty", vec!["d0", "d1"]),

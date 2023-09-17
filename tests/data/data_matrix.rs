@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    mod discrete {
+    mod categorical {
         use std::collections::BTreeMap;
 
         use causal_hub::prelude::*;
@@ -19,7 +19,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            let data = CategoricalDataMatrix::from(df);
 
             assert_eq!(
                 data.values(),
@@ -57,7 +57,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(true_df.clone());
+            let data = CategoricalDataMatrix::from(true_df.clone());
 
             // Cast datamatrix to dataframe.
             let pred_df: DataFrame = data.into();
@@ -76,7 +76,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df).with_states([
+            let data = CategoricalDataMatrix::from(df).with_states([
                 ("X", vec!["A", "B"]),
                 ("Y", vec!["A", "B", "C"]),
                 ("W", vec!["G", "H", "I", "J", "K", "L", "M", "N"]),
@@ -123,7 +123,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            let data = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -150,7 +150,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            let data = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -169,7 +169,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = DiscreteDataMatrix::from(df);
+            let data = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -201,7 +201,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            let data = GaussianDataMatrix::from(df);
 
             assert_eq!(
                 data.values(),
@@ -222,7 +222,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(true_df.clone());
+            let data = GaussianDataMatrix::from(true_df.clone());
 
             // Cast datamatrix to dataframe.
             let pred_df: DataFrame = data.into();
@@ -241,7 +241,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            let data = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -266,7 +266,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            let data = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
@@ -285,7 +285,7 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = ContinuousDataMatrix::from(df);
+            let data = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
