@@ -460,13 +460,13 @@ where
         let objective = ZINBObjective { x, z };
 
         // Initialize the solver.
-        let step = ArmijoCondition::new(f32::EPSILON as f64).unwrap();
+        let step = ArmijoCondition::new(1E-4).unwrap();
         let search = BacktrackingLineSearch::new(step);
         let solver = BFGS::new(search);
 
         // Run the solver.
         let results = Executor::new(objective, solver)
-            .configure(|s| s.inv_hessian(inv_hessian).param(theta_0).max_iters(500))
+            .configure(|s| s.inv_hessian(inv_hessian).param(theta_0).max_iters(100))
             .run()
             .expect("Failed to run the solver");
 
