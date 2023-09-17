@@ -452,7 +452,7 @@ where
         let z = z_.view();
 
         // Initialize the starting parameters.
-        let theta_0 = Array1::zeros(2 * z.len() + 3);
+        let theta_0 = Array1::zeros(2 * z.ncols() + 3);
         // Initialize the inverse Hessian matrix.
         let inv_hessian = f32::EPSILON as f64 * Array2::eye(theta_0.len());
 
