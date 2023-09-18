@@ -259,6 +259,8 @@ where
 struct ZINBObjective {
     /// The response vector.
     x1: Array2<f64>,
+    // lgamma(x1 + 1).
+    x1_1_lgamma: Array2<f64>,
     /// The design matrix.
     z10: Array2<f64>,
     z11: Array2<f64>,
@@ -280,6 +282,9 @@ impl ZINBObjective {
         i1.iter().enumerate().for_each(|(i, &j)| x1[i] = x[j]);
         let x1 = x1.insert_axis(Axis(1));
 
+        // Pre-compute lgamma(x1 + 1).
+        let x1_1_lgamma = (&x1 + 1.0).mapv(lgamma);
+
         // Allocate a new contiguous matrix.
         let mut z1 = Array2::<f64>::ones((n, m + 1));
         // Fill with observed variables.
@@ -299,10 +304,15 @@ impl ZINBObjective {
             .enumerate()
             .for_each(|(i, &j)| z11.row_mut(i).assign(&z1.row(j)));
 
-        Self { x1, z10, z11 }
+        Self {
+            x1,
+            x1_1_lgamma,
+            z10,
+            z11,
+        }
     }
 
-    fn eval(z: ArrayView2<f64>, theta: ArrayView1<f64>) -> Array2<f64> {
+    fn eval(z: &Array2<f64>, theta: ArrayView1<f64>) -> Array2<f64> {
         // logit(p) = Z * alpha + delta
         let logit = z.dot(&theta).insert_axis(Axis(1));
         // log(p / (1 - p)) = logit(p)
@@ -330,13 +340,18 @@ impl CostFunction for ZINBObjective {
         );
 
         // logit(p) = Z * alpha + delta
-        let p0 = Self::eval(self.z10.view(), alpha_delta);
-        let p1 = Self::eval(self.z11.view(), alpha_delta);
+        let p0 = Self::eval(&self.z10, alpha_delta);
+        let p1 = Self::eval(&self.z11, alpha_delta);
         // logit(q) = Z * beta + gamma
-        let q0 = Self::eval(self.z10.view(), beta_gamma);
-        let q1 = Self::eval(self.z11.view(), beta_gamma);
+        let q0 = Self::eval(&self.z10, beta_gamma);
+        let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda)
         let k = f64::exp(lambda);
+
+        // Logarithm of the ascending factorial function.
+        let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
+            x.mapv(|i| (0..(i as usize)).map(|j| f64::ln(k + j as f64)).sum())
+        };
 
         // Compute the log-likelihood.
         let log_likelihood =
@@ -345,8 +360,8 @@ impl CostFunction for ZINBObjective {
             // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(k, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + k * log(1 - q_i)
             + (
                 (-&p1).mapv(f64::ln_1p)
-                + (&self.x1 + k).mapv(lgamma) - lgamma(k)
-                - (&self.x1 + 1.0).mapv(lgamma)
+                + log_ascfacto(k, &self.x1)
+                - &self.x1_1_lgamma
                 + &self.x1 * &q1.mapv(f64::ln)
                 + k * (-&q1).mapv(f64::ln_1p)
             ).sum();
@@ -377,11 +392,11 @@ impl Gradient for ZINBObjective {
         );
 
         // logit(p) = Z * alpha + delta
-        let p0 = Self::eval(self.z10.view(), alpha_delta);
-        let p1 = Self::eval(self.z11.view(), alpha_delta);
+        let p0 = Self::eval(&self.z10, alpha_delta);
+        let p1 = Self::eval(&self.z11, alpha_delta);
         // logit(q) = Z * beta + gamma
-        let q0 = Self::eval(self.z10.view(), beta_gamma);
-        let q1 = Self::eval(self.z11.view(), beta_gamma);
+        let q0 = Self::eval(&self.z10, beta_gamma);
+        let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda)
         let k = f64::exp(lambda);
 
@@ -446,7 +461,7 @@ where
 
         // Run the solver.
         let results = Executor::new(objective, solver)
-            .configure(|s| s.param(theta_0))
+            .configure(|s| s.param(theta_0).max_iters(100))
             .run()
             .expect("Failed to run the solver");
 
