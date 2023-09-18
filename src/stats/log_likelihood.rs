@@ -334,14 +334,12 @@ impl CostFunction for ZINBObjective {
     type Output = f64;
 
     fn cost(&self, theta: &Self::Param) -> Result<Self::Output, Error> {
-        // Assert parameters are valid.
-        assert!(
-            theta.iter().all(|&i| i.is_finite()),
-            "Invalid parameters in log-likehood estimation"
-        );
-
         // [Z1; (n, z + 1)]
         let z1 = self.z11.ncols();
+
+        // Map invalid parameters to epsilon.
+        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
             theta.slice(s![..z1]),
@@ -390,14 +388,11 @@ impl Gradient for ZINBObjective {
     type Gradient = Array1<f64>;
 
     fn gradient(&self, theta: &Self::Param) -> Result<Self::Gradient, Error> {
-        // Assert parameters are valid.
-        assert!(
-            theta.iter().all(|&i| i.is_finite()),
-            "Invalid parameters in gradient estimation"
-        );
-
         // [Z; (n, z + 1)]
         let z1 = self.z11.ncols();
+
+        // Map invalid parameters to epsilon.
+        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
 
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
@@ -444,6 +439,7 @@ impl Gradient for ZINBObjective {
             // -Z11 * ((k + x1) * q1 - x1) -> Z11 * ((k + x1) * (-q1) + x1)
             + (&self.z11 * ((k + &self.x1) * &_q1 + &self.x1)).sum_axis(Axis(0))
         });
+
         // lambda
         gradient[2 * z1] = (
             // (1 - p0) * pow(1 - q0, k) * log(1 - q0) / d0)
@@ -472,13 +468,13 @@ where
         let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
 
         // Initialize the solver.
-        let step = ArmijoCondition::new(1E-4).unwrap();
+        let step = ArmijoCondition::new(f64::sqrt(EPSILON)).unwrap();
         let search = BacktrackingLineSearch::new(step);
         let solver = LBFGS::new(search, theta_0.len() * 10);
 
         // Run the solver.
         let results = Executor::new(objective, solver)
-            .configure(|s| s.param(theta_0).max_iters(100))
+            .configure(|s| s.param(theta_0).max_iters(1000))
             .timer(false)
             .run()
             .expect("Failed to run the solver");
