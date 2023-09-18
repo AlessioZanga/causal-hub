@@ -167,8 +167,7 @@ pub mod zinb {
 
         pub fn dummy(c: &mut Criterion) {
             // Initialize benchmark group.
-            let mut group =
-                c.benchmark_group(format!("discovery::hill_climbing::zinb::call").as_str());
+            let mut group = c.benchmark_group(format!("discovery::hill_climbing::zinb::call"));
 
             // Initialize random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -176,7 +175,7 @@ pub mod zinb {
             let data_matrix: ZINBDataMatrix = CsvReader::from_path("./tests/assets/zinb.csv")
                 .unwrap()
                 .has_header(true)
-                .with_dtypes_slice(Some(&vec![DataType::Float64; 5]))
+                .with_dtypes_slice(Some(&[DataType::Float64; 5]))
                 .finish()
                 .unwrap()
                 .into();
