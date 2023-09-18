@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
 use super::CovarianceMatrix;
-use crate::data::{ContinuousDataMatrix, DataSet};
+use crate::data::{DataSet, GaussianDataMatrix};
 
 /// Correlation matrix $\Rho$.
 #[derive(Clone, Debug)]
@@ -57,9 +57,9 @@ impl From<CorrelationMatrix> for Array2<f64> {
     }
 }
 
-impl From<&ContinuousDataMatrix> for CorrelationMatrix {
+impl From<&GaussianDataMatrix> for CorrelationMatrix {
     #[inline]
-    fn from(d: &ContinuousDataMatrix) -> Self {
+    fn from(d: &GaussianDataMatrix) -> Self {
         // Compute the correlation matrix.
         let rho = d
             .values()

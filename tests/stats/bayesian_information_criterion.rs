@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use approx::*;
     use causal_hub::prelude::*;
     use polars::prelude::*;
@@ -17,7 +17,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -59,7 +59,7 @@ mod discrete {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -108,7 +108,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());
@@ -150,7 +150,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = ContinuousDataMatrix::from(d);
+        let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
         let g = DiGraph::empty(d.labels());

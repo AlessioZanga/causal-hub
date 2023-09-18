@@ -2,11 +2,11 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::DiscreteBayesianNetwork;
+use super::CategoricalBayesianNetwork;
 use crate::{
-    data::{DataSet, DiscreteDataMatrix},
+    data::{CategoricalDataMatrix, DataSet},
     graphs::{structs::DirectedDenseAdjacencyMatrixGraph, BaseGraph, DirectedGraph},
-    prelude::{BayesianNetwork, ConditionalCountMatrix, DiscreteCPD, MarginalCountMatrix},
+    prelude::{BayesianNetwork, CategoricalCPD, ConditionalCountMatrix, MarginalCountMatrix},
     Pa, L, V,
 };
 
@@ -25,15 +25,15 @@ pub struct MaximumLikelihoodEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
     ParameterEstimation<
-        DiscreteDataMatrix,
+        CategoricalDataMatrix,
         DirectedDenseAdjacencyMatrixGraph,
-        DiscreteBayesianNetwork,
+        CategoricalBayesianNetwork,
     > for MaximumLikelihoodEstimation<PARALLEL>
 {
     fn call(
-        d: &DiscreteDataMatrix,
+        d: &CategoricalDataMatrix,
         g: &DirectedDenseAdjacencyMatrixGraph,
-    ) -> DiscreteBayesianNetwork {
+    ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels()));
 
@@ -62,7 +62,7 @@ impl<const PARALLEL: bool>
                 .into_iter()
                 .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
-            DiscreteCPD::new((x, y), z, n / n_i)
+            CategoricalCPD::new((x, y), z, n / n_i)
         };
 
         // Preallocate memory for parameters.
@@ -77,7 +77,7 @@ impl<const PARALLEL: bool>
             false => theta.extend(V!(g).map(estimate)),
         };
 
-        DiscreteBayesianNetwork::new(g.clone(), theta)
+        CategoricalBayesianNetwork::new(g.clone(), theta)
     }
 }
 
@@ -86,15 +86,15 @@ pub struct BayesianEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
     ParameterEstimation<
-        DiscreteDataMatrix,
+        CategoricalDataMatrix,
         DirectedDenseAdjacencyMatrixGraph,
-        DiscreteBayesianNetwork,
+        CategoricalBayesianNetwork,
     > for BayesianEstimation<PARALLEL>
 {
     fn call(
-        d: &DiscreteDataMatrix,
+        d: &CategoricalDataMatrix,
         g: &DirectedDenseAdjacencyMatrixGraph,
-    ) -> DiscreteBayesianNetwork {
+    ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels()));
 
@@ -125,7 +125,7 @@ impl<const PARALLEL: bool>
                 .into_iter()
                 .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
             // Construct CPD from states and values.
-            DiscreteCPD::new((x, y), z, n / n_i)
+            CategoricalCPD::new((x, y), z, n / n_i)
         };
 
         // Preallocate memory for parameters.
@@ -140,6 +140,6 @@ impl<const PARALLEL: bool>
             false => theta.extend(V!(g).map(estimate)),
         };
 
-        DiscreteBayesianNetwork::new(g.clone(), theta)
+        CategoricalBayesianNetwork::new(g.clone(), theta)
     }
 }

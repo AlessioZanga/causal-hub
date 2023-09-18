@@ -13,7 +13,7 @@ pub mod marginal {
         // Initialize random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load reference model.
-        let model: DiscreteBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
+        let model: CategoricalBN = BIF::read(format!("./tests/assets/bif/{model}.bif").as_str())
             .unwrap()
             .into();
 

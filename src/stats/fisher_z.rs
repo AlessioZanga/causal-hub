@@ -7,7 +7,7 @@ use std::{
 use libm::erfc;
 
 use crate::{
-    data::ContinuousDataMatrix,
+    data::GaussianDataMatrix,
     discovery::ConditionalIndependenceTest,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
@@ -25,7 +25,7 @@ pub struct FisherZ {
 impl<'a> FisherZ {
     /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
     #[inline]
-    pub fn new(d: &'a ContinuousDataMatrix) -> Self {
+    pub fn new(d: &'a GaussianDataMatrix) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -40,9 +40,9 @@ impl<'a> FisherZ {
     }
 }
 
-impl<'a> From<&'a ContinuousDataMatrix> for FisherZ {
+impl<'a> From<&'a GaussianDataMatrix> for FisherZ {
     #[inline]
-    fn from(d: &'a ContinuousDataMatrix) -> Self {
+    fn from(d: &'a GaussianDataMatrix) -> Self {
         Self::new(d)
     }
 }

@@ -15,18 +15,18 @@ use serde::{Deserialize, Serialize};
 use super::DataSet;
 use crate::types::{FxIndexMap, FxIndexSet};
 
-/* Implement DiscreteDataMatrix */
+/* Implement CategoricalDataMatrix */
 
-/// Data matrix for discrete data.
+/// Data matrix for categorical data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DiscreteDataMatrix {
+pub struct CategoricalDataMatrix {
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<u8>,
     values: Array2<u8>,
 }
 
-impl DiscreteDataMatrix {
-    /// Construct a new discrete data matrix given data and states.
+impl CategoricalDataMatrix {
+    /// Construct a new categorical data matrix given data and states.
     pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
     where
         V: Into<String>,
@@ -64,7 +64,7 @@ impl DiscreteDataMatrix {
         &self.states
     }
 
-    /// Set states of the discrete data matrix.
+    /// Set states of the categorical data matrix.
     ///
     /// # Panics
     ///
@@ -120,29 +120,29 @@ impl DiscreteDataMatrix {
     }
 }
 
-impl From<DataFrame> for DiscreteDataMatrix {
+impl From<DataFrame> for CategoricalDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
-                "Refer to `DiscreteDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
             )
         );
 
         // Check for wrong data type.
         assert!(
             df.iter().all(|s| !s.dtype().is_float()),
-            "DataSet must contain only discrete types"
+            "DataSet must contain only categorical types"
         );
 
-        // Cast to discrete datatype.
+        // Cast to categorical datatype.
         let df = df.iter().map(|s| {
             s.cast(&DataType::Utf8)
                 .expect("Failed to cast to intermediate UTF-8 datatype")
                 .cast(&DataType::Categorical(None))
-                .expect("Failed to cast to discrete datatype")
+                .expect("Failed to cast to categorical datatype")
         });
 
         // Sort columns by name.
@@ -163,7 +163,7 @@ impl From<DataFrame> for DiscreteDataMatrix {
                 (
                     s.name().to_owned(),
                     s.categorical()
-                        .expect("Failed to access discrete representation")
+                        .expect("Failed to access categorical representation")
                         .get_rev_map()
                         .deref(),
                 )
@@ -232,8 +232,8 @@ impl From<DataFrame> for DiscreteDataMatrix {
     }
 }
 
-impl From<DiscreteDataMatrix> for DataFrame {
-    fn from(data: DiscreteDataMatrix) -> Self {
+impl From<CategoricalDataMatrix> for DataFrame {
+    fn from(data: CategoricalDataMatrix) -> Self {
         // Map columns to series.
         let series = data
             .states
@@ -254,7 +254,7 @@ impl From<DiscreteDataMatrix> for DataFrame {
     }
 }
 
-impl DataSet for DiscreteDataMatrix {
+impl DataSet for CategoricalDataMatrix {
     type Data = Array2<u8>;
 
     type LabelsIter<'a> =
@@ -308,23 +308,23 @@ impl DataSet for DiscreteDataMatrix {
     }
 }
 
-/* Implement ContinuousDataMatrix */
+/* Implement GaussianDataMatrix */
 
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ContinuousDataMatrix {
+pub struct GaussianDataMatrix {
     labels: BTreeSet<String>,
     values: Array2<f64>,
 }
 
-impl From<DataFrame> for ContinuousDataMatrix {
+impl From<DataFrame> for GaussianDataMatrix {
     fn from(df: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !df.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values. ",
-                "Refer to `ContinuousDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `GaussianDataMatrixWithMissing` to handle missing values properly."
             )
         );
 
@@ -353,8 +353,8 @@ impl From<DataFrame> for ContinuousDataMatrix {
     }
 }
 
-impl From<ContinuousDataMatrix> for DataFrame {
-    fn from(data: ContinuousDataMatrix) -> Self {
+impl From<GaussianDataMatrix> for DataFrame {
+    fn from(data: GaussianDataMatrix) -> Self {
         // Map columns to series.
         let series = data
             .labels
@@ -367,7 +367,134 @@ impl From<ContinuousDataMatrix> for DataFrame {
     }
 }
 
-impl DataSet for ContinuousDataMatrix {
+impl DataSet for GaussianDataMatrix {
+    type Data = Array2<f64>;
+
+    type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Data {
+        &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
+        // Sample without replacement.
+        let values = self.values.sample_axis_using(
+            Axis(0),
+            sample_size,
+            SamplingStrategy::WithoutReplacement,
+            rng,
+        );
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
+    }
+
+    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
+        // Sample without replacement.
+        let values = self.values.sample_axis_using(
+            Axis(0),
+            sample_size,
+            SamplingStrategy::WithReplacement,
+            rng,
+        );
+
+        Self {
+            labels: self.labels.clone(),
+            values,
+        }
+    }
+}
+
+/* Implement ZeroInflatedNegativeBinomialDataMatrix */
+
+/// Data matrix for zero-inflated negative binomial data.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ZeroInflatedNegativeBinomialDataMatrix {
+    labels: BTreeSet<String>,
+    values: Array2<f64>,
+}
+
+/// Alias for `ZeroInflatedNegativeBinomialDataMatrix`.
+pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
+
+impl ZINBDataMatrix {
+    /// Construct a new zero-inflated negative binomial data matrix given data and labels.
+    pub fn new<V, I>(labels: I, values: Array2<f64>) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Get variables as set of strings.
+        let labels = labels.into_iter().map_into().collect();
+
+        Self { labels, values }
+    }
+}
+
+impl From<DataFrame> for ZINBDataMatrix {
+    fn from(df: DataFrame) -> Self {
+        // Check for missing values.
+        assert!(
+            !df.iter().any(|s| s.is_null().any()),
+            concat!(
+                "DataSet must contain no missing values. ",
+                "Refer to `ZeroInflatedNegativeBinomialDataMatrixWithMissing` to handle missing values properly."
+            )
+        );
+
+        // Check for wrong data type.
+        assert!(
+            df.iter().all(|s| s.dtype().is_float()),
+            "DataSet must contain only float types"
+        );
+
+        // Sort columns by name.
+        let df: DataFrame = df
+            .iter()
+            .sorted_by(|a, b| a.name().cmp(b.name()))
+            .cloned()
+            .collect();
+
+        // Get underlying data matrix.
+        let values = df
+            .to_ndarray::<Float64Type>(IndexOrder::C)
+            .expect("Fail to cast to ndarray matrix");
+
+        // Get variables as set of strings.
+        let labels = df.get_column_names_owned().into_iter().map_into().collect();
+
+        Self { labels, values }
+    }
+}
+
+impl From<ZINBDataMatrix> for DataFrame {
+    fn from(data: ZINBDataMatrix) -> Self {
+        // Map columns to series.
+        let series = data
+            .labels
+            .into_iter()
+            .zip(data.values.columns())
+            .map(|(name, column)| Series::new(&name, column.to_vec()))
+            .collect_vec();
+
+        DataFrame::new(series).unwrap()
+    }
+}
+
+impl DataSet for ZINBDataMatrix {
     type Data = Array2<f64>;
 
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;

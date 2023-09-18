@@ -1,16 +1,28 @@
 use std::f64::consts::PI;
 
+use argmin::{
+    core::{CostFunction, Error, Executor, Gradient},
+    solver::{
+        linesearch::{condition::ArmijoCondition, BacktrackingLineSearch},
+        quasinewton::LBFGS,
+    },
+};
 use ndarray::prelude::*;
 use ndarray_linalg::least_squares::*;
 use rayon::prelude::*;
+use statrs::function::gamma::{digamma, ln_gamma as lgamma};
 
 use crate::{
-    data::{ConditionalCountMatrix, ContinuousDataMatrix, DiscreteDataMatrix, MarginalCountMatrix},
+    data::{
+        CategoricalDataMatrix, ConditionalCountMatrix, DataSet, GaussianDataMatrix,
+        MarginalCountMatrix, ZINBDataMatrix,
+    },
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
-    prelude::DataSet,
     utils::{axis_chunks_size, nan_to_zero},
 };
+
+const EPSILON: f64 = f32::EPSILON as f64;
 
 /// Marginal Log-Likelihood functor.
 #[derive(Clone, Debug)]
@@ -26,9 +38,9 @@ impl<'a, D> MarginalLogLikelihood<'a, D> {
     }
 }
 
-/* Discrete LL */
+/* Categorical LL */
 
-impl<'a> MarginalLogLikelihood<'a, DiscreteDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
     /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
@@ -53,7 +65,7 @@ impl<'a> MarginalLogLikelihood<'a, DiscreteDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> MarginalLogLikelihood<'a, ContinuousDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
     /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
@@ -93,9 +105,9 @@ impl<'a, D> ConditionalLogLikelihood<'a, D> {
     }
 }
 
-/* Discrete LL */
+/* Categorical LL */
 
-impl<'a> ConditionalLogLikelihood<'a, DiscreteDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
     /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -154,7 +166,7 @@ impl<'a> ConditionalLogLikelihood<'a, DiscreteDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> ConditionalLogLikelihood<'a, ContinuousDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
     /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -215,8 +227,8 @@ impl<'a, D> LogLikelihood<'a, D> {
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<ContinuousDataMatrix, G>
-    for LogLikelihood<'a, ContinuousDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
+    for LogLikelihood<'a, CategoricalDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -229,8 +241,8 @@ where
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<DiscreteDataMatrix, G>
-    for LogLikelihood<'a, DiscreteDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
+    for LogLikelihood<'a, GaussianDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -240,6 +252,235 @@ where
             true => MarginalLogLikelihood::new(self.data_set).call(x),
             false => ConditionalLogLikelihood::new(self.data_set).call(x, z),
         }
+    }
+}
+
+/* Implement LogLikelihood for multivariate ZINB distribution. */
+
+/// Define the multivariate ZINB objective function.
+struct ZINBObjective {
+    /// The response vector.
+    x1: Array2<f64>,
+    // lgamma(x1 + 1).
+    x1_1_lgamma: Array2<f64>,
+    /// The design matrix.
+    z10: Array2<f64>,
+    z11: Array2<f64>,
+}
+
+impl ZINBObjective {
+    /// Constructor for ZINBObjective.
+    #[inline]
+    fn new(d: &Array2<f64>, x: usize, z: &[usize]) -> Self {
+        // Get sample size and number of conditioning variables.
+        let (n, m) = (d.nrows(), z.len());
+
+        // Get a copy of the variable.
+        let x = d.column(x);
+        // Partition the indices vector.
+        let (i0, i1): (Vec<_>, Vec<_>) = (0..n).partition(|&i| x[i] < EPSILON);
+        // Partition the response vector.
+        let mut x1 = Array1::zeros(i1.len());
+        i1.iter().enumerate().for_each(|(i, &j)| x1[i] = x[j]);
+        let x1 = x1.insert_axis(Axis(1));
+
+        // Pre-compute lgamma(x1 + 1).
+        let x1_1_lgamma = (&x1 + 1.).mapv(lgamma);
+
+        // Allocate a new contiguous matrix.
+        let mut z1 = Array2::<f64>::ones((n, m + 1));
+        // Fill with observed variables.
+        z.iter().enumerate().for_each(|(i, &j)| {
+            z1.column_mut(i).assign(&d.column(j));
+        });
+
+        // Partition the design matrix.
+        let (mut z10, mut z11) = (
+            Array2::zeros((i0.len(), z1.ncols())),
+            Array2::zeros((i1.len(), z1.ncols())),
+        );
+        i0.iter()
+            .enumerate()
+            .for_each(|(i, &j)| z10.row_mut(i).assign(&z1.row(j)));
+        i1.iter()
+            .enumerate()
+            .for_each(|(i, &j)| z11.row_mut(i).assign(&z1.row(j)));
+
+        Self {
+            x1,
+            x1_1_lgamma,
+            z10,
+            z11,
+        }
+    }
+
+    fn eval(z: &Array2<f64>, theta: ArrayView1<f64>) -> Array2<f64> {
+        // logit(p) = Z * alpha + delta
+        let logit = z.dot(&theta).insert_axis(Axis(1));
+        // log(p / (1 - p)) = logit(p)
+        let exp_logit = logit.mapv(f64::exp);
+        // p = exp(logit(p)) / (1 + exp(logit(p)))
+        let p = &exp_logit / (1. + &exp_logit);
+        // Fill the infinite values with 1..
+        let p = p.mapv(|x| if x.is_finite() { x } else { 1. });
+        // Avoid NaNs by mapping to [EPSILON, 1 - EPSILON].
+        (p - EPSILON).mapv(f64::abs)
+    }
+}
+
+/// Implement the `CostFunction` trait for `ZINBObjective`.
+impl CostFunction for ZINBObjective {
+    type Param = Array1<f64>;
+    type Output = f64;
+
+    fn cost(&self, theta: &Self::Param) -> Result<Self::Output, Error> {
+        // [Z1; (n, z + 1)]
+        let z1 = self.z11.ncols();
+
+        // Map invalid parameters to epsilon.
+        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+
+        // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
+        let (alpha_delta, beta_gamma, lambda) = (
+            theta.slice(s![..z1]),
+            theta.slice(s![z1..(2 * z1)]),
+            theta[2 * z1],
+        );
+
+        // logit(p) = Z * alpha + delta
+        let p0 = Self::eval(&self.z10, alpha_delta);
+        let p1 = Self::eval(&self.z11, alpha_delta);
+        // logit(q) = Z * beta + gamma
+        let q0 = Self::eval(&self.z10, beta_gamma);
+        let q1 = Self::eval(&self.z11, beta_gamma);
+        // k = exp(lambda), clamped to avoid overflow.
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
+
+        // Logarithm of the ascending factorial function.
+        let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
+            x.mapv(|i| (0..(i as usize)).map(|j| f64::ln(k + j as f64)).sum())
+        };
+
+        // Compute the log-likelihood.
+        let log_likelihood =
+            // \sum_{i \in x0} log(pi_i + (1 - pi_i) * (1 - q_i)^k)
+            (&p0 + (1. - &p0) * (1. - &q0).mapv(|i| f64::powf(i, k)) + EPSILON)
+                .mapv(f64::ln)
+                .sum()
+            // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(k, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + k * log(1 - q_i)
+            + ((1. - &p1).mapv(f64::ln)
+                + log_ascfacto(k, &self.x1)
+                -&self.x1_1_lgamma
+                + &self.x1 * &q1.mapv(f64::ln)
+                + k * (1. - &q1).mapv(f64::ln)
+            ).sum();
+
+        // Negate the log-likelihood since we are minimizing.
+        let log_likelihood = -log_likelihood;
+
+        Ok(log_likelihood)
+    }
+}
+
+/// Implement the `Gradient` trait for `ZINBObjective`.
+impl Gradient for ZINBObjective {
+    type Param = Array1<f64>;
+    type Gradient = Array1<f64>;
+
+    fn gradient(&self, theta: &Self::Param) -> Result<Self::Gradient, Error> {
+        // [Z; (n, z + 1)]
+        let z1 = self.z11.ncols();
+
+        // Map invalid parameters to epsilon.
+        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+
+        // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
+        let (alpha_delta, beta_gamma, lambda) = (
+            theta.slice(s![..z1]),
+            theta.slice(s![z1..(2 * z1)]),
+            theta[2 * z1],
+        );
+
+        // logit(p) = Z * alpha + delta
+        let p0 = Self::eval(&self.z10, alpha_delta);
+        let p1 = Self::eval(&self.z11, alpha_delta);
+        // logit(q) = Z * beta + gamma
+        let q0 = Self::eval(&self.z10, beta_gamma);
+        let q1 = Self::eval(&self.z11, beta_gamma);
+        // k = exp(lambda), clamped to avoid overflow.
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
+
+        // Initialize the gradient.
+        let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
+
+        // Pre-compute the following terms.
+        let _q0 = -&q0; // -q0
+        let _q1 = -&q1; // -q1
+        let _k_1 = k - 1.; // k - 1
+        let _1_p0 = 1. - &p0; // (1 - p0)
+        let _1_q0 = 1. - &q0; // (1 - q0)
+        let _1_q1 = 1. - &q1; // (1 - q1)
+        let _1_q0_k = _1_q0.mapv(|i| f64::powf(i, k)); // (1 - q0)^k
+        let d0 = &p0 + &_1_p0 * &_1_q0_k; // p0 + (1 - p0) * pow(1 - q0, k)
+        let _1_p0_d0 = &_1_p0 / &d0; // (1 - p0) / d0
+
+        // alpha_delta
+        gradient.slice_mut(s![..z1]).assign(&{
+            // Z10 * ((1 - p0) * p0 * (1 - pow(1 - q0, k)) / d0)
+            (&self.z10 * &_1_p0_d0 * &p0 * (1. - &_1_q0_k)).sum_axis(Axis(0))
+            // -Z11 * p1
+            -(&self.z11 * &p1).sum_axis(Axis(0))
+        });
+
+        // beta_gamma
+        gradient.slice_mut(s![z1..(2 * z1)]).assign(&{
+            // -Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * q0 * (1 - q0) / d0) -> Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * (-q0) * (1 - q0) / d0)
+            (&self.z10 * (&_1_p0_d0 * k * &_1_q0.mapv(|i| f64::powf(i, _k_1)) * &_q0 * &_1_q0)).sum_axis(Axis(0))
+            // -Z11 * ((k + x1) * q1 - x1) -> Z11 * ((k + x1) * (-q1) + x1)
+            + (&self.z11 * ((k + &self.x1) * &_q1 + &self.x1)).sum_axis(Axis(0))
+        });
+
+        // lambda
+        gradient[2 * z1] = (
+            // (1 - p0) * pow(1 - q0, k) * log(1 - q0) / d0)
+            (&_1_p0_d0 * &_1_q0_k * &_1_q0.mapv(f64::ln)).sum()
+            // digamma(k + x1) - digamma(k) + log(1 - q1)
+            + ((&self.x1 + k).mapv(digamma) - digamma(k) + &_1_q1.mapv(f64::ln)).sum()
+            // * k
+        ) * k;
+
+        // Negate the gradient since we are minimizing.
+        let gradient = -gradient;
+
+        Ok(gradient)
+    }
+}
+
+impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G> for LogLikelihood<'a, ZINBDataMatrix>
+where
+    G: DirectedGraph<Direction = directions::Directed>,
+{
+    fn call(&self, x: usize, z: &[usize]) -> f64 {
+        // Initialize the objective function.
+        let objective = ZINBObjective::new(self.data_set.values(), x, z);
+
+        // Initialize the starting parameters.
+        let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
+
+        // Initialize the solver.
+        let step = ArmijoCondition::new(f64::sqrt(EPSILON)).unwrap();
+        let search = BacktrackingLineSearch::new(step);
+        let solver = LBFGS::new(search, theta_0.len() * 10);
+
+        // Run the solver.
+        let results = Executor::new(objective, solver)
+            .configure(|s| s.param(theta_0).max_iters(1000))
+            .timer(false)
+            .run()
+            .expect("Failed to run the solver");
+
+        // Get the negated log-likelihood.
+        -results.state.best_cost
     }
 }
 

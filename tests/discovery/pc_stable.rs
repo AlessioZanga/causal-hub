@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod discrete {
+mod categorical {
     use causal_hub::prelude::*;
     use ndarray::array;
     use polars::prelude::*;
@@ -42,7 +42,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Create ChiSquared conditional independence test
         let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -106,7 +106,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Create ChiSquared conditional independence test
         let test = ChiSquared::new(&d).with_significance_level(ALPHA);
@@ -164,7 +164,7 @@ mod discrete {
             .unwrap()
             .finish()
             .unwrap();
-        let d = DiscreteDataMatrix::from(d);
+        let d = CategoricalDataMatrix::from(d);
 
         // Create ChiSquared conditional independence test
         let test = ChiSquared::new(&d).with_significance_level(ALPHA);
