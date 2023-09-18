@@ -22,6 +22,8 @@ use crate::{
     utils::{axis_chunks_size, nan_to_zero},
 };
 
+const EPSILON: f64 = f32::EPSILON as f64;
+
 /// Marginal Log-Likelihood functor.
 #[derive(Clone, Debug)]
 pub struct MarginalLogLikelihood<'a, D> {
@@ -276,14 +278,14 @@ impl ZINBObjective {
         // Get a copy of the variable.
         let x = d.column(x);
         // Partition the indices vector.
-        let (i0, i1): (Vec<_>, Vec<_>) = (0..n).partition(|&i| x[i] < f32::EPSILON as f64);
+        let (i0, i1): (Vec<_>, Vec<_>) = (0..n).partition(|&i| x[i] < EPSILON);
         // Partition the response vector.
         let mut x1 = Array1::zeros(i1.len());
         i1.iter().enumerate().for_each(|(i, &j)| x1[i] = x[j]);
         let x1 = x1.insert_axis(Axis(1));
 
         // Pre-compute lgamma(x1 + 1).
-        let x1_1_lgamma = (&x1 + 1.0).mapv(lgamma);
+        let x1_1_lgamma = (&x1 + 1.).mapv(lgamma);
 
         // Allocate a new contiguous matrix.
         let mut z1 = Array2::<f64>::ones((n, m + 1));
@@ -318,9 +320,11 @@ impl ZINBObjective {
         // log(p / (1 - p)) = logit(p)
         let exp_logit = logit.mapv(f64::exp);
         // p = exp(logit(p)) / (1 + exp(logit(p)))
-        let p = &exp_logit / (1.0 + &exp_logit);
-        // Fill the infinite values with 1.0.
-        p.mapv(|x| if x.is_finite() { x } else { 1.0 })
+        let p = &exp_logit / (1. + &exp_logit);
+        // Fill the infinite values with 1..
+        let p = p.mapv(|x| if x.is_finite() { x } else { 1. });
+        // Avoid NaNs by mapping to [EPSILON, 1 - EPSILON].
+        (p - EPSILON).mapv(f64::abs)
     }
 }
 
@@ -330,6 +334,12 @@ impl CostFunction for ZINBObjective {
     type Output = f64;
 
     fn cost(&self, theta: &Self::Param) -> Result<Self::Output, Error> {
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters in log-likehood estimation"
+        );
+
         // [Z1; (n, z + 1)]
         let z1 = self.z11.ncols();
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
@@ -345,8 +355,8 @@ impl CostFunction for ZINBObjective {
         // logit(q) = Z * beta + gamma
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda)
-        let k = f64::exp(lambda);
+        // k = exp(lambda), clamped to avoid overflow.
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
 
         // Logarithm of the ascending factorial function.
         let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
@@ -356,14 +366,15 @@ impl CostFunction for ZINBObjective {
         // Compute the log-likelihood.
         let log_likelihood =
             // \sum_{i \in x0} log(pi_i + (1 - pi_i) * (1 - q_i)^k)
-            (&p0 + (1.0 - &p0) * (1.0 - &q0).mapv(|i| f64::powf(i, k))).mapv(f64::ln).sum()
+            (&p0 + (1. - &p0) * (1. - &q0).mapv(|i| f64::powf(i, k)) + EPSILON)
+                .mapv(f64::ln)
+                .sum()
             // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(k, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + k * log(1 - q_i)
-            + (
-                (-&p1).mapv(f64::ln_1p)
+            + ((1. - &p1).mapv(f64::ln)
                 + log_ascfacto(k, &self.x1)
-                - &self.x1_1_lgamma
+                -&self.x1_1_lgamma
                 + &self.x1 * &q1.mapv(f64::ln)
-                + k * (-&q1).mapv(f64::ln_1p)
+                + k * (1. - &q1).mapv(f64::ln)
             ).sum();
 
         // Negate the log-likelihood since we are minimizing.
@@ -379,6 +390,12 @@ impl Gradient for ZINBObjective {
     type Gradient = Array1<f64>;
 
     fn gradient(&self, theta: &Self::Param) -> Result<Self::Gradient, Error> {
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters in gradient estimation"
+        );
+
         // [Z; (n, z + 1)]
         let z1 = self.z11.ncols();
 
@@ -395,8 +412,8 @@ impl Gradient for ZINBObjective {
         // logit(q) = Z * beta + gamma
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda)
-        let k = f64::exp(lambda);
+        // k = exp(lambda), clamped to avoid overflow.
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
 
         // Initialize the gradient.
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
@@ -404,8 +421,10 @@ impl Gradient for ZINBObjective {
         // Pre-compute the following terms.
         let _q0 = -&q0; // -q0
         let _q1 = -&q1; // -q1
-        let _1_p0 = 1.0 - &p0; // (1 - p0)
-        let _1_q0 = 1.0 - &q0; // (1 - q0)
+        let _k_1 = k - 1.; // k - 1
+        let _1_p0 = 1. - &p0; // (1 - p0)
+        let _1_q0 = 1. - &q0; // (1 - q0)
+        let _1_q1 = 1. - &q1; // (1 - q1)
         let _1_q0_k = _1_q0.mapv(|i| f64::powf(i, k)); // (1 - q0)^k
         let d0 = &p0 + &_1_p0 * &_1_q0_k; // p0 + (1 - p0) * pow(1 - q0, k)
         let _1_p0_d0 = &_1_p0 / &d0; // (1 - p0) / d0
@@ -413,7 +432,7 @@ impl Gradient for ZINBObjective {
         // alpha_delta
         gradient.slice_mut(s![..z1]).assign(&{
             // Z10 * ((1 - p0) * p0 * (1 - pow(1 - q0, k)) / d0)
-            (&self.z10 * &_1_p0_d0 * &p0 * (1.0 - &_1_q0_k)).sum_axis(Axis(0))
+            (&self.z10 * &_1_p0_d0 * &p0 * (1. - &_1_q0_k)).sum_axis(Axis(0))
             // -Z11 * p1
             -(&self.z11 * &p1).sum_axis(Axis(0))
         });
@@ -421,16 +440,16 @@ impl Gradient for ZINBObjective {
         // beta_gamma
         gradient.slice_mut(s![z1..(2 * z1)]).assign(&{
             // -Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * q0 * (1 - q0) / d0) -> Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * (-q0) * (1 - q0) / d0)
-            (&self.z10 * (&_1_p0_d0 * k * &_1_q0.mapv(|i| f64::powf(i, k - 1.0)) * &_q0 * &_1_q0)).sum_axis(Axis(0))
+            (&self.z10 * (&_1_p0_d0 * k * &_1_q0.mapv(|i| f64::powf(i, _k_1)) * &_q0 * &_1_q0)).sum_axis(Axis(0))
             // -Z11 * ((k + x1) * q1 - x1) -> Z11 * ((k + x1) * (-q1) + x1)
             + (&self.z11 * ((k + &self.x1) * &_q1 + &self.x1)).sum_axis(Axis(0))
         });
         // lambda
         gradient[2 * z1] = (
             // (1 - p0) * pow(1 - q0, k) * log(1 - q0) / d0)
-            (&_1_p0_d0 * &_1_q0_k * &_q0.mapv(f64::ln_1p)).sum()
+            (&_1_p0_d0 * &_1_q0_k * &_1_q0.mapv(f64::ln)).sum()
             // digamma(k + x1) - digamma(k) + log(1 - q1)
-            + ((&self.x1 + k).mapv(digamma) - digamma(k) + &_q1.mapv(f64::ln_1p)).sum()
+            + ((&self.x1 + k).mapv(digamma) - digamma(k) + &_1_q1.mapv(f64::ln)).sum()
             // * k
         ) * k;
 
@@ -453,15 +472,14 @@ where
         let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
 
         // Initialize the solver.
-        let step = ArmijoCondition::new(f32::EPSILON as f64).unwrap();
+        let step = ArmijoCondition::new(1E-4).unwrap();
         let search = BacktrackingLineSearch::new(step);
-        let solver = LBFGS::new(search, theta_0.len().pow(2))
-            .with_l1_regularization(1.0)
-            .expect("Failed to initialize the solver");
+        let solver = LBFGS::new(search, theta_0.len() * 10);
 
         // Run the solver.
         let results = Executor::new(objective, solver)
             .configure(|s| s.param(theta_0).max_iters(100))
+            .timer(false)
             .run()
             .expect("Failed to run the solver");
 
