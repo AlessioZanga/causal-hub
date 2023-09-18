@@ -167,21 +167,24 @@ pub mod zinb {
 
         pub fn dummy(c: &mut Criterion) {
             // Initialize benchmark group.
-            let mut group = c.benchmark_group(format!("discovery::hill_climbing::zinb::call"));
+            let mut group = c.benchmark_group("discovery::hill_climbing::zinb::call");
 
             // Initialize random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+
+            // Set dtypes.
+            let dtypes = vec![DataType::Float64; 5];
             // Load reference data set.
             let data_matrix: ZINBDataMatrix = CsvReader::from_path("./tests/assets/zinb.csv")
                 .unwrap()
                 .has_header(true)
-                .with_dtypes_slice(Some(&[DataType::Float64; 5]))
+                .with_dtypes_slice(Some(&dtypes))
                 .finish()
                 .unwrap()
                 .into();
 
             // Repeat for different sample sizes.
-            for sample_size in [100, 250, 500].iter() {
+            for sample_size in [100, 250, 500, 1_000].iter() {
                 // Sample data set from reference data set.
                 let data_set = data_matrix.sample_with_replacement(&mut rng, *sample_size);
                 // Initialize empty prior knowledge.

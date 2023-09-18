@@ -366,8 +366,6 @@ impl CostFunction for ZINBObjective {
                 + k * (-&q1).mapv(f64::ln_1p)
             ).sum();
 
-        // Clamp the log-likelihood to prevent overflow.
-        let log_likelihood = f64::clamp(log_likelihood, f64::MIN, f64::MAX);
         // Negate the log-likelihood since we are minimizing.
         let log_likelihood = -log_likelihood;
 
@@ -457,7 +455,9 @@ where
         // Initialize the solver.
         let step = ArmijoCondition::new(f32::EPSILON as f64).unwrap();
         let search = BacktrackingLineSearch::new(step);
-        let solver = LBFGS::new(search, theta_0.len());
+        let solver = LBFGS::new(search, theta_0.len().pow(2))
+            .with_l1_regularization(1.0)
+            .expect("Failed to initialize the solver");
 
         // Run the solver.
         let results = Executor::new(objective, solver)
