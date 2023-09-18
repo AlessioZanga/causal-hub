@@ -679,20 +679,39 @@ where
         // Initialize graph from D and K.
         let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
         // Compute the initial score.
-        let mut s_g: f64 = V!(g)
-            // For each vertex.
-            .map(|x| {
-                // Get vertex parents.
-                let z = Pa!(g, x).collect_vec();
-                // Compute vertex score.
-                let s = self.scoring_criterion.call(x, &z);
-                // Insert into the cache.
-                cache.extend([((x, z), s)]);
+        let mut s_g: f64 = if PARALLEL {
+            // Insert into the cache in parallel.
+            cache.par_extend(
+                (0..g.order())
+                    .into_par_iter()
+                    // For each vertex.
+                    .map(|x| {
+                        // Get vertex parents.
+                        let z = Pa!(g, x).collect_vec();
+                        // Compute vertex score.
+                        let s = self.scoring_criterion.call(x, &z);
 
-                s
-            })
-            // Sum the partial scores.
-            .sum();
+                        ((x, z), s)
+                    }),
+            );
+            // Compute initial score.
+            cache.par_values().sum()
+        } else {
+            V!(g)
+                // For each vertex.
+                .map(|x| {
+                    // Get vertex parents.
+                    let z = Pa!(g, x).collect_vec();
+                    // Compute vertex score.
+                    let s = self.scoring_criterion.call(x, &z);
+                    // Insert into the cache.
+                    cache.extend([((x, z), s)]);
+
+                    s
+                })
+                // Sum the partial scores.
+                .sum()
+        };
 
         // Initialize iterations counter.
         let mut i = 0;

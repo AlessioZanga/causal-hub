@@ -1,5 +1,6 @@
 use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 
+use indexmap::map::{rayon::ParValues, Values};
 use itertools::Itertools;
 use rayon::prelude::*;
 
@@ -73,7 +74,10 @@ pub struct ScoringCriterionCache<'a, D, G, S, T, K> {
     cache: FxIndexMap<K, f64>,
 }
 
-impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K> {
+impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K>
+where
+    K: Sync,
+{
     /// Construct a new scoring criterion cache wrapper given the scoring criterion $\mathcal{S}$.
     pub fn new(scoring_criterion: &'a S) -> Self {
         Self {
@@ -83,6 +87,18 @@ impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K> {
             scoring_criterion,
             cache: Default::default(),
         }
+    }
+
+    /// Returns the values iterator.
+    #[inline]
+    pub fn values(&self) -> Values<'_, K, f64> {
+        self.cache.values()
+    }
+
+    /// Returns the parallel values iterator.
+    #[inline]
+    pub fn par_values(&self) -> ParValues<'_, K, f64> {
+        self.cache.par_values()
     }
 }
 
