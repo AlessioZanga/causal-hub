@@ -4,7 +4,7 @@ use argmin::{
     core::{CostFunction, Error, Executor, Gradient},
     solver::{
         linesearch::{condition::ArmijoCondition, BacktrackingLineSearch},
-        quasinewton::LBFGS,
+        quasinewton::BFGS,
     },
 };
 use ndarray::prelude::*;
@@ -258,6 +258,7 @@ where
 /* Implement LogLikelihood for multivariate ZINB distribution. */
 
 /// Define the multivariate ZINB objective function.
+#[derive(Clone, Debug)]
 struct ZINBObjective {
     /// The response vector.
     x1: Array2<f64>,
@@ -354,7 +355,7 @@ impl CostFunction for ZINBObjective {
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7e2));
 
         // Logarithm of the ascending factorial function.
         let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
@@ -408,7 +409,7 @@ impl Gradient for ZINBObjective {
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7E2));
+        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7e2));
 
         // Initialize the gradient.
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
@@ -462,19 +463,24 @@ where
 {
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Initialize the objective function.
-        let objective = ZINBObjective::new(self.data_set.values(), x, z);
+        let f = ZINBObjective::new(self.data_set.values(), x, z);
 
         // Initialize the starting parameters.
         let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
+        // Initialize the inverse Hessian using the initial gradient as in:
+        // "Numerical Optimization, p. 142. Second Edition. Nocedal & Wright."
+        let l_0 = EPSILON * f.gradient(&theta_0).unwrap().mapv(f64::abs).sum().recip();
+        let h_0 = l_0 * Array2::eye(theta_0.len());
 
         // Initialize the solver.
-        let step = ArmijoCondition::new(f64::sqrt(EPSILON)).unwrap();
+        let step = ArmijoCondition::new(f64::sqrt(EPSILON)).expect("Failed to initialize the step");
         let search = BacktrackingLineSearch::new(step);
-        let solver = LBFGS::new(search, theta_0.len() * 10);
-
+        let solver = BFGS::new(search)
+            .with_tolerance_cost(1e-12)
+            .expect("Failed to initialize the solver");
         // Run the solver.
-        let results = Executor::new(objective, solver)
-            .configure(|s| s.param(theta_0).max_iters(1000))
+        let results = Executor::new(f, solver)
+            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(100))
             .timer(false)
             .run()
             .expect("Failed to run the solver");
