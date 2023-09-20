@@ -338,8 +338,11 @@ impl CostFunction for ZINBObjective {
         // [Z1; (n, z + 1)]
         let z1 = self.z11.ncols();
 
-        // Map invalid parameters to epsilon.
-        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters: {theta}",
+        );
 
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
@@ -379,6 +382,12 @@ impl CostFunction for ZINBObjective {
         // Negate the log-likelihood since we are minimizing.
         let log_likelihood = -log_likelihood;
 
+        // Assert log-likelihood is valid.
+        assert!(
+            log_likelihood.is_finite(),
+            "Invalid log-likelihood: {log_likelihood}, with parameters: {theta}",
+        );
+
         Ok(log_likelihood)
     }
 }
@@ -392,8 +401,11 @@ impl Gradient for ZINBObjective {
         // [Z; (n, z + 1)]
         let z1 = self.z11.ncols();
 
-        // Map invalid parameters to epsilon.
-        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters: {theta}",
+        );
 
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
@@ -452,6 +464,12 @@ impl Gradient for ZINBObjective {
 
         // Negate the gradient since we are minimizing.
         let gradient = -gradient;
+
+        // Assert gradient is valid.
+        assert!(
+            gradient.iter().all(|&i| i.is_finite()),
+            "Invalid gradient: {gradient}, with parameters: {theta}",
+        );
 
         Ok(gradient)
     }
