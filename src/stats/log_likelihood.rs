@@ -494,7 +494,7 @@ where
         let step = ArmijoCondition::new(f64::sqrt(EPSILON)).expect("Failed to initialize the step");
         let search = BacktrackingLineSearch::new(step);
         let solver = BFGS::new(search)
-            .with_tolerance_cost(1e-12)
+            .with_tolerance_cost(1e-10)
             .expect("Failed to initialize the solver");
         // Run the solver.
         let results = Executor::new(f, solver)
