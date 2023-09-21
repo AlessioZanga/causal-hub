@@ -502,7 +502,7 @@ where
             .expect("Failed to initialize the solver");
         // Run the solver.
         let results = Executor::new(f, solver)
-            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(1000))
+            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(500))
             .timer(false)
             .run()
             .expect("Failed to run the solver");
