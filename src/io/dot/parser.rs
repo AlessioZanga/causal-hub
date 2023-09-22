@@ -574,11 +574,11 @@ impl TryFrom<String> for DOT {
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
         // Parse the given string.
-        let out = Self::parse(Rule::file, string.trim())?;
+        let dot = Self::parse(Rule::file, string.trim())?;
         // Match inner rules. TODO: Match more than one graph.
-        let out: Self = out.map_into().next().unwrap();
+        let dot: Self = dot.map_into().next().unwrap();
 
-        Ok(out)
+        Ok(dot)
     }
 }
 
@@ -594,10 +594,10 @@ impl File for DOT {
         // Get path.
         let path = path.into();
         // Read file to string.
-        let out = std::fs::read_to_string(&path)
+        let dot = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| format!("Failed to read file: \"{}\"", path.display()));
         // Parse string.
-        Self::try_from(out)
+        Self::try_from(dot)
     }
 
     fn write<P>(self, path: P) -> Result<(), Self::WriteError>
@@ -605,28 +605,28 @@ impl File for DOT {
         P: Into<PathBuf>,
     {
         // Format to string.
-        let out = String::from(self);
+        let string = String::from(self);
         // Write string to file.
-        std::fs::write(path.into(), out)
+        std::fs::write(path.into(), string)
     }
 }
 
 impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(g: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+    fn from(graph: UndirectedDenseAdjacencyMatrixGraph) -> Self {
         // Set graph type.
         let graph_type = "graph".into();
         // Construct the vertex set.
-        let vertices = V!(g)
-            .map(|x| g.get_vertex_by_index(x).into())
+        let vertices = V!(graph)
+            .map(|x| graph.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
-        let edges = E!(g)
+        let edges = E!(graph)
             .map(|(x, y)| {
                 (
-                    g.get_vertex_by_index(x).into(),
-                    g.get_vertex_by_index(y).into(),
+                    graph.get_vertex_by_index(x).into(),
+                    graph.get_vertex_by_index(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "--".into()))
@@ -642,22 +642,35 @@ impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
     }
 }
 
+impl From<DOT> for UndirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn from(dot: DOT) -> Self {
+        // Assert graph type.
+        assert_eq!(
+            dot.graph_type, "graph",
+            "DOT graph type must match direction"
+        );
+
+        Self::new(dot.vertices.into_keys(), dot.edges.into_keys())
+    }
+}
+
 impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(g: DirectedDenseAdjacencyMatrixGraph) -> Self {
+    fn from(graph: DirectedDenseAdjacencyMatrixGraph) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.
-        let vertices = V!(g)
-            .map(|x| g.get_vertex_by_index(x).into())
+        let vertices = V!(graph)
+            .map(|x| graph.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
-        let edges = E!(g)
+        let edges = E!(graph)
             .map(|(x, y)| {
                 (
-                    g.get_vertex_by_index(x).into(),
-                    g.get_vertex_by_index(y).into(),
+                    graph.get_vertex_by_index(x).into(),
+                    graph.get_vertex_by_index(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "->".into()))
@@ -673,24 +686,37 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
     }
 }
 
+impl From<DOT> for DirectedDenseAdjacencyMatrixGraph {
+    #[inline]
+    fn from(dot: DOT) -> Self {
+        // Assert graph type.
+        assert_eq!(
+            dot.graph_type, "digraph",
+            "DOT graph type must match direction"
+        );
+
+        Self::new(dot.vertices.into_keys(), dot.edges.into_keys())
+    }
+}
+
 impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
-    fn from(g: PartiallyDenseAdjacencyMatrixGraph) -> Self {
+    fn from(graph: PartiallyDenseAdjacencyMatrixGraph) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.
-        let vertices = V!(g)
-            .map(|x| g.get_vertex_by_index(x).into())
+        let vertices = V!(graph)
+            .map(|x| graph.get_vertex_by_index(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the undirected edge set.
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
-        let mut edges: BTreeMap<_, _> = uE!(g)
+        let mut edges: BTreeMap<_, _> = uE!(graph)
             .map(|(x, y)| {
                 (
-                    g.get_vertex_by_index(x).into(),
-                    g.get_vertex_by_index(y).into(),
+                    graph.get_vertex_by_index(x).into(),
+                    graph.get_vertex_by_index(y).into(),
                 )
             })
             .map(|(x, y)| Edge {
@@ -701,11 +727,11 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the directed edge set.
-        let mut directed_edges: BTreeMap<_, _> = dE!(g)
+        let mut directed_edges: BTreeMap<_, _> = dE!(graph)
             .map(|(x, y)| {
                 (
-                    g.get_vertex_by_index(x).into(),
-                    g.get_vertex_by_index(y).into(),
+                    graph.get_vertex_by_index(x).into(),
+                    graph.get_vertex_by_index(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "->".into()))

@@ -18,7 +18,6 @@ use crate::{
         directions, BaseGraph, DirectedGraph, IntoUndirectedGraph, PartialOrdGraph, PathGraph,
         SubGraph,
     },
-    io::DOT,
     models::MoralGraph,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
@@ -1124,18 +1123,5 @@ impl MoralGraph for DirectedDenseAdjacencyMatrixGraph {
         }
 
         h
-    }
-}
-
-impl From<DOT> for DirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn from(other: DOT) -> Self {
-        // Assert graph type.
-        assert_eq!(
-            other.graph_type, "digraph",
-            "DOT graph type must match direction"
-        );
-
-        Self::new(other.vertices.into_keys(), other.edges.into_keys())
     }
 }
