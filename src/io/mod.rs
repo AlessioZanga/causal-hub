@@ -6,5 +6,9 @@ pub use bif::BIF;
 pub mod dot;
 pub use dot::DOT;
 
+/// `GML` language module.
+pub mod gml;
+pub use gml::GML;
+
 mod file;
 pub use file::*;

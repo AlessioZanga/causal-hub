@@ -1,0 +1,26 @@
+file = _{ SOI ~ graph ~ EOI }
+
+graph = { "graph" ~ list }
+
+list = { "[" ~ item* ~ "]" }
+
+item = { key ~ value }
+
+key = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+
+value = _{ real | integer | string | list }
+
+integer = @{ sign? ~ digit+ }
+
+real = @{ sign? ~ digit* ~ "." ~ digit* ~ mantissa? }
+
+sign = _{ ("+" | "-") }
+
+digit = _{ ASCII_DIGIT }
+
+mantissa = _{ ("E" | "e") ~ sign? ~ digit+ }
+
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+WHITESPACE = _{ (" " | "\t" | NEWLINE) }
+COMMENT = _{ "#" ~ ANY* }

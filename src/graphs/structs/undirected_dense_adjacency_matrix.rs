@@ -16,7 +16,6 @@ use crate::{
         algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
         directions, BaseGraph, PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
     },
-    io::DOT,
     prelude::BFS,
     types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
     Adj, E, V,
@@ -880,18 +879,5 @@ impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
     #[inline]
     fn is_acyclic(&self) -> bool {
         !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
-    }
-}
-
-impl From<DOT> for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn from(other: DOT) -> Self {
-        // Assert graph type.
-        assert_eq!(
-            other.graph_type, "graph",
-            "DOT graph type must match direction"
-        );
-
-        Self::new(other.vertices.into_keys(), other.edges.into_keys())
     }
 }
