@@ -22,7 +22,7 @@ use crate::{
     utils::{axis_chunks_size, nan_to_zero},
 };
 
-const EPSILON: f64 = f32::EPSILON as f64;
+const E: f64 = f32::EPSILON as f64;
 
 /// Marginal Log-Likelihood functor.
 #[derive(Clone, Debug)]
@@ -279,7 +279,7 @@ impl ZINBObjective {
         // Get a copy of the variable.
         let x = d.column(x);
         // Partition the indices vector.
-        let (i0, i1): (Vec<_>, Vec<_>) = (0..n).partition(|&i| x[i] < EPSILON);
+        let (i0, i1): (Vec<_>, Vec<_>) = (0..n).partition(|&i| x[i] < E);
         // Partition the response vector.
         let mut x1 = Array1::zeros(i1.len());
         i1.iter().enumerate().for_each(|(i, &j)| x1[i] = x[j]);
@@ -324,8 +324,8 @@ impl ZINBObjective {
         let p = &exp_logit / (1. + &exp_logit);
         // Fill the infinite values with 1..
         let p = p.mapv(|x| if x.is_finite() { x } else { 1. });
-        // Avoid NaNs by mapping to [EPSILON, 1 - EPSILON].
-        (p - EPSILON).mapv(f64::abs)
+        // Avoid NaNs by mapping to [E, 1 - E].
+        (p - E).mapv(f64::abs)
     }
 }
 
@@ -338,8 +338,11 @@ impl CostFunction for ZINBObjective {
         // [Z1; (n, z + 1)]
         let z1 = self.z11.ncols();
 
-        // Map invalid parameters to epsilon.
-        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters: {theta}",
+        );
 
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
@@ -355,7 +358,7 @@ impl CostFunction for ZINBObjective {
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7e2));
+        let k = f64::exp(f64::min(lambda, 1e2));
 
         // Logarithm of the ascending factorial function.
         let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
@@ -365,19 +368,27 @@ impl CostFunction for ZINBObjective {
         // Compute the log-likelihood.
         let log_likelihood =
             // \sum_{i \in x0} log(pi_i + (1 - pi_i) * (1 - q_i)^k)
-            (&p0 + (1. - &p0) * (1. - &q0).mapv(|i| f64::powf(i, k)) + EPSILON)
+            (&p0 + (1. - &p0) * (1. - &q0).mapv(|i| f64::powf(i, k)) + E)
                 .mapv(f64::ln)
                 .sum()
             // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(k, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + k * log(1 - q_i)
             + ((1. - &p1).mapv(f64::ln)
                 + log_ascfacto(k, &self.x1)
-                -&self.x1_1_lgamma
+                - &self.x1_1_lgamma
                 + &self.x1 * &q1.mapv(f64::ln)
                 + k * (1. - &q1).mapv(f64::ln)
             ).sum();
 
         // Negate the log-likelihood since we are minimizing.
         let log_likelihood = -log_likelihood;
+
+        // Clip the log-likelihood to avoid overflow.
+        let log_likelihood = f64::clamp(log_likelihood, E * f64::MIN, E * f64::MAX);
+        // Assert log-likelihood is valid.
+        assert!(
+            log_likelihood.is_finite(),
+            "Invalid log-likelihood: {log_likelihood}, with parameters: {theta}",
+        );
 
         Ok(log_likelihood)
     }
@@ -392,8 +403,11 @@ impl Gradient for ZINBObjective {
         // [Z; (n, z + 1)]
         let z1 = self.z11.ncols();
 
-        // Map invalid parameters to epsilon.
-        let theta = theta.mapv(|i| if i.is_finite() { i } else { EPSILON });
+        // Assert parameters are valid.
+        assert!(
+            theta.iter().all(|&i| i.is_finite()),
+            "Invalid parameters: {theta}",
+        );
 
         // [\theta; 2(z + 1) + 1] = [[alpha; z], [delta; 1], [beta; z], [gamma; 1], [lambda; 1]]
         let (alpha_delta, beta_gamma, lambda) = (
@@ -409,7 +423,7 @@ impl Gradient for ZINBObjective {
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
         // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::clamp(lambda, f64::MIN, 7e2));
+        let k = f64::exp(f64::min(lambda, 1e2));
 
         // Initialize the gradient.
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
@@ -453,6 +467,14 @@ impl Gradient for ZINBObjective {
         // Negate the gradient since we are minimizing.
         let gradient = -gradient;
 
+        // Clip the gradient to avoid overflow.
+        let gradient = gradient.mapv_into(|i| f64::clamp(i, E * f64::MIN, E * f64::MAX));
+        // Assert gradient is valid.
+        assert!(
+            gradient.iter().all(|&i| i.is_finite()),
+            "Invalid gradient: {gradient}, with parameters: {theta}",
+        );
+
         Ok(gradient)
     }
 }
@@ -469,18 +491,18 @@ where
         let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
         // Initialize the inverse Hessian using the initial gradient as in:
         // "Numerical Optimization, p. 142. Second Edition. Nocedal & Wright."
-        let l_0 = EPSILON * f.gradient(&theta_0).unwrap().mapv(f64::abs).sum().recip();
+        let l_0 = E * f.gradient(&theta_0).unwrap().mapv(f64::abs).sum().recip();
         let h_0 = l_0 * Array2::eye(theta_0.len());
 
         // Initialize the solver.
-        let step = ArmijoCondition::new(f64::sqrt(EPSILON)).expect("Failed to initialize the step");
+        let step = ArmijoCondition::new(f64::sqrt(E)).expect("Failed to initialize the step");
         let search = BacktrackingLineSearch::new(step);
         let solver = BFGS::new(search)
-            .with_tolerance_cost(1e-12)
+            .with_tolerance_cost(1e-10)
             .expect("Failed to initialize the solver");
         // Run the solver.
         let results = Executor::new(f, solver)
-            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(100))
+            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(500))
             .timer(false)
             .run()
             .expect("Failed to run the solver");
