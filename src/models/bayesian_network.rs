@@ -12,11 +12,10 @@ use super::{
     JointProbabilityDistribution,
 };
 use crate::{
-    graphs::{directions, structs::DirectedDenseAdjacencyMatrixGraph, DirectedGraph},
+    graphs::{directions, structs::DirectedDenseAdjacencyMatrix, DirectedGraph},
     io::BIF,
     prelude::{
-        algorithms::traversal::TopologicalSort, BaseGraph, CategoricalDataMatrix, DataSet,
-        PathGraph,
+        algorithms::traversal::TopologicalSort, CategoricalDataMatrix, DataSet, Graph, PathGraph,
     },
     types::FxIndexMap,
     Pa, L, V,
@@ -74,7 +73,7 @@ pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
 /// Categorical Bayesian Network $\mathcal{B}$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
-    graph: DirectedDenseAdjacencyMatrixGraph,
+    graph: DirectedDenseAdjacencyMatrix,
     theta: FxIndexMap<String, CategoricalCPD>,
 }
 
@@ -92,7 +91,7 @@ impl Display for CategoricalBayesianNetwork {
 
 impl From<CategoricalBayesianNetwork>
     for (
-        DirectedDenseAdjacencyMatrixGraph,
+        DirectedDenseAdjacencyMatrix,
         FxIndexMap<String, CategoricalCPD>,
     )
 {
@@ -104,7 +103,7 @@ impl From<CategoricalBayesianNetwork>
 impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
     type Data = CategoricalDataMatrix;
 
-    type Graph = DirectedDenseAdjacencyMatrixGraph;
+    type Graph = DirectedDenseAdjacencyMatrix;
 
     type Parameter = CategoricalCPD;
 
@@ -255,7 +254,7 @@ impl BayesianNetwork for CategoricalBayesianNetwork {
                 .zip(theta.values())
                 .all(|((i, x), t)| {
                     Pa!(graph, i)
-                        .map(|y| graph.get_vertex_by_index(y))
+                        .map(|y| graph.vertex_to_label(y))
                         .eq(t.scope().filter(|&z| z != x))
                 }),
             "Graph and parameters must induce the same structure"

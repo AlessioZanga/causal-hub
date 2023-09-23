@@ -1,6 +1,6 @@
 use super::CategoricalBayesianNetwork;
 use crate::{
-    prelude::{BaseGraph, Factor, ProbabilisticGraphicalModel},
+    prelude::{Factor, Graph, ProbabilisticGraphicalModel},
     utils::nan_to_zero,
     V,
 };

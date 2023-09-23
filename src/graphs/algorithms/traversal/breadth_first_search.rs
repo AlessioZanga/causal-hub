@@ -2,7 +2,7 @@ use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
+    graphs::{directions, DirectedGraph, Graph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -16,7 +16,7 @@ use crate::{
 ///
 pub struct BreadthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Given graph reference.
     g: &'a G,
@@ -32,7 +32,7 @@ where
 
 impl<'a, G, D> BreadthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Build a BFS iterator.
     ///
@@ -54,7 +54,7 @@ where
     /// ]);
     ///
     /// // Build a new graph.
-    /// let mut g = DiGraph::from(e);
+    /// let mut g = DGraph::from(e);
     ///
     /// // Build the search object over graph with `0` as source vertex.
     /// let mut search = BFS::from((&g, 0));
@@ -96,7 +96,7 @@ where
         // If no source vertex is given, choose the first in the vertex set.
         if let Some(x) = x.or_else(|| V!(g).next()) {
             // ... assert that source vertex is in graph.
-            assert!(g.has_vertex_by_index(x));
+            assert!(g.has_vertex(x));
             // Push the source vertex into the queue.
             queue.push_front(x);
             // Set its distance to zero.
@@ -115,7 +115,7 @@ where
 
 impl<'a, G, D> From<&'a G> for BreadthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     #[inline]
     fn from(g: &'a G) -> Self {
@@ -125,7 +125,7 @@ where
 
 impl<'a, G, D> From<(&'a G, usize)> for BreadthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     #[inline]
     fn from((g, x): (&'a G, usize)) -> Self {

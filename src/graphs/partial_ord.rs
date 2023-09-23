@@ -1,7 +1,7 @@
-use super::BaseGraph;
+use super::Graph;
 
 /// Partial order graph trait.
-pub trait PartialOrdGraph: BaseGraph + PartialOrd {
+pub trait PartialOrdGraph: Graph + PartialOrd {
     /// Checks if `self` is a subgraph of `other`.
     #[inline]
     fn is_subgraph(&self, other: &Self) -> bool {

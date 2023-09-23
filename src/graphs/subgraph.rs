@@ -1,7 +1,7 @@
-use super::{BaseGraph, PartialOrdGraph};
+use super::{Graph, PartialOrdGraph};
 
 /// Subgraph trait.
-pub trait SubGraph: BaseGraph + PartialOrdGraph {
+pub trait SubGraph: Graph + PartialOrdGraph {
     /// Constructs the generic subgraph.
     ///
     /// Constructs a generic subgraph given a subset of vertices and edges.
@@ -16,7 +16,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new directed graph.
-    /// let g = DiGraph::new(
+    /// let g = DGraph::new(
     ///     ["A", "B", "C", "D", "E", "F"],
     ///     [
     ///         ("A", "C"),
@@ -58,7 +58,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new directed graph.
-    /// let g = DiGraph::new(
+    /// let g = DGraph::new(
     ///     ["A", "B", "C", "D", "E", "F"],
     ///     [
     ///         ("A", "C"),
@@ -93,7 +93,7 @@ pub trait SubGraph: BaseGraph + PartialOrdGraph {
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new directed graph.
-    /// let g = DiGraph::new(
+    /// let g = DGraph::new(
     ///     ["A", "B", "C", "D", "E", "F"],
     ///     [
     ///         ("A", "C"),

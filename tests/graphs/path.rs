@@ -5,7 +5,7 @@ mod undirected {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path_by_index() {
+            fn has_path() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -47,7 +47,7 @@ mod undirected {
                     let g = $G::new(v.clone(), e.clone());
 
                     assert_eq!(
-                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
+                        g.has_path(g.label_to_vertex(x), g.label_to_vertex(y)),
                         f,
                         "(({:?}, {:?}, {}, {}), {})",
                         v,
@@ -96,8 +96,8 @@ mod undirected {
     }
 
     mod undirected_dense_matrix {
-        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrix;
+        generic_tests!(UndirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -108,7 +108,7 @@ mod directed {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path_by_index() {
+            fn has_path() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -150,7 +150,7 @@ mod directed {
                     let g = $G::new(v.clone(), e.clone());
 
                     assert_eq!(
-                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
+                        g.has_path(g.label_to_vertex(x), g.label_to_vertex(y)),
                         f,
                         "(({:?}, {:?}, {}, {}), {})",
                         v,
@@ -205,8 +205,8 @@ mod directed {
     }
 
     mod directed_dense_matrix {
-        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(DirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrix;
+        generic_tests!(DirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -217,7 +217,7 @@ mod partially_directed {
             use causal_hub::prelude::*;
 
             #[test]
-            fn has_path_by_index() {
+            fn has_path() {
                 // Test for ...
                 let data = [
                     // ... one vertex and zero edges,
@@ -298,7 +298,7 @@ mod partially_directed {
                     let g = $G::new_pagraph(v.clone(), ue.clone(), de.clone());
 
                     assert_eq!(
-                        g.has_path_by_index(g.get_vertex_index(x), g.get_vertex_index(y)),
+                        g.has_path(g.label_to_vertex(x), g.label_to_vertex(y)),
                         f,
                         "(({:?}, {:?}, {:?}, {}, {}), {})",
                         v,
@@ -384,7 +384,7 @@ mod partially_directed {
     }
 
     mod partially_dense_matrix {
-        use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
-        generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::PartiallyDirectedDenseAdjacencyMatrix;
+        generic_tests!(PartiallyDirectedDenseAdjacencyMatrix);
     }
 }

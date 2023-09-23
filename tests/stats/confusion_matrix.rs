@@ -63,21 +63,21 @@ mod tests {
     #[test]
     fn from_graphs() {
         // Initialize graphs.
-        let true_graph = Graph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
-        let pred_graph = Graph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
+        let true_graph = UGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let pred_graph = UGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
         // Construct confusion matrix.
-        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        let cm = ConfusionMatrix::from((&true_graph, &pred_graph));
         // Deref slice.
-        assert_eq!(cm.deref(), &[4., 0., 0., 2.]);
+        assert_eq!(cm.deref(), &[5., 0., 0., 4.]);
     }
 
     #[test]
     fn from_digraphs() {
         // Initialize graphs.
-        let true_graph = DiGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
-        let pred_graph = DiGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
+        let true_graph = DGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let pred_graph = DGraph::new(["A", "B", "C"], [("B", "A"), ("B", "C")]);
         // Construct confusion matrix.
-        let cm = ConfusionMatrix::from((true_graph, pred_graph));
+        let cm = ConfusionMatrix::from((&true_graph, &pred_graph));
         // Deref slice.
         assert_eq!(cm.deref(), &[6., 1., 1., 1.]);
     }

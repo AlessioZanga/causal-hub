@@ -1,10 +1,7 @@
-use crate::{
-    graphs::{directions, IntoUndirectedGraph},
-    prelude::UndirectedGraph,
-};
+use crate::graphs::{directions, UndirectedGraph};
 
 /// Moral graph trait.
-pub trait MoralGraph: IntoUndirectedGraph {
+pub trait MoralGraph {
     /// Associated moral graph type.
     type MoralGraph: UndirectedGraph<Direction = directions::Undirected>;
 
@@ -19,7 +16,7 @@ pub trait MoralGraph: IntoUndirectedGraph {
     /// use causal_hub::models::MoralGraph;
     ///
     /// // Build a new directed graph.
-    /// let g = DiGraph::new(
+    /// let g = DGraph::new(
     ///     ["A", "B", "C", "D", "E"],
     ///     [("A", "C"), ("B", "C")]
     /// );
@@ -30,7 +27,7 @@ pub trait MoralGraph: IntoUndirectedGraph {
     /// // Assert previous parents are connected.
     /// for x in V!(g) {
     ///     for (y, z) in Pa!(g, x).tuple_windows() {
-    ///         assert!(h.has_edge_by_index(y, z));
+    ///         assert!(h.has_edge(y, z));
     ///     }
     /// }
     /// ```

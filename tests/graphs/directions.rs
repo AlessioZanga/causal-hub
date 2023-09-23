@@ -6,7 +6,7 @@ mod undirected {
             use is_sorted::IsSorted;
 
             #[test]
-            fn size_of_maximal_undirected_subgraph() {
+            fn undirected_size() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -22,7 +22,7 @@ mod undirected {
                 // Test for each scenario.
                 for (i, j) in data {
                     let g = $G::new([], i);
-                    assert_eq!(g.size_of_maximal_undirected_subgraph(), j);
+                    assert_eq!(g.undirected_size(), j);
                 }
             }
             #[test]
@@ -48,15 +48,15 @@ mod undirected {
                 // Test for each scenario.
                 for (i, j) in data {
                     let g = $G::new(vec![], i);
-                    assert!(uE!(g).is_sorted());
-                    assert!(uE!(g).eq(j
+                    assert!(g.undirected_edges().is_sorted());
+                    assert!(g.undirected_edges().eq(j
                         .iter()
-                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                        .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                 }
             }
 
             #[test]
-            fn get_neighbors_by_index() {
+            fn get_neighbors() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -104,7 +104,7 @@ mod undirected {
             }
 
             #[test]
-            fn is_neighbor_by_index() {
+            fn is_neighbor() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -138,7 +138,7 @@ mod undirected {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_neighbor_by_index(x, y)));
+                    assert!(f.iter().all(|&y| g.is_neighbor(x, y)));
                 }
             }
 
@@ -147,11 +147,11 @@ mod undirected {
             fn is_neighbor_should_panic() {
                 let g = $G::null();
 
-                g.is_neighbor_by_index(0, 0);
+                g.is_neighbor(0, 0);
             }
 
             #[test]
-            fn has_undirected_edge_by_index() {
+            fn has_undirected_edge() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -180,21 +180,21 @@ mod undirected {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                        assert_eq!(g.has_undirected_edge_by_index(x, y), f);
+                        let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                        assert_eq!(g.has_undirected_edge(x, y), f);
                     }
                 }
             }
 
             #[test]
             #[should_panic]
-            fn has_undirected_edge_by_index_should_panic() {
+            fn has_undirected_edge_should_panic() {
                 let g = $G::null();
-                g.has_undirected_edge_by_index(0, 0);
+                g.has_undirected_edge(0, 0);
             }
 
             #[test]
-            fn get_degree_by_index() {
+            fn degree() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -214,19 +214,19 @@ mod undirected {
                 // Test for each scenario.
                 for (i, (x, f)) in data {
                     let g = $G::new([], i);
-                    assert_eq!(g.get_degree_by_index(x), f);
+                    assert_eq!(g.degree(x), f);
                 }
             }
 
             #[test]
             #[should_panic]
-            fn get_degree_by_index_should_panic() {
+            fn degree_should_panic() {
                 let g = $G::null();
-                g.get_degree_by_index(0);
+                g.degree(0);
             }
 
             #[test]
-            fn add_undirected_edge_by_index() {
+            fn add_undirected_edge() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -255,24 +255,24 @@ mod undirected {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                        assert_eq!(g.add_undirected_edge_by_index(x, y), f);
+                        let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                        assert_eq!(g.add_undirected_edge(x, y), f);
                     }
                 }
             }
             #[test]
             #[should_panic]
-            fn add_undirected_edge_by_index_should_panic() {
+            fn add_undirected_edge_should_panic() {
                 let mut g = $G::null();
-                g.add_undirected_edge_by_index(0, 0);
+                g.add_undirected_edge(0, 0);
             }
         };
     }
 
     #[allow(unstable_name_collisions)]
     mod undirected_dense_matrix {
-        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrix;
+        generic_tests!(UndirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -284,7 +284,7 @@ mod directed {
             use is_sorted::IsSorted;
 
             #[test]
-            fn size_of_maximal_directed_subgraph() {
+            fn directed_size() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -300,7 +300,7 @@ mod directed {
                 // Test for each scenario.
                 for (i, j) in data {
                     let g = $G::new([], i);
-                    assert_eq!(g.size_of_maximal_directed_subgraph(), j);
+                    assert_eq!(g.directed_size(), j);
                 }
             }
 
@@ -330,12 +330,12 @@ mod directed {
                     assert!(dE!(g).is_sorted());
                     assert!(dE!(g).eq(j
                         .iter()
-                        .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                        .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                 }
             }
 
             #[test]
-            fn get_ancestors_by_index() {
+            fn get_ancestors() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -388,14 +388,14 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn get_ancestors_by_index_should_panic() {
+            fn get_ancestors_should_panic() {
                 let g = $G::null();
 
                 An!(g, 0);
             }
 
             #[test]
-            fn is_ancestor_by_index() {
+            fn is_ancestor() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -441,7 +441,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_ancestor_by_index(x, y)));
+                    assert!(f.iter().all(|&y| g.is_ancestor(x, y)));
                 }
             }
 
@@ -450,11 +450,11 @@ mod directed {
             fn is_ancestor_should_panic() {
                 let g = $G::null();
 
-                g.is_ancestor_by_index(0, 0);
+                g.is_ancestor(0, 0);
             }
 
             #[test]
-            fn get_parents_by_index() {
+            fn get_parents() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -507,14 +507,14 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn get_parents_by_index_should_panic() {
+            fn get_parents_should_panic() {
                 let g = $G::null();
 
                 Pa!(g, 0);
             }
 
             #[test]
-            fn is_parent_by_index() {
+            fn is_parent() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -560,7 +560,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_parent_by_index(x, y)));
+                    assert!(f.iter().all(|&y| g.is_parent(x, y)));
                 }
             }
 
@@ -569,11 +569,11 @@ mod directed {
             fn is_parent_should_panic() {
                 let g = $G::null();
 
-                g.is_parent_by_index(0, 0);
+                g.is_parent(0, 0);
             }
 
             #[test]
-            fn get_children_by_index() {
+            fn get_children() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -633,7 +633,7 @@ mod directed {
             }
 
             #[test]
-            fn is_child_by_index() {
+            fn is_child() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -679,7 +679,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_child_by_index(x, y)));
+                    assert!(f.iter().all(|&y| g.is_child(x, y)));
                 }
             }
 
@@ -688,11 +688,11 @@ mod directed {
             fn is_child_should_panic() {
                 let g = $G::null();
 
-                g.is_child_by_index(0, 0);
+                g.is_child(0, 0);
             }
 
             #[test]
-            fn get_descendants_by_index() {
+            fn get_descendants() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -752,7 +752,7 @@ mod directed {
             }
 
             #[test]
-            fn is_descendant_by_index() {
+            fn is_descendant() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -798,7 +798,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert!(f.iter().all(|&y| g.is_descendant_by_index(x, y)));
+                    assert!(f.iter().all(|&y| g.is_descendant(x, y)));
                 }
             }
 
@@ -807,11 +807,11 @@ mod directed {
             fn is_descendant_should_panic() {
                 let g = $G::null();
 
-                g.is_descendant_by_index(0, 0);
+                g.is_descendant(0, 0);
             }
 
             #[test]
-            fn has_directed_edge_by_index() {
+            fn has_directed_edge() {
                 // Test for ...
                 let data = [
                     // ... one edge,
@@ -837,21 +837,21 @@ mod directed {
                 for (i, j) in data {
                     let g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                        assert_eq!(g.has_directed_edge_by_index(x, y), f);
+                        let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                        assert_eq!(g.has_directed_edge(x, y), f);
                     }
                 }
             }
 
             #[test]
             #[should_panic]
-            fn has_directed_edge_by_index_should_panic() {
+            fn has_directed_edge_should_panic() {
                 let g = $G::null();
-                g.has_directed_edge_by_index(0, 0);
+                g.has_directed_edge(0, 0);
             }
 
             #[test]
-            fn get_in_degree_by_index() {
+            fn get_in_degree() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -893,7 +893,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.get_in_degree_by_index(x), f);
+                    assert_eq!(g.get_in_degree(x), f);
                 }
             }
 
@@ -902,11 +902,11 @@ mod directed {
             fn in_degree_should_panic() {
                 let g = $G::null();
 
-                g.get_in_degree_by_index(0);
+                g.get_in_degree(0);
             }
 
             #[test]
-            fn get_out_degree_by_index() {
+            fn get_out_degree() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -948,7 +948,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.get_out_degree_by_index(x), f);
+                    assert_eq!(g.get_out_degree(x), f);
                 }
             }
 
@@ -957,11 +957,11 @@ mod directed {
             fn out_degree_should_panic() {
                 let g = $G::null();
 
-                g.get_out_degree_by_index(0);
+                g.get_out_degree(0);
             }
 
             #[test]
-            fn add_directed_edge_by_index() {
+            fn add_directed_edge() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -990,25 +990,25 @@ mod directed {
                 for (i, j) in data {
                     let mut g = $G::new([], i);
                     for ((x, y), f) in j {
-                        let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                        assert_eq!(g.add_directed_edge_by_index(x, y), f);
+                        let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                        assert_eq!(g.add_directed_edge(x, y), f);
                     }
                 }
             }
 
             #[test]
             #[should_panic]
-            fn add_directed_edge_by_index_should_panic() {
+            fn add_directed_edge_should_panic() {
                 let mut g = $G::null();
-                g.add_directed_edge_by_index(0, 0);
+                g.add_directed_edge(0, 0);
             }
         };
     }
 
     #[allow(unstable_name_collisions)]
     mod directed_dense_matrix {
-        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(DirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrix;
+        generic_tests!(DirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -1021,7 +1021,7 @@ mod partially_directed {
                 use is_sorted::IsSorted;
 
                 #[test]
-                fn size_of_maximal_undirected_subgraph() {
+                fn undirected_size() {
                     // Test for ...
                     let data = [
                         // ... zero edges,
@@ -1037,7 +1037,7 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new([], i);
-                        assert_eq!(g.size_of_maximal_undirected_subgraph(), j);
+                        assert_eq!(g.undirected_size(), j);
                     }
                 }
 
@@ -1064,15 +1064,15 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new(vec![], i);
-                        assert!(uE!(g).is_sorted());
-                        assert!(uE!(g).eq(j
+                        assert!(g.undirected_edges().is_sorted());
+                        assert!(g.undirected_edges().eq(j
                             .iter()
-                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                            .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                     }
                 }
 
                 #[test]
-                fn get_neighbors_by_index() {
+                fn get_neighbors() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1120,7 +1120,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn is_neighbor_by_index() {
+                fn is_neighbor() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1154,40 +1154,40 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new(i, j);
 
-                        assert!(f.iter().all(|&y| g.is_neighbor_by_index(x, y)));
+                        assert!(f.iter().all(|&y| g.is_neighbor(x, y)));
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn is_neighbor_by_index_should_panic() {
+                fn is_neighbor_should_panic() {
                     let g = $G::null();
 
-                    g.is_neighbor_by_index(0, 0);
+                    g.is_neighbor(0, 0);
                 }
 
                 #[test]
-                fn has_undirected_edge_by_index() {
+                fn has_undirected_edge() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_pagraph(i, j, k);
                     // Test for undirected edges
-                    assert!(g.has_undirected_edge_by_index(1, 2));
-                    assert!(g.has_undirected_edge_by_index(2, 1));
-                    assert!(!g.has_undirected_edge_by_index(0, 1));
+                    assert!(g.has_undirected_edge(1, 2));
+                    assert!(g.has_undirected_edge(2, 1));
+                    assert!(!g.has_undirected_edge(0, 1));
                     // Test for non-present edges
-                    assert!(!g.has_undirected_edge_by_index(0, 2));
-                    assert!(!g.has_undirected_edge_by_index(2, 0));
+                    assert!(!g.has_undirected_edge(0, 2));
+                    assert!(!g.has_undirected_edge(2, 0));
                 }
 
                 #[test]
                 #[should_panic]
-                fn has_undirected_edge_by_index_should_panic() {
+                fn has_undirected_edge_should_panic() {
                     let g = $G::null();
-                    g.has_undirected_edge_by_index(0, 0);
+                    g.has_undirected_edge(0, 0);
                 }
 
                 #[test]
-                fn get_degree_by_index() {
+                fn degree() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1207,19 +1207,19 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, (x, f)) in data {
                         let g = $G::new([], i);
-                        assert_eq!(g.get_degree_by_index(x), f);
+                        assert_eq!(g.degree(x), f);
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn get_degree_by_index_should_panic() {
+                fn degree_should_panic() {
                     let g = $G::null();
-                    g.get_degree_by_index(0);
+                    g.degree(0);
                 }
 
                 #[test]
-                fn add_undirected_edge_by_index() {
+                fn add_undirected_edge() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1247,8 +1247,8 @@ mod partially_directed {
                     for (i, j) in data {
                         let mut g = $G::new([], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                            assert_eq!(g.add_undirected_edge_by_index(x, y), f);
+                            let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                            assert_eq!(g.add_undirected_edge(x, y), f);
                         }
                     }
                 }
@@ -1257,8 +1257,8 @@ mod partially_directed {
 
         #[allow(unstable_name_collisions)]
         mod undirected_dense_matrix {
-            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
-            generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+            use causal_hub::graphs::structs::PartiallyDirectedDenseAdjacencyMatrix;
+            generic_tests!(PartiallyDirectedDenseAdjacencyMatrix);
         }
     }
 
@@ -1269,7 +1269,7 @@ mod partially_directed {
                 use is_sorted::IsSorted;
 
                 #[test]
-                fn size_of_maximal_directed_subgraph() {
+                fn directed_size() {
                     // Test for ...
                     let data = [
                         // ... zero edges,
@@ -1285,7 +1285,7 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new_pagraph(vec![], vec![], i);
-                        assert_eq!(g.size_of_maximal_directed_subgraph(), j);
+                        assert_eq!(g.directed_size(), j);
                     }
                 }
 
@@ -1315,12 +1315,12 @@ mod partially_directed {
                         assert!(dE!(g).is_sorted());
                         assert!(dE!(g).eq(j
                             .iter()
-                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                            .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                     }
                 }
 
                 #[test]
-                fn get_ancestors_by_index() {
+                fn get_ancestors() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1373,7 +1373,7 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn get_ancestors_by_index_should_panic() {
+                fn get_ancestors_should_panic() {
                     let g = $G::null();
 
                     An!(g, 0);
@@ -1426,7 +1426,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_ancestor_by_index(x, y)));
+                        assert!(f.iter().all(|&y| g.is_ancestor(x, y)));
                     }
                 }
 
@@ -1435,11 +1435,11 @@ mod partially_directed {
                 fn is_ancestor_should_panic() {
                     let g = $G::null();
 
-                    g.is_ancestor_by_index(0, 0);
+                    g.is_ancestor(0, 0);
                 }
 
                 #[test]
-                fn get_parents_by_index() {
+                fn get_parents() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1492,14 +1492,14 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn get_parents_by_index_should_panic() {
+                fn get_parents_should_panic() {
                     let g = $G::null();
 
                     Pa!(g, 0);
                 }
 
                 #[test]
-                fn is_parent_by_index() {
+                fn is_parent() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1545,20 +1545,20 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_parent_by_index(x, y)));
+                        assert!(f.iter().all(|&y| g.is_parent(x, y)));
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn is_parent_by_index_should_panic() {
+                fn is_parent_should_panic() {
                     let g = $G::null();
 
-                    g.is_parent_by_index(0, 0);
+                    g.is_parent(0, 0);
                 }
 
                 #[test]
-                fn get_children_by_index() {
+                fn get_children() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1618,7 +1618,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn is_child_by_index() {
+                fn is_child() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1664,7 +1664,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_child_by_index(x, y)));
+                        assert!(f.iter().all(|&y| g.is_child(x, y)));
                     }
                 }
 
@@ -1673,11 +1673,11 @@ mod partially_directed {
                 fn is_child_should_panic() {
                     let g = $G::null();
 
-                    g.is_child_by_index(0, 0);
+                    g.is_child(0, 0);
                 }
 
                 #[test]
-                fn get_descendants_by_index() {
+                fn get_descendants() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1783,7 +1783,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert!(f.iter().all(|&y| g.is_descendant_by_index(x, y)));
+                        assert!(f.iter().all(|&y| g.is_descendant(x, y)));
                     }
                 }
 
@@ -1792,32 +1792,32 @@ mod partially_directed {
                 fn is_descendant_should_panic() {
                     let g = $G::null();
 
-                    g.is_descendant_by_index(0, 0);
+                    g.is_descendant(0, 0);
                 }
 
                 #[test]
-                fn has_directed_edge_by_index() {
+                fn has_directed_edge() {
                     let (i, j, k) = (vec!["0", "1", "2"], vec![("1", "2")], vec![("0", "1")]);
                     let g = $G::new_pagraph(i, j, k);
                     // Test for directed edges
-                    assert!(!g.has_directed_edge_by_index(1, 2));
-                    assert!(!g.has_directed_edge_by_index(2, 1));
-                    assert!(g.has_directed_edge_by_index(0, 1));
-                    assert!(!g.has_directed_edge_by_index(1, 0));
+                    assert!(!g.has_directed_edge(1, 2));
+                    assert!(!g.has_directed_edge(2, 1));
+                    assert!(g.has_directed_edge(0, 1));
+                    assert!(!g.has_directed_edge(1, 0));
                     // Test for non-present edges
-                    assert!(!g.has_directed_edge_by_index(0, 2));
-                    assert!(!g.has_directed_edge_by_index(2, 0));
+                    assert!(!g.has_directed_edge(0, 2));
+                    assert!(!g.has_directed_edge(2, 0));
                 }
 
                 #[test]
                 #[should_panic]
-                fn has_directed_edge_by_index_should_panic() {
+                fn has_directed_edge_should_panic() {
                     let g = $G::null();
-                    g.has_directed_edge_by_index(0, 0);
+                    g.has_directed_edge(0, 0);
                 }
 
                 #[test]
-                fn get_in_degree_by_index() {
+                fn get_in_degree() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1859,7 +1859,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert_eq!(g.get_in_degree_by_index(x), f);
+                        assert_eq!(g.get_in_degree(x), f);
                     }
                 }
 
@@ -1868,11 +1868,11 @@ mod partially_directed {
                 fn in_degree_should_panic() {
                     let g = $G::null();
 
-                    g.get_in_degree_by_index(0);
+                    g.get_in_degree(0);
                 }
 
                 #[test]
-                fn get_out_degree_by_index() {
+                fn get_out_degree() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1914,7 +1914,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert_eq!(g.get_out_degree_by_index(x), f);
+                        assert_eq!(g.get_out_degree(x), f);
                     }
                 }
 
@@ -1923,11 +1923,11 @@ mod partially_directed {
                 fn out_degree_should_panic() {
                     let g = $G::null();
 
-                    g.get_out_degree_by_index(0);
+                    g.get_out_degree(0);
                 }
 
                 #[test]
-                fn add_directed_edge_by_index() {
+                fn add_directed_edge() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1956,25 +1956,25 @@ mod partially_directed {
                     for (i, j) in data {
                         let mut g = $G::new_pagraph(vec![], vec![], i);
                         for ((x, y), f) in j {
-                            let (x, y) = (g.get_vertex_index(x), g.get_vertex_index(y));
-                            assert_eq!(g.add_directed_edge_by_index(x, y), f);
+                            let (x, y) = (g.label_to_vertex(x), g.label_to_vertex(y));
+                            assert_eq!(g.add_directed_edge(x, y), f);
                         }
                     }
                 }
 
                 #[test]
                 #[should_panic]
-                fn add_directed_edge_by_index_should_panic() {
+                fn add_directed_edge_should_panic() {
                     let mut g = $G::null();
-                    g.add_directed_edge_by_index(0, 0);
+                    g.add_directed_edge(0, 0);
                 }
             };
         }
 
         #[allow(unstable_name_collisions)]
         mod directed_dense_matrix {
-            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
-            generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+            use causal_hub::graphs::structs::PartiallyDirectedDenseAdjacencyMatrix;
+            generic_tests!(PartiallyDirectedDenseAdjacencyMatrix);
         }
     }
 
@@ -2278,22 +2278,22 @@ mod partially_directed {
                         assert_eq!(g.order(), o);
                         assert_eq!(g.size(), s);
                         assert!(V!(g).is_sorted());
-                        assert!(uE!(g).is_sorted());
+                        assert!(g.undirected_edges().is_sorted());
                         assert!(dE!(g).is_sorted());
                         assert!(E!(g).is_sorted());
-                        assert!(V!(g).eq(v.into_iter().map(|x| g.get_vertex_index(x))));
-                        assert!(uE!(g).eq(ue
+                        assert!(V!(g).eq(v.into_iter().map(|x| g.label_to_vertex(x))));
+                        assert!(g.undirected_edges().eq(ue
                             .iter()
-                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                            .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                         assert!(dE!(g).eq(de
                             .iter()
-                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                            .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                         assert!(E!(g).eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_index(x), g.get_vertex_index(y)))));
+                            .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                         // Test for `size_of_type` function
-                        assert_eq!(g.size_of_maximal_undirected_subgraph(), ue.len());
-                        assert_eq!(g.size_of_maximal_directed_subgraph(), de.len());
+                        assert_eq!(g.undirected_size(), ue.len());
+                        assert_eq!(g.directed_size(), de.len());
                     }
                 }
 
@@ -2322,16 +2322,16 @@ mod partially_directed {
                     g.orient_edge(3, 0);
                     g.orient_edge(2, 1);
                     // Test for type of edges
-                    assert!(g.has_directed_edge_by_index(0, 1));
-                    assert!(g.has_directed_edge_by_index(0, 3));
-                    assert!(!g.has_directed_edge_by_index(3, 0));
-                    assert!(g.has_directed_edge_by_index(2, 1));
-                    assert!(!g.has_undirected_edge_by_index(1, 2));
-                    assert!(g.has_undirected_edge_by_index(1, 4));
-                    assert!(g.has_undirected_edge_by_index(4, 1));
+                    assert!(g.has_directed_edge(0, 1));
+                    assert!(g.has_directed_edge(0, 3));
+                    assert!(!g.has_directed_edge(3, 0));
+                    assert!(g.has_directed_edge(2, 1));
+                    assert!(!g.has_undirected_edge(1, 2));
+                    assert!(g.has_undirected_edge(1, 4));
+                    assert!(g.has_undirected_edge(4, 1));
                     // Test for sizes
-                    assert_eq!(g.size_of_maximal_undirected_subgraph(), 1);
-                    assert_eq!(g.size_of_maximal_directed_subgraph(), 3);
+                    assert_eq!(g.undirected_size(), 1);
+                    assert_eq!(g.directed_size(), 3);
                     assert_eq!(g.size(), 4);
                     // Test when orienting a non-existing edge
                     assert!(!g.orient_edge(2, 3));
@@ -2345,18 +2345,18 @@ mod partially_directed {
                         vec![("71", "1"), ("1", "58"), ("58", "3"), ("3", "75")],
                     );
                     let g_to_undirected = g.to_undirected();
-                    let g_to_undirected: PartiallyDenseAdjacencyMatrixGraph =
+                    let g_to_undirected: PartiallyDirectedDenseAdjacencyMatrix =
                         g_to_undirected.into();
-                    assert_eq!(g_to_undirected.size_of_maximal_directed_subgraph(), 0);
-                    assert_eq!(g_to_undirected.size_of_maximal_undirected_subgraph(), 4);
+                    assert_eq!(g_to_undirected.directed_size(), 0);
+                    assert_eq!(g_to_undirected.undirected_size(), 4);
                 }
             };
         }
 
         #[allow(unstable_name_collisions)]
         mod partially_dense_matrix {
-            use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
-            generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+            use causal_hub::graphs::structs::PartiallyDirectedDenseAdjacencyMatrix;
+            generic_tests!(PartiallyDirectedDenseAdjacencyMatrix);
         }
     }
 }

@@ -6,7 +6,7 @@ mod categorical {
     #[test]
     fn call() {
         // Set true graph.
-        let true_g = DiGraph::new(
+        let true_g = DGraph::new(
             [
                 "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
             ],
@@ -37,7 +37,7 @@ mod categorical {
         // Initialize discovery functor.
         let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -45,7 +45,7 @@ mod categorical {
     #[test]
     fn par_call() {
         // Set true graph.
-        let true_g = DiGraph::new(
+        let true_g = DGraph::new(
             [
                 "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
             ],
@@ -76,7 +76,7 @@ mod categorical {
         // Initialize discovery functor.
         let hc = ParallelHC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -84,7 +84,7 @@ mod categorical {
     #[test]
     fn with_shuffle() {
         // Set true graph.
-        let true_g = DiGraph::new(
+        let true_g = DGraph::new(
             [
                 "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
             ],
@@ -115,7 +115,7 @@ mod categorical {
         // Initialize discovery functor.
         let hc = HC::new(&s).with_shuffle(42);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -129,7 +129,7 @@ mod gaussian {
     #[test]
     fn call() {
         // Set true graph.
-        let true_g = DiGraph::new(
+        let true_g = DGraph::new(
             [],
             [
                 ("asnA", "icdA"),
@@ -242,7 +242,7 @@ mod gaussian {
         // Initialize discovery functor.
         let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -250,7 +250,7 @@ mod gaussian {
     #[test]
     fn par_call() {
         // Set true graph.
-        let true_g = DiGraph::new(
+        let true_g = DGraph::new(
             [],
             [
                 ("asnA", "icdA"),
@@ -363,7 +363,7 @@ mod gaussian {
         // Initialize discovery functor.
         let hc = ParallelHC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -377,7 +377,7 @@ mod zinb {
     #[test]
     fn call() {
         // Set true graph.
-        let true_g = DiGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
+        let true_g = DGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
 
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/zinb.csv")
@@ -397,7 +397,7 @@ mod zinb {
         // Initialize discovery functor.
         let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -405,7 +405,7 @@ mod zinb {
     #[test]
     fn par_call() {
         // Set true graph.
-        let true_g = DiGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
+        let true_g = DGraph::new([], [("V1", "V2"), ("V2", "V3"), ("V3", "V4"), ("V4", "V5")]);
 
         // Load data set.
         let d = CsvReader::from_path("./tests/assets/zinb.csv")
@@ -425,7 +425,7 @@ mod zinb {
         // Initialize discovery functor.
         let hc = ParallelHC::new(&s);
         // Perform discovery.
-        let pred_g: DiGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }

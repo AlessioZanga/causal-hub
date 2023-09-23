@@ -192,8 +192,8 @@ mod categorical {
     fn meek_1_base_case() {
         let mut g = PDGraph::new_pagraph(vec![], vec![("1", "2")], vec![("0", "1")]);
         g.meek_1();
-        assert!(g.has_directed_edge_by_index(1, 2));
-        assert!(g.has_directed_edge_by_index(0, 1))
+        assert!(g.has_directed_edge(1, 2));
+        assert!(g.has_directed_edge(0, 1))
     }
 
     #[test]
@@ -212,22 +212,22 @@ mod categorical {
         );
         g.meek_1();
         // Test for undirected edges
-        assert!(g.has_undirected_edge_by_index(0, 4));
-        assert!(g.has_undirected_edge_by_index(4, 1));
-        assert!(g.has_undirected_edge_by_index(1, 2));
+        assert!(g.has_undirected_edge(0, 4));
+        assert!(g.has_undirected_edge(4, 1));
+        assert!(g.has_undirected_edge(1, 2));
         // Test for directed edges
-        assert!(g.has_directed_edge_by_index(0, 3));
-        assert!(g.has_directed_edge_by_index(3, 5));
-        assert!(g.has_directed_edge_by_index(5, 4));
+        assert!(g.has_directed_edge(0, 3));
+        assert!(g.has_directed_edge(3, 5));
+        assert!(g.has_directed_edge(5, 4));
     }
 
     #[test]
     fn meek_2_base_case() {
         let mut g = PDGraph::new_pagraph(vec![], vec![("0", "2")], vec![("0", "1"), ("1", "2")]);
         g.meek_2();
-        assert!(g.has_directed_edge_by_index(0, 2));
-        assert!(g.has_directed_edge_by_index(0, 1));
-        assert!(g.has_directed_edge_by_index(1, 2));
+        assert!(g.has_directed_edge(0, 2));
+        assert!(g.has_directed_edge(0, 1));
+        assert!(g.has_directed_edge(1, 2));
     }
 
     #[test]
@@ -239,10 +239,10 @@ mod categorical {
         );
         g.meek_2();
         // Test for undirected edges
-        assert!(g.has_undirected_edge_by_index(0, 4));
+        assert!(g.has_undirected_edge(0, 4));
         // Test for directed edges
-        assert!(g.has_directed_edge_by_index(1, 2));
-        assert!(g.has_directed_edge_by_index(1, 3));
+        assert!(g.has_directed_edge(1, 2));
+        assert!(g.has_directed_edge(1, 3));
     }
 
     #[test]
@@ -254,12 +254,12 @@ mod categorical {
         );
         g.meek_3();
         // Test for undirected edges
-        assert!(g.has_undirected_edge_by_index(0, 1));
-        assert!(g.has_undirected_edge_by_index(0, 3));
+        assert!(g.has_undirected_edge(0, 1));
+        assert!(g.has_undirected_edge(0, 3));
         // Test for directed edges
-        assert!(g.has_directed_edge_by_index(0, 2));
-        assert!(g.has_directed_edge_by_index(1, 2));
-        assert!(g.has_directed_edge_by_index(3, 2));
+        assert!(g.has_directed_edge(0, 2));
+        assert!(g.has_directed_edge(1, 2));
+        assert!(g.has_directed_edge(3, 2));
     }
 
     #[test]
@@ -282,10 +282,10 @@ mod categorical {
         );
         g.meek_3();
         // Test for undirected edges
-        assert!(g.has_undirected_edge_by_index(5, 0));
+        assert!(g.has_undirected_edge(5, 0));
         // Test for directed edges
-        assert!(g.has_directed_edge_by_index(1, 0));
-        assert!(g.has_directed_edge_by_index(4, 0));
+        assert!(g.has_directed_edge(1, 0));
+        assert!(g.has_directed_edge(4, 0));
     }
 
     #[test]
@@ -306,11 +306,11 @@ mod categorical {
             let mut g = PDGraph::new_pagraph(v, ue, de);
             g.meek_4();
             // Test for undirected edges
-            assert!(g.has_undirected_edge_by_index(0, 3));
+            assert!(g.has_undirected_edge(0, 3));
             // Test for directed edges
-            assert!(g.has_directed_edge_by_index(0, 1));
-            assert!(g.has_directed_edge_by_index(1, 2));
-            assert!(g.has_directed_edge_by_index(3, 2));
+            assert!(g.has_directed_edge(0, 1));
+            assert!(g.has_directed_edge(1, 2));
+            assert!(g.has_directed_edge(3, 2));
         }
     }
 
@@ -331,9 +331,9 @@ mod categorical {
         );
         g.meek_4();
         // Test for undirected edges
-        assert!(g.has_undirected_edge_by_index(5, 0));
+        assert!(g.has_undirected_edge(5, 0));
         // Test for directed edges
-        assert!(g.has_directed_edge_by_index(7, 0));
-        assert!(g.has_directed_edge_by_index(3, 0));
+        assert!(g.has_directed_edge(7, 0));
+        assert!(g.has_directed_edge(3, 0));
     }
 }

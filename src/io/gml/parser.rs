@@ -7,10 +7,10 @@ use pest_derive::Parser;
 use crate::{
     graphs::{
         structs::{
-            DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
-            UndirectedDenseAdjacencyMatrixGraph,
+            DirectedDenseAdjacencyMatrix, PartiallyDirectedDenseAdjacencyMatrix,
+            UndirectedDenseAdjacencyMatrix,
         },
-        BaseGraph,
+        Graph,
     },
     io::File,
     types::{FxIndexMap, FxIndexSet},
@@ -260,8 +260,8 @@ impl File for GML {
     }
 }
 
-impl From<UndirectedDenseAdjacencyMatrixGraph> for GML {
-    fn from(graph: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+impl From<UndirectedDenseAdjacencyMatrix> for GML {
+    fn from(graph: UndirectedDenseAdjacencyMatrix) -> Self {
         // Set graph type.
         let graph_type = "graph".to_string();
         // Get vertices.
@@ -281,7 +281,7 @@ impl From<UndirectedDenseAdjacencyMatrixGraph> for GML {
     }
 }
 
-impl From<GML> for UndirectedDenseAdjacencyMatrixGraph {
+impl From<GML> for UndirectedDenseAdjacencyMatrix {
     #[inline]
     fn from(gml: GML) -> Self {
         // Assert graph type.
@@ -294,8 +294,8 @@ impl From<GML> for UndirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<DirectedDenseAdjacencyMatrixGraph> for GML {
-    fn from(graph: DirectedDenseAdjacencyMatrixGraph) -> Self {
+impl From<DirectedDenseAdjacencyMatrix> for GML {
+    fn from(graph: DirectedDenseAdjacencyMatrix) -> Self {
         // Set graph type.
         let graph_type = "digraph".to_string();
         // Get vertices.
@@ -315,7 +315,7 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for GML {
     }
 }
 
-impl From<GML> for DirectedDenseAdjacencyMatrixGraph {
+impl From<GML> for DirectedDenseAdjacencyMatrix {
     #[inline]
     fn from(gml: GML) -> Self {
         // Assert graph type.
@@ -328,8 +328,8 @@ impl From<GML> for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<PartiallyDenseAdjacencyMatrixGraph> for GML {
-    fn from(graph: PartiallyDenseAdjacencyMatrixGraph) -> Self {
+impl From<PartiallyDirectedDenseAdjacencyMatrix> for GML {
+    fn from(graph: PartiallyDirectedDenseAdjacencyMatrix) -> Self {
         // Set directionality.
         let graph_type = "pdgraph".to_string();
         // Get vertices.

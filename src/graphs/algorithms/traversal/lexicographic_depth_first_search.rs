@@ -100,7 +100,7 @@ where
             // Otherwise ...
             Some(x) => {
                 // ... assert that source vertex is in graph.
-                assert!(g.has_vertex_by_index(x));
+                assert!(g.has_vertex(x));
                 // Return given source vertex.
                 x
             }

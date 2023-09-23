@@ -22,7 +22,7 @@ mod parser {
     #[test]
     fn gml_to_graph() {
         let gml = GML::read("tests/assets/gml/0.gml").unwrap();
-        let g = Graph::from(gml);
+        let g = UGraph::from(gml);
 
         assert_eq!(L!(g).collect_vec(), ["13", "5"]);
         assert_eq!(E!(g).collect_vec(), [(0, 1)]);
@@ -30,7 +30,7 @@ mod parser {
 
     #[test]
     fn graph_to_gml() {
-        let g = Graph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let g = UGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
         let gml_string: String = GML::from(g).try_into().unwrap();
 
         assert_eq!(
@@ -42,7 +42,7 @@ mod parser {
     #[test]
     fn gml_to_digraph() {
         let gml = GML::read("tests/assets/gml/1.gml").unwrap();
-        let g = DiGraph::from(gml);
+        let g = DGraph::from(gml);
 
         assert_eq!(L!(g).collect_vec(), ["Node 1", "Node 2", "Node 3"]);
         assert_eq!(E!(g).collect_vec(), [(0, 1), (1, 2), (2, 0)]);
@@ -50,7 +50,7 @@ mod parser {
 
     #[test]
     fn digraph_to_gml() {
-        let g = DiGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
+        let g = DGraph::new(["A", "B", "C"], [("A", "B"), ("B", "C")]);
         let gml_string: String = GML::from(g).try_into().unwrap();
 
         assert_eq!(

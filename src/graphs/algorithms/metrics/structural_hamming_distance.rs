@@ -1,10 +1,10 @@
-use crate::{graphs::BaseGraph, types::FxIndexSet, E};
+use crate::{graphs::Graph, types::FxIndexSet, E};
 
 /// Structural Hamming Distance (SHD).
 pub fn shd<G, H>(true_graph: &G, pred_graph: &H) -> f64
 where
-    G: BaseGraph,
-    H: BaseGraph,
+    G: Graph,
+    H: Graph,
 {
     // Accumulate edges set.
     let true_graph: FxIndexSet<_> = E!(true_graph).collect();

@@ -13,16 +13,15 @@ use super::{
     Format, Layout,
 };
 use crate::{
-    dE,
     graphs::{
         structs::{
-            DirectedDenseAdjacencyMatrixGraph, PartiallyDenseAdjacencyMatrixGraph,
-            UndirectedDenseAdjacencyMatrixGraph,
+            DirectedDenseAdjacencyMatrix, PartiallyDirectedDenseAdjacencyMatrix,
+            UndirectedDenseAdjacencyMatrix,
         },
-        BaseGraph, DirectedGraph, UndirectedGraph,
+        DirectedGraph, Graph, UndirectedGraph,
     },
     io::File,
-    uE, E, V,
+    E, V,
 };
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
@@ -622,13 +621,13 @@ impl File for DOT {
     }
 }
 
-impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(graph: UndirectedDenseAdjacencyMatrixGraph) -> Self {
+impl From<UndirectedDenseAdjacencyMatrix> for DOT {
+    fn from(graph: UndirectedDenseAdjacencyMatrix) -> Self {
         // Set graph type.
         let graph_type = "graph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.get_vertex_by_index(x).into())
+            .map(|x| graph.vertex_to_label(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -636,8 +635,8 @@ impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
         let edges = E!(graph)
             .map(|(x, y)| {
                 (
-                    graph.get_vertex_by_index(x).into(),
-                    graph.get_vertex_by_index(y).into(),
+                    graph.vertex_to_label(x).into(),
+                    graph.vertex_to_label(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "--".into()))
@@ -653,7 +652,7 @@ impl From<UndirectedDenseAdjacencyMatrixGraph> for DOT {
     }
 }
 
-impl From<DOT> for UndirectedDenseAdjacencyMatrixGraph {
+impl From<DOT> for UndirectedDenseAdjacencyMatrix {
     #[inline]
     fn from(dot: DOT) -> Self {
         // Assert graph type.
@@ -666,13 +665,13 @@ impl From<DOT> for UndirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
-    fn from(graph: DirectedDenseAdjacencyMatrixGraph) -> Self {
+impl From<DirectedDenseAdjacencyMatrix> for DOT {
+    fn from(graph: DirectedDenseAdjacencyMatrix) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.get_vertex_by_index(x).into())
+            .map(|x| graph.vertex_to_label(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -680,8 +679,8 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
         let edges = E!(graph)
             .map(|(x, y)| {
                 (
-                    graph.get_vertex_by_index(x).into(),
-                    graph.get_vertex_by_index(y).into(),
+                    graph.vertex_to_label(x).into(),
+                    graph.vertex_to_label(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "->".into()))
@@ -697,7 +696,7 @@ impl From<DirectedDenseAdjacencyMatrixGraph> for DOT {
     }
 }
 
-impl From<DOT> for DirectedDenseAdjacencyMatrixGraph {
+impl From<DOT> for DirectedDenseAdjacencyMatrix {
     #[inline]
     fn from(dot: DOT) -> Self {
         // Assert graph type.
@@ -710,24 +709,25 @@ impl From<DOT> for DirectedDenseAdjacencyMatrixGraph {
     }
 }
 
-impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
-    fn from(graph: PartiallyDenseAdjacencyMatrixGraph) -> Self {
+impl From<PartiallyDirectedDenseAdjacencyMatrix> for DOT {
+    fn from(graph: PartiallyDirectedDenseAdjacencyMatrix) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.get_vertex_by_index(x).into())
+            .map(|x| graph.vertex_to_label(x).into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the undirected edge set.
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
-        let mut edges: BTreeMap<_, _> = uE!(graph)
+        let mut edges: BTreeMap<_, _> = graph
+            .undirected_edges()
             .map(|(x, y)| {
                 (
-                    graph.get_vertex_by_index(x).into(),
-                    graph.get_vertex_by_index(y).into(),
+                    graph.vertex_to_label(x).into(),
+                    graph.vertex_to_label(y).into(),
                 )
             })
             .map(|(x, y)| Edge {
@@ -738,11 +738,12 @@ impl From<PartiallyDenseAdjacencyMatrixGraph> for DOT {
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the directed edge set.
-        let mut directed_edges: BTreeMap<_, _> = dE!(graph)
+        let mut directed_edges: BTreeMap<_, _> = graph
+            .directed_edges()
             .map(|(x, y)| {
                 (
-                    graph.get_vertex_by_index(x).into(),
-                    graph.get_vertex_by_index(y).into(),
+                    graph.vertex_to_label(x).into(),
+                    graph.vertex_to_label(y).into(),
                 )
             })
             .map(|(x, y)| Edge::new((x, y), "->".into()))

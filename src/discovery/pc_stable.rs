@@ -23,9 +23,9 @@ where
 
     /// Private function. It performs skeleton discovery given a test.
     #[inline]
-    fn skeleton(&self) -> (Graph, SepSets) {
+    fn skeleton(&self) -> (UGraph, SepSets) {
         // Set complete graph
-        let mut g = Graph::complete(self.test.labels());
+        let mut g = UGraph::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -62,7 +62,7 @@ where
             for (x, y, z) in e_prime {
                 sepsets.insert((x, y), z.clone());
                 sepsets.insert((y, x), z);
-                g.del_edge_by_index(x, y);
+                g.del_edge(x, y);
             }
 
             // Increase size of conditioning set
@@ -75,9 +75,9 @@ where
     /// Private function. It performs parallel skeleton discovery given a test.
     #[inline]
     #[allow(clippy::type_complexity)]
-    fn par_skeleton(&self) -> (Graph, SepSets) {
+    fn par_skeleton(&self) -> (UGraph, SepSets) {
         // Set complete graph
-        let mut g = Graph::complete(self.test.labels());
+        let mut g = UGraph::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -121,7 +121,7 @@ where
                 if let Some((x, y, z)) = xyz {
                     sepsets.insert((x, y), z.clone());
                     sepsets.insert((y, x), z);
-                    g.del_edge_by_index(x, y);
+                    g.del_edge(x, y);
                 }
                 flag |= f;
             }
@@ -135,46 +135,45 @@ where
 
     /// Perform skeleton discovery given test.
     #[inline]
-    pub fn call_skeleton(&self) -> Graph {
+    pub fn call_skeleton(&self) -> UGraph {
         self.skeleton().0
     }
 
     /// Perform parallel skeleton discovery given test.
     #[inline]
-    pub fn par_call_skeleton(&self) -> Graph {
+    pub fn par_call_skeleton(&self) -> UGraph {
         self.par_skeleton().0
     }
 
     /// Perform discovery given a test.
     /// Firstly, it performs skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
     #[inline]
-    pub fn call(&self) -> PDGraph {
+    pub fn call(&self) -> PGraph {
         // Perform skeleton discovery
         let (g, sepsets) = self.skeleton();
-        // Cast the graph to a partially directed graph
-        let mut g: PDGraph = g.into();
+        // FIXME: Cast the graph to a partially directed graph
+        let mut g: PGraph = todo!(); // g.into();
+
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
             .flat_map(|y| {
                 std::iter::repeat(y)
                     .zip(Adj!(g, y).combinations(2))
                     .map(|(y, xz)| (xz[0], y, xz[1]))
-                    .filter(|&(x, y, z)| {
-                        !g.has_edge_by_index(x, z) && !sepsets[&(x, z)].contains(&y)
-                    })
+                    .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
             })
             .collect();
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
             // ... if one of the edges is already directed ...
-            if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(z, y) {
+            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
                 // ... skip this triple.
                 continue;
             }
             // Otherwise, the triple is a v-structure.
-            g.orient_edge(x, y);
-            g.orient_edge(z, y);
+            g.set_directed_edge(x, y);
+            g.set_directed_edge(z, y);
         }
 
         g
@@ -183,36 +182,32 @@ where
     /// Perform parallel discovery given a test.
     /// Firstly, it performs parallel skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
     #[inline]
-    pub fn par_call(&self) -> PDGraph {
+    pub fn par_call(&self) -> PGraph {
         // Perform skeleton discovery
         let (g, sepsets) = self.par_skeleton();
-        // Cast the graph to a partially directed graph
-        let mut g: PDGraph = g.into();
+        // FIXME: Cast the graph to a partially directed graph
+        let mut g: PGraph = todo!(); // g.into();
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
-            .par_bridge()
             .flat_map(|y| {
                 std::iter::repeat(y)
                     .zip(Adj!(g, y).combinations(2))
                     .map(|(y, xz)| (xz[0], y, xz[1]))
-                    .par_bridge()
-                    .filter(|&(x, y, z)| {
-                        !g.has_edge_by_index(x, z) && !sepsets[&(x, z)].contains(&y)
-                    })
+                    .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
             })
             .collect();
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
             // ... if one of the edges is already directed ...
-            if !g.has_undirected_edge_by_index(x, y) || !g.has_undirected_edge_by_index(z, y) {
+            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
                 // ... skip this triple.
                 continue;
             }
             // Otherwise, the triple is a v-structure.
-            g.orient_edge(x, y);
-            g.orient_edge(z, y);
+            g.set_directed_edge(x, y);
+            g.set_directed_edge(z, y);
         }
 
         g

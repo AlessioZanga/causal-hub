@@ -261,7 +261,7 @@ mod graph_attributes {
     }
 
     #[test]
-    fn get_vertex_by_index() {
+    fn vertex_to_label() {
         let mut attributes: GraphAttributes = Default::default();
         assert!(!attributes.unset_label());
         assert!(attributes.set_label("TEST"));
@@ -986,7 +986,7 @@ mod vertex_attributes {
     }
 
     #[test]
-    fn get_vertex_by_index() {
+    fn vertex_to_label() {
         let mut attributes: VertexAttributes = Default::default();
         assert!(!attributes.unset_label());
         assert!(attributes.set_label("TEST"));
@@ -1186,7 +1186,7 @@ mod vertex_attributes {
     }
 
     #[test]
-    fn get_vertices() {
+    fn labels() {
         let mut attributes: VertexAttributes = Default::default();
         assert!(!attributes.unset_vertices());
         assert!(attributes.set_vertices("TEST"));
@@ -1343,7 +1343,7 @@ mod cluster_attributes {
     }
 
     #[test]
-    fn get_vertex_by_index() {
+    fn vertex_to_label() {
         let mut attributes: ClusterAttributes = Default::default();
         assert!(!attributes.unset_label());
         assert!(attributes.set_label("TEST"));
@@ -1708,7 +1708,7 @@ mod edge_attributes {
     }
 
     #[test]
-    fn get_vertex_by_index() {
+    fn vertex_to_label() {
         let mut attributes: EdgeAttributes = Default::default();
         assert!(!attributes.unset_label());
         assert!(attributes.set_label("TEST"));

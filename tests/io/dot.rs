@@ -26,7 +26,7 @@ mod parser {
     #[test]
     fn from_graph() {
         let dot = DOT::read("tests/assets/dot/1658.dot").unwrap();
-        let g = Graph::from(dot);
+        let g = UGraph::from(dot);
 
         assert!(L!(g).eq([
             "0", "1", "2", "3", "ADC1", "ADC2", "ADC3", "Charger", "GND", "IHall1", "IHall2",
@@ -37,7 +37,7 @@ mod parser {
     #[test]
     fn from_digraph() {
         let dot = DOT::read("tests/assets/dot/14.dot").unwrap();
-        let g = DiGraph::from(dot);
+        let g = DGraph::from(dot);
 
         assert!(L!(g).eq(["a", "b"]));
     }

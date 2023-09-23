@@ -3,12 +3,13 @@ pub mod algorithms;
 
 /// Structures on graphs.
 pub mod structs;
+pub use structs::*;
 
-mod base;
-pub use base::*;
+mod graph;
+pub use graph::*;
 
-mod direction;
-pub use direction::*;
+pub mod directions;
+pub use directions::*;
 
 mod partial_ord;
 pub use partial_ord::*;
@@ -18,12 +19,3 @@ pub use path::*;
 
 mod subgraph;
 pub use subgraph::*;
-
-/// Default undirected graph implementation based on dense adjacency matrix.
-pub type Graph = structs::UndirectedDenseAdjacencyMatrixGraph;
-
-/// Default directed graph implementation based on dense adjacency matrix.
-pub type DiGraph = structs::DirectedDenseAdjacencyMatrixGraph;
-
-/// Default mixed graph implementation based on two dense adjacency matrices.
-pub type PDGraph = structs::PartiallyDenseAdjacencyMatrixGraph;

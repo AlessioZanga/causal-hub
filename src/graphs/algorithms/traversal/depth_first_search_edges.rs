@@ -2,7 +2,7 @@ use std::{collections::VecDeque, iter::FusedIterator};
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
+    graphs::{directions, DirectedGraph, Graph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -25,7 +25,7 @@ pub enum DFSEdge {
 ///
 pub struct DepthFirstSearchEdges<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Given graph reference.
     g: &'a G,
@@ -43,7 +43,7 @@ where
 
 impl<'a, G, D> DepthFirstSearchEdges<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Build a DFS-Edges iterator.
     ///
@@ -79,7 +79,7 @@ where
         // If no source vertex is given, choose the first in the vertex set.
         if let Some(x) = x.or_else(|| V!(g).next()) {
             // ... assert that source vertex is in graph.
-            assert!(g.has_vertex_by_index(x));
+            assert!(g.has_vertex(x));
             // Push source vertex onto the stack.
             stack.push((usize::MAX, x));
         };
@@ -97,7 +97,7 @@ where
 
 impl<'a, G, D> From<&'a G> for DepthFirstSearchEdges<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     #[inline]
     fn from(g: &'a G) -> Self {
@@ -107,7 +107,7 @@ where
 
 impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearchEdges<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     #[inline]
     fn from((g, x): (&'a G, usize)) -> Self {

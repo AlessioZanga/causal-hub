@@ -13,7 +13,7 @@ use super::{
 use crate::{
     data::DataSet,
     graphs::PathGraph,
-    prelude::{directions, BaseGraph, DirectedGraph, FxIndexSet, BFS},
+    prelude::{directions, DirectedGraph, FxIndexSet, Graph, BFS},
     Ch, Pa, E, L, V,
 };
 
@@ -84,7 +84,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
@@ -132,7 +132,7 @@ where
     /// );
     ///
     /// // Perform discovery with given initial graph.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .with_initial_graph(init_graph)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
@@ -162,7 +162,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery with maximum in-degree of 3.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .with_max_in_degree(3)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
@@ -192,7 +192,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery with maximum 10 iterations.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .with_max_iter(10)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
@@ -222,7 +222,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery with initial shuffling of search space order.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .with_shuffle(42)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
@@ -238,7 +238,7 @@ where
 
 impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
 where
-    G: BaseGraph,
+    G: Graph,
     S: ScoringCriterion<D, G, T>,
 {
     /// Apply edge operation to given graph.
@@ -247,17 +247,17 @@ where
         // Apply operation.
         match a {
             Op::ADD => {
-                assert!(g.add_edge_by_index(x, y));
+                assert!(g.add_edge(x, y));
                 in_degree[y] += 1;
             }
             Op::DEL => {
-                assert!(g.del_edge_by_index(x, y));
+                assert!(g.del_edge(x, y));
                 in_degree[y] -= 1;
             }
             Op::REV => {
-                assert!(g.del_edge_by_index(x, y));
+                assert!(g.del_edge(x, y));
                 in_degree[y] -= 1;
-                assert!(g.add_edge_by_index(y, x));
+                assert!(g.add_edge(y, x));
                 in_degree[x] += 1;
             }
             _ => panic!("Unknown operation code"),
@@ -272,8 +272,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.get_vertex_by_index(x),
-            g.get_vertex_by_index(y),
+            g.vertex_to_label(x),
+            g.vertex_to_label(y),
         );
 
         g
@@ -368,7 +368,7 @@ where
         assert!(k
             .required()
             .iter()
-            .all(|&(x, y)| g.has_edge_by_index(x, y) || g.add_edge_by_index(x, y)));
+            .all(|&(x, y)| g.has_edge(x, y) || g.add_edge(x, y)));
 
         // Check acyclicity.
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
@@ -386,7 +386,7 @@ where
             // Log shuffled columns.
             debug!(
                 "Seed is set, shuffled columns as: [{}]",
-                n.iter().map(|&x| g.get_vertex_by_index(x)).format(", ")
+                n.iter().map(|&x| g.vertex_to_label(x)).format(", ")
             );
         }
 
@@ -412,7 +412,7 @@ where
             .collect();
 
         // Compute current in-degree.
-        let in_degree = V!(g).map(|x| g.get_in_degree_by_index(x)).collect();
+        let in_degree = V!(g).map(|x| g.in_degree(x)).collect();
 
         ((add, del, rev), in_degree, g)
     }
@@ -423,11 +423,7 @@ where
         // Check validity depending on operation.
         let is_valid = match OP {
             // |Pa(G, X)| < max_Pa, (X, Y) not in F, pi(Y, X) not in G.
-            Op::ADD => {
-                in_degree[y] < self.max_in_degree
-                    && !g.has_edge_by_index(y, x)
-                    && !g.has_path_by_index(y, x)
-            }
+            Op::ADD => in_degree[y] < self.max_in_degree && !g.has_edge(y, x) && !g.has_path(y, x),
             // (X, Y) in R.
             Op::DEL => true,
             // |Pa(G, X)| < max_Pa, (Y, X) not in F, (X, Y) in R, pi(X, Y) not in G.
@@ -452,8 +448,8 @@ where
                     Op::REV => "Rev",
                     _ => panic!("Unknown operation code"),
                 },
-                g.get_vertex_by_index(x),
-                g.get_vertex_by_index(y),
+                g.vertex_to_label(x),
+                g.vertex_to_label(y),
             );
         }
 
@@ -622,8 +618,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.get_vertex_by_index(x),
-            g.get_vertex_by_index(y),
+            g.vertex_to_label(x),
+            g.vertex_to_label(y),
             delta_star
         );
 
@@ -659,7 +655,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
@@ -762,7 +758,7 @@ where
             Op::ADD => {
                 // Add X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.add_edge_by_index(x, y);
+                g_star.add_edge(x, y);
                 // Compute delta score and merge cache.
                 let s_g_star = cache.call(&g_star);
 
@@ -771,7 +767,7 @@ where
             Op::DEL => {
                 // Remove X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.del_edge_by_index(x, y);
+                g_star.del_edge(x, y);
                 // Compute delta score and merge cache.
                 let s_g_star = cache.call(&g_star);
 
@@ -780,8 +776,8 @@ where
             Op::REV => {
                 // Reverse X in-place by leveraging Pa(G, Y) order.
                 let mut g_star = g.clone();
-                g_star.del_edge_by_index(x, y);
-                g_star.add_edge_by_index(y, x);
+                g_star.del_edge(x, y);
+                g_star.add_edge(y, x);
                 // Compute delta score and merge cache.
                 let s_g_star = cache.call(&g_star);
 
@@ -799,8 +795,8 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.get_vertex_by_index(x),
-            g.get_vertex_by_index(y),
+            g.vertex_to_label(x),
+            g.vertex_to_label(y),
             delta_star
         );
 
@@ -836,7 +832,7 @@ where
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Perform discovery.
-    /// let pred_graph: DiGraph = HC::new(&scoring_criterion)
+    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///

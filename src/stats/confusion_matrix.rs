@@ -1,8 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    graphs::{BaseGraph, DiGraph, Graph},
-    types::DenseAdjacencyMatrix,
+    graphs::{DGraph, Graph, UGraph},
     V,
 };
 
@@ -46,63 +45,33 @@ where
     }
 }
 
-impl From<(Graph, Graph)> for ConfusionMatrix {
-    fn from((true_graph, pred_graph): (Graph, Graph)) -> Self {
+impl<'a> From<(&'a UGraph, &'a UGraph)> for ConfusionMatrix {
+    fn from((true_g, pred_g): (&'a UGraph, &'a UGraph)) -> Self {
         // Assert same vertices.
-        assert_eq!(
-            V!(true_graph),
-            V!(pred_graph),
-            "Graphs must have same vertex set"
-        );
-        // Assert same memory layout.
-        assert_eq!(
-            true_graph.is_standard_layout(),
-            pred_graph.is_standard_layout(),
-            "Graphs must have same memory layout"
-        );
+        assert_eq!(V!(true_g), V!(pred_g), "Graphs must have same vertex set");
 
-        // Get adjacency matrices.
-        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
-        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
+        // Get graph order.
+        let order = true_g.order();
+        // Get edges iterators.
+        let true_g = (0..order).flat_map(|x| (0..order).map(move |y| true_g.has_edge(x, y)));
+        let pred_g = (0..order).flat_map(|x| (0..order).map(move |y| pred_g.has_edge(x, y)));
 
-        // Get lower triangular.
-        let true_graph = true_graph
-            .indexed_iter()
-            .filter_map(|((i, j), &f)| match i <= j {
-                true => Some(f),
-                false => None,
-            });
-        let pred_graph = pred_graph
-            .indexed_iter()
-            .filter_map(|((i, j), &f)| match i <= j {
-                true => Some(f),
-                false => None,
-            });
-
-        Self::from((true_graph, pred_graph))
+        Self::from((true_g, pred_g))
     }
 }
 
-impl From<(DiGraph, DiGraph)> for ConfusionMatrix {
-    fn from((true_graph, pred_graph): (DiGraph, DiGraph)) -> Self {
+impl<'a> From<(&'a DGraph, &'a DGraph)> for ConfusionMatrix {
+    fn from((true_g, pred_g): (&'a DGraph, &'a DGraph)) -> Self {
         // Assert same vertices.
-        assert_eq!(
-            V!(true_graph),
-            V!(pred_graph),
-            "Graphs must have same vertex set"
-        );
-        // Assert same memory layout.
-        assert_eq!(
-            true_graph.is_standard_layout(),
-            pred_graph.is_standard_layout(),
-            "Graphs must have same memory layout"
-        );
+        assert_eq!(V!(true_g), V!(pred_g), "Graphs must have same vertex set");
 
-        // Get adjacency matrices.
-        let (_, true_graph): (_, DenseAdjacencyMatrix) = true_graph.into();
-        let (_, pred_graph): (_, DenseAdjacencyMatrix) = pred_graph.into();
+        // Get graph order.
+        let order = true_g.order();
+        // Get edges iterators.
+        let true_g = (0..order).flat_map(|x| (0..order).map(move |y| true_g.has_edge(x, y)));
+        let pred_g = (0..order).flat_map(|x| (0..order).map(move |y| pred_g.has_edge(x, y)));
 
-        Self::from((true_graph, pred_graph))
+        Self::from((true_g, pred_g))
     }
 }
 

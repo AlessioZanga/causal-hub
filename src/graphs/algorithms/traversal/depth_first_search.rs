@@ -5,7 +5,7 @@ use std::{
 
 use super::Traversal;
 use crate::{
-    graphs::{directions, BaseGraph, DirectedGraph, PartiallyDirectedGraph, UndirectedGraph},
+    graphs::{directions, DirectedGraph, Graph, PartiallyDirectedGraph, UndirectedGraph},
     Ch, Ne, V,
 };
 
@@ -15,7 +15,7 @@ use crate::{
 ///
 pub struct DepthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Given graph reference.
     g: &'a G,
@@ -33,7 +33,7 @@ where
 
 impl<'a, G, D> DepthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Build a DFS iterator.
     ///
@@ -55,7 +55,7 @@ where
     /// ]);
     ///
     /// // Build a new graph.
-    /// let mut g = DiGraph::from(e);
+    /// let mut g = DGraph::from(e);
     ///
     /// // Build the search object over said graph with `0` as source vertex.
     /// let mut search = DFS::from((&g, 0));
@@ -110,7 +110,7 @@ where
             // Otherwise ...
             Some(x) => {
                 // ... assert that source vertex is in graph.
-                assert!(g.has_vertex_by_index(x));
+                assert!(g.has_vertex(x));
                 // Return given source vertex.
                 x
             }
@@ -281,7 +281,7 @@ where
 
 impl<'a, G, D> From<&'a G> for DepthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     fn from(g: &'a G) -> Self {
         Self::new(g, None, Traversal::Tree)
@@ -290,7 +290,7 @@ where
 
 impl<'a, G, D> From<(&'a G, usize)> for DepthFirstSearch<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x), Traversal::Tree)

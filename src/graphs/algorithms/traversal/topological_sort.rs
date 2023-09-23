@@ -41,7 +41,7 @@ where
         // For each vertex in the graph.
         for x in V!(search.g) {
             // Compute its in-degree.
-            match search.g.get_in_degree_by_index(x) {
+            match search.g.in_degree(x) {
                 // If the in-degree is zero, then add it to the queue.
                 0 => search.queue.push_back(x),
                 // Otherwise, add it to the map.

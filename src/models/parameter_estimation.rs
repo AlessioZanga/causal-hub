@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use super::CategoricalBayesianNetwork;
 use crate::{
     data::{CategoricalDataMatrix, DataSet},
-    graphs::{structs::DirectedDenseAdjacencyMatrixGraph, BaseGraph, DirectedGraph},
+    graphs::{structs::DirectedDenseAdjacencyMatrix, DirectedGraph, Graph},
     prelude::{BayesianNetwork, CategoricalCPD, ConditionalCountMatrix, MarginalCountMatrix},
     Pa, L, V,
 };
@@ -14,7 +14,7 @@ use crate::{
 pub trait ParameterEstimation<D, G, M>
 where
     D: DataSet,
-    G: BaseGraph,
+    G: Graph,
 {
     /// Construct the model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
     fn call(d: &D, g: &G) -> M;
@@ -26,13 +26,13 @@ pub struct MaximumLikelihoodEstimation<const PARALLEL: bool> {}
 impl<const PARALLEL: bool>
     ParameterEstimation<
         CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrixGraph,
+        DirectedDenseAdjacencyMatrix,
         CategoricalBayesianNetwork,
     > for MaximumLikelihoodEstimation<PARALLEL>
 {
     fn call(
         d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrixGraph,
+        g: &DirectedDenseAdjacencyMatrix,
     ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
@@ -56,11 +56,11 @@ impl<const PARALLEL: bool>
                 "At least one configuration for each parent set must be observed"
             );
             // Get target label and states.
-            let (x, y) = (g.get_vertex_by_index(x), d.states()[x].clone());
+            let (x, y) = (g.vertex_to_label(x), d.states()[x].clone());
             // Get conditioning variables labels and states.
             let z = z
                 .into_iter()
-                .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
+                .map(|z| (g.vertex_to_label(z), d.states()[z].clone()));
             // Construct CPD from states and values.
             CategoricalCPD::new((x, y), z, n / n_i)
         };
@@ -87,13 +87,13 @@ pub struct BayesianEstimation<const PARALLEL: bool> {}
 impl<const PARALLEL: bool>
     ParameterEstimation<
         CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrixGraph,
+        DirectedDenseAdjacencyMatrix,
         CategoricalBayesianNetwork,
     > for BayesianEstimation<PARALLEL>
 {
     fn call(
         d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrixGraph,
+        g: &DirectedDenseAdjacencyMatrix,
     ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
@@ -119,11 +119,11 @@ impl<const PARALLEL: bool>
                 "At least one configuration for each parent set must be observed"
             );
             // Get target label and states.
-            let (x, y) = (g.get_vertex_by_index(x), d.states()[x].clone());
+            let (x, y) = (g.vertex_to_label(x), d.states()[x].clone());
             // Get conditioning variables labels and states.
             let z = z
                 .into_iter()
-                .map(|z| (g.get_vertex_by_index(z), d.states()[z].clone()));
+                .map(|z| (g.vertex_to_label(z), d.states()[z].clone()));
             // Construct CPD from states and values.
             CategoricalCPD::new((x, y), z, n / n_i)
         };

@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use super::{GeneralizedIndependence, Independence, MoralGraph};
 use crate::{
     graphs::directions,
-    prelude::{BaseGraph, DirectedGraph, UndirectedGraph, CC},
+    prelude::{DirectedGraph, Graph, UGraph, UndirectedGraph, CC},
     types::FxIndexSet,
     utils::UnionFind,
     Adj, An, Ch, Ne, V,
@@ -13,14 +13,14 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct GraphicalSeparation<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     g: &'a G,
 }
 
 impl<'a, G, D> GraphicalSeparation<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     /// Build a new graphical independence struct.
     ///
@@ -35,7 +35,7 @@ where
     /// use causal_hub::prelude::*;
     ///
     /// // Build a new directed graph.
-    /// let g = DiGraph::new(
+    /// let g = DGraph::new(
     ///     ["A", "B", "C", "D", "E", "F"],
     ///     [
     ///         ("A", "C"),
@@ -68,7 +68,7 @@ where
 
 impl<'a, G, D> From<&'a G> for GraphicalSeparation<'a, G, D>
 where
-    G: BaseGraph<Direction = D>,
+    G: Graph<Direction = D>,
 {
     #[inline]
     fn from(g: &'a G) -> Self {
@@ -126,7 +126,7 @@ where
             .flat_map(|z| Ne!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph.
         for (z, w) in e_z {
-            h.del_edge_by_index(z, w);
+            h.del_edge(z, w);
         }
 
         // Initialize union-find.
@@ -193,8 +193,8 @@ where
         let v: FxIndexSet<_> = V!(self.g).collect();
         assert!(s.is_subset(&v), "X, Y and Z must be subsets of V");
 
-        // Clone current graph.
-        let mut h = self.g.to_undirected();
+        // FIXME: Clone current graph.
+        let mut h: UGraph = todo!();
 
         // Compute the ancestors of S.
         let an_s: FxIndexSet<_> = s.iter().flat_map(|&s| An!(self.g, s)).collect();
@@ -207,7 +207,7 @@ where
             .flat_map(|s| Adj!(self.g, s).flat_map(move |t| [(s, t), (t, s)]));
         // Disconnect vertices in V \ S from the rest of the graph, i.e. compute the upward closure.
         for (s, t) in e_s {
-            h.del_edge_by_index(s, t);
+            h.del_edge(s, t);
         }
 
         // Compute the set of out-going edges of Z.
@@ -216,7 +216,7 @@ where
             .flat_map(|z| Ch!(self.g, z).map(move |w| (z, w)));
         // Disconnect vertices in Z from the rest of the graph, i.e. compute the moral graph.
         for (z, w) in e_z {
-            h.del_edge_by_index(z, w);
+            h.del_edge(z, w);
         }
 
         // Initialize union-find.

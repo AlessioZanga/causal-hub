@@ -19,15 +19,15 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize conditional independence test.
         let test = ChiSquared::from(&d);
 
         for (x, y, z, (true_dof, true_stat, true_pval)) in data {
-            let x = g.get_vertex_index(&x);
-            let y = g.get_vertex_index(&y);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let y = g.label_to_vertex(&y);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             let (pred_dof, pred_stat, pred_pval) = test.eval(x, y, &z);
 
@@ -52,15 +52,15 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize conditional independence test.
         let test = ChiSquared::from(&d);
 
         for (x, y, z, (_, _, true_pval)) in data {
-            let x = g.get_vertex_index(&x);
-            let y = g.get_vertex_index(&y);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let y = g.label_to_vertex(&y);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             let pred_call = test.call(x, y, &z);
 

@@ -19,7 +19,7 @@ mod tests {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(&d);
@@ -27,9 +27,9 @@ mod tests {
         let pcorr = PartialCorrelation::from(sigma);
 
         for (x, y, z, r) in data {
-            let x = g.get_vertex_index(&x);
-            let y = g.get_vertex_index(&y);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let y = g.label_to_vertex(&y);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             assert_relative_eq!(pcorr.call(x, y, &z), r, max_relative = 1e-8);
         }

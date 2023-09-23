@@ -1,883 +1,3041 @@
 use std::{
-    cmp::Ordering,
-    fmt::Display,
-    hash::{Hash, Hasher},
-    iter::{Enumerate, FilterMap, FusedIterator, Map},
-    ops::{Deref, Range},
+    fmt::{Debug, Display},
+    hash::Hash,
 };
 
-use is_sorted::IsSorted;
-use itertools::{iproduct, Itertools};
-use ndarray::{iter::IndexedIter, prelude::*};
+use indexmap::IndexSet;
+use itertools::Itertools;
+use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    graphs::{
-        algorithms::traversal::{DFSEdge, DFSEdges, Traversal},
-        directions, BaseGraph, PartialOrdGraph, PathGraph, SubGraph, UndirectedGraph,
-    },
-    prelude::BFS,
-    types::{AdjacencyList, DenseAdjacencyMatrix, EdgeList, FxIndexSet},
-    Adj, E, V,
-};
+use crate::graphs::{Graph, Undirected};
 
-/// Undirected graph struct based on dense adjacency matrix data structure.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UndirectedDenseAdjacencyMatrixGraph {
-    labels: FxIndexSet<String>,
-    adjacency_matrix: DenseAdjacencyMatrix,
+/// Define the `UndirectedDenseAdjacencyMatrix` struct using a dense adjacency matrix from the `ndarray` crate.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct UndirectedDenseAdjacencyMatrix {
+    /// The adjacency matrix.
+    adjacency_matrix: Array2<bool>,
+    /// The vertices labels.
+    labels: IndexSet<String>,
+    /// The graph size.
     size: usize,
 }
 
-/* Implement BaseGraph trait. */
-impl Deref for UndirectedDenseAdjacencyMatrixGraph {
-    type Target = DenseAdjacencyMatrix;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.adjacency_matrix
-    }
-}
-
-#[allow(dead_code, clippy::type_complexity)]
-pub struct EdgesIterator<'a> {
-    g: &'a UndirectedDenseAdjacencyMatrixGraph,
-    iter: FilterMap<
-        IndexedIter<'a, bool, Ix2>,
-        fn(((usize, usize), &bool)) -> Option<(usize, usize)>,
-    >,
-    size: usize,
-}
-
-impl<'a> EdgesIterator<'a> {
-    /// Constructor.
-    #[inline]
-    pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph) -> Self {
-        Self {
-            g,
-            iter: g
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match f && i <= j {
-                    true => Some((i, j)),
-                    false => None,
-                }),
-            size: g.size,
-        }
-    }
-}
-
-impl<'a> Iterator for EdgesIterator<'a> {
-    type Item = (usize, usize);
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(x, y)| {
-            // Decrement inner counter.
-            self.size -= 1;
-
-            (x, y)
-        })
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.size, Some(self.size))
-    }
-}
-
-impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
-
-impl<'a> FusedIterator for EdgesIterator<'a> {}
-
-#[allow(dead_code, clippy::type_complexity)]
-pub struct AdjacentsIterator<'a> {
-    g: &'a UndirectedDenseAdjacencyMatrixGraph,
-    iter: FilterMap<
-        Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
-        fn((usize, &bool)) -> Option<usize>,
-    >,
-}
-
-impl<'a> AdjacentsIterator<'a> {
-    /// Constructor.
-    #[inline]
-    pub fn new(g: &'a UndirectedDenseAdjacencyMatrixGraph, x: usize) -> Self {
-        Self {
-            g,
-            iter: g
-                .row(x)
-                .into_iter()
-                .enumerate()
-                .filter_map(|(i, &f)| match f {
-                    true => Some(i),
-                    false => None,
-                }),
-        }
-    }
-}
-
-impl<'a> Iterator for AdjacentsIterator<'a> {
-    type Item = usize;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
-    }
-}
-
-impl<'a> FusedIterator for AdjacentsIterator<'a> {}
-
-impl Display for UndirectedDenseAdjacencyMatrixGraph {
+// Implement the `Display` trait for the `UndirectedDenseAdjacencyMatrix` struct.
+impl Display for UndirectedDenseAdjacencyMatrix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "UndirectedGraph {{ ")?;
+
         // Write vertex set.
         write!(
             f,
             "V = {{{}}}, ",
-            V!(self)
-                .map(|x| format!("\"{}\"", self.get_vertex_by_index(x)))
+            self.vertices()
+                .map(|x| format!("\"{}\"", self.vertex_to_label(x)))
                 .join(", ")
         )?;
+
         // Write edge set.
         write!(
             f,
             "E = {{{}}}",
-            E!(self)
+            self.edges()
                 .map(|(x, y)| format!(
                     "(\"{}\", \"{}\")",
-                    self.get_vertex_by_index(x),
-                    self.get_vertex_by_index(y)
+                    self.vertex_to_label(x),
+                    self.vertex_to_label(y)
                 ))
                 .join(", ")
         )?;
+
         // Write ending character.
         write!(f, " }}")
     }
 }
 
-impl Hash for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.labels.iter().for_each(|x| x.hash(state));
+// Implement the `Hash` trait for the `UndirectedDenseAdjacencyMatrix` struct.
+impl Hash for UndirectedDenseAdjacencyMatrix {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // Compute the hash of the adjacency matrix.
         self.adjacency_matrix.hash(state);
+        // Compute the hash of the vertices labels.
+        self.labels.iter().for_each(|x| x.hash(state));
     }
 }
 
-impl Default for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn default() -> Self {
+/// Define the `EdgesIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+#[allow(clippy::type_complexity)]
+pub struct EdgesIterator<'a> {
+    // The edges indices iterator.
+    iter: std::iter::FilterMap<
+        ndarray::iter::IndexedIter<'a, bool, ndarray::Dim<[usize; 2]>>,
+        fn(((usize, usize), &'a bool)) -> Option<(usize, usize)>,
+    >,
+    // The size of the iterator.
+    size: usize,
+}
+
+// Implement the `EdgesIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+impl<'a> EdgesIterator<'a> {
+    /// Create a new `EdgesIterator` iterator.
+    fn new(graph: &'a UndirectedDenseAdjacencyMatrix) -> Self {
+        // Create the new `EdgesIterator` iterator.
         Self {
-            labels: Default::default(),
-            adjacency_matrix: DenseAdjacencyMatrix::from_elem((0, 0), false),
-            size: 0,
+            iter: graph
+                .adjacency_matrix
+                .indexed_iter()
+                .filter_map(|((x, y), &flag)|
+                    // Check if the edge exists.
+                    if flag && x <= y {
+                        // Return the edge indices.
+                        Some((x, y))
+                    } else {
+                        // Return `None`.
+                        None
+                    }
+                ),
+            size: graph.size,
         }
     }
 }
 
-impl BaseGraph for UndirectedDenseAdjacencyMatrixGraph {
-    type Data = DenseAdjacencyMatrix;
+// Implement the `Iterator` trait for the `EdgesIterator` iterator.
+impl<'a> Iterator for EdgesIterator<'a> {
+    type Item = (usize, usize);
 
-    type Direction = directions::Undirected;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        // Get the next edge indices.
+        let next = self.iter.next();
 
-    type VerticesIter<'a> = Map<indexmap::set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+        // Debug assert the iterator size is zero if and only if the next edge indices is `None`.
+        debug_assert_eq!(
+            self.size == 0,
+            next.is_none(),
+            "The iterator size is not zero."
+        );
+        // Debug assert the iterator size is non zero if and only if the next edge indices is `Some(_)`.
+        debug_assert_eq!(self.size != 0, next.is_some(), "The iterator size is zero.");
 
-    type VerticesIndexIter<'a> = Range<usize>;
+        // Decrement the iterator size.
+        self.size = self.size.saturating_sub(1);
 
-    type EdgesIndexIter<'a> = EdgesIterator<'a>;
+        next
+    }
 
-    type AdjacentsIndexIter<'a> = AdjacentsIterator<'a>;
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // Get the iterator size hint.
+        (self.size, Some(self.size))
+    }
 
+    #[inline]
+    fn count(self) -> usize {
+        // Get the iterator count.
+        self.size
+    }
+}
+
+// Implement the `ExactSizeIterator` trait for the `EdgesIterator` iterator.
+impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
+
+/// Define the `AdjacentsIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+#[allow(clippy::type_complexity)]
+pub struct AdjacentsIterator<'a> {
+    // The adjacents indices iterator.
+    iter: std::iter::FilterMap<
+        std::iter::Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
+        fn((usize, &'a bool)) -> Option<usize>,
+    >,
+}
+
+// Implement the `AdjacentsIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+impl<'a> AdjacentsIterator<'a> {
+    /// Create a new `AdjacentsIterator` iterator.
+    fn new(graph: &'a UndirectedDenseAdjacencyMatrix, x: usize) -> Self {
+        // Assert the vertex is in bounds.
+        assert!(
+            graph.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+
+        // Create the new `AdjacentsIterator` iterator.
+        Self {
+            iter: graph
+                .adjacency_matrix
+                .row(x)
+                .into_iter()
+                .enumerate()
+                .filter_map(|(y, &flag)|
+                    // Check if the vertex is adjacent.
+                    if flag {
+                        // Return the vertex index.
+                        Some(y)
+                    } else {
+                        // Return `None`.
+                        None
+                    }
+                ),
+        }
+    }
+}
+
+// Implement the `Iterator` trait for the `AdjacentsIterator` iterator.
+impl<'a> Iterator for AdjacentsIterator<'a> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        // Get the next vertex index.
+        self.iter.next()
+    }
+}
+
+// Implement the `Graph` trait for the `UndirectedDenseAdjacencyMatrix` struct.
+impl Graph for UndirectedDenseAdjacencyMatrix {
+    // Direction associated type.
+    type Direction = Undirected;
+    // Vertex labels iterator associated type.
+    type LabelsIter<'a> =
+        std::iter::Map<indexmap::set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+    // Vertex indices iterator associated type.
+    type VerticesIter<'a> = std::ops::Range<usize>;
+    // Edge indices iterator associated type.
+    type EdgesIter<'a> = EdgesIterator<'a>;
+    // Adjacents indices iterator associated type.
+    type AdjacentsIter<'a> = AdjacentsIterator<'a>;
+
+    /// Create a new graph.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V| + |E|)`,
+    /// - Space: `O(|V| + |E|)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     fn new<V, I, J>(vertices: I, edges: J) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
         J: IntoIterator<Item = (V, V)>,
     {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<_> = vertices.into_iter().map_into().collect();
-        // Map edges iterator into edge list.
-        let edges: FxIndexSet<_> = edges
+        // Collect and deduplicate the vertices labels.
+        let mut labels: IndexSet<_> = vertices
             .into_iter()
-            .map(|(x, y)| (x.into(), y.into()))
+            // Convert the vertices labels to strings.
+            .map(|x| x.into())
+            // Collect the vertices labels.
             .collect();
-        // Add missing vertices from the edges.
-        labels.extend(edges.iter().cloned().flat_map(|(x, y)| [x, y]));
-        // Sort labels.
+        // Collect the edges labels.
+        let edges: IndexSet<_> = edges
+            .into_iter()
+            // Convert the edges labels to strings.
+            .map(|(x, y)| (x.into(), y.into()))
+            // Collect the edges labels.
+            .collect();
+        // Add the edges labels to the vertices labels.
+        edges.iter().for_each(|(x, y)| {
+            labels.insert(x.clone());
+            labels.insert(y.clone());
+        });
+        // Sort the vertices labels.
         labels.sort();
 
-        // Compute new graph order.
+        // Get the new graph order.
         let order = labels.len();
-        // Initialize adjacency matrix given graph order.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
+        // Initialize the adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((order, order), false);
+        // Add the edges to the adjacency matrix.
+        edges
+            .into_iter()
+            // Map the edges labels to the edges indices.
+            .map(|(x, y)| {
+                (
+                    labels.get_index_of(&x).unwrap(),
+                    labels.get_index_of(&y).unwrap(),
+                )
+            })
+            // Add the edges to the adjacency matrix.
+            .for_each(|(x, y)| {
+                adjacency_matrix[[x, y]] = true;
+                adjacency_matrix[[y, x]] = true;
+            });
 
-        // Initialize the size.
-        let mut size = 0;
-        // Fill adjacency matrix given edge set.
-        for (x, y) in edges {
-            // Get associated vertices indices.
-            let (i, j) = (
-                labels.get_index_of(&x).unwrap(),
-                labels.get_index_of(&y).unwrap(),
-            );
-            // Set edge given indices.
-            if !adjacency_matrix[[i, j]] {
-                // Add edge.
-                adjacency_matrix[[i, j]] = true;
-                adjacency_matrix[[j, i]] = true;
-                // Increment size.
-                size += 1;
-            }
-        }
+        // Compute the graph size given the adjacency matrix.
+        let size = {
+            // Sum the adjacency matrix elements.
+            let total_sum = adjacency_matrix.mapv(|x| x as usize).sum();
+            // Sum the adjacency matrix diagonal elements.
+            let diagonal_sum = adjacency_matrix.mapv(|x| x as usize).diag().sum();
+            // Compute the graph size.
+            (total_sum - diagonal_sum) / 2 + diagonal_sum
+        };
 
-        Self {
-            labels,
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
             adjacency_matrix,
+            adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            adjacency_matrix.nrows(),
+            labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(
+            size,
+            {
+                // Sum the adjacency matrix elements.
+                let total_sum = adjacency_matrix.mapv(|x| x as usize).sum();
+                // Sum the adjacency matrix diagonal elements.
+                let diagonal_sum = adjacency_matrix.mapv(|x| x as usize).diag().sum();
+                // Compute the graph size.
+                (total_sum - diagonal_sum) / 2 + diagonal_sum
+            },
+            "The graph size is not correct."
+        );
+
+        // Create the new graph.
+        Self {
+            adjacency_matrix,
+            labels,
             size,
         }
     }
 
+    // Create a new null graph.
     fn null() -> Self {
-        Default::default()
-    }
+        // Initialize the vertices labels.
+        let labels = IndexSet::new();
+        // Initialize the adjacency matrix.
+        let adjacency_matrix = Array2::from_elem((0, 0), false);
+        // Initialize the graph size.
+        let size = 0;
 
-    fn empty<V, I>(labels: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<_> = labels.into_iter().map_into().collect();
-        // Sort labels.
-        labels.sort();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Initialize adjacency matrix given graph order.
-        let adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), false);
-
-        // Assert vertex set is still sorted.
-        debug_assert!(labels.iter().is_sorted());
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(adjacency_matrix.is_square());
-
-        Self {
-            labels,
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
             adjacency_matrix,
-            size: 0,
-        }
-    }
+            adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            adjacency_matrix.nrows(),
+            labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(size, 0, "The graph size is not correct.");
 
-    fn complete<V, I>(labels: I) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<_> = labels.into_iter().map_into().collect();
-        // Sort labels.
-        labels.sort();
-
-        // Compute new graph order.
-        let order = labels.len();
-        // Initialize adjacency matrix given graph order.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((order, order), true);
-        // Remove self loops.
-        adjacency_matrix.diag_mut().map_inplace(|x| *x = false);
-
-        // Compute size.
-        let size = (order * (order.saturating_sub(1))) / 2;
-
-        // Assert vertex set is still sorted.
-        debug_assert!(labels.iter().is_sorted());
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(adjacency_matrix.is_square());
-
+        // Create the new null graph.
         Self {
-            labels,
             adjacency_matrix,
+            labels,
             size,
         }
     }
 
-    #[inline]
-    fn clear(&mut self) {
-        // Clear the vertices map.
-        self.labels.clear();
-        // Clear the adjacency matrix.
-        self.adjacency_matrix = Default::default();
-        // Clear the size.
-        self.size = 0;
+    /// Create a new empty graph.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|^2)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    fn empty<V, I>(vertices: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Collect and deduplicate the vertices labels.
+        let mut labels: IndexSet<_> = vertices
+            .into_iter()
+            // Convert the vertices labels to strings.
+            .map(|x| x.into())
+            // Collect the vertices labels.
+            .collect();
+        // Sort the vertices labels.
+        labels.sort();
+
+        // Get the new graph order.
+        let order = labels.len();
+        // Initialize the adjacency matrix.
+        let adjacency_matrix = Array2::from_elem((order, order), false);
+        // Initialize the graph size.
+        let size = 0;
+
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            adjacency_matrix,
+            adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            adjacency_matrix.nrows(),
+            labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(size, 0, "The graph size is not correct.");
+
+        // Create the new empty graph.
+        Self {
+            adjacency_matrix,
+            labels,
+            size,
+        }
     }
 
-    #[inline]
-    fn order(&self) -> usize {
-        // Check iterator consistency.
-        debug_assert_eq!(V!(self).len(), self.labels.len());
-        // Assert vertex set is consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
-        // Assert adjacency matrix is square.
-        debug_assert!(self.adjacency_matrix.is_square());
+    // Create a new complete graph.
+    fn complete<V, I>(vertices: I) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Collect and deduplicate the vertices labels.
+        let mut labels: IndexSet<_> = vertices
+            .into_iter()
+            // Convert the vertices labels to strings.
+            .map(|x| x.into())
+            // Collect the vertices labels.
+            .collect();
+        // Sort the vertices labels.
+        labels.sort();
 
-        self.labels.len()
+        // Get the new graph order.
+        let order = labels.len();
+        // Initialize the adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((order, order), true);
+        // Set the adjacency matrix diagonal to false.
+        adjacency_matrix.diag_mut().fill(false);
+        // Initialize the graph size.
+        let size = order * (order - 1) / 2;
+
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            adjacency_matrix,
+            adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the adjacency matrix diagonal is false.
+        debug_assert!(
+            adjacency_matrix.diag().iter().all(|x| !x),
+            "The adjacency matrix diagonal is not false."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            adjacency_matrix.nrows(),
+            labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(
+            size,
+            order * (order - 1) / 2,
+            "The graph size is not correct."
+        );
+
+        // Create the new complete graph.
+        Self {
+            adjacency_matrix,
+            labels,
+            size,
+        }
     }
 
+    // Get the vertices labels iterator.
     #[inline]
-    fn get_vertices(&self) -> Self::VerticesIter<'_> {
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        // Get the vertices labels iterator.
         self.labels.iter().map(|x| x.as_str())
     }
 
+    // Get the vertex label.
     #[inline]
-    fn get_vertex_by_index(&self, x: usize) -> &str {
+    fn vertex_to_label(&self, x: usize) -> &str {
+        // Get the vertex label.
         self.labels
             .get_index(x)
-            .unwrap_or_else(|| panic!("No vertex with label `{x}`"))
+            .unwrap_or_else(|| panic!("The vertex index `{}` is out of bounds.", x))
     }
 
-    fn add_vertex<V>(&mut self, x: V) -> usize
+    // Get the vertex index.
+    #[inline]
+    fn label_to_vertex(&self, x: &str) -> usize {
+        // Get the vertex index.
+        self.labels
+            .get_index_of(x)
+            .unwrap_or_else(|| panic!("The vertex label `{}` does not exist.", x))
+    }
+
+    // Get the graph order.
+    #[inline]
+    fn order(&self) -> usize {
+        // Get the graph order.
+        self.labels.len()
+    }
+
+    // Get the vertices indices iterator.
+    #[inline]
+    fn vertices(&self) -> Self::VerticesIter<'_> {
+        // Get the vertices indices iterator.
+        0..self.order()
+    }
+
+    // Check if the vertex exists.
+    #[inline]
+    fn has_vertex(&self, x: usize) -> bool {
+        // Check if the vertex exists.
+        x < self.order()
+    }
+
+    /// Add a vertex.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|^2)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    fn add_vertex<V>(&mut self, x: V) -> (usize, bool)
     where
         V: Into<String>,
     {
-        // Cast vertex label.
+        // Get the vertex label.
         let x = x.into();
-        // Try to insert vertex label.
-        let (i, f) = self.labels.insert_full(x.clone());
-
-        // If vertex was already present ...
-        if !f {
-            // ... return early.
-            return i;
+        // Check if the vertex label already exists.
+        if let Some(x) = self.labels.get_index_of(&x) {
+            // Return the vertex index and `false`.
+            return (x, false);
         }
 
-        // Sort labels.
+        // Insert the vertex label.
+        self.labels.insert(x.clone());
+        // Sort the vertices labels.
         self.labels.sort();
+        // Get the vertex index.
+        let x = self.labels.get_index_of(&x).unwrap();
 
-        // Assert vertex has been added.
-        debug_assert!(self.labels.contains(&x));
-        // Assert vertex set is still sorted.
-        debug_assert!(self.labels.iter().is_sorted());
-
-        // Get vertex index.
-        let i = self.labels.get_index_of(&x).unwrap();
-        // Compute the new size of adjacency matrix.
-        let n = self.adjacency_matrix.nrows();
-        // Allocate new adjacency matrix.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((n + 1, n + 1), false);
-        // Compute blocks.
-        let (p, q) = ([0..i, (i + 1)..(n + 1)], [0..i, i..n]);
-        let (p, q) = (iproduct!(p.clone(), p), iproduct!(q.clone(), q));
-        // Copy old adjacency matrix using blocks operations.
-        for ((p_start, p_end), (q_start, q_end)) in p.zip(q) {
-            adjacency_matrix
-                .slice_mut(s![p_start, p_end])
-                .assign(&self.adjacency_matrix.slice(s![q_start, q_end]));
-        }
-        // Replace old with new adjacency matrix.
+        // Get the new graph order.
+        let order = self.labels.len();
+        // Initialize the new adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((order, order), false);
+        // Add the old adjacency matrix to the new adjacency matrix.
+        adjacency_matrix
+            .slice_mut(s![..x, ..x])
+            .assign(&self.adjacency_matrix.slice(s![..x, ..x]));
+        adjacency_matrix
+            .slice_mut(s![..x, x + 1..])
+            .assign(&self.adjacency_matrix.slice(s![..x, x..]));
+        adjacency_matrix
+            .slice_mut(s![x + 1.., ..x])
+            .assign(&self.adjacency_matrix.slice(s![x.., ..x]));
+        adjacency_matrix
+            .slice_mut(s![x + 1.., x + 1..])
+            .assign(&self.adjacency_matrix.slice(s![x.., x..]));
+        // Update the adjacency matrix.
         self.adjacency_matrix = adjacency_matrix;
 
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(self.adjacency_matrix.is_square());
+        // Compute the new graph size.
+        let size = {
+            // Sum the adjacency matrix elements.
+            let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+            // Sum the adjacency matrix diagonal elements.
+            let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+            // Compute the graph size.
+            (total_sum - diagonal_sum) / 2 + diagonal_sum
+        };
+        // Update the graph size.
+        self.size = size;
 
-        // Return new vertex index.
-        i
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            self.adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            self.adjacency_matrix,
+            self.adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            self.labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            self.adjacency_matrix.nrows(),
+            self.labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(
+            self.size,
+            {
+                // Sum the adjacency matrix elements.
+                let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+                // Sum the adjacency matrix diagonal elements.
+                let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+                // Compute the graph size.
+                (total_sum - diagonal_sum) / 2 + diagonal_sum
+            },
+            "The graph size is not correct."
+        );
+
+        // Return the vertex index and `true`.
+        (x, true)
     }
 
-    #[inline]
-    fn get_vertices_index(&self) -> Self::VerticesIndexIter<'_> {
-        0..self.labels.len()
-    }
-
-    #[inline]
-    fn get_vertex_index(&self, x: &str) -> usize {
-        self.labels
-            .get_index_of(x)
-            .unwrap_or_else(|| panic!("No vertex with identifier `{x}`"))
-    }
-
-    #[inline]
-    fn has_vertex_by_index(&self, x: usize) -> bool {
-        // Check vertex existence.
-        let f = self.labels.get_index(x).is_some();
-
-        // Check iterator consistency.
-        debug_assert_eq!(V!(self).any(|y| y == x), f);
-        // Assert vertex set and vertices map are consistent.
-        debug_assert_eq!(x < self.order(), f);
-
-        f
-    }
-
-    fn del_vertex_by_index(&mut self, x: usize) -> bool {
-        // Get vertex label and identifier.
-        let (x, i) = (self.labels.shift_remove_index(x), x);
-
-        // If vertex was not present ...
-        if x.is_none() {
-            // ... then return early.
+    /// Delete a vertex.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|^2)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
+    fn del_vertex(&mut self, x: usize) -> bool {
+        // Check if the vertex exists.
+        if !self.has_vertex(x) {
+            // Return `false`.
             return false;
         }
 
-        // Assert vertex has been removed.
-        debug_assert!(!self.labels.contains(&x.unwrap()));
-        // Assert vertex set is still sorted.
-        debug_assert!(self.labels.iter().is_sorted());
-
-        // Compute the new size of adjacency matrix.
-        let n = self.adjacency_matrix.nrows();
-        // Allocate new adjacency matrix.
-        let mut adjacency_matrix = DenseAdjacencyMatrix::from_elem((n - 1, n - 1), false);
-        // Compute blocks.
-        let (p, q) = ([0..i, i..(n - 1)], [0..i, (i + 1)..n]);
-        let (p, q) = (iproduct!(p.clone(), p), iproduct!(q.clone(), q));
-        // Copy old adjacency matrix using blocks operations.
-        for ((p_start, p_end), (q_start, q_end)) in p.zip(q) {
-            adjacency_matrix
-                .slice_mut(s![p_start, p_end])
-                .assign(&self.adjacency_matrix.slice(s![q_start, q_end]));
-        }
-        // Replace old with new adjacency matrix.
+        // Delete the vertex label.
+        self.labels.shift_remove_index(x);
+        // Get the new graph order.
+        let order = self.labels.len();
+        // Initialize the new adjacency matrix.
+        let mut adjacency_matrix = Array2::from_elem((order, order), false);
+        // Add the old adjacency matrix to the new adjacency matrix.
+        adjacency_matrix
+            .slice_mut(s![..x, ..x])
+            .assign(&self.adjacency_matrix.slice(s![..x, ..x]));
+        adjacency_matrix
+            .slice_mut(s![..x, x..])
+            .assign(&self.adjacency_matrix.slice(s![..x, x + 1..]));
+        adjacency_matrix
+            .slice_mut(s![x.., ..x])
+            .assign(&self.adjacency_matrix.slice(s![x + 1.., ..x]));
+        adjacency_matrix
+            .slice_mut(s![x.., x..])
+            .assign(&self.adjacency_matrix.slice(s![x + 1.., x + 1..]));
+        // Update the adjacency matrix.
         self.adjacency_matrix = adjacency_matrix;
 
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(self.labels.len(), self.adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(self.adjacency_matrix.is_square());
+        // Compute the new graph size.
+        let size = {
+            // Sum the adjacency matrix elements.
+            let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+            // Sum the adjacency matrix diagonal elements.
+            let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+            // Compute the graph size.
+            (total_sum - diagonal_sum) / 2 + diagonal_sum
+        };
+        // Update the graph size.
+        self.size = size;
 
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            self.adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            self.adjacency_matrix,
+            self.adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            self.labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            self.adjacency_matrix.nrows(),
+            self.labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
+        debug_assert_eq!(
+            self.size,
+            {
+                // Sum the adjacency matrix elements.
+                let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+                // Sum the adjacency matrix diagonal elements.
+                let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+                // Compute the graph size.
+                (total_sum - diagonal_sum) / 2 + diagonal_sum
+            },
+            "The graph size is not correct."
+        );
+
+        // Return `true`.
         true
     }
 
+    // Get the graph size.
     #[inline]
     fn size(&self) -> usize {
-        // Check iterator consistency.
-        debug_assert_eq!(E!(self).len(), self.size);
-
+        // Get the graph size.
         self.size
     }
 
+    /// Get the edges indices iterator.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn get_edges_index(&self) -> Self::EdgesIndexIter<'_> {
-        Self::EdgesIndexIter::new(self)
+    fn edges(&self) -> Self::EdgesIter<'_> {
+        // Get the edges indices iterator.
+        Self::EdgesIter::new(self)
     }
 
+    /// Check if the edge exists.
+    ///
+    /// # Complexity
+    /// - Time: `O(1)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn has_edge_by_index(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> bool {
+        // Assert the vertex indices are in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+        assert!(
+            self.has_vertex(y),
+            "The vertex index `{}` is out of bounds.",
+            y
+        );
+
+        // Check if the edge exists.
         self.adjacency_matrix[[x, y]]
     }
 
+    /// Add an edge.
+    ///
+    /// # Complexity
+    /// - Time: `O(1)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn add_edge_by_index(&mut self, x: usize, y: usize) -> bool {
-        // If edge already exists ...
-        if self.adjacency_matrix[[x, y]] {
-            // ... return early.
+    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+        // Assert the vertex indices are in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+        assert!(
+            self.has_vertex(y),
+            "The vertex index `{}` is out of bounds.",
+            y
+        );
+
+        // Check if the edge already exists.
+        if self.has_edge(x, y) {
+            // Return `false`.
             return false;
         }
 
-        // Add edge.
+        // Update the adjacency matrix.
         self.adjacency_matrix[[x, y]] = true;
         self.adjacency_matrix[[y, x]] = true;
-        // Increment size.
+        // Update the graph size.
         self.size += 1;
 
-        // Assert adjacency matrix is still consistent.
-        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
-        // Assert size counter and adjacency matrix are still consistent.
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            self.adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            self.adjacency_matrix,
+            self.adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            self.labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            self.adjacency_matrix.nrows(),
+            self.labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
         debug_assert_eq!(
             self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
+            {
+                // Sum the adjacency matrix elements.
+                let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+                // Sum the adjacency matrix diagonal elements.
+                let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+                // Compute the graph size.
+                (total_sum - diagonal_sum) / 2 + diagonal_sum
+            },
+            "The graph size is not correct."
         );
 
+        // Return `true`.
         true
     }
 
+    /// Delete an edge.
+    ///
+    /// # Complexity
+    /// - Time: `O(1)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn del_edge_by_index(&mut self, x: usize, y: usize) -> bool {
-        // If edge does not exists ...
-        if !self.adjacency_matrix[[x, y]] {
-            // ... return early.
+    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+        // Assert the vertex indices are in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+        assert!(
+            self.has_vertex(y),
+            "The vertex index `{}` is out of bounds.",
+            y
+        );
+
+        // Check if the edge does not exist.
+        if !self.has_edge(x, y) {
+            // Return `false`.
             return false;
         }
 
-        // Remove edge.
+        // Update the adjacency matrix.
         self.adjacency_matrix[[x, y]] = false;
         self.adjacency_matrix[[y, x]] = false;
-        // Decrement size.
+        // Update the graph size.
         self.size -= 1;
 
-        // Assert adjacency matrix is still consistent.
-        debug_assert_eq!(self.adjacency_matrix[[x, y]], self.adjacency_matrix[[y, x]]);
-        // Assert size counter and adjacency matrix are still consistent.
+        // Debug assert the adjacency matrix is square.
+        debug_assert!(
+            self.adjacency_matrix.is_square(),
+            "The adjacency matrix is not square."
+        );
+        // Debug assert the adjacency matrix is symmetric.
+        debug_assert_eq!(
+            self.adjacency_matrix,
+            self.adjacency_matrix.t(),
+            "The adjacency matrix is not symmetric."
+        );
+        // Debug assert the graph labels are unique and lexically sorted.
+        debug_assert!(
+            self.labels.iter().tuple_windows().all(|(x, y)| x < y),
+            "The graph labels are not sorted."
+        );
+        // Debug assert the graph order is correct.
+        debug_assert_eq!(
+            self.adjacency_matrix.nrows(),
+            self.labels.len(),
+            "The graph order is not correct."
+        );
+        // Debug assert the graph size is correct.
         debug_assert_eq!(
             self.size,
-            self.adjacency_matrix
-                .indexed_iter()
-                .filter_map(|((i, j), &f)| match i <= j {
-                    true => Some(f as usize),
-                    false => None,
-                })
-                .sum::<usize>()
+            {
+                // Sum the adjacency matrix elements.
+                let total_sum = self.adjacency_matrix.mapv(|x| x as usize).sum();
+                // Sum the adjacency matrix diagonal elements.
+                let diagonal_sum = self.adjacency_matrix.mapv(|x| x as usize).diag().sum();
+                // Compute the graph size.
+                (total_sum - diagonal_sum) / 2 + diagonal_sum
+            },
+            "The graph size is not correct."
         );
 
+        // Return `true`.
         true
     }
 
+    /// Get the vertex degree.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn get_adjacents_index(&self, x: usize) -> Self::AdjacentsIndexIter<'_> {
-        Self::AdjacentsIndexIter::new(self, x)
-    }
-
-    #[inline]
-    fn is_adjacent_by_index(&self, x: usize, y: usize) -> bool {
-        // Check using has_edge.
-        let f = self.has_edge_by_index(x, y);
-
-        // Check iterator consistency.
-        debug_assert_eq!(Adj!(self, x).any(|z| z == y), f);
-
-        f
-    }
-}
-
-/* Implement TryFrom traits. */
-impl<V> From<EdgeList<V>> for UndirectedDenseAdjacencyMatrixGraph
-where
-    V: Into<String>,
-{
-    #[inline]
-    fn from(edge_list: EdgeList<V>) -> Self {
-        Self::new([], edge_list)
-    }
-}
-
-impl<V> From<AdjacencyList<V>> for UndirectedDenseAdjacencyMatrixGraph
-where
-    V: Clone + Into<String>,
-{
-    fn from(adjacency_list: AdjacencyList<V>) -> Self {
-        // Map into vertices.
-        let vertices: Vec<_> = adjacency_list.keys().cloned().collect();
-        // Map into edges.
-        let edges = adjacency_list
-            .into_iter()
-            .flat_map(|(x, ys)| std::iter::repeat(x).take(ys.len()).zip(ys));
-
-        Self::new(vertices, edges)
-    }
-}
-
-impl<I, V> From<(I, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph
-where
-    I: IntoIterator<Item = V>,
-    V: Into<String>,
-{
-    fn from((labels, adjacency_matrix): (I, DenseAdjacencyMatrix)) -> Self {
-        // Remove duplicated vertices labels.
-        let mut labels: FxIndexSet<String> = labels.into_iter().map_into().collect();
-        // Sort labels.
-        labels.sort();
-
-        // Check if vertex set is not consistent with given adjacency matrix.
-        if labels.len() != adjacency_matrix.nrows() {
-            panic!("Matrix must be consistent with inputs");
-        }
-        // Check if adjacency matrix is not square.
-        if !adjacency_matrix.is_square() {
-            panic!("Matrix must be square");
-        }
-        // Check if adjacency matrix is not symmetric.
-        if adjacency_matrix != adjacency_matrix.t() {
-            panic!("Matrix must be symmetric");
-        }
-
-        // Cast to standard memory layout (i.e. C layout), if not already.
-        let adjacency_matrix = adjacency_matrix.as_standard_layout().into_owned();
-
-        // Compute size.
-        let size = adjacency_matrix.mapv(|f| f as usize).sum();
-        let size = size + adjacency_matrix.diag().mapv(|f| f as usize).sum();
-        let size = size / 2;
-
-        // Assert vertex set is still sorted.
-        debug_assert!(labels.iter().is_sorted());
-        // Assert vertex set is still consistent with adjacency matrix shape.
-        debug_assert_eq!(labels.len(), adjacency_matrix.nrows());
-        // Assert adjacency matrix is still square.
-        debug_assert!(adjacency_matrix.is_square());
-
-        Self {
-            labels,
-            adjacency_matrix,
-            size,
-        }
-    }
-}
-
-/* Implement Into traits. */
-
-#[allow(clippy::from_over_into)]
-impl Into<EdgeList<String>> for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn into(self) -> EdgeList<String> {
-        E!(self)
-            .map(|(x, y)| {
-                (
-                    self.get_vertex_by_index(x).into(),
-                    self.get_vertex_by_index(y).into(),
-                )
-            })
-            .collect()
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<AdjacencyList<String>> for UndirectedDenseAdjacencyMatrixGraph {
-    fn into(self) -> AdjacencyList<String> {
-        V!(self)
-            .map(|x| {
-                (
-                    self.get_vertex_by_index(x).into(),
-                    Adj!(self, x)
-                        .map(|y| self.get_vertex_by_index(y).into())
-                        .collect(),
-                )
-            })
-            .collect()
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<(FxIndexSet<String>, DenseAdjacencyMatrix)> for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn into(self) -> (FxIndexSet<String>, DenseAdjacencyMatrix) {
-        (self.labels, self.adjacency_matrix)
-    }
-}
-
-/* Implement PartialOrdGraph trait. */
-impl PartialEq for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        // Check that V(\mathcal{G}) == V(\mathcal{H}) && E(\mathcal{G}) == E(\mathcal{H}).
-        self.labels.eq(&other.labels) && self.adjacency_matrix.eq(&other.adjacency_matrix)
-    }
-}
-
-impl Eq for UndirectedDenseAdjacencyMatrixGraph {}
-
-impl PartialOrd for UndirectedDenseAdjacencyMatrixGraph {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        // Compare vertices sets.
-        let partial_cmp = iter_set::cmp(
-            V!(self).map(|x| self.get_vertex_by_index(x)),
-            V!(other).map(|x| other.get_vertex_by_index(x)),
+    fn degree(&self, x: usize) -> usize {
+        // Assert the vertex index is in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
         );
-        // If the vertices sets are comparable ...
-        partial_cmp.and_then(|vertices| {
-            // ... compare edges sets.
-            let partial_cmp = iter_set::cmp(
-                E!(self).map(|(x, y)| (self.get_vertex_by_index(x), self.get_vertex_by_index(y))),
-                E!(other)
-                    .map(|(x, y)| (other.get_vertex_by_index(x), other.get_vertex_by_index(y))),
-            );
-            // If the edges sets are comparable ...
-            partial_cmp.and_then(|edges| {
-                // ... then return ordering.
-                match (vertices, edges) {
-                    // If vertices and edges are the same, then ordering is determined.
-                    (Ordering::Greater, Ordering::Greater) => Some(Ordering::Greater),
-                    (Ordering::Less, Ordering::Less) => Some(Ordering::Less),
-                    // If either vertices or edges are equal, the rest determines the order.
-                    (_, Ordering::Equal) => Some(vertices),
-                    (Ordering::Equal, _) => Some(edges),
-                    // Every other combination does not determine an order.
-                    _ => None,
-                }
-            })
-        })
-    }
-}
 
-impl PartialOrdGraph for UndirectedDenseAdjacencyMatrixGraph {}
-
-/* Implement SubGraph trait. */
-impl SubGraph for UndirectedDenseAdjacencyMatrixGraph {
-    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = (usize, usize)>,
-    {
-        // Initialize new indices.
-        let mut indices = vec![false; self.order()];
-        // Add the required vertices.
-        for x in vertices {
-            indices[x] = true;
-        }
-
-        // Initialize a new adjacency matrix.
-        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
-        // Fill the adjacency matrix, symmetrically.
-        for (x, y) in edges {
-            // Add the edge.
-            adjacency_matrix[[x, y]] = true;
-            adjacency_matrix[[y, x]] = true;
-            // Add the vertices.
-            indices[x] = true;
-            indices[y] = true;
-        }
-
-        // Map the indices.
-        let indices: Vec<_> = indices
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, f)| match f {
-                true => Some(i),
-                false => None,
-            })
-            .collect();
-
-        // Get minor of matrix.
-        let adjacency_matrix = adjacency_matrix
-            .select(Axis(0), &indices)
-            .select(Axis(1), &indices);
-
-        // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
-
-        // Build subgraph from vertices and adjacency matrix.
-        Self::try_from((vertices, adjacency_matrix)).unwrap()
+        // Get the vertex degree.
+        self.adjacency_matrix.row(x).mapv(|x| x as usize).sum()
     }
 
-    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
-    where
-        I: IntoIterator<Item = usize>,
-    {
-        // Remove duplicated vertices identifiers.
-        let indices: FxIndexSet<_> = vertices.into_iter().collect();
-        // Cast to vector of indices.
-        let indices: Vec<_> = indices.into_iter().collect();
-
-        // Get minor of matrix.
-        let adjacency_matrix = self
-            .adjacency_matrix
-            .select(Axis(0), &indices)
-            .select(Axis(1), &indices);
-
-        // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
-
-        // Build subgraph from vertices and adjacency matrix.
-        Self::try_from((vertices, adjacency_matrix)).unwrap()
-    }
-
-    fn subgraph_by_edges<J>(&self, edges: J) -> Self
-    where
-        J: IntoIterator<Item = (usize, usize)>,
-    {
-        // Initialize new indices.
-        let mut indices = vec![false; self.order()];
-
-        // Initialize a new adjacency matrix.
-        let mut adjacency_matrix = Self::Data::from_elem(self.adjacency_matrix.dim(), false);
-        // Fill the adjacency matrix, symmetrically.
-        for (x, y) in edges {
-            // Add the edge.
-            adjacency_matrix[[x, y]] = true;
-            adjacency_matrix[[y, x]] = true;
-            // Add the vertices.
-            indices[x] = true;
-            indices[y] = true;
-        }
-
-        // Map the indices.
-        let indices: Vec<_> = indices
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, f)| match f {
-                true => Some(i),
-                false => None,
-            })
-            .collect();
-
-        // Get minor of matrix.
-        let adjacency_matrix = adjacency_matrix
-            .select(Axis(0), &indices)
-            .select(Axis(1), &indices);
-
-        // Get vertices labels.
-        let vertices = indices.into_iter().map(|x| self.get_vertex_by_index(x));
-
-        // Build subgraph from vertices and adjacency matrix.
-        Self::try_from((vertices, adjacency_matrix)).unwrap()
-    }
-}
-
-/* Implement UndirectedGraph trait. */
-impl UndirectedGraph for UndirectedDenseAdjacencyMatrixGraph {
-    type UndirectedEdgesIndexIter<'a> = EdgesIterator<'a>;
-    type NeighborsIndexIter<'a> = Self::AdjacentsIndexIter<'a>;
-
+    /// Get the vertices degrees.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn size_of_maximal_undirected_subgraph(&self) -> usize {
-        self.size()
+    fn degrees(&self) -> Vec<usize> {
+        // Get the vertices degrees.
+        self.adjacency_matrix
+            .mapv(|x| x as usize)
+            .sum_axis(Axis(1))
+            .to_vec()
     }
 
+    /// Get the vertex adjacents indices iterator.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn get_undirected_edges_index(&self) -> Self::UndirectedEdgesIndexIter<'_> {
-        self.get_edges_index()
+    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
+        // Assert the vertex index is in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+
+        // Get the vertex adjacents indices iterator.
+        Self::AdjacentsIter::new(self, x)
     }
 
+    /// Check if two vertices are adjacent.
+    ///
+    /// # Complexity
+    /// - Time: `O(1)`,
+    /// - Space: `O(1)`.
+    ///
+    /// # Notes
+    /// See the `Graph` trait for more details.
+    ///
     #[inline]
-    fn get_neighbors_by_index(&self, x: usize) -> Self::NeighborsIndexIter<'_> {
-        Self::NeighborsIndexIter::new(self, x)
-    }
+    fn is_adjacent(&self, x: usize, y: usize) -> bool {
+        // Assert the vertex indices are in bounds.
+        assert!(
+            self.has_vertex(x),
+            "The vertex index `{}` is out of bounds.",
+            x
+        );
+        assert!(
+            self.has_vertex(y),
+            "The vertex index `{}` is out of bounds.",
+            y
+        );
 
-    #[inline]
-    fn is_neighbor_by_index(&self, x: usize, y: usize) -> bool {
+        // Check if the vertices are adjacent.
         self.adjacency_matrix[[x, y]]
     }
-
-    #[inline]
-    fn has_undirected_edge_by_index(&self, x: usize, y: usize) -> bool {
-        self.adjacency_matrix[[x, y]]
-    }
-
-    #[inline]
-    fn get_degree_by_index(&self, x: usize) -> usize {
-        // Compute degree.
-        let d = self.adjacency_matrix.row(x).mapv(|f| f as usize).sum();
-
-        // Check iterator consistency.
-        debug_assert_eq!(Adj!(self, x).count(), d);
-
-        d
-    }
-
-    #[inline]
-    fn add_undirected_edge_by_index(&mut self, x: usize, y: usize) -> bool {
-        self.add_edge_by_index(x, y)
-    }
 }
 
-/* Implement PathGraph */
-impl PathGraph for UndirectedDenseAdjacencyMatrixGraph {
-    #[inline]
-    fn has_path_by_index(&self, x: usize, y: usize) -> bool {
-        self.has_edge_by_index(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
+/// Alias for the `UndirectedDenseAdjacencyMatrix` struct.
+pub type UGraph = UndirectedDenseAdjacencyMatrix;
+
+// Test the `UGraph` struct.
+#[cfg(test)]
+mod tests {
+    use std::{
+        collections::hash_map::DefaultHasher,
+        hash::{Hash, Hasher},
+    };
+
+    use itertools::Itertools;
+
+    use super::UGraph;
+    use crate::{
+        graphs::{Graph, UndirectedGraph},
+        Adj, Ne, E, L, V,
+    };
+
+    // Test the `clone` method.
+    #[test]
+    fn clone() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Assert the graph is equal to the cloned graph.
+        assert_eq!(graph, graph.clone());
     }
 
-    #[inline]
-    fn is_acyclic(&self) -> bool {
-        !DFSEdges::new(self, None, Traversal::Forest).any(|e| matches!(e, DFSEdge::Back(_, _)))
+    // Test the `debug` method.
+    #[test]
+    fn debug() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Print the graph.
+        assert_eq!(
+            format!("{:?}", graph),
+            concat!(
+                "UndirectedDenseAdjacencyMatrix { ",
+                "adjacency_matrix: ",
+                "[[false, true, true, true, false, false, false, false],\n ",
+                "[true, false, true, true, false, false, false, false],\n ",
+                "[true, true, false, true, false, false, false, false],\n ",
+                "[true, true, true, false, true, true, false, false],\n ",
+                "[false, false, false, true, false, true, true, true],\n ",
+                "[false, false, false, true, true, false, true, true],\n ",
+                "[false, false, false, false, true, true, false, true],\n ",
+                "[false, false, false, false, true, true, true, false]], ",
+                "shape=[8, 8], strides=[8, 1], layout=Cc (0x5), const ndim=2, ",
+                "labels: {\"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\", \"H\"}, ",
+                "size: 14 ",
+                "}"
+            )
+        );
+    }
+
+    // Test the `default` method.
+    #[test]
+    fn default() {
+        // Create a new default graph.
+        let graph = UGraph::default();
+
+        // Check the graph order.
+        assert_eq!(graph.order(), 0);
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+        // Check the vertices labels.
+        assert_eq!(graph.labels().collect_vec(), Vec::<&str>::new());
+        // Check the vertices indices.
+        assert_eq!(graph.vertices().collect_vec(), Vec::<usize>::new());
+        // Check the edges indices.
+        assert_eq!(graph.edges().collect_vec(), Vec::<(usize, usize)>::new());
+    }
+
+    // Test the `display` method.
+    #[test]
+    fn display() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Print the graph.
+        assert_eq!(
+            format!("{}", graph),
+            concat!(
+                "UndirectedGraph { ",
+                "V = {\"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\", \"H\"}, ",
+                "E = {(\"A\", \"B\"), (\"A\", \"C\"), (\"A\", \"D\"), (\"B\", \"C\"), (\"B\", \"D\"), (\"C\", \"D\"), (\"D\", \"E\"), (\"D\", \"F\"), (\"E\", \"F\"), (\"E\", \"G\"), (\"E\", \"H\"), (\"F\", \"G\"), (\"F\", \"H\"), (\"G\", \"H\")} ",
+                "}"
+            )
+        );
+    }
+
+    // Test the `eq` method.
+    #[test]
+    fn eq() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Assert the graph is equal to the cloned graph.
+        assert_eq!(graph, graph.clone());
+
+        // Create a new graph.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete a vertex.
+        graph_i.del_vertex(0);
+        // Assert the graph is not equal to the modified graph.
+        assert_ne!(graph, graph_i);
+
+        // Create a new graph.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete an edge.
+        graph_i.del_edge(0, 1);
+        // Assert the graph is not equal to the modified graph.
+        assert_ne!(graph, graph_i);
+    }
+
+    // Test the `hash` method.
+    #[test]
+    fn hash() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Initialize the hasher.
+        let mut hasher = DefaultHasher::new();
+        // Hash the graph.
+        graph.hash(&mut hasher);
+        // Initialize the hasher for the cloned graph.
+        let mut hasher_cloned = DefaultHasher::new();
+        // Hash the cloned graph.
+        graph.clone().hash(&mut hasher_cloned);
+        // Assert the hashes are equal.
+        assert_eq!(hasher.finish(), hasher_cloned.finish());
+
+        // Create a new graph.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete a vertex.
+        graph_i.del_vertex(0);
+        // Initialize the hasher.
+        let mut hasher_i = DefaultHasher::new();
+        // Hash the modified graph.
+        graph_i.hash(&mut hasher_i);
+        // Assert the hashes are not equal.
+        assert_ne!(hasher.finish(), hasher_i.finish());
+
+        // Create a new graph.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete an edge.
+        graph_i.del_edge(0, 1);
+
+        // Initialize the hasher.
+        let mut hasher_i = DefaultHasher::new();
+        // Hash the modified graph.
+        graph_i.hash(&mut hasher_i);
+        // Assert the hashes are not equal.
+        assert_ne!(hasher.finish(), hasher_i.finish());
+    }
+
+    // Test the `serialize` and `deserialize` method.
+    #[test]
+    fn serialize_deserialize() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Serialize and deserialize the graph.
+        let graph =
+            serde_json::from_str::<UGraph>(&serde_json::to_string(&graph).unwrap()).unwrap();
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), vertices);
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), (0..vertices.len()).collect_vec());
+        // Check the edges indices.
+        assert_eq!(
+            E!(graph).collect_vec(),
+            vec![
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (1, 2),
+                (1, 3),
+                (2, 3),
+                (3, 4),
+                (3, 5),
+                (4, 5),
+                (4, 6),
+                (4, 7),
+                (5, 6),
+                (5, 7),
+                (6, 7)
+            ]
+        );
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2, 3]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2, 3]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1, 3]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), vec![0, 1, 2, 4, 5]);
+        assert_eq!(Adj!(graph, 4).collect_vec(), vec![3, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 5).collect_vec(), vec![3, 4, 6, 7]);
+        assert_eq!(Adj!(graph, 6).collect_vec(), vec![4, 5, 7]);
+        assert_eq!(Adj!(graph, 7).collect_vec(), vec![4, 5, 6]);
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        assert_eq!(graph.vertex_to_label(5), "F");
+        assert_eq!(graph.vertex_to_label(6), "G");
+        assert_eq!(graph.vertex_to_label(7), "H");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+        assert_eq!(graph.label_to_vertex("F"), 5);
+        assert_eq!(graph.label_to_vertex("G"), 6);
+        assert_eq!(graph.label_to_vertex("H"), 7);
+    }
+
+    // Test the `new` method.
+    #[test]
+    fn new() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), vertices);
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), (0..vertices.len()).collect_vec());
+        // Check the edges indices.
+        assert_eq!(
+            E!(graph).collect_vec(),
+            vec![
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (1, 2),
+                (1, 3),
+                (2, 3),
+                (3, 4),
+                (3, 5),
+                (4, 5),
+                (4, 6),
+                (4, 7),
+                (5, 6),
+                (5, 7),
+                (6, 7)
+            ]
+        );
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2, 3]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2, 3]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1, 3]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), vec![0, 1, 2, 4, 5]);
+        assert_eq!(Adj!(graph, 4).collect_vec(), vec![3, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 5).collect_vec(), vec![3, 4, 6, 7]);
+        assert_eq!(Adj!(graph, 6).collect_vec(), vec![4, 5, 7]);
+        assert_eq!(Adj!(graph, 7).collect_vec(), vec![4, 5, 6]);
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        assert_eq!(graph.vertex_to_label(5), "F");
+        assert_eq!(graph.vertex_to_label(6), "G");
+        assert_eq!(graph.vertex_to_label(7), "H");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+        assert_eq!(graph.label_to_vertex("F"), 5);
+        assert_eq!(graph.label_to_vertex("G"), 6);
+        assert_eq!(graph.label_to_vertex("H"), 7);
+    }
+
+    // Test the `null` method.
+    #[test]
+    fn null() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check the graph order.
+        assert_eq!(graph.order(), 0);
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), Vec::<&str>::new());
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), Vec::<usize>::new());
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
+    }
+
+    // Test the `empty` method.
+    #[test]
+    fn empty() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+
+        // Create a new empty graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), vertices);
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), (0..vertices.len()).collect_vec());
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 4).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 5).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 6).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 7).collect_vec(), Vec::<usize>::new());
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        assert_eq!(graph.vertex_to_label(5), "F");
+        assert_eq!(graph.vertex_to_label(6), "G");
+        assert_eq!(graph.vertex_to_label(7), "H");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+        assert_eq!(graph.label_to_vertex("F"), 5);
+        assert_eq!(graph.label_to_vertex("G"), 6);
+        assert_eq!(graph.label_to_vertex("H"), 7);
+    }
+
+    // Test the `complete` method.
+    #[test]
+    fn complete() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+
+        // Create a new complete graph.
+        let graph = UGraph::complete(vertices.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), vertices.len() * (vertices.len() - 1) / 2);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), vertices);
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), (0..vertices.len()).collect_vec());
+        // Check the edges indices.
+        assert_eq!(
+            E!(graph).collect_vec(),
+            vec![
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (0, 4),
+                (0, 5),
+                (0, 6),
+                (0, 7),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+                (1, 5),
+                (1, 6),
+                (1, 7),
+                (2, 3),
+                (2, 4),
+                (2, 5),
+                (2, 6),
+                (2, 7),
+                (3, 4),
+                (3, 5),
+                (3, 6),
+                (3, 7),
+                (4, 5),
+                (4, 6),
+                (4, 7),
+                (5, 6),
+                (5, 7),
+                (6, 7)
+            ]
+        );
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2, 3, 4, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2, 3, 4, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1, 3, 4, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), vec![0, 1, 2, 4, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 4).collect_vec(), vec![0, 1, 2, 3, 5, 6, 7]);
+        assert_eq!(Adj!(graph, 5).collect_vec(), vec![0, 1, 2, 3, 4, 6, 7]);
+        assert_eq!(Adj!(graph, 6).collect_vec(), vec![0, 1, 2, 3, 4, 5, 7]);
+        assert_eq!(Adj!(graph, 7).collect_vec(), vec![0, 1, 2, 3, 4, 5, 6]);
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        assert_eq!(graph.vertex_to_label(5), "F");
+        assert_eq!(graph.vertex_to_label(6), "G");
+        assert_eq!(graph.vertex_to_label(7), "H");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+        assert_eq!(graph.label_to_vertex("F"), 5);
+        assert_eq!(graph.label_to_vertex("G"), 6);
+        assert_eq!(graph.label_to_vertex("H"), 7);
+    }
+
+    // Test the `labels` method.
+    #[test]
+    fn labels() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), vertices);
+    }
+
+    // Test the `vertex_to_label` method, should panic.
+    #[test]
+    #[should_panic]
+    fn vertex_to_label_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check the vertex to label.
+        graph.vertex_to_label(0);
+    }
+
+    // Test the `vertex_to_label` method.
+    #[test]
+    fn vertex_to_label() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        assert_eq!(graph.vertex_to_label(5), "F");
+        assert_eq!(graph.vertex_to_label(6), "G");
+        assert_eq!(graph.vertex_to_label(7), "H");
+    }
+
+    // Test the `label_to_vertex` method, should panic.
+    #[test]
+    #[should_panic]
+    fn label_to_vertex_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check the label to vertex.
+        graph.label_to_vertex("A");
+    }
+
+    // Test the `label_to_vertex` method.
+    #[test]
+    fn label_to_vertex() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+            ("D", "E"),
+            ("D", "F"),
+            ("E", "F"),
+            ("E", "G"),
+            ("E", "H"),
+            ("F", "G"),
+            ("F", "H"),
+            ("G", "H"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+        assert_eq!(graph.label_to_vertex("F"), 5);
+        assert_eq!(graph.label_to_vertex("G"), 6);
+        assert_eq!(graph.label_to_vertex("H"), 7);
+    }
+
+    // Test the `vertices` method.
+    #[test]
+    fn vertices() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the vertices indices.
+        assert_eq!(V!(graph).collect_vec(), (0..vertices.len()).collect_vec());
+    }
+
+    // Test the `has_vertex` method.
+    #[test]
+    fn has_vertex() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check if the vertices exist.
+        assert!(graph.has_vertex(0));
+        assert!(graph.has_vertex(1));
+        assert!(graph.has_vertex(2));
+        assert!(graph.has_vertex(3));
+        // Check if the vertices do not exist.
+        assert!(!graph.has_vertex(4));
+        assert!(!graph.has_vertex(5));
+        assert!(!graph.has_vertex(6));
+        assert!(!graph.has_vertex(7));
+    }
+
+    // Test the `add_vertex` method.
+    #[test]
+    fn add_vertex() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+
+        // Add a new vertex.
+        graph.add_vertex("E");
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() + 1);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["A", "B", "C", "D", "E"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() + 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 4).collect_vec(), Vec::<usize>::new());
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        assert_eq!(graph.vertex_to_label(3), "D");
+        assert_eq!(graph.vertex_to_label(4), "E");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+        assert_eq!(graph.label_to_vertex("D"), 3);
+        assert_eq!(graph.label_to_vertex("E"), 4);
+
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "E"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "E"),
+            ("C", "E"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+
+        // Add a new vertex.
+        graph.add_vertex("D");
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() + 1);
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["A", "B", "C", "D", "E"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() + 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(
+            E!(graph).collect_vec(),
+            vec![(0, 1), (0, 2), (0, 4), (1, 2), (1, 4), (2, 4)]
+        );
+
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "E", "H"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "E"),
+            ("C", "H"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+
+        // Add a new vertex.
+        graph.add_vertex("D");
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() + 1);
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["A", "B", "C", "D", "E", "H"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() + 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(
+            E!(graph).collect_vec(),
+            vec![(0, 1), (0, 2), (0, 4), (1, 2), (1, 4), (2, 5)]
+        );
+    }
+
+    // Test the `del_vertex` method.
+    #[test]
+    fn del_vertex() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() - 1);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["B", "C", "D"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() - 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 2).collect_vec(), Vec::<usize>::new());
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "B");
+        assert_eq!(graph.vertex_to_label(1), "C");
+        assert_eq!(graph.vertex_to_label(2), "D");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("B"), 0);
+        assert_eq!(graph.label_to_vertex("C"), 1);
+        assert_eq!(graph.label_to_vertex("D"), 2);
+
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "E"];
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "E"),
+            ("C", "E"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len());
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() - 1);
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len() - 3);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["A", "B", "C"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() - 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 2), (1, 2)]);
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1]);
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+
+        // Delete non existing vertex.
+        graph.del_vertex(3);
+
+        // Check the graph order.
+        assert_eq!(graph.order(), vertices.len() - 1);
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len() - 3);
+        // Check the vertices labels.
+        assert_eq!(L!(graph).collect_vec(), ["A", "B", "C"]);
+        // Check the vertices indices.
+        assert_eq!(
+            V!(graph).collect_vec(),
+            (0..vertices.len() - 1).collect_vec()
+        );
+        // Check the edges indices.
+        assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 2), (1, 2)]);
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1]);
+        // Check the vertex to label.
+        assert_eq!(graph.vertex_to_label(0), "A");
+        assert_eq!(graph.vertex_to_label(1), "B");
+        assert_eq!(graph.vertex_to_label(2), "C");
+        // Check the label to vertex.
+        assert_eq!(graph.label_to_vertex("A"), 0);
+        assert_eq!(graph.label_to_vertex("B"), 1);
+        assert_eq!(graph.label_to_vertex("C"), 2);
+    }
+
+    // Test the `size` method.
+    #[test]
+    fn size() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.size(), edges.len());
+    }
+
+    // Test the `has_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn has_edge_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check if the edge exists.
+        graph.has_edge(0, 1);
+    }
+
+    // Test the `has_edge` method.
+    #[test]
+    fn has_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check if the edge exists.
+        assert!(!graph.has_edge(0, 1));
+        assert!(!graph.has_edge(0, 2));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 3));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(1, 1));
+        assert!(!graph.has_edge(2, 2));
+        assert!(!graph.has_edge(3, 3));
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(0, 2));
+        assert!(graph.has_edge(0, 3));
+        assert!(graph.has_edge(1, 2));
+        assert!(graph.has_edge(1, 3));
+        assert!(graph.has_edge(2, 3));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(1, 1));
+        assert!(!graph.has_edge(2, 2));
+        assert!(!graph.has_edge(3, 3));
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(0, 2));
+        assert!(graph.has_edge(1, 2));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(1, 1));
+        assert!(!graph.has_edge(2, 2));
+
+        // Delete a vertex.
+        graph.del_vertex(1);
+
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(1, 1));
+    }
+
+    // Test the `add_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn add_edge_should_panic() {
+        // Create a new null graph.
+        let mut graph = UGraph::null();
+
+        // Add a new edge.
+        graph.add_edge(0, 1);
+    }
+
+    // Test the `add_edge` method.
+    #[test]
+    fn add_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+
+        // Add a new edge.
+        graph.add_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 1);
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(1, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(0, 2));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 0));
+        assert!(!graph.has_edge(2, 1));
+        assert!(!graph.has_edge(2, 3));
+        assert!(!graph.has_edge(3, 0));
+        assert!(!graph.has_edge(3, 1));
+        assert!(!graph.has_edge(3, 2));
+
+        // Add a new edge.
+        graph.add_edge(0, 2);
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 2);
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(1, 0));
+        assert!(graph.has_edge(0, 2));
+        assert!(graph.has_edge(2, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 1));
+        assert!(!graph.has_edge(2, 3));
+        assert!(!graph.has_edge(3, 0));
+        assert!(!graph.has_edge(3, 1));
+        assert!(!graph.has_edge(3, 2));
+
+        // Add a new edge.
+        graph.add_edge(3, 3);
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 3);
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(1, 0));
+        assert!(graph.has_edge(0, 2));
+        assert!(graph.has_edge(2, 0));
+        assert!(graph.has_edge(3, 3));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 1));
+        assert!(!graph.has_edge(2, 3));
+        assert!(!graph.has_edge(3, 0));
+        assert!(!graph.has_edge(3, 1));
+        assert!(!graph.has_edge(3, 2));
+    }
+
+    // Test the `del_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn del_edge_should_panic() {
+        // Create a new null graph.
+        let mut graph = UGraph::null();
+
+        // Delete an edge.
+        graph.del_edge(0, 1);
+    }
+
+    // Test the `del_edge` method.
+    #[test]
+    fn del_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+
+        // Add a new edge.
+        graph.add_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 1);
+        // Check if the edge exists.
+        assert!(graph.has_edge(0, 1));
+        assert!(graph.has_edge(1, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(0, 2));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 0));
+        assert!(!graph.has_edge(2, 1));
+        assert!(!graph.has_edge(2, 3));
+        assert!(!graph.has_edge(3, 0));
+        assert!(!graph.has_edge(3, 1));
+        assert!(!graph.has_edge(3, 2));
+
+        // Delete an edge.
+        graph.del_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.size(), 0);
+        // Check if the edge does not exist.
+        assert!(!graph.has_edge(0, 0));
+        assert!(!graph.has_edge(0, 1));
+        assert!(!graph.has_edge(0, 2));
+        assert!(!graph.has_edge(0, 3));
+        assert!(!graph.has_edge(1, 0));
+        assert!(!graph.has_edge(1, 1));
+        assert!(!graph.has_edge(1, 2));
+        assert!(!graph.has_edge(1, 3));
+        assert!(!graph.has_edge(2, 0));
+        assert!(!graph.has_edge(2, 1));
+        assert!(!graph.has_edge(2, 2));
+        assert!(!graph.has_edge(2, 3));
+        assert!(!graph.has_edge(3, 0));
+        assert!(!graph.has_edge(3, 1));
+        assert!(!graph.has_edge(3, 2));
+    }
+
+    // Test the `adjacents` method, should panic.
+    #[test]
+    #[should_panic]
+    fn adjacents_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check the adjacents indices.
+        Adj!(graph, 0);
+    }
+
+    // Test the `degree` method, should panic.
+    #[test]
+    #[should_panic]
+    fn degree_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check the vertex degree.
+        graph.degree(0);
+    }
+
+    // Test the `degree` method.
+    #[test]
+    fn degree() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the vertex degree.
+        assert_eq!(graph.degree(0), 0);
+        assert_eq!(graph.degree(1), 0);
+        assert_eq!(graph.degree(2), 0);
+        assert_eq!(graph.degree(3), 0);
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the vertex degree.
+        assert_eq!(graph.degree(0), 3);
+        assert_eq!(graph.degree(1), 3);
+        assert_eq!(graph.degree(2), 3);
+        assert_eq!(graph.degree(3), 3);
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check the vertex degree.
+        assert_eq!(graph.degree(0), 2);
+        assert_eq!(graph.degree(1), 2);
+        assert_eq!(graph.degree(2), 2);
+
+        // Delete a vertex.
+        graph.del_vertex(1);
+
+        // Check the vertex degree.
+        assert_eq!(graph.degree(0), 1);
+        assert_eq!(graph.degree(1), 1);
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the vertex degree.
+        assert_eq!(graph.degree(0), 0);
+    }
+
+    // Test the `degrees` method.
+    #[test]
+    fn degrees() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), vec![0, 0, 0, 0]);
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "B"), ("A", "C"), ("B", "C"), ("C", "D")];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), vec![2, 2, 3, 1]);
+
+        // Delete a vertex.
+        graph.del_vertex(2);
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), vec![1, 1, 0]);
+
+        // Delete a vertex.
+        graph.del_vertex(1);
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), vec![0, 0]);
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), vec![0]);
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the vertices degrees.
+        assert_eq!(graph.degrees(), Vec::<usize>::new());
+    }
+
+    // Test the `adjacents` method.
+    #[test]
+    fn adjacents() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 3).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2, 3]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2, 3]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1, 3]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), vec![0, 1, 2]);
+
+        // Add a vertex.
+        graph.add_vertex("E");
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2, 3]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2, 3]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1, 3]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), vec![0, 1, 2]);
+        assert_eq!(Adj!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1, 2]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0, 2]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), vec![0, 1]);
+        assert_eq!(Adj!(graph, 3).collect_vec(), Vec::<usize>::new());
+
+        // Delete a vertex.
+        graph.del_vertex(1);
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), vec![1]);
+        assert_eq!(Adj!(graph, 1).collect_vec(), vec![0]);
+        assert_eq!(Adj!(graph, 2).collect_vec(), Vec::<usize>::new());
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the adjacents indices.
+        assert_eq!(Adj!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Adj!(graph, 1).collect_vec(), Vec::<usize>::new());
+    }
+
+    // Test the `is_adjacent` method, should panic.
+    #[test]
+    #[should_panic]
+    fn is_adjacent_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Check if the vertices are adjacent.
+        graph.is_adjacent(0, 1);
+    }
+
+    // Test the `is_adjacent` method.
+    #[test]
+    fn is_adjacent() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check if the vertices are adjacent.
+        assert!(!graph.is_adjacent(0, 1));
+        assert!(!graph.is_adjacent(0, 2));
+        assert!(!graph.is_adjacent(0, 3));
+        assert!(!graph.is_adjacent(1, 2));
+        assert!(!graph.is_adjacent(1, 3));
+        assert!(!graph.is_adjacent(2, 3));
+        // Check if the vertices are not adjacent.
+        assert!(!graph.is_adjacent(0, 0));
+        assert!(!graph.is_adjacent(1, 1));
+        assert!(!graph.is_adjacent(2, 2));
+        assert!(!graph.is_adjacent(3, 3));
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertices are adjacent.
+        assert!(graph.is_adjacent(0, 1));
+        assert!(graph.is_adjacent(0, 2));
+        assert!(graph.is_adjacent(0, 3));
+        assert!(graph.is_adjacent(1, 2));
+        assert!(graph.is_adjacent(1, 3));
+        assert!(graph.is_adjacent(2, 3));
+        // Check if the vertices are not adjacent.
+        assert!(!graph.is_adjacent(0, 0));
+        assert!(!graph.is_adjacent(1, 1));
+        assert!(!graph.is_adjacent(2, 2));
+        assert!(!graph.is_adjacent(3, 3));
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check if the vertices are adjacent.
+        assert!(graph.is_adjacent(0, 1));
+        assert!(graph.is_adjacent(0, 2));
+        assert!(graph.is_adjacent(1, 2));
+        // Check if the vertices are not adjacent.
+        assert!(!graph.is_adjacent(0, 0));
+    }
+
+    /// Test the `undirected_size` method.
+    #[test]
+    fn undirected_size() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the undirected graph size.
+        assert_eq!(graph.undirected_size(), 0);
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the undirected graph size.
+        assert_eq!(graph.undirected_size(), edges.len());
+    }
+
+    // Test the `undirected_edges` method.
+    #[test]
+    fn undirected_edges() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the undirected edges indices.
+        assert_eq!(
+            graph.undirected_edges().collect_vec(),
+            Vec::<(usize, usize)>::new()
+        );
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the undirected edges indices.
+        assert_eq!(
+            graph.undirected_edges().collect_vec(),
+            vec![
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (0, 4),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+                (2, 3),
+                (2, 4),
+                (3, 4)
+            ]
+        );
+    }
+
+    // Test the `has_undirected_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn has_undirected_edge_should_panic() {
+        // Create a new null undirected graph.
+        let graph = UGraph::null();
+
+        // Check if the edge exists.
+        graph.has_undirected_edge(0, 1);
+    }
+
+    // Test the `has_undirected_edge` method.
+    #[test]
+    fn has_undirected_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check if the edge exists.
+        assert!(!graph.has_undirected_edge(0, 1));
+        assert!(!graph.has_undirected_edge(0, 2));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(0, 4));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 4));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(1, 1));
+        assert!(!graph.has_undirected_edge(2, 2));
+        assert!(!graph.has_undirected_edge(3, 3));
+        assert!(!graph.has_undirected_edge(4, 4));
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(0, 2));
+        assert!(graph.has_undirected_edge(0, 3));
+        assert!(graph.has_undirected_edge(0, 4));
+        assert!(graph.has_undirected_edge(1, 2));
+        assert!(graph.has_undirected_edge(1, 3));
+        assert!(graph.has_undirected_edge(1, 4));
+        assert!(graph.has_undirected_edge(2, 3));
+        assert!(graph.has_undirected_edge(2, 4));
+        assert!(graph.has_undirected_edge(3, 4));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(1, 1));
+        assert!(!graph.has_undirected_edge(2, 2));
+        assert!(!graph.has_undirected_edge(3, 3));
+        assert!(!graph.has_undirected_edge(4, 4));
+
+        // Delete a vertex.
+        graph.del_vertex(4);
+
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(0, 2));
+        assert!(graph.has_undirected_edge(0, 3));
+        assert!(graph.has_undirected_edge(1, 2));
+        assert!(graph.has_undirected_edge(1, 3));
+        assert!(graph.has_undirected_edge(2, 3));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(1, 1));
+        assert!(!graph.has_undirected_edge(2, 2));
+        assert!(!graph.has_undirected_edge(3, 3));
+    }
+
+    // Test the `add_undirected_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn add_undirected_edge_should_panic() {
+        // Create a new null undirected graph.
+        let mut graph = UGraph::null();
+
+        // Add a new edge.
+        graph.add_undirected_edge(0, 1);
+    }
+
+    // Test the `add_undirected_edge` method.
+    #[test]
+    fn add_undirected_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 0);
+
+        // Add a new edge.
+        graph.add_undirected_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 1);
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(1, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(0, 2));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(0, 4));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 0));
+        assert!(!graph.has_undirected_edge(2, 1));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 0));
+        assert!(!graph.has_undirected_edge(3, 1));
+        assert!(!graph.has_undirected_edge(3, 2));
+        assert!(!graph.has_undirected_edge(3, 4));
+        assert!(!graph.has_undirected_edge(4, 0));
+        assert!(!graph.has_undirected_edge(4, 1));
+        assert!(!graph.has_undirected_edge(4, 2));
+        assert!(!graph.has_undirected_edge(4, 3));
+
+        // Add a new edge.
+        graph.add_undirected_edge(0, 2);
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 2);
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(1, 0));
+        assert!(graph.has_undirected_edge(0, 2));
+        assert!(graph.has_undirected_edge(2, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(0, 4));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 1));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 0));
+        assert!(!graph.has_undirected_edge(3, 1));
+        assert!(!graph.has_undirected_edge(3, 2));
+        assert!(!graph.has_undirected_edge(3, 4));
+        assert!(!graph.has_undirected_edge(4, 0));
+        assert!(!graph.has_undirected_edge(4, 1));
+        assert!(!graph.has_undirected_edge(4, 2));
+        assert!(!graph.has_undirected_edge(4, 3));
+
+        // Add a new edge.
+        graph.add_undirected_edge(4, 4);
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 3);
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(1, 0));
+        assert!(graph.has_undirected_edge(0, 2));
+        assert!(graph.has_undirected_edge(2, 0));
+        assert!(graph.has_undirected_edge(4, 4));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 1));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 0));
+        assert!(!graph.has_undirected_edge(3, 1));
+        assert!(!graph.has_undirected_edge(3, 2));
+        assert!(!graph.has_undirected_edge(3, 4));
+        assert!(!graph.has_undirected_edge(4, 0));
+        assert!(!graph.has_undirected_edge(4, 1));
+        assert!(!graph.has_undirected_edge(4, 2));
+        assert!(!graph.has_undirected_edge(4, 3));
+    }
+
+    // Test the `del_undirected_edge` method, should panic.
+    #[test]
+    #[should_panic]
+    fn del_undirected_edge_should_panic() {
+        // Create a new null undirected graph.
+        let mut graph = UGraph::null();
+
+        // Delete an edge.
+        graph.del_undirected_edge(0, 1);
+    }
+
+    // Test the `del_undirected_edge` method.
+    #[test]
+    fn del_undirected_edge() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let mut graph = UGraph::empty(vertices.clone());
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 0);
+
+        // Add a new edge.
+        graph.add_undirected_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 1);
+        // Check if the edge exists.
+        assert!(graph.has_undirected_edge(0, 1));
+        assert!(graph.has_undirected_edge(1, 0));
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(0, 2));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(0, 4));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 0));
+        assert!(!graph.has_undirected_edge(2, 1));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 0));
+        assert!(!graph.has_undirected_edge(3, 1));
+        assert!(!graph.has_undirected_edge(3, 2));
+        assert!(!graph.has_undirected_edge(3, 4));
+        assert!(!graph.has_undirected_edge(4, 0));
+        assert!(!graph.has_undirected_edge(4, 1));
+        assert!(!graph.has_undirected_edge(4, 2));
+        assert!(!graph.has_undirected_edge(4, 3));
+
+        // Delete an edge.
+        graph.del_undirected_edge(0, 1);
+
+        // Check the graph size.
+        assert_eq!(graph.undirected_size(), 0);
+        // Check if the edge does not exist.
+        assert!(!graph.has_undirected_edge(0, 0));
+        assert!(!graph.has_undirected_edge(0, 1));
+        assert!(!graph.has_undirected_edge(0, 2));
+        assert!(!graph.has_undirected_edge(0, 3));
+        assert!(!graph.has_undirected_edge(0, 4));
+        assert!(!graph.has_undirected_edge(1, 0));
+        assert!(!graph.has_undirected_edge(1, 1));
+        assert!(!graph.has_undirected_edge(1, 2));
+        assert!(!graph.has_undirected_edge(1, 3));
+        assert!(!graph.has_undirected_edge(1, 4));
+        assert!(!graph.has_undirected_edge(2, 0));
+        assert!(!graph.has_undirected_edge(2, 1));
+        assert!(!graph.has_undirected_edge(2, 2));
+        assert!(!graph.has_undirected_edge(2, 3));
+        assert!(!graph.has_undirected_edge(2, 4));
+        assert!(!graph.has_undirected_edge(3, 0));
+        assert!(!graph.has_undirected_edge(3, 1));
+        assert!(!graph.has_undirected_edge(3, 2));
+        assert!(!graph.has_undirected_edge(3, 3));
+        assert!(!graph.has_undirected_edge(3, 4));
+        assert!(!graph.has_undirected_edge(4, 0));
+        assert!(!graph.has_undirected_edge(4, 1));
+        assert!(!graph.has_undirected_edge(4, 2));
+        assert!(!graph.has_undirected_edge(4, 3));
+        assert!(!graph.has_undirected_edge(4, 4));
+    }
+
+    // Test the `neighbors` method, should panic.
+    #[test]
+    #[should_panic]
+    fn neighbors_should_panic() {
+        // Create a new null undirected graph.
+        let graph = UGraph::null();
+
+        // Check the neighbors indices.
+        Ne!(graph, 0);
+    }
+
+    // Test the `neighbors` method.
+    #[test]
+    fn neighbors() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ne!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ne!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ne!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ne!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let mut graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), vec![1, 2, 3, 4]);
+        assert_eq!(Ne!(graph, 1).collect_vec(), vec![0, 2, 3, 4]);
+        assert_eq!(Ne!(graph, 2).collect_vec(), vec![0, 1, 3, 4]);
+        assert_eq!(Ne!(graph, 3).collect_vec(), vec![0, 1, 2, 4]);
+        assert_eq!(Ne!(graph, 4).collect_vec(), vec![0, 1, 2, 3]);
+
+        // Delete a vertex.
+        graph.del_vertex(4);
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), vec![1, 2, 3]);
+        assert_eq!(Ne!(graph, 1).collect_vec(), vec![0, 2, 3]);
+        assert_eq!(Ne!(graph, 2).collect_vec(), vec![0, 1, 3]);
+        assert_eq!(Ne!(graph, 3).collect_vec(), vec![0, 1, 2]);
+
+        // Delete a vertex.
+        graph.del_vertex(3);
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), vec![1, 2]);
+        assert_eq!(Ne!(graph, 1).collect_vec(), vec![0, 2]);
+        assert_eq!(Ne!(graph, 2).collect_vec(), vec![0, 1]);
+
+        // Delete a vertex.
+        graph.del_vertex(2);
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), vec![1]);
+        assert_eq!(Ne!(graph, 1).collect_vec(), vec![0]);
+
+        // Delete a vertex.
+        graph.del_vertex(0);
+
+        // Check the neighbors indices.
+        assert_eq!(Ne!(graph, 0).collect_vec(), Vec::<usize>::new());
+    }
+
+    // Test the `is_neighbor` method, should panic.
+    #[test]
+    #[should_panic]
+    fn is_neighbor_should_panic() {
+        // Create a new null undirected graph.
+        let graph = UGraph::null();
+
+        // Check if the vertices are neighbors.
+        graph.is_neighbor(0, 1);
+    }
+
+    // Test the `is_neighbor` method.
+    #[test]
+    fn is_neighbor() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = UGraph::empty(vertices.clone());
+
+        // Check if the vertices are neighbors.
+        assert!(!graph.is_neighbor(0, 1));
+        assert!(!graph.is_neighbor(0, 2));
+        assert!(!graph.is_neighbor(0, 3));
+        assert!(!graph.is_neighbor(0, 4));
+        assert!(!graph.is_neighbor(1, 2));
+        assert!(!graph.is_neighbor(1, 3));
+        assert!(!graph.is_neighbor(1, 4));
+        assert!(!graph.is_neighbor(2, 3));
+        assert!(!graph.is_neighbor(2, 4));
+        assert!(!graph.is_neighbor(3, 4));
+        // Check if the vertices are not neighbors.
+        assert!(!graph.is_neighbor(0, 0));
+        assert!(!graph.is_neighbor(1, 1));
+        assert!(!graph.is_neighbor(2, 2));
+        assert!(!graph.is_neighbor(3, 3));
+        assert!(!graph.is_neighbor(4, 4));
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertices are neighbors.
+        assert!(graph.is_neighbor(0, 1));
+        assert!(graph.is_neighbor(0, 2));
+        assert!(graph.is_neighbor(0, 3));
+        assert!(graph.is_neighbor(0, 4));
+        assert!(graph.is_neighbor(1, 2));
+        assert!(graph.is_neighbor(1, 3));
+        assert!(graph.is_neighbor(1, 4));
+        assert!(graph.is_neighbor(2, 3));
+        assert!(graph.is_neighbor(2, 4));
+        assert!(graph.is_neighbor(3, 4));
+        // Check if the vertices are not neighbors.
+        assert!(!graph.is_neighbor(0, 0));
+        assert!(!graph.is_neighbor(1, 1));
+        assert!(!graph.is_neighbor(2, 2));
+        assert!(!graph.is_neighbor(3, 3));
+        assert!(!graph.is_neighbor(4, 4));
     }
 }

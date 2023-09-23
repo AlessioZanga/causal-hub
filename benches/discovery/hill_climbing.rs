@@ -51,7 +51,7 @@ pub mod categorical {
                     sample_size,
                     |b, _| {
                         b.iter(|| {
-                            let _: DiGraph = call(
+                            let _: DGraph = call(
                                 black_box(&data_set),
                                 black_box(&prior_knowledge),
                                 black_box(&scoring_criterion),
@@ -122,7 +122,7 @@ pub mod categorical {
                     sample_size,
                     |b, _| {
                         b.iter(|| {
-                            let _: DiGraph = par_call(
+                            let _: DGraph = par_call(
                                 black_box(&data_set),
                                 black_box(&prior_knowledge),
                                 black_box(&scoring_criterion),
@@ -200,7 +200,7 @@ pub mod zinb {
                     sample_size,
                     |b, _| {
                         b.iter(|| {
-                            let _: DiGraph = call(
+                            let _: DGraph = call(
                                 black_box(&data_set),
                                 black_box(&prior_knowledge),
                                 black_box(&scoring_criterion),

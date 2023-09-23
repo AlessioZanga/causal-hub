@@ -8,7 +8,7 @@ use super::{
     BayesianNetwork, DistributionEstimation, DistributionProjection, ProbabilisticGraphicalModel,
 };
 use crate::{
-    graphs::BaseGraph,
+    graphs::Graph,
     models::{ConditionalProbabilityDistribution, Factor, JointProbabilityDistribution},
     prelude::{DirectedGraph, FxIndexMap},
     types::FxIndexSet,
@@ -97,8 +97,8 @@ where
         let mut g: FxIndexMap<_, FxIndexSet<_>> = V!(g)
             .map(|x| {
                 (
-                    g.get_vertex_by_index(x),
-                    Adj!(g, x).map(|x| g.get_vertex_by_index(x)).collect(),
+                    g.vertex_to_label(x),
+                    Adj!(g, x).map(|x| g.vertex_to_label(x)).collect(),
                 )
             })
             .collect();
@@ -199,8 +199,8 @@ where
             // Get the parents of each vertex.
             .map(|x| {
                 (
-                    g_q.get_vertex_by_index(x),
-                    Pa!(g_q, x).map(|z| g_q.get_vertex_by_index(z)),
+                    g_q.vertex_to_label(x),
+                    Pa!(g_q, x).map(|z| g_q.vertex_to_label(z)),
                 )
             })
             // Project P parameters onto Q structure.

@@ -1,2 +1,2 @@
 pub mod hill_climbing;
-pub mod pc_stable;
+// FIXME: pub mod pc_stable;

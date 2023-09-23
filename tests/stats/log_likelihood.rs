@@ -18,7 +18,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -27,17 +27,17 @@ mod categorical {
         assert_relative_eq!(
             ScoringCriterion::call(&s, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &[]))
+                .map(|x| DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, true_s) in data {
-            let x = g.get_vertex_index(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &z),
+                DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &z),
                 true_s,
                 max_relative = 1e-8
             );
@@ -58,7 +58,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -67,17 +67,17 @@ mod categorical {
         assert_relative_eq!(
             ScoringCriterion::call(&s, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &[]))
+                .map(|x| DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, true_s) in data {
-            let x = g.get_vertex_index(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &z),
+                DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &z),
                 true_s,
                 max_relative = 1e-8
             );
@@ -105,7 +105,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -114,17 +114,17 @@ mod gaussian {
         assert_relative_eq!(
             ScoringCriterion::call(&s, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &[]))
+                .map(|x| DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, true_s) in data {
-            let x = g.get_vertex_index(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &z),
+                DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &z),
                 true_s,
                 max_relative = 1e-8
             );
@@ -145,7 +145,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels_iter());
+        let g = DGraph::empty(d.labels_iter());
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -154,17 +154,17 @@ mod gaussian {
         assert_relative_eq!(
             ScoringCriterion::call(&s, &g),
             V!(g)
-                .map(|x| DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &[]))
+                .map(|x| DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &[]))
                 .sum(),
             max_relative = 1e-8
         );
 
         for (x, z, true_s) in data {
-            let x = g.get_vertex_index(&x);
-            let z: Vec<_> = z.into_iter().map(|z| g.get_vertex_index(&z)).collect();
+            let x = g.label_to_vertex(&x);
+            let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
             assert_relative_eq!(
-                DecomposableScoringCriterion::<_, DiGraph>::call(&s, x, &z),
+                DecomposableScoringCriterion::<_, DGraph>::call(&s, x, &z),
                 true_s,
                 max_relative = 1e-8
             );

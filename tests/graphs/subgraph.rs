@@ -38,14 +38,14 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -93,8 +93,8 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -142,10 +142,10 @@ mod undirected {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -162,8 +162,8 @@ mod undirected {
     }
 
     mod undirected_dense_matrix {
-        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(UndirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::UndirectedDenseAdjacencyMatrix;
+        generic_tests!(UndirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -207,14 +207,14 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -262,8 +262,8 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -311,10 +311,10 @@ mod directed {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -331,8 +331,8 @@ mod directed {
     }
 
     mod directed_dense_matrix {
-        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrixGraph;
-        generic_tests!(DirectedDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::DirectedDenseAdjacencyMatrix;
+        generic_tests!(DirectedDenseAdjacencyMatrix);
     }
 }
 
@@ -413,14 +413,14 @@ mod partially_directed {
                     let h = g.subgraph(v.clone(), e.clone());
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -479,8 +479,8 @@ mod partially_directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.get_vertex_by_index(x))
-                        .eq(v.into_iter().map(|x| g.get_vertex_by_index(x))));
+                        .map(|x| h.vertex_to_label(x))
+                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -552,10 +552,10 @@ mod partially_directed {
                     let h = g.subgraph_by_edges(e.clone());
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.get_vertex_by_index(x), h.get_vertex_by_index(y)))
+                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.get_vertex_by_index(x), g.get_vertex_by_index(y)))));
+                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
 
                     assert!(h.is_subgraph(&g));
 
@@ -574,7 +574,7 @@ mod partially_directed {
     }
 
     mod partially_dense_matrix {
-        use causal_hub::graphs::structs::PartiallyDenseAdjacencyMatrixGraph;
-        generic_tests!(PartiallyDenseAdjacencyMatrixGraph);
+        use causal_hub::graphs::structs::PartiallyDirectedDenseAdjacencyMatrix;
+        generic_tests!(PartiallyDirectedDenseAdjacencyMatrix);
     }
 }
