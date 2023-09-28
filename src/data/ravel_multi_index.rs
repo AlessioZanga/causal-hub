@@ -1,4 +1,3 @@
-/// Ravel multi-index to one-dimensional index.
 pub struct RavelMultiIndex {
     cardinality: Vec<usize>,
     ravel: Vec<usize>,
@@ -6,7 +5,6 @@ pub struct RavelMultiIndex {
 }
 
 impl RavelMultiIndex {
-    /// Build the new multi-index map.
     #[inline]
     pub fn new<I>(cardinality: I) -> Self
     where
@@ -45,7 +43,6 @@ impl RavelMultiIndex {
         }
     }
 
-    /// Maps multi-index to one-dimensional index.
     #[inline]
     pub fn call<I>(&self, multi_index: I) -> usize
     where
@@ -54,13 +51,11 @@ impl RavelMultiIndex {
         self.ravel.iter().zip(multi_index).map(|(i, j)| i * j).sum()
     }
 
-    /// Gets the vector of variables cardinalities.
     #[inline]
     pub fn cardinality(&self) -> &Vec<usize> {
         &self.cardinality
     }
 
-    /// Gets the maximum len of the associated one-dimensional axis.
     #[allow(clippy::len_without_is_empty)]
     #[inline]
     pub fn len(&self) -> usize {

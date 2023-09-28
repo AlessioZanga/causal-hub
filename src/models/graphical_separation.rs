@@ -1,15 +1,14 @@
 use std::fmt::Debug;
 
-use super::{GeneralizedIndependence, Independence, MoralGraph};
+use super::{ConditionalIndependence, GeneralizedConditionalIndependence, MoralGraph};
 use crate::{
     graphs::directions,
     prelude::{DirectedGraph, Graph, UGraph, UndirectedGraph, CC},
     types::FxIndexSet,
     utils::UnionFind,
-    Adj, An, Ch, Ne, V,
+    Adj, An, Ch, Ne, L, V,
 };
 
-/// Graphical independence struct
 #[derive(Clone, Debug)]
 pub struct GraphicalSeparation<'a, G, D>
 where
@@ -22,44 +21,6 @@ impl<'a, G, D> GraphicalSeparation<'a, G, D>
 where
     G: Graph<Direction = D>,
 {
-    /// Build a new graphical independence struct.
-    ///
-    /// # Panics
-    ///
-    /// If $\mathbf{X}$, $\mathbf{Y}$ and $\mathbf{Z}$
-    /// are not disjoint subsets of $\mathbf{V}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// // Build a new directed graph.
-    /// let g = DGraph::new(
-    ///     ["A", "B", "C", "D", "E", "F"],
-    ///     [
-    ///         ("A", "C"),
-    ///         ("B", "C"),
-    ///         ("C", "D"),
-    ///         ("C", "E"),
-    ///     ]
-    /// );
-    ///
-    /// // Build d-separation query struct.
-    /// let q = GSeparation::from(&g);
-    ///
-    /// // Assert A _||_ B | { } .
-    /// assert!(q.are_independent([0], [1], []));
-    /// // Assert A _||_ B | { C } .
-    /// assert!(!q.are_independent([0], [1], [2]));
-    /// // Assert A _||_ D | { } .
-    /// assert!(!q.are_independent([0], [3], []));
-    /// // Assert A _||_ D | { C } .
-    /// assert!(q.are_independent([0], [3], [2]));
-    /// // Assert { A, B } _||_ { D, E } | { C } .
-    /// assert!(q.are_independent([0, 1], [3, 4], [2]));
-    /// ```
-    ///
     #[inline]
     pub const fn new(g: &'a G) -> Self {
         Self { g }
@@ -77,22 +38,37 @@ where
 }
 
 /* Implement u-separation */
-impl<'a, G> Independence for GraphicalSeparation<'a, G, directions::Undirected>
+impl<'a, G> ConditionalIndependence for GraphicalSeparation<'a, G, directions::Undirected>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
     #[inline]
-    fn is_independent(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    #[inline]
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // TODO: Implement more efficient non-generalized version.
-        <Self as GeneralizedIndependence>::are_independent(self, [x], [y], z.iter().cloned())
+        GeneralizedConditionalIndependence::call(self, [x], [y], z.iter().cloned())
     }
 }
 
-impl<'a, G> GeneralizedIndependence for GraphicalSeparation<'a, G, directions::Undirected>
+impl<'a, G> GeneralizedConditionalIndependence
+    for GraphicalSeparation<'a, G, directions::Undirected>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
-    fn are_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    fn call<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = usize>,
@@ -153,22 +129,36 @@ where
 }
 
 /* Implement d-separation */
-impl<'a, G> Independence for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> ConditionalIndependence for GraphicalSeparation<'a, G, directions::Directed>
 where
     G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
     #[inline]
-    fn is_independent(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    #[inline]
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // TODO: Implement more efficient non-generalized version.
-        <Self as GeneralizedIndependence>::are_independent(self, [x], [y], z.iter().cloned())
+        GeneralizedConditionalIndependence::call(self, [x], [y], z.iter().cloned())
     }
 }
 
-impl<'a, G> GeneralizedIndependence for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> GeneralizedConditionalIndependence for GraphicalSeparation<'a, G, directions::Directed>
 where
     G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
-    fn are_independent<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    fn call<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = usize>,

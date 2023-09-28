@@ -16,7 +16,6 @@ use crate::types::{FxIndexMap, FxIndexSet};
 
 /* Implement CategoricalDataMatrix */
 
-/// Data matrix for categorical data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataMatrix {
     data: Array2<u8>,
@@ -25,23 +24,42 @@ pub struct CategoricalDataMatrix {
 }
 
 impl CategoricalDataMatrix {
-    /// Gets the vector of variables cardinalities.
-    #[inline]
-    pub fn cardinality(&self) -> &Vec<u8> {
-        &self.cardinality
+    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = (V, J)>,
+        J: IntoIterator<Item = V>,
+    {
+        // Construct the states map.
+        let states: FxIndexMap<String, FxIndexSet<String>> = states
+            .into_iter()
+            .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
+            .sorted_by(|(x, _), (y, _)| x.cmp(y))
+            .collect();
+        // Check labels consistency.
+        assert_eq!(values.ncols(), states.len());
+        // Compute cardinalities from states.
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
+
+        Self {
+            states,
+            cardinality,
+            values,
+        }
     }
 
-    /// Gets the map of variables to their states.
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
     }
 
-    /// Set states of the categorical data matrix.
-    ///
-    /// # Panics
-    ///
-    /// Panics if provided states are not a superset of the existing ones.
     pub fn with_states<I, J, K, V>(mut self, states: I) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -84,6 +102,11 @@ impl CategoricalDataMatrix {
             .collect_vec();
 
         self
+    }
+
+    #[inline]
+    pub fn cardinality(&self) -> &Vec<u8> {
+        &self.cardinality
     }
 }
 
@@ -289,7 +312,6 @@ impl DataSet for CategoricalDataMatrix {
 
 /* Implement GaussianDataMatrix */
 
-/// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussianDataMatrix {
     data: Array2<f64>,
@@ -387,15 +409,26 @@ impl DataSet for GaussianDataMatrix {
 
 /* Implement ZeroInflatedNegativeBinomialDataMatrix */
 
-/// Data matrix for zero-inflated negative binomial data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ZeroInflatedNegativeBinomialDataMatrix {
     data: Array2<f64>,
     labels: BTreeSet<String>,
 }
 
-/// Alias for `ZeroInflatedNegativeBinomialDataMatrix`.
 pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
+
+impl ZINBDataMatrix {
+    pub fn new<V, I>(labels: I, values: Array2<f64>) -> Self
+    where
+        V: Into<String>,
+        I: IntoIterator<Item = V>,
+    {
+        // Get variables as set of strings.
+        let labels = labels.into_iter().map_into().collect();
+
+        Self { labels, values }
+    }
+}
 
 impl From<DataFrame> for ZINBDataMatrix {
     fn from(data_frame: DataFrame) -> Self {

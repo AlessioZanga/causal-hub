@@ -17,15 +17,13 @@ use crate::{
     E, L,
 };
 
-/// A GML parser.
 #[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/gml/grammar.pest"]
 pub struct GML {
-    /// The graph direction.
     pub graph_type: String,
-    /// The set of vertices labels.
+
     pub vertices: FxIndexSet<String>,
-    /// The set of edges labels.
+
     pub edges: Vec<(String, String)>,
 }
 

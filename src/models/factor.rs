@@ -18,7 +18,6 @@ use crate::{
     utils::nan_to_zero,
 };
 
-/// Factor trait.
 pub trait Factor:
     Clone
     + Debug
@@ -34,53 +33,39 @@ pub trait Factor:
     + Sync
     + Into<Self::Phi>
 {
-    /// Underlying factor type.
     type Phi: Factor;
 
-    /// Labels iterator associated type.
     type ScopeIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
-    /// Value type of the variables.
     type Value<'a>;
 
-    /// Get the variables scope.
     fn scope(&self) -> Self::ScopeIter<'_>;
 
-    /// Check whether a variable is in scope.
     fn in_scope(&self, x: &str) -> bool;
 
-    /// Get reference to underlying values.
     fn values(&self) -> &ArrayD<f64>;
 
-    /// Compute the factor normalization.
     fn normalize(self) -> Self;
 
-    /// Compute the factor marginalization.
     fn marginalize<'a, Z>(self, z: Z) -> Self
     where
         Z: IntoIterator<Item = &'a str>;
 
-    /// Compute the factor reduction.
     fn reduce<'a, Z>(self, z: Z) -> Self
     where
         Z: IntoIterator<Item = (&'a str, Self::Value<'a>)>;
 }
 
-/// Joint Probability Distribution $\mathcal{P}(\mathbf{X})$ trait.
 pub trait JointProbabilityDistribution: Factor {
-    /// Construct joint distribution from associated factor.
     fn from_factor(phi: Self::Phi) -> Self;
 }
 
-/// Conditional Probability Distribution $\mathcal{P}(X \mid \mathbf{Z})$ trait.
 pub trait ConditionalProbabilityDistribution: Factor {
-    /// Construct conditional distribution from associated factor.
     fn from_factor(x: &str, phi: Self::Phi) -> Self;
 }
 
-/// Categorical Factor $\phi(\mathbf{X})$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalFactor {
     states: FxIndexMap<String, FxIndexSet<String>>,
@@ -88,7 +73,6 @@ pub struct CategoricalFactor {
 }
 
 impl CategoricalFactor {
-    /// Construct a new categorical factor given its values and states.
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -152,7 +136,6 @@ impl CategoricalFactor {
         Self { states, values }
     }
 
-    /// Get the set of variables states.
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
@@ -401,15 +384,12 @@ impl Factor for CategoricalFactor {
     }
 }
 
-/// Categorical Joint Probability Distribution $\mathcal{P}(\mathbf{X})$ .
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CategoricalJPD {
-    /// Underlying factor.
     phi: CategoricalFactor,
 }
 
 impl CategoricalJPD {
-    /// Construct a new categorical JPD given its values and states.
     pub fn new<D, I, J, K, V>(states: I, values: Array<f64, D>) -> Self
     where
         D: Dimension,
@@ -426,7 +406,6 @@ impl CategoricalJPD {
         Self { phi }
     }
 
-    /// Get the set of variables states.
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         self.phi.states()
@@ -551,17 +530,14 @@ impl JointProbabilityDistribution for CategoricalJPD {
     }
 }
 
-/// Categorical Conditional Probability Distribution $\mathcal{P}(X \mid \mathbf{Z})$ .
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CategoricalCPD {
-    /// Target variable,
     x: String,
-    /// Underlying factor.
+
     phi: CategoricalFactor,
 }
 
 impl CategoricalCPD {
-    /// Construct a new tabular CPD given its values and states.
     pub fn new<I, J, K, V>((x, y): (K, J), z: I, values: Array2<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -590,13 +566,11 @@ impl CategoricalCPD {
         Self { x, phi }
     }
 
-    /// Get the set of variables states.
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         self.phi.states()
     }
 
-    /// Get the target variable $X$ of the CPD $\mathcal(P)(X | \mathbf{Z})$.
     #[inline]
     pub fn target(&self) -> &str {
         self.x.as_str()

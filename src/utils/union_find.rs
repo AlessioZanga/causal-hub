@@ -1,4 +1,3 @@
-/// Union-Find structure.
 #[derive(Clone, Debug)]
 pub struct UnionFind {
     parents: Vec<usize>,
@@ -6,24 +5,6 @@ pub struct UnionFind {
 }
 
 impl UnionFind {
-    /// Build a new structure with `size` items.
-    ///
-    /// # Panics
-    ///
-    /// If `size` is zero.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// assert!(!union_find.contains(0, 1));
-    /// ```
-    ///
     #[inline]
     pub fn new(size: usize) -> Self {
         // Check if size is valid.
@@ -35,70 +16,18 @@ impl UnionFind {
         }
     }
 
-    /// Gets the number of items in the structure.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// assert_eq!(union_find.len(), 5);
-    /// ```
-    ///
     #[allow(clippy::len_without_is_empty)]
     #[inline]
     pub fn len(&self) -> usize {
         self.parents.len()
     }
 
-    /// Checks if two items are in the same set.
-    ///  
-    /// # Panics
-    ///
-    /// At least one of the items does not exist in the structure.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// assert!(!union_find.contains(0, 1));
-    /// ```
-    ///
     #[inline]
     pub fn contains(&self, x: usize, y: usize) -> bool {
         // Check if x and y are in the same set.
         self.find(x) == self.find(y)
     }
 
-    /// Gets the root of a given item.
-    ///  
-    /// # Panics
-    ///
-    /// The items does not exist in the structure.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// for x in 0..union_find.len() {
-    ///     assert_eq!(union_find.find(x), x);
-    /// }
-    /// ```
-    ///
     #[inline]
     pub fn find(&self, x: usize) -> usize {
         // Make item mutable.
@@ -112,26 +41,6 @@ impl UnionFind {
         x
     }
 
-    /// Gets the root of a given item, while compressing the paths.
-    ///  
-    /// # Panics
-    ///
-    /// The items does not exist in the structure.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let mut union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// for x in 0..union_find.len() {
-    ///     assert_eq!(union_find.find_mut(x), x);
-    /// }
-    /// ```
-    ///
     #[inline]
     pub fn find_mut(&mut self, x: usize) -> usize {
         // Make item mutable.
@@ -147,32 +56,6 @@ impl UnionFind {
         x
     }
 
-    /// Make two items into the same set, if not already.
-    ///
-    /// # Panics
-    ///
-    /// At least one of the items does not exist in the structure.
-    ///  
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let mut union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// for x in 0..union_find.len() {
-    ///     assert_eq!(union_find.find(x), x);
-    /// }
-    ///
-    /// // Merge item set 0 and 3.
-    /// assert!(union_find.union(0, 3));
-    ///
-    /// // Now, items 0 and 3 are in the same set.
-    /// assert!(union_find.contains(0, 3));
-    /// ```
-    ///
     #[inline]
     pub fn union(&mut self, x: usize, y: usize) -> bool {
         // Get root of items.
@@ -206,40 +89,6 @@ impl UnionFind {
 }
 
 impl Extend<usize> for UnionFind {
-    /// Union all the items from an iterator into the same set.
-    ///
-    /// # Panics
-    ///
-    /// At least one of the items does not exist in the structure.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::utils::UnionFind;
-    ///
-    /// // Initialize a new union-find.
-    /// let mut union_find = UnionFind::new(5);
-    ///
-    /// // The new union-find contains only disjoint sets.
-    /// for x in 0..union_find.len() {
-    ///     assert_eq!(union_find.find(x), x);
-    /// }
-    ///
-    /// // Merge items from 0 to 3.
-    /// union_find.extend(0..4);
-    ///
-    /// // Now, items from 0 to 3 are in the same set.
-    /// assert!(union_find.contains(0, 1));
-    /// assert!(union_find.contains(0, 2));
-    /// assert!(union_find.contains(0, 3));
-    ///
-    /// // Item 4 is is not in the same set
-    /// assert!(!union_find.contains(0, 4));
-    /// assert!(!union_find.contains(1, 4));
-    /// assert!(!union_find.contains(2, 4));
-    /// assert!(!union_find.contains(3, 4));
-    /// ```
-    ///
     #[inline]
     fn extend<I: IntoIterator<Item = usize>>(&mut self, iter: I) {
         // Get iterator.

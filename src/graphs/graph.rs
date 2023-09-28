@@ -1,6 +1,8 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
+    iter::FusedIterator,
+    ops::Index,
 };
 
 use serde::{Deserialize, Serialize};
@@ -41,45 +43,68 @@ macro_rules! Adj {
 ///
 /// # Methods
 ///
-/// | Method        | Description                                   |
-/// |---------------|-----------------------------------------------|
-/// | `new`         | $\mathcal{G} = (\mathbf{V}, \mathbf{E})$      |
-/// | `null`        | $\mathcal{G} = (\varnothing, \varnothing)$    |
-/// | `empty`       | $\mathcal{G} = (\mathbf{V}, \varnothing)$     |
-/// | `complete`    | $\mathcal{G} = (\mathbf{V}, \mathbf{E})$      |
-/// | `order`       | $\|\mathbf{V}\|$                              |
-/// | `vertices`    | $\mathbf{V}$                                  |
-/// | `has_vertex`  | $X \in \mathbf{V}$                            |
-/// | `add_vertex`  | $\mathbf{V} \cup \lbrace X \rbrace$           |
-/// | `del_vertex`  | $\mathbf{V} \setminus \lbrace X \rbrace$      |
-/// | `size`        | $\|\mathbf{E}\|$                              |
-/// | `edges`       | $\mathbf{E}$                                  |
-/// | `has_edge`    | $(X, Y) \in \mathbf{E}$                       |
-/// | `add_edge`    | $\mathbf{E} \cup \lbrace (X, Y) \rbrace$      |
-/// | `del_edge`    | $\mathbf{E} \setminus \lbrace (X, Y) \rbrace$ |
-/// | `degree`      | $\|Adj(X)\|$                                  |
-/// | `adjacents`   | $Adj(X)$                                      |
-/// | `is_adjacent` | $Y \in Adj(X)$                                |
+/// | Method            | Description                                   |
+/// |-------------------|-----------------------------------------------|
+/// | `new`             | $\mathcal{G} = (\mathbf{V}, \mathbf{E})$      |
+/// | `null`            | $\mathcal{G} = (\varnothing, \varnothing)$    |
+/// | `empty`           | $\mathcal{G} = (\mathbf{V}, \varnothing)$     |
+/// | `complete`        | $\mathcal{G} = (\mathbf{V}, \mathbf{E})$      |
+///
+/// | Method            | Description                                   |
+/// |-------------------|-----------------------------------------------|
+/// | `order`           | $\|\mathbf{V}\|$                              |
+/// | `vertices`        | $\mathbf{V}$                                  |
+/// | `has_vertex`      | $X \in \mathbf{V}$                            |
+/// | `add_vertex`      | $\mathbf{V} \cup \lbrace X \rbrace$           |
+/// | `del_vertex`      | $\mathbf{V} \setminus \lbrace X \rbrace$      |
+///
+/// | Method            | Description                                   |
+/// |-------------------|-----------------------------------------------|
+/// | `size`            | $\|\mathbf{E}\|$                              |
+/// | `edges`           | $\mathbf{E}$                                  |
+/// | `has_edge`        | $(X, Y) \in \mathbf{E}$                       |
+/// | `add_edge`        | $\mathbf{E} \cup \lbrace (X, Y) \rbrace$      |
+/// | `del_edge`        | $\mathbf{E} \setminus \lbrace (X, Y) \rbrace$ |
+/// | `degree`          | $\|Adj(X)\|$                                  |
+/// | `adjacents`       | $Adj(X)$                                      |
+/// | `is_adjacent`     | $Y \in Adj(X)$                                |
+///
+/// | Method            | Description                                   |
+/// |-------------------|-----------------------------------------------|
+/// | `subgraph`        | $\mathcal{G'} = (\mathbf{V'}, \mathbf{E'})$   |
+/// | `is_subgraph`     | $\mathcal{G'} \subseteq \mathcal{G}$          |
+/// | `is_supergraph`   | $\mathcal{G} \subseteq \mathcal{G'}$          |
 ///
 pub trait Graph:
-    Clone + Debug + Default + Display + Eq + Hash + Send + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone
+    + Debug
+    + Default
+    + Display
+    + Eq
+    + PartialOrd
+    + Index<usize, Output = str>
+    + Hash
+    + Send
+    + Sync
+    + Serialize
+    + for<'a> Deserialize<'a>
 {
     /// Direction associated type.
     type Direction;
     /// Vertex labels iterator associated type.
-    type LabelsIter<'a>: ExactSizeIterator<Item = &'a str>
+    type LabelsIter<'a>: ExactSizeIterator<Item = &'a str> + FusedIterator
     where
         Self: 'a;
     /// Vertex indices iterator associated type.
-    type VerticesIter<'a>: ExactSizeIterator<Item = usize>
+    type VerticesIter<'a>: ExactSizeIterator<Item = usize> + FusedIterator
     where
         Self: 'a;
     /// Edge indices iterator associated type.
-    type EdgesIter<'a>: ExactSizeIterator<Item = (usize, usize)>
+    type EdgesIter<'a>: ExactSizeIterator<Item = (usize, usize)> + FusedIterator
     where
         Self: 'a;
     /// Adjacents indices iterator associated type.
-    type AdjacentsIter<'a>: Iterator<Item = usize>
+    type AdjacentsIter<'a>: Iterator<Item = usize> + FusedIterator
     where
         Self: 'a;
 
@@ -963,4 +988,220 @@ pub trait Graph:
     /// ```
     ///
     fn is_adjacent(&self, x: usize, y: usize) -> bool;
+
+    /// Get the subgraph induced by the given vertices and edges.
+    ///
+    /// # Description
+    /// $\mathcal{G'} = (\mathbf{V'}, \mathbf{E'}) \; \text{with} \; \mathbf{V'} \subseteq \mathbf{V} \wedge \mathbf{E'} \subseteq \mathbf{E}$
+    ///
+    /// # Arguments
+    /// * `vertices` - The vertices indices,
+    /// * `edges` - The edges indices.
+    ///
+    /// # Returns
+    /// The subgraph induced by the given vertices and edges.
+    ///
+    /// # Panics
+    /// If the vertex or edge indices are out of bounds.
+    ///
+    /// # Complexity
+    /// Check the actual implementation.
+    ///
+    /// # Notes
+    /// The vertices indices will be reindexed in the `[0, |V'|)` range.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use itertools::Itertools;
+    ///
+    /// // Create a new graph.
+    /// let graph = UGraph::new(
+    ///     // The vertices labels.
+    ///     vec!["A", "B", "C", "D"],
+    ///     // The edges labels.
+    ///     vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the subgraph induced by the given vertices and edges.
+    /// let subgraph = graph.subgraph(vec![0, 1, 2], vec![(0, 1)]);
+    ///
+    /// // Assert the subgraph vertices labels are correct.
+    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// // Assert the subgraph vertices indices are correct.
+    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// // Assert the subgraph edges indices are correct.
+    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1)]);
+    /// ```
+    ///
+    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = (usize, usize)>;
+
+    /// Get the subgraph induced by the given vertices.
+    ///
+    /// # Description
+    /// $\mathcal{G'} = (\mathbf{V'}, \mathbf{E'}) \; \text{with} \; \mathbf{V'} \subseteq \mathbf{V} \wedge \mathbf{E'} \subseteq \mathbf{E}$
+    ///
+    /// # Arguments
+    /// * `vertices` - The vertices indices.
+    ///
+    /// # Returns
+    /// The subgraph induced by the given vertices.
+    ///
+    /// # Panics
+    /// If the vertex indices are out of bounds.
+    ///
+    /// # Complexity
+    /// Check the actual implementation.
+    ///
+    /// # Notes
+    /// The vertices indices will be reindexed in the `[0, |V'|)` range.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use itertools::Itertools;
+    ///
+    /// // Create a new graph.
+    /// let graph = UGraph::new(
+    ///    // The vertices labels.
+    ///   vec!["A", "B", "C", "D"],
+    ///   // The edges labels.
+    ///  vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the subgraph induced by the given vertices.
+    /// let subgraph = graph.subgraph_by_vertices(vec![0, 1, 2]);
+    ///
+    /// // Assert the subgraph vertices labels are correct.
+    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// // Assert the subgraph vertices indices are correct.
+    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// // Assert the subgraph edges indices are correct.
+    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1), (1, 2)]);
+    /// ```
+    ///
+    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
+    where
+        I: IntoIterator<Item = usize>;
+
+    /// Get the subgraph induced by the given edges.
+    ///
+    /// # Description
+    /// $\mathcal{G'} = (\mathbf{V'}, \mathbf{E'}) \; \text{with} \; \mathbf{V'} \subseteq \mathbf{V} \wedge \mathbf{E'} \subseteq \mathbf{E}$
+    ///
+    /// # Arguments
+    /// * `edges` - The edges indices.
+    ///
+    /// # Returns
+    /// The subgraph induced by the given edges.
+    ///
+    /// # Panics
+    /// If the edge indices are out of bounds.
+    ///
+    /// # Complexity
+    /// Check the actual implementation.
+    ///
+    /// # Notes
+    /// The vertices indices will be reindexed in the `[0, |V'|)` range.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use itertools::Itertools;
+    ///
+    /// // Create a new graph.
+    /// let graph = UGraph::new(
+    ///     // The vertices labels.
+    ///     vec!["A", "B", "C", "D"],
+    ///     // The edges labels.
+    ///     vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the subgraph induced by the given edges.
+    /// let subgraph = graph.subgraph_by_edges(vec![(0, 1), (1, 2)]);
+    ///
+    /// // Assert the subgraph vertices labels are correct.
+    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// // Assert the subgraph vertices indices are correct.
+    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// // Assert the subgraph edges indices are correct.
+    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1), (1, 2)]);
+    /// ```
+    ///
+    fn subgraph_by_edges<J>(&self, edges: J) -> Self
+    where
+        J: IntoIterator<Item = (usize, usize)>;
+
+    /// Check if the graph is a subgraph of a given graph.
+    ///
+    /// # Description
+    /// $\mathcal{G} \subseteq \mathcal{G'}$
+    ///
+    /// # Arguments
+    /// * `other` - The other graph.
+    ///
+    /// # Returns
+    /// `true` if the graph is a subgraph of the given graph, otherwise `false`.
+    ///
+    /// # Complexity
+    /// Check the actual implementation.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Create a new graph.
+    /// let graph = UGraph::new(
+    ///     // The vertices labels.
+    ///     vec!["A", "B", "C", "D"],
+    ///     // The edges labels.
+    ///     vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the subgraph induced by the given vertices.
+    /// let subgraph = graph.subgraph_by_vertices(vec![0, 1, 2]);
+    ///
+    /// // Assert the graph is a subgraph of the initial graph.
+    /// assert_eq!(subgraph.is_subgraph(&graph), true);
+    /// ```
+    ///
+    fn is_subgraph(&self, other: &Self) -> bool;
+
+    /// Check if the graph is a supergraph of a given graph.
+    ///
+    /// # Description
+    /// $\mathcal{G} \supseteq \mathcal{G'}$
+    ///
+    /// # Arguments
+    /// * `other` - The other graph.
+    ///
+    /// # Returns
+    /// `true` if the graph is a supergraph of the given graph, otherwise `false`.
+    ///
+    /// # Complexity
+    /// Check the actual implementation.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Create a new graph.
+    /// let supergraph = UGraph::new(
+    ///     // The vertices labels.
+    ///     vec!["A", "B", "C", "D"],
+    ///     // The edges labels.
+    ///     vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the subgraph induced by the given vertices.
+    /// let graph = supergraph.subgraph_by_vertices(vec![0, 1, 2]);
+    ///
+    /// // Assert the graph is a supergraph of the initial graph.
+    /// assert_eq!(supergraph.is_supergraph(&graph), true);
+    /// ```
+    ///
+    fn is_supergraph(&self, other: &Self) -> bool;
 }

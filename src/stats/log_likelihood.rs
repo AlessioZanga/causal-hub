@@ -24,14 +24,12 @@ use crate::{
 
 const E: f64 = f32::EPSILON as f64;
 
-/// Marginal Log-Likelihood functor.
 #[derive(Clone, Debug)]
 pub struct MarginalLogLikelihood<'a, D> {
     pub(crate) data_set: &'a D,
 }
 
 impl<'a, D> MarginalLogLikelihood<'a, D> {
-    /// Constructor for LL functor.
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }
@@ -41,7 +39,6 @@ impl<'a, D> MarginalLogLikelihood<'a, D> {
 /* Categorical LL */
 
 impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
-    /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
         // Compute marginal contingency table.
@@ -66,7 +63,6 @@ impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
 /* Gaussian LL */
 
 impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
-    /// Computes marginal log-likelihood given data_set set $\mathbf{D}$ and vertex $X$.
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
         // Get the variable and sample size.
@@ -88,14 +84,12 @@ impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
     }
 }
 
-/// Conditional Log-Likelihood functor.
 #[derive(Clone, Debug)]
 pub struct ConditionalLogLikelihood<'a, D> {
     pub(crate) data_set: &'a D,
 }
 
 impl<'a, D> ConditionalLogLikelihood<'a, D> {
-    /// Constructor for LL functor.
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }
@@ -105,7 +99,6 @@ impl<'a, D> ConditionalLogLikelihood<'a, D> {
 /* Categorical LL */
 
 impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
-    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
@@ -129,7 +122,6 @@ impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
             .sum()
     }
 
-    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$ in parallel.
     #[inline]
     pub fn par_call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
@@ -163,7 +155,6 @@ impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
 /* Gaussian LL */
 
 impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
-    /// Computes conditional log-likelihood given data_set set $\mathbf{D}$ and vertex $X$ and parents $\mathbf{Z}$.
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
@@ -209,14 +200,12 @@ impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
     }
 }
 
-/// Log-Likelihood (LL) functor.
 #[derive(Clone, Debug)]
 pub struct LogLikelihood<'a, D> {
     pub(crate) data_set: &'a D,
 }
 
 impl<'a, D> LogLikelihood<'a, D> {
-    /// Constructor for LL functor.
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
         Self { data_set }
@@ -253,20 +242,17 @@ where
 
 /* Implement LogLikelihood for multivariate ZINB distribution. */
 
-/// Define the multivariate ZINB objective function.
 #[derive(Clone, Debug)]
 struct ZINBObjective {
-    /// The response vector.
     x1: Array2<f64>,
     // lgamma(x1 + 1).
     x1_1_lgamma: Array2<f64>,
-    /// The design matrix.
+
     z10: Array2<f64>,
     z11: Array2<f64>,
 }
 
 impl ZINBObjective {
-    /// Constructor for ZINBObjective.
     #[inline]
     fn new(d: &Array2<f64>, x: usize, z: &[usize]) -> Self {
         // Get sample size and number of conditioning variables.
@@ -325,7 +311,6 @@ impl ZINBObjective {
     }
 }
 
-/// Implement the `CostFunction` trait for `ZINBObjective`.
 impl CostFunction for ZINBObjective {
     type Param = Array1<f64>;
     type Output = f64;
@@ -390,7 +375,6 @@ impl CostFunction for ZINBObjective {
     }
 }
 
-/// Implement the `Gradient` trait for `ZINBObjective`.
 impl Gradient for ZINBObjective {
     type Param = Array1<f64>;
     type Gradient = Array1<f64>;
@@ -508,5 +492,4 @@ where
     }
 }
 
-/// Alias for the LogLikelihood functor.
 pub type LL<'a, D> = LogLikelihood<'a, D>;

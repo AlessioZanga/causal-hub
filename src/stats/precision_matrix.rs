@@ -5,7 +5,6 @@ use ndarray_linalg::InverseInto;
 
 use super::CovarianceMatrix;
 
-/// Precision matrix $\Omega$.
 #[derive(Clone, Debug)]
 pub struct PrecisionMatrix {
     omega: Array2<f64>,
@@ -21,11 +20,6 @@ impl Deref for PrecisionMatrix {
 }
 
 impl PrecisionMatrix {
-    /// Construct a new precision matrix.
-    ///
-    /// # Panics
-    ///
-    /// Matrix must be square and symmetric.
     #[inline]
     pub fn new(omega: Array2<f64>) -> Self {
         // Assert Omega is squared ...

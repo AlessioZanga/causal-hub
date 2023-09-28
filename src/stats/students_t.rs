@@ -12,7 +12,6 @@ use crate::{
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
-/// Students' T conditional independence test.
 #[derive(Clone, Debug)]
 pub struct StudentsT {
     rho: PartialCorrelation,
@@ -22,7 +21,6 @@ pub struct StudentsT {
 }
 
 impl<'a> StudentsT {
-    /// Construct Students' T conditional independence test with $\alpha = 0.05$ .
     #[inline]
     pub fn new(d: &'a GaussianDataMatrix) -> Self {
         // Compute covariance matrix.
@@ -46,7 +44,7 @@ impl<'a> From<&'a GaussianDataMatrix> for StudentsT {
     }
 }
 
-impl<'a> ConditionalIndependenceTest<'a> for StudentsT {
+impl<'a> ConditionalIndependenceTest for StudentsT {
     type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
 
     #[inline]

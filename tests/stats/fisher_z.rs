@@ -62,7 +62,7 @@ mod tests {
             let y = g.label_to_vertex(&y);
             let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
-            let pred_call = test.call(x, y, &z);
+            let pred_call = ConditionalIndependence::call(&test, x, y, &z);
 
             assert_eq!(pred_call, true_pval > 0.05);
         }

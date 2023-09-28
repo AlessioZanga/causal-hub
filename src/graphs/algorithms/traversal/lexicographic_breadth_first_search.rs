@@ -2,19 +2,14 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::{graphs::UndirectedGraph, Ne, V};
 
-/// Lexicographic breadth-first search structure.
-///
-/// This structure contains the `predecessor` map.
-///
 pub struct LexicographicBreadthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Given graph reference.
     g: &'a G,
-    /// To-be-visited queue.
+
     pub partitions: VecDeque<VecDeque<usize>>,
-    /// Predecessor of each discovered vertex (except the source vertex).
+
     pub predecessor: HashMap<usize, usize>,
 }
 
@@ -22,17 +17,6 @@ impl<'a, G> LexicographicBreadthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Build a LexBFS iterator.
-    ///
-    /// Build a LexBFS[^1] iterator for a given undirected graph.
-    ///
-    /// This will execute the [`Forest`](super::Traversal) variant of the algorithm.
-    ///
-    /// [^1]: [Bretscher, A., Corneil, D., Habib, M., & Paul, C. (2003, June). A simple linear time LexBFS cograph recognition algorithm.](https://scholar.google.com/scholar?q=+A+simple+linear+time+LexBFS+cograph+recognition+algorithm)
-    ///
-    /// # Panics
-    ///
-    /// Panics if the (optional) source vertex is not in the graph.
     pub fn new(g: &'a G, x: Option<usize>) -> Self {
         // Initialize default search object.
         let mut search = Self {
@@ -149,10 +133,6 @@ impl<'a, G> From<&'a G> for LexicographicBreadthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Builds a search object from a given graph, without a source vertex.
-    ///
-    /// The first vertex of the vertex set is chosen as source vertex.
-    ///
     fn from(g: &'a G) -> Self {
         Self::new(g, None)
     }
@@ -162,16 +142,9 @@ impl<'a, G> From<(&'a G, usize)> for LexicographicBreadthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Builds a search object from a given graph, with a source vertex.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the source vertex is not in the graph.
-    ///
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x))
     }
 }
 
-/// Alias for lexicographic breadth-first search.
 pub type LexBFS<'a, G> = LexicographicBreadthFirstSearch<'a, G>;

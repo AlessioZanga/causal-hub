@@ -10,17 +10,14 @@ use crate::{
     Pa, L, V,
 };
 
-/// Parameter estimation trait for model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
 pub trait ParameterEstimation<D, G, M>
 where
     D: DataSet,
     G: Graph,
 {
-    /// Construct the model $\mathcal{M}$ given data $\mathcal{D}$ and graph $\mathcal{G}$.
     fn call(d: &D, g: &G) -> M;
 }
 
-/// Maximum Likelihood Estimation (MLE) functor.
 pub struct MaximumLikelihoodEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
@@ -56,7 +53,7 @@ impl<const PARALLEL: bool>
                 "At least one configuration for each parent set must be observed"
             );
             // Get target label and states.
-            let (x, y) = (g.vertex_to_label(x), d.states()[x].clone());
+            let (x, y) = (&g[x], d.states()[x].clone());
             // Get conditioning variables labels and states.
             let z = z
                 .into_iter()
@@ -81,7 +78,6 @@ impl<const PARALLEL: bool>
     }
 }
 
-/// Bayesian Estimation (BE) functor.
 pub struct BayesianEstimation<const PARALLEL: bool> {}
 
 impl<const PARALLEL: bool>
@@ -119,7 +115,7 @@ impl<const PARALLEL: bool>
                 "At least one configuration for each parent set must be observed"
             );
             // Get target label and states.
-            let (x, y) = (g.vertex_to_label(x), d.states()[x].clone());
+            let (x, y) = (&g[x], d.states()[x].clone());
             // Get conditioning variables labels and states.
             let z = z
                 .into_iter()

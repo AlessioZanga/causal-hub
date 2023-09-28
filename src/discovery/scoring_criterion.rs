@@ -10,34 +10,27 @@ use crate::{
     Pa, V,
 };
 
-/// Score-types pseudo-enumerator for generics algorithms.
 pub mod score_types {
-    /// Decomposable score-type pseudo-enumerator for generics algorithms.
+
     #[derive(Clone, Debug)]
     pub struct Decomposable;
-    /// Non-decomposable score-type pseudo-enumerator for generics algorithms.
+
     #[derive(Clone, Debug)]
     pub struct NonDecomposable;
 }
 
-/// Scoring criterion trait.
 pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
-    /// Computes the score value for the given data set $\mathbf{D}$ and graph $\mathcal{G}$.
     fn call(&self, g: &G) -> f64;
 
-    /// Returns the maximum in-degree that can be reached while increasing the score.
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         None
     }
 }
 
-/// Decomposable scoring criterion trait.
 pub trait DecomposableScoringCriterion<D, G>: Clone + Debug + Sync {
-    /// Computes the score value for the given data set $\mathbf{D}$, vertex $X$ and parents $\mathbf{Z}$.
     fn call(&self, x: usize, z: &[usize]) -> f64;
 
-    /// Returns the maximum in-degree that can be reached while increasing the score.
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         None
@@ -65,7 +58,7 @@ where
 }
 
 #[derive(Clone, Debug)]
-/// Scoring criterion cache wrapper.
+
 pub struct ScoringCriterionCache<'a, D, G, S, T, K> {
     _d: PhantomData<D>,
     _g: PhantomData<G>,
@@ -78,7 +71,6 @@ impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K>
 where
     K: Sync,
 {
-    /// Construct a new scoring criterion cache wrapper given the scoring criterion $\mathcal{S}$.
     pub fn new(scoring_criterion: &'a S) -> Self {
         Self {
             _d: PhantomData,
@@ -89,13 +81,11 @@ where
         }
     }
 
-    /// Returns the values iterator.
     #[inline]
     pub fn values(&self) -> Values<'_, K, f64> {
         self.cache.values()
     }
 
-    /// Returns the parallel values iterator.
     #[inline]
     pub fn par_values(&self) -> ParValues<'_, K, f64> {
         self.cache.par_values()
@@ -152,16 +142,6 @@ where
     G: Clone + Debug + Eq + Hash + Sync,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
-    /// Returns the score from cache or compute it if not present.
-    ///
-    /// Returns a `(Option<K>, f64)` pair from the scoring criterion cache.
-    /// If the score value is in the cache then the key is `None`, otherwise
-    /// it is `Some(K)`.
-    ///
-    /// The returned `(K, f64)` can be inserted into the cache by calling
-    /// `extend` or `par_extend` over an iterator of such pairs.
-    ///
-    /// The idea here is to update the cache in batch after querying it.
     pub fn call(&self, g: &G) -> (Option<G>, f64) {
         // Get value from cache ...
         self.cache
@@ -210,16 +190,6 @@ where
     G: DirectedGraph<Direction = directions::Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
-    /// Returns the score from cache or compute it if not present.
-    ///
-    /// Returns a `(Option<K>, f64)` pair from the scoring criterion cache.
-    /// If the score value is in the cache then the key is `None`, otherwise
-    /// it is `Some(K)`.
-    ///
-    /// The returned `(K, f64)` can be inserted into the cache by calling
-    /// `extend` or `par_extend` over an iterator of such pairs.
-    ///
-    /// The idea here is to update the cache in batch after querying it.
     pub fn call(&self, x: usize, z: &[usize]) -> (Option<(usize, Vec<usize>)>, f64) {
         // Compute cache key.
         let k = (x, z.to_vec());

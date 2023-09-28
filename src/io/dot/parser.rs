@@ -141,14 +141,12 @@ impl From<GraphAttributes> for String {
     }
 }
 
-/// Global attributes for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct GlobalAttributes {
-    /// Global graphs attributes.
     pub graphs: GraphAttributes,
-    /// Global vertices attributes.
+
     pub vertices: VertexAttributes,
-    /// Global edges attributes.
+
     pub edges: EdgeAttributes,
 }
 
@@ -221,19 +219,16 @@ impl From<GlobalAttributes> for String {
     }
 }
 
-/// Vertex for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct Vertex {
-    /// Vertex id.
     pub id: String,
-    /// Vertex port, if any.
+
     pub port: Option<String>,
-    /// Vertex attributes.
+
     pub attributes: VertexAttributes,
 }
 
 impl Vertex {
-    /// Construct new vertex from id.
     pub fn new(id: String) -> Self {
         Self {
             id,
@@ -297,19 +292,16 @@ impl From<Vertex> for String {
     }
 }
 
-/// Edge for `DOT` language.
 #[derive(Clone, Debug, Default)]
 pub struct Edge {
-    /// Edge id as vertices pair.
     pub id: (String, String),
-    /// Edge operation direction.
+
     pub op: String,
-    /// Edge attributes.
+
     pub attributes: EdgeAttributes,
 }
 
 impl Edge {
-    /// Construct new edge from id and direction operator.
     pub fn new(id: (String, String), op: String) -> Self {
         Self {
             id,
@@ -343,7 +335,6 @@ impl From<Edge> for String {
 
 #[derive(Default)]
 struct _Path {
-    /// Edges.
     pub edges: Vec<Edge>,
 }
 
@@ -399,13 +390,12 @@ impl<'a> From<Pairs<'a, Rule>> for _Path {
 
 #[derive(Default)]
 struct _Statements {
-    /// Local graph attributes.
     pub attributes: GraphAttributes,
-    /// Global graph attributes.
+
     pub global_attributes: GlobalAttributes,
-    /// Map of vertices IDs to vertices attributes.
+
     pub vertices: BTreeMap<String, Vertex>,
-    /// Map of edges pairs to vertices attributes.
+
     pub edges: BTreeMap<(String, String), Edge>,
 }
 
@@ -448,30 +438,25 @@ impl<'a> From<Pairs<'a, Rule>> for _Statements {
     }
 }
 
-/// DOT parser.
-///
-/// Implements a [DOT language](https://graphviz.org/doc/info/lang.html) parser.
-///
 #[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/dot/grammar.pest"]
 pub struct DOT {
-    /// Layout engine.
     pub layout: Layout,
-    /// Output format.
+
     pub format: Format,
-    /// Graph strict attribute, if set.
+
     pub strict: bool,
-    /// Graph ID, if any.
+
     pub id: Option<String>,
-    /// Graph type.
+
     pub graph_type: String,
-    /// Local graph attributes.
+
     pub attributes: GraphAttributes,
-    /// Global graph attributes.
+
     pub global_attributes: GlobalAttributes,
-    /// Map of vertices IDs to vertices attributes.
+
     pub vertices: BTreeMap<String, Vertex>,
-    /// Map of edges pairs to vertices attributes.
+
     pub edges: BTreeMap<(String, String), Edge>,
 }
 
@@ -627,18 +612,13 @@ impl From<UndirectedDenseAdjacencyMatrix> for DOT {
         let graph_type = "graph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.vertex_to_label(x).into())
+            .map(|x| graph[x].into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
         let edges = E!(graph)
-            .map(|(x, y)| {
-                (
-                    graph.vertex_to_label(x).into(),
-                    graph.vertex_to_label(y).into(),
-                )
-            })
+            .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge::new((x, y), "--".into()))
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -671,18 +651,13 @@ impl From<DirectedDenseAdjacencyMatrix> for DOT {
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.vertex_to_label(x).into())
+            .map(|x| graph[x].into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the edge set.
         let edges = E!(graph)
-            .map(|(x, y)| {
-                (
-                    graph.vertex_to_label(x).into(),
-                    graph.vertex_to_label(y).into(),
-                )
-            })
+            .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -715,7 +690,7 @@ impl From<PartiallyDirectedDenseAdjacencyMatrix> for DOT {
         let graph_type = "digraph".into();
         // Construct the vertex set.
         let vertices = V!(graph)
-            .map(|x| graph.vertex_to_label(x).into())
+            .map(|x| graph[x].into())
             .map(Vertex::new)
             .map(|x| (x.id.clone(), x))
             .collect();
@@ -724,12 +699,7 @@ impl From<PartiallyDirectedDenseAdjacencyMatrix> for DOT {
         undirected_arrowhead.insert_raw_parts("dir", "none");
         let mut edges: BTreeMap<_, _> = graph
             .undirected_edges()
-            .map(|(x, y)| {
-                (
-                    graph.vertex_to_label(x).into(),
-                    graph.vertex_to_label(y).into(),
-                )
-            })
+            .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge {
                 id: (x, y),
                 op: "->".into(),
@@ -740,12 +710,7 @@ impl From<PartiallyDirectedDenseAdjacencyMatrix> for DOT {
         // Construct the directed edge set.
         let mut directed_edges: BTreeMap<_, _> = graph
             .directed_edges()
-            .map(|(x, y)| {
-                (
-                    graph.vertex_to_label(x).into(),
-                    graph.vertex_to_label(y).into(),
-                )
-            })
+            .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))
             .collect();

@@ -6,7 +6,6 @@ use crate::{
     V,
 };
 
-/// Connected components structure.
 pub struct ConnectedComponents<'a, G>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
@@ -19,36 +18,6 @@ impl<'a, G> ConnectedComponents<'a, G>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
-    /// Build a CC iterator.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// // Build a new undirected graph.
-    /// let g = Graph::new(
-    ///     ["A", "B", "C", "D", "E", "F"],
-    ///     [
-    ///         ("A", "B"),
-    ///         ("B", "C"),
-    ///         ("D", "E"),
-    ///     ]
-    /// );
-    ///
-    /// // Build a connected component iterator.
-    /// let mut cc = CC::from(&g);
-    ///
-    /// // Assert connected components.
-    /// assert!(
-    ///     cc.eq([
-    ///         vec![0, 1, 2],
-    ///         vec![3, 4],
-    ///         vec![5],
-    ///     ])
-    /// );
-    /// ```
-    ///
     pub fn new(g: &'a G) -> Self {
         // Initialize to-be-visited queue.
         let queue = V!(g).collect();
@@ -87,5 +56,4 @@ where
     }
 }
 
-/// Alias for connected components.
 pub type CC<'a, G> = ConnectedComponents<'a, G>;

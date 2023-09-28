@@ -38,14 +38,14 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -93,8 +93,8 @@ mod undirected {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -142,10 +142,10 @@ mod undirected {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -207,14 +207,14 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -262,8 +262,8 @@ mod directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -311,10 +311,10 @@ mod directed {
 
                     assert!(E!(h)
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -413,14 +413,14 @@ mod partially_directed {
                     let h = g.subgraph(v.clone(), e.clone());
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -479,8 +479,8 @@ mod partially_directed {
 
                     assert!(V!(h)
                         .into_iter()
-                        .map(|x| h.vertex_to_label(x))
-                        .eq(v.into_iter().map(|x| g.vertex_to_label(x))));
+                        .map(|x| h[x])
+                        .eq(v.into_iter().map(|x| g[x])));
                     assert!(h.is_subgraph(&g));
                     assert!(g.is_supergraph(&h));
                 }
@@ -552,10 +552,10 @@ mod partially_directed {
                     let h = g.subgraph_by_edges(e.clone());
                     assert!(iter_set::union(uE!(h), dE!(h))
                         .into_iter()
-                        .map(|(x, y)| (h.vertex_to_label(x), h.vertex_to_label(y)))
+                        .map(|(x, y)| (h[x], h[y]))
                         .eq(e
                             .into_iter()
-                            .map(|(x, y)| (g.vertex_to_label(x), g.vertex_to_label(y)))));
+                            .map(|(x, y)| (g[x], &g[y]))));
 
                     assert!(h.is_subgraph(&g));
 

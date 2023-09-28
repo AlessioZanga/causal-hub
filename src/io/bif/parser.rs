@@ -14,7 +14,6 @@ use crate::{
 #[derive(Clone, Debug, Default, Parser)]
 #[grammar = "io/bif/grammar.pest"]
 pub struct BIF {
-    /// Parameters. TODO: Generalize to the continuous case.
     pub theta: Vec<CategoricalCPD>,
 }
 

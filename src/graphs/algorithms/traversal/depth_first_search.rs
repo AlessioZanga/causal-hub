@@ -9,25 +9,20 @@ use crate::{
     Ch, Ne, V,
 };
 
-/// Depth-first search structure.
-///
-/// This structure contains the `discovery_time`, `finish_time` and `predecessor` maps.
-///
 pub struct DepthFirstSearch<'a, G, D>
 where
     G: Graph<Direction = D>,
 {
-    /// Given graph reference.
     g: &'a G,
-    /// The visit stack.
+
     stack: Vec<usize>,
-    /// Global time counter.
+
     pub time: usize,
-    /// Discovery time of each discovered vertex.
+
     pub discovery_time: HashMap<usize, usize>,
-    /// Finish time of each discovered vertex.
+
     pub finish_time: HashMap<usize, usize>,
-    /// Predecessor of each discovered vertex (except the source vertex).
+
     pub predecessor: HashMap<usize, usize>,
 }
 
@@ -35,51 +30,6 @@ impl<'a, G, D> DepthFirstSearch<'a, G, D>
 where
     G: Graph<Direction = D>,
 {
-    /// Build a DFS iterator.
-    ///
-    /// Build a DFS iterator for a given graph. This will execute the [`Tree`](super::Traversal)
-    /// variant of the algorithm, if not specified otherwise.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the (optional) source vertex is not in the graph.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    ///
-    /// // Define edge set.
-    /// let e = EdgeList::from([
-    ///     ("A", "B"), ("B", "C"), ("A", "D"), ("A", "E"), ("E", "F")
-    /// ]);
-    ///
-    /// // Build a new graph.
-    /// let mut g = DGraph::from(e);
-    ///
-    /// // Build the search object over said graph with `0` as source vertex.
-    /// let mut search = DFS::from((&g, 0));
-    ///
-    /// // Collect visit order by reference, preserving search structure.
-    /// let order: Vec<_> = search.by_ref().collect();
-    /// // The visit returns a pre-order.
-    /// assert_eq!(order, [0, 1, 2, 3, 4, 5]);
-    ///
-    /// // The source vertex has discovery-time equals to zero ...
-    /// assert_eq!(search.discovery_time[&0], 0);
-    /// // ... finish-time equals to two times the number of discovered vertices minus one ...
-    /// assert_eq!(search.finish_time[&0], 2 * search.discovery_time.len() - 1);
-    /// // ... and no predecessor by definition.
-    /// assert_eq!(search.predecessor.contains_key(&0), false);
-    ///
-    /// // For example, vertex `5` has discovery-time equals to eight ...
-    /// assert_eq!(search.discovery_time[&5], 8);
-    /// // ... finish-time equals to nine ...
-    /// assert_eq!(search.finish_time[&5], 9);
-    /// // ... and its predecessor is `4`.
-    /// assert_eq!(search.predecessor[&5], 4);
-    /// ```
-    ///
     pub fn new(g: &'a G, x: Option<usize>, m: Traversal) -> Self {
         // Initialize default search object.
         let mut search = Self {
@@ -297,5 +247,4 @@ where
     }
 }
 
-/// Alias for depth-first search.
 pub type DFS<'a, G, D> = DepthFirstSearch<'a, G, D>;

@@ -1,6 +1,5 @@
 use crate::{graphs::Graph, types::FxIndexSet, E};
 
-/// Structural Hamming Distance (SHD).
 pub fn shd<G, H>(true_graph: &G, pred_graph: &H) -> f64
 where
     G: Graph,

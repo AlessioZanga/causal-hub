@@ -15,24 +15,16 @@ use crate::{
     Adj, Pa, L, V,
 };
 
-/// Variable Elimination (VE) functor.
 #[derive(Clone, Debug)]
 pub struct VariableElimination<'a, M, const PARALLEL: bool> {
     model: &'a M,
 }
 
 impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL> {
-    /// Construct a new variable elimination functor.
     pub const fn new(model: &'a M) -> Self {
         Self { model }
     }
 
-    /// Compute the sum-product of $\pmb{\Phi}$ w.r.t. given elimination order $\mathbf{Z}$.
-    ///
-    /// # Panics
-    ///
-    /// Panics if $\pmb{\Phi}$ is empty, or when $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
-    ///
     fn sum_product<'b, I, P, Z>(phi: I, z: Z) -> P
     where
         I: IntoIterator<Item = P> + FromIterator<P> + IntoParallelIterator<Item = P>,
@@ -49,12 +41,6 @@ impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL> {
         }
     }
 
-    /// Perform variable elimination w.r.t. the given variable $Z$.
-    ///
-    /// # Panics
-    ///
-    /// Panics if $\mathbf{Z}$ is not a subset of the scope of $\pmb{\Phi}$.
-    ///
     fn variable_elimination<P>(phi: P, z: &str) -> P
     where
         P: IntoIterator + FromIterator<P::Item>,
@@ -82,7 +68,6 @@ impl<'a, M, const PARALLEL: bool> VariableElimination<'a, M, PARALLEL>
 where
     M: ProbabilisticGraphicalModel,
 {
-    /// Compute the elimination order w.r.t. the given variables $\mathbf{Z}$.
     fn elimination_order<'b, Z>(&self, z: Z) -> Vec<&'b str>
     where
         Z: IntoIterator<Item = &'b str>,
@@ -95,12 +80,7 @@ where
         let mut queue: FxIndexSet<_> = z.into_iter().collect();
         // Clone the associated adjacencies.
         let mut g: FxIndexMap<_, FxIndexSet<_>> = V!(g)
-            .map(|x| {
-                (
-                    g.vertex_to_label(x),
-                    Adj!(g, x).map(|x| g.vertex_to_label(x)).collect(),
-                )
-            })
+            .map(|x| (&g[x], Adj!(g, x).map(|x| &g[x]).collect()))
             .collect();
         // While there are still variables to be ordered.
         while !queue.is_empty() {
@@ -197,12 +177,7 @@ where
         // Project P parameters onto Q structure.
         let theta = V!(g_q)
             // Get the parents of each vertex.
-            .map(|x| {
-                (
-                    g_q.vertex_to_label(x),
-                    Pa!(g_q, x).map(|z| g_q.vertex_to_label(z)),
-                )
-            })
+            .map(|x| (&g_q[x], Pa!(g_q, x).map(|z| &g_q[z])))
             // Project P parameters onto Q structure.
             .map(|(x, z)| self.conditional(x, z));
         // Construct projection of P given projected parameters.

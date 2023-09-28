@@ -3,14 +3,12 @@ use ndarray::prelude::*;
 
 use super::{CovarianceMatrix, PrecisionMatrix};
 
-/// Partial correlation functor.
 #[derive(Clone, Debug)]
 pub struct PartialCorrelation {
     sigma: CovarianceMatrix,
 }
 
 impl PartialCorrelation {
-    /// Compute partial correlation of $X$ and $Y$ given $\mathbf{Z}$.
     pub fn call(&self, x: usize, y: usize, z: &[usize]) -> f64 {
         // Get size of the sub-covariance matrix.
         let n = 2 + z.len();

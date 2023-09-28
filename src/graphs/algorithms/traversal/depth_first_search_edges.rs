@@ -6,38 +6,31 @@ use crate::{
     Ch, Ne, V,
 };
 
-/// Edge classification performed by the [depth first search edges](`DepthFirstSearchEdges`) algorithm.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum DFSEdge {
-    /// From a vertex to an ancestor.
     Back(usize, usize),
-    /// From a vertex to another, which is not an ancestor nor a descendant.
+
     Cross(usize, usize),
-    /// From a vertex to a descendant, which is not a child.
+
     Forward(usize, usize),
-    /// From a vertex to a child.
+
     Tree(usize, usize),
 }
 
-/// Depth-first search-edges structure.
-///
-/// This structure contains the `discovery_time`, `finish_time` and `predecessor` maps.
-///
 pub struct DepthFirstSearchEdges<'a, G, D>
 where
     G: Graph<Direction = D>,
 {
-    /// Given graph reference.
     g: &'a G,
-    /// The visit stack.
+
     stack: Vec<(usize, usize)>,
-    /// Global time counter.
+
     pub time: usize,
-    /// Discovery time of each discovered vertex.
+
     pub discovery_time: Vec<usize>,
-    /// Finish time of each discovered vertex.
+
     pub finish_time: Vec<usize>,
-    /// Predecessor of each discovered vertex (except the source vertex).
+
     pub predecessor: Vec<usize>,
 }
 
@@ -45,14 +38,6 @@ impl<'a, G, D> DepthFirstSearchEdges<'a, G, D>
 where
     G: Graph<Direction = D>,
 {
-    /// Build a DFS-Edges iterator.
-    ///
-    /// Build a DFS-Edges iterator for a given graph. This will execute the [`Tree`](super::Traversal)
-    /// variant of the algorithm, if not specified otherwise.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the (optional) source vertex is not in the graph.
     #[inline]
     pub fn new(g: &'a G, x: Option<usize>, m: Traversal) -> Self {
         // Get graph order.
@@ -396,5 +381,4 @@ impl<'a, G> FusedIterator for DepthFirstSearchEdges<'a, G, directions::Partially
 {
 }
 
-/// Alias for depth-first search.
 pub type DFSEdges<'a, G, D> = DepthFirstSearchEdges<'a, G, D>;

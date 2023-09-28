@@ -16,7 +16,7 @@ mod categorical {
         let db_name: String = "cancer".into();
 
         // Set true graph
-        let true_g = PDGraph::from((
+        let true_g = PGraph::from((
             vec!["Cancer", "Dyspnoea", "Pollution", "Smoker", "Xray"],
             array![
                 [false, false, false, false, false],
@@ -72,7 +72,7 @@ mod categorical {
         let db_name: String = "asia".into();
 
         // Set true graph
-        let true_g = PDGraph::from((
+        let true_g = PGraph::from((
             vec![
                 "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray",
             ],
@@ -136,7 +136,7 @@ mod categorical {
         let db_name: String = "survey".into();
 
         // Set true graph
-        let true_g = PDGraph::from((
+        let true_g = PGraph::from((
             vec!["A", "E", "O", "R", "S", "T"],
             array![
                 [false, false, false, false, false, false],
@@ -190,7 +190,7 @@ mod categorical {
 
     #[test]
     fn meek_1_base_case() {
-        let mut g = PDGraph::new_pagraph(vec![], vec![("1", "2")], vec![("0", "1")]);
+        let mut g = PGraph::new_pagraph(vec![], vec![("1", "2")], vec![("0", "1")]);
         g.meek_1();
         assert!(g.has_directed_edge(1, 2));
         assert!(g.has_directed_edge(0, 1))
@@ -198,7 +198,7 @@ mod categorical {
 
     #[test]
     fn meek_1_general_case() {
-        let mut g = PDGraph::new_pagraph(
+        let mut g = PGraph::new_pagraph(
             vec![],
             vec![
                 ("1", "2"),
@@ -223,7 +223,7 @@ mod categorical {
 
     #[test]
     fn meek_2_base_case() {
-        let mut g = PDGraph::new_pagraph(vec![], vec![("0", "2")], vec![("0", "1"), ("1", "2")]);
+        let mut g = PGraph::new_pagraph(vec![], vec![("0", "2")], vec![("0", "1"), ("1", "2")]);
         g.meek_2();
         assert!(g.has_directed_edge(0, 2));
         assert!(g.has_directed_edge(0, 1));
@@ -232,7 +232,7 @@ mod categorical {
 
     #[test]
     fn meek_2_general_case() {
-        let mut g = PDGraph::new_pagraph(
+        let mut g = PGraph::new_pagraph(
             vec![],
             vec![("1", "2"), ("1", "3"), ("4", "0")],
             vec![("1", "0"), ("0", "2"), ("4", "2"), ("2", "3")],
@@ -247,7 +247,7 @@ mod categorical {
 
     #[test]
     fn meek_3_base_case() {
-        let mut g = PDGraph::new_pagraph(
+        let mut g = PGraph::new_pagraph(
             vec![],
             vec![("0", "1"), ("0", "2"), ("0", "3")],
             vec![("1", "2"), ("3", "2")],
@@ -264,7 +264,7 @@ mod categorical {
 
     #[test]
     fn meek_3_general_case() {
-        let mut g = PDGraph::new_pagraph(
+        let mut g = PGraph::new_pagraph(
             vec![],
             vec![
                 ("0", "1"),
@@ -303,7 +303,7 @@ mod categorical {
             ),
         ];
         for (v, ue, de) in data {
-            let mut g = PDGraph::new_pagraph(v, ue, de);
+            let mut g = PGraph::new_pagraph(v, ue, de);
             g.meek_4();
             // Test for undirected edges
             assert!(g.has_undirected_edge(0, 3));
@@ -316,7 +316,7 @@ mod categorical {
 
     #[test]
     fn meek_4_general_case() {
-        let mut g = PDGraph::new_pagraph(
+        let mut g = PGraph::new_pagraph(
             vec![],
             vec![
                 ("0", "5"),

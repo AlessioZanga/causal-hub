@@ -1,4 +1,3 @@
-/// Style and layout attributes.
 pub mod attributes;
 
 #[allow(missing_docs)]

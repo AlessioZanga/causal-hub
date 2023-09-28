@@ -15,7 +15,6 @@ pub struct BayesianInformationCriterion<'a, D> {
 }
 
 impl<'a, D> BayesianInformationCriterion<'a, D> {
-    /// Constructor for BIC functor.
     #[inline]
     pub const fn new(d: &'a D) -> Self {
         // Initialize the log-likelihood functor.
@@ -120,5 +119,4 @@ where
     }
 }
 
-/// Alias for the BayesianInformationCriterion functor.
 pub type BIC<'a, D> = BayesianInformationCriterion<'a, D>;

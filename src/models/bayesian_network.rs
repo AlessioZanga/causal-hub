@@ -21,7 +21,6 @@ use crate::{
     Pa, L, V,
 };
 
-/// Probabilistic Graphical Model (PGM) trait.
 pub trait ProbabilisticGraphicalModel:
     Clone
     + Debug
@@ -30,24 +29,20 @@ pub trait ProbabilisticGraphicalModel:
     + for<'a> Deserialize<'a>
     + Into<(Self::Graph, FxIndexMap<String, Self::Parameter>)>
 {
-    /// Associated data set type.
     type Data: DataSet;
-    /// Underlying directed graph associated type. TODO: Generalize this bound.
+
     type Graph: DirectedGraph<Direction = directions::Directed>;
     /// Parameter associated type.
     type Parameter: Factor<Phi = Self::Phi>; // TODO: This patch is needed to avoid compiler recursion limit.
     /// Underlying factor type.
     type Phi: Factor;
 
-    /// Joint distribution associated type.
     type JPD: JointProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
-    /// Conditional distribution associated type.
+
     type CPD: ConditionalProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
 
-    /// Reference to the underlying graph.
     fn graph(&self) -> &Self::Graph;
 
-    /// Reference to the parameters.
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
 
     /// Draw `n` samples.
@@ -57,20 +52,16 @@ pub trait ProbabilisticGraphicalModel:
     fn par_sample<R: Rng + SeedableRng + Send>(&self, rng: &mut R, n: usize) -> Self::Data;
 }
 
-/// Bayesian Network $\mathcal{B}$ trait.
 pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
-    /// Constructor of $\mathcal{B} = (\mathcal{G}, \Theta)$.
     fn new<I>(graph: Self::Graph, theta: I) -> Self
     where
         I: IntoIterator<Item = Self::Parameter>;
 
-    /// Construct $\mathcal{B}$ and the associated graph $\mathcal{G}$ given the parameters $\Theta$.
     fn with_parameters<I>(theta: I) -> Self
     where
         I: IntoIterator<Item = Self::Parameter>;
 }
 
-/// Categorical Bayesian Network $\mathcal{B}$.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
     graph: DirectedDenseAdjacencyMatrix,
@@ -254,7 +245,7 @@ impl BayesianNetwork for CategoricalBayesianNetwork {
                 .zip(theta.values())
                 .all(|((i, x), t)| {
                     Pa!(graph, i)
-                        .map(|y| graph.vertex_to_label(y))
+                        .map(|y| &graph[y])
                         .eq(t.scope().filter(|&z| z != x))
                 }),
             "Graph and parameters must induce the same structure"

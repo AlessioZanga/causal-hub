@@ -24,7 +24,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::asia", |b| {
-                b.iter(|| pcs.call().meek_procedure_until_3())
+                b.iter(|| pcs.call())
             });
         }
 
@@ -45,7 +45,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::cancer", |b| {
-                b.iter(|| pcs.call().meek_procedure_until_3())
+                b.iter(|| pcs.call())
             });
         }
 
@@ -66,7 +66,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::survey", |b| {
-                b.iter(|| pcs.call().meek_procedure_until_3())
+                b.iter(|| pcs.call())
             });
         }
     }
@@ -96,7 +96,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::asia", |b| {
-                b.iter(|| pcs.par_call().meek_procedure_until_3())
+                b.iter(|| pcs.par_call())
             });
         }
 
@@ -117,7 +117,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::cancer", |b| {
-                b.iter(|| pcs.par_call().meek_procedure_until_3())
+                b.iter(|| pcs.par_call())
             });
         }
 
@@ -138,7 +138,7 @@ pub mod categorical {
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::survey", |b| {
-                b.iter(|| pcs.par_call().meek_procedure_until_3())
+                b.iter(|| pcs.par_call())
             });
         }
     }

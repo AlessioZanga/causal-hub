@@ -4,25 +4,23 @@ use rayon::prelude::*;
 use crate::prelude::*;
 
 #[derive(Clone, Debug)]
-/// PC-Stable functor.
+
 pub struct PCStable<'a, T>
 where
-    T: ConditionalIndependenceTest<'a>,
+    T: ConditionalIndependence,
 {
     test: &'a T,
 }
 
 impl<'a, T> PCStable<'a, T>
 where
-    T: ConditionalIndependenceTest<'a>,
+    T: ConditionalIndependence + 'a,
 {
-    /// Construct a new PC-Stable functor.
-    pub fn new(test: &'a T) -> Self {
+    #[inline]
+    pub const fn new(test: &'a T) -> Self {
         Self { test }
     }
 
-    /// Private function. It performs skeleton discovery given a test.
-    #[inline]
     fn skeleton(&self) -> (UGraph, SepSets) {
         // Set complete graph
         let mut g = UGraph::complete(self.test.labels());
@@ -72,9 +70,181 @@ where
         (g, sepsets)
     }
 
-    /// Private function. It performs parallel skeleton discovery given a test.
+    pub fn rule_1<P>(mut g: P) -> (P, bool)
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+
+        for x in V!(g).collect::<Vec<_>>() {
+            if Pa!(g, x).next().is_none() {
+                continue;
+            }
+            for z in Ne!(g, x).collect::<Vec<_>>() {
+                if iter_set::intersection(Adj!(g, z), Pa!(g, x))
+                    .next()
+                    .is_none()
+                {
+                    g.set_directed_edge(x, z);
+                    is_closed = false;
+                }
+            }
+        }
+
+        (g, is_closed)
+    }
+
+    pub fn rule_2<P>(mut g: P) -> (P, bool)
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+
+        for x in V!(g).collect::<Vec<_>>() {
+            if Pa!(g, x).next().is_none() {
+                continue;
+            }
+            for z in Ch!(g, x).collect::<Vec<_>>() {
+                for y in iter_set::intersection(Ne!(g, z), Pa!(g, x)).collect::<Vec<_>>() {
+                    g.set_directed_edge(y, z);
+                    is_closed = false;
+                }
+            }
+        }
+
+        (g, is_closed)
+    }
+
+    pub fn rule_3<P>(mut g: P) -> (P, bool)
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+
+        for x in V!(g).collect::<Vec<_>>() {
+            for z in Ne!(g, x).collect::<Vec<_>>() {
+                let intersection = iter_set::intersection(Ne!(g, z), Pa!(g, x));
+                // Look for a non-adjacent couple of parents of `x`
+                if intersection
+                    .combinations(2)
+                    .any(|ab| !g.is_adjacent(ab[0], ab[1]))
+                {
+                    g.set_directed_edge(z, x);
+                    is_closed = false;
+                }
+            }
+        }
+
+        (g, is_closed)
+    }
+
+    pub fn rule_4<P>(mut g: P) -> (P, bool)
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        // Flag returning `false` if some orientation takes place
+        let mut is_closed = true;
+
+        for x in V!(g).collect::<Vec<_>>() {
+            if Pa!(g, x).next().is_none() {
+                continue;
+            }
+            for z in Ne!(g, x).collect::<Vec<_>>() {
+                if iter_set::intersection(
+                    Ne!(g, z),
+                    Pa!(g, x).flat_map(|parent| Pa!(g, parent).filter(|&y| !g.is_adjacent(y, x))),
+                )
+                .next()
+                .is_some()
+                {
+                    g.set_directed_edge(z, x);
+                    is_closed = false;
+                }
+            }
+        }
+
+        (g, is_closed)
+    }
+
     #[inline]
-    #[allow(clippy::type_complexity)]
+    pub fn apply_rules_until_3<P>(mut g: P) -> P
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        let mut is_closed = false;
+
+        let (mut _1, mut _2, mut _3);
+        while !is_closed {
+            (g, _1) = Self::rule_1(g);
+            (g, _2) = Self::rule_2(g);
+            (g, _3) = Self::rule_3(g);
+            is_closed = _1 && _2 && _3;
+        }
+
+        g
+    }
+
+    #[inline]
+    pub fn apply_rules_until_4<P>(mut g: P) -> P
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        let mut is_closed = false;
+
+        let (mut _1, mut _2, mut _3, mut _4);
+        while !is_closed {
+            (g, _1) = Self::rule_1(g);
+            (g, _2) = Self::rule_2(g);
+            (g, _3) = Self::rule_3(g);
+            (g, _4) = Self::rule_4(g);
+            is_closed = _1 && _2 && _3 && _4;
+        }
+
+        g
+    }
+
+    pub fn call(&self) -> PGraph {
+        // Perform skeleton discovery
+        let (g, sepsets) = self.skeleton();
+        // Cast the graph to a partially directed graph
+        let mut g = PGraph::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
+
+        // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
+        let triples: Vec<_> = V!(g)
+            .flat_map(|y| {
+                std::iter::repeat(y)
+                    .zip(Adj!(g, y).combinations(2))
+                    .map(|(y, xz)| (xz[0], y, xz[1]))
+                    .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
+            })
+            .collect();
+
+        // For every unshielded triple ...
+        for (x, y, z) in triples {
+            // ... if one of the edges is already directed ...
+            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
+                // ... skip this triple.
+                continue;
+            }
+            // Otherwise, the triple is a v-structure.
+            g.set_directed_edge(x, y);
+            g.set_directed_edge(z, y);
+        }
+
+        // Orient edges according to orientation rules.
+        let g = Self::apply_rules_until_3(g);
+
+        g
+    }
+}
+
+impl<'a, T> PCStable<'a, T>
+where
+    T: ConditionalIndependence + Sync + 'a,
+{
     fn par_skeleton(&self) -> (UGraph, SepSets) {
         // Set complete graph
         let mut g = UGraph::complete(self.test.labels());
@@ -133,60 +303,11 @@ where
         (g, sepsets)
     }
 
-    /// Perform skeleton discovery given test.
-    #[inline]
-    pub fn call_skeleton(&self) -> UGraph {
-        self.skeleton().0
-    }
-
-    /// Perform parallel skeleton discovery given test.
-    #[inline]
-    pub fn par_call_skeleton(&self) -> UGraph {
-        self.par_skeleton().0
-    }
-
-    /// Perform discovery given a test.
-    /// Firstly, it performs skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
-    #[inline]
-    pub fn call(&self) -> PGraph {
-        // Perform skeleton discovery
-        let (g, sepsets) = self.skeleton();
-        // FIXME: Cast the graph to a partially directed graph
-        let mut g: PGraph = todo!(); // g.into();
-
-        // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
-        let triples: Vec<_> = V!(g)
-            .flat_map(|y| {
-                std::iter::repeat(y)
-                    .zip(Adj!(g, y).combinations(2))
-                    .map(|(y, xz)| (xz[0], y, xz[1]))
-                    .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
-            })
-            .collect();
-
-        // For every unshielded triple ...
-        for (x, y, z) in triples {
-            // ... if one of the edges is already directed ...
-            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
-                // ... skip this triple.
-                continue;
-            }
-            // Otherwise, the triple is a v-structure.
-            g.set_directed_edge(x, y);
-            g.set_directed_edge(z, y);
-        }
-
-        g
-    }
-
-    /// Perform parallel discovery given a test.
-    /// Firstly, it performs parallel skeleton discovery and then orients v-structures leveraging discovery implied separation sets.
-    #[inline]
     pub fn par_call(&self) -> PGraph {
         // Perform skeleton discovery
         let (g, sepsets) = self.par_skeleton();
-        // FIXME: Cast the graph to a partially directed graph
-        let mut g: PGraph = todo!(); // g.into();
+        // Cast the graph to a partially directed graph
+        let mut g = PGraph::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
@@ -209,6 +330,9 @@ where
             g.set_directed_edge(x, y);
             g.set_directed_edge(z, y);
         }
+
+        // Orient edges according to orientation rules.
+        let g = Self::apply_rules_until_3(g);
 
         g
     }

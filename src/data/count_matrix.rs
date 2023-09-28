@@ -4,13 +4,11 @@ use rayon::prelude::*;
 use super::{CategoricalDataMatrix, DataSet, RavelMultiIndex};
 use crate::utils::axis_chunks_size;
 
-/// One-dimensional marginal contingency table.
 pub struct MarginalCountMatrix {
     n: Array1<usize>,
 }
 
 impl MarginalCountMatrix {
-    /// Build new count matrix with given data matrix and indices.
     #[inline]
     pub fn new(d: &CategoricalDataMatrix, x: usize) -> Self {
         // Get cardinalities.
@@ -30,7 +28,6 @@ impl MarginalCountMatrix {
         Self { n }
     }
 
-    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array1<usize> {
         &self.n
@@ -44,7 +41,6 @@ impl From<MarginalCountMatrix> for Array1<usize> {
     }
 }
 
-/// Two-dimensional conditional contingency table.
 pub struct ConditionalCountMatrix {
     n: Array2<usize>,
 }
@@ -73,7 +69,6 @@ impl ConditionalCountMatrix {
         n
     }
 
-    /// Build new count matrix with given data matrix and indices.
     #[inline]
     pub fn new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
@@ -89,7 +84,6 @@ impl ConditionalCountMatrix {
         Self { n }
     }
 
-    /// Build new count matrix with given data matrix and indices in parallel.
     #[inline]
     pub fn par_new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
         // Get cardinalities.
@@ -110,7 +104,6 @@ impl ConditionalCountMatrix {
         Self { n }
     }
 
-    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -124,13 +117,11 @@ impl From<ConditionalCountMatrix> for Array2<usize> {
     }
 }
 
-/// Two-dimensional joint contingency table.
 pub struct JointCountMatrix {
     n: Array2<usize>,
 }
 
 impl JointCountMatrix {
-    /// Build new count matrix with given data matrix and indices.
     #[inline]
     pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize) -> Self {
         // Get cardinalities.
@@ -150,7 +141,6 @@ impl JointCountMatrix {
         Self { n }
     }
 
-    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array2<usize> {
         &self.n
@@ -164,13 +154,11 @@ impl From<JointCountMatrix> for Array2<usize> {
     }
 }
 
-/// Three-dimensional joint (conditional) contingency table.
 pub struct JointConditionalCountMatrix {
     n: Array3<usize>,
 }
 
 impl JointConditionalCountMatrix {
-    /// Build new count matrix with given data matrix and indices.
     #[inline]
     pub fn new(d: &CategoricalDataMatrix, x: usize, y: usize, z: &[usize]) -> Self {
         // Get cardinalities.
@@ -197,7 +185,6 @@ impl JointConditionalCountMatrix {
         Self { n }
     }
 
-    /// Get reference to underlying values.
     #[inline]
     pub const fn values(&self) -> &Array3<usize> {
         &self.n

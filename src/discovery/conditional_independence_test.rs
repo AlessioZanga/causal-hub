@@ -1,37 +1,32 @@
-use std::{fmt::Debug, iter::FusedIterator};
+use crate::models::ConditionalIndependence;
 
-use crate::models::Independence;
-
-/// Conditional Independence Test (CIT) trait.
-pub trait ConditionalIndependenceTest<'a>: Clone + Debug + Sync {
-    /// Labels iterator type.
-    type LabelsIter<'b>: Iterator<Item = &'b str> + ExactSizeIterator + FusedIterator
+pub trait ConditionalIndependenceTest {
+    type LabelsIter<'a>: Iterator<Item = &'a str>
     where
-        Self: 'b;
+        Self: 'a;
 
-    /// Compute (degree-of-freedom, statistic, p-value) of $X \mathrlap{\thinspace\perp}{\perp} \thinspace Y \mid \mathbf{Z}$.
+    fn labels(&self) -> Self::LabelsIter<'_>;
+
     fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64);
 
-    /// Returns `true` whether $H_0: X \mathrlap{\thinspace\perp}{\perp}_{\mathcal{P}} \thinspace Y \mid \mathbf{Z}$ is not rejected.
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 
-    /// Set significance level $\alpha$.
-    ///
-    /// # Panics
-    ///
-    /// If $\alpha$ is not in the (0, 1) interval.
     fn with_significance_level(self, alpha: f64) -> Self;
-
-    /// Returns data labels
-    fn labels(&self) -> Self::LabelsIter<'_>;
 }
 
-impl<'a, T> Independence for T
+impl<T> ConditionalIndependence for T
 where
-    T: ConditionalIndependenceTest<'a>,
+    T: ConditionalIndependenceTest,
 {
+    type LabelsIter<'a> = T::LabelsIter<'a> where T: 'a, Self: 'a;
+
     #[inline]
-    fn is_independent(&self, x: usize, y: usize, z: &[usize]) -> bool {
-        <Self as ConditionalIndependenceTest>::call(self, x, y, z)
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        ConditionalIndependenceTest::labels(self)
+    }
+
+    #[inline]
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
+        ConditionalIndependenceTest::call(self, x, y, z)
     }
 }

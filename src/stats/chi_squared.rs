@@ -9,7 +9,6 @@ use crate::{
     utils::nan_to_zero,
 };
 
-/// Chi Squared conditional independence test.
 #[derive(Clone, Debug)]
 pub struct ChiSquared<'a> {
     d: &'a CategoricalDataMatrix,
@@ -17,7 +16,6 @@ pub struct ChiSquared<'a> {
 }
 
 impl<'a> ChiSquared<'a> {
-    /// Construct Chi Squared conditional independence test with $\alpha = 0.05$ .
     #[inline]
     pub fn new(d: &'a CategoricalDataMatrix) -> Self {
         Self { d, alpha: 0.05 }
@@ -31,7 +29,7 @@ impl<'a> From<&'a CategoricalDataMatrix> for ChiSquared<'a> {
     }
 }
 
-impl<'a> ConditionalIndependenceTest<'a> for ChiSquared<'a> {
+impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
     type LabelsIter<'b> =
         Map<indexmap::map::Keys<'b, String, FxIndexSet<String>>, fn(&'b String) -> &'b str> where Self: 'b;
 

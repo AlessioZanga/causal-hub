@@ -5,14 +5,12 @@ use crate::{
     V,
 };
 
-/// Kullback-Leibler Divergence functor.
 pub struct KullbackLeiblerDivergence<'a, P, Q> {
     p: &'a P,
     q: &'a Q,
 }
 
 impl<'a, P, Q> KullbackLeiblerDivergence<'a, P, Q> {
-    /// Construct a new Kullback-Leibler Divergence functor.
     #[inline]
     pub const fn new(p: &'a P, q: &'a Q) -> Self {
         Self { p, q }
@@ -20,7 +18,6 @@ impl<'a, P, Q> KullbackLeiblerDivergence<'a, P, Q> {
 }
 
 impl<'a> KullbackLeiblerDivergence<'a, CategoricalBayesianNetwork, CategoricalBayesianNetwork> {
-    /// Compute the Kullback-Leibler divergence given two categorical Bayesian networks.
     pub fn call(&self) -> f64 {
         // Assert underlying graphs are the same.
         assert_eq!(

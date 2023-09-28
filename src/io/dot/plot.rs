@@ -9,29 +9,27 @@ use tempfile::NamedTempFile;
 use super::DOT;
 use crate::{io::File, prelude::Plot};
 
-/// Layout engine.
 #[derive(Clone, Copy, Debug, Default)]
 pub enum Layout {
-    /// Hierarchical or layered drawings of directed graphs.
     #[default]
     Dot,
-    /// "Spring model" layouts.
+
     Neato,
-    /// Force-Directed Placement.
+
     Fdp,
-    /// Scalable Force-Directed Placement.
+
     Sfdp,
-    /// Circular layout.
+
     Circo,
-    /// Radial layout.
+
     Twopi,
-    /// Pretty-print DOT graph file.
+
     Nop,
-    /// Pretty-print DOT graph file, assuming positions already known.
+
     Nop2,
-    /// Draws clustered graphs.
+
     Osage,
-    /// Draws map of clustered graph using a squarified treemap layout.
+
     Patchwork,
 }
 
@@ -54,119 +52,117 @@ impl From<Layout> for String {
     }
 }
 
-/// Output format.
 #[derive(Clone, Copy, Debug, Default)]
 pub enum Format {
-    /// Windows Bitmap.
     Bmp,
-    /// Graphviz Language.
+
     Canon,
-    /// Apple Core Graphics.
+
     Cgimage,
-    /// Image Map: Server-side and client-side.
+
     Cmap,
-    /// Image Map: Server-side and client-side.
+
     Cmapx,
-    /// Image Map: Server-side and client-side.
+
     CmapxNp,
-    /// Graphviz Language.
+
     Dot,
-    /// JavaScript Object Notation.
+
     DotJson,
-    /// Encapsulated PostScript.
+
     Eps,
-    /// OpenEXR.
+
     Exr,
-    /// Xfig.
+
     Fig,
-    /// LibGD.
+
     Gd,
-    /// LibGD.
+
     Gd2,
-    /// Graphics Interchange Format.
+
     Gif,
-    /// Formerly GTK+ / GIMP ToolKit.
+
     Gtk,
-    /// Graphviz Language.
+
     Gv,
-    /// Windows Icon.
+
     Ico,
-    /// Image Map: Server-side and client-side.
+
     Imap,
-    /// Image Map: Server-side and client-side.
+
     ImapNp,
-    /// Image Map: Server-side and client-side.
+
     Ismap,
-    /// nan.
+
     Jp2,
-    /// Joint Photographic Experts Group.
+
     Jpe,
-    /// Joint Photographic Experts Group.
+
     Jpeg,
-    /// Joint Photographic Experts Group.
+
     Jpg,
-    /// JavaScript Object Notation.
+
     Json,
-    /// JavaScript Object Notation.
+
     Json0,
-    /// Apple PICT.
+
     Pct,
-    /// Portable Document Format.
+
     #[default]
     Pdf,
-    /// Brian Kernighan's Diagram Language.
+
     Pic,
-    /// Apple PICT.
+
     Pict,
-    /// Simple, line-based language.
+
     Plain,
-    /// Simple, line-based language.
+
     PlainExt,
-    /// Portable Network Graphics.
+
     Png,
-    /// Persistence of Vision Raytracer (prototype).
+
     Pov,
-    /// Adobe PostScript.
+
     Ps,
-    /// Adobe PostScript for Portable Document Format.
+
     Ps2,
-    /// Photoshop.
+
     Psd,
-    /// Silicon Graphics Image.
+
     Sgi,
-    /// Scalable Vector Graphics.
+
     Svg,
-    /// Scalable Vector Graphics.
+
     Svgz,
-    /// Truevision TARGA.
+
     Tga,
-    /// Tag Image File Format.
+
     Tif,
-    /// Tag Image File Format.
+
     Tiff,
-    /// Tcl/Tk.
+
     Tk,
-    /// Vector Markup Language..
+
     Vml,
-    /// Vector Markup Language..
+
     Vmlz,
-    /// Virtual Reality Modeling Language.
+
     Vrml,
-    /// Wireless Bitmap.
+
     Wbmp,
-    /// WebP.
+
     Webp,
-    /// X11 Window.
+
     X11,
-    /// Graphviz Language.
+
     Xdot,
-    /// Graphviz Language.
+
     Xdot12,
-    /// Graphviz Language.
+
     Xdot14,
-    /// JavaScript Object Notation.
+
     XdotJson,
-    /// X11 Window.
+
     Xlib,
 }
 
@@ -235,7 +231,6 @@ impl From<Format> for String {
 }
 
 impl DOT {
-    /// Set [`Layout`] engine.
     pub fn with_layout(mut self, layout: Layout) -> Self {
         // Set layout engine.
         self.layout = layout;
@@ -243,7 +238,6 @@ impl DOT {
         self
     }
 
-    /// Set output [`Format`].
     pub fn with_format(mut self, format: Format) -> Self {
         // Set output format.
         self.format = format;
@@ -257,11 +251,6 @@ impl Plot for DOT {
 
     type Error = IOError;
 
-    /// Plot to path with given [`Layout`] and [`Format`].
-    ///
-    /// # Panics
-    ///
-    /// Require <a href = "https://graphviz.org/" target = "_blank">Graphviz</a> to work.
     fn plot<P>(self, path: P) -> Result<Self::Success, Self::Error>
     where
         P: Into<PathBuf>,

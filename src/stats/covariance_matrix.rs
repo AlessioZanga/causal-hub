@@ -5,18 +5,12 @@ use ndarray_stats::CorrelationExt;
 
 use crate::data::{DataSet, GaussianDataMatrix};
 
-/// (Sample) Covariance matrix $\Sigma$.
 #[derive(Clone, Debug)]
 pub struct CovarianceMatrix {
     sigma: Array2<f64>,
 }
 
 impl CovarianceMatrix {
-    /// Construct a new covariance matrix.
-    ///
-    /// # Panics
-    ///
-    /// The matrix must be squared, symmetric and non-negative.
     #[inline]
     pub fn new(sigma: Array2<f64>) -> Self {
         // Assert Sigma is square ...

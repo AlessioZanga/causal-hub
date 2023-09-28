@@ -5,21 +5,16 @@ use std::{
 
 use crate::{graphs::UndirectedGraph, Ne, V};
 
-/// Lexicographic depth-first search structure.
-///
-/// This structure contains the `predecessor` map.
-///
 pub struct LexicographicDepthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Given graph reference.
     g: &'a G,
-    /// Current index.
+
     index: usize,
-    /// To-be-visited queue.
+
     queue: HashMap<usize, VecDeque<usize>>,
-    /// Predecessor of each discovered vertex (except the source vertex).
+
     pub predecessor: HashMap<usize, usize>,
 }
 
@@ -27,53 +22,6 @@ impl<'a, G> LexicographicDepthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Build a LexDFS iterator.
-    ///
-    /// Build a LexDFS[^1] iterator for a given undirected graph.
-    ///
-    /// This will execute the [`Forest`](super::Traversal) variant of the algorithm.
-    ///
-    /// [^1]: [Corneil, D. G., & Krueger, R. M. (2008). A unified view of graph searching.](https://scholar.google.com/scholar?q=A+unified+view+of+graph+searching)
-    ///
-    /// # Panics
-    ///
-    /// Panics if the (optional) source vertex is not in the graph.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::prelude::*;
-    /// use causal_hub::graphs::algorithms::traversal::LexDFS;
-    ///
-    /// // Define edge set.
-    /// let e = EdgeList::from([
-    ///     ("A", "B"), ("A", "C"), ("A", "E"),
-    ///     ("B", "C"), ("B", "D"),
-    ///     ("C", "D"), ("C", "E")
-    /// ]);
-    ///
-    /// // Build a new graph.
-    /// let mut g = Graph::from(e);
-    ///
-    /// // Build a LexDFS iterator.
-    /// let mut search = LexDFS::from(&g);
-    ///
-    /// // Check iterator order.
-    /// assert_eq!(search.next(), Some(0));
-    /// assert_eq!(search.next(), Some(1));
-    /// assert_eq!(search.next(), Some(2));
-    /// assert_eq!(search.next(), Some(3));
-    /// assert_eq!(search.next(), Some(4));
-    /// assert_eq!(search.next(), None);
-    ///
-    /// // Check visiting tree.
-    /// assert_eq!(search.predecessor.get(&0), None);
-    /// assert_eq!(search.predecessor[&1], 0);
-    /// assert_eq!(search.predecessor[&2], 1);
-    /// assert_eq!(search.predecessor[&3], 2);
-    /// assert_eq!(search.predecessor[&4], 2);
-    /// ```
-    ///
     pub fn new(g: &'a G, x: Option<usize>) -> Self {
         // Initialize default search object.
         let mut search = Self {
@@ -162,10 +110,6 @@ impl<'a, G> From<&'a G> for LexicographicDepthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Builds a search object from a given graph, without a source vertex.
-    ///
-    /// The first vertex of the vertex set is chosen as source vertex.
-    ///
     fn from(g: &'a G) -> Self {
         Self::new(g, None)
     }
@@ -175,16 +119,9 @@ impl<'a, G> From<(&'a G, usize)> for LexicographicDepthFirstSearch<'a, G>
 where
     G: UndirectedGraph,
 {
-    /// Builds a search object from a given graph, with a source vertex.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the source vertex is not in the graph.
-    ///
     fn from((g, x): (&'a G, usize)) -> Self {
         Self::new(g, Some(x))
     }
 }
 
-/// Alias for lexicographic depth-first search.
 pub type LexDFS<'a, G> = LexicographicDepthFirstSearch<'a, G>;

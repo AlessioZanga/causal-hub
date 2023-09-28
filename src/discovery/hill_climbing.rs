@@ -17,14 +17,12 @@ use crate::{
     Ch, Pa, E, L, V,
 };
 
-/// Local cache update type.
 type CU<K> = Vec<(K, f64)>;
-/// Local edge key cache type.
+
 type KE = Option<(usize, Vec<usize>)>;
 
-/// Local edge space type
 type E = FxIndexSet<(usize, usize)>;
-/// Local operations edge space type.
+
 type ES = (
     E, // To-be-added space,
     E, // To-be-deleted space,
@@ -32,23 +30,21 @@ type ES = (
 );
 
 #[derive(Clone, Copy, Debug)]
-/// Local edge pseudo-enumerator for generics.
+
 struct Op;
-/// Set value of constants.
+
 impl Op {
-    /// Add edge operation.
     const ADD: u8 = 0;
-    /// Delete edge operation.
+
     const DEL: u8 = 1;
-    /// Reverse edge operation.
+
     const REV: u8 = 2;
 }
 
-/// Local action (operation, edge) type.
 type A = (usize, usize, u8);
 
 #[derive(Clone, Debug)]
-/// Hill-climbing functor.
+
 pub struct HillClimbing<'a, D, K, G, S, T, const PARALLEL: bool>
 where
     S: ScoringCriterion<D, G, T>,
@@ -241,7 +237,6 @@ where
     G: Graph,
     S: ScoringCriterion<D, G, T>,
 {
-    /// Apply edge operation to given graph.
     #[inline]
     fn apply(in_degree: &mut [usize], mut g: G, x: usize, y: usize, a: u8) -> G {
         // Apply operation.
@@ -272,14 +267,13 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.vertex_to_label(x),
-            g.vertex_to_label(y),
+            &g[x],
+            &g[y],
         );
 
         g
     }
 
-    /// Update edge space for each edge operation.
     #[inline]
     fn update((mut add, mut del, mut rev): ES, x: usize, y: usize, a: u8) -> ES {
         // Apply operation.
@@ -386,7 +380,7 @@ where
             // Log shuffled columns.
             debug!(
                 "Seed is set, shuffled columns as: [{}]",
-                n.iter().map(|&x| g.vertex_to_label(x)).format(", ")
+                n.iter().map(|&x| &g[x]).format(", ")
             );
         }
 
@@ -417,7 +411,6 @@ where
         ((add, del, rev), in_degree, g)
     }
 
-    /// Check if edge operation is consistent with prior knowledge and acyclicity.
     #[inline]
     fn is_valid<const OP: u8>(&self, in_degree: &[usize], g: &G, x: usize, y: usize) -> bool {
         // Check validity depending on operation.
@@ -448,8 +441,8 @@ where
                     Op::REV => "Rev",
                     _ => panic!("Unknown operation code"),
                 },
-                g.vertex_to_label(x),
-                g.vertex_to_label(y),
+                &g[x],
+                &g[y],
             );
         }
 
@@ -457,7 +450,6 @@ where
     }
 }
 
-/// Search hill-climbing edge space.
 macro_rules! search {
     (
         $PARALLEL: ident,
@@ -552,7 +544,6 @@ where
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: DecomposableScoringCriterion<D, G>,
 {
-    /// Evaluate delta score of edge operation on given graph.
     #[inline]
     fn eval<const OP: u8>(
         &self,
@@ -618,15 +609,14 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.vertex_to_label(x),
-            g.vertex_to_label(y),
+            &g[x],
+            &g[y],
             delta_star
         );
 
         (((x, y, OP), delta_star), s_star)
     }
 
-    /// Search for best operation given current graph and edges space.
     #[inline]
     fn search(
         &self,
@@ -742,7 +732,6 @@ where
     G: DirectedGraph<Direction = directions::Directed> + PathGraph,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
-    /// Evaluate delta score of edge operation on given graph.
     #[inline]
     fn eval<const OP: u8>(
         &self,
@@ -795,15 +784,14 @@ where
                 Op::REV => "Rev",
                 _ => panic!("Unknown operation code"),
             },
-            g.vertex_to_label(x),
-            g.vertex_to_label(y),
+            &g[x],
+            &g[y],
             delta_star
         );
 
         (((x, y, OP), delta_star), s_star)
     }
 
-    /// Search for best operation given current graph and edges space.
     #[inline]
     fn search(
         &self,
@@ -880,7 +868,6 @@ where
     }
 }
 
-/// Alias for the single-thread Hill-Climbing algorithm.
 pub type HC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, false>;
-/// Alias for the multi-thread Hill-Climbing algorithm.
+
 pub type ParallelHC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, true>;

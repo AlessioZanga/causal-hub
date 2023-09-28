@@ -13,7 +13,6 @@ use crate::{
     stats::{CovarianceMatrix, PartialCorrelation},
 };
 
-/// Fisher's Z conditional independence test.
 #[derive(Clone, Debug)]
 pub struct FisherZ {
     rho: PartialCorrelation,
@@ -23,7 +22,6 @@ pub struct FisherZ {
 }
 
 impl<'a> FisherZ {
-    /// Construct Fisher's Z conditional independence test with $\alpha = 0.05$ .
     #[inline]
     pub fn new(d: &'a GaussianDataMatrix) -> Self {
         // Compute covariance matrix.
@@ -47,7 +45,7 @@ impl<'a> From<&'a GaussianDataMatrix> for FisherZ {
     }
 }
 
-impl<'a> ConditionalIndependenceTest<'a> for FisherZ {
+impl<'a> ConditionalIndependenceTest for FisherZ {
     type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
 
     #[inline]

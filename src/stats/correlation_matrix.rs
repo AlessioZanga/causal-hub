@@ -7,19 +7,12 @@ use ndarray_stats::CorrelationExt;
 use super::CovarianceMatrix;
 use crate::data::{DataSet, GaussianDataMatrix};
 
-/// Correlation matrix $\Rho$.
 #[derive(Clone, Debug)]
 pub struct CorrelationMatrix {
     rho: Array2<f64>,
 }
 
 impl CorrelationMatrix {
-    /// Construct a new correlation matrix.
-    ///
-    /// # Panics
-    ///
-    /// The matrix must be squared, symmetric, diagonal is +1 and
-    /// all other values are in the [-1, +1] interval.
     #[inline]
     pub fn new(rho: Array2<f64>) -> Self {
         // Assert Rho is square ...

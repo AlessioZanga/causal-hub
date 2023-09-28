@@ -1,6 +1,9 @@
 use std::{
+    cmp::Ordering,
     fmt::{Debug, Display},
     hash::Hash,
+    iter::FusedIterator,
+    ops::Index,
 };
 
 use indexmap::IndexSet;
@@ -8,7 +11,10 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::graphs::{Graph, Undirected};
+use crate::{
+    graphs::{Graph, Undirected},
+    prelude::FxIndexSet,
+};
 
 /// Define the `UndirectedDenseAdjacencyMatrix` struct using a dense adjacency matrix from the `ndarray` crate.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -32,7 +38,7 @@ impl Display for UndirectedDenseAdjacencyMatrix {
             f,
             "V = {{{}}}, ",
             self.vertices()
-                .map(|x| format!("\"{}\"", self.vertex_to_label(x)))
+                .map(|x| format!("\"{}\"", &self[x]))
                 .join(", ")
         )?;
 
@@ -41,16 +47,70 @@ impl Display for UndirectedDenseAdjacencyMatrix {
             f,
             "E = {{{}}}",
             self.edges()
-                .map(|(x, y)| format!(
-                    "(\"{}\", \"{}\")",
-                    self.vertex_to_label(x),
-                    self.vertex_to_label(y)
-                ))
+                .map(|(x, y)| format!("(\"{}\", \"{}\")", &self[x], &self[y]))
                 .join(", ")
         )?;
 
         // Write ending character.
         write!(f, " }}")
+    }
+}
+
+// Implement the `PartialOrd` trait for the `UndirectedDenseAdjacencyMatrix` struct.
+impl PartialOrd for UndirectedDenseAdjacencyMatrix {
+    /// Compare two graphs.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|^2)`.
+    ///
+    /// # Notes
+    /// Return `None` if the graphs are not comparable.
+    ///
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Compare the vertices.
+        let vertices = iter_set::cmp(self.labels(), other.labels());
+        // If the vertices are not comparable, return `None`.
+        if vertices.is_none() {
+            return None;
+        }
+
+        // Compare the edges.
+        let edges = iter_set::cmp(self.edges(), other.edges());
+        // If the edges are not comparable, return `None`.
+        if edges.is_none() {
+            return None;
+        }
+
+        // Unwrap the vertices and edges comparison.
+        let (vertices, edges) = (vertices.unwrap(), edges.unwrap());
+
+        // If the vertices are equal, return the edges.
+        if vertices.is_eq() {
+            return Some(edges);
+        }
+        // If the edges are equal, return the vertices.
+        if edges.is_eq() {
+            return Some(vertices);
+        }
+        // If the vertices and the edges are the same, return arbitrarily.
+        if vertices.eq(&edges) {
+            return Some(vertices);
+        }
+
+        // Otherwise, return `None`.
+        None
+    }
+}
+
+// Implement the `Index` trait for the `UndirectedDenseAdjacencyMatrix` struct.
+impl Index<usize> for UndirectedDenseAdjacencyMatrix {
+    type Output = str;
+
+    #[inline]
+    fn index(&self, x: usize) -> &Self::Output {
+        // Get the vertex label.
+        self.vertex_to_label(x)
     }
 }
 
@@ -140,6 +200,9 @@ impl<'a> Iterator for EdgesIterator<'a> {
 // Implement the `ExactSizeIterator` trait for the `EdgesIterator` iterator.
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
+// Implement the `FusedIterator` trait for the `EdgesIterator` iterator.
+impl<'a> FusedIterator for EdgesIterator<'a> {}
+
 /// Define the `AdjacentsIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
@@ -192,6 +255,9 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
         self.iter.next()
     }
 }
+
+// Implement the `FusedIterator` trait for the `AdjacentsIterator` iterator.
+impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
 // Implement the `Graph` trait for the `UndirectedDenseAdjacencyMatrix` struct.
 impl Graph for UndirectedDenseAdjacencyMatrix {
@@ -1012,6 +1078,81 @@ impl Graph for UndirectedDenseAdjacencyMatrix {
         // Check if the vertices are adjacent.
         self.adjacency_matrix[[x, y]]
     }
+
+    // Get the subgraph induced by the vertices indices iterator.
+    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        // Get the vertices labels.
+        let vertices = vertices.into_iter().map(|x| &self[x]);
+        // Ge the edges labels.
+        let edges = edges
+            .into_iter()
+            .inspect(|&(x, y)| {
+                assert!(
+                    self.has_edge(x, y),
+                    "The edge ({x}, {y}) does not exist in the supergraph."
+                )
+            })
+            .map(|(x, y)| (&self[x], &self[y]));
+
+        // Create the new graph.
+        Self::new(vertices, edges)
+    }
+
+    // Get the subgraph induced by the vertices indices iterator.
+    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        // Collect the vertices.
+        let vertices: FxIndexSet<_> = vertices.into_iter().collect();
+        // Get the edges labels.
+        let edges = self
+            .edges()
+            .filter(|(x, y)| vertices.contains(x) && vertices.contains(y))
+            .map(|(x, y)| (&self[x], &self[y]))
+            .collect_vec();
+        // Get the vertices labels.
+        let vertices = vertices.into_iter().map(|x| &self[x]);
+
+        // Create the new graph.
+        Self::new(vertices, edges)
+    }
+
+    // Get the subgraph induced by the edges indices iterator.
+    fn subgraph_by_edges<J>(&self, edges: J) -> Self
+    where
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        // Get the edges labels.
+        let edges = edges
+            .into_iter()
+            .inspect(|&(x, y)| {
+                assert!(
+                    self.has_edge(x, y),
+                    "The edge ({x}, {y}) does not exist in the supergraph."
+                )
+            })
+            .map(|(x, y)| (&self[x], &self[y]));
+
+        // Create the new graph.
+        Self::new([], edges)
+    }
+
+    // Check if the graph is a subgraph of a given graph.
+    #[inline]
+    fn is_subgraph(&self, other: &Self) -> bool {
+        self <= other
+    }
+
+    // Check if the graph is a supergraph of a given graph.
+    #[inline]
+    fn is_supergraph(&self, other: &Self) -> bool {
+        self >= other
+    }
 }
 
 /// Alias for the `UndirectedDenseAdjacencyMatrix` struct.
@@ -1021,6 +1162,7 @@ pub type UGraph = UndirectedDenseAdjacencyMatrix;
 #[cfg(test)]
 mod tests {
     use std::{
+        cmp::Ordering,
         collections::hash_map::DefaultHasher,
         hash::{Hash, Hasher},
     };
@@ -1207,6 +1349,98 @@ mod tests {
         graph_i.del_edge(0, 1);
         // Assert the graph is not equal to the modified graph.
         assert_ne!(graph, graph_i);
+    }
+
+    // Test the `partial_cmp` method.
+    #[test]
+    fn partial_cmp() {
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C"];
+        // Initialize the edges labels.
+        let edges = vec![("A", "B"), ("B", "C")];
+
+        // Create a new graph.
+        let graph = UGraph::new(vertices.clone(), edges.clone());
+        // Assert the graph is equal to the cloned graph.
+        assert_eq!(graph.partial_cmp(&graph.clone()), Some(Ordering::Equal));
+
+        // Create a new graph.
+        let mut subgraph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete a vertex.
+        subgraph.del_vertex(0);
+        // Assert the graph is not equal to the modified graph.
+        assert_eq!(graph.partial_cmp(&subgraph), Some(Ordering::Greater));
+        assert!(graph.is_supergraph(&subgraph));
+        assert_eq!(subgraph.partial_cmp(&graph), Some(Ordering::Less));
+        assert!(subgraph.is_subgraph(&graph));
+
+        // Create a new graph.
+        let mut subgraph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete an edge.
+        subgraph.del_edge(0, 1);
+        // Assert the graph is not equal to the modified graph.
+        assert_eq!(graph.partial_cmp(&subgraph), Some(Ordering::Greater));
+        assert!(graph.is_supergraph(&subgraph));
+        assert_eq!(subgraph.partial_cmp(&graph), Some(Ordering::Less));
+        assert!(subgraph.is_subgraph(&graph));
+
+        // Create a new graph.
+        let mut supergraph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Add a vertex.
+        supergraph.add_vertex("D");
+        // Assert the graph is not equal to the modified graph.
+        assert_eq!(graph.partial_cmp(&supergraph), Some(Ordering::Less));
+        assert!(graph.is_subgraph(&supergraph));
+        assert_eq!(supergraph.partial_cmp(&graph), Some(Ordering::Greater));
+        assert!(supergraph.is_supergraph(&graph));
+
+        // Create a new graph.
+        let mut supergraph = UGraph::new(vertices.clone(), edges.clone());
+
+        // Add an edge.
+        supergraph.add_edge(0, 2);
+        // Assert the graph is not equal to the modified graph.
+        assert_eq!(graph.partial_cmp(&supergraph), Some(Ordering::Less));
+        assert!(graph.is_subgraph(&supergraph));
+        assert_eq!(supergraph.partial_cmp(&graph), Some(Ordering::Greater));
+        assert!(supergraph.is_supergraph(&graph));
+
+        // Create two non-comparable graphs.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+        let mut graph_j = UGraph::new(vertices.clone(), edges.clone());
+
+        // Add a vertex.
+        graph_i.add_vertex("D");
+        // Add a vertex.
+        graph_j.add_vertex("E");
+
+        // Assert the graphs are not comparable.
+        assert_eq!(graph_i.partial_cmp(&graph_j), None);
+        assert!(!graph_i.is_subgraph(&graph_j));
+        assert!(!graph_j.is_subgraph(&graph_i));
+        assert_eq!(graph_j.partial_cmp(&graph_i), None);
+        assert!(!graph_i.is_supergraph(&graph_j));
+        assert!(!graph_j.is_supergraph(&graph_i));
+
+        // Create two non-comparable graphs.
+        let mut graph_i = UGraph::new(vertices.clone(), edges.clone());
+        let mut graph_j = UGraph::new(vertices.clone(), edges.clone());
+
+        // Delete an edge.
+        graph_i.del_edge(0, 1);
+        // Delete an edge.
+        graph_j.del_edge(1, 2);
+
+        // Assert the graphs are not comparable.
+        assert_eq!(graph_i.partial_cmp(&graph_j), None);
+        assert!(!graph_i.is_subgraph(&graph_j));
+        assert!(!graph_j.is_subgraph(&graph_i));
+        assert_eq!(graph_j.partial_cmp(&graph_i), None);
+        assert!(!graph_i.is_supergraph(&graph_j));
+        assert!(!graph_j.is_supergraph(&graph_i));
     }
 
     // Test the `hash` method.
@@ -2518,7 +2752,183 @@ mod tests {
         assert!(!graph.is_adjacent(0, 0));
     }
 
-    /// Test the `undirected_size` method.
+    // Test the `subgraph` method, should panic.
+    #[test]
+    #[should_panic]
+    fn subgraph_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Get the subgraph.
+        graph.subgraph([0, 1, 2], [(0, 1), (1, 2)]);
+    }
+
+    // Test the `subgraph` method.
+    #[test]
+    fn subgraph() {
+        // Create a new graph.
+        let graph = UGraph::new(
+            vec!["A", "B", "C", "D"],
+            vec![
+                ("A", "B"),
+                ("A", "C"),
+                ("A", "D"),
+                ("B", "C"),
+                ("B", "D"),
+                ("C", "D"),
+            ],
+        );
+
+        // Get the subgraph.
+        let subgraph = graph.subgraph([0, 1, 3], [(0, 1), (1, 3)]);
+
+        // Check the subgraph order.
+        assert_eq!(subgraph.order(), 3);
+        // Check the subgraph size.
+        assert_eq!(subgraph.size(), 2);
+        // Check the vertices labels.
+        assert_eq!(L!(subgraph).collect_vec(), ["A", "B", "D"]);
+        // Check the vertices indices.
+        assert_eq!(V!(subgraph).collect_vec(), [0, 1, 2]);
+        // Check the edges indices.
+        assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1), (1, 2)]);
+    }
+
+    // Test the `subgraph_by_vertices` method, should panic.
+    #[test]
+    #[should_panic]
+    fn subgraph_by_vertices_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Get the subgraph.
+        graph.subgraph_by_vertices([0, 1, 2]);
+    }
+
+    // Test the `subgraph_by_vertices` method.
+    #[test]
+    fn subgraph_by_vertices() {
+        // Create a new graph.
+        let graph = UGraph::new(
+            vec!["A", "B", "C", "D"],
+            vec![
+                ("A", "B"),
+                ("A", "C"),
+                ("A", "D"),
+                ("B", "C"),
+                ("B", "D"),
+                ("C", "D"),
+            ],
+        );
+
+        // Get the subgraph.
+        let subgraph = graph.subgraph_by_vertices([0, 1, 3]);
+
+        // Check the subgraph order.
+        assert_eq!(subgraph.order(), 3);
+        // Check the subgraph size.
+        assert_eq!(subgraph.size(), 3);
+        // Check the vertices labels.
+        assert_eq!(L!(subgraph).collect_vec(), ["A", "B", "D"]);
+        // Check the vertices indices.
+        assert_eq!(V!(subgraph).collect_vec(), [0, 1, 2]);
+        // Check the edges indices.
+        assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1), (0, 2), (1, 2)]);
+    }
+
+    // Test the `subgraph_by_edges` method, should panic.
+    #[test]
+    #[should_panic]
+    fn subgraph_by_edges_should_panic() {
+        // Create a new null graph.
+        let graph = UGraph::null();
+
+        // Get the subgraph.
+        graph.subgraph_by_edges([(0, 1), (1, 2)]);
+    }
+
+    // Test the `subgraph_by_edges` method.
+    #[test]
+    fn subgraph_by_edges() {
+        // Create a new graph.
+        let graph = UGraph::new(
+            vec!["A", "B", "C", "D"],
+            vec![
+                ("A", "B"),
+                ("A", "C"),
+                ("A", "D"),
+                ("B", "C"),
+                ("B", "D"),
+                ("C", "D"),
+            ],
+        );
+
+        // Get the subgraph.
+        let subgraph = graph.subgraph_by_edges([(0, 1), (1, 3)]);
+
+        // Check the subgraph order.
+        assert_eq!(subgraph.order(), 3);
+        // Check the subgraph size.
+        assert_eq!(subgraph.size(), 2);
+        // Check the vertices labels.
+        assert_eq!(L!(subgraph).collect_vec(), ["A", "B", "D"]);
+        // Check the vertices indices.
+        assert_eq!(V!(subgraph).collect_vec(), [0, 1, 2]);
+        // Check the edges indices.
+        assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1), (1, 2)]);
+    }
+
+    // Test the `is_subgraph` method.
+    #[test]
+    fn is_subgraph() {
+        // Create a new graph.
+        let graph = UGraph::new(
+            vec!["A", "B", "C", "D"],
+            vec![
+                ("A", "B"),
+                ("A", "C"),
+                ("A", "D"),
+                ("B", "C"),
+                ("B", "D"),
+                ("C", "D"),
+            ],
+        );
+
+        // Get the subgraph.
+        let subgraph = graph.subgraph_by_vertices([0, 1, 3]);
+
+        // Check if the subgraph is a subgraph.
+        assert!(subgraph.is_subgraph(&graph));
+        // Check if the graph is not a subgraph.
+        assert!(!graph.is_subgraph(&subgraph));
+    }
+
+    // Test the `is_supergraph` method.
+    #[test]
+    fn is_supergraph() {
+        // Create a new graph.
+        let graph = UGraph::new(
+            vec!["A", "B", "C", "D"],
+            vec![
+                ("A", "B"),
+                ("A", "C"),
+                ("A", "D"),
+                ("B", "C"),
+                ("B", "D"),
+                ("C", "D"),
+            ],
+        );
+
+        // Get the subgraph.
+        let subgraph = graph.subgraph_by_vertices([0, 1, 3]);
+
+        // Check if the graph is a supergraph.
+        assert!(graph.is_supergraph(&subgraph));
+        // Check if the subgraph is not a supergraph.
+        assert!(!subgraph.is_supergraph(&graph));
+    }
+
+    // Test the `undirected_size` method.
     #[test]
     fn undirected_size() {
         // Initialize the vertices labels.

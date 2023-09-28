@@ -2,12 +2,10 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::{graphs::DirectedGraph, Ch, V};
 
-/// Topological sort search structure.
 pub struct TopologicalSort<'a, G>
 where
     G: DirectedGraph,
 {
-    /// Given graph reference.
     g: &'a G,
     // To-be-visited queue.
     queue: VecDeque<usize>,
@@ -19,15 +17,6 @@ impl<'a, G> TopologicalSort<'a, G>
 where
     G: DirectedGraph,
 {
-    /// Build a TopologicalSort iterator.
-    ///
-    /// Build a TopologicalSort[^1] iterator for a given directed graph.
-    ///
-    /// # Panics
-    ///
-    /// If the graph is cyclic, this iterator panics while unrolling.
-    /// [^1]: [Kahn, A. B. (1962). Topological sorting of large networks. Communications of the ACM, 5(11), 558-562.](https://scholar.google.com/scholar?q=Topological+sorting+of+large+networks)
-    ///
     pub fn new(g: &'a G) -> Self {
         // Initialize default search object.
         let mut search = Self {
@@ -102,8 +91,6 @@ impl<'a, G> From<&'a G> for TopologicalSort<'a, G>
 where
     G: DirectedGraph,
 {
-    /// Builds a search object from a given graph.
-    ///
     fn from(g: &'a G) -> Self {
         Self::new(g)
     }

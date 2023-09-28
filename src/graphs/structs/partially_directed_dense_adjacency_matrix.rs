@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{cmp::Ordering, fmt::Display, iter::FusedIterator, ops::Index};
 
 use iter_set::{classify, intersection, Classify, Inclusion};
 use itertools::Itertools;
@@ -27,7 +27,7 @@ impl Display for PartiallyDirectedDenseAdjacencyMatrix {
             f,
             "V = {{{}}}, ",
             self.vertices()
-                .map(|x| format!("\"{}\"", self.vertex_to_label(x)))
+                .map(|x| format!("\"{}\"", &self[x]))
                 .join(", ")
         )?;
 
@@ -36,16 +36,70 @@ impl Display for PartiallyDirectedDenseAdjacencyMatrix {
             f,
             "E = {{{}}}",
             self.edges()
-                .map(|(x, y)| format!(
-                    "(\"{}\", \"{}\")",
-                    self.vertex_to_label(x),
-                    self.vertex_to_label(y)
-                ))
+                .map(|(x, y)| format!("(\"{}\", \"{}\")", &&self[x], &self[y]))
                 .join(", ")
         )?;
 
         // Write ending character.
         write!(f, " }}")
+    }
+}
+
+// Implement the `Index` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+impl Index<usize> for PartiallyDirectedDenseAdjacencyMatrix {
+    type Output = str;
+
+    #[inline]
+    fn index(&self, x: usize) -> &Self::Output {
+        // Get the vertex label.
+        self.vertex_to_label(x)
+    }
+}
+
+// Implement the `PartialOrd` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+impl PartialOrd for PartiallyDirectedDenseAdjacencyMatrix {
+    /// Compare two graphs.
+    ///
+    /// # Complexity
+    /// - Time: `O(|V|^2)`,
+    /// - Space: `O(|V|^2)`.
+    ///
+    /// # Notes
+    /// Return `None` if the graphs are not comparable.
+    ///
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Compare the undirected graphs.
+        let undirected = self.undirected.partial_cmp(&other.undirected);
+        // If the undirected graphs are not comparable, return `None`.
+        if undirected.is_none() {
+            return None;
+        }
+
+        // Compare the directed graphs.
+        let directed = self.directed.partial_cmp(&other.directed);
+        // If the directed graphs are not comparable, return `None`.
+        if directed.is_none() {
+            return None;
+        }
+
+        // Unwrap the undirected and directed comparison.
+        let (undirected, directed) = (undirected.unwrap(), directed.unwrap());
+
+        // If the undirected are equal, return the directed.
+        if undirected.is_eq() {
+            return Some(directed);
+        }
+        // If the edges are equal, return the undirected.
+        if directed.is_eq() {
+            return Some(undirected);
+        }
+        // If the undirected and the directed are the same, return arbitrarily.
+        if undirected.eq(&directed) {
+            return Some(undirected);
+        }
+
+        // Otherwise, return `None`.
+        None
     }
 }
 
@@ -114,6 +168,9 @@ impl<'a> Iterator for EdgesIterator<'a> {
 // Implement the `ExactSizeIterator` trait for the `EdgesIterator` iterator.
 impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 
+// Implement the `FusedIterator` trait for the `EdgesIterator` iterator.
+impl<'a> FusedIterator for EdgesIterator<'a> {}
+
 /// Define the `AdjacentsIterator` iterator for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
@@ -147,6 +204,9 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
         self.iter.next()
     }
 }
+
+// Implement the `FusedIterator` trait for the `AdjacentsIterator` iterator.
+impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
 /// Implement the `Graph` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
 impl Graph for PartiallyDirectedDenseAdjacencyMatrix {
@@ -257,7 +317,7 @@ impl Graph for PartiallyDirectedDenseAdjacencyMatrix {
     #[inline]
     fn vertex_to_label(&self, x: usize) -> &str {
         // Delegate to the `vertex_to_label` method of the undirected graph.
-        self.undirected.vertex_to_label(x)
+        &self.undirected[x]
     }
 
     // Get the vertex index.
@@ -487,6 +547,43 @@ impl Graph for PartiallyDirectedDenseAdjacencyMatrix {
     fn is_adjacent(&self, x: usize, y: usize) -> bool {
         // Check if the vertices are adjacent in the graph.
         self.directed.is_adjacent(x, y) || self.undirected.is_adjacent(x, y)
+    }
+
+    // FIXME:
+    fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        todo!() // FIXME:
+    }
+
+    // FIXME:
+    fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        todo!() // FIXME:
+    }
+
+    // FIXME:
+    fn subgraph_by_edges<J>(&self, edges: J) -> Self
+    where
+        J: IntoIterator<Item = (usize, usize)>,
+    {
+        todo!() // FIXME:
+    }
+
+    // FIXME:
+    #[inline]
+    fn is_subgraph(&self, other: &Self) -> bool {
+        self <= other
+    }
+
+    // FIXME:
+    #[inline]
+    fn is_supergraph(&self, other: &Self) -> bool {
+        self >= other
     }
 }
 
