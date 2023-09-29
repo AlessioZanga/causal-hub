@@ -16,6 +16,9 @@ pub use evidential_bayesian_information_criterion::*;
 mod chi_squared;
 pub use chi_squared::*;
 
+mod conditional_independence_test;
+pub use conditional_independence_test::*;
+
 mod confusion_matrix;
 pub use confusion_matrix::*;
 

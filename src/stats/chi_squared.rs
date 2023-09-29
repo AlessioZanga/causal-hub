@@ -17,24 +17,12 @@ pub struct ChiSquared<'a> {
 
 impl<'a> ChiSquared<'a> {
     #[inline]
-    pub fn new(d: &'a CategoricalDataMatrix) -> Self {
-        Self { d, alpha: 0.05 }
+    pub fn new(d: &'a CategoricalDataMatrix, alpha: f64) -> Self {
+        Self { d, alpha }
     }
-}
-
-impl<'a> From<&'a CategoricalDataMatrix> for ChiSquared<'a> {
-    #[inline]
-    fn from(d: &'a CategoricalDataMatrix) -> Self {
-        Self::new(d)
-    }
-}
-
-impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
-    type LabelsIter<'b> =
-        Map<indexmap::map::Keys<'b, String, FxIndexSet<String>>, fn(&'b String) -> &'b str> where Self: 'b;
 
     #[inline]
-    fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
+    pub fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Get cardinalities.
         let cards = self.d.cardinality();
         // Compute the degree of freedom as (|X| - 1) * (|Y| - 1) * \Pi(|Z|).
@@ -75,6 +63,16 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
 
         (dof, stat, pval)
     }
+}
+
+impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
+    type LabelsIter<'b> =
+        Map<indexmap::map::Keys<'b, String, FxIndexSet<String>>, fn(&'b String) -> &'b str> where Self: 'b;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.d.labels_iter()
+    }
 
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
@@ -82,20 +80,5 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         let (_, _, pval) = self.eval(x, y, z);
 
         pval > self.alpha
-    }
-
-    #[inline]
-    fn with_significance_level(mut self, alpha: f64) -> Self {
-        // Assert alpha in (0, 1).
-        assert!((0. ..1.).contains(&alpha));
-        // Set significance level.
-        self.alpha = alpha;
-
-        self
-    }
-
-    #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
-        self.d.labels_iter()
     }
 }

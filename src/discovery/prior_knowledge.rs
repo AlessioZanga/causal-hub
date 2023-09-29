@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use crate::types::FxIndexSet;
 
-pub trait PriorKnowledge: Sync {
+pub trait PriorKnowledge {
     fn forbidden(&self) -> &FxIndexSet<(usize, usize)>;
 
     fn has_forbidden(&self, x: usize, y: usize) -> bool;

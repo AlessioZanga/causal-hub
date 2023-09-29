@@ -80,15 +80,15 @@ pub mod categorical {
 
         fn par_call<D, G, K, S>(data_set: &D, prior_knowledge: &K, scoring_criterion: &S) -> G
         where
-            D: DataSet,
-            G: DirectedGraph<Direction = directions::Directed> + PathGraph,
-            K: PriorKnowledge,
-            S: DecomposableScoringCriterion<D, G>,
+            D: DataSet + Sync,
+            G: DirectedGraph<Direction = directions::Directed> + PathGraph + Sync,
+            K: PriorKnowledge + Sync,
+            S: DecomposableScoringCriterion<D, G> + Sync,
         {
             // Initialize functor.
-            let hill_climbing = ParallelHC::new(scoring_criterion);
+            let hill_climbing = HC::new(scoring_criterion);
             // Call functor.
-            hill_climbing.call(data_set, prior_knowledge)
+            hill_climbing.par_call(data_set, prior_knowledge)
         }
 
         fn driver(c: &mut Criterion, model: &str) {

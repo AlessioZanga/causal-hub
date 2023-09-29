@@ -19,7 +19,7 @@ pub mod score_types {
     pub struct NonDecomposable;
 }
 
-pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
+pub trait ScoringCriterion<D, G, T> {
     fn call(&self, g: &G) -> f64;
 
     #[inline]
@@ -28,7 +28,7 @@ pub trait ScoringCriterion<D, G, T>: Clone + Debug + Sync {
     }
 }
 
-pub trait DecomposableScoringCriterion<D, G>: Clone + Debug + Sync {
+pub trait DecomposableScoringCriterion<D, G> {
     fn call(&self, x: usize, z: &[usize]) -> f64;
 
     #[inline]
@@ -67,10 +67,7 @@ pub struct ScoringCriterionCache<'a, D, G, S, T, K> {
     cache: FxIndexMap<K, f64>,
 }
 
-impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K>
-where
-    K: Sync,
-{
+impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K> {
     pub fn new(scoring_criterion: &'a S) -> Self {
         Self {
             _d: PhantomData,
@@ -85,7 +82,12 @@ where
     pub fn values(&self) -> Values<'_, K, f64> {
         self.cache.values()
     }
+}
 
+impl<'a, D, G, S, T, K> ScoringCriterionCache<'a, D, G, S, T, K>
+where
+    K: Sync,
+{
     #[inline]
     pub fn par_values(&self) -> ParValues<'_, K, f64> {
         self.cache.par_values()
@@ -122,8 +124,7 @@ where
 impl<'a, D, G, S> ScoringCriterion<D, G, score_types::NonDecomposable>
     for ScoringCriterionCache<'a, D, G, S, score_types::NonDecomposable, G>
 where
-    D: Clone + Debug + Sync,
-    G: Clone + Debug + Eq + Hash + Sync,
+    G: Clone + Eq + Hash,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
     fn call(&self, g: &G) -> f64 {
@@ -138,8 +139,7 @@ where
 
 impl<'a, D, G, S> ScoringCriterionCache<'a, D, G, S, score_types::NonDecomposable, G>
 where
-    D: Clone + Debug + Sync,
-    G: Clone + Debug + Eq + Hash + Sync,
+    G: Clone + Eq + Hash,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
     pub fn call(&self, g: &G) -> (Option<G>, f64) {
@@ -161,7 +161,6 @@ where
 impl<'a, D, G, S> DecomposableScoringCriterion<D, G>
     for ScoringCriterionCache<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>
 where
-    D: Clone + Debug + Sync,
     G: DirectedGraph<Direction = directions::Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
@@ -186,7 +185,6 @@ where
 
 impl<'a, D, G, S> ScoringCriterionCache<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>
 where
-    D: Clone + Debug + Sync,
     G: DirectedGraph<Direction = directions::Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {

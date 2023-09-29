@@ -22,7 +22,7 @@ mod tests {
         let g = DGraph::empty(d.labels_iter());
 
         // Initialize conditional independence test.
-        let test = StudentsT::from(&d);
+        let test = StudentsT::new(&d, 0.05);
 
         for (x, y, z, (true_dof, true_stat, true_pval)) in data {
             let x = g.label_to_vertex(&x);
@@ -55,14 +55,14 @@ mod tests {
         let g = DGraph::empty(d.labels_iter());
 
         // Initialize conditional independence test.
-        let test = StudentsT::from(&d);
+        let test = StudentsT::new(&d, 0.05);
 
         for (x, y, z, (_, _, true_pval)) in data {
             let x = g.label_to_vertex(&x);
             let y = g.label_to_vertex(&y);
             let z: Vec<_> = z.into_iter().map(|z| g.label_to_vertex(&z)).collect();
 
-            let pred_call = ConditionalIndependence::call(&test, x, y, &z);
+            let pred_call = test.call(x, y, &z);
 
             assert_eq!(pred_call, true_pval > 0.05);
         }

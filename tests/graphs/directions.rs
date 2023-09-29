@@ -26,7 +26,7 @@ mod undirected {
                 }
             }
             #[test]
-            fn get_undirected_edges_index() {
+            fn undirected_edges_index() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -56,7 +56,7 @@ mod undirected {
             }
 
             #[test]
-            fn get_neighbors() {
+            fn neighbors() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -305,7 +305,7 @@ mod directed {
             }
 
             #[test]
-            fn get_directed_edges_index() {
+            fn directed_edges_index() {
                 // Test for ...
                 let data = [
                     // ... zero edges,
@@ -327,15 +327,15 @@ mod directed {
                 // Test for each scenario.
                 for (i, j) in data {
                     let g = $G::new(vec![], i);
-                    assert!(dE!(g).is_sorted());
-                    assert!(dE!(g).eq(j
+                    assert!(g.directed_edges().is_sorted());
+                    assert!(g.directed_edges().eq(j
                         .iter()
                         .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                 }
             }
 
             #[test]
-            fn get_ancestors() {
+            fn ancestors() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -388,7 +388,7 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn get_ancestors_should_panic() {
+            fn ancestors_should_panic() {
                 let g = $G::null();
 
                 An!(g, 0);
@@ -454,7 +454,7 @@ mod directed {
             }
 
             #[test]
-            fn get_parents() {
+            fn parents() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -507,7 +507,7 @@ mod directed {
 
             #[test]
             #[should_panic]
-            fn get_parents_should_panic() {
+            fn parents_should_panic() {
                 let g = $G::null();
 
                 Pa!(g, 0);
@@ -573,7 +573,7 @@ mod directed {
             }
 
             #[test]
-            fn get_children() {
+            fn children() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -692,7 +692,7 @@ mod directed {
             }
 
             #[test]
-            fn get_descendants() {
+            fn descendants() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -851,7 +851,7 @@ mod directed {
             }
 
             #[test]
-            fn get_in_degree() {
+            fn in_degree() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -893,7 +893,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.get_in_degree(x), f);
+                    assert_eq!(g.in_degree(x), f);
                 }
             }
 
@@ -902,11 +902,11 @@ mod directed {
             fn in_degree_should_panic() {
                 let g = $G::null();
 
-                g.get_in_degree(0);
+                g.in_degree(0);
             }
 
             #[test]
-            fn get_out_degree() {
+            fn out_degree() {
                 // Test for ...
                 let data = [
                     // NOTE: This would panic!
@@ -948,7 +948,7 @@ mod directed {
                 for (i, j, (x, f)) in data {
                     let g = $G::new(i, j);
 
-                    assert_eq!(g.get_out_degree(x), f);
+                    assert_eq!(g.out_degree(x), f);
                 }
             }
 
@@ -957,7 +957,7 @@ mod directed {
             fn out_degree_should_panic() {
                 let g = $G::null();
 
-                g.get_out_degree(0);
+                g.out_degree(0);
             }
 
             #[test]
@@ -1042,7 +1042,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_undirected_edges_index() {
+                fn undirected_edges_index() {
                     // Test for ...
                     let data = [
                         // ... zero edges,
@@ -1072,7 +1072,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_neighbors() {
+                fn neighbors() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1290,7 +1290,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_directed_edges_index() {
+                fn directed_edges_index() {
                     // Test for ...
                     let data = [
                         // ... zero edges,
@@ -1312,15 +1312,15 @@ mod partially_directed {
                     // Test for each scenario.
                     for (i, j) in data {
                         let g = $G::new_pagraph(vec![], vec![], i);
-                        assert!(dE!(g).is_sorted());
-                        assert!(dE!(g).eq(j
+                        assert!(g.directed_edges().is_sorted());
+                        assert!(g.directed_edges().eq(j
                             .iter()
                             .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                     }
                 }
 
                 #[test]
-                fn get_ancestors() {
+                fn ancestors() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1373,7 +1373,7 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn get_ancestors_should_panic() {
+                fn ancestors_should_panic() {
                     let g = $G::null();
 
                     An!(g, 0);
@@ -1439,7 +1439,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_parents() {
+                fn parents() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1492,7 +1492,7 @@ mod partially_directed {
 
                 #[test]
                 #[should_panic]
-                fn get_parents_should_panic() {
+                fn parents_should_panic() {
                     let g = $G::null();
 
                     Pa!(g, 0);
@@ -1558,7 +1558,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_children() {
+                fn children() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1677,7 +1677,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_descendants() {
+                fn descendants() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1817,7 +1817,7 @@ mod partially_directed {
                 }
 
                 #[test]
-                fn get_in_degree() {
+                fn in_degree() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1859,7 +1859,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert_eq!(g.get_in_degree(x), f);
+                        assert_eq!(g.in_degree(x), f);
                     }
                 }
 
@@ -1868,11 +1868,11 @@ mod partially_directed {
                 fn in_degree_should_panic() {
                     let g = $G::null();
 
-                    g.get_in_degree(0);
+                    g.in_degree(0);
                 }
 
                 #[test]
-                fn get_out_degree() {
+                fn out_degree() {
                     // Test for ...
                     let data = [
                         // NOTE: This would panic!
@@ -1914,7 +1914,7 @@ mod partially_directed {
                     for (i, j, (x, f)) in data {
                         let g = $G::new_pagraph(i, [], j);
 
-                        assert_eq!(g.get_out_degree(x), f);
+                        assert_eq!(g.out_degree(x), f);
                     }
                 }
 
@@ -1923,7 +1923,7 @@ mod partially_directed {
                 fn out_degree_should_panic() {
                     let g = $G::null();
 
-                    g.get_out_degree(0);
+                    g.out_degree(0);
                 }
 
                 #[test]
@@ -2279,13 +2279,13 @@ mod partially_directed {
                         assert_eq!(g.size(), s);
                         assert!(V!(g).is_sorted());
                         assert!(g.undirected_edges().is_sorted());
-                        assert!(dE!(g).is_sorted());
+                        assert!(g.directed_edges().is_sorted());
                         assert!(E!(g).is_sorted());
                         assert!(V!(g).eq(v.into_iter().map(|x| g.label_to_vertex(x))));
                         assert!(g.undirected_edges().eq(ue
                             .iter()
                             .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
-                        assert!(dE!(g).eq(de
+                        assert!(g.directed_edges().eq(de
                             .iter()
                             .map(|(x, y)| (g.label_to_vertex(x), g.label_to_vertex(y)))));
                         assert!(E!(g).eq(e

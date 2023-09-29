@@ -16,6 +16,22 @@ pub trait DistributionEstimation {
         Z: IntoIterator<Item = &'a str>;
 }
 
+pub trait ParallelDistributionEstimation {
+    type JPD: JointProbabilityDistribution;
+
+    type CPD: ConditionalProbabilityDistribution;
+
+    fn par_marginal(&self, x: &str) -> Self::JPD;
+
+    fn par_joint<'a, X>(&self, x: X) -> Self::JPD
+    where
+        X: IntoIterator<Item = &'a str>;
+
+    fn par_conditional<'a, Z>(&self, x: &'a str, z: Z) -> Self::CPD
+    where
+        Z: IntoIterator<Item = &'a str>;
+}
+
 pub trait DistributionProjection {
     type Projection;
 

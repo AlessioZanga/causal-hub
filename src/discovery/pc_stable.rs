@@ -1,29 +1,39 @@
 use itertools::Itertools;
 use rayon::prelude::*;
 
-use crate::prelude::*;
+use crate::{
+    graphs::{
+        Graph, PartiallyDirected, PartiallyDirectedGraph, UGraph, Undirected, UndirectedGraph,
+    },
+    stats::ConditionalIndependenceTest,
+    types::{FxIndexSet, SepSets},
+    Adj, Ch, Ne, Pa, E, V,
+};
 
 #[derive(Clone, Debug)]
 
 pub struct PCStable<'a, T>
 where
-    T: ConditionalIndependence,
+    T: ConditionalIndependenceTest,
 {
     test: &'a T,
 }
 
 impl<'a, T> PCStable<'a, T>
 where
-    T: ConditionalIndependence + 'a,
+    T: ConditionalIndependenceTest + 'a,
 {
     #[inline]
     pub const fn new(test: &'a T) -> Self {
         Self { test }
     }
 
-    fn skeleton(&self) -> (UGraph, SepSets) {
+    pub fn skeleton<U>(&self) -> (U, SepSets)
+    where
+        U: UndirectedGraph<Direction = Undirected>,
+    {
         // Set complete graph
-        let mut g = UGraph::complete(self.test.labels());
+        let mut g = U::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -49,9 +59,12 @@ where
                     // If there exists at least one, set the flag to true
                     .inspect(|_| flag = true)
                     // Assign each edge its related sepset
-                    .find_map(|z| match self.test.call(x, y, &z) {
-                        true => Some((x, y, z.into_iter().collect())),
-                        _ => None,
+                    .find_map(|z| {
+                        if self.test.call(x, y, &z) {
+                            Some((x, y, z.into_iter().collect()))
+                        } else {
+                            None
+                        }
                     })
                 })
                 .collect();
@@ -206,11 +219,14 @@ where
         g
     }
 
-    pub fn call(&self) -> PGraph {
+    pub fn call<P>(&self) -> P
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
         // Perform skeleton discovery
-        let (g, sepsets) = self.skeleton();
+        let (g, sepsets): (UGraph, _) = self.skeleton();
         // Cast the graph to a partially directed graph
-        let mut g = PGraph::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
+        let mut g = P::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
@@ -243,11 +259,15 @@ where
 
 impl<'a, T> PCStable<'a, T>
 where
-    T: ConditionalIndependence + Sync + 'a,
+    T: ConditionalIndependenceTest + Sync,
 {
-    fn par_skeleton(&self) -> (UGraph, SepSets) {
+    pub fn par_skeleton<U>(&self) -> (U, SepSets)
+    where
+        U: UndirectedGraph<Direction = Undirected> + Sync,
+    {
         // Set complete graph
-        let mut g = UGraph::complete(self.test.labels());
+        // TODO: Generalize to other types of undirected graphs.
+        let mut g = U::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -264,7 +284,8 @@ where
             // 2. Its separation set (if any)
             // 3. A flag indicating if exists at least one set of adjacents with cardinality `c`
             let e_prime: Vec<(Option<(usize, usize, FxIndexSet<usize>)>, bool)> = E!(g)
-                .par_bridge()
+                .collect_vec()
+                .into_par_iter()
                 .map(|(x, y)| {
                     // Unset the flag.
                     let mut f = false;
@@ -277,9 +298,12 @@ where
                     // If there exists at least one, set the flag to true
                     .inspect(|_| f = true)
                     // Assign each edge its related sepset
-                    .find_map(|z| match self.test.call(x, y, &z) {
-                        true => Some((x, y, z.into_iter().collect())),
-                        _ => None,
+                    .find_map(|z| {
+                        if self.test.call(x, y, &z) {
+                            Some((x, y, z.into_iter().collect()))
+                        } else {
+                            None
+                        }
                     });
 
                     (xyz, f)
@@ -303,11 +327,15 @@ where
         (g, sepsets)
     }
 
-    pub fn par_call(&self) -> PGraph {
-        // Perform skeleton discovery
-        let (g, sepsets) = self.par_skeleton();
+    pub fn par_call<P>(&self) -> P
+    where
+        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+    {
+        // Perform skeleton discovery.
+        // TODO: Generalize to other types of undirected graphs.
+        let (g, sepsets): (UGraph, _) = self.par_skeleton();
         // Cast the graph to a partially directed graph
-        let mut g = PGraph::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
+        let mut g = P::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)

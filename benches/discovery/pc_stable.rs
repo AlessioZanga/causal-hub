@@ -17,14 +17,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::asia", |b| {
-                b.iter(|| pcs.call())
+                b.iter(|| {
+                    let _: PGraph = pcs.call();
+                })
             });
         }
 
@@ -38,14 +40,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::cancer", |b| {
-                b.iter(|| pcs.call())
+                b.iter(|| {
+                    let _: PGraph = pcs.call();
+                })
             });
         }
 
@@ -59,14 +63,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::call::survey", |b| {
-                b.iter(|| pcs.call())
+                b.iter(|| {
+                    let _: PGraph = pcs.call();
+                })
             });
         }
     }
@@ -89,14 +95,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::asia", |b| {
-                b.iter(|| pcs.par_call())
+                b.iter(|| {
+                    let _: PGraph = pcs.par_call();
+                })
             });
         }
 
@@ -110,14 +118,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::cancer", |b| {
-                b.iter(|| pcs.par_call())
+                b.iter(|| {
+                    let _: PGraph = pcs.par_call();
+                })
             });
         }
 
@@ -131,14 +141,16 @@ pub mod categorical {
             let d = CategoricalDataMatrix::from(d);
 
             // Create ChiSquared conditional independence test
-            let test = ChiSquared::new(&d).with_significance_level(ALPHA);
+            let test = ChiSquared::new(&d, ALPHA);
 
             // Create PC-Stable functor
             let pcs = PCStable::new(&test);
 
             // Benchmark
             c.bench_function("discovery::pc_stable::categorical::par_call::survey", |b| {
-                b.iter(|| pcs.par_call())
+                b.iter(|| {
+                    let _: PGraph = pcs.par_call();
+                })
             });
         }
     }

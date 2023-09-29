@@ -1,9 +1,10 @@
 use std::fmt::Debug;
 
-use super::{ConditionalIndependence, GeneralizedConditionalIndependence, MoralGraph};
+use super::MoralGraph;
 use crate::{
     graphs::directions,
     prelude::{DirectedGraph, Graph, UGraph, UndirectedGraph, CC},
+    stats::{ConditionalIndependenceTest, GeneralizedConditionalIndependenceTest},
     types::FxIndexSet,
     utils::UnionFind,
     Adj, An, Ch, Ne, L, V,
@@ -38,7 +39,7 @@ where
 }
 
 /* Implement u-separation */
-impl<'a, G> ConditionalIndependence for GraphicalSeparation<'a, G, directions::Undirected>
+impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, directions::Undirected>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
 {
@@ -52,11 +53,11 @@ where
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // TODO: Implement more efficient non-generalized version.
-        GeneralizedConditionalIndependence::call(self, [x], [y], z.iter().cloned())
+        GeneralizedConditionalIndependenceTest::call(self, [x], [y], z.iter().cloned())
     }
 }
 
-impl<'a, G> GeneralizedConditionalIndependence
+impl<'a, G> GeneralizedConditionalIndependenceTest
     for GraphicalSeparation<'a, G, directions::Undirected>
 where
     G: UndirectedGraph<Direction = directions::Undirected>,
@@ -129,7 +130,7 @@ where
 }
 
 /* Implement d-separation */
-impl<'a, G> ConditionalIndependence for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, directions::Directed>
 where
     G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
@@ -143,11 +144,12 @@ where
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // TODO: Implement more efficient non-generalized version.
-        GeneralizedConditionalIndependence::call(self, [x], [y], z.iter().cloned())
+        GeneralizedConditionalIndependenceTest::call(self, [x], [y], z.iter().cloned())
     }
 }
 
-impl<'a, G> GeneralizedConditionalIndependence for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> GeneralizedConditionalIndependenceTest
+    for GraphicalSeparation<'a, G, directions::Directed>
 where
     G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
 {
@@ -231,3 +233,5 @@ where
         })
     }
 }
+
+pub type GSeparation<'a, G, D> = GraphicalSeparation<'a, G, D>;

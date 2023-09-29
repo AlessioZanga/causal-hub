@@ -1,3 +1,4 @@
+#[derive(Clone, Debug)]
 pub struct RavelMultiIndex {
     cardinality: Vec<usize>,
     ravel: Vec<usize>,
@@ -52,7 +53,7 @@ impl RavelMultiIndex {
     }
 
     #[inline]
-    pub fn cardinality(&self) -> &Vec<usize> {
+    pub fn cardinality(&self) -> &[usize] {
         &self.cardinality
     }
 

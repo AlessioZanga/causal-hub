@@ -84,8 +84,6 @@ pub trait Graph:
     + PartialOrd
     + Index<usize, Output = str>
     + Hash
-    + Send
-    + Sync
     + Serialize
     + for<'a> Deserialize<'a>
 {

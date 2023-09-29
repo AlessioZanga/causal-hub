@@ -155,7 +155,7 @@ mod maximum_likelihood_estimation {
         let b: CategoricalBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: CategoricalBayesianNetwork = ParallelMLE::call(&d, &b.graph());
+        let c: CategoricalBayesianNetwork = MLE::par_call(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());
@@ -359,7 +359,7 @@ mod bayesian_estimation {
         let b: CategoricalBayesianNetwork = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Fit Bayesian network given data and true graph.
-        let c: CategoricalBayesianNetwork = ParallelBE::call(&d, &b.graph());
+        let c: CategoricalBayesianNetwork = BE::par_call(&d, &b.graph());
 
         // Check reference and fitted BN have the same underlying graph.
         assert_eq!(b.graph(), c.graph());

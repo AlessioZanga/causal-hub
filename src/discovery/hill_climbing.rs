@@ -44,8 +44,7 @@ impl Op {
 type A = (usize, usize, u8);
 
 #[derive(Clone, Debug)]
-
-pub struct HillClimbing<'a, D, K, G, S, T, const PARALLEL: bool>
+pub struct HillClimbing<'a, D, K, G, S, T>
 where
     S: ScoringCriterion<D, G, T>,
 {
@@ -59,7 +58,7 @@ where
     scoring_criterion: &'a S,
 }
 
-impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
+impl<'a, D, K, G, S, T> HillClimbing<'a, D, K, G, S, T>
 where
     S: ScoringCriterion<D, G, T>,
 {
@@ -232,7 +231,7 @@ where
     }
 }
 
-impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
+impl<'a, D, K, G, S, T> HillClimbing<'a, D, K, G, S, T>
 where
     G: Graph,
     S: ScoringCriterion<D, G, T>,
@@ -325,7 +324,7 @@ where
     }
 }
 
-impl<'a, D, K, G, S, T, const PARALLEL: bool> HillClimbing<'a, D, K, G, S, T, PARALLEL>
+impl<'a, D, K, G, S, T> HillClimbing<'a, D, K, G, S, T>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -450,94 +449,8 @@ where
     }
 }
 
-macro_rules! search {
-    (
-        $PARALLEL: ident,
-        $self: ident,
-        $add: ident,
-        $del: ident,
-        $rev: ident,
-        $cache: ident,
-        $in_degree: ident,
-        $g: ident
-    ) => {
-        match $PARALLEL {
-            // Search in parallel.
-            true => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
-                    .par_iter()
-                    // Check if operation is valid, compute current operation delta score and cache fragments.
-                    .filter_map(|(x, y)| match $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y) {
-                        true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
-                        false => None,
-                    })
-                    .chain($del.par_iter().filter_map(|(x, y)| {
-                        match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
-                            true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
-                            false => None,
-                        }
-                    }))
-                    .chain($rev.par_iter().filter_map(|(x, y)| {
-                        match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
-                            true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
-                            false => None,
-                        }
-                    }))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                $cache.par_extend(
-                    fragments
-                        .into_par_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
-                // Get operation with highest strictly positive delta score, if any.
-                ops_deltas
-                    .into_par_iter()
-                    .filter(|(_, delta)| delta > &0.)
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-            }
-            // Same as before but sequentially.
-            false => {
-                // Compute operations deltas and cache fragments
-                let (ops_deltas, fragments): (Vec<_>, Vec<_>) = $add
-                    .iter()
-                    // Check if operation is valid, compute current operation delta score and cache fragments.
-                    .filter_map(|(x, y)| match $self.is_valid::<{ Op::ADD }>($in_degree, $g, *x, *y) {
-                        true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
-                        false => None,
-                    })
-                    .chain($del.iter().filter_map(
-                        |(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
-                            true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
-                            false => None,
-                        },
-                    ))
-                    .chain($rev.iter().filter_map(
-                        |(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
-                            true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
-                            false => None,
-                        },
-                    ))
-                    // Unzip OPs and cache fragments.
-                    .unzip();
-                // Merge cache updates.
-                $cache.extend(fragments.into_iter().flatten().filter_map(|(k, v)| k.map(|k| (k, v))));
-                // Get operation with highest strictly positive delta score, if any.
-                ops_deltas
-                    .into_iter()
-                    .filter(|(_, delta)| delta > &0.)
-                    .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
-            }
-        }
-    };
-}
-
 /* Implement Hill-Climbing for Decomposable Scoring Criteria */
-impl<'a, D, K, G, S, const PARALLEL: bool>
-    HillClimbing<'a, D, K, G, S, score_types::Decomposable, PARALLEL>
+impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::Decomposable>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -625,7 +538,42 @@ where
         in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
-        search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
+        // Compute operations deltas and cache fragments
+        let (ops_deltas, fragments): (Vec<_>, Vec<_>) = add
+            .iter()
+            // Check if operation is valid, compute current operation delta score and cache fragments.
+            .filter_map(
+                |(x, y)| match self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y)),
+                    false => None,
+                },
+            )
+            .chain(del.iter().filter_map(|(x, y)| {
+                match self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y)),
+                    false => None,
+                }
+            }))
+            .chain(rev.iter().filter_map(|(x, y)| {
+                match self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y)),
+                    false => None,
+                }
+            }))
+            // Unzip OPs and cache fragments.
+            .unzip();
+        // Merge cache updates.
+        cache.extend(
+            fragments
+                .into_iter()
+                .flatten()
+                .filter_map(|(k, v)| k.map(|k| (k, v))),
+        );
+        // Get operation with highest strictly positive delta score, if any.
+        ops_deltas
+            .into_iter()
+            .filter(|(_, delta)| delta > &0.)
+            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -650,13 +598,120 @@ where
     /// ```
     ///
     pub fn call(&self, d: &D, k: &K) -> G {
-        // Initialize delta scores cache.
-        let mut cache = C::new(self.scoring_criterion);
-
         // Initialize graph from D and K.
         let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
+        // Initialize delta scores cache.
+        let mut cache = C::new(self.scoring_criterion);
         // Compute the initial score.
-        let mut s_g: f64 = if PARALLEL {
+        let mut s_g: f64 = V!(g)
+            // For each vertex.
+            .map(|x| {
+                // Get vertex parents.
+                let z = Pa!(g, x).collect_vec();
+                // Compute vertex score.
+                let s = self.scoring_criterion.call(x, &z);
+                // Insert into the cache.
+                cache.extend([((x, z), s)]);
+
+                s
+            })
+            // Sum the partial scores.
+            .sum();
+
+        // Initialize iterations counter.
+        let mut i = 0;
+        // Initialize the increasing score flag.
+        let mut flag = true;
+
+        // While score increase and at maximum `max_iter` times.
+        while flag && i < self.max_iter {
+            // Reset the flag.
+            flag = false;
+            // Log current iteration.
+            debug!("i: {}, max_iter: {}", i, self.max_iter);
+
+            // For each possible edge operation ...
+            let op_delta = self.search((&add, &del, &rev), &mut cache, &in_degree, &g);
+
+            // If best operation exists.
+            if let Some(((x, y, a), delta)) = op_delta {
+                // Apply operation to current solution.
+                (g, s_g) = (Self::apply(&mut in_degree, g, x, y, a), s_g + delta);
+                // Update search space.
+                (add, del, rev) = Self::update((add, del, rev), x, y, a);
+                // Set the flag.
+                flag = true;
+            }
+
+            // Increment counter.
+            i += 1;
+        }
+
+        g
+    }
+}
+
+/* Implement parallel Hill-Climbing for Decomposable Scoring Criteria */
+impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::Decomposable>
+where
+    D: DataSet + Sync,
+    K: PriorKnowledge + Sync,
+    G: DirectedGraph<Direction = directions::Directed> + PathGraph + Sync,
+    S: DecomposableScoringCriterion<D, G> + Sync,
+{
+    #[inline]
+    fn par_search(
+        &self,
+        (add, del, rev): (&E, &E, &E),
+        cache: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        in_degree: &[usize],
+        g: &G,
+    ) -> Option<(A, f64)> {
+        // Compute operations deltas and cache fragments
+        let (ops_deltas, fragments): (Vec<_>, Vec<_>) = add
+            .par_iter()
+            // Check if operation is valid, compute current operation delta score and cache fragments.
+            .filter_map(
+                |(x, y)| match self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y)),
+                    false => None,
+                },
+            )
+            .chain(del.par_iter().filter_map(|(x, y)| {
+                match self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y)),
+                    false => None,
+                }
+            }))
+            .chain(rev.par_iter().filter_map(|(x, y)| {
+                match self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
+                    true => Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y)),
+                    false => None,
+                }
+            }))
+            // Unzip OPs and cache fragments.
+            .unzip();
+        // Merge cache updates.
+        cache.par_extend(
+            fragments
+                .into_par_iter()
+                .flatten()
+                .filter_map(|(k, v)| k.map(|k| (k, v))),
+        );
+        // Get operation with highest strictly positive delta score, if any.
+        ops_deltas
+            .into_par_iter()
+            .filter(|(_, delta)| delta > &0.)
+            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
+    }
+
+    pub fn par_call(&self, d: &D, k: &K) -> G {
+        // Initialize graph from D and K.
+        let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
+        // Initialize delta scores cache.
+        let mut cache = C::new(self.scoring_criterion);
+        // Compute the initial score.
+        let mut s_g: f64 = {
             // Insert into the cache in parallel.
             cache.par_extend(
                 (0..g.order())
@@ -673,21 +728,6 @@ where
             );
             // Compute initial score.
             cache.par_values().sum()
-        } else {
-            V!(g)
-                // For each vertex.
-                .map(|x| {
-                    // Get vertex parents.
-                    let z = Pa!(g, x).collect_vec();
-                    // Compute vertex score.
-                    let s = self.scoring_criterion.call(x, &z);
-                    // Insert into the cache.
-                    cache.extend([((x, z), s)]);
-
-                    s
-                })
-                // Sum the partial scores.
-                .sum()
         };
 
         // Initialize iterations counter.
@@ -724,8 +764,7 @@ where
 }
 
 /* Implement Hill-Climbing for Non-Decomposable Scoring Criteria */
-impl<'a, D, K, G, S, const PARALLEL: bool>
-    HillClimbing<'a, D, K, G, S, score_types::NonDecomposable, PARALLEL>
+impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::NonDecomposable>
 where
     D: DataSet,
     K: PriorKnowledge,
@@ -800,7 +839,7 @@ where
         in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
-        search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
+        todo!() // FIXME: search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -868,6 +907,4 @@ where
     }
 }
 
-pub type HC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, false>;
-
-pub type ParallelHC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T, true>;
+pub type HC<'a, D, K, G, S, T> = HillClimbing<'a, D, K, G, S, T>;

@@ -6,9 +6,9 @@ use std::{
 
 use libm::erfc;
 
+use super::ConditionalIndependenceTest;
 use crate::{
     data::GaussianDataMatrix,
-    discovery::ConditionalIndependenceTest,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
 };
@@ -21,9 +21,9 @@ pub struct FisherZ {
     labels: BTreeSet<String>,
 }
 
-impl<'a> FisherZ {
+impl FisherZ {
     #[inline]
-    pub fn new(d: &'a GaussianDataMatrix) -> Self {
+    pub fn new(d: &GaussianDataMatrix, alpha: f64) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
@@ -31,25 +31,13 @@ impl<'a> FisherZ {
 
         Self {
             rho,
-            alpha: 0.05,
+            alpha,
             n: d.sample_size(),
             labels: d.labels_iter().map(|x| x.into()).collect(),
         }
     }
-}
-
-impl<'a> From<&'a GaussianDataMatrix> for FisherZ {
     #[inline]
-    fn from(d: &'a GaussianDataMatrix) -> Self {
-        Self::new(d)
-    }
-}
-
-impl<'a> ConditionalIndependenceTest for FisherZ {
-    type LabelsIter<'b> = Map<btree_set::Iter<'b, String>, fn(&'b String) -> &'b str>;
-
-    #[inline]
-    fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
+    pub fn eval(&self, x: usize, y: usize, z: &[usize]) -> (usize, f64, f64) {
         // Compute degree of freedom.
         let dof = self.n - z.len() - 3;
 
@@ -72,6 +60,15 @@ impl<'a> ConditionalIndependenceTest for FisherZ {
 
         (dof, stat, pval)
     }
+}
+
+impl ConditionalIndependenceTest for FisherZ {
+    type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
+
+    #[inline]
+    fn labels(&self) -> Self::LabelsIter<'_> {
+        self.labels.iter().map(|x| x.as_str())
+    }
 
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
@@ -79,20 +76,5 @@ impl<'a> ConditionalIndependenceTest for FisherZ {
         let (_, _, pval) = self.eval(x, y, z);
 
         pval > self.alpha
-    }
-
-    #[inline]
-    fn with_significance_level(mut self, alpha: f64) -> Self {
-        // Assert alpha in (0, 1).
-        assert!((0. ..1.).contains(&alpha));
-        // Set significance level.
-        self.alpha = alpha;
-
-        self
-    }
-
-    #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
-        self.labels.iter().map(|x| x.as_str())
     }
 }

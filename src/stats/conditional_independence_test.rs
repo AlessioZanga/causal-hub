@@ -1,4 +1,4 @@
-pub trait ConditionalIndependence {
+pub trait ConditionalIndependenceTest {
     type LabelsIter<'a>: Iterator<Item = &'a str>
     where
         Self: 'a;
@@ -8,7 +8,7 @@ pub trait ConditionalIndependence {
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 }
 
-pub trait GeneralizedConditionalIndependence {
+pub trait GeneralizedConditionalIndependenceTest {
     type LabelsIter<'a>: Iterator<Item = &'a str>
     where
         Self: 'a;

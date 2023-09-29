@@ -24,37 +24,6 @@ pub struct CategoricalDataMatrix {
 }
 
 impl CategoricalDataMatrix {
-    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = (V, J)>,
-        J: IntoIterator<Item = V>,
-    {
-        // Construct the states map.
-        let states: FxIndexMap<String, FxIndexSet<String>> = states
-            .into_iter()
-            .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
-            .sorted_by(|(x, _), (y, _)| x.cmp(y))
-            .collect();
-        // Check labels consistency.
-        assert_eq!(values.ncols(), states.len());
-        // Compute cardinalities from states.
-        let cardinality = states
-            .values()
-            .map(|s| {
-                s.len()
-                    .try_into()
-                    .expect("Max number of allowed states for each variable is u8::MAX")
-            })
-            .collect_vec();
-
-        Self {
-            states,
-            cardinality,
-            values,
-        }
-    }
-
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
@@ -416,19 +385,6 @@ pub struct ZeroInflatedNegativeBinomialDataMatrix {
 }
 
 pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
-
-impl ZINBDataMatrix {
-    pub fn new<V, I>(labels: I, values: Array2<f64>) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Get variables as set of strings.
-        let labels = labels.into_iter().map_into().collect();
-
-        Self { labels, values }
-    }
-}
 
 impl From<DataFrame> for ZINBDataMatrix {
     fn from(data_frame: DataFrame) -> Self {

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 /// Data set trait.
 pub trait DataSet:
-    Clone + Debug + From<DataFrame> + Into<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
+    Clone + Debug + From<DataFrame> + Into<DataFrame> + Serialize + for<'a> Deserialize<'a>
 {
     /// Data set underlying structure.
     type Data: Clone;
@@ -301,7 +301,7 @@ where
 
 impl<'a, D, R> ParallelIterator for ParallelBootstrapIterator<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     type Item = D;
@@ -340,7 +340,7 @@ impl<'a, D, R> From<ParallelBootstrapIterator<'a, D, R>> for ParallelBootstrapPr
 
 impl<'a, D, R> Iterator for ParallelBootstrapProducer<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     type Item = D;
@@ -371,7 +371,7 @@ where
 
 impl<'a, D, R> ExactSizeIterator for ParallelBootstrapProducer<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     #[inline]
@@ -382,7 +382,7 @@ where
 
 impl<'a, D, R> DoubleEndedIterator for ParallelBootstrapProducer<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     #[inline]
@@ -406,7 +406,7 @@ where
 
 impl<'a, D, R> Producer for ParallelBootstrapProducer<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     type Item = D;
@@ -431,7 +431,7 @@ where
 
 impl<'a, D, R> IndexedParallelIterator for ParallelBootstrapIterator<'a, D, R>
 where
-    D: DataSetSample + Send,
+    D: DataSetSample + Send + Sync,
     R: Rng + SeedableRng + Send,
 {
     #[inline]
@@ -475,7 +475,7 @@ pub trait ParallelDataSetSample: DataSet + Send {
 
 impl<D, T> ParallelDataSetSample for D
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type ParallelBootstrapIter<'a, R> = ParallelBootstrapIterator<'a, D, R>
@@ -1143,7 +1143,7 @@ where
 
 impl<'a, D, T> ParallelIterator for ParallelKFoldIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1180,7 +1180,7 @@ impl<'a, D> From<ParallelKFoldIterator<'a, D>> for ParallelKFoldSplitProducer<'a
 
 impl<'a, D, T> Iterator for ParallelKFoldSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1214,7 +1214,7 @@ where
 
 impl<'a, D, T> ExactSizeIterator for ParallelKFoldSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1225,7 +1225,7 @@ where
 
 impl<'a, D, T> DoubleEndedIterator for ParallelKFoldSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1252,7 +1252,7 @@ where
 
 impl<'a, D, T> Producer for ParallelKFoldSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1277,7 +1277,7 @@ where
 
 impl<'a, D, T> IndexedParallelIterator for ParallelKFoldIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1347,7 +1347,7 @@ where
 
 impl<'a, D, T> ParallelIterator for ParallelLeaveOneOutIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1388,7 +1388,7 @@ impl<'a, D> From<ParallelLeaveOneOutIterator<'a, D>> for ParallelLeaveOneOutSpli
 
 impl<'a, D, T> Iterator for ParallelLeaveOneOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1432,7 +1432,7 @@ where
 
 impl<'a, D, T> Producer for ParallelLeaveOneOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1465,7 +1465,7 @@ where
 
 impl<'a, D, T> IndexedParallelIterator for ParallelLeaveOneOutIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1505,7 +1505,7 @@ where
 
 impl<'a, D, T> ExactSizeIterator for ParallelLeaveOneOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1516,7 +1516,7 @@ where
 
 impl<'a, D, T> DoubleEndedIterator for ParallelLeaveOneOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1595,7 +1595,7 @@ where
 
 impl<'a, D, T> ParallelIterator for ParallelLeavePOutIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1636,7 +1636,7 @@ impl<'a, D> From<ParallelLeavePOutIterator<'a, D>> for ParallelLeavePOutSplitPro
 
 impl<'a, D, T> Iterator for ParallelLeavePOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1680,7 +1680,7 @@ where
 
 impl<'a, D, T> Producer for ParallelLeavePOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type Item = D;
@@ -1713,7 +1713,7 @@ where
 
 impl<'a, D, T> IndexedParallelIterator for ParallelLeavePOutIterator<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1753,7 +1753,7 @@ where
 
 impl<'a, D, T> ExactSizeIterator for ParallelLeavePOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1764,7 +1764,7 @@ where
 
 impl<'a, D, T> DoubleEndedIterator for ParallelLeavePOutSplitProducer<'a, D>
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     #[inline]
@@ -1798,7 +1798,7 @@ where
 
 impl<D, T> ParallelDataSetSplit for D
 where
-    D: DataSet<Data = Array2<T>> + Send,
+    D: DataSet<Data = Array2<T>> + Send + Sync,
     T: Clone + Zero,
 {
     type ParallelKFoldIter<'a> = ParallelKFoldIterator<'a, D>

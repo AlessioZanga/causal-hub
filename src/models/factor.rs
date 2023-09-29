@@ -29,8 +29,6 @@ pub trait Factor:
     + Eq
     + Serialize
     + for<'a> Deserialize<'a>
-    + Send
-    + Sync
     + Into<Self::Phi>
 {
     type Phi: Factor;

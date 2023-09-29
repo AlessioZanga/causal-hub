@@ -54,7 +54,7 @@ mod variable_elimination {
         let b: CategoricalBN = BIF::read("tests/assets/bif/asia.bif").unwrap().into();
 
         // Construct estimator.
-        let estimator = ParallelVE::new(&b);
+        let estimator = VE::new(&b);
 
         // Test for each query type.
         for (t, x, shape, values) in data {
@@ -67,9 +67,11 @@ mod variable_elimination {
             let true_query = ArrayD::from_shape_vec(shape, values).unwrap();
             // Perform the specified query.
             let pred_query: CategoricalFactor = match t {
-                "marginal" => estimator.marginal(x[0]).into(),
-                "joint" => estimator.joint(x).into(),
-                "conditional" => estimator.conditional(x[0], x.into_iter().skip(1)).into(),
+                "marginal" => estimator.par_marginal(x[0]).into(),
+                "joint" => estimator.par_joint(x).into(),
+                "conditional" => estimator
+                    .par_conditional(x[0], x.into_iter().skip(1))
+                    .into(),
                 _ => unreachable!(),
             };
 

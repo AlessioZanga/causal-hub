@@ -74,9 +74,9 @@ mod categorical {
         let s = BIC::new(&d);
 
         // Initialize discovery functor.
-        let hc = ParallelHC::new(&s);
+        let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.par_call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -361,9 +361,9 @@ mod gaussian {
         let s = BIC::new(&d);
 
         // Initialize discovery functor.
-        let hc = ParallelHC::new(&s);
+        let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.par_call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }
@@ -423,9 +423,9 @@ mod zinb {
         let s = BIC::new(&d);
 
         // Initialize discovery functor.
-        let hc = ParallelHC::new(&s);
+        let hc = HC::new(&s);
         // Perform discovery.
-        let pred_g: DGraph = hc.call(&d, &k);
+        let pred_g: DGraph = hc.par_call(&d, &k);
 
         assert_eq!(pred_g, true_g);
     }

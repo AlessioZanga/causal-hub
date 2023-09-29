@@ -62,3 +62,5 @@ impl<'a> KullbackLeiblerDivergence<'a, CategoricalBayesianNetwork, CategoricalBa
             .sum()
     }
 }
+
+pub type KL<'a, P, Q> = KullbackLeiblerDivergence<'a, P, Q>;
