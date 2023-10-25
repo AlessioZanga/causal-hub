@@ -179,7 +179,7 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
             // For each sample ...
             seeds
                 .into_par_iter()
-                .zip(values.axis_iter_mut(Axis(1)))
+                .zip(values.axis_iter_mut(Axis(0)))
                 .for_each(|(seed, mut row)| {
                     // Initialize local rng.
                     let mut rng = R::seed_from_u64(seed);
