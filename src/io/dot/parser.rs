@@ -255,8 +255,14 @@ impl<'a> From<Pair<'a, Rule>> for Vertex {
         assert!(matches!(id_port.as_rule(), Rule::vertex_id));
         // Match inner rules.
         let mut id_port = id_port.into_inner();
-        let id = id_port.next().unwrap().as_str().into();
+        let mut id = id_port.next().unwrap().as_str().to_owned();
         let port = id_port.next().map(|x| x.as_str().into());
+
+        // Unquote the vertex id, if quoted.
+        if id.starts_with("\"") && id.ends_with("\"") {
+            // Remove quotes.
+            id = id[1..id.len() - 1].replace("\\\"", "\"");
+        }
 
         // Match inner rules.
         let attributes = inner.next().map(|x| x.into()).unwrap_or_default();
@@ -271,8 +277,8 @@ impl<'a> From<Pair<'a, Rule>> for Vertex {
 
 impl From<Vertex> for String {
     fn from(vertex: Vertex) -> Self {
-        // Add vertex id.
-        let mut dot = vertex.id;
+        // Add quoted vertex id.
+        let mut dot = format!("\"{}\"", vertex.id.replace("\"", "\\\""));
 
         // Check vertex port.
         if let Some(port) = vertex.port {
@@ -317,7 +323,12 @@ impl Edge {
 impl From<Edge> for String {
     fn from(edge: Edge) -> Self {
         // Add edge id and direction.
-        let mut dot = format!("{} {} {}", edge.id.0, edge.op, edge.id.1);
+        let mut dot = format!(
+            "\"{}\" {} \"{}\"",
+            edge.id.0.replace("\"", "\\\""),
+            edge.op,
+            edge.id.1.replace("\"", "\\\"")
+        );
 
         // Get attributes.
         let attributes: String = edge.attributes.into();
