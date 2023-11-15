@@ -259,7 +259,7 @@ impl<'a> From<Pair<'a, Rule>> for Vertex {
         let port = id_port.next().map(|x| x.as_str().into());
 
         // Unquote the vertex id, if quoted.
-        if id.starts_with("\"") && id.ends_with("\"") {
+        if id.starts_with('"') && id.ends_with('"') {
             // Remove quotes.
             id = id[1..id.len() - 1].replace("\\\"", "\"");
         }
@@ -278,7 +278,7 @@ impl<'a> From<Pair<'a, Rule>> for Vertex {
 impl From<Vertex> for String {
     fn from(vertex: Vertex) -> Self {
         // Add quoted vertex id.
-        let mut dot = format!("\"{}\"", vertex.id.replace("\"", "\\\""));
+        let mut dot = format!("\"{}\"", vertex.id.replace('"', "\\\""));
 
         // Check vertex port.
         if let Some(port) = vertex.port {
@@ -325,9 +325,9 @@ impl From<Edge> for String {
         // Add edge id and direction.
         let mut dot = format!(
             "\"{}\" {} \"{}\"",
-            edge.id.0.replace("\"", "\\\""),
+            edge.id.0.replace('"', "\\\""),
             edge.op,
-            edge.id.1.replace("\"", "\\\"")
+            edge.id.1.replace('"', "\\\"")
         );
 
         // Get attributes.
