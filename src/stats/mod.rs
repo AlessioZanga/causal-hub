@@ -1,8 +1,14 @@
 mod akaike_information_criterion;
 pub use akaike_information_criterion::*;
 
+mod akaike_information_criterion_corrected;
+pub use akaike_information_criterion_corrected::*;
+
 mod bayesian_information_criterion;
 pub use bayesian_information_criterion::*;
+
+mod bayesian_information_criterion_corrected;
+pub use bayesian_information_criterion_corrected::*;
 
 mod chi_squared;
 pub use chi_squared::*;

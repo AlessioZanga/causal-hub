@@ -1,12 +1,14 @@
 use crate::{
-    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix},
+    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
-    prelude::ZINBDataMatrix,
     stats::LogLikelihood,
 };
 
 /// Bayesian Information Criterion (BIC) functor.
+///
+/// $BIC = LL - \frac{1}{2} |\theta| \log(n)$
+///
 #[derive(Clone, Debug)]
 pub struct BayesianInformationCriterion<'a, D> {
     log_likelihood: LogLikelihood<'a, D>,
