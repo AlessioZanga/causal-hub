@@ -1,21 +1,20 @@
 use crate::{
-    data::{CategoricalDataMatrix, GaussianDataMatrix},
+    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
-    prelude::ZINBDataMatrix,
     stats::LogLikelihood,
 };
 
-/// Akaike Information Criterion (AIC) functor.
+/// Akaike Information Criterion Corrected (AICC) functor.
 ///
-/// $AIC = LL - |\theta|$
+/// $AICC = LL - \frac{n + |\theta|}{n - |\theta| - 2}$
 ///
 #[derive(Clone, Debug)]
-pub struct AkaikeInformationCriterion<'a, D> {
+pub struct AkaikeInformationCriterionCorrected<'a, D> {
     log_likelihood: LogLikelihood<'a, D>,
 }
 
-impl<'a, D> AkaikeInformationCriterion<'a, D> {
+impl<'a, D> AkaikeInformationCriterionCorrected<'a, D> {
     /// Constructor for AIC functor.
     #[inline]
     pub const fn new(data_set: &'a D) -> Self {
@@ -28,7 +27,7 @@ impl<'a, D> AkaikeInformationCriterion<'a, D> {
 
 /* Implement AIC for categorical data. */
 impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for AkaikeInformationCriterion<'a, CategoricalDataMatrix>
+    for AkaikeInformationCriterionCorrected<'a, CategoricalDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -37,6 +36,8 @@ where
         // Compute the log-likelihood.
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
+        // Get the sample size.
+        let n = self.log_likelihood.data_set.sample_size() as f64;
         // Get the cardinality.
         let cards = self.log_likelihood.data_set.cardinality();
         // Get the cardinality of vertices.
@@ -48,14 +49,14 @@ where
         // Compute the number of parameters.
         let theta = ((card_x - 1) * card_z) as f64;
 
-        // Compute the AIC.
-        log_likelihood - theta
+        // Compute the AICC, enforcing positivity of the denominator.
+        log_likelihood - ((n + theta) / f64::max(n - theta - 2., 1.))
     }
 }
 
 /* Implement AIC for Gaussian data. */
 impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
-    for AkaikeInformationCriterion<'a, GaussianDataMatrix>
+    for AkaikeInformationCriterionCorrected<'a, GaussianDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -64,18 +65,20 @@ where
         // Compute the log-likelihood.
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
+        // Get the sample size.
+        let n = self.log_likelihood.data_set.sample_size() as f64;
         // Compute the number of parameters as intercept, standard deviation
         // and each regression coefficient per parent.
         let theta = (2 + z.len()) as f64;
 
-        // Compute the AIC.
-        log_likelihood - theta
+        // Compute the AICC, enforcing positivity of the denominator.
+        log_likelihood - ((n + theta) / f64::max(n - theta - 2., 1.))
     }
 }
 
 /* Implement AIC for ZINB data. */
 impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
-    for AkaikeInformationCriterion<'a, ZINBDataMatrix>
+    for AkaikeInformationCriterionCorrected<'a, ZINBDataMatrix>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
@@ -84,14 +87,16 @@ where
         // Compute the log-likelihood.
         let log_likelihood = DecomposableScoringCriterion::<_, G>::call(&self.log_likelihood, x, z);
 
+        // Get the sample size.
+        let n = self.log_likelihood.data_set.sample_size() as f64;
         // Compute the number of parameters as intercept, standard deviation
         // and each regression coefficient per parent.
         let theta = (2 * z.len() + 3) as f64;
 
-        // Compute the AIC.
-        log_likelihood - theta
+        // Compute the AICC, enforcing positivity of the denominator.
+        log_likelihood - ((n + theta) / f64::max(n - theta - 2., 1.))
     }
 }
 
-/// Alias for the AkaikeInformationCriterion functor.
-pub type AIC<'a, D> = AkaikeInformationCriterion<'a, D>;
+/// Alias for the AkaikeInformationCriterionCorrected functor.
+pub type AICC<'a, D> = AkaikeInformationCriterionCorrected<'a, D>;
