@@ -10,6 +10,9 @@ pub use bayesian_information_criterion::*;
 mod bayesian_information_criterion_corrected;
 pub use bayesian_information_criterion_corrected::*;
 
+mod evidential_bayesian_information_criterion;
+pub use evidential_bayesian_information_criterion::*;
+
 mod chi_squared;
 pub use chi_squared::*;
 
