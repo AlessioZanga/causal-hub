@@ -50,7 +50,7 @@ pub trait ProbabilisticGraphicalModel:
     fn parameters(&self) -> &FxIndexMap<String, Self::Parameter>;
 
     /// Draw `n` samples.
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data;
+    fn sample<R: Rng>(&self, rng: &mut R, n: usize) -> Self::Data;
 
     /// Draw `n` samples in parallel.
     fn par_sample<R: Rng + SeedableRng + Send>(&self, rng: &mut R, n: usize) -> Self::Data;
@@ -123,7 +123,7 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
         &self.theta
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data {
+    fn sample<R: Rng>(&self, rng: &mut R, n: usize) -> Self::Data {
         // Allocate the new data set values.
         let mut data = Array2::<u8>::zeros((n, self.graph.order()));
         // Get topological sort of the underlying graph.
