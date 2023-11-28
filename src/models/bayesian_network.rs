@@ -125,7 +125,7 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, n: usize) -> Self::Data {
         // Allocate the new data set values.
-        let mut values = Array2::<u8>::zeros((n, self.graph.order()));
+        let mut data = Array2::<u8>::zeros((n, self.graph.order()));
         // Get topological sort of the underlying graph.
         let order = TopologicalSort::new(&self.graph);
 
@@ -139,7 +139,7 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
             let phi_x = &self.theta[x];
 
             // For each sample ...
-            values.rows_mut().into_iter().for_each(|mut row| {
+            data.rows_mut().into_iter().for_each(|mut row| {
                 // Allocate P(X | Pa(X)) indices.
                 let mut indices = Vec::with_capacity(self.graph.order());
                 // Set P(X | Pa(X)) indices.
@@ -154,13 +154,20 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
             });
         }
 
+        // Get the states.
+        let states = self
+            .theta
+            .iter()
+            .map(|(k, v)| (k.into(), v.states()[k].clone()))
+            .collect();
+
         // Return sampled data set.
-        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
+        Self::Data::with_data_labels(data, states)
     }
 
     fn par_sample<R: Rng + SeedableRng + Send>(&self, rng: &mut R, n: usize) -> Self::Data {
         // Allocate the new data set values.
-        let mut values = Array2::<u8>::zeros((n, self.graph.order()));
+        let mut data = Array2::<u8>::zeros((n, self.graph.order()));
         // Get topological sort of the underlying graph.
         let order = TopologicalSort::new(&self.graph);
 
@@ -184,7 +191,7 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
 
             // For each sample ...
             rngs.par_iter_mut()
-                .zip(values.axis_iter_mut(Axis(0)))
+                .zip(data.axis_iter_mut(Axis(0)))
                 .for_each(|(rng, mut row)| {
                     // Allocate P(X | Pa(X)) indices.
                     let mut indices = Vec::with_capacity(self.graph.order());
@@ -200,8 +207,15 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
                 });
         }
 
+        // Get the states.
+        let states = self
+            .theta
+            .iter()
+            .map(|(k, v)| (k.into(), v.states()[k].clone()))
+            .collect();
+
         // Return sampled data set.
-        Self::Data::new(self.theta.iter().map(|(k, v)| (k, &v.states()[k])), values)
+        Self::Data::with_data_labels(data, states)
     }
 }
 

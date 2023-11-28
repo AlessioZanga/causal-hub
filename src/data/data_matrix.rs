@@ -7,9 +7,8 @@ use std::{
 use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
-use ndarray_rand::{RandomExt, SamplingStrategy};
+use ndarray_stats::QuantileExt;
 use polars::prelude::*;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use super::DataSet;
@@ -20,42 +19,16 @@ use crate::types::{FxIndexMap, FxIndexSet};
 /// Data matrix for categorical data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataMatrix {
-    states: FxIndexMap<String, FxIndexSet<String>>,
-    cardinality: Vec<u8>,
     data: Array2<u8>,
+    cardinality: Vec<u8>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
 }
 
 impl CategoricalDataMatrix {
-    /// Construct a new categorical data matrix given data and states.
-    pub fn new<V, I, J>(states: I, data: Array2<u8>) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = (V, J)>,
-        J: IntoIterator<Item = V>,
-    {
-        // Construct the states map.
-        let states: FxIndexMap<String, FxIndexSet<String>> = states
-            .into_iter()
-            .map(|(x, ys)| (x.into(), ys.into_iter().map_into().collect()))
-            .sorted_by(|(x, _), (y, _)| x.cmp(y))
-            .collect();
-        // Check labels consistency.
-        assert_eq!(data.ncols(), states.len());
-        // Compute cardinalities from states.
-        let cardinality = states
-            .values()
-            .map(|s| {
-                s.len()
-                    .try_into()
-                    .expect("Max number of allowed states for each variable is u8::MAX")
-            })
-            .collect_vec();
-
-        Self {
-            states,
-            cardinality,
-            data,
-        }
+    /// Gets the vector of variables cardinalities.
+    #[inline]
+    pub fn cardinality(&self) -> &Vec<u8> {
+        &self.cardinality
     }
 
     /// Gets the map of variables to their states.
@@ -111,12 +84,6 @@ impl CategoricalDataMatrix {
             .collect_vec();
 
         self
-    }
-
-    /// Gets the vector of variables cardinalities.
-    #[inline]
-    pub fn cardinality(&self) -> &Vec<u8> {
-        &self.cardinality
     }
 }
 
@@ -226,9 +193,9 @@ impl From<DataFrame> for CategoricalDataMatrix {
             .collect_vec();
 
         Self {
-            states,
-            cardinality,
             data,
+            cardinality,
+            states,
         }
     }
 }
@@ -283,35 +250,39 @@ impl DataSet for CategoricalDataMatrix {
         self.data.nrows()
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithoutReplacement,
-            rng,
+    fn with_data_labels(data: Self::Data, states: Self::Labels) -> Self {
+        // Check labels are sorted.
+        assert!(states.keys().is_sorted(), "Labels must be sorted");
+        // Check states are sorted.
+        assert!(
+            states.values().all(|s| s.iter().is_sorted()),
+            "States must be sorted"
+        );
+        // Check labels consistency.
+        assert_eq!(data.ncols(), states.len(), "Inconsistent number of labels");
+        // Check data max values match states cardinality.
+        assert!(
+            data.columns()
+                .into_iter()
+                .zip(states.values())
+                .all(|(column, states)| (*column.max().unwrap() as usize) < states.len()),
+            "Inconsistent data and states"
         );
 
-        Self {
-            states: self.states.clone(),
-            cardinality: self.cardinality.clone(),
-            data,
-        }
-    }
-
-    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithReplacement,
-            rng,
-        );
+        // Compute cardinalities from states.
+        let cardinality = states
+            .values()
+            .map(|s| {
+                s.len()
+                    .try_into()
+                    .expect("Max number of allowed states for each variable is u8::MAX")
+            })
+            .collect_vec();
 
         Self {
-            states: self.states.clone(),
-            cardinality: self.cardinality.clone(),
             data,
+            cardinality,
+            states,
         }
     }
 }
@@ -321,8 +292,8 @@ impl DataSet for CategoricalDataMatrix {
 /// Data matrix for continuous data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussianDataMatrix {
-    labels: BTreeSet<String>,
     data: Array2<f64>,
+    labels: BTreeSet<String>,
 }
 
 impl From<DataFrame> for GaussianDataMatrix {
@@ -361,7 +332,7 @@ impl From<DataFrame> for GaussianDataMatrix {
             .map_into()
             .collect();
 
-        Self { labels, data }
+        Self { data, labels }
     }
 }
 
@@ -406,34 +377,11 @@ impl DataSet for GaussianDataMatrix {
         self.data.nrows()
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithoutReplacement,
-            rng,
-        );
+    fn with_data_labels(data: Self::Data, labels: Self::Labels) -> Self {
+        // Check labels are sorted.
+        assert!(labels.iter().is_sorted(), "Labels must be sorted");
 
-        Self {
-            labels: self.labels.clone(),
-            data,
-        }
-    }
-
-    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithReplacement,
-            rng,
-        );
-
-        Self {
-            labels: self.labels.clone(),
-            data,
-        }
+        Self { data, labels }
     }
 }
 
@@ -442,26 +390,12 @@ impl DataSet for GaussianDataMatrix {
 /// Data matrix for zero-inflated negative binomial data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ZeroInflatedNegativeBinomialDataMatrix {
-    labels: BTreeSet<String>,
     data: Array2<f64>,
+    labels: BTreeSet<String>,
 }
 
 /// Alias for `ZeroInflatedNegativeBinomialDataMatrix`.
 pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
-
-impl ZINBDataMatrix {
-    /// Construct a new zero-inflated negative binomial data matrix given data and labels.
-    pub fn new<V, I>(labels: I, data: Array2<f64>) -> Self
-    where
-        V: Into<String>,
-        I: IntoIterator<Item = V>,
-    {
-        // Get variables as set of strings.
-        let labels = labels.into_iter().map_into().collect();
-
-        Self { labels, data }
-    }
-}
 
 impl From<DataFrame> for ZINBDataMatrix {
     fn from(data_frame: DataFrame) -> Self {
@@ -499,7 +433,7 @@ impl From<DataFrame> for ZINBDataMatrix {
             .map_into()
             .collect();
 
-        Self { labels, data }
+        Self { data, labels }
     }
 }
 
@@ -544,33 +478,10 @@ impl DataSet for ZINBDataMatrix {
         self.data.nrows()
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithoutReplacement,
-            rng,
-        );
+    fn with_data_labels(data: Self::Data, labels: Self::Labels) -> Self {
+        // Check labels are sorted.
+        assert!(labels.iter().is_sorted(), "Labels must be sorted");
 
-        Self {
-            labels: self.labels.clone(),
-            data,
-        }
-    }
-
-    fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
-        // Sample without replacement.
-        let data = self.data.sample_axis_using(
-            Axis(0),
-            sample_size,
-            SamplingStrategy::WithReplacement,
-            rng,
-        );
-
-        Self {
-            labels: self.labels.clone(),
-            data,
-        }
+        Self { data, labels }
     }
 }
