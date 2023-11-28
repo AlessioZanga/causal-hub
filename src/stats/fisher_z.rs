@@ -35,7 +35,7 @@ impl<'a> FisherZ {
             rho,
             alpha: 0.05,
             n: d.sample_size(),
-            labels: d.labels().map(|x| x.into()).collect(),
+            labels: d.labels_iter().map(|x| x.into()).collect(),
         }
     }
 }

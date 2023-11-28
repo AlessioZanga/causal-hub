@@ -78,7 +78,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -116,14 +116,14 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Construct initial graph.
     /// let init_graph = DiGraph::new(
-    ///     data_set.labels(),
+    ///     data_set.labels_iter(),
     ///     [
     ///         ("bronc", "dysp"),
     ///         ("either", "dysp"),
@@ -156,7 +156,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -186,7 +186,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -216,7 +216,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -345,12 +345,12 @@ where
             // If initial graph is provided ...
             Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.
-            None => G::empty(d.labels()),
+            None => G::empty(d.labels_iter()),
         };
 
         // Check coherence with data set ...
         assert!(
-            L!(g).eq(d.labels()),
+            L!(g).eq(d.labels_iter()),
             "Graph labels must be equal to data set labels"
         );
         // Check coherence of graph and prior knowledge.
@@ -374,7 +374,7 @@ where
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
         // Get number of variables.
-        let n = d.labels().len();
+        let n = d.labels_iter().len();
         // Get columns index.
         let mut n = (0..n).collect_vec();
         // Check if random number generator has been set.
@@ -662,7 +662,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -839,7 +839,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels(), [], []);
+    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);

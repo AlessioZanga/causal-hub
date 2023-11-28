@@ -19,7 +19,7 @@ mod tests {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DiGraph::empty(d.labels());
+        let g = DiGraph::empty(d.labels_iter());
 
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(&d);

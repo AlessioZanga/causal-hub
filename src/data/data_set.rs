@@ -9,7 +9,10 @@ pub trait DataSet:
     Clone + Debug + From<DataFrame> + Into<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
 {
     /// Data set underlying data structure.
-    type Data;
+    type Data: Clone;
+
+    /// Labels underlying data structure.
+    type Labels: Clone;
 
     /// Labels iterator type.
     type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
@@ -17,7 +20,10 @@ pub trait DataSet:
         Self: 'a;
 
     /// Get the set of variables labels.
-    fn labels(&self) -> Self::LabelsIter<'_>;
+    fn labels(&self) -> &Self::Labels;
+
+    /// Get the iterator over the set of variables labels.
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     /// Get reference to underlying values.
     fn values(&self) -> &Self::Data;

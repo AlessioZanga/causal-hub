@@ -85,7 +85,7 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         let m: FxHashMap<_, _> = d
-            .labels()
+            .labels_iter()
             .enumerate()
             .map(|(i, x)| (x.to_string(), i))
             .collect();

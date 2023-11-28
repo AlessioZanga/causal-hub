@@ -39,7 +39,7 @@ pub mod categorical {
                 // Sample data set from reference model.
                 let data_set = model.sample(&mut rng, *sample_size);
                 // Initialize empty prior knowledge.
-                let prior_knowledge = FR::new(data_set.labels(), [], []);
+                let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
                 // Initialize scoring criterion functor.
                 let scoring_criterion = BIC::new(&data_set);
 
@@ -110,7 +110,7 @@ pub mod categorical {
                 // Sample data set from reference model.
                 let data_set = model.sample(&mut rng, *sample_size);
                 // Initialize empty prior knowledge.
-                let prior_knowledge = FR::new(data_set.labels(), [], []);
+                let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
                 // Initialize scoring criterion functor.
                 let scoring_criterion = BIC::new(&data_set);
 
@@ -188,7 +188,7 @@ pub mod zinb {
                 // Sample data set from reference data set.
                 let data_set = data_matrix.sample_with_replacement(&mut rng, *sample_size);
                 // Initialize empty prior knowledge.
-                let prior_knowledge = FR::new(data_set.labels(), [], []);
+                let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
                 // Initialize scoring criterion functor.
                 let scoring_criterion = BIC::new(&data_set);
 

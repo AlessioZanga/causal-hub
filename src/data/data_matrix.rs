@@ -257,11 +257,18 @@ impl From<CategoricalDataMatrix> for DataFrame {
 impl DataSet for CategoricalDataMatrix {
     type Data = Array2<u8>;
 
+    type Labels = FxIndexMap<String, FxIndexSet<String>>;
+
     type LabelsIter<'a> =
         Map<indexmap::map::Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels(&self) -> &Self::Labels {
+        &self.states
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         self.states.keys().map(|x| x.as_str())
     }
 
@@ -370,10 +377,17 @@ impl From<GaussianDataMatrix> for DataFrame {
 impl DataSet for GaussianDataMatrix {
     type Data = Array2<f64>;
 
+    type Labels = BTreeSet<String>;
+
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         self.labels.iter().map(|x| x.as_str())
     }
 
@@ -497,10 +511,17 @@ impl From<ZINBDataMatrix> for DataFrame {
 impl DataSet for ZINBDataMatrix {
     type Data = Array2<f64>;
 
+    type Labels = BTreeSet<String>;
+
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         self.labels.iter().map(|x| x.as_str())
     }
 
