@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 pub trait DataSet:
     Clone + Debug + From<DataFrame> + Into<DataFrame> + Sync + Serialize + for<'a> Deserialize<'a>
 {
-    /// Data set underlying data structure.
+    /// Data set underlying structure.
     type Data: Clone;
 
-    /// Labels underlying data structure.
+    /// Labels underlying structure.
     type Labels: Clone;
 
     /// Labels iterator type.
@@ -19,14 +19,14 @@ pub trait DataSet:
     where
         Self: 'a;
 
+    /// Get reference to underlying data structure.
+    fn data(&self) -> &Self::Data;
+
     /// Get the set of variables labels.
     fn labels(&self) -> &Self::Labels;
 
     /// Get the iterator over the set of variables labels.
     fn labels_iter(&self) -> Self::LabelsIter<'_>;
-
-    /// Get reference to underlying values.
-    fn values(&self) -> &Self::Data;
 
     /// Get sample size.
     fn sample_size(&self) -> usize;

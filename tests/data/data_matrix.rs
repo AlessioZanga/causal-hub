@@ -19,14 +19,14 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data_set = CategoricalDataMatrix::from(df);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(data_set.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -35,7 +35,7 @@ mod tests {
                 ("Z", vec!["A", "B", "C"].into_iter().collect()),
             ]);
 
-            assert!(data
+            assert!(data_set
                 .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
@@ -43,7 +43,7 @@ mod tests {
                 .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
                     && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
-            assert_eq!(data.cardinality(), &vec![3, 1, 2, 3]);
+            assert_eq!(data_set.cardinality(), &vec![3, 1, 2, 3]);
         }
 
         #[test]
@@ -57,10 +57,10 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(true_df.clone());
+            let data_set = CategoricalDataMatrix::from(true_df.clone());
 
             // Cast datamatrix to dataframe.
-            let pred_df: DataFrame = data.into();
+            let pred_df: DataFrame = data_set.into();
 
             assert_eq!(pred_df, true_df);
         }
@@ -76,18 +76,18 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df).with_states([
+            let data_set = CategoricalDataMatrix::from(df).with_states([
                 ("X", vec!["A", "B"]),
                 ("Y", vec!["A", "B", "C"]),
                 ("W", vec!["G", "H", "I", "J", "K", "L", "M", "N"]),
             ]);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(data.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(data_set.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -101,7 +101,7 @@ mod tests {
                 ("Z", vec!["A", "B", "C"].into_iter().collect()),
             ]);
 
-            assert!(data
+            assert!(data_set
                 .states()
                 .into_iter()
                 .sorted_by(|a, b| a.0.cmp(b.0))
@@ -109,7 +109,7 @@ mod tests {
                 .all(|((x_k, x_v), (y_k, y_v))| x_k == y_k
                     && x_v.into_iter().zip(y_v.into_iter()).all(|(x, y)| x == y)));
 
-            assert_eq!(data.cardinality(), &vec![8, 2, 3, 3]);
+            assert_eq!(data_set.cardinality(), &vec![8, 2, 3, 3]);
         }
 
         #[test]
@@ -123,18 +123,18 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data_set = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            let sample = data.sample(&mut rng, 2);
+            let sample = data_set.sample(&mut rng, 2);
             // Assert labels, states, cardinalities and values.
-            assert!(data.labels_iter().eq(sample.labels_iter()));
-            assert_eq!(data.states(), sample.states());
-            assert_eq!(data.cardinality(), sample.cardinality());
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() > sample.sample_size());
+            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert_eq!(data_set.states(), sample.states());
+            assert_eq!(data_set.cardinality(), sample.cardinality());
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() > sample.sample_size());
             assert_eq!(sample.sample_size(), 2);
         }
 
@@ -150,12 +150,12 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data_set = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            data.sample(&mut rng, 4);
+            data_set.sample(&mut rng, 4);
         }
 
         #[test]
@@ -169,18 +169,18 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = CategoricalDataMatrix::from(df);
+            let data_set = CategoricalDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            let sample = data.sample_with_replacement(&mut rng, 4);
+            let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels, states, cardinalities and values.
-            assert!(data.labels_iter().eq(sample.labels_iter()));
-            assert_eq!(data.states(), sample.states());
-            assert_eq!(data.cardinality(), sample.cardinality());
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() < sample.sample_size());
+            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert_eq!(data_set.states(), sample.states());
+            assert_eq!(data_set.cardinality(), sample.cardinality());
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() < sample.sample_size());
             assert_eq!(sample.sample_size(), 4);
         }
     }
@@ -201,14 +201,14 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = GaussianDataMatrix::from(df);
+            let data_set = GaussianDataMatrix::from(df);
 
             assert_eq!(
-                data.values(),
+                data_set.data(),
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data.labels_iter().into_iter().eq(["X", "Y", "Z"]));
+            assert!(data_set.labels_iter().into_iter().eq(["X", "Y", "Z"]));
         }
 
         #[test]
@@ -222,10 +222,10 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = GaussianDataMatrix::from(true_df.clone());
+            let data_set = GaussianDataMatrix::from(true_df.clone());
 
             // Cast datamatrix to dataframe.
-            let pred_df: DataFrame = data.into();
+            let pred_df: DataFrame = data_set.into();
 
             assert_eq!(pred_df, true_df);
         }
@@ -241,16 +241,16 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = GaussianDataMatrix::from(df);
+            let data_set = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            let sample = data.sample(&mut rng, 2);
+            let sample = data_set.sample(&mut rng, 2);
             // Assert labels and values.
-            assert!(data.labels_iter().eq(sample.labels_iter()));
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() > sample.sample_size());
+            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() > sample.sample_size());
             assert_eq!(sample.sample_size(), 2);
         }
 
@@ -266,12 +266,12 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = GaussianDataMatrix::from(df);
+            let data_set = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            data.sample(&mut rng, 4);
+            data_set.sample(&mut rng, 4);
         }
 
         #[test]
@@ -285,16 +285,16 @@ mod tests {
                 .finish()
                 .expect("Failed to read from CSV file");
             // Cast dataframe to datamatrix.
-            let data = GaussianDataMatrix::from(df);
+            let data_set = GaussianDataMatrix::from(df);
 
             // Define random number generator.
             let mut rng = rand::thread_rng();
             // Sample from the data set.
-            let sample = data.sample_with_replacement(&mut rng, 4);
+            let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels and values.
-            assert!(data.labels_iter().eq(sample.labels_iter()));
-            assert_eq!(data.values().ncols(), sample.values().ncols());
-            assert!(data.sample_size() < sample.sample_size());
+            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert_eq!(data_set.data().ncols(), sample.data().ncols());
+            assert!(data_set.sample_size() < sample.sample_size());
             assert_eq!(sample.sample_size(), 4);
         }
     }

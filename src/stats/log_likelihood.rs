@@ -70,10 +70,7 @@ impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
         // Get the variable and sample size.
-        let (x, n) = (
-            self.data_set.values().column(x),
-            self.data_set.sample_size(),
-        );
+        let (x, n) = (self.data_set.data().column(x), self.data_set.sample_size());
 
         // Compute the mean.
         let mean = x.sum() / n as f64;
@@ -152,7 +149,6 @@ impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
                     .insert_axis(Axis(1))
                     .mapv(|j| j as f64);
                 let n_ij = n_ij.mapv(|i| i as f64);
-
                 // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
                 (&n_ij * (&n_ij / n_j).mapv(f64::ln))
                     // Map NaNs to zero.
@@ -171,7 +167,7 @@ impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
-        let d = self.data_set.values();
+        let d = self.data_set.data();
         // Get sample size and number of conditioning variables.
         let (n, m) = (d.nrows(), z.len());
         // Get a copy of the variable.
@@ -485,7 +481,7 @@ where
 {
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Initialize the objective function.
-        let f = ZINBObjective::new(self.data_set.values(), x, z);
+        let f = ZINBObjective::new(self.data_set.data(), x, z);
 
         // Initialize the starting parameters.
         let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);

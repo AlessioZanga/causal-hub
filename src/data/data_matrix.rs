@@ -22,12 +22,12 @@ use crate::types::{FxIndexMap, FxIndexSet};
 pub struct CategoricalDataMatrix {
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Vec<u8>,
-    values: Array2<u8>,
+    data: Array2<u8>,
 }
 
 impl CategoricalDataMatrix {
     /// Construct a new categorical data matrix given data and states.
-    pub fn new<V, I, J>(states: I, values: Array2<u8>) -> Self
+    pub fn new<V, I, J>(states: I, data: Array2<u8>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = (V, J)>,
@@ -40,7 +40,7 @@ impl CategoricalDataMatrix {
             .sorted_by(|(x, _), (y, _)| x.cmp(y))
             .collect();
         // Check labels consistency.
-        assert_eq!(values.ncols(), states.len());
+        assert_eq!(data.ncols(), states.len());
         // Compute cardinalities from states.
         let cardinality = states
             .values()
@@ -54,7 +54,7 @@ impl CategoricalDataMatrix {
         Self {
             states,
             cardinality,
-            values,
+            data,
         }
     }
 
@@ -91,7 +91,7 @@ impl CategoricalDataMatrix {
             // Get columns to be updated.
             let (i, _, s_v) = self.states.get_full(&k).unwrap();
             // Align values encodings.
-            self.values.column_mut(i).map_inplace(|x| {
+            self.data.column_mut(i).map_inplace(|x| {
                 // Set new location w.r.t. previous state.
                 *x = v.get_index_of(&s_v[*x as usize]).unwrap() as u8;
             });
@@ -121,10 +121,10 @@ impl CategoricalDataMatrix {
 }
 
 impl From<DataFrame> for CategoricalDataMatrix {
-    fn from(df: DataFrame) -> Self {
+    fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
-            !df.iter().any(|s| s.is_null().any()),
+            !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
                 "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
@@ -133,12 +133,12 @@ impl From<DataFrame> for CategoricalDataMatrix {
 
         // Check for wrong data type.
         assert!(
-            df.iter().all(|s| !s.dtype().is_float()),
+            data_frame.iter().all(|s| !s.dtype().is_float()),
             "DataSet must contain only categorical types"
         );
 
         // Cast to categorical datatype.
-        let df = df.iter().map(|s| {
+        let data_frame = data_frame.iter().map(|s| {
             s.cast(&DataType::Utf8)
                 .expect("Failed to cast to intermediate UTF-8 datatype")
                 .cast(&DataType::Categorical(None))
@@ -146,16 +146,18 @@ impl From<DataFrame> for CategoricalDataMatrix {
         });
 
         // Sort columns by name.
-        let df: DataFrame = df.sorted_by(|a, b| a.name().cmp(b.name())).collect();
+        let data_frame: DataFrame = data_frame
+            .sorted_by(|a, b| a.name().cmp(b.name()))
+            .collect();
 
         // Get underlying data matrix.
-        let mut values = df
+        let mut data = data_frame
             .to_ndarray::<UInt32Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix")
             .mapv(|x| x as u8);
 
         // Get variables states.
-        let states: FxIndexMap<_, _> = df
+        let states: FxIndexMap<_, _> = data_frame
             // Iterate over the columns.
             .iter()
             // Get index-to-label mapping.
@@ -200,8 +202,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
                     let mut indices = (0..states.len()).collect_vec();
                     indices.sort_by_key(|&i| &states[i]);
                     // Sort the data.
-                    values
-                        .column_mut(i)
+                    data.column_mut(i)
                         .mapv_inplace(|x| indices[x as usize] as u8);
                     // Sort the labels.
                     states.sort();
@@ -227,18 +228,18 @@ impl From<DataFrame> for CategoricalDataMatrix {
         Self {
             states,
             cardinality,
-            values,
+            data,
         }
     }
 }
 
 impl From<CategoricalDataMatrix> for DataFrame {
-    fn from(data: CategoricalDataMatrix) -> Self {
+    fn from(data_set: CategoricalDataMatrix) -> Self {
         // Map columns to series.
-        let series = data
+        let series = data_set
             .states
             .into_iter()
-            .zip(data.values.columns())
+            .zip(data_set.data.columns())
             .map(|((name, states), column)| {
                 Series::new(
                     &name,
@@ -263,6 +264,11 @@ impl DataSet for CategoricalDataMatrix {
         Map<indexmap::map::Keys<'a, String, FxIndexSet<String>>, fn(&'a String) -> &'a str>;
 
     #[inline]
+    fn data(&self) -> &Self::Data {
+        &self.data
+    }
+
+    #[inline]
     fn labels(&self) -> &Self::Labels {
         &self.states
     }
@@ -273,18 +279,13 @@ impl DataSet for CategoricalDataMatrix {
     }
 
     #[inline]
-    fn values(&self) -> &Self::Data {
-        &self.values
-    }
-
-    #[inline]
     fn sample_size(&self) -> usize {
-        self.values.nrows()
+        self.data.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithoutReplacement,
@@ -294,13 +295,13 @@ impl DataSet for CategoricalDataMatrix {
         Self {
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
-            values,
+            data,
         }
     }
 
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithReplacement,
@@ -310,7 +311,7 @@ impl DataSet for CategoricalDataMatrix {
         Self {
             states: self.states.clone(),
             cardinality: self.cardinality.clone(),
-            values,
+            data,
         }
     }
 }
@@ -321,14 +322,14 @@ impl DataSet for CategoricalDataMatrix {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GaussianDataMatrix {
     labels: BTreeSet<String>,
-    values: Array2<f64>,
+    data: Array2<f64>,
 }
 
 impl From<DataFrame> for GaussianDataMatrix {
-    fn from(df: DataFrame) -> Self {
+    fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
-            !df.iter().any(|s| s.is_null().any()),
+            !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values. ",
                 "Refer to `GaussianDataMatrixWithMissing` to handle missing values properly."
@@ -337,36 +338,40 @@ impl From<DataFrame> for GaussianDataMatrix {
 
         // Check for wrong data type.
         assert!(
-            df.iter().all(|s| s.dtype().is_float()),
+            data_frame.iter().all(|s| s.dtype().is_float()),
             "DataSet must contain only float types"
         );
 
         // Sort columns by name.
-        let df: DataFrame = df
+        let data_frame: DataFrame = data_frame
             .iter()
             .sorted_by(|a, b| a.name().cmp(b.name()))
             .cloned()
             .collect();
 
         // Get underlying data matrix.
-        let values = df
+        let data = data_frame
             .to_ndarray::<Float64Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
-        let labels = df.get_column_names_owned().into_iter().map_into().collect();
+        let labels = data_frame
+            .get_column_names_owned()
+            .into_iter()
+            .map_into()
+            .collect();
 
-        Self { labels, values }
+        Self { labels, data }
     }
 }
 
 impl From<GaussianDataMatrix> for DataFrame {
-    fn from(data: GaussianDataMatrix) -> Self {
+    fn from(data_set: GaussianDataMatrix) -> Self {
         // Map columns to series.
-        let series = data
+        let series = data_set
             .labels
             .into_iter()
-            .zip(data.values.columns())
+            .zip(data_set.data.columns())
             .map(|(name, column)| Series::new(&name, column.to_vec()))
             .collect_vec();
 
@@ -382,6 +387,11 @@ impl DataSet for GaussianDataMatrix {
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
+    fn data(&self) -> &Self::Data {
+        &self.data
+    }
+
+    #[inline]
     fn labels(&self) -> &Self::Labels {
         &self.labels
     }
@@ -392,18 +402,13 @@ impl DataSet for GaussianDataMatrix {
     }
 
     #[inline]
-    fn values(&self) -> &Self::Data {
-        &self.values
-    }
-
-    #[inline]
     fn sample_size(&self) -> usize {
-        self.values.nrows()
+        self.data.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithoutReplacement,
@@ -412,13 +417,13 @@ impl DataSet for GaussianDataMatrix {
 
         Self {
             labels: self.labels.clone(),
-            values,
+            data,
         }
     }
 
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithReplacement,
@@ -427,7 +432,7 @@ impl DataSet for GaussianDataMatrix {
 
         Self {
             labels: self.labels.clone(),
-            values,
+            data,
         }
     }
 }
@@ -438,7 +443,7 @@ impl DataSet for GaussianDataMatrix {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ZeroInflatedNegativeBinomialDataMatrix {
     labels: BTreeSet<String>,
-    values: Array2<f64>,
+    data: Array2<f64>,
 }
 
 /// Alias for `ZeroInflatedNegativeBinomialDataMatrix`.
@@ -446,7 +451,7 @@ pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
 
 impl ZINBDataMatrix {
     /// Construct a new zero-inflated negative binomial data matrix given data and labels.
-    pub fn new<V, I>(labels: I, values: Array2<f64>) -> Self
+    pub fn new<V, I>(labels: I, data: Array2<f64>) -> Self
     where
         V: Into<String>,
         I: IntoIterator<Item = V>,
@@ -454,15 +459,15 @@ impl ZINBDataMatrix {
         // Get variables as set of strings.
         let labels = labels.into_iter().map_into().collect();
 
-        Self { labels, values }
+        Self { labels, data }
     }
 }
 
 impl From<DataFrame> for ZINBDataMatrix {
-    fn from(df: DataFrame) -> Self {
+    fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
-            !df.iter().any(|s| s.is_null().any()),
+            !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values. ",
                 "Refer to `ZeroInflatedNegativeBinomialDataMatrixWithMissing` to handle missing values properly."
@@ -471,36 +476,40 @@ impl From<DataFrame> for ZINBDataMatrix {
 
         // Check for wrong data type.
         assert!(
-            df.iter().all(|s| s.dtype().is_float()),
+            data_frame.iter().all(|s| s.dtype().is_float()),
             "DataSet must contain only float types"
         );
 
         // Sort columns by name.
-        let df: DataFrame = df
+        let data_frame: DataFrame = data_frame
             .iter()
             .sorted_by(|a, b| a.name().cmp(b.name()))
             .cloned()
             .collect();
 
         // Get underlying data matrix.
-        let values = df
+        let data = data_frame
             .to_ndarray::<Float64Type>(IndexOrder::C)
             .expect("Fail to cast to ndarray matrix");
 
         // Get variables as set of strings.
-        let labels = df.get_column_names_owned().into_iter().map_into().collect();
+        let labels = data_frame
+            .get_column_names_owned()
+            .into_iter()
+            .map_into()
+            .collect();
 
-        Self { labels, values }
+        Self { labels, data }
     }
 }
 
 impl From<ZINBDataMatrix> for DataFrame {
-    fn from(data: ZINBDataMatrix) -> Self {
+    fn from(data_set: ZINBDataMatrix) -> Self {
         // Map columns to series.
-        let series = data
+        let series = data_set
             .labels
             .into_iter()
-            .zip(data.values.columns())
+            .zip(data_set.data.columns())
             .map(|(name, column)| Series::new(&name, column.to_vec()))
             .collect_vec();
 
@@ -516,6 +525,11 @@ impl DataSet for ZINBDataMatrix {
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
+    fn data(&self) -> &Self::Data {
+        &self.data
+    }
+
+    #[inline]
     fn labels(&self) -> &Self::Labels {
         &self.labels
     }
@@ -526,18 +540,13 @@ impl DataSet for ZINBDataMatrix {
     }
 
     #[inline]
-    fn values(&self) -> &Self::Data {
-        &self.values
-    }
-
-    #[inline]
     fn sample_size(&self) -> usize {
-        self.values.nrows()
+        self.data.nrows()
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithoutReplacement,
@@ -546,13 +555,13 @@ impl DataSet for ZINBDataMatrix {
 
         Self {
             labels: self.labels.clone(),
-            values,
+            data,
         }
     }
 
     fn sample_with_replacement<R: Rng + ?Sized>(&self, rng: &mut R, sample_size: usize) -> Self {
         // Sample without replacement.
-        let values = self.values.sample_axis_using(
+        let data = self.data.sample_axis_using(
             Axis(0),
             sample_size,
             SamplingStrategy::WithReplacement,
@@ -561,7 +570,7 @@ impl DataSet for ZINBDataMatrix {
 
         Self {
             labels: self.labels.clone(),
-            values,
+            data,
         }
     }
 }

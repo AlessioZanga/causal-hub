@@ -62,7 +62,7 @@ impl From<&GaussianDataMatrix> for CorrelationMatrix {
     fn from(d: &GaussianDataMatrix) -> Self {
         // Compute the correlation matrix.
         let rho = d
-            .values()
+            .data()
             .t()
             .pearson_correlation()
             .expect("Failed to compute the correlation matrix");
