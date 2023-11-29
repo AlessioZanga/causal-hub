@@ -115,6 +115,11 @@ where
 
         Some(sample)
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.bootstrap_size, Some(self.bootstrap_size))
+    }
 }
 
 impl<'a, 'b, D, R> ExactSizeIterator for BootstrapIterator<'a, 'b, D, R>
@@ -188,6 +193,74 @@ where
         bootstrap_size: usize,
     ) -> Self::BootstrapIter<'a, 'b, R> {
         Self::BootstrapIter::new(self, rng, sample_size, bootstrap_size)
+    }
+}
+
+/* Test the `DataSetSample` trait using `CategoricalDataMatrix`. */
+#[cfg(test)]
+mod test_data_set_sample {
+    use crate::prelude::*;
+    use ndarray::prelude::*;
+    use rand::prelude::*;
+    use rand_xoshiro::Xoshiro256StarStar;
+
+    #[test]
+    #[should_panic]
+    fn test_sample_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.sample(&mut rng, 11);
+    }
+
+    #[test]
+    fn test_sample() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let sample = data_set.sample(&mut rng, 5);
+        assert_eq!(sample.sample_size(), 5);
+        assert_eq!(sample.labels(), data_set.labels());
+    }
+
+    #[test]
+    fn test_sample_with_replacement() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let sample = data_set.sample_with_replacement(&mut rng, 5);
+        assert_eq!(sample.sample_size(), 5);
+        assert_eq!(sample.labels(), data_set.labels());
+    }
+
+    #[test]
+    fn test_bootstrap_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let bootstrap_iter = data_set.bootstrap_iter(&mut rng, 5, 10);
+        assert_eq!(bootstrap_iter.len(), 10);
+        assert_eq!(bootstrap_iter.size_hint(), (10, Some(10)));
+        bootstrap_iter.for_each(|sample| {
+            assert_eq!(sample.sample_size(), 5);
+            assert_eq!(sample.labels(), data_set.labels());
+        });
     }
 }
 
@@ -420,20 +493,48 @@ where
     }
 }
 
+/* Test the `ParallelDataSetSample` trait using `CategoricalDataMatrix`. */
+#[cfg(test)]
+mod test_parallel_data_set_sample {
+    use crate::prelude::*;
+    use ndarray::prelude::*;
+    use rand::prelude::*;
+    use rand_xoshiro::Xoshiro256StarStar;
+    use rayon::prelude::*;
+
+    #[test]
+    fn test_par_bootstrap_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let bootstrap_iter = data_set.par_bootstrap_iter(&mut rng, 5, 10);
+        assert_eq!(bootstrap_iter.len(), 10);
+        assert_eq!(bootstrap_iter.opt_len(), Some(10));
+        bootstrap_iter.for_each(|sample| {
+            assert_eq!(sample.sample_size(), 5);
+            assert_eq!(sample.labels(), data_set.labels());
+        });
+    }
+}
+
 /// Data set split trait.
 pub trait DataSetSplit: DataSet {
     /// K-fold iterator type.
-    type KFoldSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    type KFoldIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Leave-one-out iterator type.
-    type LeaveOneOutSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    type LeaveOneOutIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
     /// Leave-p-out iterator type.
-    type LeavePOutSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    type LeavePOutIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
     where
         Self: 'a;
 
@@ -461,7 +562,7 @@ pub trait DataSetSplit: DataSet {
     /// The folds are not guaranteed to be of equal size, e.g. if `k` is not a divisor of
     /// the total number of samples, then there will be one fold with less than `k` samples.
     ///
-    fn k_fold_split_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldSplitIter<'a>;
+    fn k_fold_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldIter<'a>;
 
     /// Split the data set into leave-one-out folds.
     ///
@@ -469,10 +570,7 @@ pub trait DataSetSplit: DataSet {
     ///
     /// The data set is shuffled before splitting.
     ///
-    fn leave_one_out_split_iter<'a, R: Rng>(
-        &'a self,
-        rng: &mut R,
-    ) -> Self::LeaveOneOutSplitIter<'a>;
+    fn leave_one_out_iter<'a, R: Rng>(&'a self, rng: &mut R) -> Self::LeaveOneOutIter<'a>;
 
     /// Split the data set into leave-p-out folds.
     ///
@@ -484,20 +582,16 @@ pub trait DataSetSplit: DataSet {
     ///
     /// The data set is shuffled before splitting.
     ///
-    fn leave_p_out_split_iter<'a, R: Rng>(
-        &'a self,
-        rng: &mut R,
-        p: usize,
-    ) -> Self::LeavePOutSplitIter<'a>;
+    fn leave_p_out_iter<'a, R: Rng>(&'a self, rng: &mut R, p: usize) -> Self::LeavePOutIter<'a>;
 }
 
 /// K-fold split iterator.
-pub struct KFoldSplitIterator<'a, D> {
+pub struct KFoldIterator<'a, D> {
     data_set: &'a D,
     indices: VecDeque<Vec<usize>>,
 }
 
-impl<'a, D> KFoldSplitIterator<'a, D>
+impl<'a, D> KFoldIterator<'a, D>
 where
     D: DataSet,
 {
@@ -506,6 +600,10 @@ where
     pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, k: usize) -> Self {
         // Get sample size.
         let n = data_set.sample_size();
+
+        // Check that `k` is not greater than the total number of samples.
+        assert!(k <= n, "k is greater than the total number of samples.");
+
         // Allocate split indices.
         let mut indices = (0..n).collect_vec();
         // Shuffle split indices.
@@ -519,7 +617,7 @@ where
     }
 }
 
-impl<'a, D, T> Iterator for KFoldSplitIterator<'a, D>
+impl<'a, D, T> Iterator for KFoldIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -552,7 +650,7 @@ where
     }
 }
 
-impl<'a, D, T> ExactSizeIterator for KFoldSplitIterator<'a, D>
+impl<'a, D, T> ExactSizeIterator for KFoldIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -563,7 +661,7 @@ where
     }
 }
 
-impl<'a, D, T> FusedIterator for KFoldSplitIterator<'a, D>
+impl<'a, D, T> FusedIterator for KFoldIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -571,13 +669,13 @@ where
 }
 
 /// Leave-one-out split iterator.
-pub struct LeaveOneOutSplitIterator<'a, D> {
+pub struct LeaveOneOutIterator<'a, D> {
     data_set: &'a D,
     indices: Vec<usize>,
     skip: usize,
 }
 
-impl<'a, D> LeaveOneOutSplitIterator<'a, D>
+impl<'a, D> LeaveOneOutIterator<'a, D>
 where
     D: DataSet,
 {
@@ -601,7 +699,7 @@ where
     }
 }
 
-impl<'a, D, T> Iterator for LeaveOneOutSplitIterator<'a, D>
+impl<'a, D, T> Iterator for LeaveOneOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -641,7 +739,7 @@ where
     }
 }
 
-impl<'a, D, T> ExactSizeIterator for LeaveOneOutSplitIterator<'a, D>
+impl<'a, D, T> ExactSizeIterator for LeaveOneOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -652,7 +750,7 @@ where
     }
 }
 
-impl<'a, D, T> FusedIterator for LeaveOneOutSplitIterator<'a, D>
+impl<'a, D, T> FusedIterator for LeaveOneOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -660,13 +758,13 @@ where
 }
 
 /// Leave-p-out split iterator.
-pub struct LeavePOutSplitIterator<'a, D> {
+pub struct LeavePOutIterator<'a, D> {
     data_set: &'a D,
     indices: Vec<Vec<usize>>,
     skip: usize,
 }
 
-impl<'a, D> LeavePOutSplitIterator<'a, D>
+impl<'a, D> LeavePOutIterator<'a, D>
 where
     D: DataSet,
 {
@@ -675,6 +773,10 @@ where
     pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, p: usize) -> Self {
         // Get sample size.
         let n = data_set.sample_size();
+
+        // Check that `p` is not greater than the total number of samples.
+        assert!(p <= n, "p is greater than the total number of samples.");
+
         // Allocate split indices.
         let mut indices = (0..n).collect_vec();
         // Shuffle split indices.
@@ -694,7 +796,7 @@ where
     }
 }
 
-impl<'a, D, T> Iterator for LeavePOutSplitIterator<'a, D>
+impl<'a, D, T> Iterator for LeavePOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -734,7 +836,7 @@ where
     }
 }
 
-impl<'a, D, T> ExactSizeIterator for LeavePOutSplitIterator<'a, D>
+impl<'a, D, T> ExactSizeIterator for LeavePOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -745,7 +847,7 @@ where
     }
 }
 
-impl<'a, D, T> FusedIterator for LeavePOutSplitIterator<'a, D>
+impl<'a, D, T> FusedIterator for LeavePOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
@@ -757,11 +859,11 @@ where
     D: DataSet<Data = Array2<T>>,
     T: Clone + Zero,
 {
-    type KFoldSplitIter<'a> = KFoldSplitIterator<'a, D> where D: 'a;
+    type KFoldIter<'a> = KFoldIterator<'a, D> where D: 'a;
 
-    type LeaveOneOutSplitIter<'a> = LeaveOneOutSplitIterator<'a, D> where D: 'a;
+    type LeaveOneOutIter<'a> = LeaveOneOutIterator<'a, D> where D: 'a;
 
-    type LeavePOutSplitIter<'a> = LeavePOutSplitIterator<'a, D> where D: 'a;
+    type LeavePOutIter<'a> = LeavePOutIterator<'a, D> where D: 'a;
 
     fn train_test_split<R: Rng>(&self, rng: &mut R, test_percentage: f64) -> (Self, Self) {
         // Check that the test percentage is in the range `[0, 1]`.
@@ -808,42 +910,153 @@ where
     }
 
     #[inline]
-    fn k_fold_split_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldSplitIter<'a> {
-        Self::KFoldSplitIter::new(self, rng, k)
+    fn k_fold_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldIter<'a> {
+        Self::KFoldIter::new(self, rng, k)
     }
 
     #[inline]
-    fn leave_one_out_split_iter<'a, R: Rng>(
-        &'a self,
-        rng: &mut R,
-    ) -> Self::LeaveOneOutSplitIter<'a> {
-        Self::LeaveOneOutSplitIter::new(self, rng)
+    fn leave_one_out_iter<'a, R: Rng>(&'a self, rng: &mut R) -> Self::LeaveOneOutIter<'a> {
+        Self::LeaveOneOutIter::new(self, rng)
     }
 
     #[inline]
-    fn leave_p_out_split_iter<'a, R: Rng>(
-        &'a self,
-        rng: &mut R,
-        p: usize,
-    ) -> Self::LeavePOutSplitIter<'a> {
-        Self::LeavePOutSplitIter::new(self, rng, p)
+    fn leave_p_out_iter<'a, R: Rng>(&'a self, rng: &mut R, p: usize) -> Self::LeavePOutIter<'a> {
+        Self::LeavePOutIter::new(self, rng, p)
+    }
+}
+
+/* Test the `DataSetSplit` trait using `CategoricalDataMatrix`. */
+#[cfg(test)]
+mod test_data_set_split {
+    use crate::prelude::*;
+    use ndarray::prelude::*;
+    use rand::prelude::*;
+    use rand_xoshiro::Xoshiro256StarStar;
+
+    #[test]
+    #[should_panic]
+    fn test_train_test_split_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.train_test_split(&mut rng, 1.1);
+    }
+
+    #[test]
+    fn test_train_test_split() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let (train_set, test_set) = data_set.train_test_split(&mut rng, 0.2);
+        assert_eq!(train_set.sample_size(), 8);
+        assert_eq!(test_set.sample_size(), 2);
+        assert_eq!(train_set.labels(), data_set.labels());
+        assert_eq!(test_set.labels(), data_set.labels());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_k_fold_iter_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.k_fold_iter(&mut rng, 11);
+    }
+
+    #[test]
+    fn test_k_fold_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let k_fold_iter = data_set.k_fold_iter(&mut rng, 5);
+        assert_eq!(k_fold_iter.len(), 5);
+        assert_eq!(k_fold_iter.size_hint(), (5, Some(5)));
+        k_fold_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 2);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
+    }
+
+    #[test]
+    fn test_leave_one_out_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let leave_one_out_iter = data_set.leave_one_out_iter(&mut rng);
+        assert_eq!(leave_one_out_iter.len(), 10);
+        assert_eq!(leave_one_out_iter.size_hint(), (10, Some(10)));
+        leave_one_out_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 9);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_leave_p_out_iter_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.leave_p_out_iter(&mut rng, 11);
+    }
+
+    #[test]
+    fn test_leave_p_out_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let leave_p_out_iter = data_set.leave_p_out_iter(&mut rng, 5);
+        assert_eq!(leave_p_out_iter.len(), 5);
+        assert_eq!(leave_p_out_iter.size_hint(), (5, Some(5)));
+        leave_p_out_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 8);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
     }
 }
 
 /// Parallel data set split trait.
 pub trait ParallelDataSetSplit: DataSet + Send {
     /// Parallel k-fold iterator type.
-    type ParallelKFoldSplitIter<'a>: ParallelIterator<Item = Self>
+    type ParallelKFoldIter<'a>: ParallelIterator<Item = Self>
     where
         Self: 'a + Send;
 
     /// Parallel leave-one-out iterator type.
-    type ParallelLeaveOneOutSplitIter<'a>: ParallelIterator<Item = Self>
+    type ParallelLeaveOneOutIter<'a>: ParallelIterator<Item = Self>
     where
         Self: 'a + Send;
 
     /// Parallel leave-p-out iterator type.
-    type ParallelLeavePOutSplitIter<'a>: ParallelIterator<Item = Self>
+    type ParallelLeavePOutIter<'a>: ParallelIterator<Item = Self>
     where
         Self: 'a + Send;
 
@@ -859,11 +1072,11 @@ pub trait ParallelDataSetSplit: DataSet + Send {
     /// The folds are not guaranteed to be of equal size, e.g. if `k` is not a divisor of
     /// the total number of samples, then there will be one fold with less than `k` samples.
     ///
-    fn par_k_fold_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_k_fold_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
         k: usize,
-    ) -> Self::ParallelKFoldSplitIter<'a>;
+    ) -> Self::ParallelKFoldIter<'a>;
 
     /// Split the data set into leave-one-out folds in parallel.
     ///
@@ -871,10 +1084,10 @@ pub trait ParallelDataSetSplit: DataSet + Send {
     ///
     /// The data set is shuffled before splitting.
     ///
-    fn par_leave_one_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_leave_one_out_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
-    ) -> Self::ParallelLeaveOneOutSplitIter<'a>;
+    ) -> Self::ParallelLeaveOneOutIter<'a>;
 
     /// Split the data set into leave-p-out folds in parallel.
     ///
@@ -886,20 +1099,20 @@ pub trait ParallelDataSetSplit: DataSet + Send {
     ///
     /// The data set is shuffled before splitting.
     ///
-    fn par_leave_p_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_leave_p_out_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
         p: usize,
-    ) -> Self::ParallelLeavePOutSplitIter<'a>;
+    ) -> Self::ParallelLeavePOutIter<'a>;
 }
 
 /// Parallel k-fold split iterator.
-pub struct ParallelKFoldSplitIterator<'a, D> {
+pub struct ParallelKFoldIterator<'a, D> {
     data_set: &'a D,
     indices: VecDeque<Vec<usize>>,
 }
 
-impl<'a, D> ParallelKFoldSplitIterator<'a, D>
+impl<'a, D> ParallelKFoldIterator<'a, D>
 where
     D: DataSet + Send,
 {
@@ -908,6 +1121,10 @@ where
     pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, k: usize) -> Self {
         // Get sample size.
         let n = data_set.sample_size();
+
+        // Check that `k` is not greater than the total number of samples.
+        assert!(k <= n, "k is greater than the total number of samples.");
+
         // Allocate split indices.
         let mut indices = (0..n).collect_vec();
         // Shuffle split indices.
@@ -921,7 +1138,7 @@ where
     }
 }
 
-impl<'a, D, T> ParallelIterator for ParallelKFoldSplitIterator<'a, D>
+impl<'a, D, T> ParallelIterator for ParallelKFoldIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -948,9 +1165,9 @@ struct ParallelKFoldSplitProducer<'a, D> {
     indices: VecDeque<Vec<usize>>,
 }
 
-impl<'a, D> From<ParallelKFoldSplitIterator<'a, D>> for ParallelKFoldSplitProducer<'a, D> {
+impl<'a, D> From<ParallelKFoldIterator<'a, D>> for ParallelKFoldSplitProducer<'a, D> {
     #[inline]
-    fn from(producer: ParallelKFoldSplitIterator<'a, D>) -> Self {
+    fn from(producer: ParallelKFoldIterator<'a, D>) -> Self {
         Self {
             data_set: producer.data_set,
             indices: producer.indices,
@@ -1055,7 +1272,7 @@ where
     }
 }
 
-impl<'a, D, T> IndexedParallelIterator for ParallelKFoldSplitIterator<'a, D>
+impl<'a, D, T> IndexedParallelIterator for ParallelKFoldIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -1089,14 +1306,14 @@ where
 }
 
 /// Parallel leave-one-out split iterator.
-pub struct ParallelLeaveOneOutSplitIterator<'a, D> {
+pub struct ParallelLeaveOneOutIterator<'a, D> {
     data_set: &'a D,
     indices: Arc<Vec<usize>>,
     skip: usize,
     skip_max: usize,
 }
 
-impl<'a, D> ParallelLeaveOneOutSplitIterator<'a, D>
+impl<'a, D> ParallelLeaveOneOutIterator<'a, D>
 where
     D: DataSet + Send,
 {
@@ -1125,7 +1342,7 @@ where
     }
 }
 
-impl<'a, D, T> ParallelIterator for ParallelLeaveOneOutSplitIterator<'a, D>
+impl<'a, D, T> ParallelIterator for ParallelLeaveOneOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -1154,11 +1371,9 @@ struct ParallelLeaveOneOutSplitProducer<'a, D> {
     skip_max: usize,
 }
 
-impl<'a, D> From<ParallelLeaveOneOutSplitIterator<'a, D>>
-    for ParallelLeaveOneOutSplitProducer<'a, D>
-{
+impl<'a, D> From<ParallelLeaveOneOutIterator<'a, D>> for ParallelLeaveOneOutSplitProducer<'a, D> {
     #[inline]
-    fn from(producer: ParallelLeaveOneOutSplitIterator<'a, D>) -> Self {
+    fn from(producer: ParallelLeaveOneOutIterator<'a, D>) -> Self {
         Self {
             data_set: producer.data_set,
             indices: producer.indices,
@@ -1245,7 +1460,7 @@ where
     }
 }
 
-impl<'a, D, T> IndexedParallelIterator for ParallelLeaveOneOutSplitIterator<'a, D>
+impl<'a, D, T> IndexedParallelIterator for ParallelLeaveOneOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -1331,14 +1546,14 @@ where
 }
 
 /// Parallel leave-p-out split iterator.
-pub struct ParallelLeavePOutSplitIterator<'a, D> {
+pub struct ParallelLeavePOutIterator<'a, D> {
     data_set: &'a D,
     indices: Arc<Vec<Vec<usize>>>,
     skip: usize,
     skip_max: usize,
 }
 
-impl<'a, D> ParallelLeavePOutSplitIterator<'a, D>
+impl<'a, D> ParallelLeavePOutIterator<'a, D>
 where
     D: DataSet + Send,
 {
@@ -1347,6 +1562,10 @@ where
     pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, p: usize) -> Self {
         // Get sample size.
         let n = data_set.sample_size();
+
+        // Check that `p` is not greater than the total number of samples.
+        assert!(p <= n, "p is greater than the total number of samples.");
+
         // Allocate split indices.
         let mut indices = (0..n).collect_vec();
         // Shuffle split indices.
@@ -1371,7 +1590,7 @@ where
     }
 }
 
-impl<'a, D, T> ParallelIterator for ParallelLeavePOutSplitIterator<'a, D>
+impl<'a, D, T> ParallelIterator for ParallelLeavePOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -1400,9 +1619,9 @@ struct ParallelLeavePOutSplitProducer<'a, D> {
     skip_max: usize,
 }
 
-impl<'a, D> From<ParallelLeavePOutSplitIterator<'a, D>> for ParallelLeavePOutSplitProducer<'a, D> {
+impl<'a, D> From<ParallelLeavePOutIterator<'a, D>> for ParallelLeavePOutSplitProducer<'a, D> {
     #[inline]
-    fn from(producer: ParallelLeavePOutSplitIterator<'a, D>) -> Self {
+    fn from(producer: ParallelLeavePOutIterator<'a, D>) -> Self {
         Self {
             data_set: producer.data_set,
             indices: producer.indices,
@@ -1489,7 +1708,7 @@ where
     }
 }
 
-impl<'a, D, T> IndexedParallelIterator for ParallelLeavePOutSplitIterator<'a, D>
+impl<'a, D, T> IndexedParallelIterator for ParallelLeavePOutIterator<'a, D>
 where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
@@ -1579,41 +1798,131 @@ where
     D: DataSet<Data = Array2<T>> + Send,
     T: Clone + Zero,
 {
-    type ParallelKFoldSplitIter<'a> = ParallelKFoldSplitIterator<'a, D>
+    type ParallelKFoldIter<'a> = ParallelKFoldIterator<'a, D>
     where
         D: 'a + Send;
 
-    type ParallelLeaveOneOutSplitIter<'a> = ParallelLeaveOneOutSplitIterator<'a, D>
+    type ParallelLeaveOneOutIter<'a> = ParallelLeaveOneOutIterator<'a, D>
     where
         D: 'a + Send;
 
-    type ParallelLeavePOutSplitIter<'a> = ParallelLeavePOutSplitIterator<'a, D>
+    type ParallelLeavePOutIter<'a> = ParallelLeavePOutIterator<'a, D>
     where
         D: 'a + Send;
 
     #[inline]
-    fn par_k_fold_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_k_fold_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
         k: usize,
-    ) -> Self::ParallelKFoldSplitIter<'a> {
-        Self::ParallelKFoldSplitIter::new(self, rng, k)
+    ) -> Self::ParallelKFoldIter<'a> {
+        Self::ParallelKFoldIter::new(self, rng, k)
     }
 
     #[inline]
-    fn par_leave_one_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_leave_one_out_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
-    ) -> Self::ParallelLeaveOneOutSplitIter<'a> {
-        Self::ParallelLeaveOneOutSplitIter::new(self, rng)
+    ) -> Self::ParallelLeaveOneOutIter<'a> {
+        Self::ParallelLeaveOneOutIter::new(self, rng)
     }
 
     #[inline]
-    fn par_leave_p_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+    fn par_leave_p_out_iter<'a, R: Rng + SeedableRng + Send>(
         &'a self,
         rng: &mut R,
         p: usize,
-    ) -> Self::ParallelLeavePOutSplitIter<'a> {
-        Self::ParallelLeavePOutSplitIter::new(self, rng, p)
+    ) -> Self::ParallelLeavePOutIter<'a> {
+        Self::ParallelLeavePOutIter::new(self, rng, p)
+    }
+}
+
+/* Test the `ParallelDataSetSplit` trait using `CategoricalDataMatrix`. */
+#[cfg(test)]
+mod test_parallel_data_set_split {
+    use crate::prelude::*;
+    use ndarray::prelude::*;
+    use rand::prelude::*;
+    use rand_xoshiro::Xoshiro256StarStar;
+    use rayon::prelude::*;
+
+    #[test]
+    #[should_panic]
+    fn test_par_k_fold_iter_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.par_k_fold_iter(&mut rng, 11);
+    }
+
+    #[test]
+    fn test_par_k_fold_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let k_fold_iter = data_set.par_k_fold_iter(&mut rng, 5);
+        assert_eq!(k_fold_iter.len(), 5);
+        assert_eq!(k_fold_iter.opt_len(), Some(5));
+        k_fold_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 2);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
+    }
+
+    #[test]
+    fn test_par_leave_one_out_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let leave_one_out_iter = data_set.par_leave_one_out_iter(&mut rng);
+        assert_eq!(leave_one_out_iter.len(), 10);
+        assert_eq!(leave_one_out_iter.opt_len(), Some(10));
+        leave_one_out_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 9);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_par_leave_p_out_iter_panic() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        data_set.par_leave_p_out_iter(&mut rng, 11);
+    }
+
+    #[test]
+    fn test_par_leave_p_out_iter() {
+        let data = Array2::zeros((10, 2));
+        let labels = [("X", ["a", "b", "c"]), ("Y", ["a", "b", "c"])]
+            .into_iter()
+            .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
+            .collect();
+        let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let leave_p_out_iter = data_set.par_leave_p_out_iter(&mut rng, 5);
+        assert_eq!(leave_p_out_iter.len(), 5);
+        assert_eq!(leave_p_out_iter.opt_len(), Some(5));
+        leave_p_out_iter.for_each(|fold| {
+            assert_eq!(fold.sample_size(), 8);
+            assert_eq!(fold.labels(), data_set.labels());
+        });
     }
 }
