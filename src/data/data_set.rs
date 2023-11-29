@@ -419,3 +419,410 @@ where
         Self::ParallelBootstrapIter::new(self, rng, sample_size, bootstrap_size)
     }
 }
+
+/// Data set split trait.
+pub trait DataSetSplit: DataSet {
+    /// K-fold iterator type.
+    type KFoldSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Leave-one-out iterator type.
+    type LeaveOneOutSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Leave-p-out iterator type.
+    type LeavePOutSplitIter<'a>: Iterator<Item = Self> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
+    /// Split the data set into training and test sets with a given test percentage.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `test_percentage` is not in the range `[0, 1]`.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    ///
+    fn train_test_split<R: Rng>(&self, rng: &mut R, test_percentage: f64) -> (Self, Self);
+
+    /// Split the data set into k-folds.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `k` is greater than the total number of samples in the data set.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    /// The folds are not guaranteed to be of equal size, e.g. if `k` is not a divisor of
+    /// the total number of samples, then there will be one fold with less than `k` samples.
+    ///
+    fn k_fold_split_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldSplitIter<'a>;
+
+    /// Split the data set into leave-one-out folds.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    ///
+    fn leave_one_out_split_iter<'a, R: Rng>(
+        &'a self,
+        rng: &mut R,
+    ) -> Self::LeaveOneOutSplitIter<'a>;
+
+    /// Split the data set into leave-p-out folds.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `p` is greater than the total number of samples in the data set.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    ///
+    fn leave_p_out_split_iter<'a, R: Rng>(
+        &'a self,
+        rng: &mut R,
+        p: usize,
+    ) -> Self::LeavePOutSplitIter<'a>;
+}
+
+/// K-fold split iterator.
+pub struct KFoldSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: VecDeque<Vec<usize>>,
+}
+
+impl<'a, D> KFoldSplitIterator<'a, D>
+where
+    D: DataSet,
+{
+    /// Construct a new k-fold iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, k: usize) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Compute chunk size.
+        let chunk_size = n / k + ((n % k) > 0) as usize;
+        // Split indices in `n` chunks.
+        let indices = indices.chunks(chunk_size).map(|i| i.to_vec()).collect();
+
+        Self { data_set, indices }
+    }
+}
+
+impl<'a, D, T> Iterator for KFoldSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.indices.is_empty() {
+            // ... return `None`.
+            return None;
+        }
+
+        // Pop the next fold indices.
+        let indices = self.indices.pop_front().unwrap();
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((indices.len(), self.data_set.data().ncols()));
+        // For each fold index ...
+        for (mut row, i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.indices.len(), Some(self.indices.len()))
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for KFoldSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+impl<'a, D, T> FusedIterator for KFoldSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+}
+
+/// Leave-one-out split iterator.
+pub struct LeaveOneOutSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: Vec<usize>,
+    skip: usize,
+}
+
+impl<'a, D> LeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet,
+{
+    /// Construct a new leave-one-out iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Initialize the skip counter.
+        let skip = 0;
+
+        Self {
+            data_set,
+            indices,
+            skip,
+        }
+    }
+}
+
+impl<'a, D, T> Iterator for LeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.indices.len() {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((self.indices.len() - 1, self.data_set.data().ncols()));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| (self.skip != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Increment the skip counter.
+        self.skip += 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.indices.len(), Some(self.indices.len()))
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for LeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+impl<'a, D, T> FusedIterator for LeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+}
+
+/// Leave-p-out split iterator.
+pub struct LeavePOutSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: VecDeque<Vec<usize>>,
+    skip: usize,
+}
+
+impl<'a, D> LeavePOutSplitIterator<'a, D>
+where
+    D: DataSet,
+{
+    /// Construct a new leave-p-out iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, p: usize) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Compute chunk size.
+        let chunk_size = n / p + ((n % p) > 0) as usize;
+        // Split indices in `n` chunks.
+        let indices = indices.chunks(chunk_size).map(|i| i.to_vec()).collect();
+        // Initialize the skip counter.
+        let skip = 0;
+
+        Self {
+            data_set,
+            indices,
+            skip,
+        }
+    }
+}
+
+impl<'a, D, T> Iterator for LeavePOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.indices.len() {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - self.indices[self.skip].len(),
+            self.data_set.data().ncols(),
+        ));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| (self.skip != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices.flatten()) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Increment the skip counter.
+        self.skip += 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.indices.len(), Some(self.indices.len()))
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for LeavePOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+impl<'a, D, T> FusedIterator for LeavePOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+}
+
+impl<D, T> DataSetSplit for D
+where
+    D: DataSet<Data = Array2<T>>,
+    T: Clone + Zero,
+{
+    type KFoldSplitIter<'a> = KFoldSplitIterator<'a, D> where D: 'a;
+
+    type LeaveOneOutSplitIter<'a> = LeaveOneOutSplitIterator<'a, D> where D: 'a;
+
+    type LeavePOutSplitIter<'a> = LeavePOutSplitIterator<'a, D> where D: 'a;
+
+    fn train_test_split<R: Rng>(&self, rng: &mut R, test_percentage: f64) -> (Self, Self) {
+        // Check that the test percentage is in the range `[0, 1]`.
+        assert!(
+            (0.0..=1.0).contains(&test_percentage),
+            "Test percentage is not in the range [0, 1]."
+        );
+
+        // Get sample size.
+        let n = self.sample_size();
+        // Compute the number of test samples.
+        let test_size = (n as f64 * test_percentage).round() as usize;
+        // Compute the number of training samples.
+        let train_size = n - test_size;
+
+        // Allocate memory for the training data.
+        let mut train_data = Self::Data::zeros((train_size, self.data().ncols()));
+        // Allocate memory for the test data.
+        let mut test_data = Self::Data::zeros((test_size, self.data().ncols()));
+
+        // Initialize the training and test indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle the indices.
+        indices.shuffle(rng);
+        // Split the indices into training and test indices.
+        let (train_indices, test_indices) = indices.split_at(train_size);
+
+        // For each training index ...
+        for (mut row, &i) in train_data.rows_mut().into_iter().zip(train_indices) {
+            // ... assign the training sample.
+            row.assign(&self.data().row(i));
+        }
+
+        // For each test index ...
+        for (mut row, &i) in test_data.rows_mut().into_iter().zip(test_indices) {
+            // ... assign the test sample.
+            row.assign(&self.data().row(i));
+        }
+
+        (
+            Self::with_data_labels(train_data, self.labels().clone()),
+            Self::with_data_labels(test_data, self.labels().clone()),
+        )
+    }
+
+    #[inline]
+    fn k_fold_split_iter<'a, R: Rng>(&'a self, rng: &mut R, k: usize) -> Self::KFoldSplitIter<'a> {
+        Self::KFoldSplitIter::new(self, rng, k)
+    }
+
+    #[inline]
+    fn leave_one_out_split_iter<'a, R: Rng>(
+        &'a self,
+        rng: &mut R,
+    ) -> Self::LeaveOneOutSplitIter<'a> {
+        Self::LeaveOneOutSplitIter::new(self, rng)
+    }
+
+    #[inline]
+    fn leave_p_out_split_iter<'a, R: Rng>(
+        &'a self,
+        rng: &mut R,
+        p: usize,
+    ) -> Self::LeavePOutSplitIter<'a> {
+        Self::LeavePOutSplitIter::new(self, rng, p)
+    }
+}

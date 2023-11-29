@@ -484,20 +484,18 @@ macro_rules! search {
                         true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
                         false => None,
                     })
-                    .chain(
-                        $del.par_iter()
-                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
-                                true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
-                                false => None,
-                            })
-                    )
-                    .chain(
-                        $rev.par_iter()
-                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
-                                true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
-                                false => None,
-                            })
-                    )
+                    .chain($del.par_iter().filter_map(|(x, y)| {
+                        match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
+                            true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                            false => None,
+                        }
+                    }))
+                    .chain($rev.par_iter().filter_map(|(x, y)| {
+                        match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
+                            true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                            false => None,
+                        }
+                    }))
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
@@ -523,29 +521,22 @@ macro_rules! search {
                         true => Some($self.eval::<{ Op::ADD }>(&$cache, $g, *x, *y)),
                         false => None,
                     })
-                    .chain(
-                        $del.iter()
-                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
-                                true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
-                                false => None,
-                            })
-                    )
-                    .chain(
-                        $rev.iter()
-                            .filter_map(|(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
-                                true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
-                                false => None,
-                            })
-                    )
+                    .chain($del.iter().filter_map(
+                        |(x, y)| match $self.is_valid::<{ Op::DEL }>($in_degree, $g, *x, *y) {
+                            true => Some($self.eval::<{ Op::DEL }>(&$cache, $g, *x, *y)),
+                            false => None,
+                        },
+                    ))
+                    .chain($rev.iter().filter_map(
+                        |(x, y)| match $self.is_valid::<{ Op::REV }>($in_degree, $g, *x, *y) {
+                            true => Some($self.eval::<{ Op::REV }>(&$cache, $g, *x, *y)),
+                            false => None,
+                        },
+                    ))
                     // Unzip OPs and cache fragments.
                     .unzip();
                 // Merge cache updates.
-                $cache.extend(
-                    fragments
-                        .into_iter()
-                        .flatten()
-                        .filter_map(|(k, v)| k.map(|k| (k, v))),
-                );
+                $cache.extend(fragments.into_iter().flatten().filter_map(|(k, v)| k.map(|k| (k, v))));
                 // Get operation with highest strictly positive delta score, if any.
                 ops_deltas
                     .into_iter()
