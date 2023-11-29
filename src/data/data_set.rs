@@ -199,10 +199,11 @@ where
 /* Test the `DataSetSample` trait using `CategoricalDataMatrix`. */
 #[cfg(test)]
 mod test_data_set_sample {
-    use crate::prelude::*;
     use ndarray::prelude::*;
     use rand::prelude::*;
     use rand_xoshiro::Xoshiro256StarStar;
+
+    use crate::prelude::*;
 
     #[test]
     #[should_panic]
@@ -496,11 +497,12 @@ where
 /* Test the `ParallelDataSetSample` trait using `CategoricalDataMatrix`. */
 #[cfg(test)]
 mod test_parallel_data_set_sample {
-    use crate::prelude::*;
     use ndarray::prelude::*;
     use rand::prelude::*;
     use rand_xoshiro::Xoshiro256StarStar;
     use rayon::prelude::*;
+
+    use crate::prelude::*;
 
     #[test]
     fn test_par_bootstrap_iter() {
@@ -928,10 +930,11 @@ where
 /* Test the `DataSetSplit` trait using `CategoricalDataMatrix`. */
 #[cfg(test)]
 mod test_data_set_split {
-    use crate::prelude::*;
     use ndarray::prelude::*;
     use rand::prelude::*;
     use rand_xoshiro::Xoshiro256StarStar;
+
+    use crate::prelude::*;
 
     #[test]
     #[should_panic]
@@ -1840,11 +1843,12 @@ where
 /* Test the `ParallelDataSetSplit` trait using `CategoricalDataMatrix`. */
 #[cfg(test)]
 mod test_parallel_data_set_split {
-    use crate::prelude::*;
     use ndarray::prelude::*;
     use rand::prelude::*;
     use rand_xoshiro::Xoshiro256StarStar;
     use rayon::prelude::*;
+
+    use crate::prelude::*;
 
     #[test]
     #[should_panic]
