@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    CategoricalCPD, CategoricalJPD, ConditionalProbabilityDistribution, Factor,
+    CategoricalCPD, CategoricalFactor, CategoricalJPD, ConditionalProbabilityDistribution, Factor,
     JointProbabilityDistribution,
 };
 use crate::{
@@ -36,7 +36,9 @@ pub trait ProbabilisticGraphicalModel:
     /// Underlying directed graph associated type. TODO: Generalize this bound.
     type Graph: DirectedGraph<Direction = directions::Directed>;
     /// Parameter associated type.
-    type Parameter: Factor;
+    type Parameter: Factor<Phi = Self::Phi>; // TODO: This patch is needed to avoid compiler recursion limit.
+    /// Underlying factor type.
+    type Phi: Factor;
 
     /// Joint distribution associated type.
     type JPD: JointProbabilityDistribution<Phi = <Self::Parameter as Factor>::Phi>;
@@ -105,6 +107,8 @@ impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
     type Graph = DirectedDenseAdjacencyMatrixGraph;
 
     type Parameter = CategoricalCPD;
+
+    type Phi = CategoricalFactor;
 
     type JPD = CategoricalJPD;
 

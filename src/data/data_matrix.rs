@@ -152,7 +152,7 @@ impl From<DataFrame> for CategoricalDataMatrix {
 
                     (label, states)
                 }
-                RevMapping::Local(states) => {
+                RevMapping::Local(states, _) => {
                     // Cast to vector of states.
                     let states = states.values_iter().map_into().collect();
 
