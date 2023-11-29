@@ -616,7 +616,10 @@ where
         }
 
         // Allocate memory for the fold data.
-        let mut data = D::Data::zeros((self.indices.len() - 1, self.data_set.data().ncols()));
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - 1,
+            self.data_set.data().ncols(),
+        ));
         // Align rows and indices.
         let indices = self.indices.iter().enumerate();
         // Filter out the skip index.
@@ -659,7 +662,7 @@ where
 /// Leave-p-out split iterator.
 pub struct LeavePOutSplitIterator<'a, D> {
     data_set: &'a D,
-    indices: VecDeque<Vec<usize>>,
+    indices: Vec<Vec<usize>>,
     skip: usize,
 }
 
@@ -824,5 +827,793 @@ where
         p: usize,
     ) -> Self::LeavePOutSplitIter<'a> {
         Self::LeavePOutSplitIter::new(self, rng, p)
+    }
+}
+
+/// Parallel data set split trait.
+pub trait ParallelDataSetSplit: DataSet + Send {
+    /// Parallel k-fold iterator type.
+    type ParallelKFoldSplitIter<'a>: ParallelIterator<Item = Self>
+    where
+        Self: 'a + Send;
+
+    /// Parallel leave-one-out iterator type.
+    type ParallelLeaveOneOutSplitIter<'a>: ParallelIterator<Item = Self>
+    where
+        Self: 'a + Send;
+
+    /// Parallel leave-p-out iterator type.
+    type ParallelLeavePOutSplitIter<'a>: ParallelIterator<Item = Self>
+    where
+        Self: 'a + Send;
+
+    /// Split the data set into k-folds in parallel.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `k` is greater than the total number of samples in the data set.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    /// The folds are not guaranteed to be of equal size, e.g. if `k` is not a divisor of
+    /// the total number of samples, then there will be one fold with less than `k` samples.
+    ///
+    fn par_k_fold_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+        k: usize,
+    ) -> Self::ParallelKFoldSplitIter<'a>;
+
+    /// Split the data set into leave-one-out folds in parallel.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    ///
+    fn par_leave_one_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+    ) -> Self::ParallelLeaveOneOutSplitIter<'a>;
+
+    /// Split the data set into leave-p-out folds in parallel.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `p` is greater than the total number of samples in the data set.
+    ///
+    /// # Note
+    ///
+    /// The data set is shuffled before splitting.
+    ///
+    fn par_leave_p_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+        p: usize,
+    ) -> Self::ParallelLeavePOutSplitIter<'a>;
+}
+
+/// Parallel k-fold split iterator.
+pub struct ParallelKFoldSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: VecDeque<Vec<usize>>,
+}
+
+impl<'a, D> ParallelKFoldSplitIterator<'a, D>
+where
+    D: DataSet + Send,
+{
+    /// Construct a new parallel k-fold iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, k: usize) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Compute chunk size.
+        let chunk_size = n / k + ((n % k) > 0) as usize;
+        // Split indices in `n` chunks.
+        let indices = indices.chunks(chunk_size).map(|i| i.to_vec()).collect();
+
+        Self { data_set, indices }
+    }
+}
+
+impl<'a, D, T> ParallelIterator for ParallelKFoldSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        // Delegate to more specific implementation.
+        self.drive(consumer)
+    }
+
+    #[inline]
+    fn opt_len(&self) -> Option<usize> {
+        Some(self.indices.len())
+    }
+}
+
+struct ParallelKFoldSplitProducer<'a, D> {
+    data_set: &'a D,
+    indices: VecDeque<Vec<usize>>,
+}
+
+impl<'a, D> From<ParallelKFoldSplitIterator<'a, D>> for ParallelKFoldSplitProducer<'a, D> {
+    #[inline]
+    fn from(producer: ParallelKFoldSplitIterator<'a, D>) -> Self {
+        Self {
+            data_set: producer.data_set,
+            indices: producer.indices,
+        }
+    }
+}
+
+impl<'a, D, T> Iterator for ParallelKFoldSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.indices.is_empty() {
+            // ... return `None`.
+            return None;
+        }
+
+        // Pop the next fold indices.
+        let indices = self.indices.pop_front().unwrap();
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((indices.len(), self.data_set.data().ncols()));
+        // For each fold index ...
+        for (mut row, i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.indices.len(), Some(self.indices.len()))
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for ParallelKFoldSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+impl<'a, D, T> DoubleEndedIterator for ParallelKFoldSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.indices.is_empty() {
+            // ... return `None`.
+            return None;
+        }
+
+        // Pop the next fold indices.
+        let indices = self.indices.pop_back().unwrap();
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((indices.len(), self.data_set.data().ncols()));
+        // For each fold index ...
+        for (mut row, i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+}
+
+impl<'a, D, T> Producer for ParallelKFoldSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    type IntoIter = Self;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self
+    }
+
+    fn split_at(self, index: usize) -> (Self, Self) {
+        // Split the indices.
+        let mut a = self.indices;
+        let b = a.split_off(index);
+        a.shrink_to_fit();
+
+        // Construct the producers.
+        (Self { indices: a, ..self }, Self { indices: b, ..self })
+    }
+}
+
+impl<'a, D, T> IndexedParallelIterator for ParallelKFoldSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn with_producer<CB: ProducerCallback<Self::Item>>(self, callback: CB) -> CB::Output {
+        callback.callback(ParallelKFoldSplitProducer::from(self))
+    }
+
+    fn drive<C: Consumer<Self::Item>>(self, consumer: C) -> C::Result {
+        // For each fold ...
+        let producer = self.indices.into_par_iter().map(move |indices| {
+            // Allocate memory for the fold data.
+            let mut data = D::Data::zeros((indices.len(), self.data_set.data().ncols()));
+            // For each fold index ...
+            for (mut row, i) in data.rows_mut().into_iter().zip(indices) {
+                // ... assign the fold.
+                row.assign(&self.data_set.data().row(i));
+            }
+
+            D::with_data_labels(data, self.data_set.labels().clone())
+        });
+
+        bridge(producer, consumer)
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+/// Parallel leave-one-out split iterator.
+pub struct ParallelLeaveOneOutSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: Arc<Vec<usize>>,
+    skip: usize,
+    skip_max: usize,
+}
+
+impl<'a, D> ParallelLeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet + Send,
+{
+    /// Construct a new parallel leave-one-out iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Convert the indices to an Arc.
+        let indices = Arc::new(indices);
+        // Initialize the skip counter.
+        let skip = 0;
+        // Initialize the skip maximum.
+        let skip_max = n;
+
+        Self {
+            data_set,
+            indices,
+            skip,
+            skip_max,
+        }
+    }
+}
+
+impl<'a, D, T> ParallelIterator for ParallelLeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        // Delegate to more specific implementation.
+        self.drive(consumer)
+    }
+
+    #[inline]
+    fn opt_len(&self) -> Option<usize> {
+        Some(self.indices.len())
+    }
+}
+
+struct ParallelLeaveOneOutSplitProducer<'a, D> {
+    data_set: &'a D,
+    indices: Arc<Vec<usize>>,
+    skip: usize,
+    skip_max: usize,
+}
+
+impl<'a, D> From<ParallelLeaveOneOutSplitIterator<'a, D>>
+    for ParallelLeaveOneOutSplitProducer<'a, D>
+{
+    #[inline]
+    fn from(producer: ParallelLeaveOneOutSplitIterator<'a, D>) -> Self {
+        Self {
+            data_set: producer.data_set,
+            indices: producer.indices,
+            skip: producer.skip,
+            skip_max: producer.skip_max,
+        }
+    }
+}
+
+impl<'a, D, T> Iterator for ParallelLeaveOneOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.skip_max {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - 1,
+            self.data_set.data().ncols(),
+        ));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| (self.skip != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Increment the skip counter.
+        self.skip += 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // Compute the remaining number of folds.
+        let remaining = self.skip_max - self.skip;
+
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a, D, T> Producer for ParallelLeaveOneOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    type IntoIter = Self;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self
+    }
+
+    fn split_at(self, index: usize) -> (Self, Self) {
+        // Construct the producers.
+        (
+            Self {
+                data_set: self.data_set,
+                indices: self.indices.clone(),
+                skip: self.skip,
+                skip_max: index,
+            },
+            Self {
+                data_set: self.data_set,
+                indices: self.indices.clone(),
+                skip: index,
+                skip_max: self.skip_max,
+            },
+        )
+    }
+}
+
+impl<'a, D, T> IndexedParallelIterator for ParallelLeaveOneOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn with_producer<CB: ProducerCallback<Self::Item>>(self, callback: CB) -> CB::Output {
+        callback.callback(ParallelLeaveOneOutSplitProducer::from(self))
+    }
+
+    fn drive<C: Consumer<Self::Item>>(self, consumer: C) -> C::Result {
+        // For each fold ...
+        let producer = (self.skip..self.skip_max).into_par_iter().map(|skip| {
+            // Allocate memory for the fold data.
+            let mut data = D::Data::zeros((
+                self.data_set.sample_size() - 1,
+                self.data_set.data().ncols(),
+            ));
+            // Align rows and indices.
+            let indices = self.indices.iter().enumerate();
+            // Filter out the skip index.
+            let indices = indices.filter_map(|(i, j)| (skip != i).then_some(j));
+            // For each fold index ...
+            for (mut row, &i) in data.rows_mut().into_iter().zip(indices) {
+                // ... assign the fold.
+                row.assign(&self.data_set.data().row(i));
+            }
+
+            D::with_data_labels(data, self.data_set.labels().clone())
+        });
+
+        bridge(producer, consumer)
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.skip_max - self.skip
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for ParallelLeaveOneOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.skip_max - self.skip
+    }
+}
+
+impl<'a, D, T> DoubleEndedIterator for ParallelLeaveOneOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.skip_max {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - 1,
+            self.data_set.data().ncols(),
+        ));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| ((self.skip_max - 1) != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Decrement the skip_max counter.
+        self.skip_max -= 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+}
+
+/// Parallel leave-p-out split iterator.
+pub struct ParallelLeavePOutSplitIterator<'a, D> {
+    data_set: &'a D,
+    indices: Arc<Vec<Vec<usize>>>,
+    skip: usize,
+    skip_max: usize,
+}
+
+impl<'a, D> ParallelLeavePOutSplitIterator<'a, D>
+where
+    D: DataSet + Send,
+{
+    /// Construct a new parallel leave-p-out iterator.
+    #[inline]
+    pub fn new<R: Rng>(data_set: &'a D, rng: &mut R, p: usize) -> Self {
+        // Get sample size.
+        let n = data_set.sample_size();
+        // Allocate split indices.
+        let mut indices = (0..n).collect_vec();
+        // Shuffle split indices.
+        indices.shuffle(rng);
+        // Compute chunk size.
+        let chunk_size = n / p + ((n % p) > 0) as usize;
+        // Split indices in `n` chunks.
+        let indices = indices.chunks(chunk_size).map(|i| i.to_vec()).collect();
+        // Convert the indices to an Arc.
+        let indices = Arc::new(indices);
+        // Initialize the skip counter.
+        let skip = 0;
+        // Initialize the skip maximum.
+        let skip_max = p;
+
+        Self {
+            data_set,
+            indices,
+            skip,
+            skip_max,
+        }
+    }
+}
+
+impl<'a, D, T> ParallelIterator for ParallelLeavePOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        // Delegate to more specific implementation.
+        self.drive(consumer)
+    }
+
+    #[inline]
+    fn opt_len(&self) -> Option<usize> {
+        Some(self.skip_max - self.skip)
+    }
+}
+
+struct ParallelLeavePOutSplitProducer<'a, D> {
+    data_set: &'a D,
+    indices: Arc<Vec<Vec<usize>>>,
+    skip: usize,
+    skip_max: usize,
+}
+
+impl<'a, D> From<ParallelLeavePOutSplitIterator<'a, D>> for ParallelLeavePOutSplitProducer<'a, D> {
+    #[inline]
+    fn from(producer: ParallelLeavePOutSplitIterator<'a, D>) -> Self {
+        Self {
+            data_set: producer.data_set,
+            indices: producer.indices,
+            skip: producer.skip,
+            skip_max: producer.skip_max,
+        }
+    }
+}
+
+impl<'a, D, T> Iterator for ParallelLeavePOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.skip_max {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - self.indices[self.skip].len(),
+            self.data_set.data().ncols(),
+        ));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| (self.skip != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices.flatten()) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Increment the skip counter.
+        self.skip += 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // Compute the remaining number of folds.
+        let remaining = self.skip_max - self.skip;
+
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a, D, T> Producer for ParallelLeavePOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type Item = D;
+
+    type IntoIter = Self;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self
+    }
+
+    fn split_at(self, index: usize) -> (Self, Self) {
+        // Construct the producers.
+        (
+            Self {
+                data_set: self.data_set,
+                indices: self.indices.clone(),
+                skip: self.skip,
+                skip_max: index,
+            },
+            Self {
+                data_set: self.data_set,
+                indices: self.indices.clone(),
+                skip: index,
+                skip_max: self.skip_max,
+            },
+        )
+    }
+}
+
+impl<'a, D, T> IndexedParallelIterator for ParallelLeavePOutSplitIterator<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn with_producer<CB: ProducerCallback<Self::Item>>(self, callback: CB) -> CB::Output {
+        callback.callback(ParallelLeavePOutSplitProducer::from(self))
+    }
+
+    fn drive<C: Consumer<Self::Item>>(self, consumer: C) -> C::Result {
+        // For each fold ...
+        let producer = (self.skip..self.skip_max).into_par_iter().map(|skip| {
+            // Allocate memory for the fold data.
+            let mut data = D::Data::zeros((
+                self.data_set.sample_size() - self.indices[skip].len(),
+                self.data_set.data().ncols(),
+            ));
+            // Align rows and indices.
+            let indices = self.indices.iter().enumerate();
+            // Filter out the skip index.
+            let indices = indices.filter_map(|(i, j)| (skip != i).then_some(j));
+            // For each fold index ...
+            for (mut row, &i) in data.rows_mut().into_iter().zip(indices.flatten()) {
+                // ... assign the fold.
+                row.assign(&self.data_set.data().row(i));
+            }
+
+            D::with_data_labels(data, self.data_set.labels().clone())
+        });
+
+        bridge(producer, consumer)
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.skip_max - self.skip
+    }
+}
+
+impl<'a, D, T> ExactSizeIterator for ParallelLeavePOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.skip_max - self.skip
+    }
+}
+
+impl<'a, D, T> DoubleEndedIterator for ParallelLeavePOutSplitProducer<'a, D>
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        // If the remaining number of folds is zero ...
+        if self.skip >= self.skip_max {
+            // ... return `None`.
+            return None;
+        }
+
+        // Allocate memory for the fold data.
+        let mut data = D::Data::zeros((
+            self.data_set.sample_size() - self.indices[self.skip].len(),
+            self.data_set.data().ncols(),
+        ));
+        // Align rows and indices.
+        let indices = self.indices.iter().enumerate();
+        // Filter out the skip index.
+        let indices = indices.filter_map(|(i, j)| ((self.skip_max - 1) != i).then_some(j));
+        // For each fold index ...
+        for (mut row, &i) in data.rows_mut().into_iter().zip(indices.flatten()) {
+            // ... assign the fold.
+            row.assign(&self.data_set.data().row(i));
+        }
+        // Decrement the skip_max counter.
+        self.skip_max -= 1;
+
+        Some(D::with_data_labels(data, self.data_set.labels().clone()))
+    }
+}
+
+impl<D, T> ParallelDataSetSplit for D
+where
+    D: DataSet<Data = Array2<T>> + Send,
+    T: Clone + Zero,
+{
+    type ParallelKFoldSplitIter<'a> = ParallelKFoldSplitIterator<'a, D>
+    where
+        D: 'a + Send;
+
+    type ParallelLeaveOneOutSplitIter<'a> = ParallelLeaveOneOutSplitIterator<'a, D>
+    where
+        D: 'a + Send;
+
+    type ParallelLeavePOutSplitIter<'a> = ParallelLeavePOutSplitIterator<'a, D>
+    where
+        D: 'a + Send;
+
+    #[inline]
+    fn par_k_fold_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+        k: usize,
+    ) -> Self::ParallelKFoldSplitIter<'a> {
+        Self::ParallelKFoldSplitIter::new(self, rng, k)
+    }
+
+    #[inline]
+    fn par_leave_one_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+    ) -> Self::ParallelLeaveOneOutSplitIter<'a> {
+        Self::ParallelLeaveOneOutSplitIter::new(self, rng)
+    }
+
+    #[inline]
+    fn par_leave_p_out_split_iter<'a, R: Rng + SeedableRng + Send>(
+        &'a self,
+        rng: &mut R,
+        p: usize,
+    ) -> Self::ParallelLeavePOutSplitIter<'a> {
+        Self::ParallelLeavePOutSplitIter::new(self, rng, p)
     }
 }
