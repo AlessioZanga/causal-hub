@@ -35,7 +35,7 @@ impl<const PARALLEL: bool>
         g: &DirectedDenseAdjacencyMatrixGraph,
     ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels()));
+        assert!(L!(g).eq(d.labels_iter()));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {
@@ -96,7 +96,7 @@ impl<const PARALLEL: bool>
         g: &DirectedDenseAdjacencyMatrixGraph,
     ) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels()));
+        assert!(L!(g).eq(d.labels_iter()));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {

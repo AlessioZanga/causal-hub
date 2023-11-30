@@ -22,7 +22,7 @@ impl MarginalCountMatrix {
         // Allocate count matrix.
         let mut n = Array1::zeros(shape);
         // Fill count matrix.
-        for row in d.values().rows() {
+        for row in d.data().rows() {
             // Increment at given index.
             n[row[x] as usize] += 1;
         }
@@ -84,7 +84,7 @@ impl ConditionalCountMatrix {
         let shape = (rmi.len(), cards[x] as usize);
 
         // Count the given observations.
-        let n = Self::eval(shape, &rmi, d.values().view(), x, z);
+        let n = Self::eval(shape, &rmi, d.data().view(), x, z);
 
         Self { n }
     }
@@ -101,8 +101,8 @@ impl ConditionalCountMatrix {
 
         // Count the given observations in parallel.
         let n = d
-            .values()
-            .axis_chunks_iter(Axis(0), axis_chunks_size(d.values()))
+            .data()
+            .axis_chunks_iter(Axis(0), axis_chunks_size(d.data()))
             .into_par_iter()
             .map(|d| Self::eval(shape, &rmi, d, x, z))
             .reduce(|| Array2::zeros(shape), |acc, x| acc + x);
@@ -142,7 +142,7 @@ impl JointCountMatrix {
         // Allocate count matrix.
         let mut n = Array2::zeros(shape);
         // Fill count matrix.
-        for row in d.values().rows() {
+        for row in d.data().rows() {
             // Increment at given index.
             n[[row[x] as usize, row[y] as usize]] += 1;
         }
@@ -185,7 +185,7 @@ impl JointConditionalCountMatrix {
         // Allocate count matrix.
         let mut n = Array3::zeros(shape);
         // Fill count matrix.
-        for row in d.values().rows() {
+        for row in d.data().rows() {
             // Get multi index.
             let row_z = z.iter().map(|&z| row[z] as usize);
             // Ravel multi index.

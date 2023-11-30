@@ -98,6 +98,6 @@ impl<'a> ConditionalIndependenceTest<'a> for ChiSquared<'a> {
 
     #[inline]
     fn labels(&self) -> Self::LabelsIter<'_> {
-        self.d.labels()
+        self.d.labels_iter()
     }
 }

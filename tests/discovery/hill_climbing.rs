@@ -29,7 +29,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -68,7 +68,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -107,7 +107,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -234,7 +234,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -355,7 +355,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -389,7 +389,7 @@ mod zinb {
         let d = ZINBDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
@@ -417,7 +417,7 @@ mod zinb {
         let d = ZINBDataMatrix::from(d);
 
         // Initialize empty prior knowledge.
-        let k = FR::new(d.labels(), [], []);
+        let k = FR::new(d.labels_iter(), [], []);
 
         // Initialize score functor.
         let s = BIC::new(&d);
