@@ -33,7 +33,7 @@ impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwo
 {
     fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels_iter()));
+        assert!(L!(g).eq(L!(d)));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {
@@ -79,7 +79,7 @@ impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayes
 {
     fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels_iter()));
+        assert!(L!(g).eq(L!(d)));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {
@@ -132,7 +132,7 @@ impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwo
 {
     fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels_iter()));
+        assert!(L!(g).eq(L!(d)));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {
@@ -180,7 +180,7 @@ impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayes
 {
     fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
-        assert!(L!(g).eq(d.labels_iter()));
+        assert!(L!(g).eq(L!(d)));
 
         // Estimate parameters of a given variable.
         let estimate = |x: usize| {

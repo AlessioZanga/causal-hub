@@ -48,7 +48,7 @@ where
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         L!(self.g)
     }
 
@@ -66,7 +66,7 @@ where
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         L!(self.g)
     }
 
@@ -138,7 +138,7 @@ where
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         L!(self.g)
     }
 
@@ -156,7 +156,7 @@ where
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         L!(self.g)
     }
 

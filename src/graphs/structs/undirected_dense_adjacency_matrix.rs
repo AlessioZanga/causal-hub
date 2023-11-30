@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     graphs::{Graph, Undirected},
     prelude::FxIndexSet,
+    E, L, V,
 };
 
 /// Define the `UndirectedDenseAdjacencyMatrix` struct using a dense adjacency matrix from the `ndarray` crate.
@@ -40,16 +41,14 @@ impl Display for UGraph {
         write!(
             f,
             "V = {{{}}}, ",
-            self.vertices()
-                .map(|x| format!("\"{}\"", &self[x]))
-                .join(", ")
+            V!(self).map(|x| format!("\"{}\"", &self[x])).join(", ")
         )?;
 
         // Write edge set.
         write!(
             f,
             "E = {{{}}}",
-            self.edges()
+            E!(self)
                 .map(|(x, y)| format!("(\"{}\", \"{}\")", &self[x], &self[y]))
                 .join(", ")
         )?;
@@ -72,14 +71,14 @@ impl PartialOrd for UGraph {
     ///
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Compare the vertices.
-        let vertices = iter_set::cmp(self.labels(), other.labels());
+        let vertices = iter_set::cmp(L!(self), L!(other));
         // If the vertices are not comparable, return `None`.
         if vertices.is_none() {
             return None;
         }
 
         // Compare the edges.
-        let edges = iter_set::cmp(self.edges(), other.edges());
+        let edges = iter_set::cmp(E!(self), E!(other));
         // If the edges are not comparable, return `None`.
         if edges.is_none() {
             return None;
@@ -561,7 +560,7 @@ impl Graph for UGraph {
 
     // Get the vertices labels iterator.
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         // Get the vertices labels iterator.
         self.labels.iter().map(|x| x.as_str())
     }
@@ -593,7 +592,7 @@ impl Graph for UGraph {
 
     // Get the vertices indices iterator.
     #[inline]
-    fn vertices(&self) -> Self::VerticesIter<'_> {
+    fn vertices_iter(&self) -> Self::VerticesIter<'_> {
         // Get the vertices indices iterator.
         0..self.order()
     }
@@ -811,7 +810,7 @@ impl Graph for UGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn edges(&self) -> Self::EdgesIter<'_> {
+    fn edges_iter(&self) -> Self::EdgesIter<'_> {
         // Get the edges indices iterator.
         Self::EdgesIter::new(self)
     }
@@ -1043,7 +1042,7 @@ impl Graph for UGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
+    fn adjacents_iter(&self, x: usize) -> Self::AdjacentsIter<'_> {
         // Assert the vertex index is in bounds.
         assert!(
             self.has_vertex(x),
@@ -1113,8 +1112,7 @@ impl Graph for UGraph {
         // Collect the vertices.
         let vertices: FxIndexSet<_> = vertices.into_iter().collect();
         // Get the edges labels.
-        let edges = self
-            .edges()
+        let edges = E!(self)
             .filter(|(x, y)| vertices.contains(x) && vertices.contains(y))
             .map(|(x, y)| (&self[x], &self[y]))
             .collect_vec();
@@ -1262,11 +1260,11 @@ mod tests {
         // Check the graph size.
         assert_eq!(graph.size(), 0);
         // Check the vertices labels.
-        assert_eq!(graph.labels().collect_vec(), Vec::<&str>::new());
+        assert_eq!(L!(graph).collect_vec(), Vec::<&str>::new());
         // Check the vertices indices.
-        assert_eq!(graph.vertices().collect_vec(), Vec::<usize>::new());
+        assert_eq!(V!(graph).collect_vec(), Vec::<usize>::new());
         // Check the edges indices.
-        assert_eq!(graph.edges().collect_vec(), Vec::<(usize, usize)>::new());
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
     }
 
     // Test the `display` method.
@@ -1822,7 +1820,7 @@ mod tests {
 
     // Test the `labels` method.
     #[test]
-    fn labels() {
+    fn labels_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
         // Initialize the edges labels.
@@ -1948,7 +1946,7 @@ mod tests {
 
     // Test the `vertices` method.
     #[test]
-    fn vertices() {
+    fn vertices_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D"];
 
@@ -2615,7 +2613,7 @@ mod tests {
 
     // Test the `adjacents` method.
     #[test]
-    fn adjacents() {
+    fn adjacents_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D"];
 
@@ -2968,7 +2966,7 @@ mod tests {
 
         // Check the undirected edges indices.
         assert_eq!(
-            graph.undirected_edges().collect_vec(),
+            graph.undirected_edges_iter().collect_vec(),
             Vec::<(usize, usize)>::new()
         );
 
@@ -2991,7 +2989,7 @@ mod tests {
 
         // Check the undirected edges indices.
         assert_eq!(
-            graph.undirected_edges().collect_vec(),
+            graph.undirected_edges_iter().collect_vec(),
             vec![
                 (0, 1),
                 (0, 2),

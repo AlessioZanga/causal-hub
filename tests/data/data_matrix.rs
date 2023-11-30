@@ -25,7 +25,7 @@ mod tests {
                 array![[0, 0, 0, 0], [1, 0, 1, 1], [2, 0, 0, 2]]
             );
 
-            assert!(data_set.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(L!(data_set).into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 ("W", vec!["I", "J", "K"].into_iter().collect()),
@@ -86,7 +86,7 @@ mod tests {
                 array![[2, 0, 0, 0], [3, 0, 1, 1], [4, 0, 0, 2]]
             );
 
-            assert!(data_set.labels_iter().into_iter().eq(["W", "X", "Y", "Z"]));
+            assert!(L!(data_set).into_iter().eq(["W", "X", "Y", "Z"]));
 
             let states: BTreeMap<&str, FxIndexSet<&str>> = BTreeMap::from([
                 (
@@ -129,7 +129,7 @@ mod tests {
             // Sample from the data set.
             let sample = data_set.sample(&mut rng, 2);
             // Assert labels, states, cardinalities and values.
-            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert!(L!(data_set).eq(sample.labels_iter()));
             assert_eq!(data_set.states(), sample.states());
             assert_eq!(data_set.cardinality(), sample.cardinality());
             assert_eq!(data_set.data().ncols(), sample.data().ncols());
@@ -175,7 +175,7 @@ mod tests {
             // Sample from the data set.
             let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels, states, cardinalities and values.
-            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert!(L!(data_set).eq(sample.labels_iter()));
             assert_eq!(data_set.states(), sample.states());
             assert_eq!(data_set.cardinality(), sample.cardinality());
             assert_eq!(data_set.data().ncols(), sample.data().ncols());
@@ -206,7 +206,7 @@ mod tests {
                 array![[1.0, 1.0, 1.0], [1.0, 2.0, 2.0], [1.0, 1.0, 3.0]]
             );
 
-            assert!(data_set.labels_iter().into_iter().eq(["X", "Y", "Z"]));
+            assert!(L!(data_set).into_iter().eq(["X", "Y", "Z"]));
         }
 
         #[test]
@@ -246,7 +246,7 @@ mod tests {
             // Sample from the data set.
             let sample = data_set.sample(&mut rng, 2);
             // Assert labels and values.
-            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert!(L!(data_set).eq(sample.labels_iter()));
             assert_eq!(data_set.data().ncols(), sample.data().ncols());
             assert!(data_set.sample_size() > sample.sample_size());
             assert_eq!(sample.sample_size(), 2);
@@ -290,7 +290,7 @@ mod tests {
             // Sample from the data set.
             let sample = data_set.sample_with_replacement(&mut rng, 4);
             // Assert labels and values.
-            assert!(data_set.labels_iter().eq(sample.labels_iter()));
+            assert!(L!(data_set).eq(sample.labels_iter()));
             assert_eq!(data_set.data().ncols(), sample.data().ncols());
             assert!(data_set.sample_size() < sample.sample_size());
             assert_eq!(sample.sample_size(), 4);

@@ -20,7 +20,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Set true graph
-        let mut true_g = PGraph::empty(d.labels_iter());
+        let mut true_g = PGraph::empty(L!(d));
         // Add directed edge.
         true_g.add_directed_edge(3, 0);
         true_g.add_directed_edge(4, 0);
@@ -61,7 +61,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Set true graph
-        let mut true_g = PGraph::empty(d.labels_iter());
+        let mut true_g = PGraph::empty(L!(d));
         // Add undirected edge.
         true_g.add_undirected_edge(1, 2);
         true_g.add_undirected_edge(1, 5);

@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, fmt::Debug, iter::FusedIterator};
 
-use crate::polars::prelude::*;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use ndarray_rand::rand_distr::num_traits::Zero;
@@ -10,6 +9,8 @@ use rayon::{
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
+
+use crate::polars::prelude::*;
 
 /// Data set trait.
 pub trait DataSet:

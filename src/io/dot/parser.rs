@@ -695,7 +695,7 @@ impl From<PGraph> for DOT {
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
         let mut edges: BTreeMap<_, _> = graph
-            .undirected_edges()
+            .undirected_edges_iter()
             .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge {
                 id: (x, y),
@@ -706,7 +706,7 @@ impl From<PGraph> for DOT {
             .collect();
         // Construct the directed edge set.
         let mut directed_edges: BTreeMap<_, _> = graph
-            .directed_edges()
+            .directed_edges_iter()
             .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))

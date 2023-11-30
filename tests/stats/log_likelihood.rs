@@ -17,7 +17,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -57,7 +57,7 @@ mod categorical {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -103,7 +103,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);
@@ -143,7 +143,7 @@ mod gaussian {
         let d = GaussianDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize the default scoring criterion.
         let s = LL::new(&d);

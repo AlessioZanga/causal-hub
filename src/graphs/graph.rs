@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 #[macro_export]
 macro_rules! L {
     ($g:expr) => {
-        $g.labels()
+        $g.labels_iter()
     };
 }
 
@@ -19,7 +19,7 @@ macro_rules! L {
 #[macro_export]
 macro_rules! V {
     ($g:expr) => {
-        $g.vertices()
+        $g.vertices_iter()
     };
 }
 
@@ -27,7 +27,7 @@ macro_rules! V {
 #[macro_export]
 macro_rules! E {
     ($g:expr) => {
-        $g.edges()
+        $g.edges_iter()
     };
 }
 
@@ -35,7 +35,7 @@ macro_rules! E {
 #[macro_export]
 macro_rules! Adj {
     ($g:expr, $x:expr) => {
-        $g.adjacents($x)
+        $g.adjacents_iter($x)
     };
 }
 
@@ -53,7 +53,7 @@ macro_rules! Adj {
 /// | Method            | Description                                   |
 /// |-------------------|-----------------------------------------------|
 /// | `order`           | $\|\mathbf{V}\|$                              |
-/// | `vertices`        | $\mathbf{V}$                                  |
+/// | `vertices_iter`   | $\mathbf{V}$                                  |
 /// | `has_vertex`      | $X \in \mathbf{V}$                            |
 /// | `add_vertex`      | $\mathbf{V} \cup \lbrace X \rbrace$           |
 /// | `del_vertex`      | $\mathbf{V} \setminus \lbrace X \rbrace$      |
@@ -61,12 +61,12 @@ macro_rules! Adj {
 /// | Method            | Description                                   |
 /// |-------------------|-----------------------------------------------|
 /// | `size`            | $\|\mathbf{E}\|$                              |
-/// | `edges`           | $\mathbf{E}$                                  |
+/// | `edges_iter`      | $\mathbf{E}$                                  |
 /// | `has_edge`        | $(X, Y) \in \mathbf{E}$                       |
 /// | `add_edge`        | $\mathbf{E} \cup \lbrace (X, Y) \rbrace$      |
 /// | `del_edge`        | $\mathbf{E} \setminus \lbrace (X, Y) \rbrace$ |
 /// | `degree`          | $\|Adj(X)\|$                                  |
-/// | `adjacents`       | $Adj(X)$                                      |
+/// | `adjacents_iter`  | $Adj(X)$                                      |
 /// | `is_adjacent`     | $Y \in Adj(X)$                                |
 ///
 /// | Method            | Description                                   |
@@ -142,11 +142,11 @@ pub trait Graph:
     /// // Assert the graph size is correct.
     /// assert_eq!(graph.size(), 4);
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
     /// ```
     ///
     fn new<V, I, J>(vertices: I, edges: J) -> Self
@@ -182,11 +182,11 @@ pub trait Graph:
     /// // Assert the graph size is correct.
     /// assert_eq!(graph.size(), 0);
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), Vec::<&str>::new());
+    /// assert_eq!(L!(graph).collect_vec(), Vec::<&str>::new());
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), Vec::<usize>::new());
+    /// assert_eq!(V!(graph).collect_vec(), Vec::<usize>::new());
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), Vec::<(usize, usize)>::new());
+    /// assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
     /// ```
     ///
     fn null() -> Self;
@@ -220,11 +220,11 @@ pub trait Graph:
     /// // Assert the graph size is correct.
     /// assert_eq!(graph.size(), 0);
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![]);
     /// ```
     ///
     fn empty<V, I>(vertices: I) -> Self
@@ -262,11 +262,11 @@ pub trait Graph:
     /// // Assert the graph size is correct.
     /// assert_eq!(graph.size(), 6);
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]);
     /// ```
     ///
     fn complete<V, I>(vertices: I) -> Self
@@ -303,10 +303,10 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D"]);
     /// ```
     ///
-    fn labels(&self) -> Self::LabelsIter<'_>;
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     /// Get the vertex label.
     ///
@@ -449,10 +449,10 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// ```
     ///
-    fn vertices(&self) -> Self::VerticesIter<'_>;
+    fn vertices_iter(&self) -> Self::VerticesIter<'_>;
 
     /// Check if the vertex exists.
     ///
@@ -526,11 +526,11 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "E"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "E"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
     ///
     /// // Add a new vertex.
     /// let (x, added) = graph.add_vertex("D");
@@ -542,11 +542,11 @@ pub trait Graph:
     /// assert_eq!(x, 3);
     ///
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D", "E"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D", "E"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3, 4]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3, 4]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 4), (1, 2), (2, 4)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 4), (1, 2), (2, 4)]);
     /// ```
     ///
     fn add_vertex<V>(&mut self, x: V) -> (usize, bool)
@@ -587,11 +587,11 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "C", "D", "E"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "C", "D", "E"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3, 4]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3, 4]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 4), (1, 2), (2, 3), (3, 4)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 4), (1, 2), (2, 3), (3, 4)]);
     ///
     /// // Delete a vertex.
     /// let deleted = graph.del_vertex(2);
@@ -600,11 +600,11 @@ pub trait Graph:
     /// assert_eq!(deleted, true);
     ///
     /// // Assert the graph vertices labels are correct.
-    /// assert_eq!(graph.labels().collect_vec(), vec!["A", "B", "D", "E"]);
+    /// assert_eq!(L!(graph).collect_vec(), vec!["A", "B", "D", "E"]);
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![0, 1, 2, 3]);
+    /// assert_eq!(V!(graph).collect_vec(), vec![0, 1, 2, 3]);
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (2, 3)]);
     /// ```
     ///
     fn del_vertex(&mut self, x: usize) -> bool;
@@ -673,10 +673,10 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
     /// ```
     ///
-    fn edges(&self) -> Self::EdgesIter<'_>;
+    fn edges_iter(&self) -> Self::EdgesIter<'_>;
 
     /// Check if the edge exists.
     ///
@@ -759,7 +759,7 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
     ///
     /// // Add a new edge.
     /// let added = graph.add_edge(0, 2);
@@ -768,7 +768,7 @@ pub trait Graph:
     /// assert_eq!(added, true);
     ///
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 2), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 2), (0, 3), (1, 2), (2, 3)]);
     /// ```
     ///
     fn add_edge(&mut self, x: usize, y: usize) -> bool;
@@ -810,7 +810,7 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (0, 3), (1, 2), (2, 3)]);
     ///
     /// // Delete an edge.
     /// let deleted = graph.del_edge(0, 3);
@@ -819,7 +819,7 @@ pub trait Graph:
     /// assert_eq!(deleted, true);
     ///
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![(0, 1), (1, 2), (2, 3)]);
+    /// assert_eq!(E!(graph).collect_vec(), vec![(0, 1), (1, 2), (2, 3)]);
     /// ```
     ///
     fn del_edge(&mut self, x: usize, y: usize) -> bool;
@@ -934,13 +934,13 @@ pub trait Graph:
     /// );
     ///
     /// // Assert the graph vertices adjacents indices are correct.
-    /// assert_eq!(graph.adjacents(0).collect_vec(), vec![1, 3]);
-    /// assert_eq!(graph.adjacents(1).collect_vec(), vec![0, 2]);
-    /// assert_eq!(graph.adjacents(2).collect_vec(), vec![1, 3]);
-    /// assert_eq!(graph.adjacents(3).collect_vec(), vec![0, 2]);
+    /// assert_eq!(graph.adjacents_iter(0).collect_vec(), vec![1, 3]);
+    /// assert_eq!(graph.adjacents_iter(1).collect_vec(), vec![0, 2]);
+    /// assert_eq!(graph.adjacents_iter(2).collect_vec(), vec![1, 3]);
+    /// assert_eq!(graph.adjacents_iter(3).collect_vec(), vec![0, 2]);
     /// ```
     ///
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_>;
+    fn adjacents_iter(&self, x: usize) -> Self::AdjacentsIter<'_>;
 
     /// Check if two vertices are adjacent.
     ///
@@ -1025,11 +1025,11 @@ pub trait Graph:
     /// let subgraph = graph.subgraph(vec![0, 1, 2], vec![(0, 1)]);
     ///
     /// // Assert the subgraph vertices labels are correct.
-    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// assert_eq!(L!(subgraph).collect_vec(), vec!["A", "B", "C"]);
     /// // Assert the subgraph vertices indices are correct.
-    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// assert_eq!(V!(subgraph).collect_vec(), vec![0, 1, 2]);
     /// // Assert the subgraph edges indices are correct.
-    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1)]);
+    /// assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1)]);
     /// ```
     ///
     fn subgraph<I, J>(&self, vertices: I, edges: J) -> Self
@@ -1074,11 +1074,11 @@ pub trait Graph:
     /// let subgraph = graph.subgraph_by_vertices(vec![0, 1, 2]);
     ///
     /// // Assert the subgraph vertices labels are correct.
-    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// assert_eq!(L!(subgraph).collect_vec(), vec!["A", "B", "C"]);
     /// // Assert the subgraph vertices indices are correct.
-    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// assert_eq!(V!(subgraph).collect_vec(), vec![0, 1, 2]);
     /// // Assert the subgraph edges indices are correct.
-    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1), (1, 2)]);
+    /// assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1), (1, 2)]);
     /// ```
     ///
     fn subgraph_by_vertices<I>(&self, vertices: I) -> Self
@@ -1122,11 +1122,11 @@ pub trait Graph:
     /// let subgraph = graph.subgraph_by_edges(vec![(0, 1), (1, 2)]);
     ///
     /// // Assert the subgraph vertices labels are correct.
-    /// assert_eq!(subgraph.labels().collect_vec(), vec!["A", "B", "C"]);
+    /// assert_eq!(L!(subgraph).collect_vec(), vec!["A", "B", "C"]);
     /// // Assert the subgraph vertices indices are correct.
-    /// assert_eq!(subgraph.vertices().collect_vec(), vec![0, 1, 2]);
+    /// assert_eq!(V!(subgraph).collect_vec(), vec![0, 1, 2]);
     /// // Assert the subgraph edges indices are correct.
-    /// assert_eq!(subgraph.edges().collect_vec(), vec![(0, 1), (1, 2)]);
+    /// assert_eq!(E!(subgraph).collect_vec(), vec![(0, 1), (1, 2)]);
     /// ```
     ///
     fn subgraph_by_edges<J>(&self, edges: J) -> Self

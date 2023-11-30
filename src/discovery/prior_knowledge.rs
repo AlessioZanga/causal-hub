@@ -19,7 +19,7 @@ pub trait PriorKnowledge {
 
     fn del_required(&mut self, x: usize, y: usize) -> bool;
 
-    fn labels(&self) -> &FxIndexSet<String>;
+    fn labels_iter(&self) -> &FxIndexSet<String>;
 }
 
 #[derive(Clone, Debug)]
@@ -140,7 +140,7 @@ impl PriorKnowledge for ForbiddenRequired {
     }
 
     #[inline]
-    fn labels(&self) -> &FxIndexSet<String> {
+    fn labels_iter(&self) -> &FxIndexSet<String> {
         &self.labels
     }
 }

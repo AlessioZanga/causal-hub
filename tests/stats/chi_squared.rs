@@ -18,7 +18,7 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize conditional independence test.
         let test = ChiSquared::new(&d, 0.05);
@@ -51,7 +51,7 @@ mod tests {
         let d = CategoricalDataMatrix::from(d);
 
         // Build an empty the graph.
-        let g = DGraph::empty(d.labels_iter());
+        let g = DGraph::empty(L!(d));
 
         // Initialize conditional independence test.
         let test = ChiSquared::new(&d, 0.05);

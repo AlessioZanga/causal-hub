@@ -1,10 +1,10 @@
-use crate::graphs::Graph;
+use crate::{graphs::Graph, E};
 
 /// Define the `Ne` neighbor macro.
 #[macro_export]
 macro_rules! Ne {
     ($g:expr, $x:expr) => {
-        $g.neighbors($x)
+        $g.neighbors_iter($x)
     };
 }
 
@@ -52,7 +52,7 @@ pub trait UndirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn undirected_edges(&self) -> Self::UndirectedEdgesIter<'_>;
+    fn undirected_edges_iter(&self) -> Self::UndirectedEdgesIter<'_>;
 
     /// Check if the undirected edge exists.
     ///
@@ -130,7 +130,7 @@ pub trait UndirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_>;
+    fn neighbors_iter(&self, x: usize) -> Self::NeighborsIter<'_>;
 
     /// Check if two vertices are neighbors.
     ///
@@ -169,9 +169,9 @@ where
 
     // Get the undirected graph edges indices iterator.
     #[inline]
-    fn undirected_edges(&self) -> Self::UndirectedEdgesIter<'_> {
+    fn undirected_edges_iter(&self) -> Self::UndirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.edges()
+        E!(self)
     }
 
     // Check if the undirected edge exists.
@@ -197,9 +197,9 @@ where
 
     // Get the vertex neighbors indices iterator.
     #[inline]
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_> {
+    fn neighbors_iter(&self, x: usize) -> Self::NeighborsIter<'_> {
         // Delegate to the `adjacents` method.
-        self.adjacents(x)
+        self.adjacents_iter(x)
     }
 
     // Check if two vertices are neighbors.

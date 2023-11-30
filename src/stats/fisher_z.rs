@@ -11,6 +11,7 @@ use crate::{
     data::GaussianDataMatrix,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
+    L,
 };
 
 #[derive(Clone, Debug)]
@@ -33,7 +34,7 @@ impl FisherZ {
             rho,
             alpha,
             n: d.sample_size(),
-            labels: d.labels_iter().map(|x| x.into()).collect(),
+            labels: L!(d).map(|x| x.into()).collect(),
         }
     }
     #[inline]
@@ -66,7 +67,7 @@ impl ConditionalIndependenceTest for FisherZ {
     type LabelsIter<'a> = Map<btree_set::Iter<'a, String>, fn(&'a String) -> &'a str>;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         self.labels.iter().map(|x| x.as_str())
     }
 

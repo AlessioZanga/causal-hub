@@ -73,7 +73,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -111,14 +111,14 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
     ///
     /// // Construct initial graph.
-    /// let init_graph = DiGraph::new(
-    ///     data_set.labels_iter(),
+    /// let init_graph = DGraph::new(
+    ///     L!(data_set),
     ///     [
     ///         ("bronc", "dysp"),
     ///         ("either", "dysp"),
@@ -151,7 +151,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -181,7 +181,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -211,7 +211,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
@@ -338,17 +338,17 @@ where
             // If initial graph is provided ...
             Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.
-            None => G::empty(d.labels_iter()),
+            None => G::empty(L!(d)),
         };
 
         // Check coherence with data set ...
         assert!(
-            L!(g).eq(d.labels_iter()),
+            L!(g).eq(L!(d)),
             "Graph labels must be equal to data set labels"
         );
         // Check coherence of graph and prior knowledge.
         assert!(
-            L!(g).eq(k.labels()),
+            L!(g).eq(L!(k)),
             "Graph labels must be equal to prior knowledge labels"
         );
 
@@ -367,7 +367,7 @@ where
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
         // Get number of variables.
-        let n = d.labels_iter().len();
+        let n = L!(d).len();
         // Get columns index.
         let mut n = (0..n).collect_vec();
         // Check if random number generator has been set.
@@ -590,7 +590,7 @@ where
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
     /// let data_set: CategoricalDataMatrix = data_set.into();
     /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
+    /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);

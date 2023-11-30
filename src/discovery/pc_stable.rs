@@ -8,7 +8,7 @@ use crate::{
     },
     stats::ConditionalIndependenceTest,
     types::{FxIndexSet, SepSets},
-    Adj, Ch, Ne, Pa, E, V,
+    Adj, Ch, Ne, Pa, E, L, V,
 };
 
 #[derive(Clone, Debug)]
@@ -34,7 +34,7 @@ where
         U: UndirectedGraph<Direction = Undirected>,
     {
         // Set complete graph
-        let mut g = U::complete(self.test.labels());
+        let mut g = U::complete(L!(self.test));
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -227,7 +227,7 @@ where
         // Perform skeleton discovery
         let (g, sepsets): (UGraph, _) = self.skeleton();
         // Cast the graph to a partially directed graph
-        let mut g = P::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
+        let mut g = P::new(L!(g), E!(g).map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
@@ -265,7 +265,7 @@ where
         U: UndirectedGraph<Direction = Undirected> + Sync,
     {
         // Set complete graph
-        let mut g = U::complete(self.test.labels());
+        let mut g = U::complete(L!(self.test));
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
         // Initialize stopping criterion
@@ -333,7 +333,7 @@ where
         // Perform skeleton discovery.
         let (g, sepsets): (<P as DirectedGraph>::UndirectedGraph, _) = self.par_skeleton();
         // Cast the graph to a partially directed graph
-        let mut g = P::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
+        let mut g = P::new(L!(g), E!(g).map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)

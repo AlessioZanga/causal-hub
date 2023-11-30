@@ -1,11 +1,11 @@
 use super::{Undirected, UndirectedGraph};
-use crate::{graphs::Graph, E};
+use crate::{graphs::Graph, E, L};
 
 /// Define the `An` ancestor macro.
 #[macro_export]
 macro_rules! An {
     ($g:expr, $x:expr) => {
-        $g.ancestors($x)
+        $g.ancestors_iter($x)
     };
 }
 
@@ -13,7 +13,7 @@ macro_rules! An {
 #[macro_export]
 macro_rules! Pa {
     ($g:expr, $x:expr) => {
-        $g.parents($x)
+        $g.parents_iter($x)
     };
 }
 
@@ -21,7 +21,7 @@ macro_rules! Pa {
 #[macro_export]
 macro_rules! Ch {
     ($g:expr, $x:expr) => {
-        $g.children($x)
+        $g.children_iter($x)
     };
 }
 
@@ -29,7 +29,7 @@ macro_rules! Ch {
 #[macro_export]
 macro_rules! De {
     ($g:expr, $x:expr) => {
-        $g.descendants($x)
+        $g.descendants_iter($x)
     };
 }
 
@@ -96,7 +96,7 @@ pub trait DirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn directed_edges(&self) -> Self::DirectedEdgesIter<'_>;
+    fn directed_edges_iter(&self) -> Self::DirectedEdgesIter<'_>;
 
     /// Check if the directed edge exists.
     ///
@@ -234,7 +234,7 @@ pub trait DirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_>;
+    fn ancestors_iter(&self, x: usize) -> Self::AncestorsIter<'_>;
 
     /// Check if the vertex is an ancestor of a vertex.
     ///
@@ -277,7 +277,7 @@ pub trait DirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn parents(&self, x: usize) -> Self::ParentsIter<'_>;
+    fn parents_iter(&self, x: usize) -> Self::ParentsIter<'_>;
 
     /// Check if the vertex is a parent of a vertex.
     ///
@@ -317,7 +317,7 @@ pub trait DirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn children(&self, x: usize) -> Self::ChildrenIter<'_>;
+    fn children_iter(&self, x: usize) -> Self::ChildrenIter<'_>;
 
     /// Check if the vertex is a child of a vertex.
     ///
@@ -357,7 +357,7 @@ pub trait DirectedGraph: Graph {
     /// - Unique,
     /// - Sorted in ascending order.
     ///
-    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_>;
+    fn descendants_iter(&self, x: usize) -> Self::DescendantsIter<'_>;
 
     /// Check if the vertex is a descendant of a vertex.
     ///
@@ -417,10 +417,10 @@ pub trait DirectedGraph: Graph {
     ///
     fn to_undirected(&self) -> Self::UndirectedGraph {
         // Initialize an empty undirected graph.
-        let mut graph = Self::UndirectedGraph::empty(self.labels());
+        let mut graph = Self::UndirectedGraph::empty(L!(self));
 
         // Add the edges.
-        for (x, y) in self.edges() {
+        for (x, y) in E!(self) {
             graph.add_undirected_edge(x, y);
         }
 

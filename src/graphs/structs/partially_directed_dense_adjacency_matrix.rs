@@ -5,8 +5,9 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use super::{DGraph, UGraph};
-use crate::graphs::{
-    DirectedGraph, Graph, PartiallyDirected, PartiallyDirectedGraph, UndirectedGraph,
+use crate::{
+    graphs::{DirectedGraph, Graph, PartiallyDirected, PartiallyDirectedGraph, UndirectedGraph},
+    E, L, V,
 };
 
 /// Define the `PartiallyDirectedDenseAdjacencyMatrix` struct.
@@ -29,16 +30,14 @@ impl Display for PGraph {
         write!(
             f,
             "V = {{{}}}, ",
-            self.vertices()
-                .map(|x| format!("\"{}\"", &self[x]))
-                .join(", ")
+            V!(self).map(|x| format!("\"{}\"", &self[x])).join(", ")
         )?;
 
         // Write edge set.
         write!(
             f,
             "E = {{{}}}",
-            self.edges()
+            E!(self)
                 .map(|(x, y)| format!("(\"{}\", \"{}\")", &&self[x], &self[y]))
                 .join(", ")
         )?;
@@ -125,7 +124,7 @@ impl<'a> EdgesIterator<'a> {
     fn new(graph: &'a PGraph) -> Self {
         // Create the new `EdgesIterator` iterator.
         Self {
-            iter: classify(graph.directed.edges(), graph.undirected.edges()).map(Inclusion::union),
+            iter: classify(E!(graph.directed), E!(graph.undirected)).map(Inclusion::union),
             size: graph.size(),
         }
     }
@@ -191,8 +190,11 @@ impl<'a> AdjacentsIterator<'a> {
     fn new(graph: &'a PGraph, x: usize) -> Self {
         // Create the new `AdjacentsIterator` iterator.
         Self {
-            iter: classify(graph.directed.adjacents(x), graph.undirected.adjacents(x))
-                .map(Inclusion::union),
+            iter: classify(
+                graph.directed.adjacents_iter(x),
+                graph.undirected.adjacents_iter(x),
+            )
+            .map(Inclusion::union),
         }
     }
 }
@@ -243,7 +245,7 @@ impl Graph for PGraph {
         // Initialize the undirected graph.
         let undirected = UGraph::new(vertices, edges);
         // Initialize the directed graph.
-        let directed = DGraph::empty(undirected.labels());
+        let directed = DGraph::empty(L!(undirected));
 
         // Return the new graph.
         Self {
@@ -282,7 +284,7 @@ impl Graph for PGraph {
         // Initialize the undirected graph.
         let undirected = UGraph::empty(vertices);
         // Initialize the directed graph.
-        let directed = DGraph::empty(undirected.labels());
+        let directed = DGraph::empty(L!(undirected));
 
         // Return the new graph.
         Self {
@@ -300,7 +302,7 @@ impl Graph for PGraph {
         // Initialize the undirected graph.
         let undirected = UGraph::complete(vertices);
         // Initialize the directed graph.
-        let directed = DGraph::empty(undirected.labels());
+        let directed = DGraph::empty(L!(undirected));
 
         // Return the new graph.
         Self {
@@ -311,9 +313,9 @@ impl Graph for PGraph {
 
     // Get the vertices labels iterator.
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         // Delegate to the `labels` method of the undirected graph.
-        self.undirected.labels()
+        L!(self.undirected)
     }
 
     // Get the vertex label.
@@ -339,9 +341,9 @@ impl Graph for PGraph {
 
     // Get the vertices indices iterator.
     #[inline]
-    fn vertices(&self) -> Self::VerticesIter<'_> {
+    fn vertices_iter(&self) -> Self::VerticesIter<'_> {
         // Delegate to the `vertices` method of the undirected graph.
-        self.undirected.vertices()
+        V!(self.undirected)
     }
 
     // Check if the vertex exists.
@@ -419,7 +421,7 @@ impl Graph for PGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn edges(&self) -> Self::EdgesIter<'_> {
+    fn edges_iter(&self) -> Self::EdgesIter<'_> {
         // Compute the union of the directed and undirected graph edges.
         Self::EdgesIter::new(self)
     }
@@ -457,7 +459,7 @@ impl Graph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges(), self.undirected_edges())
+                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
                     .next()
                     .is_none(),
                 "The edge sets are not disjoint."
@@ -532,7 +534,7 @@ impl Graph for PGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
+    fn adjacents_iter(&self, x: usize) -> Self::AdjacentsIter<'_> {
         // Compute the union of the directed and undirected graph adjacents.
         Self::AdjacentsIter::new(self, x)
     }
@@ -606,9 +608,9 @@ impl UndirectedGraph for PGraph {
 
     // Get the undirected graph edges indices iterator.
     #[inline]
-    fn undirected_edges(&self) -> Self::UndirectedEdgesIter<'_> {
+    fn undirected_edges_iter(&self) -> Self::UndirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.undirected.undirected_edges()
+        self.undirected.undirected_edges_iter()
     }
 
     // Check if the undirected edge exists.
@@ -629,7 +631,7 @@ impl UndirectedGraph for PGraph {
 
         // Debug assert that the edge sets are disjoint.
         debug_assert!(
-            intersection(self.directed_edges(), self.undirected_edges())
+            intersection(self.directed_edges_iter(), self.undirected_edges_iter())
                 .next()
                 .is_none(),
             "The edge sets are not disjoint."
@@ -647,9 +649,9 @@ impl UndirectedGraph for PGraph {
 
     // Get the vertex neighbors indices iterator.
     #[inline]
-    fn neighbors(&self, x: usize) -> Self::NeighborsIter<'_> {
+    fn neighbors_iter(&self, x: usize) -> Self::NeighborsIter<'_> {
         // Delegate to the `adjacents` method.
-        self.undirected.neighbors(x)
+        self.undirected.neighbors_iter(x)
     }
 
     // Check if two vertices are neighbors.
@@ -684,9 +686,9 @@ impl DirectedGraph for PGraph {
 
     // Get the directed graph edges indices iterator.
     #[inline]
-    fn directed_edges(&self) -> Self::DirectedEdgesIter<'_> {
+    fn directed_edges_iter(&self) -> Self::DirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.directed.directed_edges()
+        self.directed.directed_edges_iter()
     }
 
     // Check if the directed edge exists.
@@ -706,7 +708,7 @@ impl DirectedGraph for PGraph {
 
         // Debug assert that the edge sets are disjoint.
         debug_assert!(
-            intersection(self.directed_edges(), self.undirected_edges())
+            intersection(self.directed_edges_iter(), self.undirected_edges_iter())
                 .next()
                 .is_none(),
             "The edge sets are not disjoint."
@@ -752,9 +754,9 @@ impl DirectedGraph for PGraph {
 
     // Get the vertex ancestors indices iterator.
     #[inline]
-    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_> {
+    fn ancestors_iter(&self, x: usize) -> Self::AncestorsIter<'_> {
         // Delegate to the `ancestors` method.
-        self.directed.ancestors(x)
+        self.directed.ancestors_iter(x)
     }
 
     // Check if two vertices are ancestors.
@@ -766,9 +768,9 @@ impl DirectedGraph for PGraph {
 
     // Get the vertex parents indices iterator.
     #[inline]
-    fn parents(&self, x: usize) -> Self::ParentsIter<'_> {
+    fn parents_iter(&self, x: usize) -> Self::ParentsIter<'_> {
         // Delegate to the `parents` method.
-        self.directed.parents(x)
+        self.directed.parents_iter(x)
     }
 
     // Check if two vertices are parents.
@@ -780,9 +782,9 @@ impl DirectedGraph for PGraph {
 
     // Get the vertex children indices iterator.
     #[inline]
-    fn children(&self, x: usize) -> Self::ChildrenIter<'_> {
+    fn children_iter(&self, x: usize) -> Self::ChildrenIter<'_> {
         // Delegate to the `children` method.
-        self.directed.children(x)
+        self.directed.children_iter(x)
     }
 
     // Check if two vertices are children.
@@ -794,9 +796,9 @@ impl DirectedGraph for PGraph {
 
     // Get the vertex descendants indices iterator.
     #[inline]
-    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_> {
+    fn descendants_iter(&self, x: usize) -> Self::DescendantsIter<'_> {
         // Delegate to the `descendants` method.
-        self.directed.descendants(x)
+        self.directed.descendants_iter(x)
     }
 
     // Check if two vertices are descendants.
@@ -818,7 +820,7 @@ impl PartiallyDirectedGraph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges(), self.undirected_edges())
+                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
                     .next()
                     .is_none(),
                 "The edge sets are not disjoint."
@@ -841,7 +843,7 @@ impl PartiallyDirectedGraph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges(), self.undirected_edges())
+                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
                     .next()
                     .is_none(),
                 "The edge sets are not disjoint."

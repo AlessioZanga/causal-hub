@@ -7,6 +7,7 @@ use crate::{
     data::{CategoricalDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
     prelude::{ConditionalIndependenceTest, DataSet, FxIndexSet},
     utils::nan_to_zero,
+    L,
 };
 
 #[derive(Clone, Debug)]
@@ -71,8 +72,8 @@ impl<'a> ConditionalIndependenceTest for ChiSquared<'a> {
         Map<indexmap::map::Keys<'b, String, FxIndexSet<String>>, fn(&'b String) -> &'b str> where Self: 'b;
 
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
-        self.d.labels_iter()
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        L!(self.d)
     }
 
     #[inline]

@@ -3,7 +3,7 @@ pub trait ConditionalIndependenceTest {
     where
         Self: 'a;
 
-    fn labels(&self) -> Self::LabelsIter<'_>;
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 }
@@ -13,7 +13,7 @@ pub trait GeneralizedConditionalIndependenceTest {
     where
         Self: 'a;
 
-    fn labels(&self) -> Self::LabelsIter<'_>;
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     fn call<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where

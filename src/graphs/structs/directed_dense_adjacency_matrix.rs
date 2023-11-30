@@ -14,7 +14,7 @@ use crate::{
     graphs::{Directed, DirectedGraph, Graph, UGraph},
     models::MoralGraph,
     types::FxIndexSet,
-    Pa, V,
+    Pa, E, L, V,
 };
 
 /// Define the `DirectedDenseAdjacencyMatrix` struct using a dense adjacency matrix from the `ndarray` crate.
@@ -41,16 +41,14 @@ impl Display for DGraph {
         write!(
             f,
             "V = {{{}}}, ",
-            self.vertices()
-                .map(|x| format!("\"{}\"", &self[x]))
-                .join(", ")
+            V!(self).map(|x| format!("\"{}\"", &self[x])).join(", ")
         )?;
 
         // Write edge set.
         write!(
             f,
             "E = {{{}}}",
-            self.edges()
+            E!(self)
                 .map(|(x, y)| format!("(\"{}\", \"{}\")", &self[x], &self[y]))
                 .join(", ")
         )?;
@@ -84,14 +82,14 @@ impl PartialOrd for DGraph {
     ///
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         // Compare the vertices.
-        let vertices = iter_set::cmp(self.labels(), other.labels());
+        let vertices = iter_set::cmp(L!(self), L!(other));
         // If the vertices are not comparable, return `None`.
         if vertices.is_none() {
             return None;
         }
 
         // Compare the edges.
-        let edges = iter_set::cmp(self.edges(), other.edges());
+        let edges = iter_set::cmp(E!(self), E!(other));
         // If the edges are not comparable, return `None`.
         if edges.is_none() {
             return None;
@@ -533,7 +531,7 @@ impl Graph for DGraph {
 
     // Get the vertices labels iterator.
     #[inline]
-    fn labels(&self) -> Self::LabelsIter<'_> {
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
         // Get the vertices labels iterator.
         self.labels.iter().map(|x| x.as_str())
     }
@@ -565,7 +563,7 @@ impl Graph for DGraph {
 
     // Get the vertices indices iterator.
     #[inline]
-    fn vertices(&self) -> Self::VerticesIter<'_> {
+    fn vertices_iter(&self) -> Self::VerticesIter<'_> {
         // Get the vertices indices iterator.
         0..self.order()
     }
@@ -739,7 +737,7 @@ impl Graph for DGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn edges(&self) -> Self::EdgesIter<'_> {
+    fn edges_iter(&self) -> Self::EdgesIter<'_> {
         // Get the edges indices iterator.
         Self::EdgesIter::new(self)
     }
@@ -945,7 +943,7 @@ impl Graph for DGraph {
     /// See the `Graph` trait for more details.
     ///
     #[inline]
-    fn adjacents(&self, x: usize) -> Self::AdjacentsIter<'_> {
+    fn adjacents_iter(&self, x: usize) -> Self::AdjacentsIter<'_> {
         // Assert the vertex index is in bounds.
         assert!(
             self.has_vertex(x),
@@ -1015,8 +1013,7 @@ impl Graph for DGraph {
         // Collect the vertices.
         let vertices: FxIndexSet<_> = vertices.into_iter().collect();
         // Get the edges labels.
-        let edges = self
-            .edges()
+        let edges = E!(self)
             .filter(|(x, y)| vertices.contains(x) && vertices.contains(y))
             .map(|(x, y)| (&self[x], &self[y]))
             .collect_vec();
@@ -1343,9 +1340,9 @@ impl DirectedGraph for DGraph {
 
     // Get the graph directed edges indices iterator.
     #[inline]
-    fn directed_edges(&self) -> Self::DirectedEdgesIter<'_> {
+    fn directed_edges_iter(&self) -> Self::DirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.edges()
+        E!(self)
     }
 
     // Check if the directed edge exists.
@@ -1405,7 +1402,7 @@ impl DirectedGraph for DGraph {
 
     // Get the vertex ancestors indices iterator.
     #[inline]
-    fn ancestors(&self, x: usize) -> Self::AncestorsIter<'_> {
+    fn ancestors_iter(&self, x: usize) -> Self::AncestorsIter<'_> {
         // Return the vertex ancestors indices iterator.
         AncestorsIterator::new(self, x)
     }
@@ -1414,12 +1411,12 @@ impl DirectedGraph for DGraph {
     #[inline]
     fn is_ancestor(&self, x: usize, y: usize) -> bool {
         // Check if the vertex is an ancestor of a vertex.
-        self.ancestors(y).any(|z| z == x)
+        self.ancestors_iter(y).any(|z| z == x)
     }
 
     // Get the vertex parents indices iterator.
     #[inline]
-    fn parents(&self, x: usize) -> Self::ParentsIter<'_> {
+    fn parents_iter(&self, x: usize) -> Self::ParentsIter<'_> {
         // Return the vertex parents indices iterator.
         ParentsIterator::new(self, x)
     }
@@ -1433,7 +1430,7 @@ impl DirectedGraph for DGraph {
 
     // Get the vertex children indices iterator.
     #[inline]
-    fn children(&self, x: usize) -> Self::ChildrenIter<'_> {
+    fn children_iter(&self, x: usize) -> Self::ChildrenIter<'_> {
         // Return the vertex children indices iterator.
         ChildrenIterator::new(self, x)
     }
@@ -1447,7 +1444,7 @@ impl DirectedGraph for DGraph {
 
     // Get the vertex descendants indices iterator.
     #[inline]
-    fn descendants(&self, x: usize) -> Self::DescendantsIter<'_> {
+    fn descendants_iter(&self, x: usize) -> Self::DescendantsIter<'_> {
         // Return the vertex descendants indices iterator.
         DescendantsIterator::new(self, x)
     }
@@ -1456,7 +1453,7 @@ impl DirectedGraph for DGraph {
     #[inline]
     fn is_descendant(&self, x: usize, y: usize) -> bool {
         // Check if the vertex is a descendant of a vertex.
-        self.descendants(y).any(|z| z == x)
+        self.descendants_iter(y).any(|z| z == x)
     }
 }
 
@@ -1584,11 +1581,11 @@ mod tests {
         // Check the graph size.
         assert_eq!(graph.size(), 0);
         // Check the vertices labels.
-        assert_eq!(graph.labels().collect_vec(), Vec::<&str>::new());
+        assert_eq!(L!(graph).collect_vec(), Vec::<&str>::new());
         // Check the vertices indices.
-        assert_eq!(graph.vertices().collect_vec(), Vec::<usize>::new());
+        assert_eq!(V!(graph).collect_vec(), Vec::<usize>::new());
         // Check the edges indices.
-        assert_eq!(graph.edges().collect_vec(), Vec::<(usize, usize)>::new());
+        assert_eq!(E!(graph).collect_vec(), Vec::<(usize, usize)>::new());
     }
 
     // Test the `display` method.
@@ -2172,7 +2169,7 @@ mod tests {
 
     // Test the `labels` method.
     #[test]
-    fn labels() {
+    fn labels_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D", "E", "F", "G", "H"];
         // Initialize the edges labels.
@@ -2311,7 +2308,7 @@ mod tests {
 
     // Test the `vertices` method.
     #[test]
-    fn vertices() {
+    fn vertices_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D"];
 
@@ -2458,7 +2455,7 @@ mod tests {
 
     // Test the `edges` method.
     #[test]
-    fn edges() {
+    fn edges_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D"];
 
@@ -2786,7 +2783,7 @@ mod tests {
 
     // Test the `adjacents` method.
     #[test]
-    fn adjacents() {
+    fn adjacents_iter() {
         // Initialize the vertices labels.
         let vertices = vec!["A", "B", "C", "D"];
 
@@ -3121,7 +3118,7 @@ mod tests {
 
         // Check the edges indices.
         assert_eq!(
-            graph.directed_edges().collect_vec(),
+            graph.directed_edges_iter().collect_vec(),
             Vec::<(usize, usize)>::new()
         );
 
@@ -3144,7 +3141,7 @@ mod tests {
 
         // Check the edges indices.
         assert_eq!(
-            graph.directed_edges().collect_vec(),
+            graph.directed_edges_iter().collect_vec(),
             vec![
                 (0, 1),
                 (0, 2),
@@ -3646,7 +3643,7 @@ mod tests {
         let graph = DGraph::null();
 
         // Get the ancestors.
-        graph.ancestors(0);
+        graph.ancestors_iter(0);
     }
 
     // Test the `ancestors` method.
@@ -3826,7 +3823,7 @@ mod tests {
         let graph = DGraph::null();
 
         // Get the parents.
-        graph.parents(0);
+        graph.parents_iter(0);
     }
 
     // Test the `parents` method.
@@ -3972,7 +3969,7 @@ mod tests {
         let graph = DGraph::null();
 
         // Get the children.
-        graph.children(0);
+        graph.children_iter(0);
     }
 
     // Test the `children` method.
@@ -4118,7 +4115,7 @@ mod tests {
         let graph = DGraph::null();
 
         // Get the descendants.
-        graph.descendants(0);
+        graph.descendants_iter(0);
     }
 
     // Test the `descendants` method.
