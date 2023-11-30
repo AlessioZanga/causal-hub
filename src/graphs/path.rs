@@ -3,7 +3,7 @@ use super::{
     Graph,
 };
 use crate::{
-    graphs::{DirectedDenseAdjacencyMatrix, UndirectedDenseAdjacencyMatrix},
+    graphs::{DGraph, UGraph},
     prelude::BFS,
 };
 
@@ -14,7 +14,7 @@ pub trait PathGraph {
 }
 
 /* Implement PathGraph */
-impl PathGraph for UndirectedDenseAdjacencyMatrix {
+impl PathGraph for UGraph {
     #[inline]
     fn has_path(&self, x: usize, y: usize) -> bool {
         self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)
@@ -27,7 +27,7 @@ impl PathGraph for UndirectedDenseAdjacencyMatrix {
 }
 
 /* Implement PathGraph */
-impl PathGraph for DirectedDenseAdjacencyMatrix {
+impl PathGraph for DGraph {
     #[inline]
     fn has_path(&self, x: usize, y: usize) -> bool {
         self.has_edge(x, y) || BFS::from((self, x)).skip(1).any(|z| z == y)

@@ -2,8 +2,10 @@ use std::fmt::Debug;
 
 use super::MoralGraph;
 use crate::{
-    graphs::directions,
-    prelude::{DirectedGraph, Graph, UGraph, UndirectedGraph, CC},
+    graphs::{
+        algorithms::components::CC, Directed, DirectedGraph, Graph, UGraph, Undirected,
+        UndirectedGraph,
+    },
     stats::{ConditionalIndependenceTest, GeneralizedConditionalIndependenceTest},
     types::FxIndexSet,
     utils::UnionFind,
@@ -39,9 +41,9 @@ where
 }
 
 /* Implement u-separation */
-impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, directions::Undirected>
+impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, Undirected>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
@@ -57,10 +59,9 @@ where
     }
 }
 
-impl<'a, G> GeneralizedConditionalIndependenceTest
-    for GraphicalSeparation<'a, G, directions::Undirected>
+impl<'a, G> GeneralizedConditionalIndependenceTest for GraphicalSeparation<'a, G, Undirected>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
@@ -130,9 +131,9 @@ where
 }
 
 /* Implement d-separation */
-impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, Directed>
 where
-    G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
+    G: DirectedGraph<Direction = Directed> + MoralGraph,
 {
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
@@ -148,10 +149,9 @@ where
     }
 }
 
-impl<'a, G> GeneralizedConditionalIndependenceTest
-    for GraphicalSeparation<'a, G, directions::Directed>
+impl<'a, G> GeneralizedConditionalIndependenceTest for GraphicalSeparation<'a, G, Directed>
 where
-    G: DirectedGraph<Direction = directions::Directed> + MoralGraph,
+    G: DirectedGraph<Direction = Directed> + MoralGraph,
 {
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
@@ -185,8 +185,8 @@ where
         let v: FxIndexSet<_> = V!(self.g).collect();
         assert!(s.is_subset(&v), "X, Y and Z must be subsets of V");
 
-        // FIXME: Clone current graph.
-        let mut h: UGraph = todo!();
+        // Clone current graph.
+        let mut h = self.g.to_undirected();
 
         // Compute the ancestors of S.
         let an_s: FxIndexSet<_> = s.iter().flat_map(|&s| An!(self.g, s)).collect();

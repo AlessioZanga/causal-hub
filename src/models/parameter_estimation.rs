@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use super::CategoricalBayesianNetwork;
 use crate::{
     data::{CategoricalDataMatrix, DataSet},
-    graphs::{structs::DirectedDenseAdjacencyMatrix, DirectedGraph, Graph},
+    graphs::{structs::DGraph, DirectedGraph, Graph},
     prelude::{BayesianNetwork, CategoricalCPD, ConditionalCountMatrix, MarginalCountMatrix},
     Pa, L, V,
 };
@@ -28,17 +28,10 @@ where
 
 pub struct MaximumLikelihoodEstimation;
 
-impl
-    ParameterEstimation<
-        CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrix,
-        CategoricalBayesianNetwork,
-    > for MaximumLikelihoodEstimation
+impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+    for MaximumLikelihoodEstimation
 {
-    fn call(
-        d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrix,
-    ) -> CategoricalBayesianNetwork {
+    fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
 
@@ -47,9 +40,10 @@ impl
             // Compute the parents set.
             let z = Pa!(g, x).collect_vec();
             // Compute the absolute frequencies.
-            let n = match z.is_empty() {
-                true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::new(d, x, &z).into(),
+            let n = if z.is_empty() {
+                Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0))
+            } else {
+                ConditionalCountMatrix::new(d, x, &z).into()
             };
             // Cast to float.
             let n = n.mapv(|n| n as f64);
@@ -80,17 +74,10 @@ impl
     }
 }
 
-impl
-    ParallelParameterEstimation<
-        CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrix,
-        CategoricalBayesianNetwork,
-    > for MaximumLikelihoodEstimation
+impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+    for MaximumLikelihoodEstimation
 {
-    fn par_call(
-        d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrix,
-    ) -> CategoricalBayesianNetwork {
+    fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
 
@@ -99,9 +86,10 @@ impl
             // Compute the parents set.
             let z = Pa!(g, x).collect_vec();
             // Compute the absolute frequencies.
-            let n = match z.is_empty() {
-                true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::new(d, x, &z).into(),
+            let n = if z.is_empty() {
+                Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0))
+            } else {
+                ConditionalCountMatrix::new(d, x, &z).into()
             };
             // Cast to float.
             let n = n.mapv(|n| n as f64);
@@ -139,17 +127,10 @@ pub type MLE = MaximumLikelihoodEstimation;
 
 pub struct BayesianEstimation;
 
-impl
-    ParameterEstimation<
-        CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrix,
-        CategoricalBayesianNetwork,
-    > for BayesianEstimation
+impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+    for BayesianEstimation
 {
-    fn call(
-        d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrix,
-    ) -> CategoricalBayesianNetwork {
+    fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
 
@@ -158,9 +139,10 @@ impl
             // Compute the parents set.
             let z = Pa!(g, x).collect_vec();
             // Compute the absolute frequencies.
-            let n = match z.is_empty() {
-                true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::new(d, x, &z).into(),
+            let n = if z.is_empty() {
+                Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0))
+            } else {
+                ConditionalCountMatrix::new(d, x, &z).into()
             };
             // Add pseudo counts. // TODO: Generalize to non-uniform distributions.
             let n = n + 1;
@@ -193,17 +175,10 @@ impl
     }
 }
 
-impl
-    ParallelParameterEstimation<
-        CategoricalDataMatrix,
-        DirectedDenseAdjacencyMatrix,
-        CategoricalBayesianNetwork,
-    > for BayesianEstimation
+impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+    for BayesianEstimation
 {
-    fn par_call(
-        d: &CategoricalDataMatrix,
-        g: &DirectedDenseAdjacencyMatrix,
-    ) -> CategoricalBayesianNetwork {
+    fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(d.labels_iter()));
 
@@ -212,9 +187,10 @@ impl
             // Compute the parents set.
             let z = Pa!(g, x).collect_vec();
             // Compute the absolute frequencies.
-            let n = match z.is_empty() {
-                true => Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0)),
-                false => ConditionalCountMatrix::new(d, x, &z).into(),
+            let n = if z.is_empty() {
+                Array1::from(MarginalCountMatrix::new(d, x)).insert_axis(Axis(0))
+            } else {
+                ConditionalCountMatrix::new(d, x, &z).into()
             };
             // Add pseudo counts. // TODO: Generalize to non-uniform distributions.
             let n = n + 1;

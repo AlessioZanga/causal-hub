@@ -1,7 +1,7 @@
 use crate::{
     data::{CategoricalDataMatrix, GaussianDataMatrix},
     discovery::DecomposableScoringCriterion,
-    graphs::{directions, DirectedGraph},
+    graphs::{Directed, DirectedGraph},
     prelude::ZINBDataMatrix,
     stats::LogLikelihood,
 };
@@ -29,7 +29,7 @@ impl<'a, D> AkaikeInformationCriterion<'a, D> {
 impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
     for AkaikeInformationCriterion<'a, CategoricalDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -56,7 +56,7 @@ where
 impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
     for AkaikeInformationCriterion<'a, GaussianDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -76,7 +76,7 @@ where
 impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
     for AkaikeInformationCriterion<'a, ZINBDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {

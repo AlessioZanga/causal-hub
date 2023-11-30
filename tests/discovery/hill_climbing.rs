@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod categorical {
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn call() {
@@ -123,8 +122,7 @@ mod categorical {
 
 #[cfg(test)]
 mod gaussian {
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn call() {
@@ -371,8 +369,7 @@ mod gaussian {
 
 #[cfg(test)]
 mod zinb {
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn call() {

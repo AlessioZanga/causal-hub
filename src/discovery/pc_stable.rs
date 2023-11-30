@@ -3,7 +3,8 @@ use rayon::prelude::*;
 
 use crate::{
     graphs::{
-        Graph, PartiallyDirected, PartiallyDirectedGraph, UGraph, Undirected, UndirectedGraph,
+        DirectedGraph, Graph, PartiallyDirected, PartiallyDirectedGraph, UGraph, Undirected,
+        UndirectedGraph,
     },
     stats::ConditionalIndependenceTest,
     types::{FxIndexSet, SepSets},
@@ -90,11 +91,11 @@ where
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
 
-        for x in V!(g).collect::<Vec<_>>() {
+        for x in V!(g).collect_vec() {
             if Pa!(g, x).next().is_none() {
                 continue;
             }
-            for z in Ne!(g, x).collect::<Vec<_>>() {
+            for z in Ne!(g, x).collect_vec() {
                 if iter_set::intersection(Adj!(g, z), Pa!(g, x))
                     .next()
                     .is_none()
@@ -115,12 +116,12 @@ where
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
 
-        for x in V!(g).collect::<Vec<_>>() {
+        for x in V!(g).collect_vec() {
             if Pa!(g, x).next().is_none() {
                 continue;
             }
-            for z in Ch!(g, x).collect::<Vec<_>>() {
-                for y in iter_set::intersection(Ne!(g, z), Pa!(g, x)).collect::<Vec<_>>() {
+            for z in Ch!(g, x).collect_vec() {
+                for y in iter_set::intersection(Ne!(g, z), Pa!(g, x)).collect_vec() {
                     g.set_directed_edge(y, z);
                     is_closed = false;
                 }
@@ -137,8 +138,8 @@ where
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
 
-        for x in V!(g).collect::<Vec<_>>() {
-            for z in Ne!(g, x).collect::<Vec<_>>() {
+        for x in V!(g).collect_vec() {
+            for z in Ne!(g, x).collect_vec() {
                 let intersection = iter_set::intersection(Ne!(g, z), Pa!(g, x));
                 // Look for a non-adjacent couple of parents of `x`
                 if intersection
@@ -161,11 +162,11 @@ where
         // Flag returning `false` if some orientation takes place
         let mut is_closed = true;
 
-        for x in V!(g).collect::<Vec<_>>() {
+        for x in V!(g).collect_vec() {
             if Pa!(g, x).next().is_none() {
                 continue;
             }
-            for z in Ne!(g, x).collect::<Vec<_>>() {
+            for z in Ne!(g, x).collect_vec() {
                 if iter_set::intersection(
                     Ne!(g, z),
                     Pa!(g, x).flat_map(|parent| Pa!(g, parent).filter(|&y| !g.is_adjacent(y, x))),
@@ -240,14 +241,12 @@ where
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
-            // ... if one of the edges is already directed ...
-            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
-                // ... skip this triple.
-                continue;
+            // ... if both edges are undirected ...
+            if g.has_undirected_edge(x, y) && g.has_undirected_edge(z, y) {
+                // ... the triple is a v-structure.
+                g.set_directed_edge(x, y);
+                g.set_directed_edge(z, y);
             }
-            // Otherwise, the triple is a v-structure.
-            g.set_directed_edge(x, y);
-            g.set_directed_edge(z, y);
         }
 
         // Orient edges according to orientation rules.
@@ -266,7 +265,6 @@ where
         U: UndirectedGraph<Direction = Undirected> + Sync,
     {
         // Set complete graph
-        // TODO: Generalize to other types of undirected graphs.
         let mut g = U::complete(self.test.labels());
         // Initialize set of separating sets
         let mut sepsets = SepSets::default();
@@ -330,10 +328,10 @@ where
     pub fn par_call<P>(&self) -> P
     where
         P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+        P::UndirectedGraph: Sync,
     {
         // Perform skeleton discovery.
-        // TODO: Generalize to other types of undirected graphs.
-        let (g, sepsets): (UGraph, _) = self.par_skeleton();
+        let (g, sepsets): (<P as DirectedGraph>::UndirectedGraph, _) = self.par_skeleton();
         // Cast the graph to a partially directed graph
         let mut g = P::new(g.labels(), g.edges().map(|(x, y)| (&g[x], &g[y])));
 
@@ -349,14 +347,12 @@ where
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
-            // ... if one of the edges is already directed ...
-            if !g.has_undirected_edge(x, y) || !g.has_undirected_edge(z, y) {
-                // ... skip this triple.
-                continue;
+            // ... if both edges are undirected ...
+            if g.has_undirected_edge(x, y) && g.has_undirected_edge(z, y) {
+                // ... the triple is a v-structure.
+                g.set_directed_edge(x, y);
+                g.set_directed_edge(z, y);
             }
-            // Otherwise, the triple is a v-structure.
-            g.set_directed_edge(x, y);
-            g.set_directed_edge(z, y);
         }
 
         // Orient edges according to orientation rules.

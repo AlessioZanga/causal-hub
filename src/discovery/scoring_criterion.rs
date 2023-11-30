@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rayon::prelude::*;
 
 use crate::{
-    graphs::{directions, DirectedGraph},
+    graphs::{Directed, DirectedGraph},
     types::FxIndexMap,
     Pa, V,
 };
@@ -40,7 +40,7 @@ pub trait DecomposableScoringCriterion<D, G> {
 /* Blanket implementation for Decomposable Scoring Criterion */
 impl<D, G, S> ScoringCriterion<D, G, score_types::Decomposable> for S
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
     #[inline]
@@ -161,7 +161,7 @@ where
 impl<'a, D, G, S> DecomposableScoringCriterion<D, G>
     for ScoringCriterionCache<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -185,7 +185,7 @@ where
 
 impl<'a, D, G, S> ScoringCriterionCache<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
     pub fn call(&self, x: usize, z: &[usize]) -> (Option<(usize, Vec<usize>)>, f64) {

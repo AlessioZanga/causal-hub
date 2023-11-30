@@ -3,9 +3,8 @@ mod tests {
     use std::ops::Deref;
 
     use approx::*;
-    use causal_hub::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
     use ndarray::prelude::*;
-    use polars::prelude::*;
 
     #[test]
     fn clone() {

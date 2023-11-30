@@ -10,7 +10,7 @@ pub mod categorical {
         fn call<D, G, K, S>(data_set: &D, prior_knowledge: &K, scoring_criterion: &S) -> G
         where
             D: DataSet,
-            G: DirectedGraph<Direction = directions::Directed> + PathGraph,
+            G: DirectedGraph<Direction = Directed> + PathGraph,
             K: PriorKnowledge,
             S: DecomposableScoringCriterion<D, G>,
         {
@@ -81,7 +81,7 @@ pub mod categorical {
         fn par_call<D, G, K, S>(data_set: &D, prior_knowledge: &K, scoring_criterion: &S) -> G
         where
             D: DataSet + Sync,
-            G: DirectedGraph<Direction = directions::Directed> + PathGraph + Sync,
+            G: DirectedGraph<Direction = Directed> + PathGraph + Sync,
             K: PriorKnowledge + Sync,
             S: DecomposableScoringCriterion<D, G> + Sync,
         {
@@ -155,7 +155,7 @@ pub mod zinb {
         fn call<D, G, K, S>(data_set: &D, prior_knowledge: &K, scoring_criterion: &S) -> G
         where
             D: DataSet,
-            G: DirectedGraph<Direction = directions::Directed> + PathGraph,
+            G: DirectedGraph<Direction = Directed> + PathGraph,
             K: PriorKnowledge,
             S: DecomposableScoringCriterion<D, G>,
         {

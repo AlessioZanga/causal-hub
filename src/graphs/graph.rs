@@ -184,9 +184,9 @@ pub trait Graph:
     /// // Assert the graph vertices labels are correct.
     /// assert_eq!(graph.labels().collect_vec(), Vec::<&str>::new());
     /// // Assert the graph vertices indices are correct.
-    /// assert_eq!(graph.vertices().collect_vec(), vec![]);
+    /// assert_eq!(graph.vertices().collect_vec(), Vec::<usize>::new());
     /// // Assert the graph edges indices are correct.
-    /// assert_eq!(graph.edges().collect_vec(), vec![]);
+    /// assert_eq!(graph.edges().collect_vec(), Vec::<(usize, usize)>::new());
     /// ```
     ///
     fn null() -> Self;

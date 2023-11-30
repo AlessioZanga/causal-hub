@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod variable_elimination {
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn project_onto() {

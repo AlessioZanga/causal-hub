@@ -3,10 +3,9 @@ mod tests {
     mod categorical {
         use std::collections::BTreeMap;
 
-        use causal_hub::prelude::*;
+        use causal_hub::{polars::prelude::*, prelude::*};
         use itertools::Itertools;
         use ndarray::prelude::*;
-        use polars::prelude::*;
 
         #[test]
         fn from() {
@@ -186,9 +185,8 @@ mod tests {
     }
 
     mod continuous {
-        use causal_hub::prelude::*;
+        use causal_hub::{polars::prelude::*, prelude::*};
         use ndarray::prelude::*;
-        use polars::prelude::*;
 
         #[test]
         fn from() {

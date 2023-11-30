@@ -1,7 +1,7 @@
 use crate::{
     data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
     discovery::DecomposableScoringCriterion,
-    graphs::{directions, DirectedGraph},
+    graphs::{Directed, DirectedGraph},
     stats::LogLikelihood,
 };
 
@@ -28,7 +28,7 @@ impl<'a, D> BayesianInformationCriterion<'a, D> {
 impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
     for BayesianInformationCriterion<'a, CategoricalDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -68,7 +68,7 @@ where
 impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
     for BayesianInformationCriterion<'a, GaussianDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -101,7 +101,7 @@ where
 impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
     for BayesianInformationCriterion<'a, ZINBDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {

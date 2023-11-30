@@ -1,9 +1,9 @@
 use std::{collections::VecDeque, fmt::Debug, iter::FusedIterator};
 
+use crate::polars::prelude::*;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use ndarray_rand::rand_distr::num_traits::Zero;
-use polars::prelude::*;
 use rand::{distributions::Uniform, prelude::*, seq::index};
 use rayon::{
     iter::plumbing::{bridge, Consumer, Producer, ProducerCallback, UnindexedConsumer},

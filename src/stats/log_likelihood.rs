@@ -18,7 +18,7 @@ use crate::{
         MarginalCountMatrix, ZINBDataMatrix,
     },
     discovery::DecomposableScoringCriterion,
-    graphs::{directions, DirectedGraph},
+    graphs::{Directed, DirectedGraph},
     utils::{axis_chunks_size, nan_to_zero},
 };
 
@@ -215,13 +215,14 @@ impl<'a, D> LogLikelihood<'a, D> {
 impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
     for LogLikelihood<'a, CategoricalDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
-        match z.is_empty() {
-            true => MarginalLogLikelihood::new(self.data_set).call(x),
-            false => ConditionalLogLikelihood::new(self.data_set).call(x, z),
+        if z.is_empty() {
+            MarginalLogLikelihood::new(self.data_set).call(x)
+        } else {
+            ConditionalLogLikelihood::new(self.data_set).call(x, z)
         }
     }
 }
@@ -229,13 +230,14 @@ where
 impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
     for LogLikelihood<'a, GaussianDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
-        match z.is_empty() {
-            true => MarginalLogLikelihood::new(self.data_set).call(x),
-            false => ConditionalLogLikelihood::new(self.data_set).call(x, z),
+        if z.is_empty() {
+            MarginalLogLikelihood::new(self.data_set).call(x)
+        } else {
+            ConditionalLogLikelihood::new(self.data_set).call(x, z)
         }
     }
 }
@@ -333,31 +335,31 @@ impl CostFunction for ZINBObjective {
         );
 
         // logit(p) = Z * alpha + delta
-        let p0 = Self::eval(&self.z10, alpha_delta);
-        let p1 = Self::eval(&self.z11, alpha_delta);
+        let pi0 = Self::eval(&self.z10, alpha_delta);
+        let pi1 = Self::eval(&self.z11, alpha_delta);
         // logit(q) = Z * beta + gamma
-        let q0 = Self::eval(&self.z10, beta_gamma);
-        let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::min(lambda, 1e2));
+        let p0 = Self::eval(&self.z10, beta_gamma);
+        let p1 = Self::eval(&self.z11, beta_gamma);
+        // r = exp(lambda), clamped to avoid overflow.
+        let r = f64::exp(f64::min(lambda, 1e2));
 
         // Logarithm of the ascending factorial function.
-        let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
-            x.mapv(|i| (0..(i as usize)).map(|j| f64::ln(k + j as f64)).sum())
+        let log_ascfacto = |r: f64, x: &Array2<f64>| -> Array2<f64> {
+            x.mapv(|i| (0..(i as usize)).map(|j| f64::ln(r + j as f64)).sum())
         };
 
         // Compute the log-likelihood.
         let log_likelihood =
-            // \sum_{i \in x0} log(pi_i + (1 - pi_i) * (1 - q_i)^k)
-            (&p0 + (1. - &p0) * (1. - &q0).mapv(|i| f64::powf(i, k)) + E)
+            // \sum_{i \in x0} log(pi_i + (1 - pi_i) * (1 - q_i)^r)
+            (&pi0 + (1. - &pi0) * (1. - &p0).mapv(|i| f64::powf(i, r)) + E)
                 .mapv(f64::ln)
                 .sum()
-            // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(k, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + k * log(1 - q_i)
-            + ((1. - &p1).mapv(f64::ln)
-                + log_ascfacto(k, &self.x1)
+            // \sum_{i \in x1} log(1 - pi_i) + log_ascfacto(r, x_i) - lgamma(x_i + 1) + x_i * log(q_i) + r * log(1 - q_i)
+            + ((1. - &pi1).mapv(f64::ln)
+                + log_ascfacto(r, &self.x1)
                 - &self.x1_1_lgamma
-                + &self.x1 * &q1.mapv(f64::ln)
-                + k * (1. - &q1).mapv(f64::ln)
+                + &self.x1 * &p1.mapv(f64::ln)
+                + r * (1. - &p1).mapv(f64::ln)
             ).sum();
 
         // Negate the log-likelihood since we are minimizing.
@@ -397,51 +399,51 @@ impl Gradient for ZINBObjective {
         );
 
         // logit(p) = Z * alpha + delta
-        let p0 = Self::eval(&self.z10, alpha_delta);
-        let p1 = Self::eval(&self.z11, alpha_delta);
+        let pi0 = Self::eval(&self.z10, alpha_delta);
+        let pi1 = Self::eval(&self.z11, alpha_delta);
         // logit(q) = Z * beta + gamma
-        let q0 = Self::eval(&self.z10, beta_gamma);
-        let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::min(lambda, 1e2));
+        let p0 = Self::eval(&self.z10, beta_gamma);
+        let p1 = Self::eval(&self.z11, beta_gamma);
+        // r = exp(lambda), clamped to avoid overflow.
+        let r = f64::exp(f64::min(lambda, 1e2));
 
         // Initialize the gradient.
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
 
         // Pre-compute the following terms.
-        let _p_0 = -&p_0; // -p_0
-        let _p_1 = -&p_1; // -p_1
-        let _1_pi_0 = 1. - &pi_0; // (1 - pi_0)
-        let _1_p_0 = 1. - &p_0; // (1 - p_0)
-        let _1_p_1 = 1. - &p_1; // (1 - p_1)
-        let _1_p_0_k = _1_p_0.mapv(|i| f64::powf(i, r)); // (1 - p_0)^r
-        let d0 = &pi_0 + &_1_pi_0 * &_1_p_0_k; // pi_0 + (1 - pi_0) * pow(1 - p_0, r)
-        let _1_pi_0_d0 = &_1_pi_0 / &d0; // (1 - pi_0) / d0
+        let _p0 = -&p0; // -p0
+        let _p1 = -&p1; // -p1
+        let _1_pi0 = 1. - &pi0; // (1 - pi0)
+        let _1_p0 = 1. - &p0; // (1 - p0)
+        let _1_p1 = 1. - &p1; // (1 - p1)
+        let _1_p0_k = _1_p0.mapv(|i| f64::powf(i, r)); // (1 - p0)^r
+        let d0 = &pi0 + &_1_pi0 * &_1_p0_k; // pi0 + (1 - pi0) * pow(1 - p0, r)
+        let _1_pi0_d0 = &_1_pi0 / &d0; // (1 - pi0) / d0
 
         // alpha_delta
         gradient.slice_mut(s![..z1]).assign(&{
-            // Z10 * ((1 - p0) * p0 * (1 - pow(1 - q0, k)) / d0)
-            (&self.z10 * &_1_p0_d0 * &p0 * (1. - &_1_q0_k)).sum_axis(Axis(0))
-            // -Z11 * p1
-            -(&self.z11 * &p1).sum_axis(Axis(0))
+            // Z10 * ((1 - pi0) * pi0 * (1 - pow(1 - p0, r)) / d0)
+            (&self.z10 * &_1_pi0_d0 * &pi0 * (1. - &_1_p0_k)).sum_axis(Axis(0))
+            // -Z11 * pi1
+            -(&self.z11 * &pi1).sum_axis(Axis(0))
         });
 
         // beta_gamma
         gradient.slice_mut(s![z1..(2 * z1)]).assign(&{
-            // -Z10 * ((1 - pi_0) * (r * pow(1 - p_0, r - 1)) * p_0 * (1 - p_0) / d0) -> Z10 * ((1 - pi_0) * (r * pow(1 - p_0, r - 1)) * (-p_0) * (1 - p_0) / d0)
-            (&self.z10 * (&_1_pi_0_d0 * r * &_1_p_0_k * &_p_0)).sum_axis(Axis(0))
-            // -Z11 * ((r + x1) * p_1 - x1) -> Z11 * ((r + x1) * (-p_1) + x1)
-            + (&self.z11 * ((r + &self.x1) * &_p_1 + &self.x1)).sum_axis(Axis(0))
+            // -Z10 * ((1 - pi0) * (r * pow(1 - p0, r - 1)) * p0 * (1 - p0) / d0) -> Z10 * ((1 - pi0) * (r * pow(1 - p0, r - 1)) * (-p0) * (1 - p0) / d0)
+            (&self.z10 * (&_1_pi0_d0 * r * &_1_p0_k * &_p0)).sum_axis(Axis(0))
+            // -Z11 * ((r + x1) * p1 - x1) -> Z11 * ((r + x1) * (-p1) + x1)
+            + (&self.z11 * ((r + &self.x1) * &_p1 + &self.x1)).sum_axis(Axis(0))
         });
 
         // lambda
         gradient[2 * z1] = (
-            // (1 - p0) * pow(1 - q0, k) * log(1 - q0) / d0)
-            (&_1_p0_d0 * &_1_q0_k * &_1_q0.mapv(f64::ln)).sum()
-            // digamma(k + x1) - digamma(k) + log(1 - q1)
-            + ((&self.x1 + k).mapv(digamma) - digamma(k) + &_1_q1.mapv(f64::ln)).sum()
-            // * k
-        ) * k;
+            // (1 - pi0) * pow(1 - p0, r) * log(1 - p0) / d0)
+            (&_1_pi0_d0 * &_1_p0_k * &_1_p0.mapv(f64::ln)).sum()
+            // digamma(r + x1) - digamma(r) + log(1 - p1)
+            + ((&self.x1 + r).mapv(digamma) - digamma(r) + &_1_p1.mapv(f64::ln)).sum()
+            // * r
+        ) * r;
 
         // Negate the gradient since we are minimizing.
         let gradient = -gradient;
@@ -460,7 +462,7 @@ impl Gradient for ZINBObjective {
 
 impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G> for LogLikelihood<'a, ZINBDataMatrix>
 where
-    G: DirectedGraph<Direction = directions::Directed>,
+    G: DirectedGraph<Direction = Directed>,
 {
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Initialize the objective function.

@@ -7,13 +7,13 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 
 use super::{
-    score_types, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion,
+    score_types::Decomposable, DecomposableScoringCriterion, PriorKnowledge, ScoringCriterion,
     ScoringCriterionCache as C,
 };
 use crate::{
     data::DataSet,
-    graphs::PathGraph,
-    prelude::{directions, DirectedGraph, FxIndexSet, Graph, BFS},
+    graphs::{algorithms::traversal::BFS, Directed, DirectedGraph, Graph, PathGraph},
+    types::FxIndexSet,
     Ch, Pa, E, L, V,
 };
 
@@ -328,7 +328,7 @@ impl<'a, D, K, G, S, T> HillClimbing<'a, D, K, G, S, T>
 where
     D: DataSet,
     K: PriorKnowledge,
-    G: DirectedGraph<Direction = directions::Directed> + PathGraph,
+    G: DirectedGraph<Direction = Directed> + PathGraph,
     S: ScoringCriterion<D, G, T>,
 {
     #[inline]
@@ -450,17 +450,17 @@ where
 }
 
 /* Implement Hill-Climbing for Decomposable Scoring Criteria */
-impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::Decomposable>
+impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, Decomposable>
 where
     D: DataSet,
     K: PriorKnowledge,
-    G: DirectedGraph<Direction = directions::Directed> + PathGraph,
+    G: DirectedGraph<Direction = Directed> + PathGraph,
     S: DecomposableScoringCriterion<D, G>,
 {
     #[inline]
     fn eval<const OP: u8>(
         &self,
-        cache: &C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        cache: &C<'a, D, G, S, Decomposable, (usize, Vec<usize>)>,
         g: &G,
         x: usize,
         y: usize,
@@ -534,7 +534,7 @@ where
     fn search(
         &self,
         (add, del, rev): (&E, &E, &E),
-        cache: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        cache: &mut C<'a, D, G, S, Decomposable, (usize, Vec<usize>)>,
         in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
@@ -542,22 +542,25 @@ where
         let (ops_deltas, fragments): (Vec<_>, Vec<_>) = add
             .iter()
             // Check if operation is valid, compute current operation delta score and cache fragments.
-            .filter_map(
-                |(x, y)| match self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y)),
-                    false => None,
-                },
-            )
+            .filter_map(|(x, y)| {
+                if self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y))
+                } else {
+                    None
+                }
+            })
             .chain(del.iter().filter_map(|(x, y)| {
-                match self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y)),
-                    false => None,
+                if self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y))
+                } else {
+                    None
                 }
             }))
             .chain(rev.iter().filter_map(|(x, y)| {
-                match self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y)),
-                    false => None,
+                if self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y))
+                } else {
+                    None
                 }
             }))
             // Unzip OPs and cache fragments.
@@ -652,18 +655,18 @@ where
 }
 
 /* Implement parallel Hill-Climbing for Decomposable Scoring Criteria */
-impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::Decomposable>
+impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, Decomposable>
 where
     D: DataSet + Sync,
     K: PriorKnowledge + Sync,
-    G: DirectedGraph<Direction = directions::Directed> + PathGraph + Sync,
+    G: DirectedGraph<Direction = Directed> + PathGraph + Sync,
     S: DecomposableScoringCriterion<D, G> + Sync,
 {
     #[inline]
     fn par_search(
         &self,
         (add, del, rev): (&E, &E, &E),
-        cache: &mut C<'a, D, G, S, score_types::Decomposable, (usize, Vec<usize>)>,
+        cache: &mut C<'a, D, G, S, Decomposable, (usize, Vec<usize>)>,
         in_degree: &[usize],
         g: &G,
     ) -> Option<(A, f64)> {
@@ -671,22 +674,25 @@ where
         let (ops_deltas, fragments): (Vec<_>, Vec<_>) = add
             .par_iter()
             // Check if operation is valid, compute current operation delta score and cache fragments.
-            .filter_map(
-                |(x, y)| match self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y)),
-                    false => None,
-                },
-            )
+            .filter_map(|(x, y)| {
+                if self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y))
+                } else {
+                    None
+                }
+            })
             .chain(del.par_iter().filter_map(|(x, y)| {
-                match self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y)),
-                    false => None,
+                if self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y))
+                } else {
+                    None
                 }
             }))
             .chain(rev.par_iter().filter_map(|(x, y)| {
-                match self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
-                    true => Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y)),
-                    false => None,
+                if self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
+                    Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y))
+                } else {
+                    None
                 }
             }))
             // Unzip OPs and cache fragments.
@@ -743,151 +749,7 @@ where
             debug!("i: {}, max_iter: {}", i, self.max_iter);
 
             // For each possible edge operation ...
-            let op_delta = self.search((&add, &del, &rev), &mut cache, &in_degree, &g);
-
-            // If best operation exists.
-            if let Some(((x, y, a), delta)) = op_delta {
-                // Apply operation to current solution.
-                (g, s_g) = (Self::apply(&mut in_degree, g, x, y, a), s_g + delta);
-                // Update search space.
-                (add, del, rev) = Self::update((add, del, rev), x, y, a);
-                // Set the flag.
-                flag = true;
-            }
-
-            // Increment counter.
-            i += 1;
-        }
-
-        g
-    }
-}
-
-/* Implement Hill-Climbing for Non-Decomposable Scoring Criteria */
-impl<'a, D, K, G, S> HillClimbing<'a, D, K, G, S, score_types::NonDecomposable>
-where
-    D: DataSet,
-    K: PriorKnowledge,
-    G: DirectedGraph<Direction = directions::Directed> + PathGraph,
-    S: ScoringCriterion<D, G, score_types::NonDecomposable>,
-{
-    #[inline]
-    fn eval<const OP: u8>(
-        &self,
-        cache: &C<'a, D, G, S, score_types::NonDecomposable, G>,
-        g: &G,
-        x: usize,
-        y: usize,
-    ) -> ((A, f64), CU<Option<G>>) {
-        // Get current Y score.
-        let s_g = cache.call(g);
-        // Compute delta score depending on operation.
-        let (delta_star, s_star) = match OP {
-            Op::ADD => {
-                // Add X in-place by leveraging Pa(G, Y) order.
-                let mut g_star = g.clone();
-                g_star.add_edge(x, y);
-                // Compute delta score and merge cache.
-                let s_g_star = cache.call(&g_star);
-
-                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
-            }
-            Op::DEL => {
-                // Remove X in-place by leveraging Pa(G, Y) order.
-                let mut g_star = g.clone();
-                g_star.del_edge(x, y);
-                // Compute delta score and merge cache.
-                let s_g_star = cache.call(&g_star);
-
-                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
-            }
-            Op::REV => {
-                // Reverse X in-place by leveraging Pa(G, Y) order.
-                let mut g_star = g.clone();
-                g_star.del_edge(x, y);
-                g_star.add_edge(y, x);
-                // Compute delta score and merge cache.
-                let s_g_star = cache.call(&g_star);
-
-                (s_g_star.1 - s_g.1, vec![s_g_star, s_g])
-            }
-            _ => panic!("Unknown operation code"),
-        };
-
-        // Log current operation delta.
-        debug!(
-            "op: {}({}, {}), delta: {}",
-            match OP {
-                Op::ADD => "Add",
-                Op::DEL => "Del",
-                Op::REV => "Rev",
-                _ => panic!("Unknown operation code"),
-            },
-            &g[x],
-            &g[y],
-            delta_star
-        );
-
-        (((x, y, OP), delta_star), s_star)
-    }
-
-    #[inline]
-    fn search(
-        &self,
-        (add, del, rev): (&E, &E, &E),
-        cache: &mut C<'a, D, G, S, score_types::NonDecomposable, G>,
-        in_degree: &[usize],
-        g: &G,
-    ) -> Option<(A, f64)> {
-        todo!() // FIXME: search!(PARALLEL, self, add, del, rev, cache, in_degree, g)
-    }
-
-    /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use causal_hub::{prelude::*, polars::prelude::*};
-    ///
-    /// // Load data set from CSV file.
-    /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
-    /// // Initialize empty prior knowledge.
-    /// let prior_knowledge = FR::new(data_set.labels_iter(), [], []);
-    ///
-    /// // Initialize scoring criterion.
-    /// let scoring_criterion = BIC::new(&data_set);
-    ///
-    /// // Perform discovery.
-    /// let pred_graph: DGraph = HC::new(&scoring_criterion)
-    ///     .call(&data_set, &prior_knowledge);
-    /// ```
-    ///
-    pub fn call(&self, d: &D, k: &K) -> G {
-        // Initialize delta scores cache.
-        let mut cache = C::new(self.scoring_criterion);
-
-        // Initialize graph from D and K.
-        let ((mut add, mut del, mut rev), mut in_degree, mut g) = self.init(d, k);
-        // Compute the initial score.
-        let mut s_g = self.scoring_criterion.call(&g);
-        // Update cache.
-        cache.extend([(g.clone(), s_g)]);
-
-        // Initialize iterations counter.
-        let mut i = 0;
-        // Initialize the increasing score flag.
-        let mut flag = true;
-
-        // While score increase and at maximum `max_iter` times.
-        while flag && i < self.max_iter {
-            // Reset the flag.
-            flag = false;
-            // Log current iteration.
-            debug!("i: {}, max_iter: {}", i, self.max_iter);
-
-            // For each possible edge operation ...
-            let op_delta = self.search((&add, &del, &rev), &mut cache, &in_degree, &g);
+            let op_delta = self.par_search((&add, &del, &rev), &mut cache, &in_degree, &g);
 
             // If best operation exists.
             if let Some(((x, y, a), delta)) = op_delta {

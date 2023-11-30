@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
     use ndarray::prelude::*;
-    use polars::prelude::*;
     use rustc_hash::FxHashMap;
 
     #[test]

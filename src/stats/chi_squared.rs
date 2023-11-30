@@ -31,9 +31,10 @@ impl<'a> ChiSquared<'a> {
             * z.iter().map(|&z| cards[z] as usize).product::<usize>();
 
         // Compute the joint contingency table.
-        let n_ijk = match z.is_empty() {
-            true => Array2::from(JointCountMatrix::new(self.d, x, y)).insert_axis(Axis(0)),
-            false => JointConditionalCountMatrix::new(self.d, x, y, z).into(),
+        let n_ijk = if z.is_empty() {
+            Array2::from(JointCountMatrix::new(self.d, x, y)).insert_axis(Axis(0))
+        } else {
+            JointConditionalCountMatrix::new(self.d, x, y, z).into()
         };
 
         // Cast to float.

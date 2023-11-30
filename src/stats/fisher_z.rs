@@ -4,7 +4,7 @@ use std::{
     iter::Map,
 };
 
-use libm::erfc;
+use statrs::function::erf::erfc;
 
 use super::ConditionalIndependenceTest;
 use crate::{

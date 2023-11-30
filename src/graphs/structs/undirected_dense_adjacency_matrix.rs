@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     fmt::{Debug, Display},
-    hash::Hash,
+    hash::{Hash, Hasher},
     iter::FusedIterator,
     ops::Index,
 };
@@ -27,8 +27,11 @@ pub struct UndirectedDenseAdjacencyMatrix {
     size: usize,
 }
 
-// Implement the `Display` trait for the `UndirectedDenseAdjacencyMatrix` struct.
-impl Display for UndirectedDenseAdjacencyMatrix {
+/// Alias for the `UndirectedDenseAdjacencyMatrix` struct.
+pub type UGraph = UndirectedDenseAdjacencyMatrix;
+
+// Implement the `Display` trait for the `UGraph` struct.
+impl Display for UGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "UndirectedGraph {{ ")?;
@@ -56,8 +59,8 @@ impl Display for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `PartialOrd` trait for the `UndirectedDenseAdjacencyMatrix` struct.
-impl PartialOrd for UndirectedDenseAdjacencyMatrix {
+// Implement the `PartialOrd` trait for the `UGraph` struct.
+impl PartialOrd for UGraph {
     /// Compare two graphs.
     ///
     /// # Complexity
@@ -103,8 +106,8 @@ impl PartialOrd for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `Index` trait for the `UndirectedDenseAdjacencyMatrix` struct.
-impl Index<usize> for UndirectedDenseAdjacencyMatrix {
+// Implement the `Index` trait for the `UGraph` struct.
+impl Index<usize> for UGraph {
     type Output = str;
 
     #[inline]
@@ -114,9 +117,9 @@ impl Index<usize> for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `Hash` trait for the `UndirectedDenseAdjacencyMatrix` struct.
-impl Hash for UndirectedDenseAdjacencyMatrix {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+// Implement the `Hash` trait for the `UGraph` struct.
+impl Hash for UGraph {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         // Compute the hash of the adjacency matrix.
         self.adjacency_matrix.hash(state);
         // Compute the hash of the vertices labels.
@@ -124,7 +127,7 @@ impl Hash for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Define the `EdgesIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+/// Define the `EdgesIterator` iterator for the `UGraph` struct.
 #[allow(clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     // The edges indices iterator.
@@ -136,10 +139,10 @@ pub struct EdgesIterator<'a> {
     size: usize,
 }
 
-// Implement the `EdgesIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+// Implement the `EdgesIterator` iterator for the `UGraph` struct.
 impl<'a> EdgesIterator<'a> {
     /// Create a new `EdgesIterator` iterator.
-    fn new(graph: &'a UndirectedDenseAdjacencyMatrix) -> Self {
+    fn new(graph: &'a UGraph) -> Self {
         // Create the new `EdgesIterator` iterator.
         Self {
             iter: graph
@@ -203,7 +206,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 // Implement the `FusedIterator` trait for the `EdgesIterator` iterator.
 impl<'a> FusedIterator for EdgesIterator<'a> {}
 
-/// Define the `AdjacentsIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+/// Define the `AdjacentsIterator` iterator for the `UGraph` struct.
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     // The adjacents indices iterator.
@@ -213,10 +216,10 @@ pub struct AdjacentsIterator<'a> {
     >,
 }
 
-// Implement the `AdjacentsIterator` iterator for the `UndirectedDenseAdjacencyMatrix` struct.
+// Implement the `AdjacentsIterator` iterator for the `UGraph` struct.
 impl<'a> AdjacentsIterator<'a> {
     /// Create a new `AdjacentsIterator` iterator.
-    fn new(graph: &'a UndirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    fn new(graph: &'a UGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -259,8 +262,8 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 // Implement the `FusedIterator` trait for the `AdjacentsIterator` iterator.
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
-// Implement the `Graph` trait for the `UndirectedDenseAdjacencyMatrix` struct.
-impl Graph for UndirectedDenseAdjacencyMatrix {
+// Implement the `Graph` trait for the `UGraph` struct.
+impl Graph for UGraph {
     // Direction associated type.
     type Direction = Undirected;
     // Vertex labels iterator associated type.
@@ -1154,9 +1157,6 @@ impl Graph for UndirectedDenseAdjacencyMatrix {
         self >= other
     }
 }
-
-/// Alias for the `UndirectedDenseAdjacencyMatrix` struct.
-pub type UGraph = UndirectedDenseAdjacencyMatrix;
 
 // Test the `UGraph` struct.
 #[cfg(test)]

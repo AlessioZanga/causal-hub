@@ -1,7 +1,5 @@
-use crate::graphs::{directions, UndirectedGraph};
+use crate::graphs::DirectedGraph;
 
-pub trait MoralGraph {
-    type MoralGraph: UndirectedGraph<Direction = directions::Undirected>;
-
-    fn moral(&self) -> Self::MoralGraph;
+pub trait MoralGraph: DirectedGraph {
+    fn to_moral(&self) -> Self::UndirectedGraph;
 }

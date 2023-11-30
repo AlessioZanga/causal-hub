@@ -32,7 +32,8 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Split factors when the given variable is in their scope.
         let (phi_prime, mut phi_dprime): (P, P) = phi.into_iter().partition(|phi| phi.in_scope(z));
-        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+        // Compute the factor product.
+        // TODO: Change `reduce.unwrap` to `fold`.
         let psi = phi_prime.into_iter().reduce(Mul::mul).unwrap();
         // Eliminate variable by marginalization.
         let tau = psi.marginalize([z]);
@@ -49,14 +50,14 @@ impl<'a, M> VariableElimination<'a, M> {
             + FromParallelIterator<P::Item>
             + ParallelExtend<P::Item>
             + Send
-            + Send
             + Sync,
         P::Item: Factor,
     {
         // Split factors when the given variable is in their scope.
         let (phi_prime, mut phi_dprime): (P, P) =
-            phi.into_par_iter().partition(|phi| !phi.in_scope(z));
-        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+            phi.into_par_iter().partition(|phi| phi.in_scope(z));
+        // Compute the factor product.
+        // TODO: Change `reduce_with.unwrap` to `fold`.
         let psi = phi_prime.into_par_iter().reduce_with(Mul::mul).unwrap();
         // Eliminate variable by marginalization.
         let tau = psi.marginalize([z]);
@@ -75,7 +76,8 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Apply variable elimination to the given variables.
         let phi = z.into_iter().fold(phi, Self::variable_elimination);
-        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+        // Compute the factor product.
+        // TODO: Change `reduce.unwrap` to `fold`.
         phi.into_iter().reduce(Mul::mul).unwrap()
     }
 
@@ -86,7 +88,6 @@ impl<'a, M> VariableElimination<'a, M> {
             + FromParallelIterator<P::Item>
             + ParallelExtend<P::Item>
             + Send
-            + Send
             + Sync,
         P::Item: Factor + Sync,
         Z: IntoIterator<Item = &'b str>,
@@ -94,7 +95,8 @@ impl<'a, M> VariableElimination<'a, M> {
     {
         // Apply variable elimination to the given variables.
         let phi = z.into_iter().fold(phi, Self::par_variable_elimination);
-        // Compute the factor product. TODO: Change `reduce` and `reduce_with` to `fold`.
+        // Compute the factor product.
+        // TODO: Change `reduce_with.unwrap` to `fold`.
         phi.into_par_iter().reduce_with(Mul::mul).unwrap()
     }
 }

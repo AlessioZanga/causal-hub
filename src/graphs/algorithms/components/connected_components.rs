@@ -1,14 +1,14 @@
 use std::collections::VecDeque;
 
 use crate::{
-    graphs::{directions, UndirectedGraph},
+    graphs::{Undirected, UndirectedGraph},
     prelude::BFS,
     V,
 };
 
 pub struct ConnectedComponents<'a, G>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     g: &'a G,
     queue: VecDeque<usize>,
@@ -16,7 +16,7 @@ where
 
 impl<'a, G> ConnectedComponents<'a, G>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     pub fn new(g: &'a G) -> Self {
         // Initialize to-be-visited queue.
@@ -28,7 +28,7 @@ where
 
 impl<'a, G> Iterator for ConnectedComponents<'a, G>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     type Item = Vec<usize>;
 
@@ -49,7 +49,7 @@ where
 
 impl<'a, G> From<&'a G> for ConnectedComponents<'a, G>
 where
-    G: UndirectedGraph<Direction = directions::Undirected>,
+    G: UndirectedGraph<Direction = Undirected>,
 {
     fn from(g: &'a G) -> Self {
         Self::new(g)

@@ -1,4 +1,5 @@
-use crate::graphs::Graph;
+use super::{Undirected, UndirectedGraph};
+use crate::{graphs::Graph, E};
 
 /// Define the `An` ancestor macro.
 #[macro_export]
@@ -46,22 +47,29 @@ pub trait DirectedGraph: Graph {
     type DirectedEdgesIter<'a>: Iterator<Item = (usize, usize)>
     where
         Self: 'a;
+
     /// Ancestors indices iterator associated type.
     type AncestorsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
+
     /// Parents indices iterator associated type.
     type ParentsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
+
     /// Children indices iterator associated type.
     type ChildrenIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
+
     /// Descendants indices iterator associated type.
     type DescendantsIter<'a>: Iterator<Item = usize>
     where
         Self: 'a;
+
+    /// Associated undirected graph type.
+    type UndirectedGraph: UndirectedGraph<Direction = Undirected>;
 
     /// Get the directed size.
     ///
@@ -235,7 +243,7 @@ pub trait DirectedGraph: Graph {
     /// * `y` - The second vertex index.
     ///
     /// # Returns
-    /// `true` if the second vertex is an ancestor of the first vertex, otherwise `false`.
+    /// `true` if the first vertex is an ancestor of the second vertex, otherwise `false`.
     ///
     /// # Panics
     /// If the vertex indices are out of bounds.
@@ -278,7 +286,7 @@ pub trait DirectedGraph: Graph {
     /// * `y` - The second vertex index.
     ///
     /// # Returns
-    /// `true` if the second vertex is a parent of the first vertex, otherwise `false`.
+    /// `true` if the first vertex is a parent of the second vertex, otherwise `false`.
     ///
     /// # Panics
     /// If the vertex indices are out of bounds.
@@ -318,7 +326,7 @@ pub trait DirectedGraph: Graph {
     /// * `y` - The second vertex index.
     ///
     /// # Returns
-    /// `true` if the second vertex is a child of the first vertex, otherwise `false`.
+    /// `true` if the first vertex is a child of the second vertex, otherwise `false`.
     ///
     /// # Panics
     /// If the vertex indices are out of bounds.
@@ -358,7 +366,7 @@ pub trait DirectedGraph: Graph {
     /// * `y` - The second vertex index.
     ///
     /// # Returns
-    /// `true` if the second vertex is a descendant of the first vertex, otherwise `false`.
+    /// `true` if the first vertex is a descendant of the second vertex, otherwise `false`.
     ///
     /// # Panics
     /// If the vertex indices are out of bounds.
@@ -370,4 +378,58 @@ pub trait DirectedGraph: Graph {
     /// For repeated calls, it is more efficient to store the descendants of the first vertex in a set.
     ///
     fn is_descendant(&self, x: usize, y: usize) -> bool;
+
+    /// Get the associated undirected graph.
+    ///
+    /// # Returns
+    /// The associated undirected graph where each directed edge is mapped to an undirected edge.
+    ///
+    /// # Complexity
+    /// Check the implementation.
+    ///
+    /// # Notes
+    /// The undirected graph is constructed by adding each directed edge as an undirected edge.
+    ///
+    /// # Examples
+    /// ```
+    /// use causal_hub::prelude::*;
+    ///
+    /// // Create a new graph.
+    /// let digraph = DGraph::new(
+    ///     // The vertices labels.
+    ///     vec!["A", "B", "C", "D"],
+    ///     // The edges labels.
+    ///     vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+    /// );
+    ///
+    /// // Get the associated undirected graph.
+    /// let graph = digraph.to_undirected();
+    ///
+    /// // Check graphs have the same vertices.
+    /// assert!(L!(digraph).eq(L!(graph)));
+    ///
+    /// // Check the undirected edges.
+    /// for (x, y) in E!(digraph) {
+    ///     assert!(graph.has_edge(x, y));
+    ///     assert!(graph.has_edge(y, x));
+    /// }
+    /// ```
+    ///
+    fn to_undirected(&self) -> Self::UndirectedGraph {
+        // Initialize an empty undirected graph.
+        let mut graph = Self::UndirectedGraph::empty(self.labels());
+
+        // Add the edges.
+        for (x, y) in self.edges() {
+            graph.add_undirected_edge(x, y);
+        }
+
+        // Debug assert each directed edge is also an undirected edge.
+        debug_assert!(
+            E!(self).all(|(x, y)| graph.has_edge(x, y) && graph.has_edge(y, x)),
+            "Each directed edge must be an undirected edge"
+        );
+
+        graph
+    }
 }

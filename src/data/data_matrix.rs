@@ -4,15 +4,16 @@ use std::{
     ops::Deref,
 };
 
+use super::DataSet;
+use crate::{
+    polars::prelude::*,
+    types::{FxIndexMap, FxIndexSet},
+};
 use is_sorted::IsSorted;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use polars::prelude::*;
 use serde::{Deserialize, Serialize};
-
-use super::DataSet;
-use crate::types::{FxIndexMap, FxIndexSet};
 
 /* Implement CategoricalDataMatrix */
 

@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod categorical {
     use approx::*;
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn log_likelihood() {
@@ -88,8 +87,7 @@ mod categorical {
 #[cfg(test)]
 mod gaussian {
     use approx::*;
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn log_likelihood() {

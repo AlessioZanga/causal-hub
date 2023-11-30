@@ -12,7 +12,7 @@ use super::{
     JointProbabilityDistribution,
 };
 use crate::{
-    graphs::{directions, structs::DirectedDenseAdjacencyMatrix, DirectedGraph},
+    graphs::{structs::DGraph, Directed, DirectedGraph},
     io::BIF,
     prelude::{
         algorithms::traversal::TopologicalSort, CategoricalDataMatrix, DataSet, Graph, PathGraph,
@@ -31,7 +31,7 @@ pub trait ProbabilisticGraphicalModel:
 {
     type Data: DataSet;
 
-    type Graph: DirectedGraph<Direction = directions::Directed>;
+    type Graph: DirectedGraph<Direction = Directed>;
     /// Parameter associated type.
     type Parameter: Factor<Phi = Self::Phi>; // TODO: This patch is needed to avoid compiler recursion limit.
     /// Underlying factor type.
@@ -64,7 +64,7 @@ pub trait BayesianNetwork: ProbabilisticGraphicalModel + PartialEq + Eq {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
-    graph: DirectedDenseAdjacencyMatrix,
+    graph: DGraph,
     theta: FxIndexMap<String, CategoricalCPD>,
 }
 
@@ -80,12 +80,7 @@ impl Display for CategoricalBayesianNetwork {
     }
 }
 
-impl From<CategoricalBayesianNetwork>
-    for (
-        DirectedDenseAdjacencyMatrix,
-        FxIndexMap<String, CategoricalCPD>,
-    )
-{
+impl From<CategoricalBayesianNetwork> for (DGraph, FxIndexMap<String, CategoricalCPD>) {
     fn from(b: CategoricalBayesianNetwork) -> Self {
         (b.graph, b.theta)
     }
@@ -94,7 +89,7 @@ impl From<CategoricalBayesianNetwork>
 impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
     type Data = CategoricalDataMatrix;
 
-    type Graph = DirectedDenseAdjacencyMatrix;
+    type Graph = DGraph;
 
     type Parameter = CategoricalCPD;
 

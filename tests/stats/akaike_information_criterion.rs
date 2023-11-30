@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod categorical {
     use approx::*;
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn akaike_information_criterion() {
@@ -92,8 +91,7 @@ mod categorical {
 #[cfg(test)]
 mod gaussian {
     use approx::*;
-    use causal_hub::prelude::*;
-    use polars::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
 
     #[test]
     fn akaike_information_criterion() {

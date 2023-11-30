@@ -14,10 +14,7 @@ use super::{
 };
 use crate::{
     graphs::{
-        structs::{
-            DirectedDenseAdjacencyMatrix, PartiallyDirectedDenseAdjacencyMatrix,
-            UndirectedDenseAdjacencyMatrix,
-        },
+        structs::{DGraph, PGraph, UGraph},
         DirectedGraph, Graph, UndirectedGraph,
     },
     io::File,
@@ -606,8 +603,8 @@ impl File for DOT {
     }
 }
 
-impl From<UndirectedDenseAdjacencyMatrix> for DOT {
-    fn from(graph: UndirectedDenseAdjacencyMatrix) -> Self {
+impl From<UGraph> for DOT {
+    fn from(graph: UGraph) -> Self {
         // Set graph type.
         let graph_type = "graph".into();
         // Construct the vertex set.
@@ -632,7 +629,7 @@ impl From<UndirectedDenseAdjacencyMatrix> for DOT {
     }
 }
 
-impl From<DOT> for UndirectedDenseAdjacencyMatrix {
+impl From<DOT> for UGraph {
     #[inline]
     fn from(dot: DOT) -> Self {
         // Assert graph type.
@@ -645,8 +642,8 @@ impl From<DOT> for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-impl From<DirectedDenseAdjacencyMatrix> for DOT {
-    fn from(graph: DirectedDenseAdjacencyMatrix) -> Self {
+impl From<DGraph> for DOT {
+    fn from(graph: DGraph) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.
@@ -671,7 +668,7 @@ impl From<DirectedDenseAdjacencyMatrix> for DOT {
     }
 }
 
-impl From<DOT> for DirectedDenseAdjacencyMatrix {
+impl From<DOT> for DGraph {
     #[inline]
     fn from(dot: DOT) -> Self {
         // Assert graph type.
@@ -684,8 +681,8 @@ impl From<DOT> for DirectedDenseAdjacencyMatrix {
     }
 }
 
-impl From<PartiallyDirectedDenseAdjacencyMatrix> for DOT {
-    fn from(graph: PartiallyDirectedDenseAdjacencyMatrix) -> Self {
+impl From<PGraph> for DOT {
+    fn from(graph: PGraph) -> Self {
         // Set graph type.
         let graph_type = "digraph".into();
         // Construct the vertex set.

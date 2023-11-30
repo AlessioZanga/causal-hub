@@ -1,9 +1,8 @@
 #[cfg(test)]
 mod maximum_likelihood_estimation {
     use approx::*;
-    use causal_hub::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
     use ndarray::prelude::*;
-    use polars::prelude::*;
 
     #[test]
     fn call() {
@@ -173,9 +172,8 @@ mod maximum_likelihood_estimation {
 #[cfg(test)]
 mod bayesian_estimation {
     use approx::*;
-    use causal_hub::prelude::*;
+    use causal_hub::{polars::prelude::*, prelude::*};
     use ndarray::prelude::*;
-    use polars::prelude::*;
 
     #[test]
     fn call() {

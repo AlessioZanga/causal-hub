@@ -16,8 +16,11 @@ pub struct PartiallyDirectedDenseAdjacencyMatrix {
     undirected: UGraph,
 }
 
-// Implement the `Display` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl Display for PartiallyDirectedDenseAdjacencyMatrix {
+/// Alias for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+pub type PGraph = PartiallyDirectedDenseAdjacencyMatrix;
+
+// Implement the `Display` trait for the `PGraph` struct.
+impl Display for PGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "PartiallyDirectedGraph {{ ")?;
@@ -45,8 +48,8 @@ impl Display for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `Index` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl Index<usize> for PartiallyDirectedDenseAdjacencyMatrix {
+// Implement the `Index` trait for the `PGraph` struct.
+impl Index<usize> for PGraph {
     type Output = str;
 
     #[inline]
@@ -56,8 +59,8 @@ impl Index<usize> for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `PartialOrd` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl PartialOrd for PartiallyDirectedDenseAdjacencyMatrix {
+// Implement the `PartialOrd` trait for the `PGraph` struct.
+impl PartialOrd for PGraph {
     /// Compare two graphs.
     ///
     /// # Complexity
@@ -103,7 +106,7 @@ impl PartialOrd for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Define the `EdgesIterator` iterator for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+/// Define the `EdgesIterator` iterator for the `PGraph` struct.
 #[allow(clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     // The edges indices iterator.
@@ -115,11 +118,11 @@ pub struct EdgesIterator<'a> {
     size: usize,
 }
 
-// Implement the `EdgesIterator` iterator for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+// Implement the `EdgesIterator` iterator for the `PGraph` struct.
 impl<'a> EdgesIterator<'a> {
     /// Create a new `EdgesIterator` iterator.
     #[inline]
-    fn new(graph: &'a PartiallyDirectedDenseAdjacencyMatrix) -> Self {
+    fn new(graph: &'a PGraph) -> Self {
         // Create the new `EdgesIterator` iterator.
         Self {
             iter: classify(graph.directed.edges(), graph.undirected.edges()).map(Inclusion::union),
@@ -171,7 +174,7 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 // Implement the `FusedIterator` trait for the `EdgesIterator` iterator.
 impl<'a> FusedIterator for EdgesIterator<'a> {}
 
-/// Define the `AdjacentsIterator` iterator for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+/// Define the `AdjacentsIterator` iterator for the `PGraph` struct.
 #[allow(clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     // The edges indices iterator.
@@ -181,11 +184,11 @@ pub struct AdjacentsIterator<'a> {
     >,
 }
 
-// Implement the `AdjacentsIterator` iterator for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
+// Implement the `AdjacentsIterator` iterator for the `PGraph` struct.
 impl<'a> AdjacentsIterator<'a> {
     /// Create a new `AdjacentsIterator` iterator.
     #[inline]
-    fn new(graph: &'a PartiallyDirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    fn new(graph: &'a PGraph, x: usize) -> Self {
         // Create the new `AdjacentsIterator` iterator.
         Self {
             iter: classify(graph.directed.adjacents(x), graph.undirected.adjacents(x))
@@ -208,8 +211,8 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 // Implement the `FusedIterator` trait for the `AdjacentsIterator` iterator.
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
-/// Implement the `Graph` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl Graph for PartiallyDirectedDenseAdjacencyMatrix {
+/// Implement the `Graph` trait for the `PGraph` struct.
+impl Graph for PGraph {
     // Direction associated type.
     type Direction = PartiallyDirected;
     // Vertex labels iterator associated type.
@@ -587,8 +590,8 @@ impl Graph for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Implement the `UndirectedGraph` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl UndirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
+/// Implement the `UndirectedGraph` trait for the `PGraph` struct.
+impl UndirectedGraph for PGraph {
     // Undirected graph edges iterator type.
     type UndirectedEdgesIter<'a> = <UGraph as UndirectedGraph>::UndirectedEdgesIter<'a>;
     // Neighbors iterator type.
@@ -657,8 +660,8 @@ impl UndirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Implement the `DirectedGraph` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl DirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
+/// Implement the `DirectedGraph` trait for the `PGraph` struct.
+impl DirectedGraph for PGraph {
     // Directed graph edges iterator type.
     type DirectedEdgesIter<'a> = <DGraph as DirectedGraph>::DirectedEdgesIter<'a>;
     // Ancestors indices iterator associated type.
@@ -669,6 +672,8 @@ impl DirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
     type ChildrenIter<'a> = <DGraph as DirectedGraph>::ChildrenIter<'a>;
     // Descendants indices iterator associated type.
     type DescendantsIter<'a> = <DGraph as DirectedGraph>::DescendantsIter<'a>;
+    // FIXME:
+    type UndirectedGraph = UGraph;
 
     // Get the directed graph size.
     #[inline]
@@ -802,8 +807,8 @@ impl DirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Implement the `PartiallyDirectedGraph` trait for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-impl PartiallyDirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
+/// Implement the `PartiallyDirectedGraph` trait for the `PGraph` struct.
+impl PartiallyDirectedGraph for PGraph {
     // Set an already existing edge as directed.
     fn set_directed_edge(&mut self, x: usize, y: usize) -> bool {
         // Remove the edge from the undirected graph.
@@ -848,6 +853,3 @@ impl PartiallyDirectedGraph for PartiallyDirectedDenseAdjacencyMatrix {
         false
     }
 }
-
-/// Alias for the `PartiallyDirectedDenseAdjacencyMatrix` struct.
-pub type PGraph = PartiallyDirectedDenseAdjacencyMatrix;

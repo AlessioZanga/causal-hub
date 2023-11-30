@@ -1,6 +1,6 @@
 use std::{
     fmt::{Debug, Display},
-    hash::Hash,
+    hash::{Hash, Hasher},
     iter::FusedIterator,
     ops::Index,
 };
@@ -11,8 +11,10 @@ use ndarray::{prelude::*, OwnedRepr};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    graphs::{Directed, DirectedGraph, Graph},
+    graphs::{Directed, DirectedGraph, Graph, UGraph},
+    models::MoralGraph,
     types::FxIndexSet,
+    Pa, V,
 };
 
 /// Define the `DirectedDenseAdjacencyMatrix` struct using a dense adjacency matrix from the `ndarray` crate.
@@ -26,8 +28,11 @@ pub struct DirectedDenseAdjacencyMatrix {
     size: usize,
 }
 
-// Implement the `Display` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl Display for DirectedDenseAdjacencyMatrix {
+/// Alias for the `DirectedDenseAdjacencyMatrix` struct.
+pub type DGraph = DirectedDenseAdjacencyMatrix;
+
+// Implement the `Display` trait for the `DGraph` struct.
+impl Display for DGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Write graph type.
         write!(f, "DirectedGraph {{ ")?;
@@ -55,8 +60,8 @@ impl Display for DirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `Index` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl Index<usize> for DirectedDenseAdjacencyMatrix {
+// Implement the `Index` trait for the `DGraph` struct.
+impl Index<usize> for DGraph {
     type Output = str;
 
     #[inline]
@@ -66,8 +71,8 @@ impl Index<usize> for DirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `PartialOrd` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl PartialOrd for DirectedDenseAdjacencyMatrix {
+// Implement the `PartialOrd` trait for the `DGraph` struct.
+impl PartialOrd for DGraph {
     /// Compare two graphs.
     ///
     /// # Complexity
@@ -113,9 +118,9 @@ impl PartialOrd for DirectedDenseAdjacencyMatrix {
     }
 }
 
-// Implement the `Hash` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl Hash for DirectedDenseAdjacencyMatrix {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+// Implement the `Hash` trait for the `DGraph` struct.
+impl Hash for DGraph {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         // Compute the hash of the adjacency matrix.
         self.adjacency_matrix.hash(state);
         // Compute the hash of the vertices labels.
@@ -123,7 +128,7 @@ impl Hash for DirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Define the `EdgesIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `EdgesIterator` iterator for the `DGraph` struct.
 #[allow(clippy::type_complexity)]
 pub struct EdgesIterator<'a> {
     // The edges indices iterator.
@@ -135,10 +140,10 @@ pub struct EdgesIterator<'a> {
     size: usize,
 }
 
-// Implement the `EdgesIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `EdgesIterator` iterator for the `DGraph` struct.
 impl<'a> EdgesIterator<'a> {
     /// Create a new `EdgesIterator` iterator.
-    fn new(graph: &'a DirectedDenseAdjacencyMatrix) -> Self {
+    fn new(graph: &'a DGraph) -> Self {
         // Create the new `EdgesIterator` iterator.
         Self {
             iter: graph
@@ -202,11 +207,11 @@ impl<'a> ExactSizeIterator for EdgesIterator<'a> {}
 // Implement the `FusedIterator` trait for the `EdgesIterator` iterator.
 impl<'a> FusedIterator for EdgesIterator<'a> {}
 
-/// Define the `AdjacentsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `AdjacentsIterator` iterator for the `DGraph` struct.
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AdjacentsIterator<'a> {
     // The graph.
-    graph: &'a DirectedDenseAdjacencyMatrix,
+    graph: &'a DGraph,
     // The adjacents indices iterator.
     iter: std::iter::FilterMap<
         std::iter::Enumerate<
@@ -216,10 +221,10 @@ pub struct AdjacentsIterator<'a> {
     >,
 }
 
-// Implement the `AdjacentsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `AdjacentsIterator` iterator for the `DGraph` struct.
 impl<'a> AdjacentsIterator<'a> {
     /// Create a new `AdjacentsIterator` iterator.
-    fn new(graph: &'a DirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    fn new(graph: &'a DGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -272,8 +277,8 @@ impl<'a> Iterator for AdjacentsIterator<'a> {
 // Implement the `FusedIterator` trait for the `AdjacentsIterator` iterator.
 impl<'a> FusedIterator for AdjacentsIterator<'a> {}
 
-// Implement the `Graph` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl Graph for DirectedDenseAdjacencyMatrix {
+// Implement the `Graph` trait for the `DGraph` struct.
+impl Graph for DGraph {
     // Direction associated type.
     type Direction = Directed;
     // Vertex labels iterator associated type.
@@ -1055,11 +1060,11 @@ impl Graph for DirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Define the `AncestorsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `AncestorsIterator` iterator for the `DGraph` struct.
 #[allow(dead_code, clippy::type_complexity)]
 pub struct AncestorsIterator<'a> {
     // The graph.
-    graph: &'a DirectedDenseAdjacencyMatrix,
+    graph: &'a DGraph,
     // The ancestors indices iterator.
     iter: std::iter::FilterMap<
         std::iter::Enumerate<
@@ -1069,10 +1074,10 @@ pub struct AncestorsIterator<'a> {
     >,
 }
 
-// Implement the `AncestorsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `AncestorsIterator` iterator for the `DGraph` struct.
 impl<'a> AncestorsIterator<'a> {
     /// Create a new `AncestorsIterator` iterator.
-    pub fn new(graph: &'a DirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    pub fn new(graph: &'a DGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -1129,11 +1134,11 @@ impl<'a> Iterator for AncestorsIterator<'a> {
     }
 }
 
-/// Define the `ParentsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `ParentsIterator` iterator for the `DGraph` struct.
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ParentsIterator<'a> {
     // The graph.
-    graph: &'a DirectedDenseAdjacencyMatrix,
+    graph: &'a DGraph,
     // The parents indices iterator.
     iter: std::iter::FilterMap<
         std::iter::Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
@@ -1141,11 +1146,11 @@ pub struct ParentsIterator<'a> {
     >,
 }
 
-// Implement the `ParentsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `ParentsIterator` iterator for the `DGraph` struct.
 impl<'a> ParentsIterator<'a> {
     /// Create a new `ParentsIterator` iterator.
     #[inline]
-    pub fn new(graph: &'a DirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    pub fn new(graph: &'a DGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -1185,11 +1190,11 @@ impl<'a> Iterator for ParentsIterator<'a> {
     }
 }
 
-/// Define the `ChildrenIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `ChildrenIterator` iterator for the `DGraph` struct.
 #[allow(dead_code, clippy::type_complexity)]
 pub struct ChildrenIterator<'a> {
     // The graph.
-    graph: &'a DirectedDenseAdjacencyMatrix,
+    graph: &'a DGraph,
     // The children indices iterator.
     iter: std::iter::FilterMap<
         std::iter::Enumerate<ndarray::iter::Iter<'a, bool, Dim<[usize; 1]>>>,
@@ -1197,11 +1202,11 @@ pub struct ChildrenIterator<'a> {
     >,
 }
 
-// Implement the `ChildrenIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `ChildrenIterator` iterator for the `DGraph` struct.
 impl<'a> ChildrenIterator<'a> {
     /// Create a new `ChildrenIterator` iterator.
     #[inline]
-    pub fn new(graph: &'a DirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    pub fn new(graph: &'a DGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -1241,11 +1246,11 @@ impl<'a> Iterator for ChildrenIterator<'a> {
     }
 }
 
-/// Define the `DescendantsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+/// Define the `DescendantsIterator` iterator for the `DGraph` struct.
 #[allow(dead_code, clippy::type_complexity)]
 pub struct DescendantsIterator<'a> {
     // The graph.
-    graph: &'a DirectedDenseAdjacencyMatrix,
+    graph: &'a DGraph,
     // The descendants indices iterator.
     iter: std::iter::FilterMap<
         std::iter::Enumerate<
@@ -1255,10 +1260,10 @@ pub struct DescendantsIterator<'a> {
     >,
 }
 
-// Implement the `DescendantsIterator` iterator for the `DirectedDenseAdjacencyMatrix` struct.
+// Implement the `DescendantsIterator` iterator for the `DGraph` struct.
 impl<'a> DescendantsIterator<'a> {
     /// Create a new `DescendantsIterator` iterator.
-    pub fn new(graph: &'a DirectedDenseAdjacencyMatrix, x: usize) -> Self {
+    pub fn new(graph: &'a DGraph, x: usize) -> Self {
         // Assert the vertex is in bounds.
         assert!(
             graph.has_vertex(x),
@@ -1314,8 +1319,8 @@ impl<'a> Iterator for DescendantsIterator<'a> {
     }
 }
 
-/// Implement the `DirectedGraph` trait for the `DirectedDenseAdjacencyMatrix` struct.
-impl DirectedGraph for DirectedDenseAdjacencyMatrix {
+/// Implement the `DirectedGraph` trait for the `DGraph` struct.
+impl DirectedGraph for DGraph {
     // Directed edges indices iterator associated type.
     type DirectedEdgesIter<'a> = EdgesIterator<'a>;
     // Ancestors indices iterator associated type.
@@ -1326,6 +1331,8 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrix {
     type ChildrenIter<'a> = ChildrenIterator<'a>;
     // Descendants indices iterator associated type.
     type DescendantsIter<'a> = DescendantsIterator<'a>;
+    // Associated undirected graph type.
+    type UndirectedGraph = UGraph;
 
     // Get the undirected graph size.
     #[inline]
@@ -1421,7 +1428,7 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrix {
     #[inline]
     fn is_parent(&self, x: usize, y: usize) -> bool {
         // Check if the vertex is a parent of a vertex.
-        self.adjacency_matrix[[y, x]]
+        self.adjacency_matrix[[x, y]]
     }
 
     // Get the vertex children indices iterator.
@@ -1435,7 +1442,7 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrix {
     #[inline]
     fn is_child(&self, x: usize, y: usize) -> bool {
         // Check if the vertex is a child of a vertex.
-        self.adjacency_matrix[[x, y]]
+        self.adjacency_matrix[[y, x]]
     }
 
     // Get the vertex descendants indices iterator.
@@ -1453,10 +1460,27 @@ impl DirectedGraph for DirectedDenseAdjacencyMatrix {
     }
 }
 
-/// Alias for the `DirectedDenseAdjacencyMatrix` struct.
-pub type DGraph = DirectedDenseAdjacencyMatrix;
+/// Implement the `MoralGraph` trait for the `DGraph` struct.
+impl MoralGraph for DGraph {
+    // Get the associated moral graph.
+    fn to_moral(&self) -> Self::UndirectedGraph {
+        // Get the associated undirected graph.
+        let mut graph = self.to_undirected();
 
-// Test the `DirectedDenseAdjacencyMatrix` struct.
+        // Iterate over the vertices.
+        for x in V!(self) {
+            // For each pair of parents.
+            for yz in Pa!(self, x).combinations(2) {
+                // Add an edge between the parents.
+                graph.add_edge(yz[0], yz[1]);
+            }
+        }
+
+        graph
+    }
+}
+
+// Test the `DGraph` struct.
 #[cfg(test)]
 mod tests {
     use std::{
@@ -1470,7 +1494,7 @@ mod tests {
     use super::DGraph;
     use crate::{
         graphs::{DirectedGraph, Graph},
-        Adj, E, L, V,
+        Adj, An, Ch, De, Pa, E, L, V,
     };
 
     // Test the `clone` method.
@@ -3618,103 +3642,617 @@ mod tests {
     #[test]
     #[should_panic]
     fn ancestors_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Get the ancestors.
+        graph.ancestors(0);
     }
 
     // Test the `ancestors` method.
     #[test]
     fn ancestors() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check the ancestors indices.
+        assert_eq!(An!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the ancestors indices.
+        assert_eq!(An!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 1).collect_vec(), vec![0]);
+        assert_eq!(An!(graph, 2).collect_vec(), vec![0, 1]);
+        assert_eq!(An!(graph, 3).collect_vec(), vec![0, 1, 2]);
+        assert_eq!(An!(graph, 4).collect_vec(), vec![0, 1, 2, 3]);
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the ancestors indices.
+        assert_eq!(An!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(An!(graph, 1).collect_vec(), vec![0]);
+        assert_eq!(An!(graph, 2).collect_vec(), vec![0, 1]);
+        assert_eq!(An!(graph, 3).collect_vec(), vec![0, 1, 2]);
+        assert_eq!(An!(graph, 4).collect_vec(), vec![0, 1, 2, 3]);
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "B"), ("B", "C"), ("C", "D"), ("D", "E"), ("E", "A")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the ancestors indices.
+        assert_eq!(An!(graph, 0).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 1).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 2).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 3).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 4).collect_vec(), vec![0, 1, 2, 3, 4]);
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("B", "C"),
+            ("C", "D"),
+            ("D", "E"),
+            ("E", "A"),
+            ("E", "B"),
+            ("E", "C"),
+            ("E", "D"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the ancestors indices.
+        assert_eq!(An!(graph, 0).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 1).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 2).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 3).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(An!(graph, 4).collect_vec(), vec![0, 1, 2, 3, 4]);
     }
 
     // Test the `is_ancestor` method, should panic.
     #[test]
     #[should_panic]
     fn is_ancestor_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Check if the vertex is an ancestor.
+        graph.is_ancestor(0, 1);
     }
 
     // Test the `is_ancestor` method.
     #[test]
     fn is_ancestor() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check if the vertex is an ancestor.
+        assert!(!graph.is_ancestor(0, 0));
+        assert!(!graph.is_ancestor(0, 1));
+        assert!(!graph.is_ancestor(0, 2));
+        assert!(!graph.is_ancestor(0, 3));
+        assert!(!graph.is_ancestor(0, 4));
+        assert!(!graph.is_ancestor(1, 0));
+        assert!(!graph.is_ancestor(1, 1));
+        assert!(!graph.is_ancestor(1, 2));
+        assert!(!graph.is_ancestor(1, 3));
+        assert!(!graph.is_ancestor(1, 4));
+        assert!(!graph.is_ancestor(2, 0));
+        assert!(!graph.is_ancestor(2, 1));
+        assert!(!graph.is_ancestor(2, 2));
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertex is an ancestor.
+        assert!(!graph.is_ancestor(0, 0));
+        assert!(graph.is_ancestor(0, 1));
+        assert!(graph.is_ancestor(0, 2));
+        assert!(graph.is_ancestor(0, 3));
+        assert!(graph.is_ancestor(0, 4));
+        assert!(!graph.is_ancestor(1, 0));
+        assert!(!graph.is_ancestor(1, 1));
+        assert!(graph.is_ancestor(1, 2));
+        assert!(graph.is_ancestor(1, 3));
+        assert!(graph.is_ancestor(1, 4));
+        assert!(!graph.is_ancestor(2, 0));
+        assert!(!graph.is_ancestor(2, 1));
+        assert!(!graph.is_ancestor(2, 2));
+        assert!(graph.is_ancestor(2, 3));
+        assert!(graph.is_ancestor(2, 4));
+        assert!(!graph.is_ancestor(3, 0));
+        assert!(!graph.is_ancestor(3, 1));
+        assert!(!graph.is_ancestor(3, 2));
+        assert!(!graph.is_ancestor(3, 3));
+        assert!(graph.is_ancestor(3, 4));
+        assert!(!graph.is_ancestor(4, 0));
+        assert!(!graph.is_ancestor(4, 1));
+        assert!(!graph.is_ancestor(4, 2));
+        assert!(!graph.is_ancestor(4, 3));
+        assert!(!graph.is_ancestor(4, 4));
     }
 
     // Test the `parents` method, should panic.
     #[test]
     #[should_panic]
     fn parents_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Get the parents.
+        graph.parents(0);
     }
 
     // Test the `parents` method.
     #[test]
     fn parents() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check the parents indices.
+        assert_eq!(Pa!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Pa!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Pa!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Pa!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Pa!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the parents indices.
+        assert_eq!(Pa!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Pa!(graph, 1).collect_vec(), vec![0]);
+        assert_eq!(Pa!(graph, 2).collect_vec(), vec![0, 1]);
+        assert_eq!(Pa!(graph, 3).collect_vec(), vec![0, 1, 2]);
+        assert_eq!(Pa!(graph, 4).collect_vec(), vec![0, 1, 2, 3]);
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the parents indices.
+        assert_eq!(Pa!(graph, 0).collect_vec(), vec![0]);
+        assert_eq!(Pa!(graph, 1).collect_vec(), vec![0]);
+        assert_eq!(Pa!(graph, 2).collect_vec(), vec![1]);
+        assert_eq!(Pa!(graph, 3).collect_vec(), vec![2]);
+        assert_eq!(Pa!(graph, 4).collect_vec(), vec![3]);
     }
 
     // Test the `is_parent` method, should panic.
     #[test]
     #[should_panic]
     fn is_parent_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Check if the vertex is a parent.
+        graph.is_parent(0, 1);
     }
 
     // Test the `is_parent` method.
     #[test]
     fn is_parent() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check if the vertex is a parent.
+        assert!(!graph.is_parent(0, 0));
+        assert!(!graph.is_parent(0, 1));
+        assert!(!graph.is_parent(0, 2));
+        assert!(!graph.is_parent(0, 3));
+        assert!(!graph.is_parent(0, 4));
+        assert!(!graph.is_parent(1, 0));
+        assert!(!graph.is_parent(1, 1));
+        assert!(!graph.is_parent(1, 2));
+        assert!(!graph.is_parent(1, 3));
+        assert!(!graph.is_parent(1, 4));
+        assert!(!graph.is_parent(2, 0));
+        assert!(!graph.is_parent(2, 1));
+        assert!(!graph.is_parent(2, 2));
+        assert!(!graph.is_parent(2, 3));
+        assert!(!graph.is_parent(2, 4));
+        assert!(!graph.is_parent(3, 0));
+        assert!(!graph.is_parent(3, 1));
+        assert!(!graph.is_parent(3, 2));
+        assert!(!graph.is_parent(3, 3));
+        assert!(!graph.is_parent(3, 4));
+        assert!(!graph.is_parent(4, 0));
+        assert!(!graph.is_parent(4, 1));
+        assert!(!graph.is_parent(4, 2));
+        assert!(!graph.is_parent(4, 3));
+        assert!(!graph.is_parent(4, 4));
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertex is a parent.
+        assert!(graph.is_parent(0, 0));
+        assert!(graph.is_parent(0, 1));
+        assert!(!graph.is_parent(0, 2));
+        assert!(!graph.is_parent(0, 3));
+        assert!(!graph.is_parent(0, 4));
+        assert!(!graph.is_parent(1, 0));
+        assert!(!graph.is_parent(1, 1));
+        assert!(graph.is_parent(1, 2));
+        assert!(!graph.is_parent(1, 3));
+        assert!(!graph.is_parent(1, 4));
+        assert!(!graph.is_parent(2, 0));
+        assert!(!graph.is_parent(2, 1));
+        assert!(!graph.is_parent(2, 2));
+        assert!(graph.is_parent(2, 3));
+        assert!(!graph.is_parent(2, 4));
+        assert!(!graph.is_parent(3, 0));
+        assert!(!graph.is_parent(3, 1));
+        assert!(!graph.is_parent(3, 2));
+        assert!(!graph.is_parent(3, 3));
+        assert!(graph.is_parent(3, 4));
+        assert!(!graph.is_parent(4, 0));
+        assert!(!graph.is_parent(4, 1));
+        assert!(!graph.is_parent(4, 2));
+        assert!(!graph.is_parent(4, 3));
+        assert!(!graph.is_parent(4, 4));
     }
 
     // Test the `children` method, should panic.
     #[test]
     #[should_panic]
     fn children_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Get the children.
+        graph.children(0);
     }
 
     // Test the `children` method.
     #[test]
     fn children() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check the children indices.
+        assert_eq!(Ch!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ch!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ch!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ch!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(Ch!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the children indices.
+        assert_eq!(Ch!(graph, 0).collect_vec(), vec![1, 2, 3, 4]);
+        assert_eq!(Ch!(graph, 1).collect_vec(), vec![2, 3, 4]);
+        assert_eq!(Ch!(graph, 2).collect_vec(), vec![3, 4]);
+        assert_eq!(Ch!(graph, 3).collect_vec(), vec![4]);
+        assert_eq!(Ch!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the children indices.
+        assert_eq!(Ch!(graph, 0).collect_vec(), vec![0, 1]);
+        assert_eq!(Ch!(graph, 1).collect_vec(), vec![2]);
+        assert_eq!(Ch!(graph, 2).collect_vec(), vec![3]);
+        assert_eq!(Ch!(graph, 3).collect_vec(), vec![4]);
+        assert_eq!(Ch!(graph, 4).collect_vec(), Vec::<usize>::new());
     }
 
     // Test the `is_child` method, should panic.
     #[test]
     #[should_panic]
     fn is_child_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Check if the vertex is a child.
+        graph.is_child(0, 1);
     }
 
     // Test the `is_child` method.
     #[test]
     fn is_child() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check if the vertex is a child.
+        assert!(!graph.is_child(0, 0));
+        assert!(!graph.is_child(0, 1));
+        assert!(!graph.is_child(0, 2));
+        assert!(!graph.is_child(0, 3));
+        assert!(!graph.is_child(0, 4));
+        assert!(!graph.is_child(1, 0));
+        assert!(!graph.is_child(1, 1));
+        assert!(!graph.is_child(1, 2));
+        assert!(!graph.is_child(1, 3));
+        assert!(!graph.is_child(1, 4));
+        assert!(!graph.is_child(2, 0));
+        assert!(!graph.is_child(2, 1));
+        assert!(!graph.is_child(2, 2));
+        assert!(!graph.is_child(2, 3));
+        assert!(!graph.is_child(2, 4));
+        assert!(!graph.is_child(3, 0));
+        assert!(!graph.is_child(3, 1));
+        assert!(!graph.is_child(3, 2));
+        assert!(!graph.is_child(3, 3));
+        assert!(!graph.is_child(3, 4));
+        assert!(!graph.is_child(4, 0));
+        assert!(!graph.is_child(4, 1));
+        assert!(!graph.is_child(4, 2));
+        assert!(!graph.is_child(4, 3));
+        assert!(!graph.is_child(4, 4));
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertex is a child.
+        assert!(graph.is_child(0, 0));
+        assert!(!graph.is_child(0, 1));
+        assert!(!graph.is_child(0, 2));
+        assert!(!graph.is_child(0, 3));
+        assert!(!graph.is_child(0, 4));
+        assert!(graph.is_child(1, 0));
+        assert!(!graph.is_child(1, 1));
+        assert!(!graph.is_child(1, 2));
+        assert!(!graph.is_child(1, 3));
+        assert!(!graph.is_child(1, 4));
+        assert!(!graph.is_child(2, 0));
+        assert!(graph.is_child(2, 1));
+        assert!(!graph.is_child(2, 2));
+        assert!(!graph.is_child(2, 3));
+        assert!(!graph.is_child(2, 4));
+        assert!(!graph.is_child(3, 0));
+        assert!(!graph.is_child(3, 1));
+        assert!(graph.is_child(3, 2));
+        assert!(!graph.is_child(3, 3));
+        assert!(!graph.is_child(3, 4));
+        assert!(!graph.is_child(4, 0));
+        assert!(!graph.is_child(4, 1));
+        assert!(!graph.is_child(4, 2));
+        assert!(graph.is_child(4, 3));
+        assert!(!graph.is_child(4, 4));
     }
 
     // Test the `descendants` method, should panic.
     #[test]
     #[should_panic]
     fn descendants_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Get the descendants.
+        graph.descendants(0);
     }
 
     // Test the `descendants` method.
     #[test]
     fn descendants() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check the descendants indices.
+        assert_eq!(De!(graph, 0).collect_vec(), Vec::<usize>::new());
+        assert_eq!(De!(graph, 1).collect_vec(), Vec::<usize>::new());
+        assert_eq!(De!(graph, 2).collect_vec(), Vec::<usize>::new());
+        assert_eq!(De!(graph, 3).collect_vec(), Vec::<usize>::new());
+        assert_eq!(De!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("A", "E"),
+            ("B", "C"),
+            ("B", "D"),
+            ("B", "E"),
+            ("C", "D"),
+            ("C", "E"),
+            ("D", "E"),
+        ];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the descendants indices.
+        assert_eq!(De!(graph, 0).collect_vec(), vec![1, 2, 3, 4]);
+        assert_eq!(De!(graph, 1).collect_vec(), vec![2, 3, 4]);
+        assert_eq!(De!(graph, 2).collect_vec(), vec![3, 4]);
+        assert_eq!(De!(graph, 3).collect_vec(), vec![4]);
+        assert_eq!(De!(graph, 4).collect_vec(), Vec::<usize>::new());
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check the descendants indices.
+        assert_eq!(De!(graph, 0).collect_vec(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(De!(graph, 1).collect_vec(), vec![2, 3, 4]);
+        assert_eq!(De!(graph, 2).collect_vec(), vec![3, 4]);
+        assert_eq!(De!(graph, 3).collect_vec(), vec![4]);
+        assert_eq!(De!(graph, 4).collect_vec(), Vec::<usize>::new());
     }
 
     // Test the `is_descendant` method, should panic.
     #[test]
     #[should_panic]
     fn is_descendant_should_panic() {
-        // todo!() // FIXME:
+        // Create a new null graph.
+        let graph = DGraph::null();
+
+        // Check if the vertex is a descendant.
+        graph.is_descendant(0, 1);
     }
 
     // Test the `is_descendant` method.
     #[test]
     fn is_descendant() {
-        todo!() // FIXME:
+        // Initialize the vertices labels.
+        let vertices = vec!["A", "B", "C", "D", "E"];
+
+        // Create a new graph.
+        let graph = DGraph::empty(vertices.clone());
+
+        // Check if the vertex is a descendant.
+        assert!(!graph.is_descendant(0, 0));
+        assert!(!graph.is_descendant(0, 1));
+        assert!(!graph.is_descendant(0, 2));
+        assert!(!graph.is_descendant(0, 3));
+        assert!(!graph.is_descendant(0, 4));
+        assert!(!graph.is_descendant(1, 0));
+        assert!(!graph.is_descendant(1, 1));
+        assert!(!graph.is_descendant(1, 2));
+        assert!(!graph.is_descendant(1, 3));
+        assert!(!graph.is_descendant(1, 4));
+        assert!(!graph.is_descendant(2, 0));
+        assert!(!graph.is_descendant(2, 1));
+        assert!(!graph.is_descendant(2, 2));
+        assert!(!graph.is_descendant(2, 3));
+        assert!(!graph.is_descendant(2, 4));
+        assert!(!graph.is_descendant(3, 0));
+        assert!(!graph.is_descendant(3, 1));
+        assert!(!graph.is_descendant(3, 2));
+        assert!(!graph.is_descendant(3, 3));
+        assert!(!graph.is_descendant(3, 4));
+        assert!(!graph.is_descendant(4, 0));
+        assert!(!graph.is_descendant(4, 1));
+        assert!(!graph.is_descendant(4, 2));
+        assert!(!graph.is_descendant(4, 3));
+        assert!(!graph.is_descendant(4, 4));
+
+        // Initialize the edges labels.
+        let edges = vec![("A", "A"), ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E")];
+
+        // Create a new graph.
+        let graph = DGraph::new(vertices.clone(), edges.clone());
+
+        // Check if the vertex is a descendant.
+        assert!(graph.is_descendant(0, 0));
+        assert!(!graph.is_descendant(0, 1));
+        assert!(!graph.is_descendant(0, 2));
+        assert!(!graph.is_descendant(0, 3));
+        assert!(!graph.is_descendant(0, 4));
+        assert!(graph.is_descendant(1, 0));
+        assert!(!graph.is_descendant(1, 1));
+        assert!(!graph.is_descendant(1, 2));
+        assert!(!graph.is_descendant(1, 3));
+        assert!(!graph.is_descendant(1, 4));
+        assert!(graph.is_descendant(2, 0));
+        assert!(graph.is_descendant(2, 1));
+        assert!(!graph.is_descendant(2, 2));
+        assert!(!graph.is_descendant(2, 3));
+        assert!(!graph.is_descendant(2, 4));
+        assert!(graph.is_descendant(3, 0));
+        assert!(graph.is_descendant(3, 1));
+        assert!(graph.is_descendant(3, 2));
+        assert!(!graph.is_descendant(3, 3));
+        assert!(!graph.is_descendant(3, 4));
+        assert!(graph.is_descendant(4, 0));
+        assert!(graph.is_descendant(4, 1));
+        assert!(graph.is_descendant(4, 2));
+        assert!(graph.is_descendant(4, 3));
+        assert!(!graph.is_descendant(4, 4));
     }
 }

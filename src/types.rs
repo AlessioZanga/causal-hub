@@ -4,14 +4,14 @@ use std::{
 };
 
 use indexmap::{IndexMap, IndexSet};
-use ndarray::Array2 as Matrix;
+use ndarray::Array2;
 use rustc_hash::FxHasher;
 
 pub type EdgeList<V> = BTreeSet<(V, V)>;
 
 pub type AdjacencyList<V> = BTreeMap<V, BTreeSet<V>>;
 
-pub type DenseAdjacencyMatrix = Matrix<bool>;
+pub type DenseAdjacencyMatrix = Array2<bool>;
 
 pub type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
 

@@ -6,10 +6,7 @@ use pest_derive::Parser;
 
 use crate::{
     graphs::{
-        structs::{
-            DirectedDenseAdjacencyMatrix, PartiallyDirectedDenseAdjacencyMatrix,
-            UndirectedDenseAdjacencyMatrix,
-        },
+        structs::{DGraph, PGraph, UGraph},
         Graph,
     },
     io::File,
@@ -258,8 +255,8 @@ impl File for GML {
     }
 }
 
-impl From<UndirectedDenseAdjacencyMatrix> for GML {
-    fn from(graph: UndirectedDenseAdjacencyMatrix) -> Self {
+impl From<UGraph> for GML {
+    fn from(graph: UGraph) -> Self {
         // Set graph type.
         let graph_type = "graph".to_string();
         // Get vertices.
@@ -279,7 +276,7 @@ impl From<UndirectedDenseAdjacencyMatrix> for GML {
     }
 }
 
-impl From<GML> for UndirectedDenseAdjacencyMatrix {
+impl From<GML> for UGraph {
     #[inline]
     fn from(gml: GML) -> Self {
         // Assert graph type.
@@ -292,8 +289,8 @@ impl From<GML> for UndirectedDenseAdjacencyMatrix {
     }
 }
 
-impl From<DirectedDenseAdjacencyMatrix> for GML {
-    fn from(graph: DirectedDenseAdjacencyMatrix) -> Self {
+impl From<DGraph> for GML {
+    fn from(graph: DGraph) -> Self {
         // Set graph type.
         let graph_type = "digraph".to_string();
         // Get vertices.
@@ -313,7 +310,7 @@ impl From<DirectedDenseAdjacencyMatrix> for GML {
     }
 }
 
-impl From<GML> for DirectedDenseAdjacencyMatrix {
+impl From<GML> for DGraph {
     #[inline]
     fn from(gml: GML) -> Self {
         // Assert graph type.
@@ -326,8 +323,8 @@ impl From<GML> for DirectedDenseAdjacencyMatrix {
     }
 }
 
-impl From<PartiallyDirectedDenseAdjacencyMatrix> for GML {
-    fn from(graph: PartiallyDirectedDenseAdjacencyMatrix) -> Self {
+impl From<PGraph> for GML {
+    fn from(graph: PGraph) -> Self {
         // Set directionality.
         let graph_type = "pdgraph".to_string();
         // Get vertices.
