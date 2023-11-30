@@ -409,15 +409,14 @@ impl Gradient for ZINBObjective {
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
 
         // Pre-compute the following terms.
-        let _q0 = -&q0; // -q0
-        let _q1 = -&q1; // -q1
-        let _k_1 = k - 1.; // k - 1
-        let _1_p0 = 1. - &p0; // (1 - p0)
-        let _1_q0 = 1. - &q0; // (1 - q0)
-        let _1_q1 = 1. - &q1; // (1 - q1)
-        let _1_q0_k = _1_q0.mapv(|i| f64::powf(i, k)); // (1 - q0)^k
-        let d0 = &p0 + &_1_p0 * &_1_q0_k; // p0 + (1 - p0) * pow(1 - q0, k)
-        let _1_p0_d0 = &_1_p0 / &d0; // (1 - p0) / d0
+        let _p_0 = -&p_0; // -p_0
+        let _p_1 = -&p_1; // -p_1
+        let _1_pi_0 = 1. - &pi_0; // (1 - pi_0)
+        let _1_p_0 = 1. - &p_0; // (1 - p_0)
+        let _1_p_1 = 1. - &p_1; // (1 - p_1)
+        let _1_p_0_k = _1_p_0.mapv(|i| f64::powf(i, r)); // (1 - p_0)^r
+        let d0 = &pi_0 + &_1_pi_0 * &_1_p_0_k; // pi_0 + (1 - pi_0) * pow(1 - p_0, r)
+        let _1_pi_0_d0 = &_1_pi_0 / &d0; // (1 - pi_0) / d0
 
         // alpha_delta
         gradient.slice_mut(s![..z1]).assign(&{
@@ -429,10 +428,10 @@ impl Gradient for ZINBObjective {
 
         // beta_gamma
         gradient.slice_mut(s![z1..(2 * z1)]).assign(&{
-            // -Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * q0 * (1 - q0) / d0) -> Z10 * ((1 - p0) * (k * pow(1 - q0, k - 1)) * (-q0) * (1 - q0) / d0)
-            (&self.z10 * (&_1_p0_d0 * k * &_1_q0.mapv(|i| f64::powf(i, _k_1)) * &_q0 * &_1_q0)).sum_axis(Axis(0))
-            // -Z11 * ((k + x1) * q1 - x1) -> Z11 * ((k + x1) * (-q1) + x1)
-            + (&self.z11 * ((k + &self.x1) * &_q1 + &self.x1)).sum_axis(Axis(0))
+            // -Z10 * ((1 - pi_0) * (r * pow(1 - p_0, r - 1)) * p_0 * (1 - p_0) / d0) -> Z10 * ((1 - pi_0) * (r * pow(1 - p_0, r - 1)) * (-p_0) * (1 - p_0) / d0)
+            (&self.z10 * (&_1_pi_0_d0 * r * &_1_p_0_k * &_p_0)).sum_axis(Axis(0))
+            // -Z11 * ((r + x1) * p_1 - x1) -> Z11 * ((r + x1) * (-p_1) + x1)
+            + (&self.z11 * ((r + &self.x1) * &_p_1 + &self.x1)).sum_axis(Axis(0))
         });
 
         // lambda
