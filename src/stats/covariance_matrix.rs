@@ -3,7 +3,7 @@ use std::ops::Deref;
 use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
-use crate::data::{DataSet, GaussianDataMatrix};
+use crate::data::{DataSet, GaussianDataSet};
 
 #[derive(Clone, Debug)]
 pub struct CovarianceMatrix {
@@ -38,9 +38,9 @@ impl From<CovarianceMatrix> for Array2<f64> {
     }
 }
 
-impl From<&GaussianDataMatrix> for CovarianceMatrix {
+impl From<&GaussianDataSet> for CovarianceMatrix {
     #[inline]
-    fn from(d: &GaussianDataMatrix) -> Self {
+    fn from(d: &GaussianDataSet) -> Self {
         // Compute the (sample) covariance matrix.
         let sigma = d
             .data()

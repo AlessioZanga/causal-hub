@@ -5,7 +5,7 @@ mod variable_elimination {
     #[test]
     fn project_onto() {
         // Load reference data.
-        let d: CategoricalDataMatrix = CsvReader::from_path("./tests/assets/asia.csv")
+        let d: CategoricalDataSet = CsvReader::from_path("./tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()

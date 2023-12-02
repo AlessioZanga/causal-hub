@@ -4,7 +4,7 @@ use rayon::prelude::*;
 
 use super::CategoricalBayesianNetwork;
 use crate::{
-    data::{CategoricalDataMatrix, DataSet},
+    data::{CategoricalDataSet, DataSet},
     graphs::{structs::DGraph, DirectedGraph, Graph},
     prelude::{BayesianNetwork, CategoricalCPD, ConditionalCountMatrix, MarginalCountMatrix},
     Pa, L, V,
@@ -28,10 +28,10 @@ where
 
 pub struct MaximumLikelihoodEstimation;
 
-impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+impl ParameterEstimation<CategoricalDataSet, DGraph, CategoricalBayesianNetwork>
     for MaximumLikelihoodEstimation
 {
-    fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
+    fn call(d: &CategoricalDataSet, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(L!(d)));
 
@@ -74,10 +74,10 @@ impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwo
     }
 }
 
-impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+impl ParallelParameterEstimation<CategoricalDataSet, DGraph, CategoricalBayesianNetwork>
     for MaximumLikelihoodEstimation
 {
-    fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
+    fn par_call(d: &CategoricalDataSet, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(L!(d)));
 
@@ -127,10 +127,10 @@ pub type MLE = MaximumLikelihoodEstimation;
 
 pub struct BayesianEstimation;
 
-impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+impl ParameterEstimation<CategoricalDataSet, DGraph, CategoricalBayesianNetwork>
     for BayesianEstimation
 {
-    fn call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
+    fn call(d: &CategoricalDataSet, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(L!(d)));
 
@@ -175,10 +175,10 @@ impl ParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwo
     }
 }
 
-impl ParallelParameterEstimation<CategoricalDataMatrix, DGraph, CategoricalBayesianNetwork>
+impl ParallelParameterEstimation<CategoricalDataSet, DGraph, CategoricalBayesianNetwork>
     for BayesianEstimation
 {
-    fn par_call(d: &CategoricalDataMatrix, g: &DGraph) -> CategoricalBayesianNetwork {
+    fn par_call(d: &CategoricalDataSet, g: &DGraph) -> CategoricalBayesianNetwork {
         // Assert dataset and graph have same labels.
         assert!(L!(g).eq(L!(d)));
 

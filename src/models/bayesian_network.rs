@@ -15,7 +15,7 @@ use crate::{
     graphs::{structs::DGraph, Directed, DirectedGraph},
     io::BIF,
     prelude::{
-        algorithms::traversal::TopologicalSort, CategoricalDataMatrix, DataSet, Graph, PathGraph,
+        algorithms::traversal::TopologicalSort, CategoricalDataSet, DataSet, Graph, PathGraph,
     },
     types::FxIndexMap,
     Pa, L, V,
@@ -87,7 +87,7 @@ impl From<CategoricalBayesianNetwork> for (DGraph, FxIndexMap<String, Categorica
 }
 
 impl ProbabilisticGraphicalModel for CategoricalBayesianNetwork {
-    type Data = CategoricalDataMatrix;
+    type Data = CategoricalDataSet;
 
     type Graph = DGraph;
 

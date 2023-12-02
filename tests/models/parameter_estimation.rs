@@ -63,7 +63,7 @@ mod maximum_likelihood_estimation {
         ];
 
         // Read data.
-        let d: CategoricalDataMatrix = CsvReader::from_path("tests/assets/asia.csv")
+        let d: CategoricalDataSet = CsvReader::from_path("tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()
@@ -145,7 +145,7 @@ mod maximum_likelihood_estimation {
         ];
 
         // Read data.
-        let d: CategoricalDataMatrix = CsvReader::from_path("tests/assets/asia.csv")
+        let d: CategoricalDataSet = CsvReader::from_path("tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()
@@ -250,7 +250,7 @@ mod bayesian_estimation {
         ];
 
         // Read data.
-        let d: CategoricalDataMatrix = CsvReader::from_path("tests/assets/asia.csv")
+        let d: CategoricalDataSet = CsvReader::from_path("tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()
@@ -348,7 +348,7 @@ mod bayesian_estimation {
         ];
 
         // Read data.
-        let d: CategoricalDataMatrix = CsvReader::from_path("tests/assets/asia.csv")
+        let d: CategoricalDataSet = CsvReader::from_path("tests/assets/asia.csv")
             .unwrap()
             .finish()
             .unwrap()

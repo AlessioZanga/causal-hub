@@ -175,7 +175,7 @@ pub mod zinb {
             // Set dtypes.
             let dtypes = vec![DataType::Float64; 5];
             // Load reference data set.
-            let data_matrix: ZINBDataMatrix = CsvReader::from_path("./tests/assets/zinb.csv")
+            let data_matrix: ZINBDataSet = CsvReader::from_path("./tests/assets/zinb.csv")
                 .unwrap()
                 .has_header(true)
                 .with_dtypes_slice(Some(&dtypes))

@@ -7,7 +7,7 @@ use statrs::function::beta::beta_reg;
 
 use super::ConditionalIndependenceTest;
 use crate::{
-    data::GaussianDataMatrix,
+    data::GaussianDataSet,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
     L,
@@ -23,7 +23,7 @@ pub struct StudentsT {
 
 impl StudentsT {
     #[inline]
-    pub fn new(d: &GaussianDataMatrix, alpha: f64) -> Self {
+    pub fn new(d: &GaussianDataSet, alpha: f64) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.

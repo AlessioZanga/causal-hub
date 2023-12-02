@@ -14,19 +14,19 @@ mod tests {
             .finish()
             .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         let n = MarginalCountMatrix::new(&d, 0);
-        assert_eq!(n.values(), array![1, 1, 1]);
+        assert_eq!(n.data(), array![1, 1, 1]);
 
         let n = MarginalCountMatrix::new(&d, 1);
-        assert_eq!(n.values(), array![3]);
+        assert_eq!(n.data(), array![3]);
 
         let n = MarginalCountMatrix::new(&d, 2);
-        assert_eq!(n.values(), array![2, 1]);
+        assert_eq!(n.data(), array![2, 1]);
 
         let n = MarginalCountMatrix::new(&d, 3);
-        assert_eq!(n.values(), array![1, 1, 1]);
+        assert_eq!(n.data(), array![1, 1, 1]);
     }
 
     #[test]
@@ -40,23 +40,23 @@ mod tests {
             .finish()
             .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         let n = ConditionalCountMatrix::new(&d, 1, &[2]);
-        assert_eq!(n.values(), array![[2], [1]]);
+        assert_eq!(n.data(), array![[2], [1]]);
 
         let n = ConditionalCountMatrix::new(&d, 2, &[1]);
-        assert_eq!(n.values(), array![[2, 1]]);
+        assert_eq!(n.data(), array![[2, 1]]);
 
         let n = ConditionalCountMatrix::new(&d, 3, &[1]);
-        assert_eq!(n.values(), array![[1, 1, 1]]);
+        assert_eq!(n.data(), array![[1, 1, 1]]);
 
         let n = ConditionalCountMatrix::new(&d, 1, &[2, 3]);
-        assert_eq!(n.values(), array![[1], [0], [1], [0], [1], [0]]);
+        assert_eq!(n.data(), array![[1], [0], [1], [0], [1], [0]]);
 
         let n = ConditionalCountMatrix::new(&d, 0, &[1, 2, 3]);
         assert_eq!(
-            n.values(),
+            n.data(),
             array![
                 [1, 0, 0],
                 [0, 0, 0],
@@ -79,12 +79,12 @@ mod tests {
             .finish()
             .expect("Failed to read from CSV file");
         // Cast dataframe to datamatrix.
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         let n = JointConditionalCountMatrix::new(&d, 1, 2, &[3]);
-        assert_eq!(n.values(), array![[[1, 0]], [[0, 1]], [[1, 0]]]);
+        assert_eq!(n.data(), array![[[1, 0]], [[0, 1]], [[1, 0]]]);
 
         let n = JointConditionalCountMatrix::new(&d, 1, 3, &[2]);
-        assert_eq!(n.values(), array![[[1, 0, 1]], [[0, 1, 0]]]);
+        assert_eq!(n.data(), array![[[1, 0, 1]], [[0, 1, 0]]]);
     }
 }

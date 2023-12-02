@@ -17,7 +17,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Set true graph.
         let mut true_g = PGraph::empty(L!(d));
@@ -58,7 +58,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Set true graph.
         let mut true_g = PGraph::empty(L!(d));
@@ -100,7 +100,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Set true graph.
         let mut true_g = PGraph::empty(L!(d));

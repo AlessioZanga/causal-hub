@@ -16,16 +16,16 @@ use crate::{
     types::{FxIndexMap, FxIndexSet},
 };
 
-/* Implement CategoricalDataMatrix */
+/* Implement CategoricalDataSet */
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalDataMatrix {
+pub struct CategoricalDataSet {
     data: Array2<u8>,
     cardinality: Vec<u8>,
     states: FxIndexMap<String, FxIndexSet<String>>,
 }
 
-impl CategoricalDataMatrix {
+impl CategoricalDataSet {
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
@@ -81,14 +81,14 @@ impl CategoricalDataMatrix {
     }
 }
 
-impl From<DataFrame> for CategoricalDataMatrix {
+impl From<DataFrame> for CategoricalDataSet {
     fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values.",
-                "Refer to `CategoricalDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `CategoricalDataSetWithMissing` to handle missing values properly."
             )
         );
 
@@ -194,8 +194,8 @@ impl From<DataFrame> for CategoricalDataMatrix {
     }
 }
 
-impl From<CategoricalDataMatrix> for DataFrame {
-    fn from(data_set: CategoricalDataMatrix) -> Self {
+impl From<CategoricalDataSet> for DataFrame {
+    fn from(data_set: CategoricalDataSet) -> Self {
         // Map columns to series.
         let series = data_set
             .states
@@ -216,7 +216,7 @@ impl From<CategoricalDataMatrix> for DataFrame {
     }
 }
 
-impl DataSet for CategoricalDataMatrix {
+impl DataSet for CategoricalDataSet {
     type Data = Array2<u8>;
 
     type Labels = FxIndexMap<String, FxIndexSet<String>>;
@@ -281,22 +281,22 @@ impl DataSet for CategoricalDataMatrix {
     }
 }
 
-/* Implement GaussianDataMatrix */
+/* Implement GaussianDataSet */
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GaussianDataMatrix {
+pub struct GaussianDataSet {
     data: Array2<f64>,
     labels: BTreeSet<String>,
 }
 
-impl From<DataFrame> for GaussianDataMatrix {
+impl From<DataFrame> for GaussianDataSet {
     fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values. ",
-                "Refer to `GaussianDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `GaussianDataSetWithMissing` to handle missing values properly."
             )
         );
 
@@ -329,8 +329,8 @@ impl From<DataFrame> for GaussianDataMatrix {
     }
 }
 
-impl From<GaussianDataMatrix> for DataFrame {
-    fn from(data_set: GaussianDataMatrix) -> Self {
+impl From<GaussianDataSet> for DataFrame {
+    fn from(data_set: GaussianDataSet) -> Self {
         // Map columns to series.
         let series = data_set
             .labels
@@ -343,7 +343,7 @@ impl From<GaussianDataMatrix> for DataFrame {
     }
 }
 
-impl DataSet for GaussianDataMatrix {
+impl DataSet for GaussianDataSet {
     type Data = Array2<f64>;
 
     type Labels = BTreeSet<String>;
@@ -378,24 +378,24 @@ impl DataSet for GaussianDataMatrix {
     }
 }
 
-/* Implement ZeroInflatedNegativeBinomialDataMatrix */
+/* Implement ZeroInflatedNegativeBinomialDataSet */
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ZeroInflatedNegativeBinomialDataMatrix {
+pub struct ZeroInflatedNegativeBinomialDataSet {
     data: Array2<f64>,
     labels: BTreeSet<String>,
 }
 
-pub type ZINBDataMatrix = ZeroInflatedNegativeBinomialDataMatrix;
+pub type ZINBDataSet = ZeroInflatedNegativeBinomialDataSet;
 
-impl From<DataFrame> for ZINBDataMatrix {
+impl From<DataFrame> for ZINBDataSet {
     fn from(data_frame: DataFrame) -> Self {
         // Check for missing values.
         assert!(
             !data_frame.iter().any(|s| s.is_null().any()),
             concat!(
                 "DataSet must contain no missing values. ",
-                "Refer to `ZeroInflatedNegativeBinomialDataMatrixWithMissing` to handle missing values properly."
+                "Refer to `ZeroInflatedNegativeBinomialDataSetWithMissing` to handle missing values properly."
             )
         );
 
@@ -428,8 +428,8 @@ impl From<DataFrame> for ZINBDataMatrix {
     }
 }
 
-impl From<ZINBDataMatrix> for DataFrame {
-    fn from(data_set: ZINBDataMatrix) -> Self {
+impl From<ZINBDataSet> for DataFrame {
+    fn from(data_set: ZINBDataSet) -> Self {
         // Map columns to series.
         let series = data_set
             .labels
@@ -442,7 +442,7 @@ impl From<ZINBDataMatrix> for DataFrame {
     }
 }
 
-impl DataSet for ZINBDataMatrix {
+impl DataSet for ZINBDataSet {
     type Data = Array2<f64>;
 
     type Labels = BTreeSet<String>;

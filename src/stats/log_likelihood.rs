@@ -13,8 +13,8 @@ use statrs::function::gamma::{digamma, ln_gamma as lgamma};
 
 use crate::{
     data::{
-        CategoricalDataMatrix, ConditionalCountMatrix, DataSet, GaussianDataMatrix,
-        MarginalCountMatrix, ZINBDataMatrix,
+        CategoricalDataSet, ConditionalCountMatrix, DataSet, GaussianDataSet, MarginalCountMatrix,
+        ZINBDataSet,
     },
     discovery::DecomposableScoringCriterion,
     graphs::{Directed, DirectedGraph},
@@ -37,14 +37,14 @@ impl<'a, D> MarginalLogLikelihood<'a, D> {
 
 /* Categorical LL */
 
-impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, CategoricalDataSet> {
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
         // Compute marginal contingency table.
         let n_i = MarginalCountMatrix::new(self.data_set, x);
 
         // Get the underlying view.
-        let n_i = n_i.values();
+        let n_i = n_i.data();
 
         // Sum over states and cast to floating point.
         let n = n_i.sum() as f64;
@@ -61,7 +61,7 @@ impl<'a> MarginalLogLikelihood<'a, CategoricalDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> MarginalLogLikelihood<'a, GaussianDataMatrix> {
+impl<'a> MarginalLogLikelihood<'a, GaussianDataSet> {
     #[inline]
     pub fn call(&self, x: usize) -> f64 {
         // Get the variable and sample size.
@@ -97,14 +97,14 @@ impl<'a, D> ConditionalLogLikelihood<'a, D> {
 
 /* Categorical LL */
 
-impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, CategoricalDataSet> {
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute marginal contingency table.
         let n_ij = ConditionalCountMatrix::new(self.data_set, x, z);
 
         // Get the underlying view.
-        let n_ij = n_ij.values();
+        let n_ij = n_ij.data();
 
         // Sum over states and cast to floating point.
         let n_j = n_ij
@@ -124,7 +124,7 @@ impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
 
 /* Gaussian LL */
 
-impl<'a> ConditionalLogLikelihood<'a, GaussianDataMatrix> {
+impl<'a> ConditionalLogLikelihood<'a, GaussianDataSet> {
     #[inline]
     pub fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Get reference to underling values.
@@ -182,12 +182,12 @@ impl<'a, D> LogLikelihood<'a, D> {
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for LogLikelihood<'a, CategoricalDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataSet, G>
+    for LogLikelihood<'a, CategoricalDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <CategoricalDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -204,12 +204,11 @@ where
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
-    for LogLikelihood<'a, GaussianDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataSet, G> for LogLikelihood<'a, GaussianDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <GaussianDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -444,11 +443,11 @@ impl Gradient for ZINBObjective {
     }
 }
 
-impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G> for LogLikelihood<'a, ZINBDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<ZINBDataSet, G> for LogLikelihood<'a, ZINBDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <ZINBDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Initialize the objective function.

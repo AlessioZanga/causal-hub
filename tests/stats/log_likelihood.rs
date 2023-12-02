@@ -14,7 +14,7 @@ mod categorical {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Build an empty the graph.
         let g = DGraph::empty(L!(d));
@@ -54,7 +54,7 @@ mod categorical {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Build an empty the graph.
         let g = DGraph::empty(L!(d));
@@ -100,7 +100,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
 
         // Build an empty the graph.
         let g = DGraph::empty(L!(d));
@@ -140,7 +140,7 @@ mod gaussian {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
 
         // Build an empty the graph.
         let g = DGraph::empty(L!(d));

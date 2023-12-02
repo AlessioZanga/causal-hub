@@ -99,7 +99,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
         // Construct a new covariance matrix.
         let pred_s = CovarianceMatrix::from(&d);
 

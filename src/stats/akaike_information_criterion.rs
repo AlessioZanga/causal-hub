@@ -1,5 +1,5 @@
 use crate::{
-    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
+    data::{CategoricalDataSet, DataSet, GaussianDataSet, ZINBDataSet},
     discovery::DecomposableScoringCriterion,
     graphs::{Directed, DirectedGraph},
     stats::LogLikelihood,
@@ -25,12 +25,12 @@ impl<'a, D> AkaikeInformationCriterion<'a, D> {
 }
 
 /* Implement AIC for categorical data. */
-impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for AkaikeInformationCriterion<'a, CategoricalDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataSet, G>
+    for AkaikeInformationCriterion<'a, CategoricalDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <CategoricalDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -59,12 +59,12 @@ where
 }
 
 /* Implement AIC for Gaussian data. */
-impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
-    for AkaikeInformationCriterion<'a, GaussianDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataSet, G>
+    for AkaikeInformationCriterion<'a, GaussianDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <GaussianDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -86,12 +86,12 @@ where
 }
 
 /* Implement AIC for ZINB data. */
-impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
-    for AkaikeInformationCriterion<'a, ZINBDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<ZINBDataSet, G>
+    for AkaikeInformationCriterion<'a, ZINBDataSet>
 where
     G: DirectedGraph<Direction = Directed>,
 {
-    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <ZINBDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {

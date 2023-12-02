@@ -1,5 +1,5 @@
 use crate::{
-    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
+    data::{CategoricalDataSet, DataSet, GaussianDataSet, ZINBDataSet},
     discovery::DecomposableScoringCriterion,
     graphs::{directions, DirectedGraph},
     stats::LogLikelihood,
@@ -26,12 +26,12 @@ impl<'a, D> EvidentialBayesianInformationCriterion<'a, D> {
 }
 
 /* Implement BIC for categorical data_set. */
-impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
-    for EvidentialBayesianInformationCriterion<'a, CategoricalDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<CategoricalDataSet, G>
+    for EvidentialBayesianInformationCriterion<'a, CategoricalDataSet>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
-    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <CategoricalDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -62,12 +62,12 @@ where
 }
 
 /* Implement BIC for Gaussian data_set. */
-impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
-    for EvidentialBayesianInformationCriterion<'a, GaussianDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<GaussianDataSet, G>
+    for EvidentialBayesianInformationCriterion<'a, GaussianDataSet>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
-    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <GaussianDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
@@ -91,12 +91,12 @@ where
 }
 
 /* Implement BIC for ZINB data_set. */
-impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
-    for EvidentialBayesianInformationCriterion<'a, ZINBDataMatrix>
+impl<'a, G> DecomposableScoringCriterion<ZINBDataSet, G>
+    for EvidentialBayesianInformationCriterion<'a, ZINBDataSet>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
-    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+    type LabelsIter<'b> = <ZINBDataSet as DataSet>::LabelsIter<'b> where Self: 'b;
 
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {

@@ -103,7 +103,7 @@ mod tests {
             .expect("Failed to read the data from file")
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
         // Compute a new covariance matrix.
         let sigma = CovarianceMatrix::from(&d);
         // Construct a new precision matrix.

@@ -14,7 +14,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);
@@ -37,7 +37,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);
@@ -60,7 +60,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);
@@ -92,7 +92,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);
@@ -115,7 +115,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);
@@ -138,7 +138,7 @@ pub mod categorical {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let d = CategoricalDataMatrix::from(d);
+            let d = CategoricalDataSet::from(d);
 
             // Create ChiSquared conditional independence test
             let test = ChiSquared::new(&d, ALPHA);

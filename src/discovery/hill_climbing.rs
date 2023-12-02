@@ -70,7 +70,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
@@ -108,7 +108,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
@@ -148,7 +148,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
@@ -178,7 +178,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
@@ -210,7 +210,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///
@@ -587,7 +587,7 @@ where
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
-    /// let data_set: CategoricalDataMatrix = data_set.into();
+    /// let data_set: CategoricalDataSet = data_set.into();
     /// // Initialize empty prior knowledge.
     /// let prior_knowledge = FR::new(L!(data_set), [], []);
     ///

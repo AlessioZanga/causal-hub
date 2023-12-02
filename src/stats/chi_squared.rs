@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use statrs::function::gamma::gamma_lr;
 
 use crate::{
-    data::{CategoricalDataMatrix, JointConditionalCountMatrix, JointCountMatrix},
+    data::{CategoricalDataSet, JointConditionalCountMatrix, JointCountMatrix},
     prelude::{ConditionalIndependenceTest, DataSet, FxIndexSet},
     utils::nan_to_zero,
     L,
@@ -12,13 +12,13 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct ChiSquared<'a> {
-    d: &'a CategoricalDataMatrix,
+    d: &'a CategoricalDataSet,
     alpha: f64,
 }
 
 impl<'a> ChiSquared<'a> {
     #[inline]
-    pub fn new(d: &'a CategoricalDataMatrix, alpha: f64) -> Self {
+    pub fn new(d: &'a CategoricalDataSet, alpha: f64) -> Self {
         Self { d, alpha }
     }
 

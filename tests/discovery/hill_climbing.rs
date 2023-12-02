@@ -27,7 +27,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -66,7 +66,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -105,7 +105,7 @@ mod categorical {
             .unwrap()
             .finish()
             .unwrap();
-        let d = CategoricalDataMatrix::from(d);
+        let d = CategoricalDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -234,7 +234,7 @@ mod gaussian {
             .unwrap()
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -355,7 +355,7 @@ mod gaussian {
             .unwrap()
             .finish()
             .unwrap();
-        let d = GaussianDataMatrix::from(d);
+        let d = GaussianDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -388,7 +388,7 @@ mod zinb {
             .with_dtypes_slice(Some(&vec![DataType::Float64; 5]))
             .finish()
             .unwrap();
-        let d = ZINBDataMatrix::from(d);
+        let d = ZINBDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);
@@ -416,7 +416,7 @@ mod zinb {
             .with_dtypes_slice(Some(&vec![DataType::Float64; 5]))
             .finish()
             .unwrap();
-        let d = ZINBDataMatrix::from(d);
+        let d = ZINBDataSet::from(d);
 
         // Initialize empty prior knowledge.
         let k = FR::new(L!(d), [], []);

@@ -8,7 +8,7 @@ use statrs::function::erf::erfc;
 
 use super::ConditionalIndependenceTest;
 use crate::{
-    data::GaussianDataMatrix,
+    data::GaussianDataSet,
     prelude::DataSet,
     stats::{CovarianceMatrix, PartialCorrelation},
     L,
@@ -24,7 +24,7 @@ pub struct FisherZ {
 
 impl FisherZ {
     #[inline]
-    pub fn new(d: &GaussianDataMatrix, alpha: f64) -> Self {
+    pub fn new(d: &GaussianDataSet, alpha: f64) -> Self {
         // Compute covariance matrix.
         let sigma = CovarianceMatrix::from(d);
         // Initialize partial correlation functor.
