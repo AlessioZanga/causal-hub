@@ -1,8 +1,6 @@
 use ndarray::prelude::*;
-use rayon::prelude::*;
 
 use super::{CategoricalDataMatrix, DataSet, RavelMultiIndex};
-use crate::utils::axis_chunks_size;
 
 pub struct MarginalCountMatrix {
     n: Array1<usize>,
@@ -80,26 +78,6 @@ impl ConditionalCountMatrix {
 
         // Count the given observations.
         let n = Self::eval(shape, &rmi, d.data().view(), x, z);
-
-        Self { n }
-    }
-
-    #[inline]
-    pub fn par_new(d: &CategoricalDataMatrix, x: usize, z: &[usize]) -> Self {
-        // Get cardinalities.
-        let cards = d.cardinality();
-        // Get cardinalities of conditional set.
-        let rmi = RavelMultiIndex::new(z.iter().map(|&z| cards[z] as usize));
-        // Set count matrix shape.
-        let shape = (rmi.len(), cards[x] as usize);
-
-        // Count the given observations in parallel.
-        let n = d
-            .data()
-            .axis_chunks_iter(Axis(0), axis_chunks_size(d.data()))
-            .into_par_iter()
-            .map(|d| Self::eval(shape, &rmi, d, x, z))
-            .reduce(|| Array2::zeros(shape), |acc, x| acc + x);
 
         Self { n }
     }

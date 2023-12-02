@@ -2,7 +2,6 @@
 mod tests {
     use causal_hub::{polars::prelude::*, prelude::*};
     use ndarray::prelude::*;
-    use rustc_hash::FxHashMap;
 
     #[test]
     fn marginal_count_matrix() {
@@ -67,34 +66,6 @@ mod tests {
                 [0, 0, 0]
             ]
         );
-    }
-
-    #[test]
-    fn par_conditional_count_matrix() {
-        // Test count matrix from Numpy library.
-        let text = std::fs::read_to_string("./tests/assets/conditional_count_matrix.json")
-            .expect("Failed to read file to string");
-        let data: Vec<(String, Vec<String>, Array2<usize>)> =
-            serde_json::from_str(&text).expect("Failed to deserialize string to struct");
-
-        let d = CsvReader::from_path("./tests/assets/asia.csv")
-            .expect("")
-            .finish()
-            .expect("Failed to read from CSV file");
-        let d = CategoricalDataMatrix::from(d);
-
-        let m: FxHashMap<_, _> = d
-            .labels_iter()
-            .enumerate()
-            .map(|(i, x)| (x.to_string(), i))
-            .collect();
-
-        for (x, z, c) in data {
-            let x = m[&x];
-            let z: Vec<_> = z.into_iter().map(|z| m[&z]).collect();
-
-            assert_eq!(ConditionalCountMatrix::par_new(&d, x, &z).values(), c);
-        }
     }
 
     #[test]

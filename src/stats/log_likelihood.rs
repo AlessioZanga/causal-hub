@@ -9,7 +9,6 @@ use argmin::{
 };
 use ndarray::prelude::*;
 use ndarray_linalg::least_squares::*;
-use rayon::prelude::*;
 use statrs::function::gamma::{digamma, ln_gamma as lgamma};
 
 use crate::{
@@ -19,7 +18,7 @@ use crate::{
     },
     discovery::DecomposableScoringCriterion,
     graphs::{Directed, DirectedGraph},
-    utils::{axis_chunks_size, nan_to_zero},
+    utils::nan_to_zero,
 };
 
 const E: f64 = f32::EPSILON as f64;
@@ -119,35 +118,6 @@ impl<'a> ConditionalLogLikelihood<'a, CategoricalDataMatrix> {
             // Map NaNs to zero.
             .mapv(nan_to_zero)
             // Sum each term.
-            .sum()
-    }
-
-    #[inline]
-    pub fn par_call(&self, x: usize, z: &[usize]) -> f64 {
-        // Compute marginal contingency table.
-        let n_ij = ConditionalCountMatrix::new(self.data_set, x, z);
-
-        // Get the underlying view.
-        let n_ij = n_ij.values();
-
-        // Iterate over chunks.
-        n_ij.axis_chunks_iter(Axis(0), axis_chunks_size(n_ij))
-            // Map each chunk and sum over in parallel.
-            .into_par_iter()
-            .map(|n_ij| {
-                // Sum over states and cast to floating point.
-                let n_j = n_ij
-                    .sum_axis(Axis(1))
-                    .insert_axis(Axis(1))
-                    .mapv(|j| j as f64);
-                let n_ij = n_ij.mapv(|i| i as f64);
-                // Compute log-likelihood as n_ij * ln(n_ij  / n_i).
-                (&n_ij * (&n_ij / n_j).mapv(f64::ln))
-                    // Map NaNs to zero.
-                    .mapv(nan_to_zero)
-                    // Sum each term.
-                    .sum()
-            })
             .sum()
     }
 }
