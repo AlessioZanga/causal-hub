@@ -30,6 +30,8 @@ impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -53,6 +55,11 @@ where
     }
 
     #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
+    }
+
+    #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
         // Get the sample size.
         let n = self.log_likelihood.data_set.sample_size() as f64;
@@ -70,6 +77,8 @@ impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -83,6 +92,11 @@ where
 
         // Compute the BIC.
         log_likelihood - 0.5 * theta * f64::ln(n)
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
     }
 
     #[inline]
@@ -103,6 +117,8 @@ impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -116,6 +132,11 @@ where
 
         // Compute the BIC.
         log_likelihood - 0.5 * theta * f64::ln(n)
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
     }
 }
 

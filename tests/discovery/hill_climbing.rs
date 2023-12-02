@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod categorical {
     use causal_hub::{polars::prelude::*, prelude::*};
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
     fn call() {
@@ -111,8 +113,11 @@ mod categorical {
         // Initialize score functor.
         let s = BIC::new(&d);
 
+        // Initialize random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+
         // Initialize discovery functor.
-        let hc = HC::new(&s).with_shuffle(42);
+        let hc = HC::new(&s).with_shuffle(&mut rng);
         // Perform discovery.
         let pred_g: DGraph = hc.call(&d, &k);
 

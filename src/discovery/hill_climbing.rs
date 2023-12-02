@@ -3,7 +3,6 @@ use std::marker::PhantomData;
 use itertools::{iproduct, Itertools};
 use log::{debug, trace};
 use rand::prelude::*;
-use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 
 use super::{
@@ -50,7 +49,7 @@ where
 {
     max_in_degree: usize,
     max_iter: usize,
-    seed: Option<u64>,
+    shuffle: Option<Vec<usize>>,
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     _t: PhantomData<T>,
@@ -91,7 +90,7 @@ where
         Self {
             max_in_degree,
             max_iter: usize::MAX,
-            seed: None,
+            shuffle: None,
             _d: PhantomData,
             _k: PhantomData,
             _t: PhantomData,
@@ -206,6 +205,8 @@ where
     ///
     /// ```
     /// use causal_hub::{prelude::*, polars::prelude::*};
+    /// use rand::prelude::*;
+    /// use rand_xoshiro::Xoshiro256PlusPlus;
     ///
     /// // Load data set from CSV file.
     /// let data_set = CsvReader::from_path("./tests/assets/asia.csv").unwrap().finish().unwrap();
@@ -216,16 +217,23 @@ where
     /// // Initialize scoring criterion.
     /// let scoring_criterion = BIC::new(&data_set);
     ///
+    /// // Initialize the random number generator.
+    /// let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+    ///
     /// // Perform discovery with initial shuffling of search space order.
     /// let pred_graph: DGraph = HC::new(&scoring_criterion)
-    ///     .with_shuffle(42)
+    ///     .with_shuffle(&mut rng)
     ///     .call(&data_set, &prior_knowledge);
     /// ```
     ///
     #[inline]
-    pub const fn with_shuffle(mut self, seed: u64) -> Self {
-        // Set random number generator seed.
-        self.seed = Some(seed);
+    pub fn with_shuffle<R: Rng>(mut self, rng: &mut R) -> Self {
+        // Initialize vertices order.
+        let mut shuffle = (0..L!(self.scoring_criterion).len()).collect_vec();
+        // Shuffle vertices.
+        shuffle.shuffle(rng);
+        // Shuffle vertices
+        self.shuffle = Some(shuffle);
 
         self
     }
@@ -366,22 +374,13 @@ where
         // Check acyclicity.
         assert!(g.is_acyclic(), "Prior knowledge must not add any cycle");
 
-        // Get number of variables.
-        let n = L!(d).len();
-        // Get columns index.
-        let mut n = (0..n).collect_vec();
-        // Check if random number generator has been set.
-        if let Some(seed) = self.seed {
-            // Initialize random number generator.
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
-            // Shuffle columns.
-            n.shuffle(&mut rng);
-            // Log shuffled columns.
-            debug!(
-                "Seed is set, shuffled columns as: [{}]",
-                n.iter().map(|&x| &g[x]).format(", ")
-            );
-        }
+        // Initialize vertices order.
+        let n = match self.shuffle.as_ref() {
+            // If vertices order is provided ...
+            Some(shuffle) => shuffle.clone(),
+            // If no vertices order is provided, initialize one.
+            None => (0..L!(g).len()).collect_vec(),
+        };
 
         // Get current edge set.
         let e: E = E!(g).collect();

@@ -31,6 +31,8 @@ impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -52,6 +54,11 @@ where
         // Compute the EVBIC.
         (1. - 1. / n) * log_likelihood - 0.5 * theta * f64::ln(n)
     }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
+    }
 }
 
 /* Implement BIC for Gaussian data_set. */
@@ -60,6 +67,8 @@ impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -74,6 +83,11 @@ where
         // Compute the EVBIC.
         (1. - 1. / n) * log_likelihood - 0.5 * theta * f64::ln(n)
     }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
+    }
 }
 
 /* Implement BIC for ZINB data_set. */
@@ -82,6 +96,8 @@ impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
 where
     G: DirectedGraph<Direction = directions::Directed>,
 {
+    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -95,6 +111,11 @@ where
 
         // Compute the EVBIC.
         (1. - 1. / n) * log_likelihood - 0.5 * theta * f64::ln(n)
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
     }
 }
 

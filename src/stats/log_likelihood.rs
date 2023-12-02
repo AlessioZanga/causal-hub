@@ -217,6 +217,8 @@ impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         if z.is_empty() {
@@ -225,6 +227,11 @@ where
             ConditionalLogLikelihood::new(self.data_set).call(x, z)
         }
     }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.data_set.labels_iter()
+    }
 }
 
 impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
@@ -232,6 +239,8 @@ impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         if z.is_empty() {
@@ -239,6 +248,11 @@ where
         } else {
             ConditionalLogLikelihood::new(self.data_set).call(x, z)
         }
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.data_set.labels_iter()
     }
 }
 
@@ -464,6 +478,8 @@ impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G> for LogLikelihood<'a
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Initialize the objective function.
         let f = ZINBObjective::new(self.data_set.data(), x, z);
@@ -490,6 +506,11 @@ where
 
         // Get the negated log-likelihood.
         -results.state.best_cost
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.data_set.labels_iter()
     }
 }
 

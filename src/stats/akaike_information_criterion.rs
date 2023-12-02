@@ -1,8 +1,7 @@
 use crate::{
-    data::{CategoricalDataMatrix, GaussianDataMatrix},
+    data::{CategoricalDataMatrix, DataSet, GaussianDataMatrix, ZINBDataMatrix},
     discovery::DecomposableScoringCriterion,
     graphs::{Directed, DirectedGraph},
-    prelude::ZINBDataMatrix,
     stats::LogLikelihood,
 };
 
@@ -31,6 +30,8 @@ impl<'a, G> DecomposableScoringCriterion<CategoricalDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <CategoricalDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -50,6 +51,11 @@ where
         // Compute the AIC.
         log_likelihood - theta
     }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
+    }
 }
 
 /* Implement AIC for Gaussian data. */
@@ -58,6 +64,8 @@ impl<'a, G> DecomposableScoringCriterion<GaussianDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <GaussianDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -70,6 +78,11 @@ where
         // Compute the AIC.
         log_likelihood - theta
     }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
+    }
 }
 
 /* Implement AIC for ZINB data. */
@@ -78,6 +91,8 @@ impl<'a, G> DecomposableScoringCriterion<ZINBDataMatrix, G>
 where
     G: DirectedGraph<Direction = Directed>,
 {
+    type LabelsIter<'b> = <ZINBDataMatrix as DataSet>::LabelsIter<'b> where Self: 'b;
+
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the log-likelihood.
@@ -89,6 +104,11 @@ where
 
         // Compute the AIC.
         log_likelihood - theta
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.log_likelihood.data_set.labels_iter()
     }
 }
 

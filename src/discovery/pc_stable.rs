@@ -145,7 +145,7 @@ where
             // 1. The edge
             // 2. Its separation set (if any)
             // 3. A flag indicating if exists at least one set of adjacents with cardinality `c`
-            let e_prime: Vec<(Option<(usize, usize, FxIndexSet<usize>)>, bool)> = E!(g)
+            let e_prime: Vec<_> = E!(g)
                 .collect_vec()
                 .into_par_iter()
                 .map(|(x, y)| {
@@ -162,7 +162,7 @@ where
                     // Assign each edge its related sepset
                     .find_map(|z| {
                         if self.test.call(x, y, &z) {
-                            Some((x, y, z.into_iter().collect()))
+                            Some((x, y, FxIndexSet::from_iter(z)))
                         } else {
                             None
                         }

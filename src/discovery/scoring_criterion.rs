@@ -1,4 +1,4 @@
-use std::{fmt::Debug, hash::Hash, marker::PhantomData};
+use std::{fmt::Debug, hash::Hash, iter::FusedIterator, marker::PhantomData};
 
 use indexmap::map::{rayon::ParValues, Values};
 use itertools::Itertools;
@@ -20,7 +20,13 @@ pub mod score_types {
 }
 
 pub trait ScoringCriterion<D, G, T> {
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
     fn call(&self, g: &G) -> f64;
+
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
@@ -29,7 +35,13 @@ pub trait ScoringCriterion<D, G, T> {
 }
 
 pub trait DecomposableScoringCriterion<D, G> {
+    type LabelsIter<'a>: Iterator<Item = &'a str> + ExactSizeIterator + FusedIterator
+    where
+        Self: 'a;
+
     fn call(&self, x: usize, z: &[usize]) -> f64;
+
+    fn labels_iter(&self) -> Self::LabelsIter<'_>;
 
     #[inline]
     fn max_in_degree_hint(&self) -> Option<usize> {
@@ -43,12 +55,20 @@ where
     G: DirectedGraph<Direction = Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
+    type LabelsIter<'a> = <Self as DecomposableScoringCriterion<D, G>>::LabelsIter<'a> where
+        Self: 'a;
+
     #[inline]
     fn call(&self, g: &G) -> f64 {
         V!(g)
             .map(|x| (x, Pa!(g, x).collect_vec()))
             .map(|(x, z)| self.call(x, &z))
             .sum()
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        DecomposableScoringCriterion::labels_iter(self)
     }
 
     #[inline]
@@ -127,6 +147,10 @@ where
     G: Clone + Eq + Hash,
     S: ScoringCriterion<D, G, score_types::NonDecomposable>,
 {
+    type LabelsIter<'b> = <S as ScoringCriterion<D, G, score_types::NonDecomposable>>::LabelsIter<'b>
+    where
+        Self: 'b;
+
     fn call(&self, g: &G) -> f64 {
         // Get value from cache ...
         self.cache
@@ -134,6 +158,11 @@ where
             .copied()
             // ... or compute it if not in cache.
             .unwrap_or_else(|| self.scoring_criterion.call(g))
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.scoring_criterion.labels_iter()
     }
 }
 
@@ -164,6 +193,9 @@ where
     G: DirectedGraph<Direction = Directed>,
     S: DecomposableScoringCriterion<D, G>,
 {
+    type LabelsIter<'b> = <S as DecomposableScoringCriterion<D, G>>::LabelsIter<'b> where
+        Self: 'b;
+
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute cache key.
         let k = (x, z.to_vec());
@@ -174,6 +206,11 @@ where
             .copied()
             // ... or compute it if not in cache.
             .unwrap_or_else(|| self.scoring_criterion.call(x, z))
+    }
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        self.scoring_criterion.labels_iter()
     }
 
     #[inline]

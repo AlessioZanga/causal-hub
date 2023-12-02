@@ -202,7 +202,7 @@ where
 mod test_data_set_sample {
     use ndarray::prelude::*;
     use rand::prelude::*;
-    use rand_xoshiro::Xoshiro256StarStar;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
     use crate::prelude::*;
 
@@ -215,7 +215,7 @@ mod test_data_set_sample {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.sample(&mut rng, 11);
     }
 
@@ -227,7 +227,7 @@ mod test_data_set_sample {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let sample = data_set.sample(&mut rng, 5);
         assert_eq!(sample.sample_size(), 5);
         assert_eq!(sample.labels(), data_set.labels());
@@ -241,7 +241,7 @@ mod test_data_set_sample {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let sample = data_set.sample_with_replacement(&mut rng, 5);
         assert_eq!(sample.sample_size(), 5);
         assert_eq!(sample.labels(), data_set.labels());
@@ -255,7 +255,7 @@ mod test_data_set_sample {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let bootstrap_iter = data_set.bootstrap_iter(&mut rng, 5, 10);
         assert_eq!(bootstrap_iter.len(), 10);
         assert_eq!(bootstrap_iter.size_hint(), (10, Some(10)));
@@ -500,7 +500,7 @@ where
 mod test_parallel_data_set_sample {
     use ndarray::prelude::*;
     use rand::prelude::*;
-    use rand_xoshiro::Xoshiro256StarStar;
+    use rand_xoshiro::Xoshiro256PlusPlus;
     use rayon::prelude::*;
 
     use crate::prelude::*;
@@ -513,7 +513,7 @@ mod test_parallel_data_set_sample {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let bootstrap_iter = data_set.par_bootstrap_iter(&mut rng, 5, 10);
         assert_eq!(bootstrap_iter.len(), 10);
         assert_eq!(bootstrap_iter.opt_len(), Some(10));
@@ -933,7 +933,7 @@ where
 mod test_data_set_split {
     use ndarray::prelude::*;
     use rand::prelude::*;
-    use rand_xoshiro::Xoshiro256StarStar;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
     use crate::prelude::*;
 
@@ -946,7 +946,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.train_test_split(&mut rng, 1.1);
     }
 
@@ -958,7 +958,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let (train_set, test_set) = data_set.train_test_split(&mut rng, 0.2);
         assert_eq!(train_set.sample_size(), 8);
         assert_eq!(test_set.sample_size(), 2);
@@ -975,7 +975,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.k_fold_iter(&mut rng, 11);
     }
 
@@ -987,7 +987,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let k_fold_iter = data_set.k_fold_iter(&mut rng, 5);
         assert_eq!(k_fold_iter.len(), 5);
         assert_eq!(k_fold_iter.size_hint(), (5, Some(5)));
@@ -1005,7 +1005,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let leave_one_out_iter = data_set.leave_one_out_iter(&mut rng);
         assert_eq!(leave_one_out_iter.len(), 10);
         assert_eq!(leave_one_out_iter.size_hint(), (10, Some(10)));
@@ -1024,7 +1024,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.leave_p_out_iter(&mut rng, 11);
     }
 
@@ -1036,7 +1036,7 @@ mod test_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let leave_p_out_iter = data_set.leave_p_out_iter(&mut rng, 5);
         assert_eq!(leave_p_out_iter.len(), 5);
         assert_eq!(leave_p_out_iter.size_hint(), (5, Some(5)));
@@ -1846,7 +1846,7 @@ where
 mod test_parallel_data_set_split {
     use ndarray::prelude::*;
     use rand::prelude::*;
-    use rand_xoshiro::Xoshiro256StarStar;
+    use rand_xoshiro::Xoshiro256PlusPlus;
     use rayon::prelude::*;
 
     use crate::prelude::*;
@@ -1860,7 +1860,7 @@ mod test_parallel_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.par_k_fold_iter(&mut rng, 11);
     }
 
@@ -1872,7 +1872,7 @@ mod test_parallel_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let k_fold_iter = data_set.par_k_fold_iter(&mut rng, 5);
         assert_eq!(k_fold_iter.len(), 5);
         assert_eq!(k_fold_iter.opt_len(), Some(5));
@@ -1890,7 +1890,7 @@ mod test_parallel_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let leave_one_out_iter = data_set.par_leave_one_out_iter(&mut rng);
         assert_eq!(leave_one_out_iter.len(), 10);
         assert_eq!(leave_one_out_iter.opt_len(), Some(10));
@@ -1909,7 +1909,7 @@ mod test_parallel_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         data_set.par_leave_p_out_iter(&mut rng, 11);
     }
 
@@ -1921,7 +1921,7 @@ mod test_parallel_data_set_split {
             .map(|(l, s)| (l.into(), s.iter().map(|&s| s.into()).collect()))
             .collect();
         let data_set = CategoricalDataMatrix::with_data_labels(data, labels);
-        let mut rng = Xoshiro256StarStar::seed_from_u64(42);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         let leave_p_out_iter = data_set.par_leave_p_out_iter(&mut rng, 5);
         assert_eq!(leave_p_out_iter.len(), 5);
         assert_eq!(leave_p_out_iter.opt_len(), Some(5));
