@@ -1,6 +1,9 @@
 mod hill_climbing;
 pub use hill_climbing::*;
 
+mod meek_rules;
+pub use meek_rules::*;
+
 mod pc_stable;
 pub use pc_stable::*;
 
