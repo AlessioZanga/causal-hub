@@ -70,22 +70,10 @@ impl PartialOrd for UGraph {
     /// Return `None` if the graphs are not comparable.
     ///
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        // Compare the vertices.
-        let vertices = iter_set::cmp(L!(self), L!(other));
         // If the vertices are not comparable, return `None`.
-        if vertices.is_none() {
-            return None;
-        }
-
-        // Compare the edges.
-        let edges = iter_set::cmp(E!(self), E!(other));
+        let vertices = iter_set::cmp(L!(self), L!(other))?;
         // If the edges are not comparable, return `None`.
-        if edges.is_none() {
-            return None;
-        }
-
-        // Unwrap the vertices and edges comparison.
-        let (vertices, edges) = (vertices.unwrap(), edges.unwrap());
+        let edges = iter_set::cmp(E!(self), E!(other))?;
 
         // If the vertices are equal, return the edges.
         if vertices.is_eq() {

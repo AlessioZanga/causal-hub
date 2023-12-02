@@ -544,21 +544,21 @@ where
             // Check if operation is valid, compute current operation delta score and cache fragments.
             .filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::ADD }>(cache, g, *x, *y))
                 } else {
                     None
                 }
             })
             .chain(del.iter().filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::DEL }>(cache, g, *x, *y))
                 } else {
                     None
                 }
             }))
             .chain(rev.iter().filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::REV }>(cache, g, *x, *y))
                 } else {
                     None
                 }
@@ -576,7 +576,7 @@ where
         ops_deltas
             .into_iter()
             .filter(|(_, delta)| delta > &0.)
-            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
+            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(delta_star).unwrap())
     }
 
     /// Perform discovery given data set $\mathbf{D}$ and prior knowledge $\mathbf{K}$.
@@ -676,21 +676,21 @@ where
             // Check if operation is valid, compute current operation delta score and cache fragments.
             .filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::ADD }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::ADD }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::ADD }>(cache, g, *x, *y))
                 } else {
                     None
                 }
             })
             .chain(del.par_iter().filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::DEL }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::DEL }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::DEL }>(cache, g, *x, *y))
                 } else {
                     None
                 }
             }))
             .chain(rev.par_iter().filter_map(|(x, y)| {
                 if self.is_valid::<{ Op::REV }>(in_degree, g, *x, *y) {
-                    Some(self.eval::<{ Op::REV }>(&cache, g, *x, *y))
+                    Some(self.eval::<{ Op::REV }>(cache, g, *x, *y))
                 } else {
                     None
                 }
@@ -708,7 +708,7 @@ where
         ops_deltas
             .into_par_iter()
             .filter(|(_, delta)| delta > &0.)
-            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(&delta_star).unwrap())
+            .max_by(|(_, delta), (_, delta_star)| delta.partial_cmp(delta_star).unwrap())
     }
 
     pub fn par_call(&self, d: &D, k: &K) -> G {

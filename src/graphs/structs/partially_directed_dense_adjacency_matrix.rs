@@ -70,22 +70,10 @@ impl PartialOrd for PGraph {
     /// Return `None` if the graphs are not comparable.
     ///
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        // Compare the undirected graphs.
-        let undirected = self.undirected.partial_cmp(&other.undirected);
         // If the undirected graphs are not comparable, return `None`.
-        if undirected.is_none() {
-            return None;
-        }
-
-        // Compare the directed graphs.
-        let directed = self.directed.partial_cmp(&other.directed);
+        let undirected = self.undirected.partial_cmp(&other.undirected)?;
         // If the directed graphs are not comparable, return `None`.
-        if directed.is_none() {
-            return None;
-        }
-
-        // Unwrap the undirected and directed comparison.
-        let (undirected, directed) = (undirected.unwrap(), directed.unwrap());
+        let directed = self.directed.partial_cmp(&other.directed)?;
 
         // If the undirected are equal, return the directed.
         if undirected.is_eq() {

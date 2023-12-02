@@ -3,8 +3,7 @@ use std::fmt::Debug;
 use super::MoralGraph;
 use crate::{
     graphs::{
-        algorithms::components::CC, Directed, DirectedGraph, Graph, UGraph, Undirected,
-        UndirectedGraph,
+        algorithms::components::CC, Directed, DirectedGraph, Graph, Undirected, UndirectedGraph,
     },
     stats::{ConditionalIndependenceTest, GeneralizedConditionalIndependenceTest},
     types::FxIndexSet,

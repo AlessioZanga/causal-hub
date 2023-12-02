@@ -115,9 +115,8 @@ where
         }
 
         // Orient edges according to orientation rules.
-        let g = MeekRules::apply_until_3(g);
 
-        g
+        MeekRules::apply_until_3(g)
     }
 }
 
@@ -221,8 +220,7 @@ where
         }
 
         // Orient edges according to orientation rules.
-        let g = MeekRules::apply_until_3(g);
 
-        g
+        MeekRules::apply_until_3(g)
     }
 }

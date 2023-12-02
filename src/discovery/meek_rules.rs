@@ -114,12 +114,12 @@ impl MeekRules {
     {
         let mut is_closed = false;
 
-        let (mut _1, mut _2, mut _3);
+        let (mut is_closed_1, mut is_closed_2, mut is_closed_3);
         while !is_closed {
-            (g, _1) = Self::apply_1(g);
-            (g, _2) = Self::apply_2(g);
-            (g, _3) = Self::apply_3(g);
-            is_closed = _1 && _2 && _3;
+            (g, is_closed_1) = Self::apply_1(g);
+            (g, is_closed_2) = Self::apply_2(g);
+            (g, is_closed_3) = Self::apply_3(g);
+            is_closed = is_closed_1 && is_closed_2 && is_closed_3;
         }
 
         g
@@ -132,13 +132,13 @@ impl MeekRules {
     {
         let mut is_closed = false;
 
-        let (mut _1, mut _2, mut _3, mut _4);
+        let (mut is_closed_1, mut is_closed_2, mut is_closed_3, mut is_closed_4);
         while !is_closed {
-            (g, _1) = Self::apply_1(g);
-            (g, _2) = Self::apply_2(g);
-            (g, _3) = Self::apply_3(g);
-            (g, _4) = Self::apply_4(g);
-            is_closed = _1 && _2 && _3 && _4;
+            (g, is_closed_1) = Self::apply_1(g);
+            (g, is_closed_2) = Self::apply_2(g);
+            (g, is_closed_3) = Self::apply_3(g);
+            (g, is_closed_4) = Self::apply_4(g);
+            is_closed = is_closed_1 && is_closed_2 && is_closed_3 && is_closed_4;
         }
 
         g
