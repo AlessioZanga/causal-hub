@@ -353,8 +353,8 @@ impl CostFunction for ZINBObjective {
         // logit(q) = Z * beta + gamma
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::min(lambda, 1e2));
+        // k = exp(lambda), clamped to avoid underflow and overflow.
+        let k = f64::exp(f64::clamp(lambda, -1e2, 1e2));
 
         // Logarithm of the ascending factorial function.
         let log_ascfacto = |k: f64, x: &Array2<f64>| -> Array2<f64> {
@@ -418,8 +418,8 @@ impl Gradient for ZINBObjective {
         // logit(q) = Z * beta + gamma
         let q0 = Self::eval(&self.z10, beta_gamma);
         let q1 = Self::eval(&self.z11, beta_gamma);
-        // k = exp(lambda), clamped to avoid overflow.
-        let k = f64::exp(f64::min(lambda, 1e2));
+        // k = exp(lambda), clamped to avoid underflow and overflow.
+        let k = f64::exp(f64::clamp(lambda, -1e2, 1e2));
 
         // Initialize the gradient.
         let mut gradient = Array1::<f64>::zeros(2 * z1 + 1);
