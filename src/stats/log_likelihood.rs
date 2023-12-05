@@ -500,6 +500,7 @@ where
         // Run the solver.
         let results = Executor::new(f, solver)
             .configure(|s| s.param(t_0).gradient(g_0).inv_hessian(h_0).max_iters(500))
+            .ctrlc(false)
             .timer(false)
             .run()
             .expect("Failed to run the solver");
