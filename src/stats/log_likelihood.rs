@@ -483,12 +483,13 @@ where
         // Initialize the objective function.
         let f = ZINBObjective::new(self.data_set.data(), x, z);
 
-        // Initialize the starting parameters.
-        let theta_0 = Array1::zeros(2 * (z.len() + 1) + 1);
+        // Initialize the parameters.
+        let t_0 = Array1::from_elem(2 * (z.len() + 1) + 1, E);
+
         // Initialize the inverse Hessian using the initial gradient as in:
         // "Numerical Optimization, p. 142. Second Edition. Nocedal & Wright."
-        let l_0 = E * f.gradient(&theta_0).unwrap().mapv(f64::abs).sum().recip();
-        let h_0 = l_0 * Array2::eye(theta_0.len());
+        let g_0 = f.gradient(&t_0).unwrap();
+        let h_0 = f64::sqrt(E) * g_0.mapv(f64::abs).sum().recip() * Array2::eye(t_0.len());
 
         // Initialize the solver.
         let step = ArmijoCondition::new(f64::sqrt(E)).expect("Failed to initialize the step");
@@ -498,7 +499,7 @@ where
             .expect("Failed to initialize the solver");
         // Run the solver.
         let results = Executor::new(f, solver)
-            .configure(|s| s.param(theta_0).inv_hessian(h_0).max_iters(500))
+            .configure(|s| s.param(t_0).gradient(g_0).inv_hessian(h_0).max_iters(500))
             .timer(false)
             .run()
             .expect("Failed to run the solver");
