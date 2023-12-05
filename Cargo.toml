@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "python"]
+default-members = ["."]
+
 [package]
 name = "causal-hub"
 version = "0.1.2"
