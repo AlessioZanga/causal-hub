@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{DGraph, UGraph};
 use crate::{
+    dE,
     graphs::{DirectedGraph, Graph, PartiallyDirected, PartiallyDirectedGraph, UndirectedGraph},
-    E, L, V,
+    uE, E, L, V,
 };
 
 /// Define the `PartiallyDirectedDenseAdjacencyMatrix` struct.
@@ -447,9 +448,7 @@ impl Graph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
-                    .next()
-                    .is_none(),
+                intersection(dE!(self), uE!(self)).next().is_none(),
                 "The edge sets are not disjoint."
             );
 
@@ -598,7 +597,7 @@ impl UndirectedGraph for PGraph {
     #[inline]
     fn undirected_edges_iter(&self) -> Self::UndirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.undirected.undirected_edges_iter()
+        uE!(self.undirected)
     }
 
     // Check if the undirected edge exists.
@@ -619,9 +618,7 @@ impl UndirectedGraph for PGraph {
 
         // Debug assert that the edge sets are disjoint.
         debug_assert!(
-            intersection(self.directed_edges_iter(), self.undirected_edges_iter())
-                .next()
-                .is_none(),
+            intersection(dE!(self), uE!(self)).next().is_none(),
             "The edge sets are not disjoint."
         );
 
@@ -662,7 +659,7 @@ impl DirectedGraph for PGraph {
     type ChildrenIter<'a> = <DGraph as DirectedGraph>::ChildrenIter<'a>;
     // Descendants indices iterator associated type.
     type DescendantsIter<'a> = <DGraph as DirectedGraph>::DescendantsIter<'a>;
-    // FIXME:
+    // Associated undirected graph type.
     type UndirectedGraph = UGraph;
 
     // Get the directed graph size.
@@ -676,7 +673,7 @@ impl DirectedGraph for PGraph {
     #[inline]
     fn directed_edges_iter(&self) -> Self::DirectedEdgesIter<'_> {
         // Delegate to the `edges` method.
-        self.directed.directed_edges_iter()
+        dE!(self.directed)
     }
 
     // Check if the directed edge exists.
@@ -696,9 +693,7 @@ impl DirectedGraph for PGraph {
 
         // Debug assert that the edge sets are disjoint.
         debug_assert!(
-            intersection(self.directed_edges_iter(), self.undirected_edges_iter())
-                .next()
-                .is_none(),
+            intersection(dE!(self), uE!(self)).next().is_none(),
             "The edge sets are not disjoint."
         );
 
@@ -799,6 +794,23 @@ impl DirectedGraph for PGraph {
 
 /// Implement the `PartiallyDirectedGraph` trait for the `PGraph` struct.
 impl PartiallyDirectedGraph for PGraph {
+    // Associated directed graph type.
+    type DirectedGraph = DGraph;
+
+    // Reference to the directed subgraph.
+    #[inline]
+    fn directed_subgraph(&self) -> &Self::DirectedGraph {
+        // Return the reference to the directed graph.
+        &self.directed
+    }
+
+    // Reference to the undirected subgraph.
+    #[inline]
+    fn undirected_subgraph(&self) -> &Self::UndirectedGraph {
+        // Return the reference to the undirected graph.
+        &self.undirected
+    }
+
     // Set an already existing edge as directed.
     fn set_directed_edge(&mut self, x: usize, y: usize) -> bool {
         // Remove the edge from the undirected graph.
@@ -808,9 +820,7 @@ impl PartiallyDirectedGraph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
-                    .next()
-                    .is_none(),
+                intersection(dE!(self), uE!(self)).next().is_none(),
                 "The edge sets are not disjoint."
             );
 
@@ -831,9 +841,7 @@ impl PartiallyDirectedGraph for PGraph {
 
             // Debug assert that the edge sets are disjoint.
             debug_assert!(
-                intersection(self.directed_edges_iter(), self.undirected_edges_iter())
-                    .next()
-                    .is_none(),
+                intersection(dE!(self), uE!(self)).next().is_none(),
                 "The edge sets are not disjoint."
             );
 

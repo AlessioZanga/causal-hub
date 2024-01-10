@@ -1478,6 +1478,7 @@ mod tests {
 
     use super::DGraph;
     use crate::{
+        dE,
         graphs::{DirectedGraph, Graph},
         Adj, An, Ch, De, Pa, E, L, V,
     };
@@ -3105,10 +3106,7 @@ mod tests {
         let graph = DGraph::empty(vertices.clone());
 
         // Check the edges indices.
-        assert_eq!(
-            graph.directed_edges_iter().collect_vec(),
-            Vec::<(usize, usize)>::new()
-        );
+        assert_eq!(dE!(graph).collect_vec(), Vec::<(usize, usize)>::new());
 
         // Initialize the edges labels.
         let edges = vec![
@@ -3129,7 +3127,7 @@ mod tests {
 
         // Check the edges indices.
         assert_eq!(
-            graph.directed_edges_iter().collect_vec(),
+            dE!(graph).collect_vec(),
             vec![
                 (0, 1),
                 (0, 2),

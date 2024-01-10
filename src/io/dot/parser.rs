@@ -13,12 +13,13 @@ use super::{
     Format, Layout,
 };
 use crate::{
+    dE,
     graphs::{
         structs::{DGraph, PGraph, UGraph},
         DirectedGraph, Graph, UndirectedGraph,
     },
     io::File,
-    E, V,
+    uE, E, V,
 };
 
 impl<'a> Extend<Pair<'a, Rule>> for VertexAttributes {
@@ -694,8 +695,7 @@ impl From<PGraph> for DOT {
         // Construct the undirected edge set.
         let mut undirected_arrowhead = EdgeAttributes::default();
         undirected_arrowhead.insert_raw_parts("dir", "none");
-        let mut edges: BTreeMap<_, _> = graph
-            .undirected_edges_iter()
+        let mut edges: BTreeMap<_, _> = uE!(graph)
             .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge {
                 id: (x, y),
@@ -705,8 +705,7 @@ impl From<PGraph> for DOT {
             .map(|x| (x.id.clone(), x))
             .collect();
         // Construct the directed edge set.
-        let mut directed_edges: BTreeMap<_, _> = graph
-            .directed_edges_iter()
+        let mut directed_edges: BTreeMap<_, _> = dE!(graph)
             .map(|(x, y)| (graph[x].into(), graph[y].into()))
             .map(|(x, y)| Edge::new((x, y), "->".into()))
             .map(|x| (x.id.clone(), x))

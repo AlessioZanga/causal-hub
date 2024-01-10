@@ -1,4 +1,20 @@
-use super::{DirectedGraph, UndirectedGraph};
+use super::{Directed, DirectedGraph, UndirectedGraph};
+
+/// Define the `uE` undirected edges macro.
+#[macro_export]
+macro_rules! uE {
+    ($g:expr) => {
+        $g.undirected_edges_iter()
+    };
+}
+
+/// Define the `dE` directed edges macro.
+#[macro_export]
+macro_rules! dE {
+    ($g:expr) => {
+        $g.directed_edges_iter()
+    };
+}
 
 /// Define the `PartiallyDirected` direction type.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6,6 +22,15 @@ pub struct PartiallyDirected {}
 
 /// Define the `PartiallyDirectedGraph` trait.
 pub trait PartiallyDirectedGraph: UndirectedGraph + DirectedGraph {
+    /// Associated directed graph type.
+    type DirectedGraph: DirectedGraph<Direction = Directed>;
+
+    /// Reference to the directed subgraph.
+    fn directed_subgraph(&self) -> &Self::DirectedGraph;
+
+    /// Reference to the undirected subgraph.
+    fn undirected_subgraph(&self) -> &Self::UndirectedGraph;
+
     /// Set an already existing edge as directed.
     ///
     /// If the edge does not exist, then no edge is added.

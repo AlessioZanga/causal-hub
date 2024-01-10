@@ -1158,7 +1158,7 @@ mod tests {
     use super::UGraph;
     use crate::{
         graphs::{Graph, UndirectedGraph},
-        Adj, Ne, E, L, V,
+        uE, Adj, Ne, E, L, V,
     };
 
     // Test the `clone` method.
@@ -2953,10 +2953,7 @@ mod tests {
         let graph = UGraph::empty(vertices.clone());
 
         // Check the undirected edges indices.
-        assert_eq!(
-            graph.undirected_edges_iter().collect_vec(),
-            Vec::<(usize, usize)>::new()
-        );
+        assert_eq!(uE!(graph).collect_vec(), Vec::<(usize, usize)>::new());
 
         // Initialize the edges labels.
         let edges = vec![
@@ -2977,7 +2974,7 @@ mod tests {
 
         // Check the undirected edges indices.
         assert_eq!(
-            graph.undirected_edges_iter().collect_vec(),
+            uE!(graph).collect_vec(),
             vec![
                 (0, 1),
                 (0, 2),
