@@ -29,6 +29,8 @@ criterion_group!(
     models::bayesian_network::sample::alarm,
     models::bayesian_network::par_sample::asia,
     models::bayesian_network::par_sample::alarm,
+    models::graphical_separation::call::asia,
+    models::graphical_separation::call::alarm,
     // Statistics benchmarks.
     stats::log_likelihood::marginal::asia,
     stats::log_likelihood::marginal::alarm,

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{collections::VecDeque, fmt::Debug};
 
 use super::MoralGraph;
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
     stats::{ConditionalIndependenceTest, GeneralizedConditionalIndependenceTest},
     types::FxIndexSet,
     utils::UnionFind,
-    Adj, An, Ch, Ne, L, V,
+    Adj, An, Ch, Ne, Pa, L, V,
 };
 
 #[derive(Clone, Debug)]
@@ -143,8 +143,51 @@ where
 
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
-        // TODO: Implement more efficient non-generalized version.
-        GeneralizedConditionalIndependenceTest::call(self, [x], [y], z.iter().cloned())
+        // Phase I - Get all ancestors of Z.
+        let z: FxIndexSet<_> = z.iter().cloned().collect();
+        let an_z: FxIndexSet<_> = z.iter().flat_map(|&z| An!(self.g, z)).collect();
+
+        // Phase II - Traverse the active trail from X to Y.
+
+        // Initialize the set of to-be-visited vertices.
+        let mut to_be_visited = VecDeque::with_capacity(2 * self.g.order());
+        to_be_visited.push_back((x, true));
+        // Initialize the set of visited vertices.
+        let mut visited = FxIndexSet::<(usize, bool)>::default();
+        visited.reserve(2 * self.g.order());
+
+        // While there are vertices to be visited.
+        while let Some((w, d)) = to_be_visited.pop_front() {
+            // Check if current vertex is Y.
+            if w == y {
+                return false;
+            }
+            // Check if current vertex has already been visited.
+            if visited.contains(&(w, d)) {
+                continue;
+            }
+            // Add current vertex to visited set.
+            visited.insert((w, d));
+            // Trail up through W if W not in Z.
+            if d && !z.contains(&w) {
+                // Add parents of W to to-be-visited set.
+                to_be_visited.extend(Pa!(self.g, w).map(|w| (w, true)));
+                // Add children of W to to-be-visited set.
+                to_be_visited.extend(Ch!(self.g, w).map(|w| (w, false)));
+            // Trail down through W.
+            } else if !d {
+                // If W is not in Z, add children of W to to-be-visited set.
+                if !z.contains(&w) {
+                    to_be_visited.extend(Ch!(self.g, w).map(|w| (w, false)));
+                }
+                // If W is in the ancestral set of Z, add parents of W to to-be-visited set.
+                if an_z.contains(&w) {
+                    to_be_visited.extend(Pa!(self.g, w).map(|w| (w, true)));
+                }
+            }
+        }
+
+        true
     }
 }
 
