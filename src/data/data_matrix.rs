@@ -16,8 +16,51 @@ use crate::{
     types::{FxIndexMap, FxIndexSet},
 };
 
-/* Implement CategoricalDataSet */
-
+/// Data set for the joint categorical distribution.
+///
+/// # Example
+///
+/// ```
+/// use causal_hub::prelude::*;
+/// use causal_hub::polars::prelude::*;
+/// use ndarray::prelude::*;
+///
+/// // Create a data frame and convert to a data set.
+/// let data_set: CategoricalDataSet = DataFrame::new(vec![
+///     Series::new("A", &["a", "b", "a", "b"]),
+///     Series::new("B", &["c", "c", "d", "d"]),
+/// ]).unwrap().into();
+///
+/// // Check to data matrix.
+/// assert_eq!(
+///     data_set.data(),
+///     &array![
+///         [0, 0],
+///         [1, 0],
+///         [0, 1],
+///         [1, 1],
+///    ]
+/// );
+///
+/// // Check to cardinality.
+/// assert_eq!(data_set.cardinality(), &[2, 2]);
+///
+/// // Check to labels iterator.
+/// assert_eq!(
+///     data_set.labels_iter().collect::<Vec<_>>(),
+///     vec!["A", "B"]
+/// );
+///
+/// // Check to labels.
+/// assert_eq!(
+///     data_set.labels(),
+///     &[
+///         ("A".to_owned(), ["a", "b"].into_iter().map(|x| x.to_owned()).collect::<FxIndexSet<_>>()),
+///         ("B".to_owned(), ["c", "d"].into_iter().map(|x| x.to_owned()).collect()),
+///     ].into_iter().collect::<FxIndexMap<_, _>>()
+/// );
+/// ```
+///
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalDataSet {
     data: Array2<u8>,
@@ -26,11 +69,86 @@ pub struct CategoricalDataSet {
 }
 
 impl CategoricalDataSet {
+    /// Get the states of the variables.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use causal_hub::polars::prelude::*;
+    ///
+    /// // Create a data frame and convert to a data set.
+    /// let data_set: CategoricalDataSet = DataFrame::new(vec![
+    ///     Series::new("A", &["a", "b", "a", "b"]),
+    ///     Series::new("B", &["c", "c", "d", "d"]),
+    /// ]).unwrap().into();
+    ///
+    /// // Get the states of the variables.
+    /// assert_eq!(
+    ///     data_set.states(),
+    ///     &[
+    ///         ("A".to_owned(), ["a", "b"].into_iter().map(|x| x.to_owned()).collect::<FxIndexSet<_>>()),
+    ///         ("B".to_owned(), ["c", "d"].into_iter().map(|x| x.to_owned()).collect()),
+    ///     ].into_iter().collect::<FxIndexMap<_, _>>()
+    /// );
+    /// ```
+    ///
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
     }
 
+    /// Set the states of the variables.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use causal_hub::prelude::*;
+    /// use causal_hub::polars::prelude::*;
+    /// use ndarray::prelude::*;
+    ///
+    /// // Create a data frame and convert to a data set.
+    /// let data_set: CategoricalDataSet = DataFrame::new(vec![
+    ///     Series::new("A", &["a", "b", "a", "b"]),
+    ///     Series::new("B", &["c", "c", "d", "d"]),
+    /// ]).unwrap().into();
+    ///
+    /// // Set the states of the variables.
+    /// let data_set = data_set.with_states([
+    ///     ("A", vec!["a", "b", "c"]),
+    ///     ("B", vec!["c", "d"]),
+    /// ]);
+    ///
+    /// // Check to data matrix.
+    /// assert_eq!(
+    ///     data_set.data(),
+    ///     &array![
+    ///         [0, 0],
+    ///         [1, 0],
+    ///         [0, 1],
+    ///         [1, 1],
+    ///     ]
+    /// );
+    ///
+    /// // Check to cardinality.
+    /// assert_eq!(data_set.cardinality(), &[3, 2]);
+    ///
+    /// // Check to labels iterator.
+    /// assert_eq!(
+    ///     data_set.labels_iter().collect::<Vec<_>>(),
+    ///     vec!["A", "B"]
+    /// );
+    ///
+    /// // Check to labels.
+    /// assert_eq!(
+    ///     data_set.labels(),
+    ///     &[
+    ///         ("A".to_owned(), ["a", "b", "c"].into_iter().map(|x| x.to_owned()).collect::<FxIndexSet<_>>()),
+    ///         ("B".to_owned(), ["c", "d"].into_iter().map(|x| x.to_owned()).collect()),
+    ///     ].into_iter().collect::<FxIndexMap<_, _>>()
+    /// );
+    /// ```
+    ///
     pub fn with_states<I, J, K, V>(mut self, states: I) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -76,7 +194,7 @@ impl CategoricalDataSet {
     }
 
     #[inline]
-    pub fn cardinality(&self) -> &Vec<u8> {
+    pub fn cardinality(&self) -> &[u8] {
         &self.cardinality
     }
 }

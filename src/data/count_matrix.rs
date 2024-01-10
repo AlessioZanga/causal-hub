@@ -1,6 +1,62 @@
 use ndarray::prelude::*;
 
-use super::{CategoricalDataSet, DataSet, RavelMultiIndex};
+use super::{CategoricalDataSet, DataSet};
+
+#[derive(Clone, Debug)]
+struct RavelMultiIndex {
+    ravel: Vec<usize>,
+    size: usize,
+}
+
+impl RavelMultiIndex {
+    #[inline]
+    fn new<I>(cardinality: I) -> Self
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        // Collect items into array.
+        let cardinality = Vec::from_iter(cardinality);
+
+        // Assert non-empty.
+        assert!(
+            !cardinality.is_empty(),
+            "Ravel multi index must not be empty"
+        );
+        // Assert all strictly positive.
+        assert!(
+            cardinality.iter().all(|&x| x > 0),
+            "Ravel multi index must not be empty"
+        );
+
+        // Compute max size.
+        let size = cardinality.iter().product();
+
+        // Make ravel mutable.
+        let mut ravel = vec![1; cardinality.len()];
+
+        // From the end to the beginning of ravel ...
+        for i in (1..ravel.len()).rev() {
+            // ... compute the cumulative product.
+            ravel[i - 1] = ravel[i] * cardinality[i];
+        }
+
+        Self { ravel, size }
+    }
+
+    #[inline]
+    fn call<I>(&self, multi_index: I) -> usize
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        self.ravel.iter().zip(multi_index).map(|(i, j)| i * j).sum()
+    }
+
+    #[allow(clippy::len_without_is_empty)]
+    #[inline]
+    fn len(&self) -> usize {
+        self.size
+    }
+}
 
 /// Marginal counts of categorical variable.
 pub struct MarginalCountMatrix {
