@@ -3,10 +3,7 @@ use rayon::prelude::*;
 
 use super::MeekRules;
 use crate::{
-    graphs::{
-        DirectedGraph, Graph, PartiallyDirected, PartiallyDirectedGraph, UGraph, Undirected,
-        UndirectedGraph,
-    },
+    graphs::{Graph, PartiallyDirected, PartiallyDirectedGraph, Undirected, UndirectedGraph},
     stats::ConditionalIndependenceTest,
     types::{FxIndexSet, SepSets},
     Adj, E, L, V,
@@ -19,6 +16,7 @@ where
     T: ConditionalIndependenceTest,
 {
     test: &'a T,
+    max_c: usize,
 }
 
 impl<'a, T> PCStable<'a, T>
@@ -27,7 +25,18 @@ where
 {
     #[inline]
     pub const fn new(test: &'a T) -> Self {
-        Self { test }
+        // Initialize maximum size of conditioning set.
+        let max_c = usize::MAX;
+
+        Self { test, max_c }
+    }
+
+    #[inline]
+    pub const fn with_max_c(mut self, max_c: usize) -> Self {
+        // Set maximum size of conditioning set.
+        self.max_c = max_c;
+
+        self
     }
 
     pub fn skeleton<U>(&self) -> (U, SepSets)
@@ -43,7 +52,8 @@ where
         // Initialize size of conditioning set
         let mut c = 0;
 
-        while flag {
+        // While there exists at least one set of adjacents with cardinality `c` ...
+        while flag && c < self.max_c {
             // Unset the flag.
             flag = false;
 
@@ -90,16 +100,16 @@ where
         P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
     {
         // Perform skeleton discovery
-        let (g, sepsets): (UGraph, _) = self.skeleton();
+        let (g, sepsets): (P::UndirectedGraph, _) = self.skeleton();
         // Cast the graph to a partially directed graph
         let mut g = P::new(L!(g), E!(g).map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
             .flat_map(|y| {
-                std::iter::repeat(y)
-                    .zip(Adj!(g, y).combinations(2))
-                    .map(|(y, xz)| (xz[0], y, xz[1]))
+                Adj!(g, y)
+                    .combinations(2)
+                    .map(move |xz| (xz[0], y, xz[1]))
                     .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
             })
             .collect();
@@ -137,7 +147,8 @@ where
         // Initialize size of conditioning set
         let mut c = 0;
 
-        while flag {
+        // While there exists at least one set of adjacents with cardinality `c` ...
+        while flag && c < self.max_c {
             // Unset the flag.
             flag = false;
 
@@ -195,16 +206,16 @@ where
         P::UndirectedGraph: Sync,
     {
         // Perform skeleton discovery.
-        let (g, sepsets): (<P as DirectedGraph>::UndirectedGraph, _) = self.par_skeleton();
+        let (g, sepsets): (P::UndirectedGraph, _) = self.par_skeleton();
         // Cast the graph to a partially directed graph
         let mut g = P::new(L!(g), E!(g).map(|(x, y)| (&g[x], &g[y])));
 
         // Create the set of unshielded triples (x, y, z) in which (x, z) is not d-separated by y
         let triples: Vec<_> = V!(g)
             .flat_map(|y| {
-                std::iter::repeat(y)
-                    .zip(Adj!(g, y).combinations(2))
-                    .map(|(y, xz)| (xz[0], y, xz[1]))
+                Adj!(g, y)
+                    .combinations(2)
+                    .map(move |xz| (xz[0], y, xz[1]))
                     .filter(|&(x, y, z)| !g.has_edge(x, z) && !sepsets[&(x, z)].contains(&y))
             })
             .collect();
