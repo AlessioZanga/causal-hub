@@ -143,8 +143,14 @@ where
 
     #[inline]
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
-        // Phase I - Get all ancestors of Z.
+        // Make Z a set.
         let z: FxIndexSet<_> = z.iter().cloned().collect();
+        // If X or Y are in Z, then X and Y are independent.
+        if z.contains(&x) || z.contains(&y) {
+            return true;
+        }
+
+        // Phase I - Get all ancestors of Z.
         let an_z: FxIndexSet<_> = z.iter().flat_map(|&z| An!(self.g, z)).collect();
 
         // Phase II - Traverse the active trail from X to Y.
