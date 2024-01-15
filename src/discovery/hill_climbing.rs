@@ -53,7 +53,7 @@ where
     _d: PhantomData<D>,
     _k: PhantomData<K>,
     _t: PhantomData<T>,
-    g: Option<G>,
+    initial_graph: Option<G>,
     scoring_criterion: &'a S,
 }
 
@@ -94,7 +94,7 @@ where
             _d: PhantomData,
             _k: PhantomData,
             _t: PhantomData,
-            g: None,
+            initial_graph: None,
             scoring_criterion,
         }
     }
@@ -132,9 +132,9 @@ where
     /// ```
     ///
     #[inline]
-    pub fn with_initial_graph(mut self, g: G) -> Self {
+    pub fn with_initial_graph(mut self, initial_graph: G) -> Self {
         // Set initial graph.
-        self.g = Some(g);
+        self.initial_graph = Some(initial_graph);
 
         self
     }
@@ -342,7 +342,7 @@ where
     #[inline]
     fn init(&self, d: &D, k: &K) -> (ES, Vec<usize>, G) {
         // Check if initial graph has been provided.
-        let mut g = match self.g.as_ref() {
+        let mut g = match self.initial_graph.as_ref() {
             // If initial graph is provided ...
             Some(g) => g.clone(),
             // If no initial graph is provided, initialize an empty one.

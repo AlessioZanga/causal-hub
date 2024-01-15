@@ -3,32 +3,38 @@ use rayon::prelude::*;
 
 use super::MeekRules;
 use crate::{
-    graphs::{Graph, PartiallyDirected, PartiallyDirectedGraph, Undirected, UndirectedGraph},
+    graphs::{Graph, PartiallyDirected, PartiallyDirectedGraph},
     stats::ConditionalIndependenceTest,
     types::{FxIndexSet, SepSets},
-    Adj, E, L, V,
+    Adj, Ch, E, L, V,
 };
 
 #[derive(Clone, Debug)]
 
-pub struct PCStable<'a, T>
+pub struct PCStable<'a, T, P>
 where
     T: ConditionalIndependenceTest,
 {
     test: &'a T,
     max_c: usize,
+    initial_graph: Option<P>,
 }
 
-impl<'a, T> PCStable<'a, T>
+impl<'a, T, P> PCStable<'a, T, P>
 where
     T: ConditionalIndependenceTest + 'a,
+    P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
 {
     #[inline]
     pub const fn new(test: &'a T) -> Self {
         // Initialize maximum size of conditioning set.
         let max_c = usize::MAX;
 
-        Self { test, max_c }
+        Self {
+            test,
+            max_c,
+            initial_graph: None,
+        }
     }
 
     #[inline]
@@ -39,14 +45,45 @@ where
         self
     }
 
-    pub fn skeleton<U>(&self) -> (U, SepSets)
-    where
-        U: UndirectedGraph<Direction = Undirected>,
-    {
-        // Set complete graph
-        let mut g = U::complete(L!(self.test));
-        // Initialize set of separating sets
-        let mut sepsets = SepSets::default();
+    #[inline]
+    pub fn with_initial_graph(mut self, initial_graph: P) -> Self {
+        // Assert the initial graph has the same nodes as the test.
+        assert!(L!(initial_graph).eq(L!(self.test)));
+        // Set initial graph.
+        self.initial_graph = Some(initial_graph);
+
+        self
+    }
+
+    pub fn skeleton(&self) -> (P::UndirectedGraph, SepSets) {
+        // Initialize graph and set of separating sets.
+        let (mut g, mut sepsets) = match self.initial_graph {
+            // Set initial graph and set of separating sets depending on provided graph.
+            Some(ref g) => (
+                // Get the skeleton of the partially directed graph.
+                g.to_undirected(),
+                // Compute the sepsets from the v-structures the partially directed graph.
+                V!(g)
+                    .combinations(2)
+                    .filter_map(|xz| {
+                        let (x, z) = (xz[0], xz[1]);
+                        if !g.has_edge(x, z) {
+                            let (ch_x, ch_z) = (Ch!(g, x), Ch!(g, z));
+                            let y = FxIndexSet::<_>::from_iter(iter_set::intersection(ch_x, ch_z));
+                            Some(((x, z), y))
+                        } else {
+                            None
+                        }
+                    })
+                    .flat_map(|((x, z), y)| [((x, z), y.clone()), ((z, x), y)])
+                    .collect(),
+            ),
+            // Set complete graph and empty set of separating sets.
+            None => (
+                P::UndirectedGraph::complete(L!(self.test)),
+                SepSets::default(),
+            ),
+        };
         // Initialize stopping criterion
         let mut flag = true;
         // Initialize size of conditioning set
@@ -95,10 +132,7 @@ where
         (g, sepsets)
     }
 
-    pub fn call<P>(&self) -> P
-    where
-        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
-    {
+    pub fn call(&self) -> P {
         // Perform skeleton discovery
         let (g, sepsets): (P::UndirectedGraph, _) = self.skeleton();
         // Cast the graph to a partially directed graph
@@ -130,18 +164,41 @@ where
     }
 }
 
-impl<'a, T> PCStable<'a, T>
+impl<'a, T, P> PCStable<'a, T, P>
 where
     T: ConditionalIndependenceTest + Sync,
+    P: PartiallyDirectedGraph<Direction = PartiallyDirected> + Sync,
+    P::UndirectedGraph: Sync,
 {
-    pub fn par_skeleton<U>(&self) -> (U, SepSets)
-    where
-        U: UndirectedGraph<Direction = Undirected> + Sync,
-    {
-        // Set complete graph
-        let mut g = U::complete(L!(self.test));
-        // Initialize set of separating sets
-        let mut sepsets = SepSets::default();
+    pub fn par_skeleton(&self) -> (P::UndirectedGraph, SepSets) {
+        // Initialize graph and set of separating sets.
+        let (mut g, mut sepsets) = match self.initial_graph {
+            // Set initial graph and set of separating sets depending on provided graph.
+            Some(ref g) => (
+                // Get the skeleton of the partially directed graph.
+                g.to_undirected(),
+                // Compute the sepsets from the v-structures the partially directed graph.
+                V!(g)
+                    .combinations(2)
+                    .filter_map(|xz| {
+                        let (x, z) = (xz[0], xz[1]);
+                        if !g.has_edge(x, z) {
+                            let (ch_x, ch_z) = (Ch!(g, x), Ch!(g, z));
+                            let y = FxIndexSet::<_>::from_iter(iter_set::intersection(ch_x, ch_z));
+                            Some(((x, z), y))
+                        } else {
+                            None
+                        }
+                    })
+                    .flat_map(|((x, z), y)| [((x, z), y.clone()), ((z, x), y)])
+                    .collect(),
+            ),
+            // Set complete graph and empty set of separating sets.
+            None => (
+                P::UndirectedGraph::complete(L!(self.test)),
+                SepSets::default(),
+            ),
+        };
         // Initialize stopping criterion
         let mut flag = true;
         // Initialize size of conditioning set
@@ -200,11 +257,7 @@ where
         (g, sepsets)
     }
 
-    pub fn par_call<P>(&self) -> P
-    where
-        P: PartiallyDirectedGraph<Direction = PartiallyDirected>,
-        P::UndirectedGraph: Sync,
-    {
+    pub fn par_call(&self) -> P {
         // Perform skeleton discovery.
         let (g, sepsets): (P::UndirectedGraph, _) = self.par_skeleton();
         // Cast the graph to a partially directed graph
