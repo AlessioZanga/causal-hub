@@ -132,7 +132,7 @@ where
 /* Implement d-separation */
 impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, Directed>
 where
-    G: DirectedGraph<Direction = Directed> + MoralGraph,
+    G: DirectedGraph<Direction = Directed>,
 {
     type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
 
