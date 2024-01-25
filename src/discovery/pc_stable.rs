@@ -68,8 +68,13 @@ where
                     .filter_map(|xz| {
                         let (x, z) = (xz[0], xz[1]);
                         if !g.has_edge(x, z) {
-                            let (ch_x, ch_z) = (Ch!(g, x), Ch!(g, z));
-                            let y = FxIndexSet::<_>::from_iter(iter_set::intersection(ch_x, ch_z));
+                            let y = FxIndexSet::<_>::from_iter(
+                                // Adjacents of x or z that are not children of x and z.
+                                iter_set::difference(
+                                    iter_set::union(Adj!(g, x), Adj!(g, z)),
+                                    iter_set::intersection(Ch!(g, x), Ch!(g, z)),
+                                ),
+                            );
                             Some(((x, z), y))
                         } else {
                             None
@@ -183,8 +188,13 @@ where
                     .filter_map(|xz| {
                         let (x, z) = (xz[0], xz[1]);
                         if !g.has_edge(x, z) {
-                            let (ch_x, ch_z) = (Ch!(g, x), Ch!(g, z));
-                            let y = FxIndexSet::<_>::from_iter(iter_set::intersection(ch_x, ch_z));
+                            let y = FxIndexSet::<_>::from_iter(
+                                // Adjacents of x or z that are not children of x and z.
+                                iter_set::difference(
+                                    iter_set::union(Adj!(g, x), Adj!(g, z)),
+                                    iter_set::intersection(Ch!(g, x), Ch!(g, z)),
+                                ),
+                            );
                             Some(((x, z), y))
                         } else {
                             None
