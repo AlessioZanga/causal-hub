@@ -155,8 +155,8 @@ where
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
-            // ... if both edges are undirected ...
-            if g.has_undirected_edge(x, y) && g.has_undirected_edge(z, y) {
+            // ... if no edge has been oriented in the opposite direction ...
+            if !(g.has_directed_edge(y, x) || g.has_directed_edge(y, z)) {
                 // ... the triple is a v-structure.
                 g.set_directed_edge(x, y);
                 g.set_directed_edge(z, y);
@@ -164,7 +164,6 @@ where
         }
 
         // Orient edges according to orientation rules.
-
         MeekRules::apply_until_3(g)
     }
 }
@@ -285,8 +284,8 @@ where
 
         // For every unshielded triple ...
         for (x, y, z) in triples {
-            // ... if both edges are undirected ...
-            if g.has_undirected_edge(x, y) && g.has_undirected_edge(z, y) {
+            // ... if no edge has been oriented in the opposite direction ...
+            if !(g.has_directed_edge(y, x) || g.has_directed_edge(y, z)) {
                 // ... the triple is a v-structure.
                 g.set_directed_edge(x, y);
                 g.set_directed_edge(z, y);
@@ -294,7 +293,6 @@ where
         }
 
         // Orient edges according to orientation rules.
-
         MeekRules::apply_until_3(g)
     }
 }
