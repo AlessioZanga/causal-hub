@@ -3,7 +3,8 @@ use std::{collections::VecDeque, fmt::Debug};
 use super::MoralGraph;
 use crate::{
     graphs::{
-        algorithms::components::CC, Directed, DirectedGraph, Graph, Undirected, UndirectedGraph,
+        algorithms::components::CC, Directed, DirectedGraph, Graph, PartiallyDirected,
+        PartiallyDirectedGraph, Undirected, UndirectedGraph,
     },
     stats::{ConditionalIndependenceTest, GeneralizedConditionalIndependenceTest},
     types::FxIndexSet,
@@ -279,6 +280,415 @@ where
             // Check if X and Y are in the same set.
             union_find.contains(root_x, root_y)
         })
+    }
+}
+
+/* Implement m-separation */
+impl<'a, G> ConditionalIndependenceTest for GraphicalSeparation<'a, G, PartiallyDirected>
+where
+    G: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+{
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    #[inline]
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
+        // TODO: Implement more efficient non-generalized version.
+        GeneralizedConditionalIndependenceTest::call(self, [x], [y], z.iter().cloned())
+    }
+}
+
+impl<'a, G> GeneralizedConditionalIndependenceTest for GraphicalSeparation<'a, G, PartiallyDirected>
+where
+    G: PartiallyDirectedGraph<Direction = PartiallyDirected>,
+{
+    type LabelsIter<'b> = G::LabelsIter<'b> where G: 'b, Self: 'b;
+
+    #[inline]
+    fn labels_iter(&self) -> Self::LabelsIter<'_> {
+        L!(self.g)
+    }
+
+    // Based on the TESTSEP algorithm described in:
+    // van der Zander, B., Liśkiewicz, M., & Textor, J. (2019).
+    // Separators and Adjustment Sets in Causal Graphs: Complete Criteria and an Algorithmic Framework.
+    // Artificial Intelligence, 270, 1–40. https://doi.org/10.1016/j.artint.2018.12.006
+    fn call<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    where
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = usize>,
+        K: IntoIterator<Item = usize>,
+    {
+        // Check that X and Y are non-empty.
+        let x: FxIndexSet<_> = x.into_iter().collect();
+        let y: FxIndexSet<_> = y.into_iter().collect();
+        assert!(!x.is_empty() && !y.is_empty(), "X and Y must be non-empty");
+
+        // Check that X, Y and Z are disjoint, if not panic.
+        let z: FxIndexSet<_> = z.into_iter().collect();
+        assert!(
+            x.is_disjoint(&y) && y.is_disjoint(&z) && z.is_disjoint(&x),
+            "X, Y and Z must be disjoint sets"
+        );
+
+        // Edge types.
+        #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+        enum ET {
+            Incoming,
+            Outgoing,
+            Bidirected,
+            Undirected,
+        }
+
+        impl ET {
+            #[inline]
+            pub const fn reverse(self) -> ET {
+                match self {
+                    ET::Incoming => ET::Outgoing,
+                    ET::Outgoing => ET::Incoming,
+                    ET::Bidirected => ET::Bidirected,
+                    ET::Undirected => ET::Undirected,
+                }
+            }
+        }
+
+        // M-Connecting.
+        let is_m_connecting = |e: ET, m: usize, f: ET, z: &FxIndexSet<usize>| -> bool {
+            match (z.contains(&m), e, f) {
+                (false, ET::Incoming | ET::Bidirected, ET::Outgoing | ET::Undirected) => true,
+                (false, ET::Outgoing | ET::Undirected, _) => true,
+                (true, ET::Incoming | ET::Bidirected, ET::Incoming | ET::Bidirected) => true,
+                _ => false,
+            }
+        };
+
+        // P = { (<-, X) | X \in X }
+        let mut p: VecDeque<_> = x.iter().cloned().map(|x| (x, ET::Outgoing, x)).collect();
+        // Q = P
+        let mut q: FxIndexSet<_> = p.iter().cloned().collect();
+        // while P not empty do
+        // Let (e, T) be a (type of edge, node) pair of P
+        // Remove (e, T) from P
+        while let Some((s, e, t)) = p.pop_front() {
+            // if T \in Y then
+            if y.contains(&t) {
+                // return false
+                return false;
+            }
+            // for all adjacents M of T do
+            let pa_t = Pa!(self.g, t).map(|n| (t, ET::Outgoing, n));
+            let ch_t = Ch!(self.g, t).map(|n| (t, ET::Incoming, n));
+            let ne_t = Ne!(self.g, t).map(|n| (t, ET::Undirected, n));
+            // Let T and N be connected by edge f
+            for (_, f, n) in pa_t.chain(ch_t).chain(ne_t) {
+                // if (e, T, f) is *an m-connecting path segment* and (f, N) \not \in Q then
+                // INFO: Added check for s != n to avoid adding already visited nodes in case of undirected edges.
+                if is_m_connecting(e, t, f.reverse(), &z) && !q.contains(&(t, f, n)) && s != n {
+                    // Add (f, N) to P and Q
+                    p.push_back((t, f, n));
+                    q.insert((t, f, n));
+                }
+            }
+        }
+
+        // return true
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    #[test]
+    fn m_separation() {
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -> M.
+        g.add_directed_edge(0, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 1, &[]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T <- M.
+        g.add_directed_edge(1, 0);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 1, &[]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -- M.
+        g.add_undirected_edge(0, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 1, &[]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -> M -> O.
+        g.add_directed_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -> M <- I.
+        g.add_directed_edge(0, 1);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -> M -- U.
+        g.add_directed_edge(0, 1);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T <- M -> O.
+        g.add_directed_edge(1, 0);
+        g.add_directed_edge(1, 2);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T <- M -> I.
+        g.add_directed_edge(1, 0);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T <- M -- O.
+        g.add_directed_edge(1, 0);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -- M -> O.
+        g.add_undirected_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -- M -> I.
+        g.add_undirected_edge(0, 1);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph: T -- M -- O.
+        g.add_undirected_edge(0, 1);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       |
+        //       v
+        //  O <- M <- I
+        //
+        g.add_directed_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       |
+        //       v
+        //  O <- M <- I
+        //
+        g.add_directed_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       ^
+        //       |
+        //  O <- M <- I
+        //
+        g.add_directed_edge(1, 0);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       |
+        //       |
+        //  O <- M <- I
+        //
+        g.add_undirected_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       |
+        //       v
+        //  O <- M -- U
+        //       ^
+        //       |
+        //       I
+        //
+        g.add_directed_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       ^
+        //       |
+        //  O <- M -- U
+        //       ^
+        //       |
+        //       I
+        //
+        g.add_directed_edge(1, 0);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
+
+        // Create a partially directed graph.
+        let mut g = PGraph::empty(["T", "M", "O", "I", "B", "U"]);
+        // Add edges to the graph:
+        //
+        //       T
+        //       |
+        //       |
+        //  O <- M -- U
+        //       ^
+        //       |
+        //       I
+        //
+        g.add_undirected_edge(0, 1);
+        g.add_directed_edge(1, 2);
+        g.add_directed_edge(3, 1);
+        g.add_undirected_edge(1, 5);
+        // Build m-separation functor.
+        let q = GSeparation::new(&g);
+        // Test m-separation.
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 2, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 2, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 3, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 3, &[1]));
+        assert!(!ConditionalIndependenceTest::call(&q, 0, 5, &[]));
+        assert!(ConditionalIndependenceTest::call(&q, 0, 5, &[1]));
     }
 }
 
