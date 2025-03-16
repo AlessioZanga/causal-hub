@@ -54,6 +54,9 @@ impl DirectedGraph {
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
     pub fn has_edge(&self, x: usize, y: usize) -> bool {
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+
         self.adjacency_matrix[[x, y]]
     }
 
@@ -65,6 +68,9 @@ impl DirectedGraph {
     /// * `y` - The second vertex.
     ///
     pub fn add_edge(&mut self, x: usize, y: usize) {
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+
         self.adjacency_matrix[[x, y]] = true;
     }
 
@@ -76,6 +82,9 @@ impl DirectedGraph {
     /// * `y` - The second vertex.
     ///
     pub fn del_edge(&mut self, x: usize, y: usize) {
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+
         self.adjacency_matrix[[x, y]] = false;
     }
 }
