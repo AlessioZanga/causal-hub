@@ -2,9 +2,11 @@
 mod tests {
     use causal_hub_next::undirected_graph::UndirectedGraph;
 
+    const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
+
     #[test]
     fn test_has_edge() {
-        let mut graph = UndirectedGraph::new(5);
+        let mut graph = UndirectedGraph::new(&LABELS);
         graph.add_edge(0, 1);
         assert!(graph.has_edge(0, 1));
         assert!(graph.has_edge(1, 0));
@@ -13,7 +15,7 @@ mod tests {
 
     #[test]
     fn test_add_edge() {
-        let mut graph = UndirectedGraph::new(5);
+        let mut graph = UndirectedGraph::new(&LABELS);
         graph.add_edge(0, 1);
         assert!(graph.has_edge(0, 1));
         assert!(graph.has_edge(1, 0));
@@ -21,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_del_edge() {
-        let mut graph = UndirectedGraph::new(5);
+        let mut graph = UndirectedGraph::new(&LABELS);
         graph.add_edge(0, 1);
         graph.del_edge(0, 1);
         assert!(!graph.has_edge(0, 1));

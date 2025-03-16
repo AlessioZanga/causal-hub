@@ -3,6 +3,7 @@ use ndarray::Array2;
 /// A struct representing a directed graph using an adjacency matrix.
 ///
 pub struct DirectedGraph {
+    labels: Vec<String>,
     adjacency_matrix: Array2<bool>,
 }
 
@@ -11,24 +12,42 @@ impl DirectedGraph {
     ///
     /// # Arguments
     ///
-    /// * `size` - The number of nodes in the graph.
+    /// * `labels` - The labels of the vertices in the graph.
     ///
     /// # Returns
     ///
     /// A new `DirectedGraph` instance.
     ///
-    pub fn new(size: usize) -> Self {
+    pub fn new(labels: &[&str]) -> Self {
+        // Convert the array of string slices to a vector of strings.
+        let labels: Vec<_> = labels.iter().map(|s| s.to_string()).collect();
+        // Get the size of the graph from the number of labels.
+        let size = labels.len();
+        // Initialize the adjacency matrix with `false` values.
+        let adjacency_matrix = Array2::from_elem((size, size), false);
+
         Self {
-            adjacency_matrix: Array2::from_elem((size, size), false),
+            labels,
+            adjacency_matrix,
         }
     }
 
-    /// Checks if there is an edge between nodes `x` and `y`.
+    /// Returns the labels of the vertices in the graph.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the vector of labels.
+    ///
+    pub fn labels(&self) -> &Vec<String> {
+        &self.labels
+    }
+
+    /// Checks if there is an edge between vertices `x` and `y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - The first node.
-    /// * `y` - The second node.
+    /// * `x` - The first vertex.
+    /// * `y` - The second vertex.
     ///
     /// # Returns
     ///
@@ -38,23 +57,23 @@ impl DirectedGraph {
         self.adjacency_matrix[[x, y]]
     }
 
-    /// Adds an edge between nodes `x` and `y`.
+    /// Adds an edge between vertices `x` and `y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - The first node.
-    /// * `y` - The second node.
+    /// * `x` - The first vertex.
+    /// * `y` - The second vertex.
     ///
     pub fn add_edge(&mut self, x: usize, y: usize) {
         self.adjacency_matrix[[x, y]] = true;
     }
 
-    /// Removes the edge between nodes `x` and `y`.
+    /// Removes the edge between vertices `x` and `y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - The first node.
-    /// * `y` - The second node.
+    /// * `x` - The first vertex.
+    /// * `y` - The second vertex.
     ///
     pub fn del_edge(&mut self, x: usize, y: usize) {
         self.adjacency_matrix[[x, y]] = false;
