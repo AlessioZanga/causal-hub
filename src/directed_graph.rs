@@ -111,20 +111,21 @@ impl DirectedGraph {
     ///
     /// # Arguments
     ///
-    /// * `vertex` - The vertex for which to find the parents.
+    /// * `x` - The vertex for which to find the parents.
     ///
     /// # Returns
     ///
     /// A vector of indices representing the parents of the vertex.
     ///
-    pub fn parents(&self, vertex: usize) -> Vec<usize> {
+    pub fn parents(&self, x: usize) -> Vec<usize> {
         // Check if the vertex is within bounds.
-        assert!(vertex < self.labels.len(), "Vertex {} index out of bounds", vertex);
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
 
-        // Use functional code to find the parents.
         // Iterate over all vertices and filter the ones that are parents.
-        (0..self.labels.len())
-            .filter(|&i| self.adjacency_matrix[[i, vertex]])
+        self.adjacency_matrix
+            .column(x)
+            .indexed_iter()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
             .collect()
     }
 
@@ -132,20 +133,21 @@ impl DirectedGraph {
     ///
     /// # Arguments
     ///
-    /// * `vertex` - The vertex for which to find the children.
+    /// * `x` - The vertex for which to find the children.
     ///
     /// # Returns
     ///
     /// A vector of indices representing the children of the vertex.
     ///
-    pub fn children(&self, vertex: usize) -> Vec<usize> {
+    pub fn children(&self, x: usize) -> Vec<usize> {
         // Check if the vertex is within bounds.
-        assert!(vertex < self.labels.len(), "Vertex {} index out of bounds", vertex);
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
 
-        // Use functional code to find the children.
         // Iterate over all vertices and filter the ones that are children.
-        (0..self.labels.len())
-            .filter(|&i| self.adjacency_matrix[[vertex, i]])
+        self.adjacency_matrix
+            .row(x)
+            .indexed_iter()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
             .collect()
     }
 }
