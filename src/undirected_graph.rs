@@ -54,6 +54,7 @@ impl UndirectedGraph {
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
     pub fn has_edge(&self, x: usize, y: usize) -> bool {
+        // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
 
@@ -67,26 +68,44 @@ impl UndirectedGraph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
-    pub fn add_edge(&mut self, x: usize, y: usize) {
+    pub fn add_edge(&mut self, x: usize, y: usize) -> bool {
+        // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
 
+        // Check if the edge already exists.
+        if self.adjacency_matrix[[x, y]] {
+            return false;
+        }
+
+        // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
         self.adjacency_matrix[[y, x]] = true;
+
+        true
     }
 
-    /// Removes the edge between vertices `x` and `y`.
+    /// Deletes the edge between vertices `x` and `y`.
     ///
     /// # Arguments
     ///
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
-    pub fn del_edge(&mut self, x: usize, y: usize) {
+    pub fn del_edge(&mut self, x: usize, y: usize) -> bool {
+        // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
 
+        // Check if the edge exists.
+        if !self.adjacency_matrix[[x, y]] {
+            return false;
+        }
+
+        // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
         self.adjacency_matrix[[y, x]] = false;
+
+        true
     }
 }
