@@ -1,1 +1,12 @@
-This repository is empty. Any task executed on it should be considered a new capability and needs to be created.
+# Causal Hub Next
+
+Causal Hub Next is a Rust library designed to provide tools and utilities for working with causal inference and causal models.
+
+## Installation
+
+To use Causal Hub Next in your project, add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+causal-hub-next = "0.1.0"
+```

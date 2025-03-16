@@ -1,0 +1,7 @@
+[package]
+name = "causal-hub-next"
+version = "0.1.0"
+authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
+edition = "2018"
+
+[dependencies]
