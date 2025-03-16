@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ndarray::Array2;
+    use causal_hub_next::undirected_graph::UndirectedGraph;
 
     #[test]
     fn test_has_edge() {
