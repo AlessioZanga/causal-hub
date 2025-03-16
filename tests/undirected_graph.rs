@@ -71,4 +71,22 @@ mod tests {
         let mut graph = UndirectedGraph::new(&LABELS);
         graph.del_edge(1, 5);
     }
+
+    #[test]
+    fn test_neighbors() {
+        let mut graph = UndirectedGraph::new(&LABELS);
+        assert!(graph.add_edge(0, 1));
+        assert!(graph.add_edge(0, 2));
+        assert!(graph.add_edge(0, 3));
+        assert_eq!(graph.neighbors(0), vec![1, 2, 3]);
+        assert_eq!(graph.neighbors(1), vec![0]);
+        assert_eq!(graph.neighbors(4), vec![]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    fn test_neighbors_out_of_bounds() {
+        let graph = UndirectedGraph::new(&LABELS);
+        graph.neighbors(5);
+    }
 }

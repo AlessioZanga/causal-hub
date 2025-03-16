@@ -108,4 +108,25 @@ impl UndirectedGraph {
 
         true
     }
+
+    /// Returns the neighbors of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `vertex` - The vertex for which to find the neighbors.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the neighbors of the vertex.
+    ///
+    pub fn neighbors(&self, vertex: usize) -> Vec<usize> {
+        // Check if the vertex is within bounds.
+        assert!(vertex < self.labels.len(), "Vertex {} index out of bounds", vertex);
+
+        // Use functional code to find the neighbors.
+        // Iterate over all vertices and filter the ones that are neighbors.
+        (0..self.labels.len())
+            .filter(|&i| self.adjacency_matrix[[vertex, i]])
+            .collect()
+    }
 }
