@@ -106,4 +106,48 @@ impl DirectedGraph {
 
         true
     }
+
+    /// Returns the parents of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the parents.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the parents of the vertex.
+    ///
+    pub fn parents(&self, x: usize) -> Vec<usize> {
+        // Check if the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+
+        // Iterate over all vertices and filter the ones that are parents.
+        self.adjacency_matrix
+            .column(x)
+            .indexed_iter()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            .collect()
+    }
+
+    /// Returns the children of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the children.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the children of the vertex.
+    ///
+    pub fn children(&self, x: usize) -> Vec<usize> {
+        // Check if the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+
+        // Iterate over all vertices and filter the ones that are children.
+        self.adjacency_matrix
+            .row(x)
+            .indexed_iter()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            .collect()
+    }
 }
