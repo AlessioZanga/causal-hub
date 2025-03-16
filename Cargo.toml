@@ -5,3 +5,4 @@ authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 edition = "2018"
 
 [dependencies]
+ndarray = "0.15"
