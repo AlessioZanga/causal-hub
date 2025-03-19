@@ -69,12 +69,13 @@ impl Categorical {
             states.iter().skip(1).map(|(_, i)| i.len()).product(),
             "Product of the number of states of the remaining variables does not match the number of rows."
         );
-        // Assert the probabilities sum to one by row.
+        // Assert the probabilities sum to one by row, unless empty.
         assert!(
-            probabilities
-                .sum_axis(Axis(1))
-                .iter()
-                .all(|&i| relative_eq!(i, 1.0)),
+            probabilities.is_empty()
+                || probabilities
+                    .sum_axis(Axis(1))
+                    .iter()
+                    .all(|&i| relative_eq!(i, 1.0)),
             "Probabilities must sum to one by row."
         );
 

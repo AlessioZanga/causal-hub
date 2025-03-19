@@ -17,10 +17,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Variable labels must be unique.")]
     fn test_unique_labels() {
-        let variables = vec![
-            ("A", vec!["no", "yes"]),
-            ("A", vec!["no", "yes"]),
-        ];
+        let variables = vec![("A", vec!["no", "yes"]), ("A", vec!["no", "yes"])];
         let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
         Categorical::new(&variables, probabilities);
     }
@@ -28,19 +25,15 @@ mod tests {
     #[test]
     #[should_panic(expected = "Variable states must be unique.")]
     fn test_unique_states() {
-        let variables = vec![
-            ("A", vec!["no", "no"]),
-            ("B", vec!["no", "yes"]),
-        ];
+        let variables = vec![("A", vec!["no", "no"]), ("B", vec!["no", "yes"])];
         let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
         Categorical::new(&variables, probabilities);
     }
 
     #[test]
-    #[should_panic(expected = "Variable labels must be unique.")]
     fn test_empty_labels() {
         let variables = vec![];
-        let probabilities = array![];
+        let probabilities = array![[]];
         Categorical::new(&variables, probabilities);
     }
 }

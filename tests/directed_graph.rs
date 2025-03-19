@@ -114,7 +114,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Labels must be unique.")]
     fn test_empty_labels() {
         let labels: [&str; 0] = [];
         DirectedGraph::new(&labels);
