@@ -89,4 +89,18 @@ mod tests {
         let graph = UndirectedGraph::new(&LABELS);
         graph.neighbors(5);
     }
+
+    #[test]
+    #[should_panic(expected = "Labels must be unique.")]
+    fn test_unique_labels() {
+        let labels = ["A", "A", "B"];
+        UndirectedGraph::new(&labels);
+    }
+
+    #[test]
+    #[should_panic(expected = "Labels must be unique.")]
+    fn test_empty_labels() {
+        let labels: [&str; 0] = [];
+        UndirectedGraph::new(&labels);
+    }
 }
