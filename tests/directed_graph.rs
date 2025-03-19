@@ -105,4 +105,17 @@ mod tests {
         let graph = DirectedGraph::new(&LABELS);
         graph.children(5);
     }
+
+    #[test]
+    #[should_panic(expected = "Labels must be unique.")]
+    fn test_unique_labels() {
+        let labels = ["A", "A", "B"];
+        DirectedGraph::new(&labels);
+    }
+
+    #[test]
+    fn test_empty_labels() {
+        let labels: [&str; 0] = [];
+        DirectedGraph::new(&labels);
+    }
 }

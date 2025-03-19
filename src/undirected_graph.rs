@@ -1,9 +1,11 @@
 use ndarray::Array2;
 
+use crate::utils::FxIndexSet;
+
 /// A struct representing an undirected graph using an adjacency matrix.
 ///
 pub struct UndirectedGraph {
-    labels: Vec<String>,
+    labels: FxIndexSet<String>,
     adjacency_matrix: Array2<bool>,
 }
 
@@ -12,17 +14,20 @@ impl UndirectedGraph {
     ///
     /// # Arguments
     ///
-    /// * `labels` - The labels of the vertices in the graph.
+    /// * `labels` - The labels of the vertices in the graph. Must be unique.
     ///
     /// # Returns
     ///
     /// A new `UndirectedGraph` instance.
     ///
     pub fn new(labels: &[&str]) -> Self {
-        // Convert the array of string slices to a vector of strings.
-        let labels: Vec<_> = labels.iter().map(|s| s.to_string()).collect();
         // Get the size of the graph from the number of labels.
         let size = labels.len();
+        // Convert the array of string slices to a vector of strings.
+        let labels: FxIndexSet<_> = labels.iter().map(|s| s.to_string()).collect();
+        // Assert no duplicate labels.
+        assert_eq!(size, labels.len(), "Labels must be unique.");
+
         // Initialize the adjacency matrix with `false` values.
         let adjacency_matrix = Array2::from_elem((size, size), false);
 
@@ -38,7 +43,7 @@ impl UndirectedGraph {
     ///
     /// A reference to the vector of labels.
     ///
-    pub fn labels(&self) -> &Vec<String> {
+    pub fn labels(&self) -> &FxIndexSet<String> {
         &self.labels
     }
 
