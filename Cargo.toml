@@ -5,6 +5,4 @@ authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 edition = "2018"
 
 [dependencies]
-ndarray = "0.15"
-serde = { version = "1.0", features = ["derive"] }
-serde_derive = "1.0"
+ndarray = "0.16.1"
