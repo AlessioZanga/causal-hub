@@ -1,16 +1,17 @@
-use ndarray::Array2;
+use ndarray::prelude::*;
 
 use crate::utils::FxIndexSet;
 
-/// A struct representing an undirected graph using an adjacency matrix.
+/// A struct representing a directed graph using an adjacency matrix.
 ///
-pub struct UndirectedGraph {
+#[derive(Clone, Debug)]
+pub struct DirectedGraph {
     labels: FxIndexSet<String>,
     adjacency_matrix: Array2<bool>,
 }
 
-impl UndirectedGraph {
-    /// Creates a new undirected graph with the given size.
+impl DirectedGraph {
+    /// Creates an empty directed graph with the given labels.
     ///
     /// # Arguments
     ///
@@ -18,9 +19,9 @@ impl UndirectedGraph {
     ///
     /// # Returns
     ///
-    /// A new `UndirectedGraph` instance.
+    /// A new `DirectedGraph` instance.
     ///
-    pub fn new(labels: &[&str]) -> Self {
+    pub fn empty(labels: &[&str]) -> Self {
         // Get the size of the graph from the number of labels.
         let size = labels.len();
         // Convert the array of string slices to a vector of strings.
@@ -85,7 +86,6 @@ impl UndirectedGraph {
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
-        self.adjacency_matrix[[y, x]] = true;
 
         true
     }
@@ -109,30 +109,50 @@ impl UndirectedGraph {
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
-        self.adjacency_matrix[[y, x]] = false;
 
         true
     }
 
-    /// Returns the neighbors of a vertex.
+    /// Returns the parents of a vertex.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the neighbors.
+    /// * `x` - The vertex for which to find the parents.
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the neighbors of the vertex.
+    /// A vector of indices representing the parents of the vertex.
     ///
-    pub fn neighbors(&self, x: usize) -> Vec<usize> {
+    pub fn parents(&self, x: usize) -> Vec<usize> {
         // Check if the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
 
-        // Iterate over all vertices and filter the ones that are neighbors.
+        // Iterate over all vertices and filter the ones that are parents.
+        self.adjacency_matrix
+            .column(x)
+            .indexed_iter()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            .collect()
+    }
+
+    /// Returns the children of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the children.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the children of the vertex.
+    ///
+    pub fn children(&self, x: usize) -> Vec<usize> {
+        // Check if the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+
+        // Iterate over all vertices and filter the ones that are children.
         self.adjacency_matrix
             .row(x)
-            .into_iter()
-            .enumerate()
+            .indexed_iter()
             .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
             .collect()
     }

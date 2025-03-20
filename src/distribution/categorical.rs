@@ -1,23 +1,24 @@
 use approx::relative_eq;
-use ndarray::{Array2, Axis};
+use ndarray::prelude::*;
 
 use crate::utils::{FxIndexMap, FxIndexSet};
 
 /// A struct representing a categorical distribution.
 ///
-pub struct Categorical {
+#[derive(Clone, Debug)]
+pub struct CategoricalDistribution {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
-    probabilities: Array2<f64>,
+    parameters: Array2<f64>,
 }
 
-impl Categorical {
+impl CategoricalDistribution {
     /// Creates a new (conditional) categorical distribution.
     ///
     /// # Arguments
     ///
     /// * `variables` - The variables and their states. Must be unique.
-    /// * `probabilities` - The probabilities of the states.
+    /// * `parameters` - The probabilities of the states.
     ///
     /// # Notes
     ///
@@ -27,7 +28,7 @@ impl Categorical {
     ///
     /// A new `Categorical` instance.
     ///
-    pub fn new(variables: &[(&str, Vec<&str>)], probabilities: Array2<f64>) -> Self {
+    pub fn new(variables: &[(&str, Vec<&str>)], parameters: Array2<f64>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
             .iter()
@@ -59,20 +60,20 @@ impl Categorical {
 
         // Check if the number of states of the first variable matches the number of columns.
         assert_eq!(
-            probabilities.ncols(),
+            parameters.ncols(),
             states.get_index(0).map(|(_, i)| i.len()).unwrap_or(0),
             "Number of states of the first variable does not match the number of columns."
         );
         // Check if the product of the number of states of the remaining variables matches the number of rows.
         assert_eq!(
-            probabilities.nrows(),
+            parameters.nrows(),
             states.iter().skip(1).map(|(_, i)| i.len()).product(),
             "Product of the number of states of the remaining variables does not match the number of rows."
         );
         // Assert the probabilities sum to one by row, unless empty.
         assert!(
-            probabilities.is_empty()
-                || probabilities
+            parameters.is_empty()
+                || parameters
                     .sum_axis(Axis(1))
                     .iter()
                     .all(|&i| relative_eq!(i, 1.0)),
@@ -82,7 +83,7 @@ impl Categorical {
         Self {
             labels,
             states,
-            probabilities,
+            parameters,
         }
     }
 
@@ -112,7 +113,7 @@ impl Categorical {
     ///
     /// A reference to the array of probabilities.
     ///
-    pub fn probabilities(&self) -> &Array2<f64> {
-        &self.probabilities
+    pub fn parameters(&self) -> &Array2<f64> {
+        &self.parameters
     }
 }

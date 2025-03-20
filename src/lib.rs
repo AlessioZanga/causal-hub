@@ -1,4 +1,4 @@
-pub mod categorical;
-pub mod directed_graph;
-pub mod undirected_graph;
+pub mod dataset;
+pub mod distribution;
+pub mod graph;
 pub mod utils;
