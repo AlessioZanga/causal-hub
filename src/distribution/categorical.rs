@@ -9,6 +9,7 @@ use crate::utils::{FxIndexMap, FxIndexSet};
 pub struct CategoricalDistribution {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
+    cardinality: Array1<usize>,
     parameters: Array2<f64>,
 }
 
@@ -43,6 +44,8 @@ impl CategoricalDistribution {
             .collect();
         // Get the labels of the variables.
         let labels: FxIndexSet<_> = states.keys().cloned().collect();
+        // Get the cardinality of the set of states.
+        let cardinality: Array1<_> = states.values().map(|i| i.len()).collect();
         // Check variables labels are unique.
         assert_eq!(
             states.len(),
@@ -50,11 +53,9 @@ impl CategoricalDistribution {
             "Variable labels must be unique."
         );
         // Check variables states are unique.
-        assert!(
-            states
-                .values()
-                .map(|i| i.len())
-                .eq(variables.iter().map(|(_, i)| i.len())),
+        assert_eq!(
+            cardinality,
+            Array1::from_iter(variables.iter().map(|(_, i)| i.len())),
             "Variable states must be unique."
         );
 
@@ -67,7 +68,7 @@ impl CategoricalDistribution {
         // Check if the product of the number of states of the remaining variables matches the number of rows.
         assert_eq!(
             parameters.nrows(),
-            states.iter().skip(1).map(|(_, i)| i.len()).product(),
+            cardinality.iter().skip(1).product(),
             "Product of the number of states of the remaining variables does not match the number of rows."
         );
         // Assert the probabilities sum to one by row, unless empty.
@@ -83,6 +84,7 @@ impl CategoricalDistribution {
         Self {
             labels,
             states,
+            cardinality,
             parameters,
         }
     }
@@ -105,6 +107,16 @@ impl CategoricalDistribution {
     ///
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
+    }
+
+    /// Returns the cardinality of the set of states in the categorical distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the array of cardinality.
+    ///
+    pub fn cardinality(&self) -> &Array1<usize> {
+        &self.cardinality
     }
 
     /// Returns the probabilities of the states in the categorical distribution.
