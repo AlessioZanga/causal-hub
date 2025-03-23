@@ -49,12 +49,21 @@ impl CategoricalDistribution {
     ///
     /// # Arguments
     ///
-    /// * `variables` - The variables and their states. Must be unique.
+    /// * `variables` - The variables and their states.
     /// * `parameters` - The probabilities of the states.
     ///
     /// # Notes
     ///
     /// The first variable is the one conditioned on as P(X | Z).
+    ///
+    /// # Panics
+    ///
+    /// * If the variable labels are not unique.
+    /// * If the variable states are not unique.
+    /// * If the number of states of the first variable does not match the number of columns.
+    /// * If the product of the number of states of the remaining variables does not match the number of rows.
+    /// * If the probabilities do not sum to one by row, unless empty.
+    ///
     ///
     /// # Returns
     ///
@@ -178,6 +187,22 @@ pub type MLE<'a, P> = MaximumLikelihoodEstimator<'a, P>;
 impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
     type Distribution = CategoricalDistribution;
 
+    /// Fits the distribution to the data.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variable to fit.
+    /// * `z` - The variables to condition on.
+    ///
+    /// # Panics
+    ///
+    /// * If the variables to fit are not in the data.
+    /// * If the any of the marginal counts are zero.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalDistribution` instance.
+    ///
     fn fit(&self, x: usize, z: &[usize]) -> Self::Distribution {
         // Get the reference to the labels, states and cardinality.
         let (labels, states, cards) = (

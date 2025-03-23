@@ -33,6 +33,24 @@ impl Data for CategoricalData {
 }
 
 impl CategoricalData {
+    /// Creates a new categorical data.
+    ///
+    /// # Arguments
+    ///
+    /// * `variables` - The variables and their states.
+    /// * `values` - The values of the variables.
+    ///
+    /// # Panics
+    ///
+    /// * If the variable labels are not unique.
+    /// * If the variable states are not unique.
+    /// * If the number of variables is not equal to the number of columns.
+    /// * If the variables values are not smaller than the number of states.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalData` instance.
+    ///
     pub fn new(variables: &[(&str, Vec<&str>)], values: Array2<u8>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
@@ -63,6 +81,12 @@ impl CategoricalData {
             "Variable states must be unique."
         );
 
+        // Check if the number of variables is equal to the number of columns.
+        assert_eq!(
+            cardinality.len(),
+            values.ncols(),
+            "Number of variables must be equal to the number of columns."
+        );
         // Check if the maximum value of the values is less than the number of states.
         assert!(
             values.rows().into_iter().all(|row|
