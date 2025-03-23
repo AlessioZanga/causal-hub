@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::graph::directed::DirectedGraph;
+    use causal_hub_next::graph::DirectedGraph;
 
     const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
 

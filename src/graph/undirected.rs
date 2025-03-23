@@ -1,6 +1,6 @@
 use ndarray::prelude::*;
 
-use crate::utils::FxIndexSet;
+use crate::types::FxIndexSet;
 
 /// A struct representing an undirected graph using an adjacency matrix.
 ///

@@ -1,3 +1,3 @@
-mod dataset;
+mod data;
 mod distribution;
 mod graph;

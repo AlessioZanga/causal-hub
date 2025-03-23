@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::distribution::categorical::CategoricalDistribution;
+    use causal_hub_next::distribution::{CategoricalDistribution, Distribution};
     use ndarray::prelude::*;
 
     #[test]
