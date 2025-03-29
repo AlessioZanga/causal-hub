@@ -43,4 +43,25 @@ mod tests {
         let probabilities = array![[]];
         CategoricalDistribution::new(&variables, probabilities);
     }
+
+    #[test]
+    fn test_display() {
+        let variables = vec![("A", vec!["no", "yes"]), ("B", vec!["no", "yes"])];
+        let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
+        let categorical = CategoricalDistribution::new(&variables, probabilities);
+
+        assert_eq!(
+            categorical.to_string(),
+            concat!(
+                "----------------------\n",
+                "|      | A    |      |\n",
+                "| ---- | ---- | ---- |\n",
+                "| B    | no   | yes  |\n",
+                "| ---- | ---- | ---- |\n",
+                "| no   | 0.10 | 0.90 |\n",
+                "| yes  | 0.20 | 0.80 |\n",
+                "----------------------\n",
+            )
+        );
+    }
 }
