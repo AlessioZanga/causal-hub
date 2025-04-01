@@ -1,6 +1,6 @@
 use ndarray::prelude::*;
 
-use crate::utils::FxIndexSet;
+use crate::types::FxIndexSet;
 
 /// A struct representing an undirected graph using an adjacency matrix.
 ///
@@ -15,7 +15,11 @@ impl UndirectedGraph {
     ///
     /// # Arguments
     ///
-    /// * `labels` - The labels of the vertices in the graph. Must be unique.
+    /// * `labels` - The labels of the vertices in the graph.
+    ///
+    /// # Panics
+    ///
+    /// * If the labels are not unique.
     ///
     /// # Returns
     ///
@@ -55,6 +59,10 @@ impl UndirectedGraph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
+    /// # Panics
+    ///
+    /// * If the vertices are out of bounds.
+    ///
     /// # Returns
     ///
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
@@ -73,6 +81,14 @@ impl UndirectedGraph {
     ///
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
+    ///
+    /// # Panics
+    ///
+    /// * If the vertices are out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the edge was added, `false` if it already existed.
     ///
     pub fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
@@ -98,6 +114,14 @@ impl UndirectedGraph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
+    /// # Panics
+    ///
+    /// * If the vertices are out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the edge was deleted, `false` if it did not exist.
+    ///
     pub fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
@@ -120,6 +144,10 @@ impl UndirectedGraph {
     /// # Arguments
     ///
     /// * `x` - The vertex for which to find the neighbors.
+    ///
+    /// # Panics
+    ///
+    /// * If the vertex is out of bounds.
     ///
     /// # Returns
     ///

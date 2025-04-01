@@ -1,2 +1,5 @@
-pub mod directed;
-pub mod undirected;
+mod directed;
+pub use directed::*;
+
+mod undirected;
+pub use undirected::*;

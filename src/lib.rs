@@ -1,4 +1,5 @@
-pub mod dataset;
+pub mod data;
 pub mod distribution;
+pub mod estimator;
 pub mod graph;
-pub mod utils;
+pub mod types;

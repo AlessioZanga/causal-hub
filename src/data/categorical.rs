@@ -3,19 +3,54 @@ use std::fmt::Display;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use crate::utils::{FxIndexMap, FxIndexSet};
+use crate::types::{FxIndexMap, FxIndexSet};
 
-/// A struct representing a categorical dataset.
+use super::Data;
+
+/// A struct representing a categorical data.
 ///
 #[derive(Clone, Debug)]
-pub struct CategoricalDataset {
+pub struct CategoricalData {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Array1<usize>,
     values: Array2<u8>,
 }
 
-impl CategoricalDataset {
+impl Data for CategoricalData {
+    type Labels = FxIndexSet<String>;
+    type Values = Array2<u8>;
+
+    #[inline]
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Values {
+        &self.values
+    }
+}
+
+impl CategoricalData {
+    /// Creates a new categorical data.
+    ///
+    /// # Arguments
+    ///
+    /// * `variables` - The variables and their states.
+    /// * `values` - The values of the variables.
+    ///
+    /// # Panics
+    ///
+    /// * If the variable labels are not unique.
+    /// * If the variable states are not unique.
+    /// * If the number of variables is not equal to the number of columns.
+    /// * If the variables values are not smaller than the number of states.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalData` instance.
+    ///
     pub fn new(variables: &[(&str, Vec<&str>)], values: Array2<u8>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
@@ -46,6 +81,12 @@ impl CategoricalDataset {
             "Variable states must be unique."
         );
 
+        // Check if the number of variables is equal to the number of columns.
+        assert_eq!(
+            cardinality.len(),
+            values.ncols(),
+            "Number of variables must be equal to the number of columns."
+        );
         // Check if the maximum value of the values is less than the number of states.
         assert!(
             values.rows().into_iter().all(|row|
@@ -53,7 +94,7 @@ impl CategoricalDataset {
                     row.iter().zip(&cardinality)
                     // ... check if the value is less than the number of states.
                     .all(|(x, y)| (*x as usize) < *y)),
-            "Values must be less than the number of states."
+            "Variables values must be smaller than the number of states."
         );
 
         Self {
@@ -64,23 +105,14 @@ impl CategoricalDataset {
         }
     }
 
-    /// Returns the labels of the variables in the categorical distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the vector of labels.
-    ///
-    pub fn labels(&self) -> &FxIndexSet<String> {
-        &self.labels
-    }
-
     /// Returns the states of the variables in the categorical distribution.
     ///
     /// # Returns
     ///
     /// A reference to the vector of states.
     ///
-    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    #[inline]
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         &self.states
     }
 
@@ -90,22 +122,13 @@ impl CategoricalDataset {
     ///
     /// A reference to the array of cardinality.
     ///
-    pub fn cardinality(&self) -> &Array1<usize> {
+    #[inline]
+    pub const fn cardinality(&self) -> &Array1<usize> {
         &self.cardinality
-    }
-
-    /// Returns the values of the states in the categorical distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the array of values.
-    ///
-    pub fn values(&self) -> &Array2<u8> {
-        &self.values
     }
 }
 
-impl Display for CategoricalDataset {
+impl Display for CategoricalData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Get the maximum length of the labels and states.
         let n = self
@@ -118,25 +141,29 @@ impl Display for CategoricalDataset {
 
         // Write the top line.
         let hline = std::iter::repeat("-")
-            .take((n + 3) * self.labels.len() + 1)
+            .take((n + 3) * self.labels().len() + 1)
             .join("");
         writeln!(f, "{hline}")?;
         // Write the header.
-        let mut header = self.labels.iter().map(|x| format!("{x:width$}", width = n));
-        writeln!(f, "| {} |", header.join(" | "))?;
+        let header = self
+            .labels()
+            .iter()
+            .map(|x| format!("{x:width$}", width = n))
+            .join(" | ");
+        writeln!(f, "| {header} |")?;
         // Write the separator.
-        let separator = std::iter::repeat("-").take(n).join("");
-        let mut separator = std::iter::repeat(separator).take(self.labels.len());
-        writeln!(f, "| {} |", separator.join(" | "))?;
+        let separator = (0..self.labels().len()).map(|_| "-".repeat(n)).join(" | ");
+        writeln!(f, "| {separator} |")?;
         // Write the values.
         for row in self.values.rows() {
             // Get the state corresponding to the value.
-            let mut row = row
+            let row = row
                 .iter()
                 .enumerate()
-                .map(|(i, &x)| &self.states[i][x as usize])
-                .map(|x| format!("{x:width$}", width = n));
-            writeln!(f, "| {} |", row.join(" | "))?;
+                .map(|(i, &x)| &self.states()[i][x as usize])
+                .map(|x| format!("{x:width$}", width = n))
+                .join(" | ");
+            writeln!(f, "| {row} |")?;
         }
         // Write the bottom line.
         writeln!(f, "{hline}")
