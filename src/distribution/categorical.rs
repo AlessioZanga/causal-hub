@@ -23,7 +23,7 @@ pub struct CategoricalDistribution {
     parameters_size: usize,
     // Fitted statistics.
     sample_size: Option<usize>,
-    log_likelihood: Option<f64>,
+    sample_log_likelihood: Option<f64>,
 }
 
 impl Distribution for CategoricalDistribution {
@@ -135,7 +135,7 @@ impl CategoricalDistribution {
             parameters_size,
             // No estimated statistics, the distribution is not fitted.
             sample_size: None,
-            log_likelihood: None,
+            sample_log_likelihood: None,
         }
     }
 
@@ -172,15 +172,15 @@ impl CategoricalDistribution {
         self.sample_size
     }
 
-    /// Returns the log-likelihood of the data given the distribution, if any.
+    /// Returns the sample log-likelihood of the data given the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The log-likelihood of the data given the distribution.
+    /// The sample log-likelihood of the data given the distribution.
     ///
     #[inline]
-    pub const fn log_likelihood(&self) -> Option<f64> {
-        self.log_likelihood
+    pub const fn sample_log_likelihood(&self) -> Option<f64> {
+        self.sample_log_likelihood
     }
 }
 
@@ -241,16 +241,12 @@ impl Display for CategoricalDistribution {
             .zip(self.parameters().rows())
         {
             // Format the states for the current row.
-            let states = states
-                .iter()
-                .map(|x| format!("{x:width$}", width = n))
-                .join(" | ");
+            let states = states.iter().map(|x| format!("{x:width$}", width = n));
             // Format the parameter values for the current row.
-            let values = values
-                .iter()
-                .map(|x| format!("{:width$.2}", x, width = n))
-                .join(" | ");
-            writeln!(f, "| {states} | {values} |")?;
+            let values = values.iter().map(|x| format!("{:width$.2}", x, width = n));
+            // Join the states and values for the current row.
+            let states_values = states.chain(values).join(" | ");
+            writeln!(f, "| {states_values} |")?;
         }
 
         // Write the closing horizontal line for the table.
@@ -283,15 +279,21 @@ impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
     /// A new `CategoricalDistribution` instance.
     ///
     fn fit(&self, x: usize, z: &[usize]) -> Self::Distribution {
+        // Concat the variables to fit.
+        let x_z: Vec<_> = [x].iter().chain(z).cloned().collect();
+
+        // Assert X_Z does not contain duplicates.
+        assert!(
+            x_z.iter().unique().count() == x_z.len(),
+            "Variables to fit must be unique."
+        );
+
         // Get the reference to the labels, states and cardinality.
         let (labels, states, cards) = (
             self.data().labels(),
             self.data().states(),
             self.data().cardinality(),
         );
-
-        // Order the variables to fit.
-        let x_z: Vec<_> = [x].iter().chain(z).cloned().collect();
 
         // Assert the variables to fit are in the data.
         assert!(
@@ -301,11 +303,11 @@ impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
 
         // Get the cardinality of Z.
         let c_z: Array1<_> = z.iter().map(|&i| cards[i]).collect();
-        // Compute the strides of the parameters.
+        // Allocate the strides of the parameters.
         let mut s = vec![1; c_z.len()];
-        // Compute cumulative product (column-major strides).
-        for i in 1..c_z.len() {
-            s[i] = s[i - 1] * c_z[i - 1];
+        // Compute cumulative product in reverse order (row-major strides).
+        for i in (0..c_z.len().saturating_sub(1)).rev() {
+            s[i] = s[i + 1] * c_z[i + 1];
         }
 
         // Initialize the joint counts.
@@ -341,8 +343,9 @@ impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
         // Set the sample size.
         let sample_size = Some(n);
-        // Compute the log-likelihood, avoiding ln(0).
-        let log_likelihood = Some((n_xz * (&parameters + f64::MIN_POSITIVE).mapv(f64::ln)).sum());
+        // Compute the sample log-likelihood, avoiding ln(0).
+        let sample_log_likelihood =
+            Some((n_xz * (&parameters + f64::MIN_POSITIVE).mapv(f64::ln)).sum());
 
         // Subset the labels, states and cardinality.
         let labels = x_z.iter().map(|&i| labels[i].clone()).collect();
@@ -360,7 +363,7 @@ impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
             parameters,
             parameters_size,
             sample_size,
-            log_likelihood,
+            sample_log_likelihood,
         }
     }
 }
