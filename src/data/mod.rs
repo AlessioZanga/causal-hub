@@ -1,7 +1,7 @@
 mod categorical;
 pub use categorical::*;
 
-/// A trait for datas.
+/// A trait for data.
 pub trait Data {
     /// The type of the labels.
     type Labels;
