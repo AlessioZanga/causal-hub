@@ -3,8 +3,8 @@ mod tests {
     use approx::*;
     use causal_hub_next::{
         data::CategoricalData,
-        distribution::{Distribution, MLE},
-        estimator::Estimator,
+        distribution::Distribution,
+        estimator::{Estimator, MLE},
     };
     use ndarray::prelude::*;
 

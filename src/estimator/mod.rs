@@ -1,7 +1,7 @@
-mod maximum_likelihood;
 mod bayesian;
-pub use maximum_likelihood::*;
+mod maximum_likelihood;
 pub use bayesian::*;
+pub use maximum_likelihood::*;
 
 pub trait Estimator {
     /// The type of the output distribution.
