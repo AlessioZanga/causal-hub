@@ -145,24 +145,25 @@ impl Display for CategoricalData {
             .join("");
         writeln!(f, "{hline}")?;
         // Write the header.
-        let mut header = self
+        let header = self
             .labels()
             .iter()
-            .map(|x| format!("{x:width$}", width = n));
-        writeln!(f, "| {} |", header.join(" | "))?;
+            .map(|x| format!("{x:width$}", width = n))
+            .join(" | ");
+        writeln!(f, "| {header} |")?;
         // Write the separator.
-        let separator = std::iter::repeat("-").take(n).join("");
-        let mut separator = std::iter::repeat(separator).take(self.labels().len());
-        writeln!(f, "| {} |", separator.join(" | "))?;
+        let separator = (0..self.labels().len()).map(|_| "-".repeat(n)).join(" | ");
+        writeln!(f, "| {separator} |")?;
         // Write the values.
         for row in self.values.rows() {
             // Get the state corresponding to the value.
-            let mut row = row
+            let row = row
                 .iter()
                 .enumerate()
                 .map(|(i, &x)| &self.states()[i][x as usize])
-                .map(|x| format!("{x:width$}", width = n));
-            writeln!(f, "| {} |", row.join(" | "))?;
+                .map(|x| format!("{x:width$}", width = n))
+                .join(" | ");
+            writeln!(f, "| {row} |")?;
         }
         // Write the bottom line.
         writeln!(f, "{hline}")

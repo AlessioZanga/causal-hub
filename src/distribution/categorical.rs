@@ -186,55 +186,53 @@ impl CategoricalDistribution {
 
 impl Display for CategoricalDistribution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Get the maximum length of the labels and states.
+        // Determine the maximum width for formatting based on the labels and states.
         let n = self
             .labels()
             .iter()
             .chain(self.states().values().flatten())
             .map(|x| x.len())
             .max()
-            .unwrap_or(0);
-
-        // Get the maximum between the maximum length and the number of floats digits.
-        let n = usize::max(n, 4);
-
-        // Get the number of conditional variables.
+            .unwrap_or(0)
+            .max(4);
+        // Get the number of variables to condition on.
         let z = self.labels().len().saturating_sub(1);
-        // Get the number of states of the first variable.
+        // Get the number of states for the first variable.
         let s = self
             .states()
             .get_index(0)
             .map(|(_, i)| i.len())
             .unwrap_or(0);
 
-        // Write the top line.
-        let hline = std::iter::repeat("-").take((n + 3) * (z + s) + 1).join("");
+        // Create a horizontal line for table formatting.
+        let hline = "-".repeat((n + 3) * (z + s) + 1);
         writeln!(f, "{hline}")?;
-        // Write the header.
-        let mut header =
-            // Get the fillers for the conditional variables.
-            std::iter::repeat("").take(z)
-            // Get the first variable label.
-            .chain([self.labels().get_index(0).map(|x| x.as_str()).unwrap_or("")])
-            // Get the remaining variable states as fillers.
-            .chain(std::iter::repeat("").take(s.saturating_sub(1)))
-            .map(|x| format!("{x:width$}", width = n));
-        writeln!(f, "| {} |", header.join(" | "))?;
-        // Write the separator.
-        let separator = std::iter::repeat("-").take(n).join("");
-        let separator = std::iter::repeat(separator).take(z + s).join(" | ");
-        writeln!(f, "| {} |", separator)?;
-        // Write the conditional variables labels and the first variable states.
-        let mut header = self
+
+        // Create the header row for the table.
+        let header = std::iter::repeat("")
+            .take(z) // Empty columns for the conditioning variables.
+            .chain([self.labels().get_index(0).map(|x| x.as_str()).unwrap_or("")]) // Label for the first variable.
+            .chain(std::iter::repeat("").take(s.saturating_sub(1))) // Empty columns for remaining states.
+            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .join(" | ");
+        writeln!(f, "| {header} |")?;
+
+        // Create a separator row for the table.
+        let separator = std::iter::repeat("-".repeat(n)).take(z + s).join(" | ");
+        writeln!(f, "| {separator} |")?;
+
+        // Create the second header row with labels and states.
+        let header = self
             .labels()
             .iter()
-            .skip(1)
-            .chain(self.states().get_index(0).unwrap().1)
-            .map(|x| format!("{x:width$}", width = n));
-        writeln!(f, "| {} |", header.join(" | "))?;
-        // Write the separator.
-        writeln!(f, "| {} |", separator)?;
-        // Write body.
+            .skip(1) // Skip the first label.
+            .chain(self.states().get_index(0).unwrap().1) // Include states of the first variable.
+            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .join(" | ");
+        writeln!(f, "| {header} |")?;
+        writeln!(f, "| {separator} |")?;
+
+        // Iterate over the Cartesian product of states and parameter rows.
         for (states, values) in self
             .states()
             .values()
@@ -242,19 +240,20 @@ impl Display for CategoricalDistribution {
             .multi_cartesian_product()
             .zip(self.parameters().rows())
         {
-            // Format the parents configuration.
+            // Format the states for the current row.
             let states = states
                 .iter()
                 .map(|x| format!("{x:width$}", width = n))
                 .join(" | ");
-            // Format the parameters line.
+            // Format the parameter values for the current row.
             let values = values
                 .iter()
                 .map(|x| format!("{:width$.2}", x, width = n))
                 .join(" | ");
-            writeln!(f, "| {} | {} |", states, values)?;
+            writeln!(f, "| {states} | {values} |")?;
         }
-        // Write the bottom line.
+
+        // Write the closing horizontal line for the table.
         writeln!(f, "{hline}")?;
 
         Ok(())
