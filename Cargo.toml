@@ -9,4 +9,4 @@ approx = "^0.5"
 fxhash = "^0.2"
 indexmap = "^2.8"
 itertools = "^0.14"
-ndarray = "^0.16"
+ndarray = { version = "^0.16", features = ["approx"] }

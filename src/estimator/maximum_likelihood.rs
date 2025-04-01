@@ -40,3 +40,6 @@ where
         self.data
     }
 }
+
+/// A type alias for a maximum likelihood estimator.
+pub type MLE<'a, P> = MaximumLikelihoodEstimator<'a, P>;

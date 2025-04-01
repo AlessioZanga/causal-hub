@@ -1,4 +1,6 @@
+mod bayesian;
 mod maximum_likelihood;
+pub use bayesian::*;
 pub use maximum_likelihood::*;
 
 pub trait Estimator {
