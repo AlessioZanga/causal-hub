@@ -47,14 +47,14 @@ pub trait BayesianNetwork {
     fn parameters_size(&self) -> usize;
 
     /// Fits the Bayesian network to the data given the estimator and the graph.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `estimator` - The estimator used to fit.
     /// * `graph` - The graph to fit the estimator to.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// The fitted Bayesian network.
     ///
     fn from_estimator<E>(estimator: &E, graph: Self::Graph) -> Self

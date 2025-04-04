@@ -80,7 +80,7 @@ impl CategoricalDistribution {
     ///
     /// A new `Categorical` instance.
     ///
-    pub fn new(variables: &[(&str, Vec<&str>)], parameters: Array2<f64>) -> Self {
+    pub fn new(variables: Vec<(&str, Vec<&str>)>, parameters: Array2<f64>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
             .iter()

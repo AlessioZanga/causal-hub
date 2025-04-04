@@ -21,7 +21,7 @@ impl Graph for DirectedGraph {
     type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
 
-    fn empty(labels: &[&str]) -> Self {
+    fn empty(labels: Vec<&str>) -> Self {
         // Get the size of the graph from the number of labels.
         let size = labels.len();
         // Convert the array of string slices to a vector of strings.

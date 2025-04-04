@@ -25,7 +25,7 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn empty(labels: &[&str]) -> Self;
+    fn empty(labels: Vec<&str>) -> Self;
 
     /// Returns the labels of the vertices in the graph.
     ///
