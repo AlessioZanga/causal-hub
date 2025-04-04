@@ -1,9 +1,8 @@
-use fxhash::FxHashMap;
-
 use crate::{
     distribution::{CategoricalDistribution, Distribution},
     estimator::Estimator,
     graph::{DiGraph, Graph},
+    types::FxIndexMap,
 };
 
 use super::BayesianNetwork;
@@ -15,7 +14,7 @@ pub struct CategoricalBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
     /// The parameters of the distribution.
-    parameters: FxHashMap<String, CategoricalDistribution>,
+    parameters: FxIndexMap<String, CategoricalDistribution>,
 }
 
 /// A type alias for the categorical Bayesian network.
@@ -25,7 +24,7 @@ impl BayesianNetwork for CategoricalBayesianNetwork {
     type Labels = <Self::Graph as Graph>::Labels;
     type Graph = DiGraph;
     type Distribution = CategoricalDistribution;
-    type Parameters = FxHashMap<String, Self::Distribution>;
+    type Parameters = FxIndexMap<String, Self::Distribution>;
 
     #[inline]
     fn labels(&self) -> &Self::Labels {
