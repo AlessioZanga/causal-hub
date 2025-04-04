@@ -3,7 +3,10 @@ mod maximum_likelihood;
 pub use bayesian::*;
 pub use maximum_likelihood::*;
 
+/// A trait for estimators.
 pub trait Estimator {
+    /// The type of the data.
+    type Data;
     /// The type of the output distribution.
     type Distribution;
 
@@ -16,7 +19,7 @@ pub trait Estimator {
     ///
     /// # Returns
     ///
-    /// A distribution.
+    /// The fitted distribution.
     ///
     fn fit(&self, x: usize, z: &[usize]) -> Self::Distribution;
 }
