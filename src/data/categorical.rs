@@ -51,7 +51,7 @@ impl CategoricalData {
     ///
     /// A new `CategoricalData` instance.
     ///
-    pub fn new(variables: &[(&str, Vec<&str>)], values: Array2<u8>) -> Self {
+    pub fn new(variables: Vec<(&str, Vec<&str>)>, values: Array2<u8>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
             .iter()

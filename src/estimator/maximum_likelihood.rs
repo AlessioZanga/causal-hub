@@ -1,19 +1,13 @@
-use crate::distribution::Distribution;
-
 /// A struct representing a maximum likelihood estimator.
 #[derive(Clone, Debug)]
-pub struct MaximumLikelihoodEstimator<'a, P>
-where
-    P: Distribution,
-{
-    // Required fields.
-    data: &'a P::Data,
+pub struct MaximumLikelihoodEstimator<'a, D> {
+    data: &'a D,
 }
 
-impl<'a, P> MaximumLikelihoodEstimator<'a, P>
-where
-    P: Distribution,
-{
+/// A type alias for a maximum likelihood estimator.
+pub type MLE<'a, D> = MaximumLikelihoodEstimator<'a, D>;
+
+impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
     /// Creates a new maximum likelihood estimator.
     ///
     /// # Arguments
@@ -25,7 +19,7 @@ where
     /// A new `MaximumLikelihoodEstimator` instance.
     ///
     #[inline]
-    pub const fn new(data: &'a P::Data) -> Self {
+    pub const fn new(data: &'a D) -> Self {
         Self { data }
     }
 
@@ -36,10 +30,7 @@ where
     /// A reference to the data.
     ///
     #[inline]
-    pub const fn data(&self) -> &'a P::Data {
+    pub const fn data(&self) -> &'a D {
         self.data
     }
 }
-
-/// A type alias for a maximum likelihood estimator.
-pub type MLE<'a, P> = MaximumLikelihoodEstimator<'a, P>;

@@ -1,6 +1,10 @@
+use std::ops::Range;
+
 use ndarray::prelude::*;
 
 use crate::types::FxIndexSet;
+
+use super::Graph;
 
 /// A struct representing an undirected graph using an adjacency matrix.
 ///
@@ -10,22 +14,14 @@ pub struct UndirectedGraph {
     adjacency_matrix: Array2<bool>,
 }
 
-impl UndirectedGraph {
-    /// Creates an empty undirected graph with the given labels.
-    ///
-    /// # Arguments
-    ///
-    /// * `labels` - The labels of the vertices in the graph.
-    ///
-    /// # Panics
-    ///
-    /// * If the labels are not unique.
-    ///
-    /// # Returns
-    ///
-    /// A new `UndirectedGraph` instance.
-    ///
-    pub fn empty(labels: &[&str]) -> Self {
+/// A type alias for an undirected graph.
+pub type UnGraph = UndirectedGraph;
+
+impl Graph for UndirectedGraph {
+    type Labels = FxIndexSet<String>;
+    type Vertices = Range<usize>;
+
+    fn empty(labels: Vec<&str>) -> Self {
         // Get the size of the graph from the number of labels.
         let size = labels.len();
         // Convert the array of string slices to a vector of strings.
@@ -42,32 +38,15 @@ impl UndirectedGraph {
         }
     }
 
-    /// Returns the labels of the vertices in the graph.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the vector of labels.
-    ///
-    pub fn labels(&self) -> &FxIndexSet<String> {
+    fn labels(&self) -> &Self::Labels {
         &self.labels
     }
 
-    /// Checks if there is an edge between vertices `x` and `y`.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The first vertex.
-    /// * `y` - The second vertex.
-    ///
-    /// # Panics
-    ///
-    /// * If the vertices are out of bounds.
-    ///
-    /// # Returns
-    ///
-    /// `true` if there is an edge between `x` and `y`, `false` otherwise.
-    ///
-    pub fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn vertices(&self) -> Self::Vertices {
+        0..self.labels.len()
+    }
+
+    fn has_edge(&self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
@@ -75,22 +54,7 @@ impl UndirectedGraph {
         self.adjacency_matrix[[x, y]]
     }
 
-    /// Adds an edge between vertices `x` and `y`.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The first vertex.
-    /// * `y` - The second vertex.
-    ///
-    /// # Panics
-    ///
-    /// * If the vertices are out of bounds.
-    ///
-    /// # Returns
-    ///
-    /// `true` if the edge was added, `false` if it already existed.
-    ///
-    pub fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
@@ -107,22 +71,7 @@ impl UndirectedGraph {
         true
     }
 
-    /// Deletes the edge between vertices `x` and `y`.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The first vertex.
-    /// * `y` - The second vertex.
-    ///
-    /// # Panics
-    ///
-    /// * If the vertices are out of bounds.
-    ///
-    /// # Returns
-    ///
-    /// `true` if the edge was deleted, `false` if it did not exist.
-    ///
-    pub fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
         assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
@@ -138,7 +87,9 @@ impl UndirectedGraph {
 
         true
     }
+}
 
+impl UndirectedGraph {
     /// Returns the neighbors of a vertex.
     ///
     /// # Arguments

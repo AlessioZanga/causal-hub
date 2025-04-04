@@ -23,7 +23,7 @@ mod tests {
             [0, 1, 1],
             [1, 1, 1]
         ];
-        let data = CategoricalData::new(&variables, values);
+        let data = CategoricalData::new(variables, values);
 
         let estimator = MLE::new(&data);
 
@@ -124,7 +124,7 @@ mod tests {
             [0, 1, 1],
             [1, 1, 1]
         ];
-        let data = CategoricalData::new(&variables, values);
+        let data = CategoricalData::new(variables, values);
 
         let estimator = MLE::new(&data);
 
@@ -147,7 +147,7 @@ mod tests {
             [0, 1, 1],
             [1, 1, 1]
         ];
-        let data = CategoricalData::new(&variables, values);
+        let data = CategoricalData::new(variables, values);
 
         let estimator = MLE::new(&data);
 

@@ -29,7 +29,6 @@ pub struct CategoricalDistribution {
 impl Distribution for CategoricalDistribution {
     type Labels = FxIndexSet<String>;
     type Parameters = Array2<f64>;
-    type Data = CategoricalData;
 
     #[inline]
     fn labels(&self) -> &Self::Labels {
@@ -44,6 +43,15 @@ impl Distribution for CategoricalDistribution {
     #[inline]
     fn parameters_size(&self) -> usize {
         self.parameters_size
+    }
+
+    #[inline]
+    fn from_estimator<E>(estimator: &E, x: usize, z: &[usize]) -> Self
+    where
+        Self: Sized,
+        E: Estimator<Distribution = Self>,
+    {
+        estimator.fit(x, z)
     }
 }
 
@@ -72,7 +80,7 @@ impl CategoricalDistribution {
     ///
     /// A new `Categorical` instance.
     ///
-    pub fn new(variables: &[(&str, Vec<&str>)], parameters: Array2<f64>) -> Self {
+    pub fn new(variables: Vec<(&str, Vec<&str>)>, parameters: Array2<f64>) -> Self {
         // Get the states of the variables.
         let states: FxIndexMap<_, FxIndexSet<_>> = variables
             .iter()
@@ -256,7 +264,8 @@ impl Display for CategoricalDistribution {
     }
 }
 
-impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
+impl<'a> Estimator for MLE<'a, CategoricalData> {
+    type Data = CategoricalData;
     type Distribution = CategoricalDistribution;
 
     /// Fits the distribution to the data.
@@ -366,7 +375,9 @@ impl<'a> Estimator for MLE<'a, CategoricalDistribution> {
     }
 }
 
-impl<'a> Estimator for BE<'a, CategoricalDistribution> {
+// NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
+impl<'a> Estimator for BE<'a, CategoricalData, f64> {
+    type Data = CategoricalData;
     type Distribution = CategoricalDistribution;
 
     /// Fits the distribution to the data.
@@ -439,10 +450,13 @@ impl<'a> Estimator for BE<'a, CategoricalDistribution> {
         let n_xz = n_xz.mapv(|x| x as f64);
         let n_z = n_z.mapv(|x| x as f64);
 
-        // Get the prior parameter.
-        let a = self.alpha();
+        // Align the marginal counts axes.
+        let n_z = n_z.insert_axis(Axis(1));
+
+        // Get the prior, as the alpha of the Dirichlet distribution.
+        let alpha = *self.prior_distribution();
         // Compute the parameters by normalizing the counts with the prior.
-        let parameters = (&n_xz + a) / (n_z.insert_axis(Axis(1)) + a * cards[x] as f64);
+        let parameters = (&n_xz + alpha) / (n_z + alpha * cards[x] as f64);
         // Compute the parameters size.
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
         // Set the sample size.

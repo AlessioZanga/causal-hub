@@ -11,7 +11,7 @@ mod tests {
             ("C", vec!["no", "yes"]),
         ];
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
-        let categorical = CategoricalData::new(&variables, values.clone());
+        let categorical = CategoricalData::new(variables, values.clone());
 
         assert!(categorical.labels().iter().eq(["A", "B", "C"]));
         assert!(categorical
@@ -29,7 +29,7 @@ mod tests {
             ("C", vec!["no", "yes"]),
         ];
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
-        let categorical = CategoricalData::new(&variables, values);
+        let categorical = CategoricalData::new(variables, values);
 
         assert_eq!(
             format!("{}", categorical),
