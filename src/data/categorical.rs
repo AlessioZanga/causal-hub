@@ -1,9 +1,13 @@
-use std::fmt::Display;
+use std::{fmt::Display, io::Read};
 
+use csv::Reader;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::{
+    io::FromCsvReader,
+    types::{FxIndexMap, FxIndexSet},
+};
 
 use super::Data;
 
@@ -167,5 +171,93 @@ impl Display for CategoricalData {
         }
         // Write the bottom line.
         writeln!(f, "{hline}")
+    }
+}
+
+impl FromCsvReader for CategoricalData {
+    /// Reads a CSV file and returns a new `CategoricalData` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A CSV reader from the `csv` crate.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalData` instance.
+    ///
+    fn from_csv_reader<R: Read>(mut reader: Reader<R>) -> Self {
+        // Assert that the reader has headers.
+        assert!(reader.has_headers(), "Failed to read the headers.");
+        // Read the headers.
+        let labels: FxIndexSet<_> = reader
+            .headers()
+            .expect("Failed to read the headers.")
+            .into_iter()
+            .map(|x| x.to_owned())
+            .collect();
+
+        // Read the records.
+        // NOTE: One could improve this implementation
+        //       by mapping the strings to u8 directly.
+        let values: Array1<_> = reader
+            .into_records()
+            .enumerate()
+            .map(|(i, row)| {
+                // Get the record row.
+                let row = row.expect(&format!("Failed to read line number {}.", i + 1));
+                // Get the record values and convert to strings.
+                let row = row.into_iter().map(|x| x.to_owned());
+                // Assert no empty (missing) values.
+                let row: Vec<_> = row
+                    .inspect(|x| {
+                        assert!(
+                            !x.is_empty(),
+                            "Failed to read empty value at line number {}.",
+                            i + 1
+                        );
+                    })
+                    .collect();
+                // Collect the values.
+                row
+            })
+            .flatten()
+            .collect();
+        // Get the number of rows and columns.
+        let ncols = labels.len();
+        let nrows = values.len() / ncols;
+        // Allocate the values.
+        let values = values
+            .into_shape_with_order((nrows, ncols))
+            .expect("Failed to rearrange values to the correct shape.");
+
+        // Get the states of the variables.
+        let states: FxIndexMap<_, FxIndexSet<_>> = labels
+            .iter()
+            .zip(values.columns())
+            .map(|(i, j)| {
+                (
+                    // Convert the variable label to a string.
+                    i.to_owned(),
+                    // Convert the variable states to a set of strings.
+                    j.iter().map(|k| k.to_owned()).collect(),
+                )
+            })
+            .collect();
+
+        // Get the cardinality of the set of states.
+        let cardinality: Array1<_> = states.values().map(|i| i.len()).collect();
+
+        // Map the values to the states indexes.
+        let values: Array2<_> = Array2::from_shape_fn(values.dim(), |(i, j)| {
+            // Get the state corresponding to the value.
+            states[j].get_index_of(&values[[i, j]]).unwrap() as u8
+        });
+
+        CategoricalData {
+            labels,
+            states,
+            cardinality,
+            values,
+        }
     }
 }
