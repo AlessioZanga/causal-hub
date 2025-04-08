@@ -1,42 +1,26 @@
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Debug)]
-pub struct BayesianEstimator<'a, D, Pi> {
-    data: &'a D,
-    prior_distribution: Pi,
+pub struct BayesianEstimator<Pi> {
+    prior: Pi,
 }
 
 /// A type alias for a bayesian estimator.
-pub type BE<'a, D, Pi> = BayesianEstimator<'a, D, Pi>;
+pub type BE<Pi> = BayesianEstimator<Pi>;
 
-impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
+impl<Pi> BayesianEstimator<Pi> {
     /// Creates a new Bayesian estimator.
     ///
     /// # Arguments
     ///
-    /// * `data` - The data to fit the estimator to.
-    /// * `prior_distribution` - The prior distribution parameter.
+    /// * `prior` - The prior distribution.
     ///
     /// # Returns
     ///
     /// A new `BayesianEstimator` instance.
     ///
     #[inline]
-    pub const fn new(data: &'a D, prior_distribution: Pi) -> Self {
-        Self {
-            data,
-            prior_distribution,
-        }
-    }
-
-    /// Returns a reference to the data.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the data.
-    ///
-    #[inline]
-    pub const fn data(&self) -> &'a D {
-        self.data
+    pub const fn new(prior: Pi) -> Self {
+        Self { prior }
     }
 
     /// Returns the prior distribution.
@@ -46,7 +30,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
     /// A reference to the prior.
     ///
     #[inline]
-    pub const fn prior_distribution(&self) -> &Pi {
-        &self.prior_distribution
+    pub const fn prior(&self) -> &Pi {
+        &self.prior
     }
 }

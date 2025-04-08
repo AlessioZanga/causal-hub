@@ -17,7 +17,36 @@ pub struct UndirectedGraph {
 /// A type alias for an undirected graph.
 pub type UnGraph = UndirectedGraph;
 
-impl Graph for UndirectedGraph {
+impl UnGraph {
+    /// Returns the neighbors of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the neighbors.
+    ///
+    /// # Panics
+    ///
+    /// * If the vertex is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the neighbors of the vertex.
+    ///
+    pub fn neighbors(&self, x: usize) -> Vec<usize> {
+        // Check if the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+
+        // Iterate over all vertices and filter the ones that are neighbors.
+        self.adjacency_matrix
+            .row(x)
+            .into_iter()
+            .enumerate()
+            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            .collect()
+    }
+}
+
+impl Graph for UnGraph {
     type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
 
@@ -86,34 +115,5 @@ impl Graph for UndirectedGraph {
         self.adjacency_matrix[[y, x]] = false;
 
         true
-    }
-}
-
-impl UndirectedGraph {
-    /// Returns the neighbors of a vertex.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The vertex for which to find the neighbors.
-    ///
-    /// # Panics
-    ///
-    /// * If the vertex is out of bounds.
-    ///
-    /// # Returns
-    ///
-    /// A vector of indices representing the neighbors of the vertex.
-    ///
-    pub fn neighbors(&self, x: usize) -> Vec<usize> {
-        // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-
-        // Iterate over all vertices and filter the ones that are neighbors.
-        self.adjacency_matrix
-            .row(x)
-            .into_iter()
-            .enumerate()
-            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
-            .collect()
     }
 }

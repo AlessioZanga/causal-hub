@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 
 use crate::{
     data::{CategoricalData, Data},
-    estimator::{Estimator, BE, MLE},
+    estimator::{CPDEstimator, BE, MLE},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -15,7 +15,7 @@ use super::Distribution;
 /// A struct representing a categorical distribution.
 ///
 #[derive(Clone, Debug)]
-pub struct CategoricalDistribution {
+pub struct CategoricalConditionalProbabilityDistribution {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Array1<usize>,
@@ -26,37 +26,11 @@ pub struct CategoricalDistribution {
     sample_log_likelihood: Option<f64>,
 }
 
-impl Distribution for CategoricalDistribution {
-    type Labels = FxIndexSet<String>;
-    type Parameters = Array2<f64>;
+/// A type alias for a categorical conditional probability distribution.
+pub type CategoricalCPD = CategoricalConditionalProbabilityDistribution;
 
-    #[inline]
-    fn labels(&self) -> &Self::Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn parameters(&self) -> &Self::Parameters {
-        &self.parameters
-    }
-
-    #[inline]
-    fn parameters_size(&self) -> usize {
-        self.parameters_size
-    }
-
-    #[inline]
-    fn from_estimator<E>(estimator: &E, x: usize, z: &[usize]) -> Self
-    where
-        Self: Sized,
-        E: Estimator<Distribution = Self>,
-    {
-        estimator.fit(x, z)
-    }
-}
-
-impl CategoricalDistribution {
-    /// Creates a new (conditional) categorical distribution.
+impl CategoricalCPD {
+    /// Creates a new categorical conditional probability distribution.
     ///
     /// # Arguments
     ///
@@ -78,7 +52,7 @@ impl CategoricalDistribution {
     ///
     /// # Returns
     ///
-    /// A new `Categorical` instance.
+    /// A new `CategoricalCPD` instance.
     ///
     pub fn new(variables: Vec<(&str, Vec<&str>)>, parameters: Array2<f64>) -> Self {
         // Get the states of the variables.
@@ -192,7 +166,7 @@ impl CategoricalDistribution {
     }
 }
 
-impl Display for CategoricalDistribution {
+impl Display for CategoricalCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Determine the maximum width for formatting based on the labels and states.
         let n = self
@@ -217,16 +191,15 @@ impl Display for CategoricalDistribution {
         writeln!(f, "{hline}")?;
 
         // Create the header row for the table.
-        let header = std::iter::repeat("")
-            .take(z) // Empty columns for the conditioning variables.
+        let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
             .chain([self.labels().get_index(0).map(|x| x.as_str()).unwrap_or("")]) // Label for the first variable.
-            .chain(std::iter::repeat("").take(s.saturating_sub(1))) // Empty columns for remaining states.
+            .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining states.
             .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
 
         // Create a separator row for the table.
-        let separator = std::iter::repeat("-".repeat(n)).take(z + s).join(" | ");
+        let separator = std::iter::repeat_n("-".repeat(n), z + s).join(" | ");
         writeln!(f, "| {separator} |")?;
 
         // Create the second header row with labels and states.
@@ -264,27 +237,28 @@ impl Display for CategoricalDistribution {
     }
 }
 
-impl<'a> Estimator for MLE<'a, CategoricalData> {
-    type Data = CategoricalData;
-    type Distribution = CategoricalDistribution;
+impl Distribution for CategoricalCPD {
+    type Labels = FxIndexSet<String>;
+    type Parameters = Array2<f64>;
 
-    /// Fits the distribution to the data.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Panics
-    ///
-    /// * If the variables to fit are not in the data.
-    /// * If the any of the marginal counts are zero.
-    ///
-    /// # Returns
-    ///
-    /// A new `CategoricalDistribution` instance.
-    ///
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Distribution {
+    #[inline]
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn parameters(&self) -> &Self::Parameters {
+        &self.parameters
+    }
+
+    #[inline]
+    fn parameters_size(&self) -> usize {
+        self.parameters_size
+    }
+}
+
+impl CPDEstimator<CategoricalData, CategoricalCPD> for MLE {
+    fn fit(&self, data: &CategoricalData, x: usize, z: &[usize]) -> CategoricalCPD {
         // Concat the variables to fit.
         let x_z: Vec<_> = [x].iter().chain(z).cloned().collect();
 
@@ -295,11 +269,7 @@ impl<'a> Estimator for MLE<'a, CategoricalData> {
         );
 
         // Get the reference to the labels, states and cardinality.
-        let (labels, states, cards) = (
-            self.data().labels(),
-            self.data().states(),
-            self.data().cardinality(),
-        );
+        let (labels, states, cards) = (data.labels(), data.states(), data.cardinality());
 
         // Assert the variables to fit are in the data.
         assert!(
@@ -320,7 +290,7 @@ impl<'a> Estimator for MLE<'a, CategoricalData> {
         let mut n_xz: Array2<usize> = Array::zeros((c_z.product(), cards[x]));
 
         // Count the occurrences of the states.
-        self.data().values().rows().into_iter().for_each(|row| {
+        data.values().rows().into_iter().for_each(|row| {
             // Get the value of X as index.
             let idx_x = row[x] as usize;
             // Get the value of Z as index using the strides.
@@ -334,7 +304,8 @@ impl<'a> Estimator for MLE<'a, CategoricalData> {
         // Assert the marginal counts are not zero.
         assert!(
             n_z.iter().all(|&i| i > 0),
-            "Marginal counts must be non-zero."
+            "Failed to get non-zero counts for variable '{}'.",
+            labels[x]
         );
         // Compute the sample size.
         let n = n_z.sum();
@@ -363,7 +334,7 @@ impl<'a> Estimator for MLE<'a, CategoricalData> {
             .collect();
         let cardinality = x_z.iter().map(|&i| cards[i]).collect();
 
-        CategoricalDistribution {
+        CategoricalCPD {
             labels,
             states,
             cardinality,
@@ -376,27 +347,8 @@ impl<'a> Estimator for MLE<'a, CategoricalData> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl<'a> Estimator for BE<'a, CategoricalData, f64> {
-    type Data = CategoricalData;
-    type Distribution = CategoricalDistribution;
-
-    /// Fits the distribution to the data.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Panics
-    ///
-    /// * If the variables to fit are not in the data.
-    /// * If the any of the marginal counts are zero.
-    ///
-    /// # Returns
-    ///
-    /// A new `CategoricalDistribution` instance.
-    ///
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Distribution {
+impl CPDEstimator<CategoricalData, CategoricalCPD> for BE<f64> {
+    fn fit(&self, data: &CategoricalData, x: usize, z: &[usize]) -> CategoricalCPD {
         // Concat the variables to fit.
         let x_z: Vec<_> = [x].iter().chain(z).cloned().collect();
 
@@ -407,11 +359,7 @@ impl<'a> Estimator for BE<'a, CategoricalData, f64> {
         );
 
         // Get the reference to the labels, states and cardinality.
-        let (labels, states, cards) = (
-            self.data().labels(),
-            self.data().states(),
-            self.data().cardinality(),
-        );
+        let (labels, states, cards) = (data.labels(), data.states(), data.cardinality());
 
         // Assert the variables to fit are in the data.
         assert!(
@@ -432,7 +380,7 @@ impl<'a> Estimator for BE<'a, CategoricalData, f64> {
         let mut n_xz: Array2<usize> = Array::zeros((c_z.product(), cards[x]));
 
         // Count the occurrences of the states.
-        self.data().values().rows().into_iter().for_each(|row| {
+        data.values().rows().into_iter().for_each(|row| {
             // Get the value of X as index.
             let idx_x = row[x] as usize;
             // Get the value of Z as index using the strides.
@@ -454,7 +402,7 @@ impl<'a> Estimator for BE<'a, CategoricalData, f64> {
         let n_z = n_z.insert_axis(Axis(1));
 
         // Get the prior, as the alpha of the Dirichlet distribution.
-        let alpha = *self.prior_distribution();
+        let alpha = *self.prior();
         // Compute the parameters by normalizing the counts with the prior.
         let parameters = (&n_xz + alpha) / (n_z + alpha * cards[x] as f64);
         // Compute the parameters size.
@@ -473,7 +421,7 @@ impl<'a> Estimator for BE<'a, CategoricalData, f64> {
             .collect();
         let cardinality = x_z.iter().map(|&i| cards[i]).collect();
 
-        CategoricalDistribution {
+        CategoricalCPD {
             labels,
             states,
             cardinality,

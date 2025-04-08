@@ -1,18 +1,14 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::estimator::Estimator;
+use crate::{graph::DiGraph, types::FxIndexMap};
 
 /// A trait for Bayesian networks.
 pub trait BayesianNetwork {
     /// The type of the labels.
     type Labels;
-    /// The type of the graph.
-    type Graph;
-    /// The type of the distribution.
-    type Distribution;
-    /// The type of the parameters.
-    type Parameters;
+    /// The type of the CPD.
+    type CPD;
 
     /// Returns the labels of the variables.
     ///
@@ -28,15 +24,15 @@ pub trait BayesianNetwork {
     ///
     /// A reference to the graph.
     ///
-    fn graph(&self) -> &Self::Graph;
+    fn graph(&self) -> &DiGraph;
 
-    /// Returns the parameters.
+    /// Returns the a map labels-distributions.
     ///
     /// # Returns
     ///
-    /// A reference to the parameters.
+    /// A reference to the cdps.
     ///
-    fn parameters(&self) -> &Self::Parameters;
+    fn cdps(&self) -> &FxIndexMap<String, Self::CPD>;
 
     /// Returns the parameters size.
     ///
@@ -46,18 +42,16 @@ pub trait BayesianNetwork {
     ///
     fn parameters_size(&self) -> usize;
 
-    /// Fits the Bayesian network to the data given the estimator and the graph.
+    /// Constructor of the Bayesian network given the graph and the parameters.
     ///
     /// # Arguments
     ///
-    /// * `estimator` - The estimator used to fit.
-    /// * `graph` - The graph to fit the estimator to.
+    /// * `graph` - The underlying graph.
+    /// * `cdps` - The map of labels-distributions.
     ///
     /// # Returns
     ///
-    /// The fitted Bayesian network.
+    /// The Bayesian network.
     ///
-    fn from_estimator<E>(estimator: &E, graph: Self::Graph) -> Self
-    where
-        E: Estimator<Distribution = Self::Distribution>;
+    fn with_graph_cdps(graph: DiGraph, cdps: FxIndexMap<String, Self::CPD>) -> Self;
 }

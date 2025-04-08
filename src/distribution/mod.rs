@@ -1,8 +1,6 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::estimator::Estimator;
-
 /// A trait for probability distributions.
 pub trait Distribution {
     /// The type of the labels.
@@ -33,21 +31,4 @@ pub trait Distribution {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
-
-    /// Fits the distribution to the data.
-    ///
-    /// # Arguments
-    ///
-    /// * `estimator` - The estimator used to fit.
-    /// * `x` - The variable to fit the estimator to.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Returns
-    ///
-    /// The fitted distribution.
-    ///
-    fn from_estimator<E>(estimator: &E, x: usize, z: &[usize]) -> Self
-    where
-        Self: Sized,
-        E: Estimator<Distribution = Self>;
 }

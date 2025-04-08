@@ -12,6 +12,8 @@ pub mod distribution;
 pub mod estimator;
 /// Graph structures and algorithms.
 pub mod graph;
+/// Input/output utilities.
+pub mod io;
 /// Models and algorithms for inference.
 pub mod model;
 /// Helper types and functions.
