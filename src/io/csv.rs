@@ -12,9 +12,9 @@ pub trait FromCsvReader {
     /// # Returns
     ///
     /// A new instance of the implementing type.
-    /// 
+    ///
     /// # Notes
-    /// 
+    ///
     /// CSV reader should trim input.
     ///
     fn from_csv_reader<R: Read>(reader: Reader<R>) -> Self;

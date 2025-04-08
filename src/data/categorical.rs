@@ -21,21 +21,6 @@ pub struct CategoricalData {
     values: Array2<u8>,
 }
 
-impl Data for CategoricalData {
-    type Labels = FxIndexSet<String>;
-    type Values = Array2<u8>;
-
-    #[inline]
-    fn labels(&self) -> &Self::Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn values(&self) -> &Self::Values {
-        &self.values
-    }
-}
-
 impl CategoricalData {
     /// Creates a new categorical data.
     ///
@@ -144,9 +129,7 @@ impl Display for CategoricalData {
             .unwrap_or(0);
 
         // Write the top line.
-        let hline = std::iter::repeat("-")
-            .take((n + 3) * self.labels().len() + 1)
-            .join("");
+        let hline = std::iter::repeat_n("-", (n + 3) * self.labels().len() + 1).join("");
         writeln!(f, "{hline}")?;
         // Write the header.
         let header = self
@@ -171,6 +154,21 @@ impl Display for CategoricalData {
         }
         // Write the bottom line.
         writeln!(f, "{hline}")
+    }
+}
+
+impl Data for CategoricalData {
+    type Labels = FxIndexSet<String>;
+    type Values = Array2<u8>;
+
+    #[inline]
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Values {
+        &self.values
     }
 }
 
@@ -202,9 +200,9 @@ impl FromCsvReader for CategoricalData {
         let values: Array1<_> = reader
             .into_records()
             .enumerate()
-            .map(|(i, row)| {
+            .flat_map(|(i, row)| {
                 // Get the record row.
-                let row = row.expect(&format!("Failed to read line number {}.", i + 1));
+                let row = row.unwrap_or_else(|_| panic!("Failed to read line number {}.", i + 1));
                 // Get the record values and convert to strings.
                 let row = row.into_iter().map(|x| x.to_owned());
                 // Assert no empty (missing) values.
@@ -220,7 +218,6 @@ impl FromCsvReader for CategoricalData {
                 // Collect the values.
                 row
             })
-            .flatten()
             .collect();
         // Get the number of rows and columns.
         let ncols = labels.len();
