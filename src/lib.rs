@@ -4,7 +4,7 @@
 //! CausalHub is a library for causal inference and causal discovery.
 //! It provides tools for estimating causal effects, learning causal structures, and more.
 
-/// Assents such as datasets, models, and other resources.
+/// Assets such as datasets, models, and other resources.
 pub mod assets;
 /// Data structures.
 pub mod data;
