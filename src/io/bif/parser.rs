@@ -1,8 +1,7 @@
 use itertools::Itertools;
+use ndarray::prelude::*;
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
-
-use ndarray::prelude::*;
 
 use crate::{
     distribution::{CategoricalCPD, Distribution},
@@ -111,6 +110,8 @@ impl BifReader {
                     }
                     _ => unreachable!(),
                 };
+                // Normalize the parameters so that they sum exactly to 1 by row.
+                let parameters = &parameters / parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
                 // Construct the CPD.
                 CategoricalCPD::new(variables, parameters)
             })

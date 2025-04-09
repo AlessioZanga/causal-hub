@@ -7,18 +7,18 @@ network = { "network" ~ identifier ~ "{" ~ property* ~ "}" }
 
 property = { "property" ~ identifier ~ identifier ~ ";" }
 
-variable = { 
-    "variable" ~ identifier ~ "{" ~ 
-    "type" ~ "discrete" ~ "[" ~ number ~ "]" ~ "{" ~ identifier_list ~ "}" ~ ";" ~ 
-    property* ~ 
-    "}" 
+variable = {
+    "variable" ~ identifier ~ "{" ~
+    "type" ~ "discrete" ~ "[" ~ number ~ "]" ~ "{" ~ identifier_list ~ "}" ~ ";" ~
+    property* ~
+    "}"
 }
 
-probability = { 
-    "probability" ~ "(" ~ identifier ~ parents? ~ ")" ~ "{" ~ 
-    ( "table" ~ number_list ~ ";" | entry+ ) ~ 
-    property* ~ 
-    "}" 
+probability = {
+    "probability" ~ "(" ~ identifier ~ parents? ~ ")" ~ "{" ~
+    ( "table" ~ number_list ~ ";" | entry+ ) ~
+    property* ~
+    "}"
 }
 
 parents = { "|" ~ identifier_list }
@@ -31,6 +31,6 @@ number_list = { number ~ ("," ~ number)* }
 identifier = @{ quoted_string | unquoted_string }
 
 quoted_string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
-unquoted_string = @{ (ASCII_ALPHANUMERIC | "_" | "-" )+ }
+unquoted_string = @{ (ASCII_ALPHANUMERIC | "_" | "-" | "+" | "=" | "/" | "<" | ">" | ".")+ }
 
-number = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+number = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (("e" | "E") ~ ("+" | "-")? ~ ASCII_DIGIT+)? }

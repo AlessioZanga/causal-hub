@@ -4,13 +4,12 @@ use approx::relative_eq;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
+use super::Distribution;
 use crate::{
     data::{CategoricalData, Data},
     estimator::{BE, CPDEstimator, MLE},
     types::{FxIndexMap, FxIndexSet},
 };
-
-use super::Distribution;
 
 /// A struct representing a categorical distribution.
 ///
@@ -96,15 +95,16 @@ impl CategoricalCPD {
             cardinality.iter().skip(1).product(),
             "Product of the number of states of the remaining variables does not match the number of rows."
         );
-        // Assert the probabilities sum to one by row, unless empty.
-        assert!(
-            parameters.is_empty()
-                || parameters
-                    .sum_axis(Axis(1))
-                    .iter()
-                    .all(|&i| relative_eq!(i, 1.0)),
-            "Probabilities must sum to one by row."
-        );
+        // Assert the probabilities sum to one by row.
+        parameters
+            .sum_axis(Axis(1))
+            .iter()
+            .enumerate()
+            .for_each(|(i, &x)| {
+                if !relative_eq!(x, 1.0, epsilon = 1e-8) {
+                    panic!("Failed to sum probability to one: {}.", parameters.row(i));
+                }
+            });
 
         // Compute the parameters size.
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
@@ -176,7 +176,7 @@ impl Display for CategoricalCPD {
             .map(|x| x.len())
             .max()
             .unwrap_or(0)
-            .max(4);
+            .max(8);
         // Get the number of variables to condition on.
         let z = self.labels().len().saturating_sub(1);
         // Get the number of states for the first variable.
@@ -224,7 +224,7 @@ impl Display for CategoricalCPD {
             // Format the states for the current row.
             let states = states.iter().map(|x| format!("{x:width$}", width = n));
             // Format the parameter values for the current row.
-            let values = values.iter().map(|x| format!("{:width$.2}", x, width = n));
+            let values = values.iter().map(|x| format!("{:width$.6}", x, width = n));
             // Join the states and values for the current row.
             let states_values = states.chain(values).join(" | ");
             writeln!(f, "| {states_values} |")?;

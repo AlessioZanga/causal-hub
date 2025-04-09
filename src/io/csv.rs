@@ -1,5 +1,6 @@
-use csv::Reader;
 use std::io::Read;
+
+use csv::Reader;
 
 /// A trait for reading CSV files.
 pub trait FromCsvReader {

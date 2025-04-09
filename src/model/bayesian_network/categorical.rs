@@ -1,12 +1,11 @@
 use core::panic;
 
+use super::BayesianNetwork;
 use crate::{
     distribution::{CategoricalCPD, Distribution},
     graph::{DiGraph, Graph},
     types::{FxIndexMap, FxIndexSet},
 };
-
-use super::BayesianNetwork;
 
 /// A categorical Bayesian network.
 ///

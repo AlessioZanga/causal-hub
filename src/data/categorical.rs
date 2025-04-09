@@ -4,12 +4,11 @@ use csv::Reader;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
+use super::Data;
 use crate::{
     io::FromCsvReader,
     types::{FxIndexMap, FxIndexSet},
 };
-
-use super::Data;
 
 /// A struct representing a categorical data.
 ///

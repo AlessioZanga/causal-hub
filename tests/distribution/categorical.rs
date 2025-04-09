@@ -40,6 +40,7 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Failed to sum probability to one: [].")]
     fn test_empty_labels() {
         let variables = vec![];
         let probabilities = array![[]];
@@ -55,14 +56,14 @@ mod tests {
         assert_eq!(
             categorical.to_string(),
             concat!(
-                "----------------------\n",
-                "|      | A    |      |\n",
-                "| ---- | ---- | ---- |\n",
-                "| B    | no   | yes  |\n",
-                "| ---- | ---- | ---- |\n",
-                "| no   | 0.10 | 0.90 |\n",
-                "| yes  | 0.20 | 0.80 |\n",
-                "----------------------\n",
+                "----------------------------------\n",
+                "|          | A        |          |\n",
+                "| -------- | -------- | -------- |\n",
+                "| B        | no       | yes      |\n",
+                "| -------- | -------- | -------- |\n",
+                "| no       | 0.100000 | 0.900000 |\n",
+                "| yes      | 0.200000 | 0.800000 |\n",
+                "----------------------------------\n",
             )
         );
     }

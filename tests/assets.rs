@@ -1,13 +1,46 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        assets::load_asia, distribution::Distribution, graph::Graph, model::BayesianNetwork,
+        assets::*, distribution::Distribution, graph::Graph, model::BayesianNetwork,
     };
-    use ndarray::array;
+    use dry::macro_for;
+    use ndarray::prelude::*;
+    use paste::paste;
+
+    macro_for!(
+        $bn in [
+            alarm,
+            andes,
+            asia,
+            barley,
+            cancer,
+            child,
+            diabetes,
+            earthquake,
+            hailfinder,
+            hepar2,
+            insurance,
+            link,
+            mildew,
+            munin1,
+            pathfinder,
+            pigs,
+            sachs,
+            survey,
+            water,
+            win95pts
+        ] {
+        paste! {
+            #[test]
+            fn [<test_load_ $bn>]() {
+                let _ = [<load_ $bn>]();
+            }
+        }
+    });
 
     #[test]
-    fn test_load_asia() {
-        // Load Asia BN.
+    fn test_load_asia_full() {
+        // Load BN.
         let bn = load_asia();
 
         // Check labels.
@@ -104,6 +137,34 @@ mod tests {
                 [0.70, 0.30], //
                 [0.10, 0.90]
             ]
+        );
+    }
+
+    #[test]
+    fn test_load_sachs_full() {
+        // Load BN.
+        let bn = load_sachs();
+
+        // Check probability values with exponential notation.
+        assert_eq!(
+            bn.cpds()[5].to_string(),
+            concat!(
+                "--------------------------------------------------------\n",
+                "|          |          | PIP2     |          |          |\n",
+                "| -------- | -------- | -------- | -------- | -------- |\n",
+                "| PIP3     | Plcg     | LOW      | AVG      | HIGH     |\n",
+                "| -------- | -------- | -------- | -------- | -------- |\n",
+                "| LOW      | LOW      | 0.996792 | 0.003170 | 0.000039 |\n",
+                "| LOW      | AVG      | 0.997890 | 0.001055 | 0.001055 |\n",
+                "| LOW      | HIGH     | 0.221809 | 0.493649 | 0.284542 |\n",
+                "| AVG      | LOW      | 0.986711 | 0.013270 | 0.000019 |\n",
+                "| AVG      | AVG      | 0.957165 | 0.042445 | 0.000389 |\n",
+                "| AVG      | HIGH     | 0.076728 | 0.391103 | 0.532169 |\n",
+                "| HIGH     | LOW      | 0.872401 | 0.120071 | 0.007528 |\n",
+                "| HIGH     | AVG      | 0.521810 | 0.462455 | 0.015735 |\n",
+                "| HIGH     | HIGH     | 0.026417 | 0.052354 | 0.921230 |\n",
+                "--------------------------------------------------------\n",
+            )
         );
     }
 }
