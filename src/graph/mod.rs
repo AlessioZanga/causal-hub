@@ -1,6 +1,9 @@
 mod directed;
 pub use directed::*;
 
+mod topological_sort;
+pub use topological_sort::*;
+
 mod undirected;
 pub use undirected::*;
 

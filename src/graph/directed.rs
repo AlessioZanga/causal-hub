@@ -17,6 +17,17 @@ pub struct DirectedGraph {
 pub type DiGraph = DirectedGraph;
 
 impl DiGraph {
+    /// Returns the adjacency matrix of the graph.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the adjacency matrix.
+    ///
+    #[inline]
+    pub const fn adjacency_matrix(&self) -> &Array2<bool> {
+        &self.adjacency_matrix
+    }
+
     /// Returns the parents of a vertex.
     ///
     /// # Arguments
