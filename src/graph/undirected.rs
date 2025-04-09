@@ -2,9 +2,8 @@ use std::ops::Range;
 
 use ndarray::prelude::*;
 
-use crate::types::FxIndexSet;
-
 use super::Graph;
+use crate::types::FxIndexSet;
 
 /// A struct representing an undirected graph using an adjacency matrix.
 ///

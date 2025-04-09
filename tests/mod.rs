@@ -1,3 +1,4 @@
+mod assets;
 mod data;
 mod distribution;
 mod estimator;

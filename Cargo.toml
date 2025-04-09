@@ -7,7 +7,11 @@ edition = "2024"
 [dependencies]
 approx = "^0.5"
 csv = "^1"
+dry = "0.1.1"
 fxhash = "^0.2"
 indexmap = "^2"
 itertools = "^0.14"
 ndarray = { version = "^0.16", features = ["approx"] }
+paste = "1.0.15"
+pest = "2.8.0"
+pest_derive = "2.8.0"

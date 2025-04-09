@@ -5,7 +5,7 @@ mod tests {
         use causal_hub_next::{
             data::CategoricalData,
             distribution::Distribution,
-            estimator::{CPDEstimator, BE},
+            estimator::{BE, CPDEstimator},
         };
         use ndarray::prelude::*;
 
@@ -32,10 +32,12 @@ mod tests {
             let distribution = estimator.fit(&data, 0, &[]);
 
             assert!(distribution.labels().iter().eq(["A"]));
-            assert!(distribution
-                .states()
-                .values()
-                .all(|x| x.iter().eq(["no", "yes"])));
+            assert!(
+                distribution
+                    .states()
+                    .values()
+                    .all(|x| x.iter().eq(["no", "yes"]))
+            );
 
             assert_relative_eq!(
                 distribution.parameters(),
@@ -55,13 +57,13 @@ mod tests {
             assert_eq!(
                 distribution.to_string(),
                 concat!(
-                    "---------------\n",
-                    "| A    |      |\n",
-                    "| ---- | ---- |\n",
-                    "| no   | yes  |\n",
-                    "| ---- | ---- |\n",
-                    "| 0.57 | 0.43 |\n",
-                    "---------------\n",
+                    "-----------------------\n",
+                    "| A        |          |\n",
+                    "| -------- | -------- |\n",
+                    "| no       | yes      |\n",
+                    "| -------- | -------- |\n",
+                    "| 0.571429 | 0.428571 |\n",
+                    "-----------------------\n",
                 )
             );
 
@@ -69,10 +71,12 @@ mod tests {
             let distribution = estimator.fit(&data, 0, &[1, 2]);
 
             assert!(distribution.labels().iter().eq(["A", "B", "C"]));
-            assert!(distribution
-                .states()
-                .values()
-                .all(|x| x.iter().eq(["no", "yes"])));
+            assert!(
+                distribution
+                    .states()
+                    .values()
+                    .all(|x| x.iter().eq(["no", "yes"]))
+            );
 
             assert_relative_eq!(
                 distribution.parameters(),
@@ -95,16 +99,16 @@ mod tests {
             assert_eq!(
                 distribution.to_string(),
                 concat!(
-                    "-----------------------------\n",
-                    "|      |      | A    |      |\n",
-                    "| ---- | ---- | ---- | ---- |\n",
-                    "| B    | C    | no   | yes  |\n",
-                    "| ---- | ---- | ---- | ---- |\n",
-                    "| no   | no   | 0.67 | 0.33 |\n",
-                    "| no   | yes  | 0.67 | 0.33 |\n",
-                    "| yes  | no   | 0.33 | 0.67 |\n",
-                    "| yes  | yes  | 0.50 | 0.50 |\n",
-                    "-----------------------------\n",
+                    "---------------------------------------------\n",
+                    "|          |          | A        |          |\n",
+                    "| -------- | -------- | -------- | -------- |\n",
+                    "| B        | C        | no       | yes      |\n",
+                    "| -------- | -------- | -------- | -------- |\n",
+                    "| no       | no       | 0.666667 | 0.333333 |\n",
+                    "| no       | yes      | 0.666667 | 0.333333 |\n",
+                    "| yes      | no       | 0.333333 | 0.666667 |\n",
+                    "| yes      | yes      | 0.500000 | 0.500000 |\n",
+                    "---------------------------------------------\n",
                 )
             );
         }
@@ -130,7 +134,7 @@ mod tests {
             let estimator = BE::new(1.0);
 
             // P(A | A, C)
-            let _distribution = estimator.fit(&data, 0, &[0, 2]);
+            let _ = estimator.fit(&data, 0, &[0, 2]);
         }
     }
 }

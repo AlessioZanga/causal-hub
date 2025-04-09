@@ -61,25 +61,25 @@ mod tests {
         assert!(bn.graph().has_edge(1, 2));
 
         // Check the distributions.
-        assert_eq!(bn.cdps().len(), 3);
-        assert!(bn.cdps()[0].labels().iter().eq(["A"]));
-        assert!(bn.cdps()[1].labels().iter().eq(["B", "A"]));
-        assert!(bn.cdps()[2].labels().iter().eq(["C", "A", "B"]));
+        assert_eq!(bn.cpds().len(), 3);
+        assert!(bn.cpds()[0].labels().iter().eq(["A"]));
+        assert!(bn.cpds()[1].labels().iter().eq(["B", "A"]));
+        assert!(bn.cpds()[2].labels().iter().eq(["C", "A", "B"]));
 
         // Check the states.
         assert_eq!(
-            bn.cdps()[0].parameters(),
+            bn.cpds()[0].parameters(),
             &array![[0.1, 0.9]] //
         );
         assert_eq!(
-            bn.cdps()[1].parameters(),
+            bn.cpds()[1].parameters(),
             &array![
                 [0.2, 0.8], //
                 [0.4, 0.6], //
             ]
         );
         assert_eq!(
-            bn.cdps()[2].parameters(),
+            bn.cpds()[2].parameters(),
             &array![
                 [0.1, 0.9], //
                 [0.3, 0.7], //
@@ -111,7 +111,7 @@ mod tests {
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
-        let _bn = CategoricalBN::new(graph, cpds);
+        let _ = CategoricalBN::new(graph, cpds);
     }
 
     #[test]
@@ -138,11 +138,11 @@ mod tests {
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
-        let _bn = CategoricalBN::new(graph, cpds);
+        let _ = CategoricalBN::new(graph, cpds);
     }
 
     #[test]
-    #[should_panic(expected = "Distributions labels must be the same as the graph parents.")]
+    #[should_panic(expected = "Failed to align graph parents and conditioning labels.")]
     fn test_same_parents() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
@@ -168,6 +168,6 @@ mod tests {
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             ),
         ];
-        let _bn = CategoricalBN::new(graph, cpds);
+        let _ = CategoricalBN::new(graph, cpds);
     }
 }

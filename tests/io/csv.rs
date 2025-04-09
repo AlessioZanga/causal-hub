@@ -55,7 +55,7 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _data = CategoricalData::from_csv_reader(reader);
+        let _ = CategoricalData::from_csv_reader(reader);
     }
 
     #[test]
@@ -71,6 +71,6 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _data = CategoricalData::from_csv_reader(reader);
+        let _ = CategoricalData::from_csv_reader(reader);
     }
 }
