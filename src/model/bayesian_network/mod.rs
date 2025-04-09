@@ -30,9 +30,9 @@ pub trait BayesianNetwork {
     ///
     /// # Returns
     ///
-    /// A reference to the cdps.
+    /// A reference to the cpds.
     ///
-    fn cdps(&self) -> &FxIndexMap<String, Self::CPD>;
+    fn cpds(&self) -> &FxIndexMap<String, Self::CPD>;
 
     /// Returns the parameters size.
     ///
@@ -47,11 +47,11 @@ pub trait BayesianNetwork {
     /// # Arguments
     ///
     /// * `graph` - The underlying graph.
-    /// * `cdps` - The map of labels-distributions.
+    /// * `cpds` - The map of labels-distributions.
     ///
     /// # Returns
     ///
     /// The Bayesian network.
     ///
-    fn with_graph_cdps(graph: DiGraph, cdps: FxIndexMap<String, Self::CPD>) -> Self;
+    fn with_graph_cpds(graph: DiGraph, cpds: FxIndexMap<String, Self::CPD>) -> Self;
 }

@@ -32,10 +32,12 @@ mod tests {
             let distribution = estimator.fit(&data, 0, &[]);
 
             assert!(distribution.labels().iter().eq(["A"]));
-            assert!(distribution
-                .states()
-                .values()
-                .all(|x| x.iter().eq(["no", "yes"])));
+            assert!(
+                distribution
+                    .states()
+                    .values()
+                    .all(|x| x.iter().eq(["no", "yes"]))
+            );
 
             assert_eq!(
                 distribution.parameters(),
@@ -69,10 +71,12 @@ mod tests {
             let distribution = estimator.fit(&data, 0, &[1, 2]);
 
             assert!(distribution.labels().iter().eq(["A", "B", "C"]));
-            assert!(distribution
-                .states()
-                .values()
-                .all(|x| x.iter().eq(["no", "yes"])));
+            assert!(
+                distribution
+                    .states()
+                    .values()
+                    .all(|x| x.iter().eq(["no", "yes"]))
+            );
 
             assert_eq!(
                 distribution.parameters(),
@@ -130,7 +134,7 @@ mod tests {
             let estimator = MLE::new();
 
             // P(A | A, C)
-            let _distribution = estimator.fit(&data, 0, &[0, 2]);
+            let _ = estimator.fit(&data, 0, &[0, 2]);
         }
 
         #[test]
@@ -153,7 +157,7 @@ mod tests {
             let estimator = MLE::new();
 
             // P(A | B, C)
-            let _distribution = estimator.fit(&data, 0, &[1, 2]);
+            let _ = estimator.fit(&data, 0, &[1, 2]);
         }
     }
 
@@ -198,13 +202,15 @@ mod tests {
             let bn: CategoricalBN = estimator.fit(&data, graph);
 
             // P(A)
-            let distribution = &bn.cdps()["A"];
+            let distribution = &bn.cpds()["A"];
 
             assert!(distribution.labels().iter().eq(["A"]));
-            assert!(distribution
-                .states()
-                .values()
-                .all(|x| x.iter().eq(["no", "yes"])));
+            assert!(
+                distribution
+                    .states()
+                    .values()
+                    .all(|x| x.iter().eq(["no", "yes"]))
+            );
 
             assert_eq!(
                 distribution.parameters(),

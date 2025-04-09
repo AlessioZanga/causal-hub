@@ -14,10 +14,12 @@ mod tests {
         let categorical = CategoricalCPD::new(variables, probabilities.clone());
 
         assert!(categorical.labels().iter().eq(["A", "B", "C"]));
-        assert!(categorical
-            .states()
-            .values()
-            .all(|x| x.iter().eq(["no", "yes"])));
+        assert!(
+            categorical
+                .states()
+                .values()
+                .all(|x| x.iter().eq(["no", "yes"]))
+        );
         assert_eq!(categorical.parameters(), &probabilities);
     }
 

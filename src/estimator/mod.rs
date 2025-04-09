@@ -55,7 +55,7 @@ where
 {
     fn fit(&self, data: &D, graph: DiGraph) -> BN {
         // Fit the parameters of the distribution using the estimator.
-        let cdps = graph
+        let cpds = graph
             .labels()
             .into_iter()
             .enumerate()
@@ -69,6 +69,6 @@ where
             })
             .collect();
         // Construct the Bayesian network with the graph and the parameters.
-        BN::with_graph_cdps(graph, cdps)
+        BN::with_graph_cpds(graph, cpds)
     }
 }

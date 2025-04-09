@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 
 use crate::{
     data::{CategoricalData, Data},
-    estimator::{CPDEstimator, BE, MLE},
+    estimator::{BE, CPDEstimator, MLE},
     types::{FxIndexMap, FxIndexSet},
 };
 

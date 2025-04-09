@@ -11,3 +11,5 @@ fxhash = "^0.2"
 indexmap = "^2"
 itertools = "^0.14"
 ndarray = { version = "^0.16", features = ["approx"] }
+pest = "2.8.0"
+pest_derive = "2.8.0"
