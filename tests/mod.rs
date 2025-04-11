@@ -5,3 +5,4 @@ mod estimator;
 mod graph;
 mod io;
 mod model;
+mod sampler;

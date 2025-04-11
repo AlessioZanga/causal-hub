@@ -10,6 +10,21 @@ pub trait BayesianNetwork {
     /// The type of the CPD.
     type CPD;
 
+    /// Constructs a new Bayesian network.
+    ///
+    /// # Arguments
+    ///
+    /// * `graph` - The underlying graph.
+    /// * `cpds` - The conditional probability distributions.
+    ///
+    /// # Returns
+    ///
+    /// A new Bayesian network instance.
+    ///
+    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    where
+        I: IntoIterator<Item = Self::CPD>;
+
     /// Returns the labels of the variables.
     ///
     /// # Returns
@@ -41,17 +56,4 @@ pub trait BayesianNetwork {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
-
-    /// Constructor of the Bayesian network given the graph and the parameters.
-    ///
-    /// # Arguments
-    ///
-    /// * `graph` - The underlying graph.
-    /// * `cpds` - The map of labels-distributions.
-    ///
-    /// # Returns
-    ///
-    /// The Bayesian network.
-    ///
-    fn with_graph_cpds(graph: DiGraph, cpds: FxIndexMap<String, Self::CPD>) -> Self;
 }

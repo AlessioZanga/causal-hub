@@ -4,7 +4,7 @@ mod tests {
         use approx::*;
         use causal_hub_next::{
             data::CategoricalData,
-            distribution::Distribution,
+            distribution::CPD,
             estimator::{CPDEstimator, MLE},
         };
         use ndarray::prelude::*;
@@ -31,10 +31,17 @@ mod tests {
             // P(A)
             let distribution = estimator.fit(&data, 0, &[]);
 
-            assert!(distribution.labels().iter().eq(["A"]));
+            assert_eq!(distribution.label(), "A");
+            assert!(distribution.states().iter().eq(["no", "yes"]));
             assert!(
                 distribution
-                    .states()
+                    .conditioning_labels()
+                    .iter()
+                    .eq(Vec::<&str>::new())
+            );
+            assert!(
+                distribution
+                    .conditioning_states()
                     .values()
                     .all(|x| x.iter().eq(["no", "yes"]))
             );
@@ -70,10 +77,12 @@ mod tests {
             // P(A | B, C)
             let distribution = estimator.fit(&data, 0, &[1, 2]);
 
-            assert!(distribution.labels().iter().eq(["A", "B", "C"]));
+            assert_eq!(distribution.label(), "A");
+            assert!(distribution.states().iter().eq(["no", "yes"]));
+            assert!(distribution.conditioning_labels().iter().eq(vec!["B", "C"]));
             assert!(
                 distribution
-                    .states()
+                    .conditioning_states()
                     .values()
                     .all(|x| x.iter().eq(["no", "yes"]))
             );
@@ -165,7 +174,7 @@ mod tests {
         use approx::*;
         use causal_hub_next::{
             data::CategoricalData,
-            distribution::Distribution,
+            distribution::CPD,
             estimator::{BNEstimator, MLE},
             graph::{DiGraph, Graph},
             io::FromCsvReader,
@@ -204,10 +213,17 @@ mod tests {
             // P(A)
             let distribution = &bn.cpds()["A"];
 
-            assert!(distribution.labels().iter().eq(["A"]));
+            assert_eq!(distribution.label(), "A");
+            assert!(distribution.states().iter().eq(["no", "yes"]));
             assert!(
                 distribution
-                    .states()
+                    .conditioning_labels()
+                    .iter()
+                    .eq(Vec::<&str>::new())
+            );
+            assert!(
+                distribution
+                    .conditioning_states()
                     .values()
                     .all(|x| x.iter().eq(["no", "yes"]))
             );

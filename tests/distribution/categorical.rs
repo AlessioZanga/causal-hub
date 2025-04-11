@@ -1,57 +1,60 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::distribution::{CategoricalCPD, Distribution};
+    use causal_hub_next::distribution::{CPD, CategoricalCPD};
     use ndarray::prelude::*;
 
     #[test]
     fn test_new() {
-        let variables = vec![
-            ("A", vec!["no", "yes"]),
-            ("B", vec!["no", "yes"]),
-            ("C", vec!["no", "yes"]),
-        ];
-        let probabilities = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
-        let categorical = CategoricalCPD::new(variables, probabilities.clone());
+        let x = ("A", vec!["no", "yes"]);
+        let z = vec![("B", vec!["no", "yes"]), ("C", vec!["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
+        let categorical = CategoricalCPD::new(x, z, p.clone());
 
-        assert!(categorical.labels().iter().eq(["A", "B", "C"]));
+        assert_eq!(categorical.label(), "A");
+        assert!(categorical.states().iter().eq(["no", "yes"]));
+        assert!(categorical.conditioning_labels().iter().eq(["B", "C"]));
         assert!(
             categorical
-                .states()
+                .conditioning_states()
                 .values()
                 .all(|x| x.iter().eq(["no", "yes"]))
         );
-        assert_eq!(categorical.parameters(), &probabilities);
+        assert_eq!(categorical.parameters(), &p);
     }
 
     #[test]
-    #[should_panic(expected = "Variable labels must be unique.")]
+    #[should_panic(expected = "Conditioned variable cannot be a conditioning variable.")]
     fn test_unique_labels() {
-        let variables = vec![("A", vec!["no", "yes"]), ("A", vec!["no", "yes"])];
-        let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
-        CategoricalCPD::new(variables, probabilities);
+        let x = ("A", vec!["no", "yes"]);
+        let z = vec![("A", vec!["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.2, 0.8]];
+        CategoricalCPD::new(x, z, p);
     }
 
     #[test]
-    #[should_panic(expected = "Variable states must be unique.")]
+    #[should_panic(expected = "Variables states must be unique.")]
     fn test_unique_states() {
-        let variables = vec![("A", vec!["no", "no"]), ("B", vec!["no", "yes"])];
-        let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
-        CategoricalCPD::new(variables, probabilities);
+        let x = ("A", vec!["no", "no"]);
+        let z = vec![("B", vec!["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.2, 0.8]];
+        CategoricalCPD::new(x, z, p);
     }
 
     #[test]
     #[should_panic(expected = "Failed to sum probability to one: [].")]
     fn test_empty_labels() {
-        let variables = vec![];
-        let probabilities = array![[]];
-        CategoricalCPD::new(variables, probabilities);
+        let x: (&str, Vec<&str>) = ("", vec![]);
+        let z: Vec<(&str, Vec<&str>)> = vec![];
+        let p = array![[]];
+        CategoricalCPD::new(x, z, p);
     }
 
     #[test]
     fn test_display() {
-        let variables = vec![("A", vec!["no", "yes"]), ("B", vec!["no", "yes"])];
-        let probabilities = array![[0.1, 0.9], [0.2, 0.8]];
-        let categorical = CategoricalCPD::new(variables, probabilities);
+        let x = ("A", vec!["no", "yes"]);
+        let z = vec![("B", vec!["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.2, 0.8]];
+        let categorical = CategoricalCPD::new(x, z, p);
 
         assert_eq!(
             categorical.to_string(),

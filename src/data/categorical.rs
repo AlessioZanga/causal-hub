@@ -1,14 +1,10 @@
-use std::{fmt::Display, io::Read};
+use std::fmt::Display;
 
-use csv::Reader;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
 use super::Data;
-use crate::{
-    io::FromCsvReader,
-    types::{FxIndexMap, FxIndexSet},
-};
+use crate::types::{FxIndexMap, FxIndexSet};
 
 /// A struct representing a categorical data.
 ///
@@ -25,64 +21,133 @@ impl CategoricalData {
     ///
     /// # Arguments
     ///
-    /// * `variables` - The variables and their states.
+    /// * `states` - The variables states.
     /// * `values` - The values of the variables.
+    ///
+    /// # Notes
+    ///
+    /// * Labels and states will be sorted in alphabetical order.
     ///
     /// # Panics
     ///
     /// * If the variable labels are not unique.
     /// * If the variable states are not unique.
-    /// * If the number of variables is not equal to the number of columns.
+    /// * If the number of variable states is higher than `u8::MAX`.
+    /// * If the number of variables is different from the number of values columns.
     /// * If the variables values are not smaller than the number of states.
     ///
     /// # Returns
     ///
     /// A new `CategoricalData` instance.
     ///
-    pub fn new(variables: Vec<(&str, Vec<&str>)>, values: Array2<u8>) -> Self {
+    pub fn new<I, J, K, V>(states: I, values: Array2<u8>) -> Self
+    where
+        I: IntoIterator<Item = (K, J)>,
+        J: IntoIterator<Item = V>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        // Initialize variables counter.
+        let mut n = 0;
         // Get the states of the variables.
-        let states: FxIndexMap<_, FxIndexSet<_>> = variables
-            .iter()
-            .map(|(i, j)| {
-                (
-                    // Convert the variable label to a string.
-                    i.to_string(),
-                    // Convert the variable states to a set of strings.
-                    j.iter().map(|k| k.to_string()).collect(),
-                )
+        let mut states: FxIndexMap<_, _> = states
+            .into_iter()
+            .inspect(|_| n += 1)
+            .map(|(label, states)| {
+                // Convert the variable label to a string.
+                let label = label.into();
+
+                // Initialize states counter.
+                let mut n = 0;
+                // Convert the variable states to a set of strings.
+                let states: FxIndexSet<_> = states
+                    .into_iter()
+                    .inspect(|_| n += 1)
+                    .map(|x| x.into())
+                    .collect();
+                // Assert unique states.
+                assert_eq!(states.len(), n, "Variables states must be unique.");
+
+                (label, states)
             })
             .collect();
+
+        // Assert unique labels.
+        assert_eq!(states.len(), n, "Variables labels must be unique.");
+        // Check if the number of variables is equal to the number of columns.
+        assert_eq!(
+            states.len(),
+            values.ncols(),
+            "Number of variables must be equal to the number of columns."
+        );
+
+        // Get the indices to sort the labels and states labels.
+        let mut indices: Vec<(_, Vec<_>)> = states
+            .values()
+            .enumerate()
+            .map(|(label_idx, states)| {
+                // Allocate the indices of the states labels.
+                let mut states_idx: Vec<_> = (0..states.len()).collect();
+                // Sort the indices by the states labels.
+                states_idx.sort_by_key(|&i| &states[i]);
+
+                (label_idx, states_idx)
+            })
+            .collect();
+        // Sort the indices by the states labels.
+        indices.sort_by_key(|&(i, _)| states.get_index(i).unwrap().0);
+        // Sort the states labels.
+        states.values_mut().for_each(|states| states.sort());
+        // Sort the labels.
+        states.sort_keys();
+
+        // Allocate the new values array.
+        let mut new_values: Array2<u8> = Array::zeros(values.dim());
+        // Sort the values by the indices of the states labels.
+        new_values
+            .columns_mut()
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, mut new_values_col)| {
+                // Get the indices of the states labels.
+                let (label_idx, states_idx) = &indices[i];
+                // Get the corresponding states labels.
+                let values_col = values.column(*label_idx);
+                // Sort the values by the indices of the states labels. TODO: Check `u8::MAX` limit.
+                let values_col = values_col.mapv(|x| states_idx[x as usize] as u8);
+                // Assign the sorted values to the new values array.
+                new_values_col.assign(&values_col);
+            });
+        // Update the values with the new sorted values.
+        let values = new_values;
+
         // Get the labels of the variables.
         let labels: FxIndexSet<_> = states.keys().cloned().collect();
         // Get the cardinality of the set of states.
         let cardinality: Array1<_> = states.values().map(|i| i.len()).collect();
-        // Check variables labels are unique.
-        assert_eq!(
-            states.len(),
-            variables.len(),
-            "Variable labels must be unique."
-        );
-        // Check variables states are unique.
-        assert_eq!(
-            cardinality,
-            Array1::from_iter(variables.iter().map(|(_, i)| i.len())),
-            "Variable states must be unique."
-        );
 
-        // Check if the number of variables is equal to the number of columns.
-        assert_eq!(
-            cardinality.len(),
-            values.ncols(),
-            "Number of variables must be equal to the number of columns."
+        // Check if the number of states is less than `u8::MAX`.
+        assert!(
+            cardinality.iter().all(|&x| x <= u8::MAX as usize),
+            "Number of states must be less than {}.",
+            u8::MAX
         );
         // Check if the maximum value of the values is less than the number of states.
         assert!(
-            values.rows().into_iter().all(|row|
-                    // For each row ...
-                    row.iter().zip(&cardinality)
-                    // ... check if the value is less than the number of states.
-                    .all(|(x, y)| (*x as usize) < *y)),
+            values
+                .fold_axis(Axis(0), 0, |&a, &b| a.max(b))
+                .into_iter()
+                .zip(&cardinality)
+                .all(|(x, &y)| (x as usize) < y),
             "Variables values must be smaller than the number of states."
+        );
+
+        // Debug assert to check the sorting of the labels.
+        debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
+        debug_assert!(states.keys().is_sorted(), "Labels must be sorted.");
+        debug_assert!(
+            states.values().all(|x| x.iter().is_sorted()),
+            "States must be sorted."
         );
 
         Self {
@@ -169,91 +234,9 @@ impl Data for CategoricalData {
     fn values(&self) -> &Self::Values {
         &self.values
     }
-}
 
-impl FromCsvReader for CategoricalData {
-    /// Reads a CSV file and returns a new `CategoricalData` instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `reader` - A CSV reader from the `csv` crate.
-    ///
-    /// # Returns
-    ///
-    /// A new `CategoricalData` instance.
-    ///
-    fn from_csv_reader<R: Read>(mut reader: Reader<R>) -> Self {
-        // Assert that the reader has headers.
-        assert!(reader.has_headers(), "Failed to read the headers.");
-        // Read the headers.
-        let labels: FxIndexSet<_> = reader
-            .headers()
-            .expect("Failed to read the headers.")
-            .into_iter()
-            .map(|x| x.to_owned())
-            .collect();
-
-        // Read the records.
-        // NOTE: One could improve this implementation
-        //       by mapping the strings to u8 directly.
-        let values: Array1<_> = reader
-            .into_records()
-            .enumerate()
-            .flat_map(|(i, row)| {
-                // Get the record row.
-                let row = row.unwrap_or_else(|_| panic!("Failed to read line number {}.", i + 1));
-                // Get the record values and convert to strings.
-                let row = row.into_iter().map(|x| x.to_owned());
-                // Assert no empty (missing) values.
-                let row: Vec<_> = row
-                    .inspect(|x| {
-                        assert!(
-                            !x.is_empty(),
-                            "Failed to read empty value at line number {}.",
-                            i + 1
-                        );
-                    })
-                    .collect();
-                // Collect the values.
-                row
-            })
-            .collect();
-        // Get the number of rows and columns.
-        let ncols = labels.len();
-        let nrows = values.len() / ncols;
-        // Allocate the values.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
-
-        // Get the states of the variables.
-        let states: FxIndexMap<_, FxIndexSet<_>> = labels
-            .iter()
-            .zip(values.columns())
-            .map(|(i, j)| {
-                (
-                    // Convert the variable label to a string.
-                    i.to_owned(),
-                    // Convert the variable states to a set of strings.
-                    j.iter().map(|k| k.to_owned()).collect(),
-                )
-            })
-            .collect();
-
-        // Get the cardinality of the set of states.
-        let cardinality: Array1<_> = states.values().map(|i| i.len()).collect();
-
-        // Map the values to the states indexes.
-        let values: Array2<_> = Array2::from_shape_fn(values.dim(), |(i, j)| {
-            // Get the state corresponding to the value.
-            states[j].get_index_of(&values[[i, j]]).unwrap() as u8
-        });
-
-        CategoricalData {
-            labels,
-            states,
-            cardinality,
-            values,
-        }
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
     }
 }

@@ -1,20 +1,30 @@
 mod categorical;
 pub use categorical::*;
 
-/// A trait for probability distributions.
-pub trait Distribution {
-    /// The type of the labels.
-    type Labels;
+/// A trait for conditional probability distributions.
+pub trait ConditionalProbabilityDistribution {
+    /// The type of the label.
+    type Label;
+    /// The type of the conditioning labels.
+    type ConditioningLabels;
     /// The type of the parameters.
     type Parameters;
 
-    /// Returns the labels of the variables.
+    /// Returns the label of the conditioned variable.
     ///
     /// # Returns
     ///
-    /// A reference to the labels.
+    /// A reference to the label.
     ///
-    fn labels(&self) -> &Self::Labels;
+    fn label(&self) -> &Self::Label;
+
+    /// Returns the labels of the conditioned variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the conditioning labels.
+    ///
+    fn conditioning_labels(&self) -> &Self::ConditioningLabels;
 
     /// Returns the parameters.
     ///
@@ -32,3 +42,6 @@ pub trait Distribution {
     ///
     fn parameters_size(&self) -> usize;
 }
+
+/// A type alias for the conditional probability distribution.
+pub use ConditionalProbabilityDistribution as CPD;

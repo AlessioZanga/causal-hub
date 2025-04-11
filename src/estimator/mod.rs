@@ -55,20 +55,11 @@ where
 {
     fn fit(&self, data: &D, graph: DiGraph) -> BN {
         // Fit the parameters of the distribution using the estimator.
-        let cpds = graph
-            .labels()
-            .into_iter()
-            .enumerate()
-            .map(|(i, x)| {
-                (
-                    // The label of the variable.
-                    x.into(),
-                    // The fitted distribution.
-                    self.fit(data, i, &graph.parents(i)),
-                )
-            })
+        let cpds: Vec<_> = graph
+            .vertices()
+            .map(|i| self.fit(data, i, &graph.parents(i)))
             .collect();
         // Construct the Bayesian network with the graph and the parameters.
-        BN::with_graph_cpds(graph, cpds)
+        BN::new(graph, cpds)
     }
 }
