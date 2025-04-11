@@ -135,7 +135,7 @@ impl CategoricalData {
         // Check if the maximum value of the values is less than the number of states.
         assert!(
             values
-                .fold_axis(Axis(1), 0, |&a, &b| a.max(b))
+                .fold_axis(Axis(0), 0, |&a, &b| a.max(b))
                 .into_iter()
                 .zip(&cardinality)
                 .all(|(x, &y)| (x as usize) < y),
@@ -233,5 +233,10 @@ impl Data for CategoricalData {
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.nrows()
     }
 }

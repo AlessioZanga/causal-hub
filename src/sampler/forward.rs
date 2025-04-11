@@ -16,6 +16,19 @@ use crate::{
 /// A forward sampler.
 pub struct ForwardSampler;
 
+impl ForwardSampler {
+    /// Construct a new forward sampler.
+    ///
+    /// # Returns
+    ///
+    /// Return a new `ForwardSampler` instance.
+    ///
+    #[inline]
+    pub const fn new() -> Self {
+        Self
+    }
+}
+
 impl BNSampler<CategoricalBN, CategoricalData> for ForwardSampler {
     fn sample<R>(&self, rng: &mut R, bn: &CategoricalBN, n: usize) -> CategoricalData
     where
