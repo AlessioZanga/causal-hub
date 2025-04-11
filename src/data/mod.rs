@@ -1,6 +1,9 @@
 mod categorical;
 pub use categorical::*;
 
+mod trajectory;
+pub use trajectory::*;
+
 /// A trait for data.
 pub trait Data {
     /// The type of the labels.

@@ -69,11 +69,7 @@ mod tests {
         // Check fitted CDPs.
         for ((_, cpd), (_, fitted_cpd)) in bn.cpds().iter().zip(fitted_bn.cpds()) {
             // Check values.
-            assert_relative_eq!(
-                cpd.parameters(),
-                fitted_cpd.parameters(),
-                epsilon = 1e-2
-            );
+            assert_relative_eq!(cpd.parameters(), fitted_cpd.parameters(), epsilon = 1e-2);
         }
     }
 }
