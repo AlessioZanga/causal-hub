@@ -1,12 +1,36 @@
 mod bayesian;
-mod maximum_likelihood;
 pub use bayesian::*;
+
+mod maximum_likelihood;
 pub use maximum_likelihood::*;
+
+mod sufficient_statistics;
+pub use sufficient_statistics::*;
 
 use crate::{
     graph::{DiGraph, Graph},
     model::BayesianNetwork,
 };
+
+/// A trait for sufficient statistics estimators.
+pub trait ConditionalSufficientStatisticsEstimator<D, S> {
+    /// Fits the estimator to the data and returns the conditional sufficient statistics.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The data to fit the estimator to.
+    /// * `x` - The variable to fit the estimator to.
+    /// * `z` - The variables to condition on.
+    ///
+    /// # Returns
+    ///
+    /// The sufficient statistics.
+    ///
+    fn fit(&self, data: &D, x: usize, z: &[usize]) -> S;
+}
+
+/// A type alias for a sufficient statistics estimator.
+pub use ConditionalSufficientStatisticsEstimator as CSSEstimator;
 
 /// A trait for conditional probability distribution estimators.
 pub trait ConditionalProbabilityDistributionEstimator<D, P> {

@@ -14,6 +14,7 @@ use crate::{
 };
 
 /// A forward sampler.
+#[derive(Clone, Copy, Debug, Default)]
 pub struct ForwardSampler;
 
 impl ForwardSampler {

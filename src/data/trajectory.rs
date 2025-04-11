@@ -3,6 +3,7 @@ use ndarray::prelude::*;
 use crate::types::{FxIndexMap, FxIndexSet};
 
 /// A multivariate trajectory.
+#[derive(Clone, Debug)]
 pub struct Trajectory {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
