@@ -4,9 +4,9 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    distribution::{CategoricalCPD, Distribution},
+    distribution::{CPD, CategoricalCPD},
     graph::{DiGraph, Graph},
-    model::CategoricalBN,
+    model::{BayesianNetwork, CategoricalBN},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -63,15 +63,18 @@ impl BifReader {
             .probabilities
             .into_iter()
             .map(|p| {
-                // Get the variables of the CPD.
-                let variables: Vec<(&str, Vec<&str>)> = [&p.label]
-                    .into_iter()
-                    .chain(&p.parents)
-                    .map(|x| {
-                        let states = states.get(x).expect("Failed to get variable states.");
-                        (x.as_str(), states.iter().map(|s| s.as_str()).collect())
-                    })
-                    .collect();
+                // Get the variable of the CPD.
+                let variable = (
+                    &p.label,
+                    states
+                        .get(&p.label)
+                        .expect("Failed to get variable states."),
+                );
+                // Get the conditioning variables of the CPD.
+                let conditioning_variables = p.parents.iter().map(|x| {
+                    let states = states.get(x).expect("Failed to get variable states.");
+                    (x.as_str(), states.iter().map(|s| s.as_str()))
+                });
                 // Map the probability values.
                 let parameters = match (p.table, p.entries) {
                     (Some(table), None) => Array1::from_vec(table).insert_axis(Axis(0)),
@@ -113,21 +116,21 @@ impl BifReader {
                 // Normalize the parameters so that they sum exactly to 1 by row.
                 let parameters = &parameters / parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
                 // Construct the CPD.
-                CategoricalCPD::new(variables, parameters)
+                CategoricalCPD::new(variable, conditioning_variables, parameters)
             })
             .collect();
 
         // Construct the graph.
-        let mut graph = DiGraph::empty(states.keys().map(|x| x.as_str()).collect());
+        let mut graph = DiGraph::empty(states.keys());
         cpds.iter().for_each(|p| {
             // Get child index.
-            let x = &p.labels()[0];
+            let x = p.label();
             let x = graph
                 .labels()
                 .get_index_of(x)
                 .unwrap_or_else(|| panic!("Failed to get index of label '{x}'."));
             // Get parent indices.
-            p.labels().into_iter().skip(1).for_each(|z| {
+            p.conditioning_labels().into_iter().for_each(|z| {
                 // Get parent index.
                 let z = graph
                     .labels()

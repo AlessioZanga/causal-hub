@@ -49,16 +49,31 @@ impl Graph for UnGraph {
     type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
 
-    fn empty(labels: Vec<&str>) -> Self {
-        // Get the size of the graph from the number of labels.
-        let size = labels.len();
-        // Convert the array of string slices to a vector of strings.
-        let labels: FxIndexSet<_> = labels.iter().map(|s| s.to_string()).collect();
+    fn empty<I, V>(labels: I) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: Into<String>,
+    {
+        // Initialize labels counter.
+        let mut n = 0;
+        // Collect the labels.
+        let mut labels: FxIndexSet<_> = labels
+            .into_iter()
+            .inspect(|_| n += 1)
+            .map(|x| x.into())
+            .collect();
+
         // Assert no duplicate labels.
-        assert_eq!(size, labels.len(), "Labels must be unique.");
+        assert_eq!(labels.len(), n, "Labels must be unique.");
+
+        // Sort the labels.
+        labels.sort();
 
         // Initialize the adjacency matrix with `false` values.
-        let adjacency_matrix = Array2::from_elem((size, size), false);
+        let adjacency_matrix: Array2<_> = Array::from_elem((n, n), false);
+
+        // Debug assert to check the sorting of the labels.
+        debug_assert!(labels.iter().is_sorted(), "Vertices labels must be sorted.");
 
         Self {
             labels,

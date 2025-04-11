@@ -5,7 +5,7 @@ use ndarray::Axis;
 use super::DiGraph;
 
 /// Topological sort trait.
-pub trait TopologicalSort {
+pub trait TopologicalOrder {
     /// Returns the topological sort of the graph.
     ///
     /// # Returns
@@ -13,17 +13,17 @@ pub trait TopologicalSort {
     /// A vector of vertex indices in topological order,
     /// or `None` if the order does not exists.
     ///
-    fn topological_sort(&self) -> Option<Vec<usize>>;
+    fn topological_order(&self) -> Option<Vec<usize>>;
 }
 
-impl TopologicalSort for DiGraph {
-    fn topological_sort(&self) -> Option<Vec<usize>> {
+impl TopologicalOrder for DiGraph {
+    fn topological_order(&self) -> Option<Vec<usize>> {
         // Compute the in-degrees of the vertices.
         let mut in_degree = self
             .adjacency_matrix()
             .mapv(|x| x as usize)
             .sum_axis(Axis(0));
-        // Initialize queue with nodes having in-degree 0
+        // Initialize queue with vertices having in-degree 0
         let mut to_be_visited: VecDeque<usize> = in_degree
             .iter()
             .enumerate()
@@ -32,7 +32,7 @@ impl TopologicalSort for DiGraph {
 
         // Initialize the order vector.
         let mut order = Vec::with_capacity(in_degree.len());
-        // While there are nodes to be visited ...
+        // While there are vertices to be visited ...
         while let Some(i) = to_be_visited.pop_front() {
             // Add the vertex to the order.
             order.push(i);

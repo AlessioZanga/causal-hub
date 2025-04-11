@@ -1,8 +1,8 @@
 mod directed;
 pub use directed::*;
 
-mod topological_sort;
-pub use topological_sort::*;
+mod topological_order;
+pub use topological_order::*;
 
 mod undirected;
 pub use undirected::*;
@@ -20,6 +20,10 @@ pub trait Graph {
     ///
     /// * `labels` - The labels of the vertices in the graph.
     ///
+    /// # Notes
+    ///
+    /// * Labels will be sorted in alphabetical order.
+    ///
     /// # Panics
     ///
     /// * If the labels are not unique.
@@ -28,7 +32,10 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn empty(labels: Vec<&str>) -> Self;
+    fn empty<I, V>(labels: I) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: Into<String>;
 
     /// Returns the labels of the vertices in the graph.
     ///

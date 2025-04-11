@@ -43,8 +43,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to read line number 2.")]
-    fn test_from_csv_reader_malformed_line() {
+    #[should_panic(expected = "Malformed record on line 2.")]
+    fn test_from_csv_reader_malformed_record() {
         let reader = concat!(
             "A,B,C\n",
             "no,no,no\n",
@@ -59,8 +59,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to read empty value at line number 2.")]
-    fn test_from_csv_reader_empty_value() {
+    #[should_panic(expected = "Missing value on line 2.")]
+    fn test_from_csv_reader_missing_value() {
         let reader = concat!(
             "A,B,C\n",
             "no,no,no\n",

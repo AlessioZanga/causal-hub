@@ -1,3 +1,3 @@
 mod directed;
-mod topological_sort;
+mod topological_order;
 mod undirected;

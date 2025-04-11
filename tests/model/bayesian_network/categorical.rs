@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        distribution::{CategoricalCPD, Distribution},
+        distribution::{CPD, CategoricalCPD},
         graph::{DiGraph, Graph},
         model::{BayesianNetwork, CategoricalBN},
     };
@@ -19,15 +19,14 @@ mod tests {
         let cpds = vec![
             CategoricalCPD::new(
                 // P(A)
-                vec![("A", vec!["no", "yes"])], //
-                array![[0.1, 0.9]],             //
+                ("A", vec!["no", "yes"]),        //
+                Vec::<(&str, Vec<&str>)>::new(), //
+                array![[0.1, 0.9]],              //
             ),
             CategoricalCPD::new(
                 // P(B | A)
-                vec![
-                    ("B", vec!["no", "yes"]), //
-                    ("A", vec!["no", "yes"]), //
-                ],
+                ("B", vec!["no", "yes"]),       //
+                vec![("A", vec!["no", "yes"])], //
                 array![
                     [0.2, 0.8], //
                     [0.4, 0.6], //
@@ -35,8 +34,8 @@ mod tests {
             ),
             CategoricalCPD::new(
                 // P(C | A, B)
+                ("C", vec!["no", "yes"]), //
                 vec![
-                    ("C", vec!["no", "yes"]), //
                     ("A", vec!["no", "yes"]), //
                     ("B", vec!["no", "yes"]), //
                 ],
@@ -62,9 +61,17 @@ mod tests {
 
         // Check the distributions.
         assert_eq!(bn.cpds().len(), 3);
-        assert!(bn.cpds()[0].labels().iter().eq(["A"]));
-        assert!(bn.cpds()[1].labels().iter().eq(["B", "A"]));
-        assert!(bn.cpds()[2].labels().iter().eq(["C", "A", "B"]));
+        assert_eq!(bn.cpds()[0].label(), "A");
+        assert_eq!(bn.cpds()[1].label(), "B");
+        assert_eq!(bn.cpds()[2].label(), "C");
+        assert!(
+            bn.cpds()[0]
+                .conditioning_labels()
+                .iter()
+                .eq(Vec::<&str>::new())
+        );
+        assert!(bn.cpds()[1].conditioning_labels().iter().eq(["A"]));
+        assert!(bn.cpds()[2].conditioning_labels().iter().eq(["A", "B"]));
 
         // Check the states.
         assert_eq!(
@@ -93,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to map graph labels to distributions labels.")]
+    #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
     fn test_unique_labels() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
@@ -102,12 +109,14 @@ mod tests {
         let cpds = vec![
             CategoricalCPD::new(
                 // P(A)
-                vec![("A", vec!["no", "yes"])],
+                ("A", vec!["no", "yes"]),
+                Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
             CategoricalCPD::new(
                 // P(B | A)
-                vec![("B", vec!["no", "yes"]), ("A", vec!["no", "yes"])],
+                ("B", vec!["no", "yes"]),
+                vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -115,7 +124,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to map graph labels to distributions labels.")]
+    #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
     fn test_missing_distribution() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
@@ -124,17 +133,20 @@ mod tests {
         let cpds = vec![
             CategoricalCPD::new(
                 // P(A)
-                vec![("A", vec!["no", "yes"])],
+                ("A", vec!["no", "yes"]),
+                Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
             CategoricalCPD::new(
                 // P(A)
-                vec![("A", vec!["no", "yes"])],
+                ("A", vec!["no", "yes"]),
+                Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
             CategoricalCPD::new(
                 // P(B | A)
-                vec![("B", vec!["no", "yes"]), ("A", vec!["no", "yes"])],
+                ("B", vec!["no", "yes"]),
+                vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -142,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to align graph parents and conditioning labels.")]
+    #[should_panic(expected = "Graph parents labels and conditioning labels must be the same.")]
     fn test_same_parents() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
@@ -150,21 +162,20 @@ mod tests {
         let cpds = vec![
             CategoricalCPD::new(
                 // P(A)
-                vec![("A", vec!["no", "yes"])],
+                ("A", vec!["no", "yes"]),
+                Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
             CategoricalCPD::new(
                 // P(B | A)
-                vec![("B", vec!["no", "yes"]), ("A", vec!["no", "yes"])],
+                ("B", vec!["no", "yes"]),
+                vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
             CategoricalCPD::new(
                 // P(C | A, B)
-                vec![
-                    ("C", vec!["no", "yes"]),
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                ],
+                ("C", vec!["no", "yes"]),
+                vec![("A", vec!["no", "yes"]), ("B", vec!["no", "yes"])],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             ),
         ];

@@ -18,5 +18,9 @@ pub mod graph;
 pub mod io;
 /// Models and algorithms for inference.
 pub mod model;
-/// Helper types and functions.
+/// Sampling methods for models.
+pub mod sampler;
+/// Helper types.
 pub mod types;
+/// Utilities and helper functions.
+pub mod utils;

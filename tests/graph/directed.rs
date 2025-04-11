@@ -6,7 +6,11 @@ mod tests {
 
     #[test]
     fn test_has_edge() {
-        let mut graph = DiGraph::empty(LABELS.to_vec());
+        let mut graph = DiGraph::empty(["A", "C", "B"]);
+
+        assert!(graph.labels().iter().is_sorted());
+        assert!(graph.labels().iter().eq(["A", "B", "C"]));
+
         assert!(graph.add_edge(0, 1));
         assert!(graph.has_edge(0, 1));
         assert!(!graph.has_edge(1, 0));
@@ -115,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_empty_labels() {
-        let labels = vec![];
+        let labels: Vec<String> = vec![];
         DiGraph::empty(labels);
     }
 }
