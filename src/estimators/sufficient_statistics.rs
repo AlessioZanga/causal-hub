@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 
 use super::CSSEstimator;
 use crate::{
-    dataset::{CategoricalDataset, CategoricalTrj, Dataset},
+    datasets::{CategoricalDataset, CategoricalTrj, Dataset},
     types::FxIndexSet,
     utils::RMI,
 };

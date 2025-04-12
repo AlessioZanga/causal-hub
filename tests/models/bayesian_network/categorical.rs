@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        distribution::{CPD, CategoricalCPD},
-        graph::{DiGraph, Graph},
-        model::{BayesianNetwork, CategoricalBN},
+        distributions::{CPD, CategoricalCPD},
+        graphs::{DiGraph, Graph},
+        models::{BayesianNetwork, CategoricalBN},
     };
     use ndarray::prelude::*;
 

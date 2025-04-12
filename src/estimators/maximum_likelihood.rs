@@ -2,8 +2,8 @@ use ndarray::prelude::*;
 
 use super::{CPDEstimator, CSSEstimator, SSE};
 use crate::{
-    dataset::{CategoricalDataset, Dataset},
-    distribution::CategoricalCPD,
+    datasets::{CategoricalDataset, Dataset},
+    distributions::CategoricalCPD,
 };
 
 /// A struct representing a maximum likelihood estimator.

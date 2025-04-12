@@ -3,9 +3,9 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub_next::{
-            dataset::CategoricalDataset,
-            distribution::CPD,
-            estimator::{CPDEstimator, MLE},
+            datasets::CategoricalDataset,
+            distributions::CPD,
+            estimators::{CPDEstimator, MLE},
         };
         use ndarray::prelude::*;
 
@@ -173,12 +173,12 @@ mod tests {
     mod categorical_bn {
         use approx::*;
         use causal_hub_next::{
-            dataset::CategoricalDataset,
-            distribution::CPD,
-            estimator::{BNEstimator, MLE},
-            graph::{DiGraph, Graph},
+            datasets::CategoricalDataset,
+            distributions::CPD,
+            estimators::{BNEstimator, MLE},
+            graphs::{DiGraph, Graph},
             io::FromCsvReader,
-            model::{BayesianNetwork, CategoricalBN},
+            models::{BayesianNetwork, CategoricalBN},
         };
         use csv::ReaderBuilder;
         use ndarray::prelude::*;

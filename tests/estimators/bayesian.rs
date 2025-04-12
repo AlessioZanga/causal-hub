@@ -3,9 +3,9 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub_next::{
-            dataset::CategoricalDataset,
-            distribution::CPD,
-            estimator::{BE, CPDEstimator},
+            datasets::CategoricalDataset,
+            distributions::CPD,
+            estimators::{BE, CPDEstimator},
         };
         use ndarray::prelude::*;
 

@@ -8,8 +8,8 @@ mod sufficient_statistics;
 pub use sufficient_statistics::*;
 
 use crate::{
-    graph::{DiGraph, Graph},
-    model::BayesianNetwork,
+    graphs::{DiGraph, Graph},
+    models::BayesianNetwork,
 };
 
 /// A trait for sufficient statistics estimators.

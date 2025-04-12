@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::graph::{DiGraph, Graph, TopologicalOrder};
+    use causal_hub_next::graphs::{DiGraph, Graph, TopologicalOrder};
 
     #[test]
     fn test_topological_order_simple() {

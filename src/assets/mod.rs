@@ -1,7 +1,7 @@
 use dry::macro_for;
 use paste::paste;
 
-use crate::{io::BifReader, model::CategoricalBN};
+use crate::{io::BifReader, models::CategoricalBN};
 
 macro_for!(
     $bn in [

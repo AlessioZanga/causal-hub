@@ -6,10 +6,10 @@ use rand::{
 
 use super::BNSampler;
 use crate::{
-    dataset::CategoricalDataset,
-    distribution::CPD,
-    graph::{Graph, TopologicalOrder},
-    model::{BayesianNetwork, CategoricalBN},
+    datasets::CategoricalDataset,
+    distributions::CPD,
+    graphs::{Graph, TopologicalOrder},
+    models::{BayesianNetwork, CategoricalBN},
     utils::RMI,
 };
 

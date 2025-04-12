@@ -1,7 +1,7 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{graph::DiGraph, types::FxIndexMap};
+use crate::{graphs::DiGraph, types::FxIndexMap};
 
 /// A trait for Bayesian networks.
 pub trait BayesianNetwork {

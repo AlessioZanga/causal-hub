@@ -1,6 +1,9 @@
 mod categorical;
 pub use categorical::*;
 
+mod intensity_matrix;
+pub use intensity_matrix::*;
+
 /// A trait for conditional probability distributions.
 pub trait ConditionalProbabilityDistribution {
     /// The type of the label.

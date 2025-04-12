@@ -3,11 +3,11 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub_next::{
         assets::{load_cancer, load_child},
-        dataset::Dataset,
-        distribution::CPD,
-        estimator::{BNEstimator, MLE},
-        model::{BayesianNetwork, CategoricalBN},
-        sampler::{BNSampler, ForwardSampler},
+        datasets::Dataset,
+        distributions::CPD,
+        estimators::{BNEstimator, MLE},
+        models::{BayesianNetwork, CategoricalBN},
+        samplers::{BNSampler, ForwardSampler},
     };
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;

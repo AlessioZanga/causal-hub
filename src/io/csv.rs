@@ -4,7 +4,7 @@ use csv::Reader;
 use ndarray::prelude::*;
 
 use crate::{
-    dataset::CategoricalDataset,
+    datasets::CategoricalDataset,
     types::{FxIndexMap, FxIndexSet},
 };
 

@@ -7,19 +7,19 @@
 /// Assets such as datasets, models, and other resources.
 pub mod assets;
 /// Dataset structures.
-pub mod dataset;
+pub mod datasets;
 /// Probability distributions.
-pub mod distribution;
+pub mod distributions;
 /// Estimators for probability distributions.
-pub mod estimator;
+pub mod estimators;
 /// Graph structures and algorithms.
-pub mod graph;
+pub mod graphs;
 /// Input/output utilities.
 pub mod io;
 /// Models and algorithms for inference.
-pub mod model;
+pub mod models;
 /// Sampling methods for models.
-pub mod sampler;
+pub mod samplers;
 /// Helper types.
 pub mod types;
 /// Utilities and helper functions.

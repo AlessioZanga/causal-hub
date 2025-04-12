@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    dataset::Dataset,
+    datasets::Dataset,
     types::{FxIndexMap, FxIndexSet},
 };
 

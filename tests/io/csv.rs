@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        dataset::{CategoricalDataset, Dataset},
+        datasets::{CategoricalDataset, Dataset},
         io::FromCsvReader,
     };
     use csv::ReaderBuilder;

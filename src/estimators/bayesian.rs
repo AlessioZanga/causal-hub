@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use super::{CPDEstimator, CSSEstimator, SSE};
-use crate::{dataset::CategoricalDataset, distribution::CategoricalCPD};
+use crate::{datasets::CategoricalDataset, distributions::CategoricalCPD};
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Copy, Debug, Default)]

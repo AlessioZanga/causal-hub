@@ -1,7 +1,7 @@
 use super::BayesianNetwork;
 use crate::{
-    distribution::{CPD, CategoricalCPD},
-    graph::{DiGraph, Graph, TopologicalOrder},
+    distributions::{CPD, CategoricalCPD},
+    graphs::{DiGraph, Graph, TopologicalOrder},
     types::{FxIndexMap, FxIndexSet},
 };
 
