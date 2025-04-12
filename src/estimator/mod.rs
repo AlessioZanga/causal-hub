@@ -14,11 +14,11 @@ use crate::{
 
 /// A trait for sufficient statistics estimators.
 pub trait ConditionalSufficientStatisticsEstimator<D, S> {
-    /// Fits the estimator to the data and returns the conditional sufficient statistics.
+    /// Fits the estimator to the dataset and returns the conditional sufficient statistics.
     ///
     /// # Arguments
     ///
-    /// * `data` - The data to fit the estimator to.
+    /// * `dataset` - The dataset to fit the estimator to.
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
@@ -26,7 +26,7 @@ pub trait ConditionalSufficientStatisticsEstimator<D, S> {
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, data: &D, x: usize, z: &[usize]) -> S;
+    fn fit(&self, dataset: &D, x: usize, z: &[usize]) -> S;
 }
 
 /// A type alias for a sufficient statistics estimator.
@@ -34,11 +34,11 @@ pub use ConditionalSufficientStatisticsEstimator as CSSEstimator;
 
 /// A trait for conditional probability distribution estimators.
 pub trait ConditionalProbabilityDistributionEstimator<D, P> {
-    /// Fits the estimator to the data and returns a CPD.
+    /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments
     ///
-    /// * `data` - The data to fit the estimator to.
+    /// * `dataset` - The dataset to fit the estimator to.
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
@@ -46,7 +46,7 @@ pub trait ConditionalProbabilityDistributionEstimator<D, P> {
     ///
     /// The estimated CDP.
     ///
-    fn fit(&self, data: &D, x: usize, z: &[usize]) -> P;
+    fn fit(&self, dataset: &D, x: usize, z: &[usize]) -> P;
 }
 
 /// A type alias for a conditional probability distribution estimator.
@@ -54,18 +54,18 @@ pub use ConditionalProbabilityDistributionEstimator as CPDEstimator;
 
 /// A trait for Bayesian network estimators.
 pub trait BayesianNetworkEstimator<D, BN> {
-    /// Fits the estimator to the data and returns a Bayesian network.
+    /// Fits the estimator to the dataset and returns a Bayesian network.
     ///
     /// # Arguments
     ///
-    /// * `data` - The data to fit the estimator to.
+    /// * `dataset` - The dataset to fit the estimator to.
     /// * `graph` - The graph to fit the estimator to.
     ///
     /// # Returns
     ///
     /// The estimated Bayesian network.
     ///
-    fn fit(&self, data: &D, graph: DiGraph) -> BN;
+    fn fit(&self, dataset: &D, graph: DiGraph) -> BN;
 }
 
 /// A type alias for a Bayesian network estimator.
@@ -77,11 +77,11 @@ where
     BN: BayesianNetwork,
     E: CPDEstimator<D, BN::CPD>,
 {
-    fn fit(&self, data: &D, graph: DiGraph) -> BN {
+    fn fit(&self, dataset: &D, graph: DiGraph) -> BN {
         // Fit the parameters of the distribution using the estimator.
         let cpds: Vec<_> = graph
             .vertices()
-            .map(|i| self.fit(data, i, &graph.parents(i)))
+            .map(|i| self.fit(dataset, i, &graph.parents(i)))
             .collect();
         // Construct the Bayesian network with the graph and the parameters.
         BN::new(graph, cpds)

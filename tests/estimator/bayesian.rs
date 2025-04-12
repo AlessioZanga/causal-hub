@@ -3,7 +3,7 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub_next::{
-            data::CategoricalData,
+            dataset::CategoricalDataset,
             distribution::CPD,
             estimator::{BE, CPDEstimator},
         };
@@ -24,12 +24,12 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let data = CategoricalData::new(variables, values);
+            let dataset = CategoricalDataset::new(variables, values);
 
             let estimator = BE::new(1.0);
 
             // P(A)
-            let distribution = estimator.fit(&data, 0, &[]);
+            let distribution = estimator.fit(&dataset, 0, &[]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -75,7 +75,7 @@ mod tests {
             );
 
             // P(A | B, C)
-            let distribution = estimator.fit(&data, 0, &[1, 2]);
+            let distribution = estimator.fit(&dataset, 0, &[1, 2]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -138,12 +138,12 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let data = CategoricalData::new(variables, values);
+            let dataset = CategoricalDataset::new(variables, values);
 
             let estimator = BE::new(1.0);
 
             // P(A | A, C)
-            let _ = estimator.fit(&data, 0, &[0, 2]);
+            let _ = estimator.fit(&dataset, 0, &[0, 2]);
         }
     }
 }

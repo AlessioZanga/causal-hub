@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 
 use super::{CPDEstimator, CSSEstimator, SSE};
 use crate::{
-    data::{CategoricalData, Data},
+    dataset::{CategoricalDataset, Dataset},
     distribution::CategoricalCPD,
 };
 
@@ -26,21 +26,21 @@ impl MaximumLikelihoodEstimator {
     }
 }
 
-impl CPDEstimator<CategoricalData, CategoricalCPD> for MLE {
-    fn fit(&self, data: &CategoricalData, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CategoricalDataset, CategoricalCPD> for MLE {
+    fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> CategoricalCPD {
         // Get states and cardinality.
-        let states = data.states();
+        let states = dataset.states();
 
         // Initialize the sufficient statistics estimator.
         let sse = SSE::new();
         // Compute sufficient statistics.
-        let (n_xz, n_z, n) = sse.fit(data, x, z);
+        let (n_xz, n_z, n) = sse.fit(dataset, x, z);
 
         // Assert the marginal counts are not zero.
         assert!(
             n_z.iter().all(|&x| x > 0.),
             "Failed to get non-zero counts for variable '{}'.",
-            data.labels()[x]
+            dataset.labels()[x]
         );
 
         // Compute the parameters by normalizing the counts.

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::data::{CategoricalData, Data};
+    use causal_hub_next::dataset::{CategoricalDataset, Dataset};
     use ndarray::prelude::*;
 
     #[test]
@@ -16,13 +16,13 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let data = CategoricalData::new(variables, values.clone());
+        let dataset = CategoricalDataset::new(variables, values.clone());
 
-        assert!(data.labels().iter().eq(["A", "B", "C"]));
-        assert!(data.labels().iter().is_sorted());
-        assert!(data.states().values().all(|x| x.iter().eq(["no", "yes"])));
+        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert!(dataset.labels().iter().is_sorted());
+        assert!(dataset.states().values().all(|x| x.iter().eq(["no", "yes"])));
         assert_eq!(
-            data.values(),
+            dataset.values(),
             &array![
                 [0, 0, 0], //
                 [0, 0, 1], //
@@ -45,10 +45,10 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let data = CategoricalData::new(variables, values);
+        let dataset = CategoricalDataset::new(variables, values);
 
         assert_eq!(
-            data.to_string(),
+            dataset.to_string(),
             concat!(
                 "-------------------\n",
                 "| A   | B   | C   |\n",

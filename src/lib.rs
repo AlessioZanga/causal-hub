@@ -6,8 +6,8 @@
 
 /// Assets such as datasets, models, and other resources.
 pub mod assets;
-/// Data structures.
-pub mod data;
+/// Dataset structures.
+pub mod dataset;
 /// Probability distributions.
 pub mod distribution;
 /// Estimators for probability distributions.

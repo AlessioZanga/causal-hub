@@ -3,7 +3,7 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub_next::{
-            data::CategoricalData,
+            dataset::CategoricalDataset,
             distribution::CPD,
             estimator::{CPDEstimator, MLE},
         };
@@ -24,12 +24,12 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let data = CategoricalData::new(variables, values);
+            let dataset = CategoricalDataset::new(variables, values);
 
             let estimator = MLE::new();
 
             // P(A)
-            let distribution = estimator.fit(&data, 0, &[]);
+            let distribution = estimator.fit(&dataset, 0, &[]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -75,7 +75,7 @@ mod tests {
             );
 
             // P(A | B, C)
-            let distribution = estimator.fit(&data, 0, &[1, 2]);
+            let distribution = estimator.fit(&dataset, 0, &[1, 2]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -138,12 +138,12 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let data = CategoricalData::new(variables, values);
+            let dataset = CategoricalDataset::new(variables, values);
 
             let estimator = MLE::new();
 
             // P(A | A, C)
-            let _ = estimator.fit(&data, 0, &[0, 2]);
+            let _ = estimator.fit(&dataset, 0, &[0, 2]);
         }
 
         #[test]
@@ -161,19 +161,19 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let data = CategoricalData::new(variables, values);
+            let dataset = CategoricalDataset::new(variables, values);
 
             let estimator = MLE::new();
 
             // P(A | B, C)
-            let _ = estimator.fit(&data, 0, &[1, 2]);
+            let _ = estimator.fit(&dataset, 0, &[1, 2]);
         }
     }
 
     mod categorical_bn {
         use approx::*;
         use causal_hub_next::{
-            data::CategoricalData,
+            dataset::CategoricalDataset,
             distribution::CPD,
             estimator::{BNEstimator, MLE},
             graph::{DiGraph, Graph},
@@ -185,7 +185,7 @@ mod tests {
 
         #[test]
         fn test_fit() {
-            let data = concat!(
+            let dataset = concat!(
                 "A,B,C\n",
                 "no,no,no\n",
                 "no,no,yes\n",
@@ -196,10 +196,10 @@ mod tests {
                 "yes,yes,no\n",
                 "yes,yes,yes"
             );
-            let data = ReaderBuilder::new()
+            let dataset = ReaderBuilder::new()
                 .has_headers(true)
-                .from_reader(data.as_bytes());
-            let data = CategoricalData::from_csv_reader(data);
+                .from_reader(dataset.as_bytes());
+            let dataset = CategoricalDataset::from_csv_reader(dataset);
 
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
             graph.add_edge(0, 1);
@@ -208,7 +208,7 @@ mod tests {
 
             let estimator = MLE::new();
 
-            let bn: CategoricalBN = estimator.fit(&data, graph);
+            let bn: CategoricalBN = estimator.fit(&dataset, graph);
 
             // P(A)
             let distribution = &bn.cpds()["A"];

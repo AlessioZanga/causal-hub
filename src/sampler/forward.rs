@@ -6,7 +6,7 @@ use rand::{
 
 use super::BNSampler;
 use crate::{
-    data::CategoricalData,
+    dataset::CategoricalDataset,
     distribution::CPD,
     graph::{Graph, TopologicalOrder},
     model::{BayesianNetwork, CategoricalBN},
@@ -30,15 +30,15 @@ impl ForwardSampler {
     }
 }
 
-impl BNSampler<CategoricalBN, CategoricalData> for ForwardSampler {
-    fn sample<R>(&self, rng: &mut R, bn: &CategoricalBN, n: usize) -> CategoricalData
+impl BNSampler<CategoricalBN, CategoricalDataset> for ForwardSampler {
+    fn sample<R>(&self, rng: &mut R, bn: &CategoricalBN, n: usize) -> CategoricalDataset
     where
         R: Rng,
     {
         // Get the graph.
         let graph = bn.graph();
-        // Allocate the data.
-        let mut data: Array2<u8> = Array::zeros((n, bn.labels().len()));
+        // Allocate the dataset.
+        let mut dataset: Array2<u8> = Array::zeros((n, bn.labels().len()));
         // Compute the topological order of the graph.
         let order = graph
             .topological_order()
@@ -47,7 +47,7 @@ impl BNSampler<CategoricalBN, CategoricalData> for ForwardSampler {
         // Cache the parents.
         let parents: Vec<_> = graph.vertices().map(|x| graph.parents(x)).collect();
         // Cache the RMIs.
-        let rmi: Vec<_> = bn
+        let idx: Vec<_> = bn
             .cpds()
             .values()
             .map(|cpd| RMI::new(cpd.conditioning_cardinality().iter().copied()))
@@ -58,11 +58,11 @@ impl BNSampler<CategoricalBN, CategoricalData> for ForwardSampler {
             // Get the parents of the vertex.
             let pa_x = &parents[x];
             // Get the RMI of the vertex.
-            let rmi_x = &rmi[x];
+            let rmi_x = &idx[x];
             // Get the CPD of the vertex.
             let cpd_x = bn.cpds()[x].parameters();
             // For each sample ...
-            data.rows_mut().into_iter().for_each(|mut row| {
+            dataset.rows_mut().into_iter().for_each(|mut row| {
                 // Compute the index on the parents to condition on.
                 // NOTE: We can to this because the labels and states are sorted (i.e. aligned).
                 let pa_i = rmi_x.ravel(pa_x.iter().map(|&z| row[z] as usize));
@@ -78,7 +78,7 @@ impl BNSampler<CategoricalBN, CategoricalData> for ForwardSampler {
         // Get the states.
         let states = bn.cpds().iter().map(|(label, cpd)| (label, cpd.states()));
 
-        // Construct the data.
-        CategoricalData::new(states, data)
+        // Construct the dataset.
+        CategoricalDataset::new(states, dataset)
     }
 }

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        data::{CategoricalData, Data},
+        dataset::{CategoricalDataset, Dataset},
         io::FromCsvReader,
     };
     use csv::ReaderBuilder;
@@ -19,16 +19,16 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let data = CategoricalData::from_csv_reader(reader);
+        let dataset = CategoricalDataset::from_csv_reader(reader);
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
-        assert!(data.labels().iter().eq(["A", "B", "C"]));
-        assert!(data.states().values().all(|x| x.iter().eq(["no", "yes"])));
-        assert_eq!(data.values(), &values);
+        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert!(dataset.states().values().all(|x| x.iter().eq(["no", "yes"])));
+        assert_eq!(dataset.values(), &values);
 
         assert_eq!(
-            data.to_string(),
+            dataset.to_string(),
             concat!(
                 "-------------------\n",
                 "| A   | B   | C   |\n",
@@ -55,7 +55,7 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _ = CategoricalData::from_csv_reader(reader);
+        let _ = CategoricalDataset::from_csv_reader(reader);
     }
 
     #[test]
@@ -71,6 +71,6 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _ = CategoricalData::from_csv_reader(reader);
+        let _ = CategoricalDataset::from_csv_reader(reader);
     }
 }

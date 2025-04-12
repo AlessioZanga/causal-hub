@@ -1,5 +1,5 @@
 mod assets;
-mod data;
+mod dataset;
 mod distribution;
 mod estimator;
 mod graph;

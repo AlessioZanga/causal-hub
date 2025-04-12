@@ -3,21 +3,21 @@ use std::fmt::Display;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use super::Data;
+use super::Dataset;
 use crate::types::{FxIndexMap, FxIndexSet};
 
-/// A struct representing a categorical data.
+/// A struct representing a categorical dataset.
 ///
 #[derive(Clone, Debug)]
-pub struct CategoricalData {
+pub struct CategoricalDataset {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Array1<usize>,
     values: Array2<u8>,
 }
 
-impl CategoricalData {
-    /// Creates a new categorical data.
+impl CategoricalDataset {
+    /// Creates a new categorical dataset.
     ///
     /// # Arguments
     ///
@@ -38,7 +38,7 @@ impl CategoricalData {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalData` instance.
+    /// A new `CategoricalDataset` instance.
     ///
     pub fn new<I, J, K, V>(states: I, values: Array2<u8>) -> Self
     where
@@ -181,7 +181,7 @@ impl CategoricalData {
     }
 }
 
-impl Display for CategoricalData {
+impl Display for CategoricalDataset {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Get the maximum length of the labels and states.
         let n = self
@@ -221,7 +221,7 @@ impl Display for CategoricalData {
     }
 }
 
-impl Data for CategoricalData {
+impl Dataset for CategoricalDataset {
     type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 

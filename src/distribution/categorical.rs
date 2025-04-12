@@ -278,22 +278,22 @@ impl CategoricalCPD {
         &self.conditioning_cardinality
     }
 
-    /// Returns the sample size of the data used to fit the distribution, if any.
+    /// Returns the sample size of the dataset used to fit the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample size of the data used to fit the distribution.
+    /// The sample size of the dataset used to fit the distribution.
     ///
     #[inline]
     pub const fn sample_size(&self) -> Option<usize> {
         self.sample_size
     }
 
-    /// Returns the sample log-likelihood of the data given the distribution, if any.
+    /// Returns the sample log-likelihood of the dataset given the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample log-likelihood of the data given the distribution.
+    /// The sample log-likelihood of the dataset given the distribution.
     ///
     #[inline]
     pub const fn sample_log_likelihood(&self) -> Option<f64> {
@@ -306,8 +306,8 @@ impl CategoricalCPD {
     ///
     /// * `states` - The variables states.
     /// * `parameters` - The probabilities of the states.
-    /// * `sample_size` - The sample size of the data used to fit the distribution, if any.
-    /// * `sample_log_likelihood` - The sample log-likelihood of the data given the distribution, if any.
+    /// * `sample_size` - The sample size of the dataset used to fit the distribution, if any.
+    /// * `sample_log_likelihood` - The sample log-likelihood of the dataset given the distribution, if any.
     ///
     /// # Notes
     ///

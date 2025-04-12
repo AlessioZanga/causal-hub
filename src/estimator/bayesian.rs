@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use super::{CPDEstimator, CSSEstimator, SSE};
-use crate::{data::CategoricalData, distribution::CategoricalCPD};
+use crate::{dataset::CategoricalDataset, distribution::CategoricalCPD};
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Copy, Debug, Default)]
@@ -41,15 +41,15 @@ impl<Pi> BayesianEstimator<Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CategoricalData, CategoricalCPD> for BE<f64> {
-    fn fit(&self, data: &CategoricalData, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CategoricalDataset, CategoricalCPD> for BE<f64> {
+    fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> CategoricalCPD {
         // Get states and cardinality.
-        let (states, cards) = (data.states(), data.cardinality());
+        let (states, cards) = (dataset.states(), dataset.cardinality());
 
         // Initialize the sufficient statistics estimator.
         let sse = SSE::new();
         // Compute sufficient statistics.
-        let (n_xz, n_z, n) = sse.fit(data, x, z);
+        let (n_xz, n_z, n) = sse.fit(dataset, x, z);
 
         // Get the prior, as the alpha of the Dirichlet distribution.
         let alpha = *self.prior();

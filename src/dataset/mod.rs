@@ -4,8 +4,8 @@ pub use categorical::*;
 mod trajectory;
 pub use trajectory::*;
 
-/// A trait for data.
-pub trait Data {
+/// A trait for dataset.
+pub trait Dataset {
     /// The type of the labels.
     type Labels;
     /// The type of the values.

@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub_next::{
         assets::{load_cancer, load_child},
-        data::Data,
+        dataset::Dataset,
         distribution::CPD,
         estimator::{BNEstimator, MLE},
         model::{BayesianNetwork, CategoricalBN},
@@ -21,16 +21,16 @@ mod tests {
         // Initialize sampler.
         let sampler = ForwardSampler::new();
         // Sample from BN.
-        let data = sampler.sample(&mut rng, &bn, 10);
+        let dataset = sampler.sample(&mut rng, &bn, 10);
 
         // Check labels.
-        assert!(data.labels().eq(bn.labels()));
+        assert!(dataset.labels().eq(bn.labels()));
         // Check sample size.
-        assert_eq!(data.sample_size(), 10);
+        assert_eq!(dataset.sample_size(), 10);
 
-        // Check data layout.
+        // Check dataset layout.
         assert_eq!(
-            data.to_string(),
+            dataset.to_string(),
             concat!(
                 "-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n",
                 "| Age            | BirthAsphyxia  | CO2            | CO2Report      | CardiacMixing  | ChestXray      | Disease        | DuctFlow       | Grunting       | GruntingReport | HypDistrib     | HypoxiaInO2    | LVH            | LVHreport      | LowerBodyO2    | LungFlow       | LungParench    | RUQO2          | Sick           | XrayReport     |\n",
@@ -59,12 +59,12 @@ mod tests {
         // Initialize sampler.
         let sampler = ForwardSampler::new();
         // Sample from BN.
-        let data = sampler.sample(&mut rng, &bn, 100_000);
+        let dataset = sampler.sample(&mut rng, &bn, 100_000);
 
         // Initialize estimator.
         let estimator = MLE::new();
-        // Fit with generated data.
-        let fitted_bn: CategoricalBN = estimator.fit(&data, bn.graph().clone());
+        // Fit with generated dataset.
+        let fitted_bn: CategoricalBN = estimator.fit(&dataset, bn.graph().clone());
 
         // Check fitted CDPs.
         for ((_, cpd), (_, fitted_cpd)) in bn.cpds().iter().zip(fitted_bn.cpds()) {
