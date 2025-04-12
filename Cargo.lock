@@ -54,6 +54,7 @@ dependencies = [
  "pest_derive",
  "rand",
  "rand_xoshiro",
+ "statrs",
 ]
 
 [[package]]
@@ -468,6 +469,16 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "statrs"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a3fe7c28c6512e766b0874335db33c94ad7b8f9054228ae1c2abd47ce7d335e"
+dependencies = [
+ "approx",
+ "num-traits",
 ]
 
 [[package]]

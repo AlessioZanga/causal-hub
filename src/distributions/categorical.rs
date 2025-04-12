@@ -37,10 +37,6 @@ impl CategoricalCPD {
     /// * `states` - The variables states.
     /// * `parameters` - The probabilities of the states.
     ///
-    /// # Notes
-    ///
-    /// The first variable is the one conditioned on as P(X | Z).
-    ///
     /// # Panics
     ///
     /// * If the variable labels are not unique.
@@ -48,7 +44,6 @@ impl CategoricalCPD {
     /// * If the number of states of the first variable does not match the number of columns.
     /// * If the product of the number of states of the remaining variables does not match the number of rows.
     /// * If the probabilities do not sum to one by row, unless empty.
-    ///
     ///
     /// # Returns
     ///
@@ -182,7 +177,7 @@ impl CategoricalCPD {
             conditioning_states.values().map(|i| i.len()).collect();
 
         // Allocate new parameters.
-        let mut new_parameters: Array2<f64> = Array::zeros(parameters.dim());
+        let mut new_parameters = parameters.clone();
         // Sort the values by the indices of the states labels.
         new_parameters
             .columns_mut()
@@ -309,18 +304,9 @@ impl CategoricalCPD {
     /// * `sample_size` - The sample size of the dataset used to fit the distribution, if any.
     /// * `sample_log_likelihood` - The sample log-likelihood of the dataset given the distribution, if any.
     ///
-    /// # Notes
-    ///
-    /// The first variable is the one conditioned on as P(X | Z).
-    ///
     /// # Panics
     ///
-    /// * If the variable labels are not unique.
-    /// * If the variable states are not unique.
-    /// * If the number of states of the first variable does not match the number of columns.
-    /// * If the product of the number of states of the remaining variables does not match the number of rows.
-    /// * If the probabilities do not sum to one by row, unless empty.
-    ///
+    /// See `new` method for panics.
     ///
     /// # Returns
     ///

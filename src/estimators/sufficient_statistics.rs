@@ -111,10 +111,11 @@ impl CSSEstimator<CategoricalTrj, _T1> for SSE {
                 t_xz[[z_i, x_i]] += t_j - t_i;
             });
 
+        // Get the sample size.
+        let n = n_xz.sum();
+
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);
-        // Get the sample size.
-        let n = trj.sample_size();
 
         (n_xz, t_xz, n)
     }

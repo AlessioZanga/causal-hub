@@ -26,7 +26,7 @@ mod tests {
             ];
             let dataset = CategoricalDataset::new(variables, values);
 
-            let estimator = BE::new(1.0);
+            let estimator = BE::new(1);
 
             // P(A)
             let distribution = estimator.fit(&dataset, 0, &[]);
@@ -140,7 +140,7 @@ mod tests {
             ];
             let dataset = CategoricalDataset::new(variables, values);
 
-            let estimator = BE::new(1.0);
+            let estimator = BE::new(1);
 
             // P(A | A, C)
             let _ = estimator.fit(&dataset, 0, &[0, 2]);

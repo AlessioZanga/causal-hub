@@ -102,7 +102,7 @@ impl CategoricalDataset {
         states.sort_keys();
 
         // Allocate the new values array.
-        let mut new_values: Array2<u8> = Array::zeros(values.dim());
+        let mut new_values = values.clone();
         // Sort the values by the indices of the states labels.
         new_values
             .columns_mut()

@@ -27,6 +27,21 @@ pub struct CategoricalConditionalIntensityMatrix {
 pub type CategoricalCIM = CategoricalConditionalIntensityMatrix;
 
 impl CategoricalCIM {
+    /// Creates a new categorical conditional intensity matrix.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The variables states.
+    /// * `parameters` - The intensity matrices of the states.
+    ///
+    /// # Panics
+    ///
+    /// FIXME: Add panics.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalCIM` instance.
+    ///
     pub fn new<I, J, K, L, M, N, O>(
         state: (L, I),
         conditioning_states: J,
@@ -126,7 +141,26 @@ impl CategoricalCIM {
             "Product of the number of conditioning states must match the first shape."
         );
 
-        // FIXME: Check parameters are normalized.
+        // Check parameters validity.
+        parameters.outer_iter().for_each(|q| {
+            // Assert Q is square.
+            assert_eq!(q.nrows(), q.ncols(), "Q must be square.");
+            // Assert Q has non-positive diagonal.
+            assert!(
+                q.diag().iter().all(|&x| x <= 0.0),
+                "Q diagonal must be non-positive."
+            );
+            // Assert Q has non-negative off-diagonal.
+            assert!(
+                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.0),
+                "Q off-diagonal must be non-negative."
+            );
+            // Assert Q rows sum to zero.
+            assert!(
+                q.rows().into_iter().all(|x| x.sum() == 0.0),
+                "Q rows must sum to zero."
+            );
+        });
 
         // Compute the parameters size.
         let parameters_size = shape[0] * shape[1] * shape[2].saturating_sub(1);
@@ -231,6 +265,23 @@ impl CategoricalCIM {
         self.sample_log_likelihood
     }
 
+    /// Creates a new categorical conditional intensity matrix.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The variables states.
+    /// * `parameters` - The intensity matrices of the states.
+    /// * `sample_size` - The sample size of the dataset used to fit the distribution, if any.
+    /// * `sample_log_likelihood` - The sample log-likelihood of the dataset given the distribution, if any.
+    ///
+    /// # Panics
+    ///
+    /// See `new` method for panics.
+    ///
+    /// # Returns
+    ///
+    /// A new `CategoricalCIM` instance.
+    ///
     pub fn with_sample_size<I, J, K, L, M, N, O>(
         state: (L, I),
         conditioning_states: J,
