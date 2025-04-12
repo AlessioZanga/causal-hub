@@ -1,6 +1,9 @@
 use ndarray::prelude::*;
 
-use crate::{dataset::Dataset, types::FxIndexSet};
+use crate::{
+    dataset::Dataset,
+    types::{FxIndexMap, FxIndexSet},
+};
 
 use super::CategoricalDataset;
 
@@ -15,6 +18,18 @@ pub struct CategoricalTrajectory {
 pub type CategoricalTrj = CategoricalTrajectory;
 
 impl CategoricalTrj {
+    /// Constructs a new trajectory instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - An iterator of tuples containing the state labels and their corresponding values.
+    /// * `events` - A 2D array of events.
+    /// * `times` - A 1D array of times.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `CategoricalTrj`.
+    ///
     pub fn new<I, J, K, V>(states: I, events: Array2<u8>, times: Array1<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
@@ -22,7 +37,25 @@ impl CategoricalTrj {
         K: Into<String>,
         V: Into<String>,
     {
-        // FIXME: Sort values by times.
+        // Sort values by times.
+        let mut indices: Vec<_> = (0..events.nrows()).collect();
+        indices.sort_by(|&a, &b| times[a].partial_cmp(&times[b]).unwrap());
+        // Clone the events and times arrays to avoid borrowing issues.
+        let mut new_events = events.clone();
+        let mut new_times = times.clone();
+        // Sort the events and times arrays by the sorted indices.
+        new_events
+            .rows_mut()
+            .into_iter()
+            .zip(new_times.iter_mut())
+            .enumerate()
+            .for_each(|(i, (mut new_events_row, new_time))| {
+                new_events_row.assign(&events.row(indices[i]));
+                *new_time = times[indices[i]];
+            });
+        // Update the events and times with the sorted values.
+        let events = new_events;
+        let times = new_times;
 
         // Create a new categorical dataset instance.
         let events = CategoricalDataset::new(states, events);
@@ -41,11 +74,45 @@ impl CategoricalTrj {
         Self { events, times }
     }
 
+    /// Returns the states of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the states of the trajectory.
+    ///
     #[inline]
-    pub const fn events(&self) -> &CategoricalDataset {
-        &self.events
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        self.events.states()
     }
 
+    /// Returns the cardinality of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the cardinality of the trajectory.
+    ///
+    #[inline]
+    pub const fn cardinality(&self) -> &Array1<usize> {
+        self.events.cardinality()
+    }
+
+    /// Returns the events of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the events of the trajectory.
+    ///
+    #[inline]
+    pub fn events(&self) -> &Array2<u8> {
+        self.events.values()
+    }
+
+    /// Returns the times of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the times of the trajectory.
+    ///
     #[inline]
     pub const fn times(&self) -> &Array1<f64> {
         &self.times
@@ -58,12 +125,12 @@ impl Dataset for CategoricalTrj {
 
     #[inline]
     fn labels(&self) -> &Self::Labels {
-        &self.events.labels()
+        self.events.labels()
     }
 
     #[inline]
     fn values(&self) -> &Self::Values {
-        &self.events.values()
+        self.events.values()
     }
 
     #[inline]
