@@ -9,7 +9,7 @@ pub use sufficient_statistics::*;
 
 use crate::{
     graphs::{DiGraph, Graph},
-    models::BayesianNetwork,
+    models::{BayesianNetwork, ContinuousTimeBayesianNetwork},
 };
 
 /// A trait for sufficient statistics estimators.
@@ -83,7 +83,43 @@ where
             .vertices()
             .map(|i| self.fit(dataset, i, &graph.parents(i)))
             .collect();
-        // Construct the Bayesian network with the graph and the parameters.
+        // Construct the BN with the graph and the parameters.
         BN::new(graph, cpds)
+    }
+}
+
+/// A trait for CTBN estimators.
+pub trait ContinuousTimeBayesianNetworkEstimator<T, CTBN> {
+    /// Fits the estimator to the trajectory and returns a CTBN.
+    ///
+    /// # Arguments
+    ///
+    /// * `trj` - The trajectory to fit the estimator to.
+    /// * `graph` - The graph to fit the estimator to.
+    ///
+    /// # Returns
+    ///
+    /// The estimated CTBN.
+    ///
+    fn fit(&self, trj: &T, graph: DiGraph) -> CTBN;
+}
+
+/// A type alias for a CTBN estimator.
+pub use ContinuousTimeBayesianNetworkEstimator as CTBNEstimator;
+
+/// Blanket implement for all CTBN estimators with a corresponding CPD estimator.
+impl<T, CTBN, E> CTBNEstimator<T, CTBN> for E
+where
+    CTBN: ContinuousTimeBayesianNetwork,
+    E: CPDEstimator<T, CTBN::CIM>,
+{
+    fn fit(&self, trj: &T, graph: DiGraph) -> CTBN {
+        // Fit the parameters of the distribution using the estimator.
+        let cims: Vec<_> = graph
+            .vertices()
+            .map(|i| self.fit(trj, i, &graph.parents(i)))
+            .collect();
+        // Construct the CTBN with the graph and the parameters.
+        CTBN::new(graph, cims)
     }
 }

@@ -24,7 +24,12 @@ mod tests {
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
         assert!(dataset.labels().iter().eq(["A", "B", "C"]));
-        assert!(dataset.states().values().all(|x| x.iter().eq(["no", "yes"])));
+        assert!(
+            dataset
+                .states()
+                .values()
+                .all(|x| x.iter().eq(["no", "yes"]))
+        );
         assert_eq!(dataset.values(), &values);
 
         assert_eq!(

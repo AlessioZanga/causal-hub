@@ -1,5 +1,4 @@
 use ndarray::prelude::*;
-
 use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, SSE};

@@ -1,4 +1,4 @@
-#![warn(missing_docs)] // This will warn if any public items are missing documentation.
+#![warn(missing_docs)]
 //! # CausalHub
 //!
 //! CausalHub is a library for causal inference and causal discovery.

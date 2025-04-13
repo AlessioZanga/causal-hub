@@ -20,7 +20,12 @@ mod tests {
 
         assert!(dataset.labels().iter().eq(["A", "B", "C"]));
         assert!(dataset.labels().iter().is_sorted());
-        assert!(dataset.states().values().all(|x| x.iter().eq(["no", "yes"])));
+        assert!(
+            dataset
+                .states()
+                .values()
+                .all(|x| x.iter().eq(["no", "yes"]))
+        );
         assert_eq!(
             dataset.values(),
             &array![

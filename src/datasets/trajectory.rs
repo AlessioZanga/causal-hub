@@ -1,11 +1,10 @@
 use ndarray::prelude::*;
 
+use super::CategoricalDataset;
 use crate::{
     datasets::Dataset,
     types::{FxIndexMap, FxIndexSet},
 };
-
-use super::CategoricalDataset;
 
 /// A multivariate trajectory.
 #[derive(Clone, Debug)]

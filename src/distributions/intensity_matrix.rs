@@ -1,8 +1,7 @@
 use ndarray::prelude::*;
 
-use crate::types::{FxIndexMap, FxIndexSet};
-
 use super::CPD;
+use crate::types::{FxIndexMap, FxIndexSet};
 
 /// A struct representing a categorical conditional intensity matrix.
 #[derive(Clone, Debug)]

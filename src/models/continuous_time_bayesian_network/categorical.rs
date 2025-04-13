@@ -1,41 +1,41 @@
-use super::BayesianNetwork;
+use super::ContinuousTimeBayesianNetwork;
 use crate::{
-    distributions::{CPD, CategoricalCPD},
-    graphs::{DiGraph, Graph, TopologicalOrder},
+    distributions::{CPD, CategoricalCIM},
+    graphs::{DiGraph, Graph},
     types::FxIndexMap,
 };
 
-/// A categorical Bayesian network (BN).
+/// A categorical continuous time Bayesian network (CTBN).
 #[derive(Clone, Debug)]
-pub struct CategoricalBayesianNetwork {
+pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
-    /// The conditional probability distributions.
-    cpds: FxIndexMap<String, CategoricalCPD>,
+    /// The conditional intensity matrices.
+    cims: FxIndexMap<String, CategoricalCIM>,
 }
 
-/// A type alias for the categorical Bayesian network.
-pub type CategoricalBN = CategoricalBayesianNetwork;
+/// A type alias for the categorical CTBN.
+pub type CategoricalCTBN = CategoricalContinuousTimeBayesianNetwork;
 
-impl BayesianNetwork for CategoricalBN {
+impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
     type Labels = <DiGraph as Graph>::Labels;
-    type CPD = CategoricalCPD;
+    type CIM = CategoricalCIM;
 
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cims: I) -> Self
     where
-        I: IntoIterator<Item = Self::CPD>,
+        I: IntoIterator<Item = Self::CIM>,
     {
         // Collect the CPDs into a map.
-        let mut cpds: FxIndexMap<_, _> = cpds
+        let mut cims: FxIndexMap<_, _> = cims
             .into_iter()
             .map(|x| (x.label().to_owned(), x))
             .collect();
         // Sort the CPDs by their labels.
-        cpds.sort_keys();
+        cims.sort_keys();
 
         // Assert same number of graph labels and CPDs.
         assert!(
-            graph.labels().iter().eq(cpds.keys()),
+            graph.labels().iter().eq(cims.keys()),
             "Graph labels and distributions labels must be the same."
         );
 
@@ -47,7 +47,7 @@ impl BayesianNetwork for CategoricalBN {
                 graph
                     .parents(i)
                     .into_iter()
-                    .eq(cpds[i].conditioning_labels().iter().map(|j| {
+                    .eq(cims[i].conditioning_labels().iter().map(|j| {
                         // Get the index of the label in the graph.
                         graph.labels().get_index_of(j).unwrap()
                     }))
@@ -55,31 +55,22 @@ impl BayesianNetwork for CategoricalBN {
             "Graph parents labels and conditioning labels must be the same."
         );
 
-        // Assert the graph is acyclic.
-        assert!(
-            graph.topological_order().is_some(),
-            "Graph must be acyclic."
-        );
-
-        Self { graph, cpds }
+        Self { graph, cims }
     }
 
-    #[inline]
     fn labels(&self) -> &Self::Labels {
         self.graph.labels()
     }
 
-    #[inline]
     fn graph(&self) -> &DiGraph {
         &self.graph
     }
 
-    #[inline]
-    fn cpds(&self) -> &FxIndexMap<String, Self::CPD> {
-        &self.cpds
+    fn cims(&self) -> &FxIndexMap<String, Self::CIM> {
+        &self.cims
     }
 
     fn parameters_size(&self) -> usize {
-        self.cpds.iter().map(|(_, d)| d.parameters_size()).sum()
+        self.cims.values().map(|x| x.parameters_size()).sum()
     }
 }
