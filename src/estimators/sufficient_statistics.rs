@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 
 use super::CSSEstimator;
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, Dataset},
+    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs, Dataset},
     types::FxIndexSet,
     utils::RMI,
 };
@@ -29,7 +29,7 @@ impl SufficientStatisticsEstimator {
 pub type SSE = SufficientStatisticsEstimator;
 
 // (conditional counts, marginal counts, sample size)
-type _T0 = (Array2<f64>, Array1<f64>, usize);
+type _T0 = (Array2<usize>, Array1<usize>, usize);
 
 impl CSSEstimator<CategoricalDataset, _T0> for SSE {
     fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> _T0 {
@@ -50,8 +50,11 @@ impl CSSEstimator<CategoricalDataset, _T0> for SSE {
 
         // Initialize ravel multi index.
         let idx = RMI::new(z.iter().map(|&i| cards[i]));
+        // Get the cardinality of the conditioned and conditioning variables.
+        let (c_x, c_z) = (cards[x], idx.cardinality().product());
+
         // Initialize the joint counts.
-        let mut n_xz: Array2<usize> = Array::zeros((idx.cardinality().product(), cards[x]));
+        let mut n_xz: Array2<usize> = Array::zeros((c_z, c_x));
 
         // Count the occurrences of the states.
         dataset.values().rows().into_iter().for_each(|row| {
@@ -68,16 +71,12 @@ impl CSSEstimator<CategoricalDataset, _T0> for SSE {
         // Compute the sample size.
         let n = n_z.sum();
 
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
-
         (n_xz, n_z, n)
     }
 }
 
 // (conditional counts, conditional time spent, sample size)
-type _T1 = (Array3<f64>, Array2<f64>, usize);
+type _T1 = (Array3<usize>, Array2<f64>, usize);
 
 impl CSSEstimator<CategoricalTrj, _T1> for SSE {
     fn fit(&self, trj: &CategoricalTrj, x: usize, z: &[usize]) -> _T1 {
@@ -114,9 +113,30 @@ impl CSSEstimator<CategoricalTrj, _T1> for SSE {
         // Get the sample size.
         let n = n_xz.sum();
 
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-
         (n_xz, t_xz, n)
+    }
+}
+
+impl CSSEstimator<CategoricalTrjs, _T1> for SSE {
+    fn fit(&self, trjs: &CategoricalTrjs, x: usize, z: &[usize]) -> _T1 {
+        // Get the cardinality of the trajectory.
+        let cards = trjs.cardinality();
+        // Get the cardinality of the conditioned and conditioning variables.
+        let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+
+        // Initialize the joint counts.
+        let n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
+        // Initialize the time spent in that state.
+        let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+
+        // Iterate over the trajectories.
+        trjs.into_iter()
+            // Sum the sufficient statistics of each trajectory.
+            .fold((n_xz, t_xz, 0), |(n_xz_a, t_xz_a, n_a), trj_b| {
+                // Compute the sufficient statistics of the trajectory.
+                let (n_xz_b, t_xz_b, n_b) = self.fit(trj_b, x, z);
+                // Sum the sufficient statistics.
+                (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+            })
     }
 }

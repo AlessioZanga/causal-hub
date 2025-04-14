@@ -137,3 +137,134 @@ impl Dataset for CategoricalTrj {
         self.events.values().nrows()
     }
 }
+
+/// A collection of multivariate trajectories.
+pub struct CategoricalTrajectories {
+    trajectories: Vec<CategoricalTrajectory>,
+}
+
+/// A type alias for a collection of multivariate trajectories.
+pub type CategoricalTrjs = CategoricalTrajectories;
+
+impl CategoricalTrajectories {
+    /// Constructs a new collection of trajectories.
+    ///
+    /// # Arguments
+    ///
+    /// * `trajectories` - An iterator of `CategoricalTrajectory` instances.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// * The trajectories have different labels.
+    /// * The trajectories have different states.
+    /// * The trajectories have different cardinality.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `CategoricalTrajectories`.
+    ///
+    pub fn new<I>(trajectories: I) -> Self
+    where
+        I: IntoIterator<Item = CategoricalTrajectory>,
+    {
+        // Collect the trajectories into a vector.
+        let trajectories: Vec<_> = trajectories.into_iter().collect();
+
+        // Assert every trajectory has the same labels.
+        assert!(
+            trajectories
+                .windows(2)
+                .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
+            "All trajectories must have the same labels."
+        );
+        // Assert every trajectory has the same states.
+        assert!(
+            trajectories
+                .windows(2)
+                .all(|trjs| trjs[0].states().eq(trjs[1].states())),
+            "All trajectories must have the same states."
+        );
+        // Assert every trajectory has the same cardinality.
+        assert!(
+            trajectories
+                .windows(2)
+                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
+            "All trajectories must have the same cardinality."
+        );
+
+        Self { trajectories }
+    }
+
+    /// Returns the states of the trajectories.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the dataset is empty.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the states of the trajectories.
+    ///
+    #[inline]
+    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        self.trajectories
+            .first()
+            .expect("Dataset is empty.")
+            .states()
+    }
+
+    /// Returns the cardinality of the trajectories.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the dataset is empty.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the cardinality of the trajectories.
+    ///
+    #[inline]
+    pub fn cardinality(&self) -> &Array1<usize> {
+        self.trajectories
+            .first()
+            .expect("Dataset is empty.")
+            .cardinality()
+    }
+}
+
+impl<'a> IntoIterator for &'a CategoricalTrjs {
+    type IntoIter = std::slice::Iter<'a, CategoricalTrj>;
+    type Item = &'a CategoricalTrj;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.trajectories.iter()
+    }
+}
+
+impl Dataset for CategoricalTrjs {
+    type Labels = FxIndexSet<String>;
+    type Values = Array2<u8>;
+
+    #[inline]
+    fn labels(&self) -> &Self::Labels {
+        self.trajectories
+            .first()
+            .expect("Dataset is empty.")
+            .labels()
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Values {
+        self.trajectories
+            .first()
+            .expect("Dataset is empty.")
+            .values()
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.trajectories.iter().map(|x| x.sample_size()).sum()
+    }
+}

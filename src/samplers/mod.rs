@@ -1,6 +1,5 @@
 mod forward;
 pub use forward::*;
-
 use rand::Rng;
 
 /// A trait for sampling from a Bayesian network.
