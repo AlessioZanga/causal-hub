@@ -55,6 +55,8 @@ impl BayesianNetwork for CategoricalBN {
             "Graph parents labels and conditioning labels must be the same."
         );
 
+        // FIXME: Assert states of variables are the same across CPDs.
+
         // Assert the graph is acyclic.
         assert!(
             graph.topological_order().is_some(),
