@@ -55,15 +55,15 @@ impl CategoricalCIM {
         I: IntoIterator<Item = M>,
         J: IntoIterator<Item = (N, K)>,
         K: IntoIterator<Item = O>,
-        L: Into<String>,
-        M: Into<String>,
-        N: Into<String>,
-        O: Into<String>,
+        L: AsRef<str>,
+        M: AsRef<str>,
+        N: AsRef<str>,
+        O: AsRef<str>,
     {
         // Unpack label and states.
         let (label, states) = state;
         // Convert variable label to a string.
-        let label = label.into();
+        let label = label.as_ref().to_owned();
 
         // Initialize variables counter.
         let mut n = 0;
@@ -71,7 +71,7 @@ impl CategoricalCIM {
         let mut states: FxIndexSet<_> = states
             .into_iter()
             .inspect(|_| n += 1)
-            .map(|state| state.into())
+            .map(|state| state.as_ref().to_owned())
             .collect();
 
         // Assert unique labels.
@@ -88,7 +88,7 @@ impl CategoricalCIM {
             .inspect(|_| n += 1)
             .map(|(_label, _states)| {
                 // Convert the variable label to a string.
-                let _label = _label.into();
+                let _label = _label.as_ref().to_owned();
                 // Assert conditioned variable is not a conditioning variable.
                 assert_ne!(
                     _label, label,
@@ -100,7 +100,7 @@ impl CategoricalCIM {
                 let _states: FxIndexSet<_> = _states
                     .into_iter()
                     .inspect(|_| n += 1)
-                    .map(|x| x.into())
+                    .map(|x| x.as_ref().to_owned())
                     .collect();
                 // Assert unique states.
                 assert_eq!(_states.len(), n, "Variables states must be unique.");
@@ -312,10 +312,10 @@ impl CategoricalCIM {
         I: IntoIterator<Item = M>,
         J: IntoIterator<Item = (N, K)>,
         K: IntoIterator<Item = O>,
-        L: Into<String>,
-        M: Into<String>,
-        N: Into<String>,
-        O: Into<String>,
+        L: AsRef<str>,
+        M: AsRef<str>,
+        N: AsRef<str>,
+        O: AsRef<str>,
     {
         // Construct the CIM.
         let mut cim = Self::new(state, conditioning_states, parameters);

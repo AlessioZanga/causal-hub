@@ -35,7 +35,7 @@ pub trait Graph {
     fn empty<I, V>(labels: I) -> Self
     where
         I: IntoIterator<Item = V>,
-        V: Into<String>;
+        V: AsRef<str>;
 
     /// Returns the labels of the vertices in the graph.
     ///

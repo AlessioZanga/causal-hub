@@ -44,8 +44,8 @@ impl CategoricalDataset {
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
-        K: Into<String>,
-        V: Into<String>,
+        K: AsRef<str>,
+        V: AsRef<str>,
     {
         // Initialize variables counter.
         let mut n = 0;
@@ -55,7 +55,7 @@ impl CategoricalDataset {
             .inspect(|_| n += 1)
             .map(|(label, states)| {
                 // Convert the variable label to a string.
-                let label = label.into();
+                let label = label.as_ref().to_owned();
 
                 // Initialize states counter.
                 let mut n = 0;
@@ -63,7 +63,7 @@ impl CategoricalDataset {
                 let states: FxIndexSet<_> = states
                     .into_iter()
                     .inspect(|_| n += 1)
-                    .map(|x| x.into())
+                    .map(|x| x.as_ref().to_owned())
                     .collect();
                 // Assert unique states.
                 assert_eq!(states.len(), n, "Variables states must be unique.");

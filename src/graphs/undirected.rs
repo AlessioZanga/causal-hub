@@ -52,7 +52,7 @@ impl Graph for UnGraph {
     fn empty<I, V>(labels: I) -> Self
     where
         I: IntoIterator<Item = V>,
-        V: Into<String>,
+        V: AsRef<str>,
     {
         // Initialize labels counter.
         let mut n = 0;
@@ -60,7 +60,7 @@ impl Graph for UnGraph {
         let mut labels: FxIndexSet<_> = labels
             .into_iter()
             .inspect(|_| n += 1)
-            .map(|x| x.into())
+            .map(|x| x.as_ref().to_owned())
             .collect();
 
         // Assert no duplicate labels.

@@ -33,8 +33,8 @@ impl CategoricalTrj {
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
-        K: Into<String>,
-        V: Into<String>,
+        K: AsRef<str>,
+        V: AsRef<str>,
     {
         // Sort values by times.
         let mut indices: Vec<_> = (0..events.nrows()).collect();
