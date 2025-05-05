@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 
 use super::ContinuousTimeBayesianNetwork;
 use crate::{
+    datasets::CategoricalTrj,
     distributions::{CPD, CategoricalCIM, CategoricalCPD},
     graphs::{DiGraph, Graph},
     models::{BayesianNetwork, CategoricalBN},
@@ -26,6 +27,8 @@ impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CIM = CategoricalCIM;
     type InitialDistribution = CategoricalBN;
+    type Event = (f64, Array1<u8>);
+    type Trajectory = CategoricalTrj;
 
     fn new<I>(graph: DiGraph, cims: I) -> Self
     where

@@ -5,7 +5,10 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 
 use super::CPD;
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::{
+    types::{FxIndexMap, FxIndexSet},
+    utils::RMI,
+};
 
 /// A struct representing a categorical distribution.
 #[derive(Clone, Debug)]
@@ -18,6 +21,8 @@ pub struct CategoricalConditionalProbabilityDistribution {
     conditioning_labels: FxIndexSet<String>,
     conditioning_states: FxIndexMap<String, FxIndexSet<String>>,
     conditioning_cardinality: Array1<usize>,
+    // Ravel multi index.
+    ravel_multi_index: RMI,
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
@@ -197,6 +202,9 @@ impl CategoricalCPD {
         // Update the values with the new sorted values.
         let parameters = new_parameters;
 
+        // Construct the ravel multi index.
+        let ravel_multi_index = RMI::new(conditioning_cardinality.iter().copied());
+
         // Debug assert to check the sorting of the labels.
         debug_assert!(
             states.iter().is_sorted(),
@@ -222,6 +230,7 @@ impl CategoricalCPD {
             conditioning_labels,
             conditioning_states,
             conditioning_cardinality,
+            ravel_multi_index,
             parameters,
             parameters_size,
             sample_size: None,
@@ -271,6 +280,17 @@ impl CategoricalCPD {
     #[inline]
     pub const fn conditioning_cardinality(&self) -> &Array1<usize> {
         &self.conditioning_cardinality
+    }
+
+    /// Returns the ravel multi index of the conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The ravel multi index of the conditioning variables.
+    ///
+    #[inline]
+    pub const fn ravel_multi_index(&self) -> &RMI {
+        &self.ravel_multi_index
     }
 
     /// Returns the sample size of the dataset used to fit the distribution, if any.

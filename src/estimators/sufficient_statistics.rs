@@ -9,10 +9,12 @@ use crate::{
 };
 
 /// A struct representing a sufficient statistics estimator.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct SufficientStatisticsEstimator;
+#[derive(Clone, Copy, Debug)]
+pub struct SufficientStatisticsEstimator<'a, D> {
+    dataset: &'a D,
+}
 
-impl SufficientStatisticsEstimator {
+impl<'a, D> SufficientStatisticsEstimator<'a, D> {
     /// Constructs a new sufficient statistics estimator.
     ///
     /// # Returns
@@ -20,19 +22,19 @@ impl SufficientStatisticsEstimator {
     /// A new `SufficientStatisticsEstimator` instance.
     ///
     #[inline]
-    pub const fn new() -> Self {
-        Self
+    pub const fn new(dataset: &'a D) -> Self {
+        Self { dataset }
     }
 }
 
 /// A type alias for a sufficient statistics estimator.
-pub type SSE = SufficientStatisticsEstimator;
+pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
 // (conditional counts, marginal counts, sample size)
 type _T0 = (Array2<usize>, Array1<usize>, usize);
 
-impl CSSEstimator<CategoricalDataset, _T0> for SSE {
-    fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> _T0 {
+impl CSSEstimator<_T0> for SSE<'_, CategoricalDataset> {
+    fn fit(&self, x: usize, z: &[usize]) -> _T0 {
         // Concat the variables to fit.
         let x_z: FxIndexSet<_> = [x].iter().chain(z).cloned().collect();
 
@@ -40,7 +42,7 @@ impl CSSEstimator<CategoricalDataset, _T0> for SSE {
         assert_eq!(x_z.len(), 1 + z.len(), "Variables to fit must be unique.");
 
         // Get the reference to the labels, states and cardinality.
-        let (labels, cards) = (dataset.labels(), dataset.cardinality());
+        let (labels, cards) = (self.dataset.labels(), self.dataset.cardinality());
 
         // Assert the variables to fit are in the dataset.
         assert!(
@@ -57,7 +59,7 @@ impl CSSEstimator<CategoricalDataset, _T0> for SSE {
         let mut n_xz: Array2<usize> = Array::zeros((c_z, c_x));
 
         // Count the occurrences of the states.
-        dataset.values().rows().into_iter().for_each(|row| {
+        self.dataset.values().rows().into_iter().for_each(|row| {
             // Get the value of X as index.
             let idx_x = row[x] as usize;
             // Get the value of Z as index using the strides.
@@ -78,10 +80,10 @@ impl CSSEstimator<CategoricalDataset, _T0> for SSE {
 // (conditional counts, conditional time spent, sample size)
 type _T1 = (Array3<usize>, Array2<f64>, usize);
 
-impl CSSEstimator<CategoricalTrj, _T1> for SSE {
-    fn fit(&self, trj: &CategoricalTrj, x: usize, z: &[usize]) -> _T1 {
+impl CSSEstimator<_T1> for SSE<'_, CategoricalTrj> {
+    fn fit(&self, x: usize, z: &[usize]) -> _T1 {
         // Get the cardinality of the trajectory.
-        let cards = trj.cardinality();
+        let cards = self.dataset.cardinality();
         // Construct the ravel multi index.
         let idx = RMI::new(z.iter().map(|&i| cards[i]));
         // Get the cardinality of the conditioned and conditioning variables.
@@ -93,10 +95,11 @@ impl CSSEstimator<CategoricalTrj, _T1> for SSE {
         let mut t_xz: Array2<f64> = Array::zeros((c_z, c_x));
 
         // Iterate over the trajectory events.
-        trj.events()
+        self.dataset
+            .events()
             .rows()
             .into_iter()
-            .zip(trj.times())
+            .zip(self.dataset.times())
             .tuple_windows()
             // Compare the current and next event.
             .for_each(|((e_i, t_i), (e_j, t_j))| {
@@ -117,10 +120,10 @@ impl CSSEstimator<CategoricalTrj, _T1> for SSE {
     }
 }
 
-impl CSSEstimator<CategoricalTrjs, _T1> for SSE {
-    fn fit(&self, trjs: &CategoricalTrjs, x: usize, z: &[usize]) -> _T1 {
+impl CSSEstimator<_T1> for SSE<'_, CategoricalTrjs> {
+    fn fit(&self, x: usize, z: &[usize]) -> _T1 {
         // Get the cardinality of the trajectory.
-        let cards = trjs.cardinality();
+        let cards = self.dataset.cardinality();
         // Get the cardinality of the conditioned and conditioning variables.
         let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
 
@@ -130,11 +133,12 @@ impl CSSEstimator<CategoricalTrjs, _T1> for SSE {
         let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
 
         // Iterate over the trajectories.
-        trjs.into_iter()
+        self.dataset
+            .into_iter()
             // Sum the sufficient statistics of each trajectory.
             .fold((n_xz, t_xz, 0), |(n_xz_a, t_xz_a, n_a), trj_b| {
                 // Compute the sufficient statistics of the trajectory.
-                let (n_xz_b, t_xz_b, n_b) = self.fit(trj_b, x, z);
+                let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
                 // Sum the sufficient statistics.
                 (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
             })

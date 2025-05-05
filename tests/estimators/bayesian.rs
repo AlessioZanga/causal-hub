@@ -26,10 +26,10 @@ mod tests {
             ];
             let dataset = CategoricalDataset::new(variables, values);
 
-            let estimator = BE::new(1);
+            let estimator = BE::new(&dataset, 1);
 
             // P(A)
-            let distribution = estimator.fit(&dataset, 0, &[]);
+            let distribution = estimator.fit(0, &[]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -75,7 +75,7 @@ mod tests {
             );
 
             // P(A | B, C)
-            let distribution = estimator.fit(&dataset, 0, &[1, 2]);
+            let distribution = estimator.fit(0, &[1, 2]);
 
             assert_eq!(distribution.label(), "A");
             assert!(distribution.states().iter().eq(["no", "yes"]));
@@ -140,10 +140,10 @@ mod tests {
             ];
             let dataset = CategoricalDataset::new(variables, values);
 
-            let estimator = BE::new(1);
+            let estimator = BE::new(&dataset, 1);
 
             // P(A | A, C)
-            let _ = estimator.fit(&dataset, 0, &[0, 2]);
+            let _ = estimator.fit(0, &[0, 2]);
         }
     }
 }

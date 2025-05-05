@@ -1,5 +1,8 @@
+use ndarray::Array1;
+
 use super::BayesianNetwork;
 use crate::{
+    datasets::CategoricalDataset,
     distributions::{CPD, CategoricalCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
     types::FxIndexMap,
@@ -20,6 +23,8 @@ pub type CategoricalBN = CategoricalBayesianNetwork;
 impl BayesianNetwork for CategoricalBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CPD = CategoricalCPD;
+    type Sample = Array1<u8>;
+    type Dataset = CategoricalDataset;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where

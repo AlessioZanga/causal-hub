@@ -1,6 +1,7 @@
 use ndarray::Array1;
 
 /// A structure to compute the ravel index of a multi-dimensional array.
+#[derive(Clone, Debug)]
 pub struct RavelMultiIndex {
     cardinality: Array1<usize>,
     strides: Array1<usize>,

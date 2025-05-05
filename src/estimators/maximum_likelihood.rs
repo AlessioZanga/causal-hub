@@ -7,40 +7,46 @@ use crate::{
 };
 
 /// A struct representing a maximum likelihood estimator.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct MaximumLikelihoodEstimator;
+#[derive(Clone, Copy, Debug)]
+pub struct MaximumLikelihoodEstimator<'a, D> {
+    dataset: &'a D,
+}
 
 /// A type alias for a maximum likelihood estimator.
-pub type MLE = MaximumLikelihoodEstimator;
+pub type MLE<'a, D> = MaximumLikelihoodEstimator<'a, D>;
 
-impl MaximumLikelihoodEstimator {
+impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
     /// Creates a new maximum likelihood estimator.
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - A reference to the dataset to fit the estimator to.
     ///
     /// # Returns
     ///
     /// A new `MaximumLikelihoodEstimator` instance.
     ///
     #[inline]
-    pub const fn new() -> Self {
-        Self
+    pub const fn new(dataset: &'a D) -> Self {
+        Self { dataset }
     }
 }
 
-impl CPDEstimator<CategoricalDataset, CategoricalCPD> for MLE {
-    fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
         // Get states and cardinality.
-        let states = dataset.states();
+        let states = self.dataset.states();
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, n_z, n) = sse.fit(dataset, x, z);
+        let (n_xz, n_z, n) = sse.fit(x, z);
 
         // Assert the marginal counts are not zero.
         assert!(
             n_z.iter().all(|&x| x > 0),
             "Failed to get non-zero counts for variable '{}'.",
-            dataset.labels()[x]
+            self.dataset.labels()[x]
         );
 
         // Cast the counts to floating point.
@@ -73,21 +79,21 @@ impl CPDEstimator<CategoricalDataset, CategoricalCPD> for MLE {
     }
 }
 
-impl CPDEstimator<CategoricalTrj, CategoricalCIM> for MLE {
-    fn fit(&self, trj: &CategoricalTrj, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrj> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
         // Get states and cardinality.
-        let states = trj.states();
+        let states = self.dataset.states();
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(trj, x, z);
+        let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
             "Failed to get non-zero conditional times for variable '{}'.",
-            trj.labels()[x]
+            self.dataset.labels()[x]
         );
 
         // Cast the counts to floating point.
@@ -141,21 +147,21 @@ impl CPDEstimator<CategoricalTrj, CategoricalCIM> for MLE {
 }
 
 // TODO: Avoid code duplication with the above implementation.
-impl CPDEstimator<CategoricalTrjs, CategoricalCIM> for MLE {
-    fn fit(&self, trj: &CategoricalTrjs, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
         // Get states and cardinality.
-        let states = trj.states();
+        let states = self.dataset.states();
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(trj, x, z);
+        let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
             "Failed to get non-zero conditional times for variable '{}'.",
-            trj.labels()[x]
+            self.dataset.labels()[x]
         );
 
         // Cast the counts to floating point.

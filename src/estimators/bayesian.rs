@@ -8,19 +8,21 @@ use crate::{
 };
 
 /// A struct representing a Bayesian estimator.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct BayesianEstimator<Pi> {
+#[derive(Clone, Copy, Debug)]
+pub struct BayesianEstimator<'a, D, Pi> {
+    dataset: &'a D,
     prior: Pi,
 }
 
 /// A type alias for a bayesian estimator.
-pub type BE<Pi> = BayesianEstimator<Pi>;
+pub type BE<'a, D, Pi> = BayesianEstimator<'a, D, Pi>;
 
-impl<Pi> BayesianEstimator<Pi> {
+impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
     /// Creates a new Bayesian estimator.
     ///
     /// # Arguments
     ///
+    /// * `dataset` - A reference to the dataset to fit the estimator to.
     /// * `prior` - The prior distribution.
     ///
     /// # Returns
@@ -28,8 +30,8 @@ impl<Pi> BayesianEstimator<Pi> {
     /// A new `BayesianEstimator` instance.
     ///
     #[inline]
-    pub const fn new(prior: Pi) -> Self {
-        Self { prior }
+    pub const fn new(dataset: &'a D, prior: Pi) -> Self {
+        Self { dataset, prior }
     }
 
     /// Returns the prior distribution.
@@ -45,15 +47,15 @@ impl<Pi> BayesianEstimator<Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CategoricalDataset, CategoricalCPD> for BE<usize> {
-    fn fit(&self, dataset: &CategoricalDataset, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
         // Get states and cardinality.
-        let (states, cards) = (dataset.states(), dataset.cardinality());
+        let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, n_z, n) = sse.fit(dataset, x, z);
+        let (n_xz, n_z, n) = sse.fit(x, z);
 
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);
@@ -91,15 +93,15 @@ impl CPDEstimator<CategoricalDataset, CategoricalCPD> for BE<usize> {
     }
 }
 
-impl CPDEstimator<CategoricalTrj, CategoricalCIM> for BE<(usize, f64)> {
-    fn fit(&self, trj: &CategoricalTrj, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrj, (usize, f64)> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
         // Get states and cardinality.
-        let states = trj.states();
+        let states = self.dataset.states();
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(trj, x, z);
+        let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);
@@ -163,15 +165,15 @@ impl CPDEstimator<CategoricalTrj, CategoricalCIM> for BE<(usize, f64)> {
 }
 
 // TODO: Avoid code duplication with the above implementation.
-impl CPDEstimator<CategoricalTrjs, CategoricalCIM> for BE<(usize, f64)> {
-    fn fit(&self, trj: &CategoricalTrjs, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
+    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
         // Get states and cardinality.
-        let states = trj.states();
+        let states = self.dataset.states();
 
         // Initialize the sufficient statistics estimator.
-        let sse = SSE::new();
+        let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(trj, x, z);
+        let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);

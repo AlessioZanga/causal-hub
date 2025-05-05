@@ -11,6 +11,10 @@ pub trait ContinuousTimeBayesianNetwork {
     type CIM;
     /// The type of the initial distribution.
     type InitialDistribution;
+    /// The type of the observed event.
+    type Event;
+    /// The type of the observed trajectory.
+    type Trajectory;
 
     /// Constructs a new CTBN.
     ///
