@@ -60,4 +60,12 @@ pub trait BayesianNetwork {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+
+    /// Returns the topological order of the graph.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the topological order.
+    ///
+    fn topological_order(&self) -> &[usize];
 }

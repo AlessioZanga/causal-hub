@@ -73,7 +73,7 @@ impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
             // Set empty conditioning states.
             let conditioning_states: [(&str, Vec<&str>); 0] = [];
             // Set uniform parameters.
-            let alpha = state.0.len();
+            let alpha = cim.states().len();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.

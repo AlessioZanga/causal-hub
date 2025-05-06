@@ -15,6 +15,8 @@ pub struct CategoricalBayesianNetwork {
     graph: DiGraph,
     /// The conditional probability distributions.
     cpds: FxIndexMap<String, CategoricalCPD>,
+    /// The topological order of the graph.
+    topological_order: Vec<usize>,
 }
 
 /// A type alias for the categorical Bayesian network.
@@ -63,12 +65,13 @@ impl BayesianNetwork for CategoricalBN {
         // FIXME: Assert states of variables are the same across CPDs.
 
         // Assert the graph is acyclic.
-        assert!(
-            graph.topological_order().is_some(),
-            "Graph must be acyclic."
-        );
+        let topological_order = graph.topological_order().expect("Graph must be acyclic.");
 
-        Self { graph, cpds }
+        Self {
+            graph,
+            cpds,
+            topological_order,
+        }
     }
 
     #[inline]
@@ -88,5 +91,10 @@ impl BayesianNetwork for CategoricalBN {
 
     fn parameters_size(&self) -> usize {
         self.cpds.iter().map(|(_, d)| d.parameters_size()).sum()
+    }
+
+    #[inline]
+    fn topological_order(&self) -> &[usize] {
+        &self.topological_order
     }
 }

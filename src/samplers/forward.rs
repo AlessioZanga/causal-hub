@@ -12,22 +12,18 @@ use super::{BNSampler, CTBNSampler};
 use crate::{
     datasets::{CategoricalDataset, CategoricalTrj},
     distributions::CPD,
-    graphs::{Graph, TopologicalOrder},
+    graphs::Graph,
     models::{BayesianNetwork, CategoricalBN, CategoricalCTBN, ContinuousTimeBayesianNetwork},
 };
 
 /// A forward sampler.
 #[derive(Debug)]
-pub struct ForwardSampler<'a, R, M, C> {
+pub struct ForwardSampler<'a, R, M> {
     rng: &'a mut R,
     model: &'a M,
-    cache: C,
 }
 
-// (order, parents, idx)
-type _C0 = (Vec<usize>, Vec<Vec<usize>>);
-
-impl<'a, R> ForwardSampler<'a, R, CategoricalBN, _C0> {
+impl<'a, R, M> ForwardSampler<'a, R, M> {
     /// Construct a new forward sampler.
     ///
     /// # Arguments
@@ -39,37 +35,27 @@ impl<'a, R> ForwardSampler<'a, R, CategoricalBN, _C0> {
     ///
     /// Return a new `ForwardSampler` instance.
     ///
-    pub fn new(rng: &'a mut R, model: &'a CategoricalBN) -> Self {
-        // Cache the topological order of the graph.
-        let order = model
-            .graph()
-            .topological_order()
-            .expect("Failed to compute topological order.");
-        // Cache the parents.
-        let parents = model
-            .graph()
-            .vertices()
-            .map(|x| model.graph().parents(x))
-            .collect();
-
-        // Pack the cache.
-        let cache = (order, parents);
-
-        Self { rng, model, cache }
+    pub fn new(rng: &'a mut R, model: &'a M) -> Self {
+        Self { rng, model }
     }
 }
 
-impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN, _C0> {
+impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
     #[inline]
     fn sample(&mut self) -> <CategoricalBN as BayesianNetwork>::Sample {
-        // Unpack the cache.
-        let (order, parents) = &self.cache;
+        // Cache the parents.
+        let parents: Vec<_> = self
+            .model
+            .graph()
+            .vertices()
+            .map(|x| self.model.graph().parents(x))
+            .collect();
 
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
-        order.iter().for_each(|&x| {
+        self.model.topological_order().iter().for_each(|&x| {
             // Get the parents of the vertex.
             let pa_x = &parents[x];
             // Get the CPD.
@@ -115,7 +101,7 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN, _
     }
 }
 
-impl<R: Rng, M, C> Iterator for ForwardSampler<'_, R, M, C>
+impl<R: Rng, M> Iterator for ForwardSampler<'_, R, M>
 where
     Self: BNSampler<M>,
     M: BayesianNetwork,
@@ -128,31 +114,7 @@ where
     }
 }
 
-/* FIXME:
-impl<'a, R> ForwardSampler<'a, R, CategoricalCTBN, ()> {
-    /// Construct a new forward sampler.
-    ///
-    /// # Arguments
-    ///
-    /// * `rng` - A random number generator.
-    /// * `model` - A reference to the model to sample from.
-    ///
-    /// # Returns
-    ///
-    /// Return a new `ForwardSampler` instance.
-    ///
-    pub fn new(rng: &'a mut R, model: &'a CategoricalCTBN) -> Self {
-        // No cache so far.
-        Self {
-            rng,
-            model,
-            cache: (),
-        }
-    }
-}
-*/
-
-impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalCTBN, ()> {
+impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalCTBN> {
     fn sample(&mut self) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Event {
         todo!() // FIXME:
     }
@@ -200,21 +162,24 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         let sample_times =
             |rng: &mut R, model: &CategoricalCTBN, s_i: &Array1<u8>| -> Array1<f64> {
                 // Sample the transition times for each variable.
-                (0..s_i.len())
-                    .map(|x| {
+                s_i.iter()
+                    .enumerate()
+                    .map(|(i, &x)| {
+                        // Cast the state to usize.
+                        let x = x as usize;
                         // Get the parents of the vertex.
-                        let pa_x = model.graph().parents(x);
+                        let pa_i = model.graph().parents(i);
                         // Get the CIM.
-                        let cim_x = &model.cims()[x];
+                        let cim_i = &model.cims()[i];
                         // Compute the index on the parents to condition on.
-                        let pa_i = pa_x.iter().map(|&z| s_i[z] as usize);
-                        let pa_i = cim_x.ravel_multi_index().ravel(pa_i);
+                        let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
+                        let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
                         // Get the distribution of the vertex.
-                        let q_x = -cim_x.parameters()[[pa_i, x, x]];
+                        let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
                         // Initialize the exponential distribution.
-                        let exp_x = Exp::new(q_x).unwrap();
+                        let exp_i_x = Exp::new(q_i_x).unwrap();
                         // Sample the transition time.
-                        exp_x.sample(rng)
+                        exp_i_x.sample(rng)
                     })
                     .collect()
             };
@@ -223,38 +188,40 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         let mut t_i = sample_times(self.rng, self.model, &s_i);
 
         // Get the variable that transitions first.
-        let mut x = t_i.argmin().unwrap();
+        let mut i = t_i.argmin().unwrap();
         // Set global time.
-        let mut t = t_i[x];
+        let mut t = t_i[i];
 
         // While:
         //  1. the length of the trajectory is less than n, and ...
         //  2. the time is less than tau ...
         while events.len() < n && t < tau {
+            // Cast the state to usize.
+            let x = s_i[i] as usize;
             // Get the parents of the vertex.
-            let pa_x = self.model.graph().parents(x);
+            let pa_i = self.model.graph().parents(i);
             // Get the CIM.
-            let cim_x = &self.model.cims()[x];
+            let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = pa_x.iter().map(|&z| s_i[z] as usize);
-            let pa_i = cim_x.ravel_multi_index().ravel(pa_i);
+            let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
+            let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
-            let mut q_zx = cim_x.parameters().slice(s![pa_i, x, ..]).to_owned();
+            let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
             // Set the diagonal element to zero.
-            q_zx[x] = 0.;
+            q_i_zx[x] = 0.;
             // Initialize a weighted index sampler.
-            let s_zx = WeightedIndex::new(q_zx).unwrap();
+            let s_i_zx = WeightedIndex::new(q_i_zx).unwrap();
             // Sample the next event.
-            s_i[x] = s_zx.sample(self.rng) as u8;
+            s_i[x] = s_i_zx.sample(self.rng) as u8;
             // Append the event to the trajectory.
             events.push(s_i.clone());
             times.push(t);
             // Update the transition times.
             t_i += &sample_times(self.rng, self.model, &s_i);
             // Get the variable to transition first.
-            x = t_i.argmin().unwrap();
+            i = t_i.argmin().unwrap();
             // Update the global time.
-            t += t_i[x];
+            t += t_i[i];
         }
 
         // Get the states of the CIMs.
