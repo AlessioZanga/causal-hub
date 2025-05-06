@@ -1,4 +1,5 @@
 use ndarray::prelude::*;
+use rayon::prelude::*;
 
 use super::CategoricalDataset;
 use crate::{
@@ -139,6 +140,7 @@ impl Dataset for CategoricalTrj {
 }
 
 /// A collection of multivariate trajectories.
+#[derive(Clone, Debug)]
 pub struct CategoricalTrajectories {
     trajectories: Vec<CategoricalTrajectory>,
 }
@@ -231,6 +233,21 @@ impl CategoricalTrajectories {
             .first()
             .expect("Dataset is empty.")
             .cardinality()
+    }
+}
+
+impl FromIterator<CategoricalTrj> for CategoricalTrajectories {
+    #[inline]
+    fn from_iter<I: IntoIterator<Item = CategoricalTrj>>(iter: I) -> Self {
+        Self::new(iter)
+    }
+}
+
+impl FromParallelIterator<CategoricalTrj> for CategoricalTrajectories {
+    #[inline]
+    fn from_par_iter<I: IntoParallelIterator<Item = CategoricalTrj>>(iter: I) -> Self {
+        // TODO: Avoid collecting into a Vec, this is a workaround.
+        Self::new(iter.into_par_iter().collect::<Vec<_>>())
     }
 }
 

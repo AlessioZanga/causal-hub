@@ -3,16 +3,16 @@ use core::f64;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
-    Rng,
+    Rng, SeedableRng,
     distr::{Distribution as _Distribution, weighted::WeightedIndex},
 };
 use rand_distr::Exp;
+use rayon::prelude::*;
 
-use super::{BNSampler, CTBNSampler};
+use super::{BNSampler, CTBNSampler, ParCTBNSampler};
 use crate::{
     datasets::{CategoricalDataset, CategoricalTrj},
     distributions::CPD,
-    graphs::Graph,
     models::{BayesianNetwork, CategoricalBN, CategoricalCTBN, ContinuousTimeBayesianNetwork},
 };
 
@@ -43,21 +43,13 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
 impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
     #[inline]
     fn sample(&mut self) -> <CategoricalBN as BayesianNetwork>::Sample {
-        // Cache the parents.
-        let parents: Vec<_> = self
-            .model
-            .graph()
-            .vertices()
-            .map(|x| self.model.graph().parents(x))
-            .collect();
-
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&x| {
             // Get the parents of the vertex.
-            let pa_x = &parents[x];
+            let pa_x = self.model.graph().parents(x);
             // Get the CPD.
             let cpd_x = &self.model.cpds()[x];
             // Compute the index on the parents to condition on.
@@ -115,37 +107,36 @@ where
 }
 
 impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalCTBN> {
-    fn sample(&mut self) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Event {
-        todo!() // FIXME:
+    #[inline]
+    fn sample_by_length(
+        &mut self,
+        length: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectory {
+        // Delegate to generic function.
+        self.sample_by_length_or_time(length, f64::MAX)
     }
 
     #[inline]
-    fn sample_n(
+    fn sample_by_time(
         &mut self,
-        n: usize,
+        time: f64,
     ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectory {
-        // Delegate to the sample_n_or_t function.
-        self.sample_n_or_t(n, f64::MAX)
+        // Delegate to generic function.
+        self.sample_by_length_or_time(usize::MAX, time)
     }
 
-    #[inline]
-    fn sample_t(
+    fn sample_by_length_or_time(
         &mut self,
-        tau: f64,
+        length: usize,
+        time: f64,
     ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectory {
-        // Delegate to the sample_n_or_t function.
-        self.sample_n_or_t(usize::MAX, tau)
-    }
-
-    fn sample_n_or_t(
-        &mut self,
-        n: usize,
-        tau: f64,
-    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectory {
-        // Assert n is positive.
-        assert!(n > 0, "The number of samples must be positive.");
-        // Assert tau is positive.
-        assert!(tau > 0., "The time must be positive.");
+        // Assert length is positive.
+        assert!(
+            length > 0,
+            "The length of the trajectory must be strictly positive."
+        );
+        // Assert time is positive.
+        assert!(time > 0., "The time must be positive.");
 
         // Allocate the trajectory components.
         let mut events = Vec::new();
@@ -193,9 +184,9 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         let mut t = t_i[i];
 
         // While:
-        //  1. the length of the trajectory is less than n, and ...
-        //  2. the time is less than tau ...
-        while events.len() < n && t < tau {
+        //  1. the length of the trajectory is less than length, and ...
+        //  2. the time is less than time ...
+        while events.len() < length && t < time {
             // Cast the state to usize.
             let x = s_i[i] as usize;
             // Get the parents of the vertex.
@@ -212,16 +203,16 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             // Initialize a weighted index sampler.
             let s_i_zx = WeightedIndex::new(q_i_zx).unwrap();
             // Sample the next event.
-            s_i[x] = s_i_zx.sample(self.rng) as u8;
+            s_i[i] = s_i_zx.sample(self.rng) as u8;
             // Append the event to the trajectory.
             events.push(s_i.clone());
             times.push(t);
             // Update the transition times.
-            t_i += &sample_times(self.rng, self.model, &s_i);
+            t_i = t + &sample_times(self.rng, self.model, &s_i);
             // Get the variable to transition first.
             i = t_i.argmin().unwrap();
             // Update the global time.
-            t += t_i[i];
+            t = t_i[i];
         }
 
         // Get the states of the CIMs.
@@ -242,5 +233,103 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
 
         // Return the trajectory.
         CategoricalTrj::new(states, events, times)
+    }
+
+    #[inline]
+    fn sample_n_by_length(
+        &mut self,
+        length: usize,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        (0..n).map(|_| self.sample_by_length(length)).collect()
+    }
+
+    #[inline]
+    fn sample_n_by_time(
+        &mut self,
+        time: f64,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        (0..n).map(|_| self.sample_by_time(time)).collect()
+    }
+
+    #[inline]
+    fn sample_n_by_length_or_time(
+        &mut self,
+        length: usize,
+        time: f64,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        (0..n)
+            .map(|_| self.sample_by_length_or_time(length, time))
+            .collect()
+    }
+}
+
+impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
+    for ForwardSampler<'_, R, CategoricalCTBN>
+{
+    fn par_sample_n_by_length(
+        &mut self,
+        length: usize,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .map(|seed| {
+                // Create a new random number generator with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the random number generator and model.
+                let mut sampler = ForwardSampler::new(&mut rng, self.model);
+                // Sample the trajectory.
+                sampler.sample_by_length(length)
+            })
+            .collect()
+    }
+
+    fn par_sample_n_by_time(
+        &mut self,
+        time: f64,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .map(|seed| {
+                // Create a new random number generator with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the random number generator and model.
+                let mut sampler = ForwardSampler::new(&mut rng, self.model);
+                // Sample the trajectory.
+                sampler.sample_by_time(time)
+            })
+            .collect()
+    }
+
+    fn par_sample_n_by_length_or_time(
+        &mut self,
+        length: usize,
+        time: f64,
+        n: usize,
+    ) -> <CategoricalCTBN as ContinuousTimeBayesianNetwork>::Trajectories {
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .map(|seed| {
+                // Create a new random number generator with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the random number generator and model.
+                let mut sampler = ForwardSampler::new(&mut rng, self.model);
+                // Sample the trajectory.
+                sampler.sample_by_length_or_time(length, time)
+            })
+            .collect()
     }
 }

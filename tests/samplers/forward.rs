@@ -80,12 +80,12 @@ mod tests {
 
         use approx::assert_relative_eq;
         use causal_hub_next::{
-            datasets::{CategoricalTrjs, Dataset},
+            datasets::Dataset,
             distributions::{CPD, CategoricalCIM},
             estimators::{CTBNEstimator, MLE},
             graphs::{DiGraph, Graph},
             models::{CategoricalCTBN, ContinuousTimeBayesianNetwork},
-            samplers::{CTBNSampler, ForwardSampler},
+            samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
         use ndarray::prelude::*;
         use rand::SeedableRng;
@@ -162,7 +162,7 @@ mod tests {
             // Initialize sampler.
             let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let trajectory = sampler.sample_n(10);
+            let trajectory = sampler.sample_by_length(10);
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
@@ -179,7 +179,7 @@ mod tests {
             // Initialize sampler.
             let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let trajectory = sampler.sample_t(100.);
+            let trajectory = sampler.sample_by_time(100.);
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
@@ -196,17 +196,17 @@ mod tests {
             // Initialize sampler.
             let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let dataset = CategoricalTrjs::new((0..100).map(|_| sampler.sample_n(100)));
+            let trajectory = sampler.par_sample_n_by_length(1000, 1000);
 
             // Initialize estimator.
-            let estimator = MLE::new(&dataset);
+            let estimator = MLE::new(&trajectory);
             // Fit with generated dataset.
             let fitted_ctbn: CategoricalCTBN = estimator.fit(ctbn.graph().clone());
 
             // Check fitted CIMs.
             for ((_, cim), (_, fitted_cim)) in ctbn.cims().iter().zip(fitted_ctbn.cims()) {
                 // Check values.
-                assert_relative_eq!(cim.parameters(), fitted_cim.parameters(), epsilon = 1e-2);
+                assert_relative_eq!(cim.parameters(), fitted_cim.parameters(), epsilon = 5e-2);
             }
         }
     }

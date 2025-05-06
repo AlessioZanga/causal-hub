@@ -15,6 +15,8 @@ pub trait ContinuousTimeBayesianNetwork {
     type Event;
     /// The type of the observed trajectory.
     type Trajectory;
+    /// The type of a collection of trajectories.
+    type Trajectories;
 
     /// Constructs a new CTBN.
     ///
