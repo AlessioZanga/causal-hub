@@ -1,7 +1,8 @@
 use itertools::Itertools;
 use ndarray::prelude::*;
+use rayon::prelude::*;
 
-use super::CSSEstimator;
+use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
     datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs, Dataset},
     types::FxIndexSet,
@@ -30,11 +31,11 @@ impl<'a, D> SufficientStatisticsEstimator<'a, D> {
 /// A type alias for a sufficient statistics estimator.
 pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
-// (conditional counts, marginal counts, sample size)
-type _T0 = (Array2<usize>, Array1<usize>, usize);
+impl CSSEstimator for SSE<'_, CategoricalDataset> {
+    // (conditional counts, marginal counts, sample size)
+    type SufficientStatistics = (Array2<usize>, Array1<usize>, usize);
 
-impl CSSEstimator<_T0> for SSE<'_, CategoricalDataset> {
-    fn fit(&self, x: usize, z: &[usize]) -> _T0 {
+    fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Concat the variables to fit.
         let x_z: FxIndexSet<_> = [x].iter().chain(z).cloned().collect();
 
@@ -77,11 +78,11 @@ impl CSSEstimator<_T0> for SSE<'_, CategoricalDataset> {
     }
 }
 
-// (conditional counts, conditional time spent, sample size)
-type _T1 = (Array3<usize>, Array2<f64>, usize);
+impl CSSEstimator for SSE<'_, CategoricalTrj> {
+    // (conditional counts, conditional time spent, sample size)
+    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
 
-impl CSSEstimator<_T1> for SSE<'_, CategoricalTrj> {
-    fn fit(&self, x: usize, z: &[usize]) -> _T1 {
+    fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
         // Construct the ravel multi index.
@@ -120,8 +121,11 @@ impl CSSEstimator<_T1> for SSE<'_, CategoricalTrj> {
     }
 }
 
-impl CSSEstimator<_T1> for SSE<'_, CategoricalTrjs> {
-    fn fit(&self, x: usize, z: &[usize]) -> _T1 {
+impl CSSEstimator for SSE<'_, CategoricalTrjs> {
+    // (conditional counts, conditional time spent, sample size)
+    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
+
+    fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
         // Get the cardinality of the conditioned and conditioning variables.
@@ -142,5 +146,43 @@ impl CSSEstimator<_T1> for SSE<'_, CategoricalTrjs> {
                 // Sum the sufficient statistics.
                 (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
             })
+    }
+}
+
+impl ParCSSEstimator for SSE<'_, CategoricalTrjs> {
+    // (conditional counts, conditional time spent, sample size)
+    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
+
+    fn par_fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
+        // Get the cardinality of the trajectory.
+        let cards = self.dataset.cardinality();
+        // Get the cardinality of the conditioned and conditioning variables.
+        let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+
+        // Initialize the joint counts.
+        let n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
+        // Initialize the time spent in that state.
+        let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+
+        // Iterate over the trajectories in parallel.
+        self.dataset
+            .par_iter()
+            // Sum the sufficient statistics of each trajectory.
+            .fold(
+                || (n_xz.clone(), t_xz.clone(), 0),
+                |(n_xz_a, t_xz_a, n_a), trj_b| {
+                    // Compute the sufficient statistics of the trajectory.
+                    let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
+                    // Sum the sufficient statistics.
+                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                },
+            )
+            .reduce(
+                || (n_xz.clone(), t_xz.clone(), 0),
+                |(n_xz_a, t_xz_a, n_a), (n_xz_b, t_xz_b, n_b)| {
+                    // Sum the sufficient statistics.
+                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                },
+            )
     }
 }

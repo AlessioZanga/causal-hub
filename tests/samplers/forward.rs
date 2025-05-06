@@ -20,9 +20,9 @@ mod tests {
             // Load BN.
             let bn = load_child();
             // Initialize sampler.
-            let mut sampler = ForwardSampler::new(&mut rng, &bn);
+            let mut forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
-            let dataset = sampler.sample_n(10);
+            let dataset = forward.sample_n(10);
 
             // Check labels.
             assert!(dataset.labels().eq(bn.labels()));
@@ -58,9 +58,9 @@ mod tests {
             // Load BN.
             let bn = load_cancer();
             // Initialize sampler.
-            let mut sampler = ForwardSampler::new(&mut rng, &bn);
+            let mut forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
-            let dataset = sampler.sample_n(150_000);
+            let dataset = forward.sample_n(150_000);
 
             // Initialize estimator.
             let estimator = MLE::new(&dataset);
@@ -76,93 +76,28 @@ mod tests {
     }
 
     mod continuous_time_bayesian_network {
-        use std::cell::LazyCell;
-
         use approx::assert_relative_eq;
         use causal_hub_next::{
+            assets::load_eating,
             datasets::Dataset,
-            distributions::{CPD, CategoricalCIM},
-            estimators::{CTBNEstimator, MLE},
-            graphs::{DiGraph, Graph},
+            distributions::CPD,
+            estimators::{MLE, ParCTBNEstimator},
             models::{CategoricalCTBN, ContinuousTimeBayesianNetwork},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
-        use ndarray::prelude::*;
         use rand::SeedableRng;
         use rand_xoshiro::Xoshiro256PlusPlus;
-
-        const EATING: LazyCell<CategoricalCTBN> = LazyCell::new(|| {
-            // Initialize the graph.
-            let mut graph = DiGraph::empty(vec!["Hungry", "Eating", "FullStomach"]);
-            graph.add_edge(0, 1); // Hungry -> Eating
-            graph.add_edge(1, 2); // Eating -> FullStomach
-            graph.add_edge(2, 0); // FullStomach -> Hungry
-
-            // Initialize the distributions.
-            let cims = vec![
-                CategoricalCIM::new(
-                    // P(Hungry | FullStomach)
-                    ("Hungry", vec!["no", "yes"]),
-                    [("FullStomach", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-0.1, 0.1], //
-                            [10., -10.]  //
-                        ],
-                        [
-                            [-2., 2.],   //
-                            [0.1, -0.1]  //
-                        ],
-                    ],
-                ),
-                CategoricalCIM::new(
-                    // P(Eating | Hungry)
-                    ("Eating", vec!["no", "yes"]),
-                    [("Hungry", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-0.1, 0.1], //
-                            [10., -10.]  //
-                        ],
-                        [
-                            [-2., 2.],   //
-                            [0.1, -0.1]  //
-                        ],
-                    ],
-                ),
-                CategoricalCIM::new(
-                    // P(FullStomach | Eating)
-                    ("FullStomach", vec!["no", "yes"]),
-                    [("Eating", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-0.1, 0.1], //
-                            [10., -10.]  //
-                        ],
-                        [
-                            [-2., 2.],   //
-                            [0.1, -0.1]  //
-                        ],
-                    ],
-                ),
-            ];
-
-            // Initialize the model.
-            let ctbn = CategoricalCTBN::new(graph.clone(), cims.clone());
-
-            ctbn
-        });
 
         #[test]
         fn test_forward_sampling_by_length() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let ctbn = EATING.clone();
+            let ctbn = load_eating();
             // Initialize sampler.
-            let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
+            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let trajectory = sampler.sample_by_length(10);
+            let trajectory = forward.sample_by_length(10);
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
@@ -175,11 +110,11 @@ mod tests {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let ctbn = EATING.clone();
+            let ctbn = load_eating();
             // Initialize sampler.
-            let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
+            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let trajectory = sampler.sample_by_time(100.);
+            let trajectory = forward.sample_by_time(100.);
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
@@ -192,16 +127,16 @@ mod tests {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let ctbn = EATING.clone();
+            let ctbn = load_eating();
             // Initialize sampler.
-            let mut sampler = ForwardSampler::new(&mut rng, &ctbn);
+            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let trajectory = sampler.par_sample_n_by_length(1000, 1000);
+            let trajectory = forward.par_sample_n_by_length(1_000, 1_000);
 
             // Initialize estimator.
             let estimator = MLE::new(&trajectory);
             // Fit with generated dataset.
-            let fitted_ctbn: CategoricalCTBN = estimator.fit(ctbn.graph().clone());
+            let fitted_ctbn: CategoricalCTBN = estimator.par_fit(ctbn.graph().clone());
 
             // Check fitted CIMs.
             for ((_, cim), (_, fitted_cim)) in ctbn.cims().iter().zip(fitted_ctbn.cims()) {

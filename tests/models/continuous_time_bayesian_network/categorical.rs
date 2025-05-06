@@ -1,71 +1,17 @@
 #[cfg(test)]
 mod tests {
     use causal_hub_next::{
-        distributions::{CPD, CategoricalCIM},
-        graphs::{DiGraph, Graph},
-        models::{BayesianNetwork, CategoricalCTBN, ContinuousTimeBayesianNetwork},
+        assets::load_eating,
+        distributions::CPD,
+        graphs::Graph,
+        models::{BayesianNetwork, ContinuousTimeBayesianNetwork},
     };
     use ndarray::prelude::*;
 
     #[test]
     fn test_new() {
-        // Initialize the graph.
-        let mut graph = DiGraph::empty(vec!["Hungry", "Eating", "FullStomach"]);
-        graph.add_edge(0, 1); // Hungry -> Eating
-        graph.add_edge(1, 2); // Eating -> FullStomach
-        graph.add_edge(2, 0); // FullStomach -> Hungry
-
-        // Initialize the distributions.
-        let cims = vec![
-            CategoricalCIM::new(
-                // P(Hungry | FullStomach)
-                ("Hungry", vec!["no", "yes"]),
-                [("FullStomach", vec!["no", "yes"])],
-                array![
-                    [
-                        [-0.1, 0.1], //
-                        [10., -10.]  //
-                    ],
-                    [
-                        [-2., 2.],   //
-                        [0.1, -0.1]  //
-                    ],
-                ],
-            ),
-            CategoricalCIM::new(
-                // P(Eating | Hungry)
-                ("Eating", vec!["no", "yes"]),
-                [("Hungry", vec!["no", "yes"])],
-                array![
-                    [
-                        [-0.1, 0.1], //
-                        [10., -10.]  //
-                    ],
-                    [
-                        [-2., 2.],   //
-                        [0.1, -0.1]  //
-                    ],
-                ],
-            ),
-            CategoricalCIM::new(
-                // P(FullStomach | Eating)
-                ("FullStomach", vec!["no", "yes"]),
-                [("Eating", vec!["no", "yes"])],
-                array![
-                    [
-                        [-0.1, 0.1], //
-                        [10., -10.]  //
-                    ],
-                    [
-                        [-2., 2.],   //
-                        [0.1, -0.1]  //
-                    ],
-                ],
-            ),
-        ];
-
         // Initialize the model.
-        let ctbn = CategoricalCTBN::new(graph.clone(), cims.clone());
+        let ctbn = load_eating();
 
         // Check the labels.
         assert!(ctbn.labels().iter().eq(["Eating", "FullStomach", "Hungry"]));

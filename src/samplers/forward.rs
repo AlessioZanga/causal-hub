@@ -72,14 +72,10 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
         let mut dataset = Array::zeros((n, self.model.labels().len()));
 
         // For each sample ...
-        dataset
-            .rows_mut()
-            .into_iter()
-            .zip(self.take(n))
-            .for_each(|(mut row, sample)| {
-                // Sample from the distribution.
-                row.assign(&sample);
-            });
+        dataset.rows_mut().into_iter().for_each(|mut row| {
+            // Sample from the distribution.
+            row.assign(&self.sample());
+        });
 
         // Get the states.
         let states = self
@@ -90,19 +86,6 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
 
         // Construct the dataset.
         CategoricalDataset::new(states, dataset)
-    }
-}
-
-impl<R: Rng, M> Iterator for ForwardSampler<'_, R, M>
-where
-    Self: BNSampler<M>,
-    M: BayesianNetwork,
-{
-    type Item = <M as BayesianNetwork>::Sample;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(self.sample())
     }
 }
 

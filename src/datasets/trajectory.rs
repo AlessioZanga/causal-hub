@@ -255,8 +255,19 @@ impl<'a> IntoIterator for &'a CategoricalTrjs {
     type IntoIter = std::slice::Iter<'a, CategoricalTrj>;
     type Item = &'a CategoricalTrj;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.trajectories.iter()
+    }
+}
+
+impl<'a> IntoParallelRefIterator<'a> for CategoricalTrjs {
+    type Item = &'a CategoricalTrj;
+    type Iter = rayon::slice::Iter<'a, CategoricalTrj>;
+
+    #[inline]
+    fn par_iter(&'a self) -> Self::Iter {
+        self.trajectories.par_iter()
     }
 }
 
