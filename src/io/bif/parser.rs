@@ -4,9 +4,9 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    distribution::{CPD, CategoricalCPD},
-    graph::{DiGraph, Graph},
-    model::{BayesianNetwork, CategoricalBN},
+    distributions::{CPD, CategoricalCPD},
+    graphs::{DiGraph, Graph},
+    models::{BayesianNetwork, CategoricalBN},
     types::{FxIndexMap, FxIndexSet},
 };
 

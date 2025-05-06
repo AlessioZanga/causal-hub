@@ -1,4 +1,4 @@
-#![warn(missing_docs)] // This will warn if any public items are missing documentation.
+#![warn(missing_docs)]
 //! # CausalHub
 //!
 //! CausalHub is a library for causal inference and causal discovery.
@@ -6,20 +6,20 @@
 
 /// Assets such as datasets, models, and other resources.
 pub mod assets;
-/// Data structures.
-pub mod data;
+/// Dataset structures.
+pub mod datasets;
 /// Probability distributions.
-pub mod distribution;
+pub mod distributions;
 /// Estimators for probability distributions.
-pub mod estimator;
+pub mod estimators;
 /// Graph structures and algorithms.
-pub mod graph;
+pub mod graphs;
 /// Input/output utilities.
 pub mod io;
 /// Models and algorithms for inference.
-pub mod model;
+pub mod models;
 /// Sampling methods for models.
-pub mod sampler;
+pub mod samplers;
 /// Helper types.
 pub mod types;
 /// Utilities and helper functions.

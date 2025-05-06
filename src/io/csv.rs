@@ -4,7 +4,7 @@ use csv::Reader;
 use ndarray::prelude::*;
 
 use crate::{
-    data::CategoricalData,
+    datasets::CategoricalDataset,
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -27,8 +27,8 @@ pub trait FromCsvReader {
     fn from_csv_reader<R: Read>(reader: Reader<R>) -> Self;
 }
 
-impl FromCsvReader for CategoricalData {
-    /// Reads a CSV file and returns a new `CategoricalData` instance.
+impl FromCsvReader for CategoricalDataset {
+    /// Reads a CSV file and returns a new `CategoricalDataset` instance.
     ///
     /// # Arguments
     ///
@@ -43,7 +43,7 @@ impl FromCsvReader for CategoricalData {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalData` instance.
+    /// A new `CategoricalDataset` instance.
     ///
     fn from_csv_reader<R: Read>(mut reader: Reader<R>) -> Self {
         // Assert that the reader has headers.
@@ -101,7 +101,7 @@ impl FromCsvReader for CategoricalData {
             .into_shape_with_order((nrows, ncols))
             .expect("Failed to rearrange values to the correct shape.");
 
-        // Construct the categorical data.
-        CategoricalData::new(states, values)
+        // Construct the categorical dataset.
+        CategoricalDataset::new(states, values)
     }
 }

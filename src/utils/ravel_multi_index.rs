@@ -1,6 +1,8 @@
 use ndarray::Array1;
+use serde::{Deserialize, Serialize};
 
 /// A structure to compute the ravel index of a multi-dimensional array.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RavelMultiIndex {
     cardinality: Array1<usize>,
     strides: Array1<usize>,
