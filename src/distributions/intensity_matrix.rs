@@ -1,4 +1,5 @@
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
@@ -7,7 +8,7 @@ use crate::{
 };
 
 /// A struct representing a categorical conditional intensity matrix.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalConditionalIntensityMatrix {
     // Labels of the conditioned variable.
     label: String,

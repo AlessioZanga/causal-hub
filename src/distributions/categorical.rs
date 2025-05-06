@@ -3,6 +3,7 @@ use std::fmt::Display;
 use approx::relative_eq;
 use itertools::Itertools;
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
@@ -11,7 +12,7 @@ use crate::{
 };
 
 /// A struct representing a categorical distribution.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalConditionalProbabilityDistribution {
     // Labels of the conditioned variable.
     label: String,

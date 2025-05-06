@@ -81,8 +81,8 @@ mod tests {
         assert!(graph.add_edge(2, 0));
         assert!(graph.add_edge(3, 0));
         assert_eq!(graph.parents(0), vec![1, 2, 3]);
-        assert_eq!(graph.parents(1), vec![]);
-        assert_eq!(graph.parents(4), vec![]);
+        assert_eq!(graph.parents(1), Vec::<usize>::new());
+        assert_eq!(graph.parents(4), Vec::<usize>::new());
     }
 
     #[test]
@@ -99,8 +99,8 @@ mod tests {
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(0, 3));
         assert_eq!(graph.children(0), vec![1, 2, 3]);
-        assert_eq!(graph.children(1), vec![]);
-        assert_eq!(graph.children(4), vec![]);
+        assert_eq!(graph.children(1), Vec::<usize>::new());
+        assert_eq!(graph.children(4), Vec::<usize>::new());
     }
 
     #[test]

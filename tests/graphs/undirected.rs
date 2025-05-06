@@ -84,7 +84,7 @@ mod tests {
         assert!(graph.add_edge(0, 3));
         assert_eq!(graph.neighbors(0), vec![1, 2, 3]);
         assert_eq!(graph.neighbors(1), vec![0]);
-        assert_eq!(graph.neighbors(4), vec![]);
+        assert_eq!(graph.neighbors(4), Vec::<usize>::new());
     }
 
     #[test]

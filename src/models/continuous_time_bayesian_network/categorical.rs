@@ -1,4 +1,5 @@
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::ContinuousTimeBayesianNetwork;
 use crate::{
@@ -10,7 +11,7 @@ use crate::{
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The initial distribution.
     initial_distribution: CategoricalBN,

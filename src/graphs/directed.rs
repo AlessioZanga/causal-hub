@@ -1,13 +1,14 @@
 use std::ops::Range;
 
 use ndarray::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::Graph;
 use crate::types::FxIndexSet;
 
 /// A struct representing a directed graph using an adjacency matrix.
 ///
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DirectedGraph {
     labels: FxIndexSet<String>,
     adjacency_matrix: Array2<bool>,

@@ -1,4 +1,5 @@
 use ndarray::Array1;
+use serde::{Deserialize, Serialize};
 
 use super::BayesianNetwork;
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
 };
 
 /// A categorical Bayesian network (BN).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
