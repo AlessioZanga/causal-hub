@@ -4,6 +4,23 @@ use pyo3::prelude::*;
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn causal_hub(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    Ok(())
+mod causal_hub {
+    use super::*;
+
+    #[pymodule]
+    mod graphs {
+        use super::*;
+
+        #[pymodule_init]
+        fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+            // Set the module members.
+            m.add_class::<crate::graphs::PyDiGraph>()?;
+            // Import the submodules.
+            Python::with_gil(|py| {
+                py.import("sys")?
+                    .getattr("modules")?
+                    .set_item("causal_hub.graphs", m)
+            })
+        }
+    }
 }

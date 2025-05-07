@@ -7,7 +7,6 @@ use super::Graph;
 use crate::types::FxIndexSet;
 
 /// A struct representing an undirected graph using an adjacency matrix.
-///
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UndirectedGraph {
     labels: FxIndexSet<String>,
@@ -49,6 +48,7 @@ impl UnGraph {
 impl Graph for UnGraph {
     type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
+    type Edges = Vec<(usize, usize)>;
 
     fn empty<I, V>(labels: I) -> Self
     where
@@ -86,10 +86,6 @@ impl Graph for UnGraph {
         &self.labels
     }
 
-    fn vertices(&self) -> Self::Vertices {
-        0..self.labels.len()
-    }
-
     fn label_to_index<V>(&self, x: &V) -> usize
     where
         V: AsRef<str>,
@@ -107,6 +103,25 @@ impl Graph for UnGraph {
         self.labels
             .get_index(x)
             .unwrap_or_else(|| panic!("Vertex {} index out of bounds", x))
+    }
+
+    fn vertices(&self) -> Self::Vertices {
+        0..self.labels.len()
+    }
+
+    fn edges(&self) -> Self::Edges {
+        // Iterate over the adjacency matrix and collect the edges.
+        self.adjacency_matrix
+            .indexed_iter()
+            .filter_map(|((x, y), &has_edge)| {
+                // Since the graph is undirected, we only need to check one direction.
+                if has_edge && x <= y {
+                    Some((x, y))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn has_edge(&self, x: usize, y: usize) -> bool {

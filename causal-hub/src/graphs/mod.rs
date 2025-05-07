@@ -13,6 +13,8 @@ pub trait Graph {
     type Labels;
     /// The type of the vertices.
     type Vertices: IntoIterator<Item = usize>;
+    /// The type of the edges.
+    type Edges: IntoIterator<Item = (usize, usize)>;
 
     /// Creates an empty directed graph with the given labels.
     ///
@@ -45,6 +47,40 @@ pub trait Graph {
     ///
     fn labels(&self) -> &Self::Labels;
 
+    /// Return the vertex index for a given label.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The label of the vertex.
+    ///
+    /// # Panics
+    ///
+    /// * If the label is not in the graph.
+    ///
+    /// # Returns
+    ///
+    /// The index of the vertex.
+    ///
+    fn label_to_index<V>(&self, x: &V) -> usize
+    where
+        V: AsRef<str>;
+
+    /// Return the label for a given vertex index.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The index of the vertex.
+    ///
+    /// # Panics
+    ///
+    /// * If the index is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// The label of the vertex.
+    ///
+    fn index_to_label(&self, x: usize) -> &str;
+
     /// Returns the iterator of vertices in the graph.
     ///
     /// # Returns
@@ -53,11 +89,13 @@ pub trait Graph {
     ///
     fn vertices(&self) -> Self::Vertices;
 
-    fn label_to_index<V>(&self, x: &V) -> usize
-    where
-        V: AsRef<str>;
-
-    fn index_to_label(&self, x: usize) -> &str;
+    /// Returns the iterator of edges in the graph.
+    ///
+    /// # Returns
+    ///
+    /// A vector of tuples representing the edges in the graph.
+    ///
+    fn edges(&self) -> Self::Edges;
 
     /// Checks if there is an edge between vertices `x` and `y`.
     ///

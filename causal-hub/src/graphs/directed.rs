@@ -7,7 +7,6 @@ use super::Graph;
 use crate::types::FxIndexSet;
 
 /// A struct representing a directed graph using an adjacency matrix.
-///
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DirectedGraph {
     labels: FxIndexSet<String>,
@@ -85,6 +84,7 @@ impl DiGraph {
 impl Graph for DiGraph {
     type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
+    type Edges = Vec<(usize, usize)>;
 
     fn empty<I, V>(labels: I) -> Self
     where
@@ -122,10 +122,6 @@ impl Graph for DiGraph {
         &self.labels
     }
 
-    fn vertices(&self) -> Self::Vertices {
-        0..self.labels.len()
-    }
-
     fn label_to_index<V>(&self, x: &V) -> usize
     where
         V: AsRef<str>,
@@ -143,6 +139,18 @@ impl Graph for DiGraph {
         self.labels
             .get_index(x)
             .unwrap_or_else(|| panic!("Vertex {} index out of bounds", x))
+    }
+
+    fn vertices(&self) -> Self::Vertices {
+        0..self.labels.len()
+    }
+
+    fn edges(&self) -> Self::Edges {
+        // Iterate over the adjacency matrix and collect the edges.
+        self.adjacency_matrix
+            .indexed_iter()
+            .filter_map(|((x, y), &has_edge)| if has_edge { Some((x, y)) } else { None })
+            .collect()
     }
 
     fn has_edge(&self, x: usize, y: usize) -> bool {
