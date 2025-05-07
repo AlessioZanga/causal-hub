@@ -90,6 +90,25 @@ impl Graph for UnGraph {
         0..self.labels.len()
     }
 
+    fn label_to_index<V>(&self, x: &V) -> usize
+    where
+        V: AsRef<str>,
+    {
+        // Get the label as a string reference.
+        let x = x.as_ref();
+        // Get the index of the label, if it exists.
+        self.labels
+            .get_index_of(x)
+            .unwrap_or_else(|| panic!("Vertex {} label does not exist", x))
+    }
+
+    fn index_to_label(&self, x: usize) -> &str {
+        // Get the label at the index, if it exists.
+        self.labels
+            .get_index(x)
+            .unwrap_or_else(|| panic!("Vertex {} index out of bounds", x))
+    }
+
     fn has_edge(&self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);

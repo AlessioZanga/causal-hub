@@ -1,5 +1,5 @@
 [package]
-name = "causal-hub"
+name = "causal-hub-python"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -9,4 +9,5 @@ name = "causal_hub"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.24.0"
+causal-hub = { path = "../causal-hub" }
+pyo3 = { version = "0.24.0", features = ["extension-module"] }

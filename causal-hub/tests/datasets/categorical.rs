@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::datasets::{CategoricalDataset, Dataset};
+    use causal_hub::datasets::{CategoricalDataset, Dataset};
     use ndarray::prelude::*;
 
     #[test]

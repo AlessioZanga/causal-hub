@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::{
+    use causal_hub::{
         distributions::{CPD, CategoricalCPD},
         graphs::{DiGraph, Graph},
         models::{BayesianNetwork, CategoricalBN},

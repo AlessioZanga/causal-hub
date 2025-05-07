@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::graphs::{DiGraph, Graph};
+    use causal_hub::graphs::{DiGraph, Graph};
 
     const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
 

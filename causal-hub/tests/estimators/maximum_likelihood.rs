@@ -2,7 +2,7 @@
 mod tests {
     mod categorical_cpd {
         use approx::*;
-        use causal_hub_next::{
+        use causal_hub::{
             datasets::CategoricalDataset,
             distributions::CPD,
             estimators::{CPDEstimator, MLE},
@@ -172,7 +172,7 @@ mod tests {
 
     mod categorical_bn {
         use approx::*;
-        use causal_hub_next::{
+        use causal_hub::{
             datasets::CategoricalDataset,
             distributions::CPD,
             estimators::{BNEstimator, MLE},

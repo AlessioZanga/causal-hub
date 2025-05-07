@@ -53,6 +53,12 @@ pub trait Graph {
     ///
     fn vertices(&self) -> Self::Vertices;
 
+    fn label_to_index<V>(&self, x: &V) -> usize
+    where
+        V: AsRef<str>;
+
+    fn index_to_label(&self, x: usize) -> &str;
+
     /// Checks if there is an edge between vertices `x` and `y`.
     ///
     /// # Arguments

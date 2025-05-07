@@ -1,5 +1,5 @@
 [package]
-name = "causal-hub-next"
+name = "causal-hub"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

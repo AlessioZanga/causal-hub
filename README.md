@@ -8,5 +8,5 @@ To use Causal Hub Next in your project, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-causal-hub-next = "0.1.0"
+causal-hub = "0.1.0"
 ```

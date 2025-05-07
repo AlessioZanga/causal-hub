@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub_next::{
+    use causal_hub::{
         assets::load_eating,
         distributions::CPD,
         graphs::Graph,

@@ -2,7 +2,7 @@
 mod tests {
     mod bayesian_network {
         use approx::assert_relative_eq;
-        use causal_hub_next::{
+        use causal_hub::{
             assets::{load_cancer, load_child},
             datasets::Dataset,
             distributions::CPD,
@@ -77,7 +77,7 @@ mod tests {
 
     mod continuous_time_bayesian_network {
         use approx::assert_relative_eq;
-        use causal_hub_next::{
+        use causal_hub::{
             assets::load_eating,
             datasets::Dataset,
             distributions::CPD,

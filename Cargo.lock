@@ -42,13 +42,6 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 name = "causal-hub"
 version = "0.1.0"
 dependencies = [
- "pyo3",
-]
-
-[[package]]
-name = "causal-hub-next"
-version = "0.1.0"
-dependencies = [
  "approx",
  "csv",
  "dry",
@@ -67,6 +60,14 @@ dependencies = [
  "serde",
  "serde_json",
  "statrs",
+]
+
+[[package]]
+name = "causal-hub-python"
+version = "0.1.0"
+dependencies = [
+ "causal-hub",
+ "pyo3",
 ]
 
 [[package]]
