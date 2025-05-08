@@ -4,8 +4,9 @@ use causal_hub::distributions::{CPD, CategoricalCPD};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
 
-#[pyclass(name = "CategoricalCPD")]
 /// A struct representing a categorical conditional probability distribution (CPD).
+#[pyclass(name = "CategoricalCPD")]
+#[derive(Clone, Debug)]
 pub struct PyCategoricalCPD {
     inner: CategoricalCPD,
 }

@@ -3,6 +3,7 @@ use pyo3::{prelude::*, types::PyType};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[pyclass(name = "DiGraph")]
+#[derive(Clone, Debug)]
 pub struct PyDiGraph {
     inner: DiGraph,
 }

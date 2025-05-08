@@ -67,7 +67,9 @@ name = "causal-hub-python"
 version = "0.1.0"
 dependencies = [
  "causal-hub",
+ "dry",
  "numpy",
+ "paste",
  "pyo3",
 ]
 
