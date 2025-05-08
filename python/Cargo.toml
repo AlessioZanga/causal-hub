@@ -1,0 +1,16 @@
+[package]
+name = "causal-hub-python"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[lib]
+name = "causal_hub"
+crate-type = ["cdylib"]
+
+[dependencies]
+causal-hub = { path = "../causal-hub" }
+dry.workspace = true
+numpy = "0.24.0"
+paste.workspace = true
+pyo3 = { version = "0.24.0", features = ["extension-module"] }
