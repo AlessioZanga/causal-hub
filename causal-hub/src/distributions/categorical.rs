@@ -40,7 +40,8 @@ impl CategoricalCPD {
     ///
     /// # Arguments
     ///
-    /// * `states` - The variables states.
+    /// * `states` - The variable label and states.
+    /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The probabilities of the states.
     ///
     /// # Panics
