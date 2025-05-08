@@ -7,6 +7,18 @@ pub struct PyDiGraph {
     inner: DiGraph,
 }
 
+impl From<DiGraph> for PyDiGraph {
+    fn from(inner: DiGraph) -> Self {
+        Self { inner }
+    }
+}
+
+impl From<PyDiGraph> for DiGraph {
+    fn from(outer: PyDiGraph) -> Self {
+        outer.inner
+    }
+}
+
 #[pymethods]
 impl PyDiGraph {
     /// Creates an empty directed graph with the given labels.
