@@ -27,9 +27,9 @@ impl From<PyCategoricalCPD> for CategoricalCPD {
 impl PyCategoricalCPD {
     #[new]
     fn new(
-        state: Bound<'_, PyTuple>,
-        conditioning_states: Bound<'_, PyAny>,
-        parameters: Bound<'_, PyArray2<f64>>,
+        state: &Bound<'_, PyTuple>,
+        conditioning_states: &Bound<'_, PyAny>,
+        parameters: &Bound<'_, PyArray2<f64>>,
     ) -> PyResult<Self> {
         // Convert the PyTuple to a (String, Vec<String>).
         let state = state.extract::<(String, Vec<String>)>()?;
@@ -41,9 +41,7 @@ impl PyCategoricalCPD {
         // Convert the PyArray2<f64> to a Array2<f64>.
         let parameters = parameters.to_owned_array();
         // Create a new CategoricalCPD with the given parameters.
-        Ok(Self {
-            inner: CategoricalCPD::new(state, conditioning_states, parameters),
-        })
+        Ok(CategoricalCPD::new(state, conditioning_states, parameters).into())
     }
 
     /// Returns the label of the conditioned variable.

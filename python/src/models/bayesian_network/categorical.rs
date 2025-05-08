@@ -1,14 +1,19 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    fs::File,
+    io::{BufReader, Read},
+};
 
 use causal_hub::{
     graphs::DiGraph,
+    io::BifReader,
     models::{BayesianNetwork, CategoricalBN},
 };
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyType};
 
 use crate::{distributions::PyCategoricalCPD, graphs::PyDiGraph};
 
-#[pyclass]
+#[pyclass(name = "CategoricalBN")]
 #[derive(Clone, Debug)]
 pub struct PyCategoricalBN {
     inner: CategoricalBN,
@@ -40,7 +45,7 @@ impl PyCategoricalBN {
     /// A new Bayesian network instance.
     ///
     #[new]
-    fn new(graph: Bound<'_, PyDiGraph>, cpds: Bound<'_, PyAny>) -> PyResult<Self> {
+    fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CategoricalCPD>.
@@ -50,11 +55,8 @@ impl PyCategoricalBN {
             .collect::<PyResult<_>>()?;
         // Convert Vec<PyCategoricalCPD> to Vec<CategoricalCPD>.
         let cpds = cpds.into_iter().map(|x| x.into());
-
         // Create a new CategoricalBN with the given parameters.
-        Ok(Self {
-            inner: CategoricalBN::new(graph, cpds),
-        })
+        Ok(CategoricalBN::new(graph, cpds).into())
     }
 
     /// Returns the labels of the variables.
@@ -107,5 +109,30 @@ impl PyCategoricalBN {
     ///
     fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
+    }
+
+    /// Read a BIF file and return a CategoricalBN.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to the BIF file.
+    ///
+    /// # Returns
+    ///
+    /// A new CategoricalBN instance.
+    ///
+    #[classmethod]
+    fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        // Open file given by path.
+        let file = File::open(path)?;
+        // Read the file and parse it.
+        let mut reader = BufReader::new(file);
+        // Read the BIF file.
+        let mut bif = String::new();
+        reader.read_to_string(&mut bif)?;
+        // Read the BIF file and return a CategoricalBN.
+        let bn = BifReader::read(&bif);
+        // Convert the BifReader to a CategoricalBN.
+        Ok(bn.into())
     }
 }

@@ -43,11 +43,8 @@ impl PyDiGraph {
             .try_iter()?
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;
-
         // Create a new DiGraph with the labels.
-        Ok(Self {
-            inner: DiGraph::empty(labels),
-        })
+        Ok(DiGraph::empty(labels).into())
     }
 
     /// Returns the vertices of the graph.
@@ -98,7 +95,6 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
-
         // Check if the edge exists in the graph.
         Ok(self.inner.has_edge(x, y))
     }
@@ -118,7 +114,6 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
-
         // Add the edge to the graph.
         Ok(self.inner.add_edge(x, y))
     }
@@ -138,7 +133,6 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
-
         // Delete the edge from the graph.
         Ok(self.inner.del_edge(x, y))
     }
