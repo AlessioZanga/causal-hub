@@ -106,3 +106,6 @@ pub trait ContinuousTimeBayesianNetwork {
     where
         I: IntoIterator<Item = Self::CIM>;
 }
+
+/// A type alias for a continuous time Bayesian network.
+pub use ContinuousTimeBayesianNetwork as CTBN;
