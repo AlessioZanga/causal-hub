@@ -7,7 +7,7 @@ use std::{
 use causal_hub::{
     graphs::DiGraph,
     io::BifReader,
-    models::{BayesianNetwork, CategoricalBN},
+    models::{BN, CategoricalBN},
 };
 use pyo3::{prelude::*, types::PyType};
 

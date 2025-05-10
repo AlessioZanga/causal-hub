@@ -7,7 +7,7 @@ mod tests {
             datasets::Dataset,
             distributions::CPD,
             estimators::{BNEstimator, MLE},
-            models::{BayesianNetwork, CategoricalBN},
+            models::{BN, CategoricalBN},
             samplers::{BNSampler, ForwardSampler},
         };
         use rand::SeedableRng;
@@ -82,7 +82,7 @@ mod tests {
             datasets::Dataset,
             distributions::CPD,
             estimators::{MLE, ParCTBNEstimator},
-            models::{CategoricalCTBN, ContinuousTimeBayesianNetwork},
+            models::{CTBN, CategoricalCTBN},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
         use rand::SeedableRng;

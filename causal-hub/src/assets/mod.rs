@@ -6,7 +6,7 @@ use crate::{
     distributions::CategoricalCIM,
     graphs::{DiGraph, Graph},
     io::BifReader,
-    models::{CategoricalBN, CategoricalCTBN, ContinuousTimeBayesianNetwork},
+    models::{CTBN, CategoricalBN, CategoricalCTBN},
 };
 
 macro_for!(

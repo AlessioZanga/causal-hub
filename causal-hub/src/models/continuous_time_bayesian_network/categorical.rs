@@ -1,12 +1,12 @@
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::ContinuousTimeBayesianNetwork;
+use super::CTBN;
 use crate::{
     datasets::{CategoricalTrj, CategoricalTrjs},
     distributions::{CPD, CategoricalCIM, CategoricalCPD},
     graphs::{DiGraph, Graph},
-    models::{BayesianNetwork, CategoricalBN},
+    models::{BN, CategoricalBN},
     types::FxIndexMap,
 };
 
@@ -24,7 +24,7 @@ pub struct CategoricalContinuousTimeBayesianNetwork {
 /// A type alias for the categorical CTBN.
 pub type CategoricalCTBN = CategoricalContinuousTimeBayesianNetwork;
 
-impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
+impl CTBN for CategoricalCTBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CIM = CategoricalCIM;
     type InitialDistribution = CategoricalBN;

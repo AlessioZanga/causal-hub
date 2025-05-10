@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{assets::*, distributions::CPD, graphs::Graph, models::BayesianNetwork};
+    use causal_hub::{assets::*, distributions::CPD, graphs::Graph, models::BN};
     use dry::macro_for;
     use ndarray::prelude::*;
     use paste::paste;

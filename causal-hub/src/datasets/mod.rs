@@ -1,8 +1,14 @@
 mod categorical;
 pub use categorical::*;
 
+mod categorical_evidence;
+pub use categorical_evidence::*;
+
 mod trajectory;
 pub use trajectory::*;
+
+mod trajectory_evidence;
+pub use trajectory_evidence::*;
 
 /// A trait for dataset.
 pub trait Dataset {

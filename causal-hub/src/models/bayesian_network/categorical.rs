@@ -1,7 +1,7 @@
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
-use super::BayesianNetwork;
+use super::BN;
 use crate::{
     datasets::CategoricalDataset,
     distributions::{CPD, CategoricalCPD},
@@ -23,7 +23,7 @@ pub struct CategoricalBayesianNetwork {
 /// A type alias for the categorical Bayesian network.
 pub type CategoricalBN = CategoricalBayesianNetwork;
 
-impl BayesianNetwork for CategoricalBN {
+impl BN for CategoricalBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CPD = CategoricalCPD;
     type Sample = Array1<u8>;

@@ -178,7 +178,7 @@ mod tests {
             estimators::{BNEstimator, MLE},
             graphs::{DiGraph, Graph},
             io::FromCsvReader,
-            models::{BayesianNetwork, CategoricalBN},
+            models::{BN, CategoricalBN},
         };
         use csv::ReaderBuilder;
         use ndarray::prelude::*;

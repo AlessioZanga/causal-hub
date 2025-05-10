@@ -37,9 +37,20 @@ impl CategoricalTrj {
         K: AsRef<str>,
         V: AsRef<str>,
     {
+        // Assert times must be positive and finite.
+        assert!(
+            times.iter().all(|&t| t.is_finite() && t >= 0.0),
+            "Times must be positive and finite."
+        );
+
         // Sort values by times.
         let mut indices: Vec<_> = (0..events.nrows()).collect();
-        indices.sort_by(|&a, &b| times[a].partial_cmp(&times[b]).unwrap());
+        indices.sort_by(|&a, &b| {
+            times[a]
+                .partial_cmp(&times[b])
+                // Due to previous assertions, this should never fail.
+                .unwrap_or_else(|| unreachable!())
+        });
         // Clone the events and times arrays to avoid borrowing issues.
         let mut new_events = events.clone();
         let mut new_times = times.clone();

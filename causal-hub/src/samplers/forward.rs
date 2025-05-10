@@ -47,21 +47,20 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
         let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&x| {
-            // Get the parents of the vertex.
-            let pa_x = self.model.graph().parents(x);
+        self.model.topological_order().iter().for_each(|&i| {
             // Get the CPD.
-            let cpd_x = &self.model.cpds()[x];
+            let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             // NOTE: Labels and states are sorted (i.e. aligned).
-            let pa_i = pa_x.iter().map(|&z| sample[z] as usize);
-            let pa_i = cpd_x.ravel_multi_index().ravel(pa_i);
+            let pa_i = self.model.graph().parents(i);
+            let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
+            let pa_i = cpd_i.ravel_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
-            let p_x = cpd_x.parameters().row(pa_i);
+            let p_i = cpd_i.parameters().row(pa_i);
             // Construct the sampler.
-            let s_x = WeightedIndex::new(&p_x).unwrap();
+            let s_i = WeightedIndex::new(&p_i).unwrap();
             // Sample from the distribution.
-            sample[x] = s_x.sample(self.rng) as u8;
+            sample[i] = s_i.sample(self.rng) as u8;
         });
 
         sample
@@ -94,11 +93,10 @@ impl<R: Rng> ForwardSampler<'_, R, CategoricalCTBN> {
     fn sample_time(&mut self, s_i: &Array1<u8>, i: usize) -> f64 {
         // Cast the state to usize.
         let x = s_i[i] as usize;
-        // Get the parents of the vertex.
-        let pa_i = self.model.graph().parents(i);
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
+        let pa_i = self.model.graph().parents(i);
         let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
         let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -161,11 +159,10 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         while events.len() < length && t < time {
             // Cast the state to usize.
             let x = s_i[i] as usize;
-            // Get the parents of the vertex.
-            let pa_i = self.model.graph().parents(i);
             // Get the CIM.
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
+            let pa_i = self.model.graph().parents(i);
             let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
             let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
