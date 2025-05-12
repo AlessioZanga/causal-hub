@@ -90,14 +90,14 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
 
 impl<R: Rng> ForwardSampler<'_, R, CategoricalCTBN> {
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&mut self, s_i: &Array1<u8>, i: usize) -> f64 {
+    fn sample_time(&mut self, event: &Array1<u8>, i: usize) -> f64 {
         // Cast the state to usize.
-        let x = s_i[i] as usize;
+        let x = event[i] as usize;
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(i);
-        let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
+        let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
@@ -110,60 +110,62 @@ impl<R: Rng> ForwardSampler<'_, R, CategoricalCTBN> {
 
 impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalCTBN> {
     #[inline]
-    fn sample_by_length(&mut self, length: usize) -> <CategoricalCTBN as CTBN>::Trajectory {
+    fn sample_by_length(&mut self, max_length: usize) -> <CategoricalCTBN as CTBN>::Trajectory {
         // Delegate to generic function.
-        self.sample_by_length_or_time(length, f64::MAX)
+        self.sample_by_length_or_time(max_length, f64::MAX)
     }
 
     #[inline]
-    fn sample_by_time(&mut self, time: f64) -> <CategoricalCTBN as CTBN>::Trajectory {
+    fn sample_by_time(&mut self, max_time: f64) -> <CategoricalCTBN as CTBN>::Trajectory {
         // Delegate to generic function.
-        self.sample_by_length_or_time(usize::MAX, time)
+        self.sample_by_length_or_time(usize::MAX, max_time)
     }
 
     fn sample_by_length_or_time(
         &mut self,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
     ) -> <CategoricalCTBN as CTBN>::Trajectory {
         // Assert length is positive.
         assert!(
-            length > 0,
-            "The length of the trajectory must be strictly positive."
+            max_length > 0,
+            "The maximum length of the trajectory must be strictly positive."
         );
         // Assert time is positive.
-        assert!(time > 0., "The time must be positive.");
+        assert!(max_time > 0., "The maximum time must be positive.");
 
         // Allocate the trajectory components.
-        let mut events = Vec::new();
-        let mut times = Vec::new();
+        let mut sample_events = Vec::new();
+        let mut sample_times = Vec::new();
 
         // Sample the initial states.
         let mut initial_sampler = ForwardSampler::new(self.rng, self.model.initial_distribution());
-        let mut s_i = initial_sampler.sample();
+        let mut event = initial_sampler.sample();
         // Append the initial state to the trajectory.
-        events.push(s_i.clone());
-        times.push(0.);
+        sample_events.push(event.clone());
+        sample_times.push(0.);
 
         // Sample the transition time.
-        let mut t_i: Array1<_> = (0..s_i.len()).map(|i| self.sample_time(&s_i, i)).collect();
+        let mut times: Array1<_> = (0..event.len())
+            .map(|i| self.sample_time(&event, i))
+            .collect();
 
         // Get the variable that transitions first.
-        let mut i = t_i.argmin().unwrap();
+        let mut i = times.argmin().unwrap();
         // Set global time.
-        let mut t = t_i[i];
+        let mut time = times[i];
 
         // While:
-        //  1. the length of the trajectory is less than length, and ...
-        //  2. the time is less than time ...
-        while events.len() < length && t < time {
+        //  1. the length of the trajectory is less than max_length, and ...
+        //  2. the time is less than max_time ...
+        while sample_events.len() < max_length && time < max_time {
             // Cast the state to usize.
-            let x = s_i[i] as usize;
+            let x = event[i] as usize;
             // Get the CIM.
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(i);
-            let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
+            let pa_i = pa_i.iter().map(|&z| event[z] as usize);
             let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
             let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
@@ -172,21 +174,21 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             // Initialize a weighted index sampler.
             let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
             // Sample the next event.
-            s_i[i] = s_i_zx.sample(self.rng) as u8;
+            event[i] = s_i_zx.sample(self.rng) as u8;
             // Append the event to the trajectory.
-            events.push(s_i.clone());
-            times.push(t);
+            sample_events.push(event.clone());
+            sample_times.push(time);
             // Update the transition times for { X } U Ch(X).
             [i].into_iter()
                 .chain(self.model.graph().children(i))
                 .for_each(|j| {
                     // Sample the transition time.
-                    t_i[j] = t + self.sample_time(&s_i, j);
+                    times[j] = time + self.sample_time(&event, j);
                 });
             // Get the variable to transition first.
-            i = t_i.argmin().unwrap();
+            i = times.argmin().unwrap();
             // Update the global time.
-            t = t_i[i];
+            time = times[i];
         }
 
         // Get the states of the CIMs.
@@ -197,41 +199,45 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             .map(|(label, cim)| (label, cim.states()));
 
         // Convert the events to a 2D array.
-        let shape = (events.len(), events[0].len());
-        let events = Array::from_iter(events.into_iter().flatten())
+        let shape = (sample_events.len(), sample_events[0].len());
+        let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
             .expect("Failed to convert events to 2D array.");
         // Convert the times to a 1D array.
-        let times = Array::from_shape_vec((times.len(),), times)
+        let sample_times = Array::from_shape_vec((sample_times.len(),), sample_times)
             .expect("Failed to convert times to 1D array.");
 
         // Return the trajectory.
-        CategoricalTrj::new(states, events, times)
+        CategoricalTrj::new(states, sample_events, sample_times)
     }
 
     #[inline]
     fn sample_n_by_length(
         &mut self,
-        length: usize,
+        max_length: usize,
         n: usize,
     ) -> <CategoricalCTBN as CTBN>::Trajectories {
-        (0..n).map(|_| self.sample_by_length(length)).collect()
+        (0..n).map(|_| self.sample_by_length(max_length)).collect()
     }
 
     #[inline]
-    fn sample_n_by_time(&mut self, time: f64, n: usize) -> <CategoricalCTBN as CTBN>::Trajectories {
-        (0..n).map(|_| self.sample_by_time(time)).collect()
+    fn sample_n_by_time(
+        &mut self,
+        max_time: f64,
+        n: usize,
+    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+        (0..n).map(|_| self.sample_by_time(max_time)).collect()
     }
 
     #[inline]
     fn sample_n_by_length_or_time(
         &mut self,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
         n: usize,
     ) -> <CategoricalCTBN as CTBN>::Trajectories {
         (0..n)
-            .map(|_| self.sample_by_length_or_time(length, time))
+            .map(|_| self.sample_by_length_or_time(max_length, max_time))
             .collect()
     }
 }
@@ -241,7 +247,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
 {
     fn par_sample_n_by_length(
         &mut self,
-        length: usize,
+        max_length: usize,
         n: usize,
     ) -> <CategoricalCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
@@ -255,14 +261,14 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
                 // Create a new sampler with the random number generator and model.
                 let mut sampler = ForwardSampler::new(&mut rng, self.model);
                 // Sample the trajectory.
-                sampler.sample_by_length(length)
+                sampler.sample_by_length(max_length)
             })
             .collect()
     }
 
     fn par_sample_n_by_time(
         &mut self,
-        time: f64,
+        max_time: f64,
         n: usize,
     ) -> <CategoricalCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
@@ -276,15 +282,15 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
                 // Create a new sampler with the random number generator and model.
                 let mut sampler = ForwardSampler::new(&mut rng, self.model);
                 // Sample the trajectory.
-                sampler.sample_by_time(time)
+                sampler.sample_by_time(max_time)
             })
             .collect()
     }
 
     fn par_sample_n_by_length_or_time(
         &mut self,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
         n: usize,
     ) -> <CategoricalCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
@@ -298,7 +304,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
                 // Create a new sampler with the random number generator and model.
                 let mut sampler = ForwardSampler::new(&mut rng, self.model);
                 // Sample the trajectory.
-                sampler.sample_by_length_or_time(length, time)
+                sampler.sample_by_length_or_time(max_length, max_time)
             })
             .collect()
     }

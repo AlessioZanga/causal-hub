@@ -1,3 +1,4 @@
+use approx::relative_eq;
 use ndarray::prelude::*;
 
 use super::CategoricalEv;
@@ -79,6 +80,20 @@ impl CategoricalTrjEvT {
             | Self::UncertainPositiveInterval { end_time, .. }
             | Self::UncertainNegativeInterval { end_time, .. } => *end_time,
         }
+    }
+
+    /// Checks if the evidence contains a given time.
+    ///
+    /// # Arguments
+    ///
+    /// * `time` - The time to check.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the time is in [start_time, end_time), `false` otherwise.
+    ///
+    pub fn contains(&self, time: &f64) -> bool {
+        (self.start_time()..self.end_time()).contains(time)
     }
 }
 
@@ -321,10 +336,10 @@ impl CategoricalTrjEv {
                     E::CertainPositiveInterval { .. } => true,
                     E::CertainNegativeInterval { .. } => true,
                     E::UncertainPositiveInterval { p_states, .. } => {
-                        p_states.sum() == 1.0
+                        relative_eq!(p_states.sum(), 1.)
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
-                        p_not_states.sum() == 1.0
+                        relative_eq!(p_not_states.sum(), 1.)
                     }
                 }),
                 "States distributions must sum to 1."
@@ -385,7 +400,7 @@ impl CategoricalTrjEv {
             // Get the first evidence, if any.
             let evidence = evidence.iter().next().cloned();
             // Check if the evidence is at time zero.
-            let evidence = evidence.filter(|e| e.start_time() == 0.0);
+            let evidence = evidence.filter(|e| relative_eq!(e.start_time(), 0.));
             // Map the evidence to its variable.
             evidence.map(|e| (label, e.into()))
         });

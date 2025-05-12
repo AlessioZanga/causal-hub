@@ -1,3 +1,4 @@
+use approx::relative_eq;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -162,7 +163,7 @@ impl CategoricalCIM {
             );
             // Assert Q rows sum to zero.
             assert!(
-                q.rows().into_iter().all(|x| x.sum() == 0.0),
+                q.rows().into_iter().all(|x| relative_eq!(x.sum(), 0.)),
                 "Q rows must sum to zero."
             );
         });

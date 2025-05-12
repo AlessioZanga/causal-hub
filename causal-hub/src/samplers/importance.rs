@@ -1,5 +1,7 @@
 use core::f64;
+use std::f32::consts::E;
 
+use approx::relative_eq;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
@@ -100,70 +102,68 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalBN> {
         let evidence = self.sample_evidence(&evidence);
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&x| {
+        self.model.topological_order().iter().for_each(|&i| {
             // Get the evidence of the vertex.
-            let e_x = &evidence.evidences()[x];
+            let e_i = &evidence.evidences()[i];
 
             // Get the CPD.
-            let cpd_x = &self.model.cpds()[x];
+            let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             // NOTE: Labels and states are sorted (i.e. aligned).
-            let pa_i = self.model.graph().parents(x);
+            let pa_i = self.model.graph().parents(i);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
-            let pa_i = cpd_x.ravel_multi_index().ravel(pa_i);
+            let pa_i = cpd_i.ravel_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
-            let p_x = cpd_x.parameters().row(pa_i);
+            let p_i = cpd_i.parameters().row(pa_i);
 
             // Get the evidence of the vertex.
-            let (s_x, w_x) = match e_x {
+            let (s_i, w_i) = match e_i {
                 // If there is evidence, sample from the constrained distribution.
-                Some(e_x) => match e_x {
+                Some(e_i) => match e_i {
                     E::CertainPositive { state, .. } => {
                         // Get the state.
-                        let s_x = *state as u8;
+                        let s_i = *state as u8;
                         // Return the state and its weight.
-                        (s_x, p_x[s_x as usize])
+                        (s_i, p_i[*state])
                     }
                     E::CertainNegative { not_states, .. } => {
                         // Initialize the weight.
-                        let mut w_x = 1.;
+                        let mut w_i = 1.;
                         // Clone the distribution.
-                        let mut p_x = p_x.to_owned();
+                        let mut p_i = p_i.to_owned();
                         // For each not state ...
-                        not_states.iter().for_each(|&i| {
+                        not_states.iter().for_each(|&j| {
                             // Update the weight.
-                            w_x -= p_x[i];
+                            w_i -= p_i[j];
                             // Zero out the not states.
-                            p_x[i] = 0.;
+                            p_i[j] = 0.;
                         });
-                        // Assert the weight is positive.
-                        assert!(w_x > 0., "The weight must be positive.");
                         // Normalize the probabilities.
-                        p_x /= p_x.sum();
+                        p_i /= p_i.sum();
                         // Construct the sampler.
-                        let s_x = WeightedIndex::new(&p_x).unwrap();
+                        let s_i = WeightedIndex::new(&p_i).unwrap();
                         // Sample the state.
-                        let s_x = s_x.sample(self.rng) as u8;
+                        let s_i = s_i.sample(self.rng) as u8;
                         // Return the sample and weight.
-                        (s_x, w_x)
+                        (s_i, w_i)
                     }
                     _ => unreachable!(), // Due to evidence sampling.
                 },
                 // If there is no evidence, sample as usual.
                 None => {
                     // Construct the sampler.
-                    let s_x = WeightedIndex::new(&p_x).unwrap();
+                    let s_i = WeightedIndex::new(&p_i).unwrap();
                     // Sample the state.
-                    let s_x = s_x.sample(self.rng) as u8;
+                    let s_i = s_i.sample(self.rng) as u8;
                     // Return the sample and weight.
-                    (s_x, 1.)
+                    (s_i, 1.)
                 }
             };
 
             // Sample from the distribution.
-            sample[x] = s_x;
+            sample[i] = s_i;
             // Update the weight.
-            weight *= w_x;
+            weight *= w_i;
         });
 
         (sample, weight)
@@ -233,7 +233,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
     fn sample_time(
         &mut self,
         evidence: &CategoricalTrjEv,
-        s_i: &Array1<u8>,
+        event: &Array1<u8>,
         i: usize,
         t: f64,
     ) -> f64 {
@@ -245,7 +245,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
 
         // Check if there is certain positive evidence at this point in time.
         let e = e_i.iter().find(|e| match e {
-            E::CertainPositiveInterval { .. } => e.start_time() <= t && t < e.end_time(),
+            E::CertainPositiveInterval { .. } => e.contains(&t),
             E::CertainNegativeInterval { .. } => false, // Due to state sampling.
             _ => unreachable!(),                        // Due to evidence sampling.
         });
@@ -256,12 +256,12 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         }
 
         // Cast the state to usize.
-        let x = s_i[i] as usize;
+        let x = event[i] as usize;
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(i);
-        let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
+        let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
@@ -316,7 +316,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
     fn update_weight(
         &self,
         evidence: &CategoricalTrjEv,
-        s_i: &Array1<u8>,
+        event: &Array1<u8>,
         i: usize,
         t_a: f64,
         t_b: f64,
@@ -325,7 +325,8 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         use CategoricalTrjEvT as E;
 
         // For each ...
-        s_i.indexed_iter()
+        event
+            .indexed_iter()
             .map(|(j, &y)| {
                 // Get the evidence of the vertex.
                 let e_j = &evidence.evidences()[j];
@@ -336,16 +337,14 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
                 let cim_j = &self.model.cims()[j];
                 // Compute the index on the parents to condition on.
                 let pa_j = self.model.graph().parents(j);
-                let pa_j = pa_j.iter().map(|&z| s_i[z] as usize);
+                let pa_j = pa_j.iter().map(|&z| event[z] as usize);
                 let pa_j = cim_j.ravel_multi_index().ravel(pa_j);
                 // Get the distribution of the vertex.
                 let q_j_y = -cim_j.parameters()[[pa_j, y, y]];
 
                 // Check if there is certain positive evidence at this point in time.
                 let e = e_j.iter().find(|e| match e {
-                    E::CertainPositiveInterval { .. } => {
-                        e.start_time() <= t_a && t_a < e.end_time()
-                    }
+                    E::CertainPositiveInterval { .. } => e.contains(&t_a),
                     E::CertainNegativeInterval { .. } => false, // Due to state sampling.
                     _ => unreachable!(),                        // Due to evidence sampling.
                 });
@@ -398,9 +397,12 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
     pub fn sample_with_evidence_by_length_or_time(
         &mut self,
         evidence: &CategoricalTrjEv,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
     ) -> (CategoricalTrj, f64) {
+        // Get shortened variable type.
+        use CategoricalTrjEvT as E;
+
         // Assert the model and the evidences have the same labels.
         assert_eq!(
             self.model.labels(),
@@ -410,15 +412,15 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         // TODO: Assert the model and the evidences have the same states.
         // Assert length is positive.
         assert!(
-            length > 0,
-            "The length of the trajectory must be strictly positive."
+            max_length > 0,
+            "The maximum length of the trajectory must be strictly positive."
         );
         // Assert time is positive.
-        assert!(time > 0., "The time must be positive.");
+        assert!(max_time > 0., "The maximum time must be positive.");
 
         // Allocate the trajectory components.
-        let mut events = Vec::new();
-        let mut times = Vec::new();
+        let mut sample_events = Vec::new();
+        let mut sample_times = Vec::new();
 
         // Reduce the uncertain evidences to certain evidences.
         let evidence = self.sample_evidence(&evidence);
@@ -430,60 +432,76 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         // Initialize the sampler for the initial state.
         let mut initial_sampler = ImportanceSampler::new(self.rng, initial_distribution);
         // Sample the initial states with given initial evidence.
-        let (mut s_i, mut weight) = initial_sampler.sample_with_evidence(&initial_evidence);
+        let (mut event, mut weight) = initial_sampler.sample_with_evidence(&initial_evidence);
 
         // Append the initial state to the trajectory.
-        events.push(s_i.clone());
-        times.push(0.);
+        sample_events.push(event.clone());
+        sample_times.push(0.);
 
         // Sample the transition time.
-        let mut t_i: Array1<_> = (0..s_i.len())
-            .map(|i| self.sample_time(&evidence, &s_i, i, 0.))
+        let mut times: Array1<_> = (0..event.len())
+            .map(|i| self.sample_time(&evidence, &event, i, 0.))
             .collect();
 
         // Get the variable that transitions first.
-        let mut i = t_i.argmin().unwrap();
+        let mut i = times.argmin().unwrap();
         // Update the weight.
-        weight *= self.update_weight(&evidence, &s_i, i, 0., t_i[i]);
+        weight *= self.update_weight(&evidence, &event, i, 0., times[i]);
         // Set global time.
-        let mut t = t_i[i];
+        let mut time = times[i];
 
-        // FIXME: While:
-        //  1. the length of the trajectory is less than length, and ...
-        //  2. the time is less than time ...
-        while events.len() < length && t < time {
+        // While:
+        //  1. the length of the trajectory is less than max_length, and ...
+        //  2. the time is less than max_time ...
+        while sample_events.len() < max_length && time < max_time {
+            // Get evidence of the vertex.
+            let e_i = &evidence.evidences()[i];
+
             // Cast the state to usize.
-            let x = s_i[i] as usize;
-            // Get the CIM.
-            let cim_i = &self.model.cims()[i];
-            // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(i);
-            let pa_i = pa_i.iter().map(|&z| s_i[z] as usize);
-            let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
-            // Get the distribution of the vertex.
-            let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
-            // Set the diagonal element to zero.
-            q_i_zx[x] = 0.;
-            // Initialize a weighted index sampler.
-            let s_i_zx = WeightedIndex::new(q_i_zx).unwrap();
-            // Sample the next event.
-            s_i[i] = s_i_zx.sample(self.rng) as u8;
-            // Append the event to the trajectory.
-            events.push(s_i.clone());
-            times.push(t);
-            // Update the transition times for { X } U Ch(X).
-            [i].into_iter()
-                .chain(self.model.graph().children(i))
-                .for_each(|j| {
-                    // Sample the transition time.
-                    t_i[j] = t + self.sample_time(&evidence, &s_i, j, t);
-                });
+            let x = event[i] as usize;
+
+            // Check if there is evidence at this point in time.
+            let e = e_i.iter().find(|e| e.contains(&time));
+            // FIXME:
+            if true {
+                // Sample the transition time.
+                times[i] = time + self.sample_time(&evidence, &event, i, time);
+            // FIXME:
+            } else {
+                // Get the CIM.
+                let cim_i = &self.model.cims()[i];
+                // Compute the index on the parents to condition on.
+                let pa_i = self.model.graph().parents(i);
+                let pa_i = pa_i.iter().map(|&z| event[z] as usize);
+                let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
+                // Get the distribution of the vertex.
+                let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
+                // Set the diagonal element to zero.
+                q_i_zx[x] = 0.;
+
+                // Check if there is evidence at this point in time.
+                match e {
+                    _ => todo!(), // FIXME:
+                };
+
+                // Append the event to the trajectory.
+                sample_events.push(event.clone());
+                sample_times.push(time);
+                // Update the transition times for { X } U Ch(X).
+                [i].into_iter()
+                    .chain(self.model.graph().children(i))
+                    .for_each(|j| {
+                        // Sample the transition time.
+                        times[j] = time + self.sample_time(&evidence, &event, j, time);
+                    });
+            }
+
             // Get the variable to transition first.
-            i = t_i.argmin().unwrap();
+            i = times.argmin().unwrap();
             // Update the weight.
-            weight *= self.update_weight(&evidence, &s_i, i, t, t_i[i].min(time));
+            weight *= self.update_weight(&evidence, &event, i, time, times[i].min(max_time));
             // Update the global time.
-            t = t_i[i];
+            time = times[i];
         }
 
         // Get the states of the CIMs.
@@ -494,16 +512,16 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
             .map(|(label, cim)| (label, cim.states()));
 
         // Convert the events to a 2D array.
-        let shape = (events.len(), events[0].len());
-        let events = Array::from_iter(events.into_iter().flatten())
+        let shape = (sample_events.len(), sample_events[0].len());
+        let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
             .expect("Failed to convert events to 2D array.");
         // Convert the times to a 1D array.
-        let times = Array::from_shape_vec((times.len(),), times)
+        let sample_times = Array::from_shape_vec((sample_times.len(),), sample_times)
             .expect("Failed to convert times to 1D array.");
 
         // Construct the trajectory.
-        let trajectory = CategoricalTrj::new(states, events, times);
+        let trajectory = CategoricalTrj::new(states, sample_events, sample_times);
 
         // Return the trajectory and its weight.
         (trajectory, weight)
