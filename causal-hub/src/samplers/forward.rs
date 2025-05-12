@@ -35,7 +35,8 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
     ///
     /// Return a new `ForwardSampler` instance.
     ///
-    pub fn new(rng: &'a mut R, model: &'a M) -> Self {
+    #[inline]
+    pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
         Self { rng, model }
     }
 }
@@ -77,11 +78,7 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
         });
 
         // Get the states.
-        let states = self
-            .model
-            .cpds()
-            .iter()
-            .map(|(label, cpd)| (label, cpd.states()));
+        let states = self.model.states();
 
         // Construct the dataset.
         CategoricalDataset::new(states, dataset)
@@ -181,7 +178,7 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             sample_events.push(event.clone());
             sample_times.push(time);
             // Update the transition times for { X } U Ch(X).
-            [i].into_iter()
+            std::iter::once(i)
                 .chain(self.model.graph().children(i))
                 .for_each(|j| {
                     // Sample the transition time.
@@ -194,11 +191,7 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         }
 
         // Get the states of the CIMs.
-        let states = self
-            .model
-            .cims()
-            .iter()
-            .map(|(label, cim)| (label, cim.states()));
+        let states = self.model.states();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());

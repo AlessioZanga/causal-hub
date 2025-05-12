@@ -101,8 +101,9 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///     * `max_length` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -120,8 +121,9 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///    * `max_time` is zero or negative.
-    ///   * `n` is zero or negative.
+    ///
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -140,9 +142,10 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///     * `max_length` is zero or negative.
-    ///     * `max_time` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -173,8 +176,9 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///     * `max_length` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -192,8 +196,9 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///     * `max_time` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -212,9 +217,10 @@ where
     /// # Panics
     ///
     /// Panics if:
-    ///     * `max_length` is zero or negative.
-    ///     * `max_time` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///

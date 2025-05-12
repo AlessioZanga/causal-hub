@@ -102,6 +102,6 @@ impl FromCsvReader for CategoricalDataset {
             .expect("Failed to rearrange values to the correct shape.");
 
         // Construct the categorical dataset.
-        CategoricalDataset::new(states, values)
+        Self::new(states, values)
     }
 }

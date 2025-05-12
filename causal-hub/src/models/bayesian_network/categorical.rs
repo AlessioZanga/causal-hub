@@ -6,12 +6,14 @@ use crate::{
     datasets::CategoricalDataset,
     distributions::{CPD, CategoricalCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    types::FxIndexMap,
+    types::{FxIndexMap, FxIndexSet},
 };
 
 /// A categorical Bayesian network (BN).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
+    /// The states of the variables.
+    states: FxIndexMap<String, FxIndexSet<String>>,
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional probability distributions.
@@ -22,6 +24,19 @@ pub struct CategoricalBayesianNetwork {
 
 /// A type alias for the categorical Bayesian network.
 pub type CategoricalBN = CategoricalBayesianNetwork;
+
+impl CategoricalBN {
+    /// Returns the states of the variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the states of the variables.
+    ///
+    #[inline]
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.states
+    }
+}
 
 impl BN for CategoricalBN {
     type Labels = <DiGraph as Graph>::Labels;
@@ -47,6 +62,29 @@ impl BN for CategoricalBN {
             "Graph labels and distributions labels must be the same."
         );
 
+        // Allocate the states of the variables.
+        let mut states: FxIndexMap<String, FxIndexSet<String>> = FxIndexMap::default();
+        // Insert the states of the variables into the map to check if they are the same.
+        for cpd in cpds.values() {
+            std::iter::once((cpd.label(), cpd.states()))
+                .chain(cpd.conditioning_states())
+                .for_each(|(l, s)| {
+                    // Check if the states are already in the map.
+                    if let Some(existing_states) = states.get(l) {
+                        // Check if the states are the same.
+                        assert_eq!(
+                            existing_states, s,
+                            "States of `{l}` must be the same across CPDs.",
+                        );
+                    } else {
+                        // Insert the states into the map.
+                        states.insert(l.to_owned(), s.clone());
+                    }
+                });
+        }
+        // Sort the states of the variables.
+        states.sort_keys();
+
         // Assert the labels of the parameters are the same as the graph parents.
         assert!(
             // Check if all vertices have the same labels as their parents.
@@ -63,12 +101,11 @@ impl BN for CategoricalBN {
             "Graph parents labels and conditioning labels must be the same."
         );
 
-        // FIXME: Assert states of variables are the same across CPDs.
-
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().expect("Graph must be acyclic.");
 
         Self {
+            states,
             graph,
             cpds,
             topological_order,

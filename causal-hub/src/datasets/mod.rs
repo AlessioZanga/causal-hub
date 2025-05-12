@@ -17,7 +17,7 @@ pub trait Dataset {
     /// The type of the values.
     type Values;
 
-    /// Returns the labels of the variables.
+    /// The labels of the variables.
     ///
     /// # Returns
     ///
@@ -25,7 +25,7 @@ pub trait Dataset {
     ///
     fn labels(&self) -> &Self::Labels;
 
-    /// Returns the values.
+    /// The values of the variables.
     ///
     /// # Returns
     ///
@@ -33,7 +33,7 @@ pub trait Dataset {
     ///
     fn values(&self) -> &Self::Values;
 
-    /// Returns the sample size.
+    /// The sample size.
     ///
     /// # Returns
     ///

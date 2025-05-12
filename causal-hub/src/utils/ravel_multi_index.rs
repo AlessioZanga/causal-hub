@@ -48,7 +48,7 @@ impl RMI {
     /// The number of dimensions.
     ///
     #[inline]
-    pub fn cardinality(&self) -> &Array1<usize> {
+    pub const fn cardinality(&self) -> &Array1<usize> {
         &self.cardinality
     }
 

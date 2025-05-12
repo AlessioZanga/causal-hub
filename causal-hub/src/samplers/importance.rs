@@ -17,6 +17,7 @@ use crate::{
     models::{BN, CTBN, CategoricalBN, CategoricalCTBN},
 };
 
+/// A struct for sampling using importance sampling.
 #[derive(Debug)]
 pub struct ImportanceSampler<'a, R, M> {
     rng: &'a mut R,
@@ -35,7 +36,8 @@ impl<'a, R, M> ImportanceSampler<'a, R, M> {
     ///
     /// Return a new `ImportanceSampler` instance.
     ///
-    pub fn new(rng: &'a mut R, model: &'a M) -> Self {
+    #[inline]
+    pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
         Self { rng, model }
     }
 }
@@ -88,9 +90,32 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
         CategoricalEv::new(evidence.states(), certain_evidence)
     }
 
-    pub fn sample_with_evidence(&mut self, evidence: &CategoricalEv) -> (Array1<u8>, f64) {
+    /// Sample a single instance with evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `evidence` - The evidence to sample from.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// * the model and the evidence have different labels.
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple containing the sampled instance and its weight.
+    ///
+    pub fn sample(&mut self, evidence: &CategoricalEv) -> (Array1<u8>, f64) {
         // Get shortened variable type.
         use CategoricalEvT as E;
+
+        // Assert the model and the evidences have the same labels.
+        assert_eq!(
+            self.model.labels(),
+            evidence.labels(),
+            "The model and the evidences must have the same variables."
+        );
 
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
@@ -392,7 +417,28 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             .product()
     }
 
-    pub fn sample_with_evidence_by_length_or_time(
+    /// Sample a trajectory with evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `evidence` - The evidence to sample from.
+    /// * `max_length` - The maximum length of the trajectory.
+    /// * `max_time` - The maximum time of the trajectory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// * the model and the evidence have different labels.
+    /// * the model and the evidence have different states.
+    /// * the maximum length of the trajectory is not strictly positive.
+    /// * the maximum time of the trajectory is not strictly positive.
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple containing the sampled trajectory and its weight.
+    ///
+    pub fn sample_by_length_or_time(
         &mut self,
         evidence: &CategoricalTrjEv,
         max_length: usize,
@@ -407,7 +453,12 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             evidence.labels(),
             "The model and the evidences must have the same variables."
         );
-        // TODO: Assert the model and the evidences have the same states.
+        // Assert the model and the evidences have the same states.
+        assert_eq!(
+            self.model.states(),
+            evidence.states(),
+            "The model and the evidences must have the same states."
+        );
         // Assert length is positive.
         assert!(
             max_length > 0,
@@ -430,7 +481,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         // Initialize the sampler for the initial state.
         let mut initial_sampler = ImportanceSampler::new(self.rng, initial_distribution);
         // Sample the initial states with given initial evidence.
-        let (mut event, mut weight) = initial_sampler.sample_with_evidence(&initial_evidence);
+        let (mut event, mut weight) = initial_sampler.sample(&initial_evidence);
 
         // Append the initial state to the trajectory.
         sample_events.push(event.clone());
@@ -544,7 +595,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                 sample_events.push(event.clone());
                 sample_times.push(time);
                 // Update the transition times for { X } U Ch(X).
-                [i].into_iter()
+                std::iter::once(i)
                     .chain(self.model.graph().children(i))
                     .for_each(|j| {
                         // Sample the transition time.
@@ -561,11 +612,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         }
 
         // Get the states of the CIMs.
-        let states = self
-            .model
-            .cims()
-            .iter()
-            .map(|(label, cim)| (label, cim.states()));
+        let states = self.model.states();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());
