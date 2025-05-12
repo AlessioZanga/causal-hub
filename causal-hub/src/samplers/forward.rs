@@ -171,6 +171,8 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
             // Set the diagonal element to zero.
             q_i_zx[x] = 0.;
+            // Normalize the probabilities.
+            q_i_zx /= q_i_zx.sum();
             // Initialize a weighted index sampler.
             let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
             // Sample the next event.

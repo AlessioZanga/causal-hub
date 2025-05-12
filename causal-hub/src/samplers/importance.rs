@@ -1,5 +1,4 @@
 use core::f64;
-use std::f32::consts::E;
 
 use approx::relative_eq;
 use ndarray::prelude::*;
@@ -41,7 +40,7 @@ impl<'a, R, M> ImportanceSampler<'a, R, M> {
     }
 }
 
-impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
     /// Sample uncertain evidence.
     fn sample_evidence(&mut self, evidence: &CategoricalEv) -> CategoricalEv {
         // Get shortened variable type.
@@ -99,7 +98,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalBN> {
         let mut weight = 1.;
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(&evidence);
+        let evidence = self.sample_evidence(evidence);
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
@@ -170,7 +169,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalBN> {
     }
 }
 
-impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
     /// Sample uncertain evidence.
     fn sample_evidence(&mut self, evidence: &CategoricalTrjEv) -> CategoricalTrjEv {
         // Get shortened variable type.
@@ -182,8 +181,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
             .evidences()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .map(|(l, e)| std::iter::repeat(l).zip(e))
-            .flatten()
+            .flat_map(|(l, e)| std::iter::repeat(l).zip(e))
             .flat_map(|(l, e)| {
                 // Get the variable index, starting time, and ending time.
                 let (start_time, end_time) = (e.start_time(), e.end_time());
@@ -270,7 +268,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         let e = e_i.iter().find(|e| t < e.start_time());
         // Check if there is conflict between current state and upcoming evidence.
         let e = e.filter(|e| match e {
-            E::CertainPositiveInterval { state, .. } => state != &x,
+            E::CertainPositiveInterval { state, .. } => *state != x,
             E::CertainNegativeInterval { not_states, .. } => not_states.contains(&x),
             _ => unreachable!(), // Due to evidence sampling.
         });
@@ -298,7 +296,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         // Check if there is compliance between the current state and upcoming evidence ...
         let e = e.filter(|e| match e {
             // ... for which starting time is greater than the sampled transition time.
-            E::CertainPositiveInterval { state, .. } => (t_i + t) > e.start_time() && state == &x,
+            E::CertainPositiveInterval { state, .. } => (t_i + t) > e.start_time() && *state == x,
             E::CertainNegativeInterval { .. } => false, // Due to state sampling.
             _ => unreachable!(),                        // Due to evidence sampling.
         });
@@ -352,7 +350,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
                 let e_next = e_j.iter().find(|e| t_a < e.start_time());
                 // Check if there is a difference between current state and upcoming evidence.
                 let e_next = e_next.filter(|e| match e {
-                    E::CertainPositiveInterval { state, .. } => state != &y,
+                    E::CertainPositiveInterval { state, .. } => *state != y,
                     E::CertainNegativeInterval { not_states, .. } => not_states.contains(&y),
                     _ => unreachable!(), // Due to evidence sampling.
                 });
@@ -370,7 +368,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
                 let e = e_j.iter().find(|e| t_b < e.start_time());
                 // Check if there is conflict between current state and upcoming evidence.
                 let e = e.filter(|e| match e {
-                    E::CertainPositiveInterval { state, .. } => state != &y,
+                    E::CertainPositiveInterval { state, .. } => *state != y,
                     E::CertainNegativeInterval { not_states, .. } => not_states.contains(&y),
                     _ => unreachable!(), // Due to evidence sampling.
                 });
@@ -423,7 +421,7 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
         let mut sample_times = Vec::new();
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(&evidence);
+        let evidence = self.sample_evidence(evidence);
 
         // Get the initial state distribution.
         let initial_distribution = self.model.initial_distribution();
@@ -462,11 +460,17 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
 
             // Check if there is evidence at this point in time.
             let e = e_i.iter().find(|e| e.contains(&time));
-            // FIXME:
-            if true {
+            // Check if there is certain evidence at this point in time.
+            if e.is_some_and(|e| {
+                relative_eq!(e.end_time(), time)
+                    && match e {
+                        E::CertainPositiveInterval { state, .. } => *state == x,
+                        E::CertainNegativeInterval { .. } => true,
+                        _ => false,
+                    }
+            }) {
                 // Sample the transition time.
                 times[i] = time + self.sample_time(&evidence, &event, i, time);
-            // FIXME:
             } else {
                 // Get the CIM.
                 let cim_i = &self.model.cims()[i];
@@ -478,11 +482,63 @@ impl<'a, R: Rng> ImportanceSampler<'a, R, CategoricalCTBN> {
                 let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
                 // Set the diagonal element to zero.
                 q_i_zx[x] = 0.;
+                // Normalize the probabilities.
+                q_i_zx /= q_i_zx.sum();
 
                 // Check if there is evidence at this point in time.
-                match e {
-                    _ => todo!(), // FIXME:
+                let (s_i, w_i) = if e.is_some_and(|e| {
+                    relative_eq!(e.end_time(), time)
+                        && match e {
+                            E::CertainPositiveInterval { state, .. } => *state != x,
+                            _ => false,
+                        }
+                }) {
+                    // Get the state of the certain positive interval.
+                    match e {
+                        Some(E::CertainPositiveInterval { state, .. }) => {
+                            (*state as u8, q_i_zx[*state])
+                        }
+                        _ => unreachable!(), // Due to previous checks.
+                    }
+                } else {
+                    //
+                    match e {
+                        Some(E::CertainNegativeInterval { not_states, .. }) => {
+                            // Initialize the weight.
+                            let mut w_i = 1.;
+                            // Clone the distribution.
+                            let mut q_i_zx = q_i_zx.to_owned();
+                            // For each not state ...
+                            not_states.iter().for_each(|&j| {
+                                // Update the weight.
+                                w_i -= q_i_zx[j];
+                                // Zero out the not states.
+                                q_i_zx[j] = 0.;
+                            });
+                            // Normalize the probabilities.
+                            q_i_zx /= q_i_zx.sum();
+                            // Construct the sampler.
+                            let s_i = WeightedIndex::new(&q_i_zx).unwrap();
+                            // Sample the state.
+                            let s_i = s_i.sample(self.rng) as u8;
+                            // Return the sample and weight.
+                            (s_i, w_i)
+                        }
+                        _ => {
+                            // Initialize a weighted index sampler.
+                            let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
+                            // Sample the next event.
+                            let s_i = s_i_zx.sample(self.rng) as u8;
+                            // Return the sample and weight.
+                            (s_i, 1.)
+                        }
+                    }
                 };
+
+                // Set the state.
+                event[i] = s_i;
+                // Update the weight.
+                weight *= w_i;
 
                 // Append the event to the trajectory.
                 sample_events.push(event.clone());
