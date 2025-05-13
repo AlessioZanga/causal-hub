@@ -146,9 +146,9 @@ impl CSSEstimator for SSE<'_, CatWtdTrj> {
 }
 
 // Implement the CSSEstimator and ParCSSEstimator traits for both CatTrjs and CatWtdTrjs.
-macro_for!($trjs in [CatTrjs, CatWtdTrjs] {
+macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl CSSEstimator for SSE<'_, $trjs> {
+    impl CSSEstimator for SSE<'_, $type> {
         // (conditional counts, conditional time spent, sample size)
         type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
 
@@ -176,7 +176,7 @@ macro_for!($trjs in [CatTrjs, CatWtdTrjs] {
         }
     }
 
-    impl ParCSSEstimator for SSE<'_, $trjs> {
+    impl ParCSSEstimator for SSE<'_, $type> {
         // (conditional counts, conditional time spent, sample size)
         type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
 

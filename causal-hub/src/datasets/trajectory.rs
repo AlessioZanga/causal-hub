@@ -153,7 +153,7 @@ impl Dataset for CatTrj {
 /// A collection of multivariate trajectories.
 #[derive(Clone, Debug)]
 pub struct CategoricalTrajectories {
-    trajectories: Vec<CategoricalTrajectory>,
+    trajectories: Vec<CatTrj>,
 }
 
 /// A type alias for a collection of multivariate trajectories.
@@ -180,7 +180,7 @@ impl CatTrjs {
     ///
     pub fn new<I>(trajectories: I) -> Self
     where
-        I: IntoIterator<Item = CategoricalTrajectory>,
+        I: IntoIterator<Item = CatTrj>,
     {
         // Collect the trajectories into a vector.
         let trajectories: Vec<_> = trajectories.into_iter().collect();
@@ -257,7 +257,6 @@ impl FromIterator<CatTrj> for CatTrjs {
 impl FromParallelIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
-        // TODO: Avoid collecting into a Vec, this is a workaround.
         Self::new(iter.into_par_iter().collect::<Vec<_>>())
     }
 }

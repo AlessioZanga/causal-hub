@@ -7,26 +7,9 @@ mod tests {
 
     macro_for!(
         $bn in [
-            alarm,
-            andes,
-            asia,
-            barley,
-            cancer,
-            child,
-            diabetes,
-            earthquake,
-            hailfinder,
-            hepar2,
-            insurance,
-            link,
-            mildew,
-            munin1,
-            pathfinder,
-            pigs,
-            sachs,
-            survey,
-            water,
-            win95pts
+            alarm, andes, asia, barley, cancer, child, diabetes, earthquake,
+            hailfinder, hepar2, insurance, link, mildew, munin1, pathfinder,
+            pigs, sachs, survey, water, win95pts
         ] {
         paste! {
             #[test]

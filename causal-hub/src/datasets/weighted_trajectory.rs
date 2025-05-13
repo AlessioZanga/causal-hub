@@ -246,7 +246,6 @@ impl FromIterator<CatWtdTrj> for CatWtdTrjs {
 impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        // TODO: Avoid collecting into a Vec, this is a workaround.
         Self::new(iter.into_par_iter().collect::<Vec<_>>())
     }
 }

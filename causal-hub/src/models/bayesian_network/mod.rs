@@ -11,8 +11,8 @@ pub trait BayesianNetwork {
     type CPD;
     /// The type of the sample.
     type Sample;
-    /// The type of the dataset.
-    type Dataset;
+    /// The type of the samples.
+    type Samples;
 
     /// Constructs a new Bayesian network.
     ///

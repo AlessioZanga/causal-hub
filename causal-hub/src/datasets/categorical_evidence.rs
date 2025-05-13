@@ -58,7 +58,7 @@ pub struct CategoricalEvidence {
 }
 
 /// A type alias for the categorical evidence structure.
-pub type CategoricalEv = CategoricalEvidence;
+pub type CatEv = CategoricalEvidence;
 
 impl CategoricalEvidence {
     /// Creates a new categorical evidence structure.

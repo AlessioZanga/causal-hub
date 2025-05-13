@@ -42,7 +42,7 @@ impl BN for CatBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CPD = CatCPD;
     type Sample = Array1<u8>;
-    type Dataset = CategoricalDataset;
+    type Samples = CategoricalDataset;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where

@@ -42,8 +42,10 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
 }
 
 impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
-    #[inline]
-    fn sample(&mut self) -> <CatBN as BN>::Sample {
+    type Sample = <CatBN as BN>::Sample;
+    type Samples = <CatBN as BN>::Samples;
+
+    fn sample(&mut self) -> Self::Sample {
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
@@ -67,7 +69,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         sample
     }
 
-    fn sample_n(&mut self, n: usize) -> <CatBN as BN>::Dataset {
+    fn sample_n(&mut self, n: usize) -> Self::Samples {
         // Allocate the dataset.
         let mut dataset = Array::zeros((n, self.model.labels().len()));
 
@@ -106,23 +108,22 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
 }
 
 impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
+    type Sample = <CatCTBN as CTBN>::Trajectory;
+    type Samples = <CatCTBN as CTBN>::Trajectories;
+
     #[inline]
-    fn sample_by_length(&mut self, max_length: usize) -> <CatCTBN as CTBN>::Trajectory {
+    fn sample_by_length(&mut self, max_length: usize) -> Self::Sample {
         // Delegate to generic function.
         self.sample_by_length_or_time(max_length, f64::MAX)
     }
 
     #[inline]
-    fn sample_by_time(&mut self, max_time: f64) -> <CatCTBN as CTBN>::Trajectory {
+    fn sample_by_time(&mut self, max_time: f64) -> Self::Sample {
         // Delegate to generic function.
         self.sample_by_length_or_time(usize::MAX, max_time)
     }
 
-    fn sample_by_length_or_time(
-        &mut self,
-        max_length: usize,
-        max_time: f64,
-    ) -> <CatCTBN as CTBN>::Trajectory {
+    fn sample_by_length_or_time(&mut self, max_length: usize, max_time: f64) -> Self::Sample {
         // Assert length is positive.
         assert!(
             max_length > 0,
@@ -207,16 +208,12 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     }
 
     #[inline]
-    fn sample_n_by_length(
-        &mut self,
-        max_length: usize,
-        n: usize,
-    ) -> <CatCTBN as CTBN>::Trajectories {
+    fn sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples {
         (0..n).map(|_| self.sample_by_length(max_length)).collect()
     }
 
     #[inline]
-    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> <CatCTBN as CTBN>::Trajectories {
+    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples {
         (0..n).map(|_| self.sample_by_time(max_time)).collect()
     }
 
@@ -226,7 +223,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> <CatCTBN as CTBN>::Trajectories {
+    ) -> Self::Samples {
         (0..n)
             .map(|_| self.sample_by_length_or_time(max_length, max_time))
             .collect()
@@ -234,42 +231,16 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
 }
 
 impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
-    fn par_sample_n_by_length(
-        &mut self,
-        max_length: usize,
-        n: usize,
-    ) -> <CatCTBN as CTBN>::Trajectories {
-        // Generate a random seed for each trajectory.
-        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
-        // Sample the trajectories in parallel.
-        seeds
-            .into_par_iter()
-            .map(|seed| {
-                // Create a new random number generator with the seed.
-                let mut rng = R::seed_from_u64(seed);
-                // Create a new sampler with the random number generator and model.
-                let mut sampler = ForwardSampler::new(&mut rng, self.model);
-                // Sample the trajectory.
-                sampler.sample_by_length(max_length)
-            })
-            .collect()
+    type Samples = <CatCTBN as CTBN>::Trajectories;
+
+    #[inline]
+    fn par_sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples {
+        self.par_sample_n_by_length_or_time(max_length, f64::MAX, n)
     }
 
-    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> <CatCTBN as CTBN>::Trajectories {
-        // Generate a random seed for each trajectory.
-        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
-        // Sample the trajectories in parallel.
-        seeds
-            .into_par_iter()
-            .map(|seed| {
-                // Create a new random number generator with the seed.
-                let mut rng = R::seed_from_u64(seed);
-                // Create a new sampler with the random number generator and model.
-                let mut sampler = ForwardSampler::new(&mut rng, self.model);
-                // Sample the trajectory.
-                sampler.sample_by_time(max_time)
-            })
-            .collect()
+    #[inline]
+    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples {
+        self.par_sample_n_by_length_or_time(usize::MAX, max_time, n)
     }
 
     fn par_sample_n_by_length_or_time(
@@ -277,7 +248,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> <CatCTBN as CTBN>::Trajectories {
+    ) -> Self::Samples {
         // Generate a random seed for each trajectory.
         let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.

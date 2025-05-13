@@ -1,7 +1,7 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 
-use super::CategoricalEv;
+use super::CatEv;
 use crate::{
     datasets::Dataset,
     types::{FxIndexMap, FxIndexSet},
@@ -106,9 +106,9 @@ pub struct CategoricalTrajectoryEvidence {
 }
 
 /// Type alias for `CategoricalTrajectoryEvidence`.
-pub type CategoricalTrjEv = CategoricalTrajectoryEvidence;
+pub type CatTrjEv = CategoricalTrajectoryEvidence;
 
-impl CategoricalTrjEv {
+impl CatTrjEv {
     /// Constructs a new `CategoricalTrajectoryEvidence` instance.
     ///
     /// # Arguments
@@ -394,7 +394,7 @@ impl CategoricalTrjEv {
     ///
     /// The evidences at time zero.
     ///
-    pub fn initial_evidence(&self) -> CategoricalEv {
+    pub fn initial_evidence(&self) -> CatEv {
         // Get the evidences at time zero.
         let evidences = self.evidences.iter().filter_map(|(label, evidence)| {
             // Get the first evidence, if any.
@@ -409,11 +409,11 @@ impl CategoricalTrjEv {
         let states = self.states.clone();
 
         // Create a new categorical evidence instance.
-        CategoricalEv::new(states, evidences)
+        CatEv::new(states, evidences)
     }
 }
 
-impl Dataset for CategoricalTrjEv {
+impl Dataset for CatTrjEv {
     type Labels = FxIndexSet<String>;
     type Values = FxIndexMap<String, Vec<CatTrjEvT>>;
 
