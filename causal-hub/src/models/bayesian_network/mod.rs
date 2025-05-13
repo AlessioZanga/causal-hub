@@ -69,3 +69,6 @@ pub trait BayesianNetwork {
     ///
     fn topological_order(&self) -> &[usize];
 }
+
+/// A type alias for a Bayesian network.
+pub use BayesianNetwork as BN;

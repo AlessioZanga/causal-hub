@@ -1,8 +1,14 @@
 mod categorical;
 pub use categorical::*;
 
+mod categorical_evidence;
+pub use categorical_evidence::*;
+
 mod trajectory;
 pub use trajectory::*;
+
+mod trajectory_evidence;
+pub use trajectory_evidence::*;
 
 /// A trait for dataset.
 pub trait Dataset {
@@ -11,7 +17,7 @@ pub trait Dataset {
     /// The type of the values.
     type Values;
 
-    /// Returns the labels of the variables.
+    /// The labels of the variables.
     ///
     /// # Returns
     ///
@@ -19,7 +25,7 @@ pub trait Dataset {
     ///
     fn labels(&self) -> &Self::Labels;
 
-    /// Returns the values.
+    /// The values of the variables.
     ///
     /// # Returns
     ///
@@ -27,7 +33,7 @@ pub trait Dataset {
     ///
     fn values(&self) -> &Self::Values;
 
-    /// Returns the sample size.
+    /// The sample size.
     ///
     /// # Returns
     ///

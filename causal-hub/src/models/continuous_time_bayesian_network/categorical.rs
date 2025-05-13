@@ -1,13 +1,13 @@
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::ContinuousTimeBayesianNetwork;
+use super::CTBN;
 use crate::{
     datasets::{CategoricalTrj, CategoricalTrjs},
     distributions::{CPD, CategoricalCIM, CategoricalCPD},
     graphs::{DiGraph, Graph},
-    models::{BayesianNetwork, CategoricalBN},
-    types::FxIndexMap,
+    models::{BN, CategoricalBN},
+    types::{FxIndexMap, FxIndexSet},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
@@ -24,7 +24,20 @@ pub struct CategoricalContinuousTimeBayesianNetwork {
 /// A type alias for the categorical CTBN.
 pub type CategoricalCTBN = CategoricalContinuousTimeBayesianNetwork;
 
-impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
+impl CategoricalCTBN {
+    /// Returns the states of the variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the states of the variables.
+    ///
+    #[inline]
+    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        self.initial_distribution.states()
+    }
+}
+
+impl CTBN for CategoricalCTBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CIM = CategoricalCIM;
     type InitialDistribution = CategoricalBN;
@@ -137,10 +150,10 @@ impl ContinuousTimeBayesianNetwork for CategoricalCTBN {
         // Assert the initial distribution has same states.
         assert!(
             initial_distribution
-                .cpds()
+                .states()
                 .into_iter()
                 .zip(ctbn.cims())
-                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
+                .all(|((_, states), (_, cim))| states.eq(cim.states())),
             "Initial distribution states must be the same as the CIMs states."
         );
 

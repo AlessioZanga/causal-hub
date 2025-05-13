@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         distributions::{CPD, CategoricalCPD},
         graphs::{DiGraph, Graph},
-        models::{BayesianNetwork, CategoricalBN},
+        models::{BN, CategoricalBN},
     };
     use ndarray::prelude::*;
 

@@ -6,7 +6,7 @@ use pest_derive::Parser;
 use crate::{
     distributions::{CPD, CategoricalCPD},
     graphs::{DiGraph, Graph},
-    models::{BayesianNetwork, CategoricalBN},
+    models::{BN, CategoricalBN},
     types::{FxIndexMap, FxIndexSet},
 };
 

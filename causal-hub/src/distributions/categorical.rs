@@ -363,8 +363,7 @@ impl CategoricalCPD {
 impl Display for CategoricalCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Determine the maximum width for formatting based on the labels and states.
-        let n = [self.label()]
-            .into_iter()
+        let n = std::iter::once(self.label())
             .chain(self.states())
             .chain(self.conditioning_labels())
             .chain(self.conditioning_states().values().flatten())

@@ -1,12 +1,15 @@
 mod forward;
 pub use forward::*;
 
-use crate::models::{BayesianNetwork, ContinuousTimeBayesianNetwork};
+mod importance;
+pub use importance::*;
+
+use crate::models::{BN, CTBN};
 
 /// A trait for sampling from a Bayesian network.
-pub trait BayesianNetworkSampler<BN>
+pub trait BayesianNetworkSampler<T>
 where
-    BN: BayesianNetwork,
+    T: BN,
 {
     /// Sample a single instance from a Bayesian network.
     ///
@@ -14,7 +17,7 @@ where
     ///
     /// A single sample from the Bayesian network.
     ///
-    fn sample(&mut self) -> BN::Sample;
+    fn sample(&mut self) -> T::Sample;
 
     /// Sample from a Bayesian network.
     ///
@@ -26,119 +29,122 @@ where
     ///
     /// A dataset containing the samples.
     ///
-    fn sample_n(&mut self, n: usize) -> BN::Dataset;
+    fn sample_n(&mut self, n: usize) -> T::Dataset;
 }
 
 pub use BayesianNetworkSampler as BNSampler;
 
 /// A trait for sampling from a CTBN.
-pub trait ContinuousTimeBayesianNetworkSampler<CTBN>
+pub trait ContinuousTimeBayesianNetworkSampler<T>
 where
-    CTBN: ContinuousTimeBayesianNetwork,
+    T: CTBN,
 {
     /// Sample a single trajectory with a given length from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectory.
+    /// * `max_length` - The length of the trajectory.
     ///
     /// # Panics
     ///
-    /// Panics if `length` is zero or negative.
+    /// Panics if `max_length` is zero or negative.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length(&mut self, length: usize) -> CTBN::Trajectory;
+    fn sample_by_length(&mut self, max_length: usize) -> T::Trajectory;
 
     /// Sample a single trajectory with a given time from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `time` - The ending time of the trajectory.
+    /// * `max_time` - The ending time of the trajectory.
     ///
     /// # Panics
     ///
-    /// Panics if `time` is zero or negative.
+    /// Panics if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_time(&mut self, time: f64) -> CTBN::Trajectory;
+    fn sample_by_time(&mut self, max_time: f64) -> T::Trajectory;
 
     /// Sample a single trajectory with a given length or time from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectory.
-    /// * `time` - The ending time of the trajectory.
+    /// * `max_length` - The length of the trajectory.
+    /// * `max_time` - The ending time of the trajectory.
     ///
     /// # Panics
     ///
     /// Panics if:
     ///
-    /// * `length` is zero or negative.
-    /// * `time` is zero or negative.
+    /// * `max_length` is zero or negative.
+    /// * `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length_or_time(&mut self, length: usize, time: f64) -> CTBN::Trajectory;
+    fn sample_by_length_or_time(&mut self, max_length: usize, max_time: f64) -> T::Trajectory;
 
     /// Sample multiple trajectories with a given length from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectories.
+    /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///     * `length` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_length(&mut self, length: usize, n: usize) -> CTBN::Trajectories;
+    fn sample_n_by_length(&mut self, max_length: usize, n: usize) -> T::Trajectories;
 
     /// Sample multiple trajectories with a given time from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `time` - The ending time of the trajectories.
+    /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///    * `time` is zero or negative.
-    ///   * `n` is zero or negative.
+    ///
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_time(&mut self, time: f64, n: usize) -> CTBN::Trajectories;
+    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> T::Trajectories;
 
     /// Sample multiple trajectories with a given length or time from a CTBN.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectories.
-    /// * `time` - The ending time of the trajectories.
+    /// * `max_length` - The length of the trajectories.
+    /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///   * `length` is zero or negative.
-    ///  * `time` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `max_time` is zero or negative.
     /// * `n` is zero or negative.
     ///
     /// # Returns
@@ -147,70 +153,73 @@ where
     ///
     fn sample_n_by_length_or_time(
         &mut self,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
         n: usize,
-    ) -> CTBN::Trajectories;
+    ) -> T::Trajectories;
 }
 
 pub use ContinuousTimeBayesianNetworkSampler as CTBNSampler;
 
 /// A trait for sampling from a CTBN.
-pub trait ParallelContinuousTimeBayesianNetworkSampler<CTBN>
+pub trait ParallelContinuousTimeBayesianNetworkSampler<T>
 where
-    CTBN: ContinuousTimeBayesianNetwork,
+    T: CTBN,
 {
     /// Sample multiple trajectories with a given length from a CTBN in parallel.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectories.
+    /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///     * `length` is zero or negative.
-    ///     * `n` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_length(&mut self, length: usize, n: usize) -> CTBN::Trajectories;
+    fn par_sample_n_by_length(&mut self, max_length: usize, n: usize) -> T::Trajectories;
 
     /// Sample multiple trajectories with a given time from a CTBN in parallel.
     ///
     /// # Arguments
     ///
-    /// * `time` - The ending time of the trajectories.
+    /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///    * `time` is zero or negative.
-    ///   * `n` is zero or negative.
+    ///
+    /// * `max_time` is zero or negative.
+    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_time(&mut self, time: f64, n: usize) -> CTBN::Trajectories;
+    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> T::Trajectories;
 
     /// Sample multiple trajectories with a given length or time from a CTBN in parallel.
     ///
     /// # Arguments
     ///
-    /// * `length` - The length of the trajectories.
-    /// * `time` - The ending time of the trajectories.
+    /// * `max_length` - The length of the trajectories.
+    /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
     /// # Panics
     ///
     /// Panics if:
-    ///   * `length` is zero or negative.
-    ///  * `time` is zero or negative.
+    ///
+    /// * `max_length` is zero or negative.
+    /// * `max_time` is zero or negative.
     /// * `n` is zero or negative.
     ///
     /// # Returns
@@ -219,10 +228,10 @@ where
     ///
     fn par_sample_n_by_length_or_time(
         &mut self,
-        length: usize,
-        time: f64,
+        max_length: usize,
+        max_time: f64,
         n: usize,
-    ) -> CTBN::Trajectories;
+    ) -> T::Trajectories;
 }
 
 pub use ParallelContinuousTimeBayesianNetworkSampler as ParCTBNSampler;

@@ -37,7 +37,7 @@ impl CSSEstimator for SSE<'_, CategoricalDataset> {
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Concat the variables to fit.
-        let x_z: FxIndexSet<_> = [x].iter().chain(z).cloned().collect();
+        let x_z: FxIndexSet<_> = std::iter::once(&x).chain(z).cloned().collect();
 
         // Assert X_Z does not contain duplicates.
         assert_eq!(x_z.len(), 1 + z.len(), "Variables to fit must be unique.");

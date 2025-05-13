@@ -4,7 +4,7 @@ mod tests {
         assets::load_eating,
         distributions::CPD,
         graphs::Graph,
-        models::{BayesianNetwork, ContinuousTimeBayesianNetwork},
+        models::{BN, CTBN},
     };
     use ndarray::prelude::*;
 
