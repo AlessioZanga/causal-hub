@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CTBN;
 use crate::{
-    datasets::{CatTrj, CategoricalTrjs},
+    datasets::{CatTrj, CatTrjs},
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
@@ -43,7 +43,7 @@ impl CTBN for CatCTBN {
     type InitialDistribution = CatBN;
     type Event = (f64, Array1<u8>);
     type Trajectory = CatTrj;
-    type Trajectories = CategoricalTrjs;
+    type Trajectories = CatTrjs;
 
     fn new<I>(graph: DiGraph, cims: I) -> Self
     where

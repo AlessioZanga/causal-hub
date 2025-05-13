@@ -1,6 +1,9 @@
 mod bayesian;
 pub use bayesian::*;
 
+mod expectation_maximization;
+pub use expectation_maximization::*;
+
 mod maximum_likelihood;
 pub use maximum_likelihood::*;
 

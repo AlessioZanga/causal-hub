@@ -10,6 +10,9 @@ pub use trajectory::*;
 mod trajectory_evidence;
 pub use trajectory_evidence::*;
 
+mod weighted_trajectory;
+pub use weighted_trajectory::*;
+
 /// A trait for dataset.
 pub trait Dataset {
     /// The type of the labels.

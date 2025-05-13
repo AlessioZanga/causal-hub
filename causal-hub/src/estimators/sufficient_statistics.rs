@@ -1,10 +1,11 @@
+use dry::macro_for;
 use itertools::Itertools;
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
-    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs, Dataset},
+    datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, CategoricalDataset, Dataset},
     types::FxIndexSet,
     utils::RMI,
 };
@@ -33,7 +34,7 @@ pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
 impl CSSEstimator for SSE<'_, CategoricalDataset> {
     // (conditional counts, marginal counts, sample size)
-    type SufficientStatistics = (Array2<usize>, Array1<usize>, usize);
+    type SufficientStatistics = (Array2<f64>, Array1<f64>, f64);
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Concat the variables to fit.
@@ -74,13 +75,18 @@ impl CSSEstimator for SSE<'_, CategoricalDataset> {
         // Compute the sample size.
         let n = n_z.sum();
 
+        // Cast the counts to floating point.
+        let n_xz = n_xz.mapv(|x| x as f64);
+        let n_z = n_z.mapv(|x| x as f64);
+        let n = n as f64;
+
         (n_xz, n_z, n)
     }
 }
 
 impl CSSEstimator for SSE<'_, CatTrj> {
     // (conditional counts, conditional time spent, sample size)
-    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
+    type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
         // Get the cardinality of the trajectory.
@@ -117,72 +123,95 @@ impl CSSEstimator for SSE<'_, CatTrj> {
         // Get the sample size.
         let n = n_xz.sum();
 
+        // Cast the counts to floating point.
+        let n_xz = n_xz.mapv(|x| x as f64);
+        let n = n as f64;
+
         (n_xz, t_xz, n)
     }
 }
 
-impl CSSEstimator for SSE<'_, CategoricalTrjs> {
+impl CSSEstimator for SSE<'_, CatWtdTrj> {
     // (conditional counts, conditional time spent, sample size)
-    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
+    type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
-        // Get the cardinality of the trajectory.
-        let cards = self.dataset.cardinality();
-        // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
-
-        // Initialize the joint counts.
-        let n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
-        // Initialize the time spent in that state.
-        let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
-
-        // Iterate over the trajectories.
-        self.dataset
-            .into_iter()
-            // Sum the sufficient statistics of each trajectory.
-            .fold((n_xz, t_xz, 0), |(n_xz_a, t_xz_a, n_a), trj_b| {
-                // Compute the sufficient statistics of the trajectory.
-                let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
-                // Sum the sufficient statistics.
-                (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-            })
+        // Get the weight of the trajectory.
+        let w = self.dataset.weight();
+        // Compute the unweighted sufficient statistics.
+        let (n_xz, t_xz, n) = SSE::new(self.dataset.trajectory()).fit(x, z);
+        // Apply the weight to the sufficient statistics.
+        (n_xz * w, t_xz * w, n * w)
     }
 }
 
-impl ParCSSEstimator for SSE<'_, CategoricalTrjs> {
-    // (conditional counts, conditional time spent, sample size)
-    type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
+// Implement the CSSEstimator and ParCSSEstimator traits for both CatTrjs and CatWtdTrjs.
+macro_for!($trjs in [CatTrjs, CatWtdTrjs] {
 
-    fn par_fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
-        // Get the cardinality of the trajectory.
-        let cards = self.dataset.cardinality();
-        // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+    impl CSSEstimator for SSE<'_, $trjs> {
+        // (conditional counts, conditional time spent, sample size)
+        type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
 
-        // Initialize the joint counts.
-        let n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
-        // Initialize the time spent in that state.
-        let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+        fn fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
+            // Get the cardinality of the trajectory.
+            let cards = self.dataset.cardinality();
+            // Get the cardinality of the conditioned and conditioning variables.
+            let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
 
-        // Iterate over the trajectories in parallel.
-        self.dataset
-            .par_iter()
-            // Sum the sufficient statistics of each trajectory.
-            .fold(
-                || (n_xz.clone(), t_xz.clone(), 0),
-                |(n_xz_a, t_xz_a, n_a), trj_b| {
+            // Initialize the joint counts.
+            let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
+            // Initialize the time spent in that state.
+            let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+
+            // Iterate over the trajectories.
+            self.dataset
+                .into_iter()
+                // Sum the sufficient statistics of each trajectory.
+                .fold((n_xz, t_xz, 0.), |(n_xz_a, t_xz_a, n_a), trj_b| {
                     // Compute the sufficient statistics of the trajectory.
                     let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
                     // Sum the sufficient statistics.
                     (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-                },
-            )
-            .reduce(
-                || (n_xz.clone(), t_xz.clone(), 0),
-                |(n_xz_a, t_xz_a, n_a), (n_xz_b, t_xz_b, n_b)| {
-                    // Sum the sufficient statistics.
-                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-                },
-            )
+                })
+        }
     }
-}
+
+    impl ParCSSEstimator for SSE<'_, $trjs> {
+        // (conditional counts, conditional time spent, sample size)
+        type SufficientStatistics = (Array3<f64>, Array2<f64>, f64);
+
+        fn par_fit(&self, x: usize, z: &[usize]) -> Self::SufficientStatistics {
+            // Get the cardinality of the trajectory.
+            let cards = self.dataset.cardinality();
+            // Get the cardinality of the conditioned and conditioning variables.
+            let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+
+            // Initialize the joint counts.
+            let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
+            // Initialize the time spent in that state.
+            let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+
+            // Iterate over the trajectories in parallel.
+            self.dataset
+                .par_iter()
+                // Sum the sufficient statistics of each trajectory.
+                .fold(
+                    || (n_xz.clone(), t_xz.clone(), 0.),
+                    |(n_xz_a, t_xz_a, n_a), trj_b| {
+                        // Compute the sufficient statistics of the trajectory.
+                        let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
+                        // Sum the sufficient statistics.
+                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                    },
+                )
+                .reduce(
+                    || (n_xz.clone(), t_xz.clone(), 0.),
+                    |(n_xz_a, t_xz_a, n_a), (n_xz_b, t_xz_b, n_b)| {
+                        // Sum the sufficient statistics.
+                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                    },
+                )
+        }
+    }
+
+});

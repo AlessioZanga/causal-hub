@@ -62,8 +62,11 @@ mod tests {
             // Initialize sampler.
             let mut importance = ImportanceSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
-            let (trajectory, _weight) =
+            let weighted_trajectory =
                 importance.sample_by_length_or_time(&evidence, 10, f64::INFINITY);
+
+            // Get trajectory.
+            let trajectory = weighted_trajectory.trajectory();
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));

@@ -151,7 +151,7 @@ impl PyCategoricalCPD {
     ///
     /// The sample size of the dataset used to fit the distribution.
     ///
-    fn sample_size(&self) -> PyResult<Option<usize>> {
+    fn sample_size(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_size())
     }
 

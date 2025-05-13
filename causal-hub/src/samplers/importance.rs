@@ -9,7 +9,7 @@ use rand::{
 use rand_distr::Exp;
 
 use crate::{
-    datasets::{CatEvT, CatTrj, CatTrjEvT, CategoricalEv, CategoricalTrjEv, Dataset},
+    datasets::{CatEvT, CatTrj, CatTrjEvT, CatWtdTrj, CategoricalEv, CategoricalTrjEv, Dataset},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
     types::FxIndexSet,
@@ -451,7 +451,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN> {
         evidence: &CategoricalTrjEv,
         max_length: usize,
         max_time: f64,
-    ) -> (CatTrj, f64) {
+    ) -> CatWtdTrj {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -630,6 +630,6 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN> {
         let trajectory = CatTrj::new(states, sample_events, sample_times);
 
         // Return the trajectory and its weight.
-        (trajectory, weight)
+        (trajectory, weight).into()
     }
 }

@@ -5,7 +5,7 @@ use super::{
     SSE,
 };
 use crate::{
-    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs, Dataset},
+    datasets::{CatTrj, CatTrjs, CategoricalDataset, Dataset},
     distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
@@ -48,14 +48,10 @@ impl CPDEstimator<CatCPD> for MLE<'_, CategoricalDataset> {
 
         // Assert the marginal counts are not zero.
         assert!(
-            n_z.iter().all(|&x| x > 0),
+            n_z.iter().all(|&x| x > 0.),
             "Failed to get non-zero counts for variable '{}'.",
             self.dataset.labels()[x]
         );
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
 
         // Compute the parameters by normalizing the counts.
         let parameters = &n_xz / n_z.insert_axis(Axis(1));
@@ -88,9 +84,9 @@ impl MLE<'_, CatTrj> {
     fn fit_cim(
         x: usize,
         z: &[usize],
-        n_xz: Array3<usize>,
+        n_xz: Array3<f64>,
         t_xz: Array2<f64>,
-        n: usize,
+        n: f64,
         labels: &FxIndexSet<String>,
         states: &FxIndexMap<String, FxIndexSet<String>>,
     ) -> CatCIM {
@@ -100,9 +96,6 @@ impl MLE<'_, CatTrj> {
             "Failed to get non-zero conditional times for variable '{}'.",
             labels[x]
         );
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
@@ -166,7 +159,7 @@ impl CPDEstimator<CatCIM> for MLE<'_, CatTrj> {
     }
 }
 
-impl CPDEstimator<CatCIM> for MLE<'_, CategoricalTrjs> {
+impl CPDEstimator<CatCIM> for MLE<'_, CatTrjs> {
     fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get labels and states.
         let (labels, states) = (self.dataset.labels(), self.dataset.states());
@@ -181,7 +174,7 @@ impl CPDEstimator<CatCIM> for MLE<'_, CategoricalTrjs> {
     }
 }
 
-impl ParCPDEstimator<CatCIM> for MLE<'_, CategoricalTrjs> {
+impl ParCPDEstimator<CatCIM> for MLE<'_, CatTrjs> {
     fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get labels and states.
         let (labels, states) = (self.dataset.labels(), self.dataset.states());

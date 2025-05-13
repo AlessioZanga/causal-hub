@@ -1,88 +1,77 @@
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::CategoricalDataset;
-use crate::{
-    datasets::Dataset,
-    types::{FxIndexMap, FxIndexSet},
-};
+use super::{CatTrj, Dataset};
+use crate::types::{FxIndexMap, FxIndexSet};
 
-/// A multivariate trajectory.
+/// A multivariate weighted trajectory.
 #[derive(Clone, Debug)]
-pub struct CategoricalTrajectory {
-    events: CategoricalDataset,
-    times: Array1<f64>,
+pub struct CategoricalWeightedTrajectory {
+    trajectory: CatTrj,
+    weight: f64,
 }
 
-/// A type alias for a multivariate trajectory.
-pub type CatTrj = CategoricalTrajectory;
+/// A type alias for a weighted trajectories.
+pub type CatWtdTrj = CategoricalWeightedTrajectory;
 
-impl CatTrj {
-    /// Constructs a new trajectory instance.
+impl From<(CatTrj, f64)> for CatWtdTrj {
+    fn from((trajectory, weight): (CatTrj, f64)) -> Self {
+        Self::new(trajectory, weight)
+    }
+}
+
+impl From<CatWtdTrj> for (CatTrj, f64) {
+    fn from(other: CatWtdTrj) -> Self {
+        (other.trajectory, other.weight)
+    }
+}
+
+impl CatWtdTrj {
+    /// Creates a new categorical weighted trajectory.
     ///
     /// # Arguments
     ///
-    /// * `states` - An iterator of tuples containing the state labels and their corresponding values.
-    /// * `events` - A 2D array of events.
-    /// * `times` - A 1D array of times.
+    /// * `trajectory` - The trajectory.
+    /// * `weight` - The weight of the trajectory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the weight is not in the range [0, 1].
     ///
     /// # Returns
     ///
-    /// A new instance of `CatTrj`.
+    /// A new categorical weighted trajectory.
     ///
-    pub fn new<I, J, K, V>(states: I, events: Array2<u8>, times: Array1<f64>) -> Self
-    where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = V>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
-        // Assert times must be positive and finite.
+    pub fn new(trajectory: CatTrj, weight: f64) -> Self {
+        // Assert that the weight is in the range [0, 1].
         assert!(
-            times.iter().all(|&t| t.is_finite() && t >= 0.0),
-            "Times must be positive and finite."
+            (0.0..=1.0).contains(&weight),
+            "Weight must be in the range [0, 1]"
         );
 
-        // Sort values by times.
-        let mut indices: Vec<_> = (0..events.nrows()).collect();
-        indices.sort_by(|&a, &b| {
-            times[a]
-                .partial_cmp(&times[b])
-                // Due to previous assertions, this should never fail.
-                .unwrap_or_else(|| unreachable!())
-        });
-        // Clone the events and times arrays to avoid borrowing issues.
-        let mut new_events = events.clone();
-        let mut new_times = times.clone();
-        // Sort the events and times arrays by the sorted indices.
-        new_events
-            .rows_mut()
-            .into_iter()
-            .zip(new_times.iter_mut())
-            .enumerate()
-            .for_each(|(i, (mut new_events_row, new_time))| {
-                new_events_row.assign(&events.row(indices[i]));
-                *new_time = times[indices[i]];
-            });
-        // Update the events and times with the sorted values.
-        let events = new_events;
-        let times = new_times;
+        Self { trajectory, weight }
+    }
 
-        // Create a new categorical dataset instance.
-        let events = CategoricalDataset::new(states, events);
+    /// Returns the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the trajectory.
+    ///
+    #[inline]
+    pub const fn trajectory(&self) -> &CatTrj {
+        &self.trajectory
+    }
 
-        // Assert the number of rows in values and times are equal.
-        assert_eq!(
-            events.values().nrows(),
-            times.len(),
-            "The number of events and times must be equal."
-        );
-
-        // Debug assert times are sorted.
-        debug_assert!(times.iter().is_sorted(), "Times must be sorted.");
-
-        // Return a new trajectory instance.
-        Self { events, times }
+    /// Returns the weight of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// The weight of the trajectory.
+    ///
+    #[inline]
+    pub const fn weight(&self) -> f64 {
+        self.weight
     }
 
     /// Returns the states of the trajectory.
@@ -93,7 +82,7 @@ impl CatTrj {
     ///
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
-        self.events.states()
+        self.trajectory.states()
     }
 
     /// Returns the cardinality of the trajectory.
@@ -104,7 +93,7 @@ impl CatTrj {
     ///
     #[inline]
     pub const fn cardinality(&self) -> &Array1<usize> {
-        self.events.cardinality()
+        self.trajectory.cardinality()
     }
 
     /// Returns the events of the trajectory.
@@ -115,7 +104,7 @@ impl CatTrj {
     ///
     #[inline]
     pub fn events(&self) -> &Array2<u8> {
-        self.events.values()
+        self.trajectory.events()
     }
 
     /// Returns the times of the trajectory.
@@ -126,40 +115,40 @@ impl CatTrj {
     ///
     #[inline]
     pub const fn times(&self) -> &Array1<f64> {
-        &self.times
+        &self.trajectory.times()
     }
 }
 
-impl Dataset for CatTrj {
+impl Dataset for CatWtdTrj {
     type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 
     #[inline]
     fn labels(&self) -> &Self::Labels {
-        self.events.labels()
+        self.trajectory.labels()
     }
 
     #[inline]
     fn values(&self) -> &Self::Values {
-        self.events.values()
+        self.trajectory.values()
     }
 
     #[inline]
     fn sample_size(&self) -> usize {
-        self.events.values().nrows()
+        self.trajectory.values().nrows()
     }
 }
 
 /// A collection of multivariate trajectories.
 #[derive(Clone, Debug)]
-pub struct CategoricalTrajectories {
-    trajectories: Vec<CategoricalTrajectory>,
+pub struct CategoricalWeightedTrajectories {
+    trajectories: Vec<CatWtdTrj>,
 }
 
 /// A type alias for a collection of multivariate trajectories.
-pub type CatTrjs = CategoricalTrajectories;
+pub type CatWtdTrjs = CategoricalWeightedTrajectories;
 
-impl CatTrjs {
+impl CatWtdTrjs {
     /// Constructs a new collection of trajectories.
     ///
     /// # Arguments
@@ -180,7 +169,7 @@ impl CatTrjs {
     ///
     pub fn new<I>(trajectories: I) -> Self
     where
-        I: IntoIterator<Item = CategoricalTrajectory>,
+        I: IntoIterator<Item = CatWtdTrj>,
     {
         // Collect the trajectories into a vector.
         let trajectories: Vec<_> = trajectories.into_iter().collect();
@@ -247,24 +236,24 @@ impl CatTrjs {
     }
 }
 
-impl FromIterator<CatTrj> for CatTrjs {
+impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
-    fn from_iter<I: IntoIterator<Item = CatTrj>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
         Self::new(iter)
     }
 }
 
-impl FromParallelIterator<CatTrj> for CatTrjs {
+impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
-    fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
+    fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
         // TODO: Avoid collecting into a Vec, this is a workaround.
         Self::new(iter.into_par_iter().collect::<Vec<_>>())
     }
 }
 
-impl<'a> IntoIterator for &'a CatTrjs {
-    type IntoIter = std::slice::Iter<'a, CatTrj>;
-    type Item = &'a CatTrj;
+impl<'a> IntoIterator for &'a CatWtdTrjs {
+    type IntoIter = std::slice::Iter<'a, CatWtdTrj>;
+    type Item = &'a CatWtdTrj;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -272,9 +261,9 @@ impl<'a> IntoIterator for &'a CatTrjs {
     }
 }
 
-impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
-    type Item = &'a CatTrj;
-    type Iter = rayon::slice::Iter<'a, CatTrj>;
+impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
+    type Item = &'a CatWtdTrj;
+    type Iter = rayon::slice::Iter<'a, CatWtdTrj>;
 
     #[inline]
     fn par_iter(&'a self) -> Self::Iter {
@@ -282,7 +271,7 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
     }
 }
 
-impl Dataset for CatTrjs {
+impl Dataset for CatWtdTrjs {
     type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 

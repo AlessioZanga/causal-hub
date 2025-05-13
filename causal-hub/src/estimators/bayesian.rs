@@ -3,7 +3,7 @@ use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs},
+    datasets::{CatTrj, CatTrjs, CategoricalDataset},
     distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
@@ -58,10 +58,6 @@ impl CPDEstimator<CatCPD> for BE<'_, CategoricalDataset, usize> {
         // Compute sufficient statistics.
         let (n_xz, n_z, n) = sse.fit(x, z);
 
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
-
         // Get the prior, as the alpha of the Dirichlet distribution.
         let alpha = *self.prior();
         // Assert alpha is positive.
@@ -75,7 +71,6 @@ impl CPDEstimator<CatCPD> for BE<'_, CategoricalDataset, usize> {
 
         // Set the sample size.
         let sample_size = Some(n);
-
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some((n_xz * parameters.mapv(f64::ln)).sum());
 
@@ -99,9 +94,9 @@ impl BE<'_, CatTrj, (usize, f64)> {
     fn fit_cim(
         x: usize,
         z: &[usize],
-        n_xz: Array3<usize>,
+        n_xz: Array3<f64>,
         t_xz: Array2<f64>,
-        n: usize,
+        n: f64,
         prior: (usize, f64),
         states: &FxIndexMap<String, FxIndexSet<String>>,
     ) -> CatCIM {
@@ -117,9 +112,6 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Scale the prior by the cardinality.
         let alpha = alpha as f64 / c_z;
         let tau = tau / c_z;
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
@@ -137,7 +129,6 @@ impl BE<'_, CatTrj, (usize, f64)> {
 
         // Set the sample size.
         let sample_size = Some(n);
-
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some({
             // Compute the sample log-likelihood as the sum of:
@@ -183,7 +174,7 @@ impl CPDEstimator<CatCIM> for BE<'_, CatTrj, (usize, f64)> {
     }
 }
 
-impl CPDEstimator<CatCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
+impl CPDEstimator<CatCIM> for BE<'_, CatTrjs, (usize, f64)> {
     fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get states.
         let states = self.dataset.states();
@@ -200,7 +191,7 @@ impl CPDEstimator<CatCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
     }
 }
 
-impl ParCPDEstimator<CatCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
+impl ParCPDEstimator<CatCIM> for BE<'_, CatTrjs, (usize, f64)> {
     fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get states.
         let states = self.dataset.states();

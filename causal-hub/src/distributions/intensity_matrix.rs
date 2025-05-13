@@ -25,7 +25,7 @@ pub struct CategoricalConditionalIntensityMatrix {
     parameters: Array3<f64>,
     parameters_size: usize,
     // Fitted statistics.
-    sample_size: Option<usize>,
+    sample_size: Option<f64>,
     sample_log_likelihood: Option<f64>,
 }
 
@@ -266,12 +266,16 @@ impl CatCIM {
 
     /// Returns the sample size of the dataset used to fit the distribution, if any.
     ///
+    /// # Note
+    ///
+    /// The sample size could be non-integer if the distribution was fitted using a weighted dataset.
+    ///
     /// # Returns
     ///
     /// The sample size of the dataset used to fit the distribution.
     ///
     #[inline]
-    pub const fn sample_size(&self) -> Option<usize> {
+    pub const fn sample_size(&self) -> Option<f64> {
         self.sample_size
     }
 
@@ -307,7 +311,7 @@ impl CatCIM {
         state: (L, I),
         conditioning_states: J,
         parameters: Array3<f64>,
-        sample_size: Option<usize>,
+        sample_size: Option<f64>,
         sample_log_likelihood: Option<f64>,
     ) -> Self
     where
