@@ -1,6 +1,5 @@
 use core::f64;
 
-use approx::relative_eq;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
@@ -15,6 +14,7 @@ use crate::{
     },
     distributions::CPD,
     models::{BN, CTBN, CategoricalBN, CategoricalCTBN},
+    types::FxIndexSet,
 };
 
 /// A struct for sampling using importance sampling.
@@ -67,15 +67,20 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
                         E::CertainPositive { state }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        // Sample the not states.
-                        let not_states = p_not_states
-                            .indexed_iter()
-                            // For each (state, p_not_state) pair ...
-                            .filter_map(|(i, &p_i)| {
-                                // ... with p_i probability, retain the state.
-                                Some(i).filter(|_| self.rng.random_bool(p_i))
-                            })
-                            .collect();
+                        // Allocate the not states.
+                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        // Repeat until only a subset of the not states are sampled.
+                        while not_states.len() == p_not_states.len() {
+                            // Sample the not states.
+                            not_states = p_not_states
+                                .indexed_iter()
+                                // For each (state, p_not_state) pair ...
+                                .filter_map(|(i, &p_i)| {
+                                    // ... with p_i probability, retain the state.
+                                    Some(i).filter(|_| self.rng.random_bool(p_i))
+                                })
+                                .collect();
+                        }
                         // Return the sample and weight.
                         E::CertainNegative { not_states }
                     }
@@ -225,15 +230,20 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                         }
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
-                        // Sample the not states.
-                        let not_states = p_not_states
-                            .indexed_iter()
-                            // For each (state, p_not_state) pair ...
-                            .filter_map(|(i, &p_i)| {
-                                // ... with p_i probability, retain the state.
-                                Some(i).filter(|_| self.rng.random_bool(p_i))
-                            })
-                            .collect();
+                        // Allocate the not states.
+                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        // Repeat until only a subset of the not states are sampled.
+                        while not_states.len() == p_not_states.len() {
+                            // Sample the not states.
+                            not_states = p_not_states
+                                .indexed_iter()
+                                // For each (state, p_not_state) pair ...
+                                .filter_map(|(i, &p_i)| {
+                                    // ... with p_i probability, retain the state.
+                                    Some(i).filter(|_| self.rng.random_bool(p_i))
+                                })
+                                .collect();
+                        }
                         // Return the sample and weight.
                         E::CertainNegativeInterval {
                             not_states,
@@ -512,13 +522,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             // Check if there is evidence at this point in time.
             let e = e_i.iter().find(|e| e.contains(&time));
             // Check if there is certain evidence at this point in time.
-            if e.is_some_and(|e| {
-                relative_eq!(e.end_time(), time)
-                    && match e {
-                        E::CertainPositiveInterval { state, .. } => *state == x,
-                        E::CertainNegativeInterval { .. } => true,
-                        _ => false,
-                    }
+            if e.is_some_and(|e| match e {
+                E::CertainPositiveInterval { state, .. } => *state == x,
+                E::CertainNegativeInterval { not_states, .. } => !not_states.contains(&x),
+                _ => false,
             }) {
                 // Sample the transition time.
                 times[i] = time + self.sample_time(&evidence, &event, i, time);
@@ -537,12 +544,9 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                 q_i_zx /= q_i_zx.sum();
 
                 // Check if there is evidence at this point in time.
-                let (s_i, w_i) = if e.is_some_and(|e| {
-                    relative_eq!(e.end_time(), time)
-                        && match e {
-                            E::CertainPositiveInterval { state, .. } => *state != x,
-                            _ => false,
-                        }
+                let (s_i, w_i) = if e.is_some_and(|e| match e {
+                    E::CertainPositiveInterval { state, .. } => *state != x,
+                    _ => false,
                 }) {
                     // Get the state of the certain positive interval.
                     match e {
@@ -575,7 +579,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                             // Return the sample and weight.
                             (s_i, w_i)
                         }
-                        _ => {
+                        None => {
                             // Initialize a weighted index sampler.
                             let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
                             // Sample the next event.
@@ -583,6 +587,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                             // Return the sample and weight.
                             (s_i, 1.)
                         }
+                        _ => unreachable!(), // Due to previous checks.
                     }
                 };
 

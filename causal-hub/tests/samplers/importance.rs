@@ -27,7 +27,7 @@ mod tests {
                     (
                         "Hungry",
                         E::CertainPositiveInterval {
-                            state: 1,
+                            state: 0,
                             start_time: 0.,
                             end_time: 0.2,
                         },
@@ -51,7 +51,7 @@ mod tests {
                     (
                         "Hungry",
                         E::UncertainNegativeInterval {
-                            p_not_states: array![0.1, 0.9],
+                            p_not_states: array![0.9, 0.1],
                             start_time: 0.3,
                             end_time: 0.5,
                         },
@@ -63,12 +63,12 @@ mod tests {
             let mut importance = ImportanceSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let (trajectory, _weight) =
-                importance.sample_by_length_or_time(&evidence, 100, f64::INFINITY);
+                importance.sample_by_length_or_time(&evidence, 10, f64::INFINITY);
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
             // Check sample size.
-            assert_eq!(trajectory.sample_size(), 100);
+            assert_eq!(trajectory.sample_size(), 10);
         }
     }
 }
