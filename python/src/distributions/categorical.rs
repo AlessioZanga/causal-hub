@@ -1,23 +1,23 @@
 use std::collections::BTreeMap;
 
-use causal_hub::distributions::{CPD, CategoricalCPD};
+use causal_hub::distributions::{CPD, CatCPD};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
 
 /// A struct representing a categorical conditional probability distribution (CPD).
-#[pyclass(name = "CategoricalCPD")]
+#[pyclass(name = "CatCPD")]
 #[derive(Clone, Debug)]
 pub struct PyCategoricalCPD {
-    inner: CategoricalCPD,
+    inner: CatCPD,
 }
 
-impl From<CategoricalCPD> for PyCategoricalCPD {
-    fn from(inner: CategoricalCPD) -> Self {
+impl From<CatCPD> for PyCategoricalCPD {
+    fn from(inner: CatCPD) -> Self {
         Self { inner }
     }
 }
 
-impl From<PyCategoricalCPD> for CategoricalCPD {
+impl From<PyCategoricalCPD> for CatCPD {
     fn from(outer: PyCategoricalCPD) -> Self {
         outer.inner
     }
@@ -40,8 +40,8 @@ impl PyCategoricalCPD {
             .collect::<PyResult<_>>()?;
         // Convert the PyArray2<f64> to a Array2<f64>.
         let parameters = parameters.to_owned_array();
-        // Create a new CategoricalCPD with the given parameters.
-        Ok(CategoricalCPD::new(state, conditioning_states, parameters).into())
+        // Create a new CatCPD with the given parameters.
+        Ok(CatCPD::new(state, conditioning_states, parameters).into())
     }
 
     /// Returns the label of the conditioned variable.
@@ -165,9 +165,9 @@ impl PyCategoricalCPD {
         Ok(self.inner.sample_log_likelihood())
     }
 
-    /// Returns the string representation of the CategoricalCPD.
+    /// Returns the string representation of the CatCPD.
     fn __repr__(&self) -> PyResult<String> {
-        // Get the string representation of the CategoricalCPD.
+        // Get the string representation of the CatCPD.
         Ok(self.inner.to_string())
     }
 }

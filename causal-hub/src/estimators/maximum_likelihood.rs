@@ -5,8 +5,8 @@ use super::{
     SSE,
 };
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs, Dataset},
-    distributions::{CategoricalCIM, CategoricalCPD},
+    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs, Dataset},
+    distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -36,8 +36,8 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
     }
 }
 
-impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CatCPD> for MLE<'_, CategoricalDataset> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let states = self.dataset.states();
 
@@ -73,7 +73,7 @@ impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCPD::with_sample_size(
+        CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -83,7 +83,7 @@ impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
     }
 }
 
-impl MLE<'_, CategoricalTrj> {
+impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
     fn fit_cim(
         x: usize,
@@ -93,7 +93,7 @@ impl MLE<'_, CategoricalTrj> {
         n: usize,
         labels: &FxIndexSet<String>,
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CategoricalCIM {
+    ) -> CatCIM {
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
@@ -141,7 +141,7 @@ impl MLE<'_, CategoricalTrj> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCIM::with_sample_size(
+        CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -151,8 +151,8 @@ impl MLE<'_, CategoricalTrj> {
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrj> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CatCIM> for MLE<'_, CatTrj> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get labels and states.
         let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -162,12 +162,12 @@ impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrj> {
         let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+        MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CatCIM> for MLE<'_, CategoricalTrjs> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get labels and states.
         let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -177,12 +177,12 @@ impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
         let (n_xz, t_xz, n) = sse.fit(x, z);
 
         // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+        MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
     }
 }
 
-impl ParCPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
-    fn par_fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl ParCPDEstimator<CatCIM> for MLE<'_, CategoricalTrjs> {
+    fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get labels and states.
         let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -192,6 +192,6 @@ impl ParCPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
         let (n_xz, t_xz, n) = sse.par_fit(x, z);
 
         // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+        MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
     }
 }

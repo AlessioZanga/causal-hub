@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::BN;
 use crate::{
     datasets::CategoricalDataset,
-    distributions::{CPD, CategoricalCPD},
+    distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
     types::{FxIndexMap, FxIndexSet},
 };
@@ -17,15 +17,15 @@ pub struct CategoricalBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional probability distributions.
-    cpds: FxIndexMap<String, CategoricalCPD>,
+    cpds: FxIndexMap<String, CatCPD>,
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
 
 /// A type alias for the categorical Bayesian network.
-pub type CategoricalBN = CategoricalBayesianNetwork;
+pub type CatBN = CategoricalBayesianNetwork;
 
-impl CategoricalBN {
+impl CatBN {
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -38,9 +38,9 @@ impl CategoricalBN {
     }
 }
 
-impl BN for CategoricalBN {
+impl BN for CatBN {
     type Labels = <DiGraph as Graph>::Labels;
-    type CPD = CategoricalCPD;
+    type CPD = CatCPD;
     type Sample = Array1<u8>;
     type Dataset = CategoricalDataset;
 

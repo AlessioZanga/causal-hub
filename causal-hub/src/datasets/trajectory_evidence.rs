@@ -49,9 +49,9 @@ pub enum CategoricalTrajectoryEvidenceType {
 }
 
 /// Type alias for `CategoricalTrajectoryEvidenceType`.
-pub type CategoricalTrjEvT = CategoricalTrajectoryEvidenceType;
+pub type CatTrjEvT = CategoricalTrajectoryEvidenceType;
 
-impl CategoricalTrjEvT {
+impl CatTrjEvT {
     /// Returns the start time of the evidence.
     ///
     /// # Returns
@@ -102,7 +102,7 @@ pub struct CategoricalTrajectoryEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Array1<usize>,
-    evidences: FxIndexMap<String, Vec<CategoricalTrjEvT>>,
+    evidences: FxIndexMap<String, Vec<CatTrjEvT>>,
 }
 
 /// Type alias for `CategoricalTrajectoryEvidence`.
@@ -127,7 +127,7 @@ impl CategoricalTrjEv {
         J: IntoIterator<Item = L>,
         K: AsRef<str>,
         L: AsRef<str>,
-        M: IntoIterator<Item = (N, CategoricalTrjEvT)>,
+        M: IntoIterator<Item = (N, CatTrjEvT)>,
         N: AsRef<str>,
     {
         // Initialize variables counter.
@@ -184,7 +184,7 @@ impl CategoricalTrjEv {
         let cardinality = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Allocate evidences.
         let mut evidences: FxIndexMap<_, Vec<_>> = states
@@ -384,7 +384,7 @@ impl CategoricalTrjEv {
     /// A reference to the evidences of the trajectory evidence.
     ///
     #[inline]
-    pub const fn evidences(&self) -> &FxIndexMap<String, Vec<CategoricalTrjEvT>> {
+    pub const fn evidences(&self) -> &FxIndexMap<String, Vec<CatTrjEvT>> {
         &self.evidences
     }
 
@@ -415,7 +415,7 @@ impl CategoricalTrjEv {
 
 impl Dataset for CategoricalTrjEv {
     type Labels = FxIndexSet<String>;
-    type Values = FxIndexMap<String, Vec<CategoricalTrjEvT>>;
+    type Values = FxIndexMap<String, Vec<CatTrjEvT>>;
 
     #[inline]
     fn labels(&self) -> &Self::Labels {

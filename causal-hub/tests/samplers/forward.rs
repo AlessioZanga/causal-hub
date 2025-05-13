@@ -7,7 +7,7 @@ mod tests {
             datasets::Dataset,
             distributions::CPD,
             estimators::{BNEstimator, MLE},
-            models::{BN, CategoricalBN},
+            models::{BN, CatBN},
             samplers::{BNSampler, ForwardSampler},
         };
         use rand::SeedableRng;
@@ -65,7 +65,7 @@ mod tests {
             // Initialize estimator.
             let estimator = MLE::new(&dataset);
             // Fit with generated dataset.
-            let fitted_bn: CategoricalBN = estimator.fit(bn.graph().clone());
+            let fitted_bn: CatBN = estimator.fit(bn.graph().clone());
 
             // Check fitted CDPs.
             for ((_, cpd), (_, fitted_cpd)) in bn.cpds().iter().zip(fitted_bn.cpds()) {
@@ -82,7 +82,7 @@ mod tests {
             datasets::Dataset,
             distributions::CPD,
             estimators::{MLE, ParCTBNEstimator},
-            models::{CTBN, CategoricalCTBN},
+            models::{CTBN, CatCTBN},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
         use rand::SeedableRng;
@@ -136,7 +136,7 @@ mod tests {
             // Initialize estimator.
             let estimator = MLE::new(&trajectory);
             // Fit with generated dataset.
-            let fitted_ctbn: CategoricalCTBN = estimator.par_fit(ctbn.graph().clone());
+            let fitted_ctbn: CatCTBN = estimator.par_fit(ctbn.graph().clone());
 
             // Check fitted CIMs.
             for ((_, cim), (_, fitted_cim)) in ctbn.cims().iter().zip(fitted_ctbn.cims()) {

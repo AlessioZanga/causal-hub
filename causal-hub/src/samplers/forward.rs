@@ -11,9 +11,9 @@ use rayon::prelude::*;
 
 use super::{BNSampler, CTBNSampler, ParCTBNSampler};
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj},
+    datasets::{CatTrj, CategoricalDataset},
     distributions::CPD,
-    models::{BN, CTBN, CategoricalBN, CategoricalCTBN},
+    models::{BN, CTBN, CatBN, CatCTBN},
 };
 
 /// A forward sampler.
@@ -41,9 +41,9 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
     }
 }
 
-impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
+impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
     #[inline]
-    fn sample(&mut self) -> <CategoricalBN as BN>::Sample {
+    fn sample(&mut self) -> <CatBN as BN>::Sample {
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
@@ -67,7 +67,7 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
         sample
     }
 
-    fn sample_n(&mut self, n: usize) -> <CategoricalBN as BN>::Dataset {
+    fn sample_n(&mut self, n: usize) -> <CatBN as BN>::Dataset {
         // Allocate the dataset.
         let mut dataset = Array::zeros((n, self.model.labels().len()));
 
@@ -85,7 +85,7 @@ impl<R: Rng> BNSampler<CategoricalBN> for ForwardSampler<'_, R, CategoricalBN> {
     }
 }
 
-impl<R: Rng> ForwardSampler<'_, R, CategoricalCTBN> {
+impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
     /// Sample transition time for variable X_i with state x_i.
     fn sample_time(&mut self, event: &Array1<u8>, i: usize) -> f64 {
         // Cast the state to usize.
@@ -105,15 +105,15 @@ impl<R: Rng> ForwardSampler<'_, R, CategoricalCTBN> {
     }
 }
 
-impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalCTBN> {
+impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     #[inline]
-    fn sample_by_length(&mut self, max_length: usize) -> <CategoricalCTBN as CTBN>::Trajectory {
+    fn sample_by_length(&mut self, max_length: usize) -> <CatCTBN as CTBN>::Trajectory {
         // Delegate to generic function.
         self.sample_by_length_or_time(max_length, f64::MAX)
     }
 
     #[inline]
-    fn sample_by_time(&mut self, max_time: f64) -> <CategoricalCTBN as CTBN>::Trajectory {
+    fn sample_by_time(&mut self, max_time: f64) -> <CatCTBN as CTBN>::Trajectory {
         // Delegate to generic function.
         self.sample_by_length_or_time(usize::MAX, max_time)
     }
@@ -122,7 +122,7 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         &mut self,
         max_length: usize,
         max_time: f64,
-    ) -> <CategoricalCTBN as CTBN>::Trajectory {
+    ) -> <CatCTBN as CTBN>::Trajectory {
         // Assert length is positive.
         assert!(
             max_length > 0,
@@ -203,7 +203,7 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
             .expect("Failed to convert times to 1D array.");
 
         // Return the trajectory.
-        CategoricalTrj::new(states, sample_events, sample_times)
+        CatTrj::new(states, sample_events, sample_times)
     }
 
     #[inline]
@@ -211,16 +211,12 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         &mut self,
         max_length: usize,
         n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    ) -> <CatCTBN as CTBN>::Trajectories {
         (0..n).map(|_| self.sample_by_length(max_length)).collect()
     }
 
     #[inline]
-    fn sample_n_by_time(
-        &mut self,
-        max_time: f64,
-        n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> <CatCTBN as CTBN>::Trajectories {
         (0..n).map(|_| self.sample_by_time(max_time)).collect()
     }
 
@@ -230,21 +226,19 @@ impl<R: Rng> CTBNSampler<CategoricalCTBN> for ForwardSampler<'_, R, CategoricalC
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    ) -> <CatCTBN as CTBN>::Trajectories {
         (0..n)
             .map(|_| self.sample_by_length_or_time(max_length, max_time))
             .collect()
     }
 }
 
-impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
-    for ForwardSampler<'_, R, CategoricalCTBN>
-{
+impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     fn par_sample_n_by_length(
         &mut self,
         max_length: usize,
         n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    ) -> <CatCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
         let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.
@@ -261,11 +255,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
             .collect()
     }
 
-    fn par_sample_n_by_time(
-        &mut self,
-        max_time: f64,
-        n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> <CatCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
         let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.
@@ -287,7 +277,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CategoricalCTBN>
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> <CategoricalCTBN as CTBN>::Trajectories {
+    ) -> <CatCTBN as CTBN>::Trajectories {
         // Generate a random seed for each trajectory.
         let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.

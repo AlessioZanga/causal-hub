@@ -7,25 +7,25 @@ use std::{
 use causal_hub::{
     graphs::DiGraph,
     io::BifReader,
-    models::{BN, CategoricalBN},
+    models::{BN, CatBN},
 };
 use pyo3::{prelude::*, types::PyType};
 
 use crate::{distributions::PyCategoricalCPD, graphs::PyDiGraph};
 
-#[pyclass(name = "CategoricalBN")]
+#[pyclass(name = "CatBN")]
 #[derive(Clone, Debug)]
 pub struct PyCategoricalBN {
-    inner: CategoricalBN,
+    inner: CatBN,
 }
 
-impl From<CategoricalBN> for PyCategoricalBN {
-    fn from(inner: CategoricalBN) -> Self {
+impl From<CatBN> for PyCategoricalBN {
+    fn from(inner: CatBN) -> Self {
         Self { inner }
     }
 }
 
-impl From<PyCategoricalBN> for CategoricalBN {
+impl From<PyCategoricalBN> for CatBN {
     fn from(outer: PyCategoricalBN) -> Self {
         outer.inner
     }
@@ -48,15 +48,15 @@ impl PyCategoricalBN {
     fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Convert PyAny to Vec<CategoricalCPD>.
+        // Convert PyAny to Vec<CatCPD>.
         let cpds: Vec<_> = cpds
             .try_iter()?
             .map(|x| x?.extract::<PyCategoricalCPD>())
             .collect::<PyResult<_>>()?;
-        // Convert Vec<PyCategoricalCPD> to Vec<CategoricalCPD>.
+        // Convert Vec<PyCategoricalCPD> to Vec<CatCPD>.
         let cpds = cpds.into_iter().map(|x| x.into());
-        // Create a new CategoricalBN with the given parameters.
-        Ok(CategoricalBN::new(graph, cpds).into())
+        // Create a new CatBN with the given parameters.
+        Ok(CatBN::new(graph, cpds).into())
     }
 
     /// Returns the labels of the variables.
@@ -111,7 +111,7 @@ impl PyCategoricalBN {
         Ok(self.inner.parameters_size())
     }
 
-    /// Read a BIF file and return a CategoricalBN.
+    /// Read a BIF file and return a CatBN.
     ///
     /// # Arguments
     ///
@@ -119,7 +119,7 @@ impl PyCategoricalBN {
     ///
     /// # Returns
     ///
-    /// A new CategoricalBN instance.
+    /// A new CatBN instance.
     ///
     #[classmethod]
     fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
@@ -130,9 +130,9 @@ impl PyCategoricalBN {
         // Read the BIF file.
         let mut bif = String::new();
         reader.read_to_string(&mut bif)?;
-        // Read the BIF file and return a CategoricalBN.
+        // Read the BIF file and return a CatBN.
         let bn = BifReader::read(&bif);
-        // Convert the BifReader to a CategoricalBN.
+        // Convert the BifReader to a CatBN.
         Ok(bn.into())
     }
 }

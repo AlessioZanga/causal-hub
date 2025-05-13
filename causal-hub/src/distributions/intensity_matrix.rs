@@ -30,9 +30,9 @@ pub struct CategoricalConditionalIntensityMatrix {
 }
 
 /// A type alias for the categorical conditional intensity matrix.
-pub type CategoricalCIM = CategoricalConditionalIntensityMatrix;
+pub type CatCIM = CategoricalConditionalIntensityMatrix;
 
-impl CategoricalCIM {
+impl CatCIM {
     /// Creates a new categorical conditional intensity matrix.
     ///
     /// # Arguments
@@ -46,7 +46,7 @@ impl CategoricalCIM {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCIM` instance.
+    /// A new `CatCIM` instance.
     ///
     pub fn new<I, J, K, L, M, N, O>(
         state: (L, I),
@@ -301,7 +301,7 @@ impl CategoricalCIM {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCIM` instance.
+    /// A new `CatCIM` instance.
     ///
     pub fn with_sample_size<I, J, K, L, M, N, O>(
         state: (L, I),
@@ -329,7 +329,7 @@ impl CategoricalCIM {
     }
 }
 
-impl CPD for CategoricalCIM {
+impl CPD for CatCIM {
     type Label = String;
     type ConditioningLabels = FxIndexSet<String>;
     type Parameters = Array3<f64>;

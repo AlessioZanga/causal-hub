@@ -178,7 +178,7 @@ mod tests {
             estimators::{BNEstimator, MLE},
             graphs::{DiGraph, Graph},
             io::FromCsvReader,
-            models::{BN, CategoricalBN},
+            models::{BN, CatBN},
         };
         use csv::ReaderBuilder;
         use ndarray::prelude::*;
@@ -208,7 +208,7 @@ mod tests {
 
             let estimator = MLE::new(&dataset);
 
-            let bn: CategoricalBN = estimator.fit(graph);
+            let bn: CatBN = estimator.fit(graph);
 
             // P(A)
             let distribution = &bn.cpds()["A"];

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::distributions::{CPD, CategoricalCPD};
+    use causal_hub::distributions::{CPD, CatCPD};
     use ndarray::prelude::*;
 
     #[test]
@@ -8,7 +8,7 @@ mod tests {
         let x = ("A", vec!["no", "yes"]);
         let z = vec![("B", vec!["no", "yes"]), ("C", vec!["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
-        let categorical = CategoricalCPD::new(x, z, p.clone());
+        let categorical = CatCPD::new(x, z, p.clone());
 
         assert_eq!(categorical.label(), "A");
         assert!(categorical.states().iter().eq(["no", "yes"]));
@@ -28,7 +28,7 @@ mod tests {
         let x = ("A", vec!["no", "yes"]);
         let z = vec![("A", vec!["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CategoricalCPD::new(x, z, p);
+        CatCPD::new(x, z, p);
     }
 
     #[test]
@@ -37,7 +37,7 @@ mod tests {
         let x = ("A", vec!["no", "no"]);
         let z = vec![("B", vec!["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CategoricalCPD::new(x, z, p);
+        CatCPD::new(x, z, p);
     }
 
     #[test]
@@ -46,7 +46,7 @@ mod tests {
         let x: (&str, Vec<&str>) = ("", vec![]);
         let z: Vec<(&str, Vec<&str>)> = vec![];
         let p = array![[]];
-        CategoricalCPD::new(x, z, p);
+        CatCPD::new(x, z, p);
     }
 
     #[test]
@@ -54,7 +54,7 @@ mod tests {
         let x = ("A", vec!["no", "yes"]);
         let z = vec![("B", vec!["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        let categorical = CategoricalCPD::new(x, z, p);
+        let categorical = CatCPD::new(x, z, p);
 
         assert_eq!(
             categorical.to_string(),

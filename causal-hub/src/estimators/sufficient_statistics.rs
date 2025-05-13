@@ -4,7 +4,7 @@ use rayon::prelude::*;
 
 use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs, Dataset},
+    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs, Dataset},
     types::FxIndexSet,
     utils::RMI,
 };
@@ -78,7 +78,7 @@ impl CSSEstimator for SSE<'_, CategoricalDataset> {
     }
 }
 
-impl CSSEstimator for SSE<'_, CategoricalTrj> {
+impl CSSEstimator for SSE<'_, CatTrj> {
     // (conditional counts, conditional time spent, sample size)
     type SufficientStatistics = (Array3<usize>, Array2<f64>, usize);
 

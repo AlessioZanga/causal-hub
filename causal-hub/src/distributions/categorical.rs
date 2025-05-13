@@ -33,9 +33,9 @@ pub struct CategoricalConditionalProbabilityDistribution {
 }
 
 /// A type alias for a categorical conditional probability distribution.
-pub type CategoricalCPD = CategoricalConditionalProbabilityDistribution;
+pub type CatCPD = CategoricalConditionalProbabilityDistribution;
 
-impl CategoricalCPD {
+impl CatCPD {
     /// Creates a new categorical conditional probability distribution.
     ///
     /// # Arguments
@@ -54,7 +54,7 @@ impl CategoricalCPD {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCPD` instance.
+    /// A new `CatCPD` instance.
     ///
     pub fn new<I, J, K, L, M, N, O>(
         state: (L, I),
@@ -332,7 +332,7 @@ impl CategoricalCPD {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCPD` instance.
+    /// A new `CatCPD` instance.
     ///
     pub fn with_sample_size<I, J, K, L, M, N, O>(
         state: (L, I),
@@ -360,7 +360,7 @@ impl CategoricalCPD {
     }
 }
 
-impl Display for CategoricalCPD {
+impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Determine the maximum width for formatting based on the labels and states.
         let n = std::iter::once(self.label())
@@ -425,7 +425,7 @@ impl Display for CategoricalCPD {
     }
 }
 
-impl CPD for CategoricalCPD {
+impl CPD for CatCPD {
     type Label = String;
     type ConditioningLabels = FxIndexSet<String>;
     type Parameters = Array2<f64>;

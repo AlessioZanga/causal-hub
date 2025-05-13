@@ -3,8 +3,8 @@ use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs},
-    distributions::{CategoricalCIM, CategoricalCPD},
+    datasets::{CatTrj, CategoricalDataset, CategoricalTrjs},
+    distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -48,8 +48,8 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CatCPD> for BE<'_, CategoricalDataset, usize> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -84,7 +84,7 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCPD::with_sample_size(
+        CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -94,7 +94,7 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
     }
 }
 
-impl BE<'_, CategoricalTrj, (usize, f64)> {
+impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit_cim(
         x: usize,
@@ -104,7 +104,7 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
         n: usize,
         prior: (usize, f64),
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CategoricalCIM {
+    ) -> CatCIM {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
         // Assert alpha is positive.
@@ -156,7 +156,7 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCIM::with_sample_size(
+        CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -166,8 +166,8 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrj, (usize, f64)> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CatCIM> for BE<'_, CatTrj, (usize, f64)> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get states.
         let states = self.dataset.states();
 
@@ -179,12 +179,12 @@ impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrj, (usize, f64)> {
         // Get the prior.
         let prior = *self.prior();
         // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+        BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl CPDEstimator<CatCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get states.
         let states = self.dataset.states();
 
@@ -196,12 +196,12 @@ impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
         // Get the prior.
         let prior = *self.prior();
         // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+        BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
     }
 }
 
-impl ParCPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
-    fn par_fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
+impl ParCPDEstimator<CatCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
+    fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
         // Get states.
         let states = self.dataset.states();
 
@@ -213,6 +213,6 @@ impl ParCPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
         // Get the prior.
         let prior = *self.prior();
         // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+        BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
     }
 }

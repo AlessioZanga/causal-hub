@@ -15,9 +15,9 @@ pub struct CategoricalTrajectory {
 }
 
 /// A type alias for a multivariate trajectory.
-pub type CategoricalTrj = CategoricalTrajectory;
+pub type CatTrj = CategoricalTrajectory;
 
-impl CategoricalTrj {
+impl CatTrj {
     /// Constructs a new trajectory instance.
     ///
     /// # Arguments
@@ -28,7 +28,7 @@ impl CategoricalTrj {
     ///
     /// # Returns
     ///
-    /// A new instance of `CategoricalTrj`.
+    /// A new instance of `CatTrj`.
     ///
     pub fn new<I, J, K, V>(states: I, events: Array2<u8>, times: Array1<f64>) -> Self
     where
@@ -130,7 +130,7 @@ impl CategoricalTrj {
     }
 }
 
-impl Dataset for CategoricalTrj {
+impl Dataset for CatTrj {
     type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 
@@ -247,24 +247,24 @@ impl CategoricalTrajectories {
     }
 }
 
-impl FromIterator<CategoricalTrj> for CategoricalTrajectories {
+impl FromIterator<CatTrj> for CategoricalTrajectories {
     #[inline]
-    fn from_iter<I: IntoIterator<Item = CategoricalTrj>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = CatTrj>>(iter: I) -> Self {
         Self::new(iter)
     }
 }
 
-impl FromParallelIterator<CategoricalTrj> for CategoricalTrajectories {
+impl FromParallelIterator<CatTrj> for CategoricalTrajectories {
     #[inline]
-    fn from_par_iter<I: IntoParallelIterator<Item = CategoricalTrj>>(iter: I) -> Self {
+    fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
         // TODO: Avoid collecting into a Vec, this is a workaround.
         Self::new(iter.into_par_iter().collect::<Vec<_>>())
     }
 }
 
 impl<'a> IntoIterator for &'a CategoricalTrjs {
-    type IntoIter = std::slice::Iter<'a, CategoricalTrj>;
-    type Item = &'a CategoricalTrj;
+    type IntoIter = std::slice::Iter<'a, CatTrj>;
+    type Item = &'a CatTrj;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -273,8 +273,8 @@ impl<'a> IntoIterator for &'a CategoricalTrjs {
 }
 
 impl<'a> IntoParallelRefIterator<'a> for CategoricalTrjs {
-    type Item = &'a CategoricalTrj;
-    type Iter = rayon::slice::Iter<'a, CategoricalTrj>;
+    type Item = &'a CatTrj;
+    type Iter = rayon::slice::Iter<'a, CatTrj>;
 
     #[inline]
     fn par_iter(&'a self) -> Self::Iter {

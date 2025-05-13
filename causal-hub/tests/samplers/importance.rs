@@ -5,7 +5,7 @@ mod tests {
     mod continuous_time_bayesian_network {
         use causal_hub::{
             assets::load_eating,
-            datasets::{CategoricalTrjEv, CategoricalTrjEvT as E, Dataset},
+            datasets::{CatTrjEvT as E, CategoricalTrjEv, Dataset},
             models::CTBN,
             samplers::ImportanceSampler,
         };

@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 
 use super::CTBN;
 use crate::{
-    datasets::{CategoricalTrj, CategoricalTrjs},
-    distributions::{CPD, CategoricalCIM, CategoricalCPD},
+    datasets::{CatTrj, CategoricalTrjs},
+    distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
-    models::{BN, CategoricalBN},
+    models::{BN, CatBN},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -14,17 +14,17 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The initial distribution.
-    initial_distribution: CategoricalBN,
+    initial_distribution: CatBN,
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional intensity matrices.
-    cims: FxIndexMap<String, CategoricalCIM>,
+    cims: FxIndexMap<String, CatCIM>,
 }
 
 /// A type alias for the categorical CTBN.
-pub type CategoricalCTBN = CategoricalContinuousTimeBayesianNetwork;
+pub type CatCTBN = CategoricalContinuousTimeBayesianNetwork;
 
-impl CategoricalCTBN {
+impl CatCTBN {
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -37,12 +37,12 @@ impl CategoricalCTBN {
     }
 }
 
-impl CTBN for CategoricalCTBN {
+impl CTBN for CatCTBN {
     type Labels = <DiGraph as Graph>::Labels;
-    type CIM = CategoricalCIM;
-    type InitialDistribution = CategoricalBN;
+    type CIM = CatCIM;
+    type InitialDistribution = CatBN;
     type Event = (f64, Array1<u8>);
-    type Trajectory = CategoricalTrj;
+    type Trajectory = CatTrj;
     type Trajectories = CategoricalTrjs;
 
     fn new<I>(graph: DiGraph, cims: I) -> Self
@@ -92,10 +92,10 @@ impl CTBN for CategoricalCTBN {
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.
-            CategoricalCPD::new(state, conditioning_states, parameters)
+            CatCPD::new(state, conditioning_states, parameters)
         });
         // Initialize a uniform initial distribution.
-        let initial_distribution = CategoricalBN::new(initial_graph, initial_cpds);
+        let initial_distribution = CatBN::new(initial_graph, initial_cpds);
 
         Self {
             initial_distribution,

@@ -9,11 +9,9 @@ use rand::{
 use rand_distr::Exp;
 
 use crate::{
-    datasets::{
-        CategoricalEv, CategoricalEvT, CategoricalTrj, CategoricalTrjEv, CategoricalTrjEvT, Dataset,
-    },
+    datasets::{CatEvT, CatTrj, CatTrjEvT, CategoricalEv, CategoricalTrjEv, Dataset},
     distributions::CPD,
-    models::{BN, CTBN, CategoricalBN, CategoricalCTBN},
+    models::{BN, CTBN, CatBN, CatCTBN},
     types::FxIndexSet,
 };
 
@@ -42,11 +40,11 @@ impl<'a, R, M> ImportanceSampler<'a, R, M> {
     }
 }
 
-impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CatBN> {
     /// Sample uncertain evidence.
     fn sample_evidence(&mut self, evidence: &CategoricalEv) -> CategoricalEv {
         // Get shortened variable type.
-        use CategoricalEvT as E;
+        use CatEvT as E;
 
         // Sample the evidence for each variable.
         let certain_evidence = evidence
@@ -113,7 +111,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
     ///
     pub fn sample(&mut self, evidence: &CategoricalEv) -> (Array1<u8>, f64) {
         // Get shortened variable type.
-        use CategoricalEvT as E;
+        use CatEvT as E;
 
         // Assert the model and the evidences have the same labels.
         assert_eq!(
@@ -199,11 +197,11 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
     }
 }
 
-impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CatCTBN> {
     /// Sample uncertain evidence.
     fn sample_evidence(&mut self, evidence: &CategoricalTrjEv) -> CategoricalTrjEv {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Sample the evidence for each variable.
         let certain_evidence = evidence
@@ -271,7 +269,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         t: f64,
     ) -> f64 {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Get the evidence of the vertex.
         let e_i = &evidence.evidences()[i];
@@ -355,7 +353,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         t_b: f64,
     ) -> f64 {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // For each ...
         event
@@ -453,9 +451,9 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         evidence: &CategoricalTrjEv,
         max_length: usize,
         max_time: f64,
-    ) -> (CategoricalTrj, f64) {
+    ) -> (CatTrj, f64) {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Assert the model and the evidences have the same labels.
         assert_eq!(
@@ -629,7 +627,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             .expect("Failed to convert times to 1D array.");
 
         // Construct the trajectory.
-        let trajectory = CategoricalTrj::new(states, sample_events, sample_times);
+        let trajectory = CatTrj::new(states, sample_events, sample_times);
 
         // Return the trajectory and its weight.
         (trajectory, weight)
