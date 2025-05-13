@@ -3,7 +3,7 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub::{
-            datasets::CategoricalDataset,
+            datasets::CatData,
             distributions::CPD,
             estimators::{CPDEstimator, MLE},
         };
@@ -24,7 +24,7 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let dataset = CategoricalDataset::new(variables, values);
+            let dataset = CatData::new(variables, values);
 
             let estimator = MLE::new(&dataset);
 
@@ -138,7 +138,7 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let dataset = CategoricalDataset::new(variables, values);
+            let dataset = CatData::new(variables, values);
 
             let estimator = MLE::new(&dataset);
 
@@ -161,7 +161,7 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let dataset = CategoricalDataset::new(variables, values);
+            let dataset = CatData::new(variables, values);
 
             let estimator = MLE::new(&dataset);
 
@@ -173,7 +173,7 @@ mod tests {
     mod categorical_bn {
         use approx::*;
         use causal_hub::{
-            datasets::CategoricalDataset,
+            datasets::CatData,
             distributions::CPD,
             estimators::{BNEstimator, MLE},
             graphs::{DiGraph, Graph},
@@ -199,7 +199,7 @@ mod tests {
             let dataset = ReaderBuilder::new()
                 .has_headers(true)
                 .from_reader(dataset.as_bytes());
-            let dataset = CategoricalDataset::from_csv_reader(dataset);
+            let dataset = CatData::from_csv_reader(dataset);
 
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
             graph.add_edge(0, 1);

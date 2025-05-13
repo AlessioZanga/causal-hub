@@ -3,7 +3,7 @@ mod tests {
     mod categorical_cpd {
         use approx::*;
         use causal_hub::{
-            datasets::CategoricalDataset,
+            datasets::CatData,
             distributions::CPD,
             estimators::{BE, CPDEstimator},
         };
@@ -24,7 +24,7 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let dataset = CategoricalDataset::new(variables, values);
+            let dataset = CatData::new(variables, values);
 
             let estimator = BE::new(&dataset, 1);
 
@@ -138,7 +138,7 @@ mod tests {
                 [0, 1, 1],
                 [1, 1, 1]
             ];
-            let dataset = CategoricalDataset::new(variables, values);
+            let dataset = CatData::new(variables, values);
 
             let estimator = BE::new(&dataset, 1);
 

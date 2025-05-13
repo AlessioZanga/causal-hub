@@ -209,7 +209,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         let certain_evidence = self
             .evidence
             // Flatten the evidence.
-            .evidences()
+            .values()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
             .flat_map(|(l, e)| std::iter::repeat(l).zip(e))
@@ -269,7 +269,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         use CatTrjEvT as E;
 
         // Get the evidence of the vertex.
-        let e_i = &evidence.evidences()[i];
+        let e_i = &evidence.values()[i];
 
         // Check if there is certain positive evidence at this point in time.
         let e = e_i.iter().find(|e| match e {
@@ -357,7 +357,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .indexed_iter()
             .map(|(j, &y)| {
                 // Get the evidence of the vertex.
-                let e_j = &evidence.evidences()[j];
+                let e_j = &evidence.values()[j];
 
                 // Cast the state to usize.
                 let y = y as usize;
@@ -501,7 +501,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         //  2. the time is less than max_time ...
         while sample_events.len() < max_length && time < max_time {
             // Get evidence of the vertex.
-            let e_i = &evidence.evidences()[i];
+            let e_i = &evidence.values()[i];
 
             // Cast the state to usize.
             let x = event[i] as usize;

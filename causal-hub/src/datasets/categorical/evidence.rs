@@ -1,8 +1,10 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 
-use super::CatTrjEvT;
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::{
+    datasets::CatTrjEvT,
+    types::{FxIndexMap, FxIndexSet},
+};
 
 /// Categorical evidence type.
 #[derive(Clone, Debug)]

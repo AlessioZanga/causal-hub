@@ -5,7 +5,7 @@ use rayon::prelude::*;
 
 use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
-    datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, CategoricalDataset, Dataset},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     types::FxIndexSet,
     utils::RMI,
 };
@@ -32,7 +32,7 @@ impl<'a, D> SufficientStatisticsEstimator<'a, D> {
 /// A type alias for a sufficient statistics estimator.
 pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
-impl CSSEstimator for SSE<'_, CategoricalDataset> {
+impl CSSEstimator for SSE<'_, CatData> {
     // (conditional counts, marginal counts, sample size)
     type SufficientStatistics = (Array2<f64>, Array1<f64>, f64);
 
@@ -103,7 +103,7 @@ impl CSSEstimator for SSE<'_, CatTrj> {
 
         // Iterate over the trajectory events.
         self.dataset
-            .events()
+            .values()
             .rows()
             .into_iter()
             .zip(self.dataset.times())

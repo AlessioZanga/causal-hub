@@ -11,7 +11,7 @@ use rayon::prelude::*;
 
 use super::{BNSampler, CTBNSampler, ParCTBNSampler};
 use crate::{
-    datasets::{CatTrj, CategoricalDataset},
+    datasets::{CatData, CatTrj},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
 };
@@ -83,7 +83,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         let states = self.model.states();
 
         // Construct the dataset.
-        CategoricalDataset::new(states, dataset)
+        CatData::new(states, dataset)
     }
 }
 

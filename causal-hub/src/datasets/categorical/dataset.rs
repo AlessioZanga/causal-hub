@@ -3,11 +3,23 @@ use std::fmt::Display;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use super::Dataset;
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::{
+    datasets::Dataset,
+    types::{FxIndexMap, FxIndexSet},
+};
+
+/// A struct representing a categorical sample.
+#[derive(Clone, Debug)]
+pub struct CategoricalSample {
+    values: Array2<u8>,
+}
+
+/// A type alias for a categorical sample.
+pub type CatSample = CategoricalSample;
+
+// TODO: Implement `CatSample` methods.
 
 /// A struct representing a categorical dataset.
-///
 #[derive(Clone, Debug)]
 pub struct CategoricalDataset {
     labels: FxIndexSet<String>,
@@ -16,7 +28,10 @@ pub struct CategoricalDataset {
     values: Array2<u8>,
 }
 
-impl CategoricalDataset {
+/// A type alias for a categorical dataset.
+pub type CatData = CategoricalDataset;
+
+impl CatData {
     /// Creates a new categorical dataset.
     ///
     /// # Arguments
@@ -181,7 +196,7 @@ impl CategoricalDataset {
     }
 }
 
-impl Display for CategoricalDataset {
+impl Display for CatData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Get the maximum length of the labels and states.
         let n = self
@@ -221,7 +236,7 @@ impl Display for CategoricalDataset {
     }
 }
 
-impl Dataset for CategoricalDataset {
+impl Dataset for CatData {
     type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 

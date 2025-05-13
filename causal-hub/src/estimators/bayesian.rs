@@ -4,7 +4,7 @@ use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, CategoricalDataset},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
@@ -49,7 +49,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CatCPD> for BE<'_, CategoricalDataset, usize> {
+impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
     fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());

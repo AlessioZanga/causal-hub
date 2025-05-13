@@ -6,7 +6,7 @@ use super::{
     SSE,
 };
 use crate::{
-    datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, CategoricalDataset, Dataset},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
@@ -37,7 +37,7 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
     }
 }
 
-impl CPDEstimator<CatCPD> for MLE<'_, CategoricalDataset> {
+impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
     fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let states = self.dataset.states();

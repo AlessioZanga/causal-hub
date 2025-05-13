@@ -1,8 +1,11 @@
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
-use super::{CatTrj, Dataset};
-use crate::types::{FxIndexMap, FxIndexSet};
+use super::CatTrj;
+use crate::{
+    datasets::Dataset,
+    types::{FxIndexMap, FxIndexSet},
+};
 
 /// A multivariate weighted trajectory.
 #[derive(Clone, Debug)]
@@ -96,17 +99,6 @@ impl CatWtdTrj {
         self.trajectory.cardinality()
     }
 
-    /// Returns the events of the trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the events of the trajectory.
-    ///
-    #[inline]
-    pub fn events(&self) -> &Array2<u8> {
-        self.trajectory.events()
-    }
-
     /// Returns the times of the trajectory.
     ///
     /// # Returns
@@ -142,7 +134,10 @@ impl Dataset for CatWtdTrj {
 /// A collection of multivariate trajectories.
 #[derive(Clone, Debug)]
 pub struct CategoricalWeightedTrajectories {
-    trajectories: Vec<CatWtdTrj>,
+    labels: FxIndexSet<String>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
+    cardinality: Array1<usize>,
+    values: Vec<CatWtdTrj>,
 }
 
 /// A type alias for a collection of multivariate trajectories.
@@ -162,48 +157,56 @@ impl CatWtdTrjs {
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
     /// * The trajectories have different cardinality.
+    /// * The trajectories are empty.
     ///
     /// # Returns
     ///
     /// A new instance of `CategoricalTrajectories`.
     ///
-    pub fn new<I>(trajectories: I) -> Self
+    pub fn new<I>(values: I) -> Self
     where
         I: IntoIterator<Item = CatWtdTrj>,
     {
         // Collect the trajectories into a vector.
-        let trajectories: Vec<_> = trajectories.into_iter().collect();
+        let values: Vec<_> = values.into_iter().collect();
 
         // Assert every trajectory has the same labels.
         assert!(
-            trajectories
+            values
                 .windows(2)
                 .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
             "All trajectories must have the same labels."
         );
         // Assert every trajectory has the same states.
         assert!(
-            trajectories
+            values
                 .windows(2)
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
         // Assert every trajectory has the same cardinality.
         assert!(
-            trajectories
+            values
                 .windows(2)
                 .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
             "All trajectories must have the same cardinality."
         );
 
-        Self { trajectories }
+        // Get the labels, states and cardinality from the first trajectory.
+        let trj = values.first().expect("No trajectory in the dataset.");
+        let labels = trj.labels().clone();
+        let states = trj.states().clone();
+        let cardinality = trj.cardinality().clone();
+
+        Self {
+            labels,
+            states,
+            cardinality,
+            values,
+        }
     }
 
     /// Returns the states of the trajectories.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the dataset is empty.
     ///
     /// # Returns
     ///
@@ -211,17 +214,10 @@ impl CatWtdTrjs {
     ///
     #[inline]
     pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
-        self.trajectories
-            .first()
-            .expect("Dataset is empty.")
-            .states()
+        &self.states
     }
 
     /// Returns the cardinality of the trajectories.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the dataset is empty.
     ///
     /// # Returns
     ///
@@ -229,10 +225,7 @@ impl CatWtdTrjs {
     ///
     #[inline]
     pub fn cardinality(&self) -> &Array1<usize> {
-        self.trajectories
-            .first()
-            .expect("Dataset is empty.")
-            .cardinality()
+        &self.cardinality
     }
 }
 
@@ -256,7 +249,7 @@ impl<'a> IntoIterator for &'a CatWtdTrjs {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.trajectories.iter()
+        self.values.iter()
     }
 }
 
@@ -266,32 +259,26 @@ impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
 
     #[inline]
     fn par_iter(&'a self) -> Self::Iter {
-        self.trajectories.par_iter()
+        self.values.par_iter()
     }
 }
 
 impl Dataset for CatWtdTrjs {
     type Labels = FxIndexSet<String>;
-    type Values = Array2<u8>;
+    type Values = Vec<CatWtdTrj>;
 
     #[inline]
     fn labels(&self) -> &Self::Labels {
-        self.trajectories
-            .first()
-            .expect("Dataset is empty.")
-            .labels()
+        &self.labels
     }
 
     #[inline]
     fn values(&self) -> &Self::Values {
-        self.trajectories
-            .first()
-            .expect("Dataset is empty.")
-            .values()
+        &self.values
     }
 
     #[inline]
     fn sample_size(&self) -> usize {
-        self.trajectories.iter().map(|x| x.sample_size()).sum()
+        self.values.iter().map(|x| x.sample_size()).sum()
     }
 }

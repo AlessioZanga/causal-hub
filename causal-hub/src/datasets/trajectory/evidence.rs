@@ -1,9 +1,8 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 
-use super::CatEv;
 use crate::{
-    datasets::Dataset,
+    datasets::{CatEv, Dataset},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -377,17 +376,6 @@ impl CatTrjEv {
         &self.cardinality
     }
 
-    /// Returns the evidences of the trajectory evidence.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the evidences of the trajectory evidence.
-    ///
-    #[inline]
-    pub const fn evidences(&self) -> &FxIndexMap<String, Vec<CatTrjEvT>> {
-        &self.evidences
-    }
-
     /// Returns the evidences at time zero.
     ///
     /// # Returns
@@ -429,6 +417,6 @@ impl Dataset for CatTrjEv {
 
     #[inline]
     fn sample_size(&self) -> usize {
-        self.evidences.values().map(|v| v.len()).sum()
+        self.evidences.values().map(|x| x.len()).sum()
     }
 }

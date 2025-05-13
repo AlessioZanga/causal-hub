@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::BN;
 use crate::{
-    datasets::CategoricalDataset,
+    datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
     types::{FxIndexMap, FxIndexSet},
@@ -42,7 +42,7 @@ impl BN for CatBN {
     type Labels = <DiGraph as Graph>::Labels;
     type CPD = CatCPD;
     type Sample = Array1<u8>;
-    type Samples = CategoricalDataset;
+    type Samples = CatData;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where
