@@ -52,6 +52,7 @@ impl From<CatTrjEvT> for CategoricalEvidenceType {
 }
 
 /// Categorical evidence structure.
+#[derive(Clone, Debug)]
 pub struct CategoricalEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,

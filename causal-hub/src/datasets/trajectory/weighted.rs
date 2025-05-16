@@ -131,7 +131,7 @@ impl Dataset for CatWtdTrj {
     }
 }
 
-/// A collection of multivariate trajectories.
+/// A collection of weighted trajectories.
 #[derive(Clone, Debug)]
 pub struct CategoricalWeightedTrajectories {
     labels: FxIndexSet<String>,
@@ -140,7 +140,7 @@ pub struct CategoricalWeightedTrajectories {
     values: Vec<CatWtdTrj>,
 }
 
-/// A type alias for a collection of multivariate trajectories.
+/// A type alias for a collection of weighted trajectories.
 pub type CatWtdTrjs = CategoricalWeightedTrajectories;
 
 impl CatWtdTrjs {

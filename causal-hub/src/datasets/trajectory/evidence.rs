@@ -97,6 +97,7 @@ impl CatTrjEvT {
 }
 
 /// A type representing a collection of evidences for a categorical trajectory.
+#[derive(Clone, Debug)]
 pub struct CategoricalTrajectoryEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,

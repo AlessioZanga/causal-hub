@@ -163,16 +163,10 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
-            // Get states.
-            let states = self.dataset.states();
-
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
+            // Get (states, prior).
+            let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.
-            let (n_xz, t_xz, n) = sse.fit(x, z);
-
-            // Get the prior.
-            let prior = *self.prior();
+            let (n_xz, t_xz, n) = SSE::new(self.dataset).fit(x, z);
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
         }
@@ -185,16 +179,10 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
-            // Get states.
-            let states = self.dataset.states();
-
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
+            // Get (states, prior).
+            let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.
-            let (n_xz, t_xz, n) = sse.par_fit(x, z);
-
-            // Get the prior.
-            let prior = *self.prior();
+            let (n_xz, t_xz, n) = SSE::new(self.dataset).par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
         }

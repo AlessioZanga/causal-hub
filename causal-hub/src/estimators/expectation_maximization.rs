@@ -1,3 +1,4 @@
+#[derive(Clone, Copy, Debug)]
 pub struct ExpectationMaximization<'a, M, E> {
     /// The model to be fitted.
     initial_model: &'a M,
