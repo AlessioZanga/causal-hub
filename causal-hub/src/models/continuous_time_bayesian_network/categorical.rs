@@ -1,3 +1,4 @@
+use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ use crate::{
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The initial distribution.
     initial_distribution: CatBN,
@@ -34,6 +35,49 @@ impl CatCTBN {
     #[inline]
     pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
         self.initial_distribution.states()
+    }
+}
+
+impl AbsDiffEq for CatCTBN {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.initial_distribution.eq(&other.initial_distribution)
+            && self.graph.eq(&other.graph)
+            && self
+                .cims
+                .iter()
+                .zip(&other.cims)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
+                })
+    }
+}
+
+impl RelativeEq for CatCTBN {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        self.initial_distribution.eq(&other.initial_distribution)
+            && self.graph.eq(&other.graph)
+            && self
+                .cims
+                .iter()
+                .zip(&other.cims)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
+                })
     }
 }
 

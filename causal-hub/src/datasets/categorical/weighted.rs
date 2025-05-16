@@ -13,7 +13,7 @@ pub struct CategoricalWeightedSample {
 /// A type alias for the categorical weighted sample.
 pub type CatWtdSample = CategoricalWeightedSample;
 
-// TODO: Implement `CatWtdSample` methods.
+// FIXME: Implement `CatWtdSample` methods.
 
 /// A struct representing a dataset of categorical weighted samples.
 #[derive(Clone, Debug)]
@@ -27,4 +27,4 @@ pub struct CategoricalWeightedDataset {
 /// A type alias for the categorical weighted dataset.
 pub type CatWtdData = CategoricalWeightedDataset;
 
-// TODO: Implement `CatWtdData` methods.
+// FIXME: Implement `CatWtdData` methods.

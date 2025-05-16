@@ -7,7 +7,7 @@ use super::Graph;
 use crate::types::FxIndexSet;
 
 /// A struct representing a directed graph using an adjacency matrix.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DirectedGraph {
     labels: FxIndexSet<String>,
     adjacency_matrix: Array2<bool>,
