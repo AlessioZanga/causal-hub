@@ -4,9 +4,9 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    distributions::{CPD, CategoricalCPD},
+    distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph},
-    models::{BN, CategoricalBN},
+    models::{BN, CatBN},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -46,7 +46,7 @@ pub struct BifReader;
 
 impl BifReader {
     /// Read a BIF string and returns a `Network` object.
-    pub fn read(input: &str) -> CategoricalBN {
+    pub fn read(input: &str) -> CatBN {
         let network = Self::parse(Rule::file, input)
             .expect("Failed to parse BIF file.")
             .map(build_ast)
@@ -116,7 +116,7 @@ impl BifReader {
                 // Normalize the parameters so that they sum exactly to 1 by row.
                 let parameters = &parameters / parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
                 // Construct the CPD.
-                CategoricalCPD::new(variable, conditioning_variables, parameters)
+                CatCPD::new(variable, conditioning_variables, parameters)
             })
             .collect();
 
@@ -142,7 +142,7 @@ impl BifReader {
         });
 
         // Construct the Bayesian network.
-        CategoricalBN::new(graph, cpds)
+        CatBN::new(graph, cpds)
     }
 }
 

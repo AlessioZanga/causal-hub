@@ -5,9 +5,9 @@ mod tests {
     mod continuous_time_bayesian_network {
         use causal_hub::{
             assets::load_eating,
-            datasets::{CategoricalTrjEv, CategoricalTrjEvT as E, Dataset},
+            datasets::{CatTrjEv, CatTrjEvT as E, Dataset},
             models::CTBN,
-            samplers::ImportanceSampler,
+            samplers::{ImportanceSampler, ParCTBNSampler},
         };
         use ndarray::prelude::*;
         use rand::SeedableRng;
@@ -21,7 +21,7 @@ mod tests {
             let ctbn = load_eating();
 
             // Initialize evidence.
-            let evidence = CategoricalTrjEv::new(
+            let evidence = CatTrjEv::new(
                 ctbn.states(),
                 [
                     (
@@ -60,10 +60,12 @@ mod tests {
             );
 
             // Initialize sampler.
-            let mut importance = ImportanceSampler::new(&mut rng, &ctbn);
+            let mut importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
             // Sample from CTBN.
-            let (trajectory, _weight) =
-                importance.sample_by_length_or_time(&evidence, 10, f64::INFINITY);
+            let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
+
+            // Get trajectory.
+            let trajectory = weighted_trajectory.into_iter().next().unwrap().trajectory();
 
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));

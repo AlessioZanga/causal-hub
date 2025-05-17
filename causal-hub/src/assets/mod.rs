@@ -3,10 +3,10 @@ use ndarray::prelude::*;
 use paste::paste;
 
 use crate::{
-    distributions::CategoricalCIM,
+    distributions::CatCIM,
     graphs::{DiGraph, Graph},
     io::BifReader,
-    models::{CTBN, CategoricalBN, CategoricalCTBN},
+    models::{CTBN, CatBN, CatCTBN},
 };
 
 macro_for!(
@@ -17,7 +17,7 @@ macro_for!(
     ] {
     paste! {
         #[doc = "Load the `" $bn:upper "` BN from the assets."]
-        pub fn [<load_ $bn>]() -> CategoricalBN {
+        pub fn [<load_ $bn>]() -> CatBN {
             BifReader::read(include_str!(concat!(stringify!($bn), ".bif")))
         }
     }
@@ -29,7 +29,7 @@ macro_for!(
 ///     U. Nodelman, C.R. Shelton, and D. Koller (2003). "Learning Continuous Time Bayesian Networks."
 ///     Proc. Nineteenth Conference on Uncertainty in Artificial Intelligence (UAI) (pp. 451-458).
 ///
-pub fn load_eating() -> CategoricalCTBN {
+pub fn load_eating() -> CatCTBN {
     // Initialize the graph.
     let mut graph = DiGraph::empty(vec!["Hungry", "Eating", "FullStomach"]);
     graph.add_edge(0, 1); // Hungry -> Eating
@@ -38,7 +38,7 @@ pub fn load_eating() -> CategoricalCTBN {
 
     // Initialize the distributions.
     let cims = vec![
-        CategoricalCIM::new(
+        CatCIM::new(
             // P(Hungry | FullStomach)
             ("Hungry", vec!["no", "yes"]),
             [("FullStomach", vec!["no", "yes"])],
@@ -53,7 +53,7 @@ pub fn load_eating() -> CategoricalCTBN {
                 ],
             ],
         ),
-        CategoricalCIM::new(
+        CatCIM::new(
             // P(Eating | Hungry)
             ("Eating", vec!["no", "yes"]),
             [("Hungry", vec!["no", "yes"])],
@@ -68,7 +68,7 @@ pub fn load_eating() -> CategoricalCTBN {
                 ],
             ],
         ),
-        CategoricalCIM::new(
+        CatCIM::new(
             // P(FullStomach | Eating)
             ("FullStomach", vec!["no", "yes"]),
             [("Eating", vec!["no", "yes"])],
@@ -86,5 +86,5 @@ pub fn load_eating() -> CategoricalCTBN {
     ];
 
     // Initialize the model.
-    CategoricalCTBN::new(graph, cims)
+    CatCTBN::new(graph, cims)
 }

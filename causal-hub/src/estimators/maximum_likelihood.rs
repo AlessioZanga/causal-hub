@@ -1,3 +1,4 @@
+use dry::macro_for;
 use ndarray::prelude::*;
 
 use super::{
@@ -5,8 +6,8 @@ use super::{
     SSE,
 };
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs, Dataset},
-    distributions::{CategoricalCIM, CategoricalCPD},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -36,8 +37,8 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
     }
 }
 
-impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let states = self.dataset.states();
 
@@ -48,14 +49,10 @@ impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
 
         // Assert the marginal counts are not zero.
         assert!(
-            n_z.iter().all(|&x| x > 0),
+            n_z.iter().all(|&x| x > 0.),
             "Failed to get non-zero counts for variable '{}'.",
             self.dataset.labels()[x]
         );
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
 
         // Compute the parameters by normalizing the counts.
         let parameters = &n_xz / n_z.insert_axis(Axis(1));
@@ -73,7 +70,7 @@ impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCPD::with_sample_size(
+        CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -83,26 +80,23 @@ impl CPDEstimator<CategoricalCPD> for MLE<'_, CategoricalDataset> {
     }
 }
 
-impl MLE<'_, CategoricalTrj> {
+impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
     fn fit_cim(
         x: usize,
         z: &[usize],
-        n_xz: Array3<usize>,
+        n_xz: Array3<f64>,
         t_xz: Array2<f64>,
-        n: usize,
+        n: f64,
         labels: &FxIndexSet<String>,
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CategoricalCIM {
+    ) -> CatCIM {
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
             "Failed to get non-zero conditional times for variable '{}'.",
             labels[x]
         );
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
@@ -141,7 +135,7 @@ impl MLE<'_, CategoricalTrj> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCIM::with_sample_size(
+        CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -151,47 +145,42 @@ impl MLE<'_, CategoricalTrj> {
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrj> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get labels and states.
-        let (labels, states) = (self.dataset.labels(), self.dataset.states());
+// Implement the CIM estimator for the MLE struct.
+macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(x, z);
+    impl CPDEstimator<CatCIM> for MLE<'_, $type> {
+        fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
+            // Get labels and states.
+            let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
-        // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+            // Initialize the sufficient statistics estimator.
+            let sse = SSE::new(self.dataset);
+            // Compute sufficient statistics.
+            let (n_xz, t_xz, n) = sse.fit(x, z);
+
+            // Fit the CIM given the sufficient statistics.
+            MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+        }
     }
-}
 
-impl CPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get labels and states.
-        let (labels, states) = (self.dataset.labels(), self.dataset.states());
+});
 
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(x, z);
+// Implement the parallel version of the CIM estimator for the MLE struct.
+macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-        // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+    impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
+        fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
+            // Get labels and states.
+            let (labels, states) = (self.dataset.labels(), self.dataset.states());
+
+            // Initialize the sufficient statistics estimator.
+            let sse = SSE::new(self.dataset);
+            // Compute sufficient statistics in parallel.
+            let (n_xz, t_xz, n) = sse.par_fit(x, z);
+
+            // Fit the CIM given the sufficient statistics.
+            MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+        }
     }
-}
 
-impl ParCPDEstimator<CategoricalCIM> for MLE<'_, CategoricalTrjs> {
-    fn par_fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get labels and states.
-        let (labels, states) = (self.dataset.labels(), self.dataset.states());
-
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics in parallel.
-        let (n_xz, t_xz, n) = sse.par_fit(x, z);
-
-        // Fit the CIM given the sufficient statistics.
-        MLE::<'_, CategoricalTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
-    }
-}
+});

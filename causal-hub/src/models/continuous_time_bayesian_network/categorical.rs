@@ -1,30 +1,31 @@
+use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::CTBN;
 use crate::{
-    datasets::{CategoricalTrj, CategoricalTrjs},
-    distributions::{CPD, CategoricalCIM, CategoricalCPD},
+    datasets::{CatTrj, CatTrjs},
+    distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
-    models::{BN, CategoricalBN},
+    models::{BN, CatBN},
     types::{FxIndexMap, FxIndexSet},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The initial distribution.
-    initial_distribution: CategoricalBN,
+    initial_distribution: CatBN,
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional intensity matrices.
-    cims: FxIndexMap<String, CategoricalCIM>,
+    cims: FxIndexMap<String, CatCIM>,
 }
 
 /// A type alias for the categorical CTBN.
-pub type CategoricalCTBN = CategoricalContinuousTimeBayesianNetwork;
+pub type CatCTBN = CategoricalContinuousTimeBayesianNetwork;
 
-impl CategoricalCTBN {
+impl CatCTBN {
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -37,13 +38,56 @@ impl CategoricalCTBN {
     }
 }
 
-impl CTBN for CategoricalCTBN {
+impl AbsDiffEq for CatCTBN {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.initial_distribution.eq(&other.initial_distribution)
+            && self.graph.eq(&other.graph)
+            && self
+                .cims
+                .iter()
+                .zip(&other.cims)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
+                })
+    }
+}
+
+impl RelativeEq for CatCTBN {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        self.initial_distribution.eq(&other.initial_distribution)
+            && self.graph.eq(&other.graph)
+            && self
+                .cims
+                .iter()
+                .zip(&other.cims)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
+                })
+    }
+}
+
+impl CTBN for CatCTBN {
     type Labels = <DiGraph as Graph>::Labels;
-    type CIM = CategoricalCIM;
-    type InitialDistribution = CategoricalBN;
+    type CIM = CatCIM;
+    type InitialDistribution = CatBN;
     type Event = (f64, Array1<u8>);
-    type Trajectory = CategoricalTrj;
-    type Trajectories = CategoricalTrjs;
+    type Trajectory = CatTrj;
+    type Trajectories = CatTrjs;
 
     fn new<I>(graph: DiGraph, cims: I) -> Self
     where
@@ -92,10 +136,10 @@ impl CTBN for CategoricalCTBN {
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.
-            CategoricalCPD::new(state, conditioning_states, parameters)
+            CatCPD::new(state, conditioning_states, parameters)
         });
         // Initialize a uniform initial distribution.
-        let initial_distribution = CategoricalBN::new(initial_graph, initial_cpds);
+        let initial_distribution = CatBN::new(initial_graph, initial_cpds);
 
         Self {
             initial_distribution,

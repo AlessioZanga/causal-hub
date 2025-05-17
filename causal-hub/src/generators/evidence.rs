@@ -1,0 +1,94 @@
+use itertools::Itertools;
+use rand::{Rng, seq::index::sample};
+
+use crate::datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset};
+
+pub struct RandomEvidence<'a, R, D> {
+    rng: &'a mut R,
+    data: &'a D,
+    p: f64,
+}
+
+pub type RngEv<'a, R, D> = RandomEvidence<'a, R, D>;
+
+impl<'a, R, D> RandomEvidence<'a, R, D> {
+    /// Creates a new `RandomEvidence` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `rng` - A mutable reference to a random number generator.
+    /// * `data` - A reference to the dataset.
+    /// * `p` - The probability of selecting an evidence.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the probability is not in [0, 1].
+    ///
+    /// # Returns
+    ///
+    /// A new `RandomEvidence` instance.
+    pub fn new(rng: &'a mut R, data: &'a D, p: f64) -> Self {
+        // Assert that the probability is in [0, 1].
+        assert!((0.0..=1.0).contains(&p), "Probability must be in [0, 1]");
+
+        Self { rng, data, p }
+    }
+}
+
+impl<R: Rng> RngEv<'_, R, CatTrj> {
+    pub fn random(&mut self) -> CatTrjEv {
+        // Get shortened variable type.
+        use CatTrjEvT as E;
+
+        // Get times.
+        let times = self.data.times();
+        // Get events.
+        let events = self.data.values().rows();
+        // Zip times and events.
+        let times_events = times.into_iter().zip(events);
+        // Get the labels.
+        let labels = self.data.labels();
+
+        // Iterate over (time, event) pairs.
+        let evidence = times_events
+            .tuple_windows()
+            .filter_map(|((&start_time, v), (&end_time, _))| {
+                // Choose if the event is selected.
+                if !self.rng.random_bool(self.p) {
+                    // If the event is not selected, skip it.
+                    return None;
+                }
+                // Select how many events to select.
+                let n = self.rng.random_range(1..=v.len());
+                // Sample the events.
+                let evidence = sample(self.rng, v.len(), n).into_iter().map(move |index| {
+                    // Get label and state.
+                    let (label, state) = (&labels[index], v[index] as usize);
+                    // Create the evidence.
+                    let evidence = E::CertainPositiveInterval {
+                        state,
+                        start_time,
+                        end_time,
+                    };
+                    // Return the evidence.
+                    (label, evidence)
+                });
+                // Return the evidences.
+                Some(evidence)
+            })
+            .flatten();
+
+        // Collect the evidence.
+        CatTrjEv::new(self.data.states(), evidence)
+    }
+}
+
+impl<R: Rng> RngEv<'_, R, CatTrjs> {
+    pub fn random(&mut self) -> CatTrjsEv {
+        self.data
+            .values()
+            .iter()
+            .map(|trj| RngEv::new(&mut self.rng, trj, self.p).random())
+            .collect()
+    }
+}

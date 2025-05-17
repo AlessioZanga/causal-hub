@@ -1,3 +1,28 @@
+//! Sampling module for BNs and CTBNs.
+//!
+//! This module contains the following traits:
+//!
+//! * BNSampler - Sampling from a BN.
+//! * CTBNSampler - Sampling from a CTBN.
+//!
+//! and their parallel versions:
+//!
+//! * ParCTBNSampler - Parallel sampling from a CTBN.
+//!
+//! This module contains the following samplers:
+//!
+//! * ForwardSampler - Forward sampling from a BN or CTBN.
+//! * ImportanceSampler - Importance sampling from a BN or CTBN with evidence.
+//!
+//! This is the table of the implemented traits for each sampler:
+//!
+//! | Trait          | ForwardSampler | ImportanceSampler |
+//! |----------------|:--------------:|:-----------------:|
+//! | BNSampler      | ✅             | ✅                |
+//! | CTBNSampler    | ✅             | ✅                |
+//! | ParCTBNSampler | ✅             | ✅                |
+//!
+
 mod forward;
 pub use forward::*;
 
@@ -11,13 +36,18 @@ pub trait BayesianNetworkSampler<T>
 where
     T: BN,
 {
+    /// The sample type.
+    type Sample;
+    /// The samples type.
+    type Samples;
+
     /// Sample a single instance from a Bayesian network.
     ///
     /// # Returns
     ///
     /// A single sample from the Bayesian network.
     ///
-    fn sample(&mut self) -> T::Sample;
+    fn sample(&mut self) -> Self::Sample;
 
     /// Sample from a Bayesian network.
     ///
@@ -29,7 +59,7 @@ where
     ///
     /// A dataset containing the samples.
     ///
-    fn sample_n(&mut self, n: usize) -> T::Dataset;
+    fn sample_n(&mut self, n: usize) -> Self::Samples;
 }
 
 pub use BayesianNetworkSampler as BNSampler;
@@ -39,6 +69,11 @@ pub trait ContinuousTimeBayesianNetworkSampler<T>
 where
     T: CTBN,
 {
+    /// The sample type.
+    type Sample;
+    /// The samples type.
+    type Samples;
+
     /// Sample a single trajectory with a given length from a CTBN.
     ///
     /// # Arguments
@@ -53,7 +88,7 @@ where
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length(&mut self, max_length: usize) -> T::Trajectory;
+    fn sample_by_length(&mut self, max_length: usize) -> Self::Sample;
 
     /// Sample a single trajectory with a given time from a CTBN.
     ///
@@ -69,7 +104,7 @@ where
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_time(&mut self, max_time: f64) -> T::Trajectory;
+    fn sample_by_time(&mut self, max_time: f64) -> Self::Sample;
 
     /// Sample a single trajectory with a given length or time from a CTBN.
     ///
@@ -89,7 +124,7 @@ where
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length_or_time(&mut self, max_length: usize, max_time: f64) -> T::Trajectory;
+    fn sample_by_length_or_time(&mut self, max_length: usize, max_time: f64) -> Self::Sample;
 
     /// Sample multiple trajectories with a given length from a CTBN.
     ///
@@ -109,7 +144,7 @@ where
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_length(&mut self, max_length: usize, n: usize) -> T::Trajectories;
+    fn sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples;
 
     /// Sample multiple trajectories with a given time from a CTBN.
     ///
@@ -129,7 +164,7 @@ where
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> T::Trajectories;
+    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples;
 
     /// Sample multiple trajectories with a given length or time from a CTBN.
     ///
@@ -156,7 +191,7 @@ where
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> T::Trajectories;
+    ) -> Self::Samples;
 }
 
 pub use ContinuousTimeBayesianNetworkSampler as CTBNSampler;
@@ -166,6 +201,9 @@ pub trait ParallelContinuousTimeBayesianNetworkSampler<T>
 where
     T: CTBN,
 {
+    /// The samples type.
+    type Samples;
+
     /// Sample multiple trajectories with a given length from a CTBN in parallel.
     ///
     /// # Arguments
@@ -184,7 +222,7 @@ where
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_length(&mut self, max_length: usize, n: usize) -> T::Trajectories;
+    fn par_sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples;
 
     /// Sample multiple trajectories with a given time from a CTBN in parallel.
     ///
@@ -204,7 +242,7 @@ where
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> T::Trajectories;
+    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples;
 
     /// Sample multiple trajectories with a given length or time from a CTBN in parallel.
     ///
@@ -231,7 +269,7 @@ where
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> T::Trajectories;
+    ) -> Self::Samples;
 }
 
 pub use ParallelContinuousTimeBayesianNetworkSampler as ParCTBNSampler;

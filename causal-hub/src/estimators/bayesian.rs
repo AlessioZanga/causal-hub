@@ -1,10 +1,11 @@
+use dry::macro_for;
 use ndarray::prelude::*;
 use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CategoricalDataset, CategoricalTrj, CategoricalTrjs},
-    distributions::{CategoricalCIM, CategoricalCPD},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
+    distributions::{CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -48,8 +49,8 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCPD {
+impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
+    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -57,10 +58,6 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
         let sse = SSE::new(self.dataset);
         // Compute sufficient statistics.
         let (n_xz, n_z, n) = sse.fit(x, z);
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
 
         // Get the prior, as the alpha of the Dirichlet distribution.
         let alpha = *self.prior();
@@ -75,7 +72,6 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
 
         // Set the sample size.
         let sample_size = Some(n);
-
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some((n_xz * parameters.mapv(f64::ln)).sum());
 
@@ -84,7 +80,7 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCPD::with_sample_size(
+        CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -94,17 +90,17 @@ impl CPDEstimator<CategoricalCPD> for BE<'_, CategoricalDataset, usize> {
     }
 }
 
-impl BE<'_, CategoricalTrj, (usize, f64)> {
+impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit_cim(
         x: usize,
         z: &[usize],
-        n_xz: Array3<usize>,
+        n_xz: Array3<f64>,
         t_xz: Array2<f64>,
-        n: usize,
+        n: f64,
         prior: (usize, f64),
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CategoricalCIM {
+    ) -> CatCIM {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
         // Assert alpha is positive.
@@ -117,9 +113,6 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
         // Scale the prior by the cardinality.
         let alpha = alpha as f64 / c_z;
         let tau = tau / c_z;
-
-        // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
@@ -137,18 +130,25 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
 
         // Set the sample size.
         let sample_size = Some(n);
-
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some({
+            //
             // Compute the sample log-likelihood as the sum of:
             //
             //   1. ln(tau) * (alpha + 1) - ln_gamma(alpha + 1)
             //   2. + ln_gamma(n_xz + alpha + 1) - ln(t_xz + tau) * (n_xz + alpha + 1)
             //
-            let mut sll = f64::ln(tau) * (alpha + 1.) - ln_gamma(alpha + 1.);
-            sll += (n_xz + alpha + 1.).mapv(ln_gamma).sum() - (t_xz + tau).mapv(ln_gamma).sum();
-
-            sll
+            ({
+                // Compute marginal sufficient statistics.
+                let n_z = n_xz.sum_axis(Axis(2));
+                let t_z = t_xz.sum_axis(Axis(2));
+                // Compute the sample log-likelihood.
+                f64::ln(tau) * (alpha + 1.)
+                - ln_gamma(alpha + 1.)                              // .
+                + ((&n_z + alpha + 1.).mapv(ln_gamma)               // .
+                - (t_z + tau).mapv(f64::ln) * (n_z + alpha + 1.))
+            })
+            .sum()
         });
 
         // Subset the conditioning labels, states and cardinality.
@@ -156,7 +156,7 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
 
-        CategoricalCIM::with_sample_size(
+        CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
@@ -166,53 +166,34 @@ impl BE<'_, CategoricalTrj, (usize, f64)> {
     }
 }
 
-impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrj, (usize, f64)> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get states.
-        let states = self.dataset.states();
+// Implement the CIM estimator for the BE struct.
+macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(x, z);
-
-        // Get the prior.
-        let prior = *self.prior();
-        // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+    impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
+            // Get (states, prior).
+            let (states, prior) = (self.dataset.states(), *self.prior());
+            // Compute sufficient statistics.
+            let (n_xz, t_xz, n) = SSE::new(self.dataset).fit(x, z);
+            // Fit the CIM given the sufficient statistics.
+            BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+        }
     }
-}
 
-impl CPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
-    fn fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get states.
-        let states = self.dataset.states();
+});
 
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let (n_xz, t_xz, n) = sse.fit(x, z);
+// Implement the parallel CIM estimator for the BE struct.
+macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-        // Get the prior.
-        let prior = *self.prior();
-        // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+    impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
+            // Get (states, prior).
+            let (states, prior) = (self.dataset.states(), *self.prior());
+            // Compute sufficient statistics in parallel.
+            let (n_xz, t_xz, n) = SSE::new(self.dataset).par_fit(x, z);
+            // Fit the CIM given the sufficient statistics.
+            BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+        }
     }
-}
 
-impl ParCPDEstimator<CategoricalCIM> for BE<'_, CategoricalTrjs, (usize, f64)> {
-    fn par_fit(&self, x: usize, z: &[usize]) -> CategoricalCIM {
-        // Get states.
-        let states = self.dataset.states();
-
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics in parallel.
-        let (n_xz, t_xz, n) = sse.par_fit(x, z);
-
-        // Get the prior.
-        let prior = *self.prior();
-        // Fit the CIM given the sufficient statistics.
-        BE::<'_, CategoricalTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
-    }
-}
+});

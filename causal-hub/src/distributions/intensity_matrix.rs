@@ -1,4 +1,4 @@
-use approx::relative_eq;
+use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -25,14 +25,14 @@ pub struct CategoricalConditionalIntensityMatrix {
     parameters: Array3<f64>,
     parameters_size: usize,
     // Fitted statistics.
-    sample_size: Option<usize>,
+    sample_size: Option<f64>,
     sample_log_likelihood: Option<f64>,
 }
 
 /// A type alias for the categorical conditional intensity matrix.
-pub type CategoricalCIM = CategoricalConditionalIntensityMatrix;
+pub type CatCIM = CategoricalConditionalIntensityMatrix;
 
-impl CategoricalCIM {
+impl CatCIM {
     /// Creates a new categorical conditional intensity matrix.
     ///
     /// # Arguments
@@ -46,7 +46,7 @@ impl CategoricalCIM {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCIM` instance.
+    /// A new `CatCIM` instance.
     ///
     pub fn new<I, J, K, L, M, N, O>(
         state: (L, I),
@@ -266,12 +266,16 @@ impl CategoricalCIM {
 
     /// Returns the sample size of the dataset used to fit the distribution, if any.
     ///
+    /// # Note
+    ///
+    /// The sample size could be non-integer if the distribution was fitted using a weighted dataset.
+    ///
     /// # Returns
     ///
     /// The sample size of the dataset used to fit the distribution.
     ///
     #[inline]
-    pub const fn sample_size(&self) -> Option<usize> {
+    pub const fn sample_size(&self) -> Option<f64> {
         self.sample_size
     }
 
@@ -301,13 +305,13 @@ impl CategoricalCIM {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalCIM` instance.
+    /// A new `CatCIM` instance.
     ///
     pub fn with_sample_size<I, J, K, L, M, N, O>(
         state: (L, I),
         conditioning_states: J,
         parameters: Array3<f64>,
-        sample_size: Option<usize>,
+        sample_size: Option<f64>,
         sample_log_likelihood: Option<f64>,
     ) -> Self
     where
@@ -329,7 +333,72 @@ impl CategoricalCIM {
     }
 }
 
-impl CPD for CategoricalCIM {
+impl PartialEq for CatCIM {
+    fn eq(&self, other: &Self) -> bool {
+        // Check for equality, excluding the sample values.
+        self.label.eq(&other.label)
+            && self.states.eq(&other.states)
+            && self.cardinality.eq(&other.cardinality)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self
+                .conditioning_cardinality
+                .eq(&other.conditioning_cardinality)
+            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self.parameters.eq(&other.parameters)
+    }
+}
+
+impl AbsDiffEq for CatCIM {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        // Check for equality, excluding the sample values.
+        self.label.eq(&other.label)
+            && self.states.eq(&other.states)
+            && self.cardinality.eq(&other.cardinality)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self
+                .conditioning_cardinality
+                .eq(&other.conditioning_cardinality)
+            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
+    }
+}
+
+impl RelativeEq for CatCIM {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        // Check for equality, excluding the sample values.
+        self.label.eq(&other.label)
+            && self.states.eq(&other.states)
+            && self.cardinality.eq(&other.cardinality)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self
+                .conditioning_cardinality
+                .eq(&other.conditioning_cardinality)
+            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self
+                .parameters
+                .relative_eq(&other.parameters, epsilon, max_relative)
+    }
+}
+
+impl CPD for CatCIM {
     type Label = String;
     type ConditioningLabels = FxIndexSet<String>;
     type Parameters = Array3<f64>;

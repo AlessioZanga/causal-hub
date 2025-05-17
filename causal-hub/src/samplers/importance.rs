@@ -3,53 +3,60 @@ use core::f64;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
-    Rng,
+    Rng, SeedableRng,
     distr::{Distribution as _Distribution, weighted::WeightedIndex},
 };
 use rand_distr::Exp;
+use rayon::prelude::*;
 
+use super::{BNSampler, CTBNSampler, ParCTBNSampler};
 use crate::{
-    datasets::{
-        CategoricalEv, CategoricalEvT, CategoricalTrj, CategoricalTrjEv, CategoricalTrjEvT, Dataset,
-    },
+    datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::CPD,
-    models::{BN, CTBN, CategoricalBN, CategoricalCTBN},
+    models::{BN, CTBN, CatBN, CatCTBN},
     types::FxIndexSet,
 };
 
 /// A struct for sampling using importance sampling.
 #[derive(Debug)]
-pub struct ImportanceSampler<'a, R, M> {
+pub struct ImportanceSampler<'a, R, M, E> {
     rng: &'a mut R,
     model: &'a M,
+    evidence: &'a E,
 }
 
-impl<'a, R, M> ImportanceSampler<'a, R, M> {
+impl<'a, R, M, E> ImportanceSampler<'a, R, M, E> {
     /// Construct a new importance sampler.
     ///
     /// # Arguments
     ///
     /// * `rng` - A random number generator.
     /// * `model` - A reference to the model to sample from.
+    /// * `evidence` - A reference to the evidence to sample from.
     ///
     /// # Returns
     ///
     /// Return a new `ImportanceSampler` instance.
     ///
     #[inline]
-    pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
-        Self { rng, model }
+    pub const fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Self {
+        Self {
+            rng,
+            model,
+            evidence,
+        }
     }
 }
 
-impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
     /// Sample uncertain evidence.
-    fn sample_evidence(&mut self, evidence: &CategoricalEv) -> CategoricalEv {
+    fn sample_evidence(&mut self) -> CatEv {
         // Get shortened variable type.
-        use CategoricalEvT as E;
+        use CatEvT as E;
 
         // Sample the evidence for each variable.
-        let certain_evidence = evidence
+        let certain_evidence = self
+            .evidence
             // Flatten the evidence.
             .evidences()
             .iter()
@@ -92,33 +99,22 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
             });
 
         // Collect the certain evidence.
-        CategoricalEv::new(evidence.states(), certain_evidence)
+        CatEv::new(self.evidence.states(), certain_evidence)
     }
+}
 
-    /// Sample a single instance with evidence.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - The evidence to sample from.
-    ///
-    /// # Panics
-    ///
-    /// Panics if:
-    ///
-    /// * the model and the evidence have different labels.
-    ///
-    /// # Returns
-    ///
-    /// Returns a tuple containing the sampled instance and its weight.
-    ///
-    pub fn sample(&mut self, evidence: &CategoricalEv) -> (Array1<u8>, f64) {
+impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    type Sample = (<CatBN as BN>::Sample, f64);
+    type Samples = (<CatBN as BN>::Samples, f64);
+
+    fn sample(&mut self) -> Self::Sample {
         // Get shortened variable type.
-        use CategoricalEvT as E;
+        use CatEvT as E;
 
         // Assert the model and the evidences have the same labels.
         assert_eq!(
             self.model.labels(),
-            evidence.labels(),
+            self.evidence.labels(),
             "The model and the evidences must have the same variables."
         );
 
@@ -128,7 +124,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
         let mut weight = 1.;
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(evidence);
+        let evidence = self.sample_evidence();
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
@@ -197,18 +193,23 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalBN> {
 
         (sample, weight)
     }
+
+    fn sample_n(&mut self, _n: usize) -> Self::Samples {
+        todo!() // FIXME:
+    }
 }
 
-impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
+impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
     /// Sample uncertain evidence.
-    fn sample_evidence(&mut self, evidence: &CategoricalTrjEv) -> CategoricalTrjEv {
+    fn sample_evidence(&mut self) -> CatTrjEv {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Sample the evidence for each variable.
-        let certain_evidence = evidence
+        let certain_evidence = self
+            .evidence
             // Flatten the evidence.
-            .evidences()
+            .values()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
             .flat_map(|(l, e)| std::iter::repeat(l).zip(e))
@@ -259,22 +260,16 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             });
 
         // Collect the certain evidence.
-        CategoricalTrjEv::new(evidence.states(), certain_evidence)
+        CatTrjEv::new(self.evidence.states(), certain_evidence)
     }
 
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(
-        &mut self,
-        evidence: &CategoricalTrjEv,
-        event: &Array1<u8>,
-        i: usize,
-        t: f64,
-    ) -> f64 {
+    fn sample_time(&mut self, evidence: &CatTrjEv, event: &Array1<u8>, i: usize, t: f64) -> f64 {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Get the evidence of the vertex.
-        let e_i = &evidence.evidences()[i];
+        let e_i = &evidence.values()[i];
 
         // Check if there is certain positive evidence at this point in time.
         let e = e_i.iter().find(|e| match e {
@@ -348,21 +343,21 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
 
     fn update_weight(
         &self,
-        evidence: &CategoricalTrjEv,
+        evidence: &CatTrjEv,
         event: &Array1<u8>,
         i: usize,
         t_a: f64,
         t_b: f64,
     ) -> f64 {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // For each ...
         event
             .indexed_iter()
             .map(|(j, &y)| {
                 // Get the evidence of the vertex.
-                let e_j = &evidence.evidences()[j];
+                let e_j = &evidence.values()[j];
 
                 // Cast the state to usize.
                 let y = y as usize;
@@ -423,50 +418,43 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
                 // Otherwise, return one.
                 1.
             })
+            // Check numeric stability.
+            .map(|w| if !w.is_finite() { 1. } else { w.clamp(0., 1.) })
             // Collect the weights.
             .product()
     }
+}
 
-    /// Sample a trajectory with evidence.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - The evidence to sample from.
-    /// * `max_length` - The maximum length of the trajectory.
-    /// * `max_time` - The maximum time of the trajectory.
-    ///
-    /// # Panics
-    ///
-    /// Panics if:
-    ///
-    /// * the model and the evidence have different labels.
-    /// * the model and the evidence have different states.
-    /// * the maximum length of the trajectory is not strictly positive.
-    /// * the maximum time of the trajectory is not strictly positive.
-    ///
-    /// # Returns
-    ///
-    /// Returns a tuple containing the sampled trajectory and its weight.
-    ///
-    pub fn sample_by_length_or_time(
-        &mut self,
-        evidence: &CategoricalTrjEv,
-        max_length: usize,
-        max_time: f64,
-    ) -> (CategoricalTrj, f64) {
+impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
+    type Sample = CatWtdTrj;
+    type Samples = CatWtdTrjs;
+
+    #[inline]
+    fn sample_by_length(&mut self, max_length: usize) -> Self::Sample {
+        // Delegate to generic function.
+        self.sample_by_length_or_time(max_length, f64::MAX)
+    }
+
+    #[inline]
+    fn sample_by_time(&mut self, max_time: f64) -> Self::Sample {
+        // Delegate to generic function.
+        self.sample_by_length_or_time(usize::MAX, max_time)
+    }
+
+    fn sample_by_length_or_time(&mut self, max_length: usize, max_time: f64) -> Self::Sample {
         // Get shortened variable type.
-        use CategoricalTrjEvT as E;
+        use CatTrjEvT as E;
 
         // Assert the model and the evidences have the same labels.
         assert_eq!(
             self.model.labels(),
-            evidence.labels(),
+            self.evidence.labels(),
             "The model and the evidences must have the same variables."
         );
         // Assert the model and the evidences have the same states.
         assert_eq!(
             self.model.states(),
-            evidence.states(),
+            self.evidence.states(),
             "The model and the evidences must have the same states."
         );
         // Assert length is positive.
@@ -482,16 +470,17 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         let mut sample_times = Vec::new();
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(evidence);
+        let evidence = self.sample_evidence();
 
         // Get the initial state distribution.
         let initial_distribution = self.model.initial_distribution();
         // Get the initial evidence.
-        let initial_evidence = evidence.initial_evidence();
+        let initial_evidence = &evidence.initial_evidence();
         // Initialize the sampler for the initial state.
-        let mut initial_sampler = ImportanceSampler::new(self.rng, initial_distribution);
+        let mut initial_sampler =
+            ImportanceSampler::new(self.rng, initial_distribution, initial_evidence);
         // Sample the initial states with given initial evidence.
-        let (mut event, mut weight) = initial_sampler.sample(&initial_evidence);
+        let (mut event, mut weight) = initial_sampler.sample();
 
         // Append the initial state to the trajectory.
         sample_events.push(event.clone());
@@ -514,7 +503,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
         //  2. the time is less than max_time ...
         while sample_events.len() < max_length && time < max_time {
             // Get evidence of the vertex.
-            let e_i = &evidence.evidences()[i];
+            let e_i = &evidence.values()[i];
 
             // Cast the state to usize.
             let x = event[i] as usize;
@@ -629,9 +618,67 @@ impl<R: Rng> ImportanceSampler<'_, R, CategoricalCTBN> {
             .expect("Failed to convert times to 1D array.");
 
         // Construct the trajectory.
-        let trajectory = CategoricalTrj::new(states, sample_events, sample_times);
+        let trajectory = CatTrj::new(states, sample_events, sample_times);
 
         // Return the trajectory and its weight.
-        (trajectory, weight)
+        (trajectory, weight).into()
+    }
+
+    #[inline]
+    fn sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples {
+        (0..n).map(|_| self.sample_by_length(max_length)).collect()
+    }
+
+    #[inline]
+    fn sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples {
+        (0..n).map(|_| self.sample_by_time(max_time)).collect()
+    }
+
+    #[inline]
+    fn sample_n_by_length_or_time(
+        &mut self,
+        max_length: usize,
+        max_time: f64,
+        n: usize,
+    ) -> Self::Samples {
+        (0..n)
+            .map(|_| self.sample_by_length_or_time(max_length, max_time))
+            .collect()
+    }
+}
+
+impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
+    type Samples = CatWtdTrjs;
+
+    #[inline]
+    fn par_sample_n_by_length(&mut self, max_length: usize, n: usize) -> Self::Samples {
+        self.par_sample_n_by_length_or_time(max_length, f64::MAX, n)
+    }
+
+    #[inline]
+    fn par_sample_n_by_time(&mut self, max_time: f64, n: usize) -> Self::Samples {
+        self.par_sample_n_by_length_or_time(usize::MAX, max_time, n)
+    }
+
+    fn par_sample_n_by_length_or_time(
+        &mut self,
+        max_length: usize,
+        max_time: f64,
+        n: usize,
+    ) -> Self::Samples {
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .map(|seed| {
+                // Create a new random number generator with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the random number generator and model.
+                let mut sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                // Sample the trajectory.
+                sampler.sample_by_length_or_time(max_length, max_time)
+            })
+            .collect()
     }
 }

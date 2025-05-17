@@ -1,31 +1,32 @@
+use approx::{AbsDiffEq, RelativeEq};
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
 use super::BN;
 use crate::{
-    datasets::CategoricalDataset,
-    distributions::{CPD, CategoricalCPD},
+    datasets::CatData,
+    distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
     types::{FxIndexMap, FxIndexSet},
 };
 
 /// A categorical Bayesian network (BN).
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
     /// The states of the variables.
     states: FxIndexMap<String, FxIndexSet<String>>,
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional probability distributions.
-    cpds: FxIndexMap<String, CategoricalCPD>,
+    cpds: FxIndexMap<String, CatCPD>,
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
 
 /// A type alias for the categorical Bayesian network.
-pub type CategoricalBN = CategoricalBayesianNetwork;
+pub type CatBN = CategoricalBayesianNetwork;
 
-impl CategoricalBN {
+impl CatBN {
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -38,11 +39,56 @@ impl CategoricalBN {
     }
 }
 
-impl BN for CategoricalBN {
+impl AbsDiffEq for CatBN {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.states.eq(&other.states)
+            && self.graph.eq(&other.graph)
+            && self.topological_order.eq(&other.topological_order)
+            && self
+                .cpds
+                .iter()
+                .zip(&other.cpds)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
+                })
+    }
+}
+
+impl RelativeEq for CatBN {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        self.states.eq(&other.states)
+            && self.graph.eq(&other.graph)
+            && self.topological_order.eq(&other.topological_order)
+            && self
+                .cpds
+                .iter()
+                .zip(&other.cpds)
+                .all(|((label, cpd), (other_label, other_cpd))| {
+                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
+                })
+    }
+}
+
+impl BN for CatBN {
     type Labels = <DiGraph as Graph>::Labels;
-    type CPD = CategoricalCPD;
+    type CPD = CatCPD;
     type Sample = Array1<u8>;
-    type Dataset = CategoricalDataset;
+    type Samples = CatData;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where

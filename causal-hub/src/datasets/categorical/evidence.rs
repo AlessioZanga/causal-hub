@@ -1,8 +1,10 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 
-use super::CategoricalTrjEvT;
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::{
+    datasets::CatTrjEvT,
+    types::{FxIndexMap, FxIndexSet},
+};
 
 /// Categorical evidence type.
 #[derive(Clone, Debug)]
@@ -30,13 +32,13 @@ pub enum CategoricalEvidenceType {
 }
 
 /// A type alias for the categorical evidence type.
-pub type CategoricalEvT = CategoricalEvidenceType;
+pub type CatEvT = CategoricalEvidenceType;
 
-impl From<CategoricalTrjEvT> for CategoricalEvidenceType {
-    fn from(evidence: CategoricalTrjEvT) -> Self {
+impl From<CatTrjEvT> for CategoricalEvidenceType {
+    fn from(evidence: CatTrjEvT) -> Self {
         // Get shortened variable types.
-        use CategoricalEvT as U;
-        use CategoricalTrjEvT as T;
+        use CatEvT as U;
+        use CatTrjEvT as T;
         // Match the evidence type discard the temporal information.
         match evidence {
             T::CertainPositiveInterval { state, .. } => U::CertainPositive { state },
@@ -50,15 +52,16 @@ impl From<CategoricalTrjEvT> for CategoricalEvidenceType {
 }
 
 /// Categorical evidence structure.
+#[derive(Clone, Debug)]
 pub struct CategoricalEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
     cardinality: Array1<usize>,
-    evidences: FxIndexMap<String, Option<CategoricalEvT>>,
+    evidences: FxIndexMap<String, Option<CatEvT>>,
 }
 
 /// A type alias for the categorical evidence structure.
-pub type CategoricalEv = CategoricalEvidence;
+pub type CatEv = CategoricalEvidence;
 
 impl CategoricalEvidence {
     /// Creates a new categorical evidence structure.
@@ -78,7 +81,7 @@ impl CategoricalEvidence {
         J: IntoIterator<Item = L>,
         K: AsRef<str>,
         L: AsRef<str>,
-        M: IntoIterator<Item = (N, CategoricalEvT)>,
+        M: IntoIterator<Item = (N, CatEvT)>,
         N: AsRef<str>,
     {
         // Initialize variables counter.
@@ -135,7 +138,7 @@ impl CategoricalEvidence {
         let cardinality = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
-        use CategoricalEvT as E;
+        use CatEvT as E;
 
         // Allocate evidences.
         let mut evidences: FxIndexMap<_, Option<_>> =
@@ -290,7 +293,7 @@ impl CategoricalEvidence {
     /// A reference to the evidences of the evidence.
     ///
     #[inline]
-    pub const fn evidences(&self) -> &FxIndexMap<String, Option<CategoricalEvT>> {
+    pub const fn evidences(&self) -> &FxIndexMap<String, Option<CatEvT>> {
         &self.evidences
     }
 }

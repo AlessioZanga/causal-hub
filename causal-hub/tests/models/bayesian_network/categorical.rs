@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        distributions::{CPD, CategoricalCPD},
+        distributions::{CPD, CatCPD},
         graphs::{DiGraph, Graph},
-        models::{BN, CategoricalBN},
+        models::{BN, CatBN},
     };
     use ndarray::prelude::*;
 
@@ -17,13 +17,13 @@ mod tests {
 
         // Initialize the distributions.
         let cpds = vec![
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(A)
                 ("A", vec!["no", "yes"]),        //
                 Vec::<(&str, Vec<&str>)>::new(), //
                 array![[0.1, 0.9]],              //
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(B | A)
                 ("B", vec!["no", "yes"]),       //
                 vec![("A", vec!["no", "yes"])], //
@@ -32,7 +32,7 @@ mod tests {
                     [0.4, 0.6], //
                 ],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(C | A, B)
                 ("C", vec!["no", "yes"]), //
                 vec![
@@ -48,7 +48,7 @@ mod tests {
             ),
         ];
         // Initialize the model.
-        let bn = CategoricalBN::new(graph, cpds);
+        let bn = CatBN::new(graph, cpds);
 
         // Check the labels.
         assert!(bn.labels().iter().eq(["A", "B", "C"]));
@@ -107,20 +107,20 @@ mod tests {
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
         let cpds = vec![
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(A)
                 ("A", vec!["no", "yes"]),
                 Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(B | A)
                 ("B", vec!["no", "yes"]),
                 vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
-        let _ = CategoricalBN::new(graph, cpds);
+        let _ = CatBN::new(graph, cpds);
     }
 
     #[test]
@@ -131,26 +131,26 @@ mod tests {
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
         let cpds = vec![
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(A)
                 ("A", vec!["no", "yes"]),
                 Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(A)
                 ("A", vec!["no", "yes"]),
                 Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(B | A)
                 ("B", vec!["no", "yes"]),
                 vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
-        let _ = CategoricalBN::new(graph, cpds);
+        let _ = CatBN::new(graph, cpds);
     }
 
     #[test]
@@ -160,25 +160,25 @@ mod tests {
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         let cpds = vec![
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(A)
                 ("A", vec!["no", "yes"]),
                 Vec::<(&str, Vec<&str>)>::new(),
                 array![[0.1, 0.9]],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(B | A)
                 ("B", vec!["no", "yes"]),
                 vec![("A", vec!["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
-            CategoricalCPD::new(
+            CatCPD::new(
                 // P(C | A, B)
                 ("C", vec!["no", "yes"]),
                 vec![("A", vec!["no", "yes"]), ("B", vec!["no", "yes"])],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             ),
         ];
-        let _ = CategoricalBN::new(graph, cpds);
+        let _ = CatBN::new(graph, cpds);
     }
 }

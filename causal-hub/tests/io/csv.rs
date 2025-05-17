@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        datasets::{CategoricalDataset, Dataset},
+        datasets::{CatData, Dataset},
         io::FromCsvReader,
     };
     use csv::ReaderBuilder;
@@ -19,7 +19,7 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let dataset = CategoricalDataset::from_csv_reader(reader);
+        let dataset = CatData::from_csv_reader(reader);
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
@@ -60,7 +60,7 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _ = CategoricalDataset::from_csv_reader(reader);
+        let _ = CatData::from_csv_reader(reader);
     }
 
     #[test]
@@ -76,6 +76,6 @@ mod tests {
         let reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(reader.as_bytes());
-        let _ = CategoricalDataset::from_csv_reader(reader);
+        let _ = CatData::from_csv_reader(reader);
     }
 }

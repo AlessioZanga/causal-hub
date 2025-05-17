@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::datasets::{CategoricalDataset, Dataset};
+    use causal_hub::datasets::{CatData, Dataset};
     use ndarray::prelude::*;
 
     #[test]
@@ -16,7 +16,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CategoricalDataset::new(variables, values.clone());
+        let dataset = CatData::new(variables, values.clone());
 
         assert!(dataset.labels().iter().eq(["A", "B", "C"]));
         assert!(dataset.labels().iter().is_sorted());
@@ -50,7 +50,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CategoricalDataset::new(variables, values);
+        let dataset = CatData::new(variables, values);
 
         assert_eq!(
             dataset.to_string(),
