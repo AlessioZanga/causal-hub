@@ -3,12 +3,14 @@ use rand::{Rng, seq::index::sample};
 
 use crate::datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset};
 
+/// A struct representing a random evidence generator.
 pub struct RandomEvidence<'a, R, D> {
     rng: &'a mut R,
     data: &'a D,
     p: f64,
 }
 
+/// A type alias for the random evidence generator.
 pub type RngEv<'a, R, D> = RandomEvidence<'a, R, D>;
 
 impl<'a, R, D> RandomEvidence<'a, R, D> {
@@ -36,6 +38,12 @@ impl<'a, R, D> RandomEvidence<'a, R, D> {
 }
 
 impl<R: Rng> RngEv<'_, R, CatTrj> {
+    /// Generates random evidence from the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A `CatTrjEv` instance containing the random evidence.
+    ///
     pub fn random(&mut self) -> CatTrjEv {
         // Get shortened variable type.
         use CatTrjEvT as E;
@@ -84,6 +92,12 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
 }
 
 impl<R: Rng> RngEv<'_, R, CatTrjs> {
+    /// Generates random evidence from the trajectories.
+    ///
+    /// # Returns
+    ///
+    /// A `CatTrjsEv` instance containing the random evidence.
+    ///
     pub fn random(&mut self) -> CatTrjsEv {
         self.data
             .values()
