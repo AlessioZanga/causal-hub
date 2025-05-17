@@ -418,6 +418,8 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 // Otherwise, return one.
                 1.
             })
+            // Check numeric stability.
+            .map(|w| if !w.is_finite() { 1. } else { w.clamp(0., 1.) })
             // Collect the weights.
             .product()
     }

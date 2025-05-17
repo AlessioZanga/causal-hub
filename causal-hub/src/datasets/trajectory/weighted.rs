@@ -49,7 +49,8 @@ impl CatWtdTrj {
         // Assert that the weight is in the range [0, 1].
         assert!(
             (0.0..=1.0).contains(&weight),
-            "Weight must be in the range [0, 1]"
+            "Weight must be in the range [0, 1], but got {}.",
+            weight
         );
 
         Self { trajectory, weight }

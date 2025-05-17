@@ -132,15 +132,23 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let sample_size = Some(n);
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some({
+            //
             // Compute the sample log-likelihood as the sum of:
             //
             //   1. ln(tau) * (alpha + 1) - ln_gamma(alpha + 1)
             //   2. + ln_gamma(n_xz + alpha + 1) - ln(t_xz + tau) * (n_xz + alpha + 1)
             //
-            let mut sll = f64::ln(tau) * (alpha + 1.) - ln_gamma(alpha + 1.);
-            sll += (n_xz + alpha + 1.).mapv(ln_gamma).sum() - (t_xz + tau).mapv(ln_gamma).sum();
-
-            sll
+            ({
+                // Compute marginal sufficient statistics.
+                let n_z = n_xz.sum_axis(Axis(2));
+                let t_z = t_xz.sum_axis(Axis(2));
+                // Compute the sample log-likelihood.
+                f64::ln(tau) * (alpha + 1.)
+                - ln_gamma(alpha + 1.)                              // .
+                + ((&n_z + alpha + 1.).mapv(ln_gamma)               // .
+                - (t_z + tau).mapv(f64::ln) * (n_z + alpha + 1.))
+            })
+            .sum()
         });
 
         // Subset the conditioning labels, states and cardinality.

@@ -17,7 +17,7 @@ pub struct CategoricalSample {
 /// A type alias for a categorical sample.
 pub type CatSample = CategoricalSample;
 
-// TODO: Implement `CatSample` methods.
+// FIXME: Implement `CatSample` methods.
 
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]

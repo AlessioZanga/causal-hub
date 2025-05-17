@@ -12,6 +12,8 @@ pub mod datasets;
 pub mod distributions;
 /// Estimators for probability distributions.
 pub mod estimators;
+/// Generators for random datasets.
+pub mod generators;
 /// Graph structures and algorithms.
 pub mod graphs;
 /// Input/output utilities.

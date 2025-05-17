@@ -1,5 +1,6 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
+use rayon::prelude::*;
 
 use crate::{
     datasets::{CatEv, Dataset},
@@ -290,17 +291,17 @@ impl CatTrjEv {
                     .unwrap_or_else(|| unreachable!())
             });
 
-            // Assert starting time is less than ending time.
+            // Assert starting time is less or equal than ending time.
             assert!(
-                evidence.iter().all(|e| e.start_time() < e.end_time()),
-                "Starting time must be less than ending time."
+                evidence.iter().all(|e| e.start_time() <= e.end_time()),
+                "Starting time must be less or equal than ending time."
             );
-            // Assert current ending time is less than next starting time.
+            // Assert current ending time is less or equal than next starting time.
             assert!(
                 evidence
                     .windows(2)
-                    .all(|e| e[0].end_time() < e[1].start_time()),
-                "Ending time must be less than starting time."
+                    .all(|e| e[0].end_time() <= e[1].start_time()),
+                "Ending time must be less or equal than next starting time."
             );
             // Assert states distributions have the correct size.
             assert!(
@@ -419,5 +420,157 @@ impl Dataset for CatTrjEv {
     #[inline]
     fn sample_size(&self) -> usize {
         self.evidences.values().map(|x| x.len()).sum()
+    }
+}
+
+/// A collection of multivariate trajectories evidence.
+#[derive(Clone, Debug)]
+pub struct CategoricalTrajectoriesEvidence {
+    labels: FxIndexSet<String>,
+    states: FxIndexMap<String, FxIndexSet<String>>,
+    cardinality: Array1<usize>,
+    values: Vec<CatTrjEv>,
+}
+
+/// A type alias for a collection of multivariate trajectories evidence.
+pub type CatTrjsEv = CategoricalTrajectoriesEvidence;
+
+impl CatTrjsEv {
+    /// Constructs a new collection of trajectories evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `trajectories` - An iterator of `CategoricalTrajectoryEvidence` instances.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// * The trajectories have different labels.
+    /// * The trajectories have different states.
+    /// * The trajectories have different cardinality.
+    /// * The trajectories are empty.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `CategoricalTrajectoriesEvidence`.
+    ///
+    pub fn new<I>(values: I) -> Self
+    where
+        I: IntoIterator<Item = CatTrjEv>,
+    {
+        // Collect the trajectories into a vector.
+        let values: Vec<_> = values.into_iter().collect();
+
+        // Assert every trajectory has the same labels.
+        assert!(
+            values
+                .windows(2)
+                .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
+            "All trajectories must have the same labels."
+        );
+        // Assert every trajectory has the same states.
+        assert!(
+            values
+                .windows(2)
+                .all(|trjs| trjs[0].states().eq(trjs[1].states())),
+            "All trajectories must have the same states."
+        );
+        // Assert every trajectory has the same cardinality.
+        assert!(
+            values
+                .windows(2)
+                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
+            "All trajectories must have the same cardinality."
+        );
+
+        // Get the labels, states and cardinality from the first trajectory.
+        let trj = values.first().expect("No trajectory in the dataset.");
+        let labels = trj.labels().clone();
+        let states = trj.states().clone();
+        let cardinality = trj.cardinality().clone();
+
+        Self {
+            labels,
+            states,
+            cardinality,
+            values,
+        }
+    }
+
+    /// Returns the states of the trajectories evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the states of the trajectories evidence.
+    ///
+    #[inline]
+    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+        &self.states
+    }
+
+    /// Returns the cardinality of the trajectories evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the cardinality of the trajectories evidence.
+    ///
+    #[inline]
+    pub fn cardinality(&self) -> &Array1<usize> {
+        &self.cardinality
+    }
+}
+
+impl FromIterator<CatTrjEv> for CatTrjsEv {
+    #[inline]
+    fn from_iter<I: IntoIterator<Item = CatTrjEv>>(iter: I) -> Self {
+        Self::new(iter)
+    }
+}
+
+impl FromParallelIterator<CatTrjEv> for CatTrjsEv {
+    #[inline]
+    fn from_par_iter<I: IntoParallelIterator<Item = CatTrjEv>>(iter: I) -> Self {
+        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+    }
+}
+
+impl<'a> IntoIterator for &'a CatTrjsEv {
+    type IntoIter = std::slice::Iter<'a, CatTrjEv>;
+    type Item = &'a CatTrjEv;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.values.iter()
+    }
+}
+
+impl<'a> IntoParallelRefIterator<'a> for CatTrjsEv {
+    type Item = &'a CatTrjEv;
+    type Iter = rayon::slice::Iter<'a, CatTrjEv>;
+
+    #[inline]
+    fn par_iter(&'a self) -> Self::Iter {
+        self.values.par_iter()
+    }
+}
+
+impl Dataset for CatTrjsEv {
+    type Labels = FxIndexSet<String>;
+    type Values = Vec<CatTrjEv>;
+
+    #[inline]
+    fn labels(&self) -> &Self::Labels {
+        &self.labels
+    }
+
+    #[inline]
+    fn values(&self) -> &Self::Values {
+        &self.values
+    }
+
+    #[inline]
+    fn sample_size(&self) -> usize {
+        self.values.iter().map(|x| x.sample_size()).sum()
     }
 }
