@@ -24,5 +24,5 @@ pub mod random;
 pub mod samplers;
 /// Types.
 pub mod types;
-/// Utilities functions.
+/// Utility functions.
 pub mod utils;
