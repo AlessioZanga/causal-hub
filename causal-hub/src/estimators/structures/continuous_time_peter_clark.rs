@@ -87,10 +87,10 @@ where
             // Get the parameters of the chi-squared distribution.
             let k_xz = n_xz.index_axis(Axis(0), i).sum_axis(Axis(1));
             let k_xs = n_xs.index_axis(Axis(0), j).sum_axis(Axis(1));
-            let k = (&k_xz / &k_xs).mapv(f64::sqrt).insert_axis(Axis(1));
+            let k = (&k_xz / &k_xs).sqrt().insert_axis(Axis(1));
             let l = (&k).recip();
             // Compute the chi-squared statistic.
-            let mut chi_sq = (&k * &k_xs - &l * &k_xz).mapv(|x| x.powi(2)) / (&k_xz + &k_xs);
+            let mut chi_sq = (&k * &k_xs - &l * &k_xz).powi(2) / (&k_xz + &k_xs);
             chi_sq.diag_mut().fill(0.);
             let chi_sq = chi_sq.sum_axis(Axis(1));
             // Initialize the chi-squared distribution.

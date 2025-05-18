@@ -68,7 +68,7 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         // Set epsilon to avoid ln(0).
         let eps = f64::MIN_POSITIVE;
         // Compute the sample log-likelihood, avoiding ln(0).
-        let sample_log_likelihood = Some((&n_xz * (&parameters + eps).mapv(f64::ln)).sum());
+        let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
 
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
@@ -138,7 +138,7 @@ impl MLE<'_, CatTrj> {
                 q.diag_mut().fill(0.);
             });
             // Compute the sample log-likelihood as -t * q + n * ln(q + eps).
-            (-&t_xz * &q_xz).sum() + (&n_xz * (q_xz + eps).mapv(f64::ln)).sum()
+            (-&t_xz * &q_xz).sum() + (&n_xz * (q_xz + eps).ln()).sum()
         });
 
         // Subset the conditioning labels, states and cardinality.

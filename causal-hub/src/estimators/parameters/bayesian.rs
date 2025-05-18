@@ -81,7 +81,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         // Set the sample size.
         let sample_size = Some(n);
         // Compute the sample log-likelihood.
-        let sample_log_likelihood = Some((&n_xz * parameters.mapv(f64::ln)).sum());
+        let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
 
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
@@ -163,7 +163,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
                 f64::ln(tau) * (alpha + 1.)
                 - ln_gamma(alpha + 1.)                  // .
                 + ((&n_z + 1.).mapv(ln_gamma)           // .
-                - (t_z).mapv(f64::ln) * (n_z + 1.))
+                - t_z.ln() * (n_z + 1.))
             })
             .sum()
         });
