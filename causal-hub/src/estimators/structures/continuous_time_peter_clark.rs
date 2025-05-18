@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// A trait for conditional independence testing.
-pub trait ConditionaIndependenceTest {
+pub trait ConditionalIndependenceTest {
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -26,7 +26,7 @@ pub trait ConditionaIndependenceTest {
 }
 
 /// A type alias for a conditional independence test.
-pub use ConditionaIndependenceTest as CIT;
+pub use ConditionalIndependenceTest as CIT;
 
 /// A struct representing the Chi-squared test.
 pub struct ChiSquaredTest<'a, E> {
@@ -85,21 +85,34 @@ where
             // Compute the corresponding index for the separation set.
             let i = j % c_s + (j / (c_s * c_y)) * c_s;
             // Get the parameters of the chi-squared distribution.
-            let k_xz = n_xz.index_axis(Axis(0), i).sum_axis(Axis(1));
-            let k_xs = n_xs.index_axis(Axis(0), j).sum_axis(Axis(1));
-            let k = (&k_xz / &k_xs).sqrt().insert_axis(Axis(1));
+            let k_xz = n_xz.index_axis(Axis(0), i);
+            let k_xs = n_xs.index_axis(Axis(0), j);
+            // Compute the scaling factors.
+            let k = &k_xz.sum_axis(Axis(1)) / &k_xs.sum_axis(Axis(1));
+            let k = k.sqrt().insert_axis(Axis(1));
             let l = (&k).recip();
+            // Compute the chi-squared statistic for uneven number of samples.
+            let chi_sq_num = (&k * &k_xs - &l * &k_xz).powi(2);
+            let chi_sq_den = &k_xs + &k_xz;
+            let chi_sq = chi_sq_num / &chi_sq_den;
+            // Fix division by zero.
+            let chi_sq = chi_sq.mapv(|x| if x.is_finite() { x } else { 0. });
             // Compute the chi-squared statistic.
-            let mut chi_sq = (&k * &k_xs - &l * &k_xz).powi(2) / (&k_xz + &k_xs);
-            chi_sq.diag_mut().fill(0.);
             let chi_sq = chi_sq.sum_axis(Axis(1));
-            // Initialize the chi-squared distribution.
-            let n = ChiSquared::new((chi_sq.dim() - 1) as f64).unwrap();
             // For each chi-squared statistic ...
             chi_sq
                 .into_iter()
-                // Compute the p-value.
-                .map(|x| n.cdf(x))
+                .zip(chi_sq_den.rows())
+                .map(|(c, d)| {
+                    // Count the non-zero degrees of freedom.
+                    let dof = d.mapv(|d| (d > 0.) as usize).sum();
+                    // Check if the degrees of freedom is at least 2.
+                    let dof = if dof >= 2 { dof } else { 2 };
+                    // Initialize the chi-squared distribution.
+                    let n = ChiSquared::new((dof - 1) as f64).unwrap();
+                    // Compute the p-value.
+                    n.cdf(c)
+                })
                 // Check if the p-value is in the alpha range.
                 .all(|p_value| p_value < (1. - self.alpha))
         })
@@ -250,10 +263,8 @@ where
 
                 // For each parent ...
                 for &j in &pa_i {
-                    // Filter out X_j from the parents of X_i.
-                    let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
-                    for s_ij in pa_i_not_j.combinations(k) {
+                    for s_ij in pa_i.iter().filter(|&&z| z != j).cloned().combinations(k) {
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
                         if self.null_time.test(i, j, &s_ij) && self.null_state.test(i, j, &s_ij) {
                             // Add the parent to the set of vertices to remove.

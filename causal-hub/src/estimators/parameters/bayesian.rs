@@ -72,11 +72,8 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
 
         // Align the dimensions of the counts.
         let n_z = n_z.insert_axis(Axis(1));
-        // Add the prior to the counts.
-        let n_xz = n_xz + alpha;
-        let n_z = n_z + alpha * cards[x] as f64;
         // Compute the parameters by normalizing the counts with the prior.
-        let parameters = &n_xz / &n_z;
+        let parameters = (&n_xz + alpha) / (&n_z + alpha * cards[x] as f64);
 
         // Set the sample size.
         let sample_size = Some(n);
@@ -130,11 +127,8 @@ impl BE<'_, CatTrj, (usize, f64)> {
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
-        // Add the prior to the counts.
-        let n_xz = n_xz + alpha;
-        let t_xz = t_xz + tau;
         // Estimate the parameters by normalizing the counts.
-        let mut parameters = &n_xz / &t_xz;
+        let mut parameters = (&n_xz + alpha) / (&t_xz + tau);
         // Fix the diagonal.
         parameters.outer_iter_mut().for_each(|mut q| {
             // Fill the diagonal with zeros.
