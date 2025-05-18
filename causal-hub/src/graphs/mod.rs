@@ -16,7 +16,7 @@ pub trait Graph {
     /// The type of the edges.
     type Edges: IntoIterator<Item = (usize, usize)>;
 
-    /// Creates an empty directed graph with the given labels.
+    /// Creates an empty graph with the given labels.
     ///
     /// # Arguments
     ///
@@ -35,6 +35,30 @@ pub trait Graph {
     /// A new graph instance.
     ///
     fn empty<I, V>(labels: I) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>;
+
+    /// Creates a complete graph with the given labels.
+    ///
+    /// # Arguments
+    ///
+    /// * `labels` - The labels of the vertices in the graph.
+    ///
+    /// # Notes
+    ///
+    /// * Labels will be sorted in alphabetical order.
+    /// * No self-loops are created.
+    ///
+    /// # Panics
+    ///
+    /// * If the labels are not unique.
+    ///
+    /// # Returns
+    ///
+    /// A new graph instance.
+    ///
+    fn complete<I, V>(labels: I) -> Self
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>;

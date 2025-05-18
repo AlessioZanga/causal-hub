@@ -50,7 +50,10 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
 impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
-    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
+    // (conditional counts, marginal counts, sample size)
+    type SS = (Array2<f64>, Array1<f64>, f64);
+
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -67,32 +70,43 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         // Cast alpha to floating point.
         let alpha = alpha as f64;
 
+        // Align the dimensions of the counts.
+        let n_z = n_z.insert_axis(Axis(1));
+        // Add the prior to the counts.
+        let n_xz = n_xz + alpha;
+        let n_z = n_z + alpha * cards[x] as f64;
         // Compute the parameters by normalizing the counts with the prior.
-        let parameters = (&n_xz + alpha) / (n_z.insert_axis(Axis(1)) + alpha * cards[x] as f64);
+        let parameters = &n_xz / &n_z;
 
         // Set the sample size.
         let sample_size = Some(n);
         // Compute the sample log-likelihood.
-        let sample_log_likelihood = Some((n_xz * parameters.mapv(f64::ln)).sum());
+        let sample_log_likelihood = Some((&n_xz * parameters.mapv(f64::ln)).sum());
 
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
-
-        CatCPD::with_sample_size(
+        // Construct the CPD.
+        let cpd_xz = CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
             sample_size,
             sample_log_likelihood,
-        )
+        );
+
+        // Remove the last axis of the counts.
+        let n_z = n_z.remove_axis(Axis(1));
+
+        // Return the sufficient statistics and the CPD.
+        ((n_xz, n_z, n), cpd_xz)
     }
 }
 
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
-    fn fit_cim(
+    fn fit_transform_cim(
         x: usize,
         z: &[usize],
         n_xz: Array3<f64>,
@@ -100,7 +114,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         n: f64,
         prior: (usize, f64),
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CatCIM {
+    ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
         // Assert alpha is positive.
@@ -116,8 +130,11 @@ impl BE<'_, CatTrj, (usize, f64)> {
 
         // Align the dimensions of the counts and times.
         let t_xz = t_xz.insert_axis(Axis(2));
+        // Add the prior to the counts.
+        let n_xz = n_xz + alpha;
+        let t_xz = t_xz + tau;
         // Estimate the parameters by normalizing the counts.
-        let mut parameters = (&n_xz + alpha) / (&t_xz + tau);
+        let mut parameters = &n_xz / &t_xz;
         // Fix the diagonal.
         parameters.outer_iter_mut().for_each(|mut q| {
             // Fill the diagonal with zeros.
@@ -144,9 +161,9 @@ impl BE<'_, CatTrj, (usize, f64)> {
                 let t_z = t_xz.sum_axis(Axis(2));
                 // Compute the sample log-likelihood.
                 f64::ln(tau) * (alpha + 1.)
-                - ln_gamma(alpha + 1.)                              // .
-                + ((&n_z + alpha + 1.).mapv(ln_gamma)               // .
-                - (t_z + tau).mapv(f64::ln) * (n_z + alpha + 1.))
+                - ln_gamma(alpha + 1.)                  // .
+                + ((&n_z + 1.).mapv(ln_gamma)           // .
+                - (t_z).mapv(f64::ln) * (n_z + 1.))
             })
             .sum()
         });
@@ -155,14 +172,20 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
-
-        CatCIM::with_sample_size(
+        // Construct the CIM.
+        let cim_xz = CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
             sample_size,
             sample_log_likelihood,
-        )
+        );
+
+        // Remove the last axis of the times.
+        let t_xz = t_xz.remove_axis(Axis(2));
+
+        // Return the sufficient statistics and the CIM.
+        ((n_xz, t_xz, n), cim_xz)
     }
 }
 
@@ -170,13 +193,16 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
+        // (conditional counts, conditional time spent, sample size)
+        type SS = (Array3<f64>, Array2<f64>, f64);
+
+        fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.
             let (n_xz, t_xz, n) = SSE::new(self.dataset).fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+            BE::<'_, CatTrj, _>::fit_transform_cim(x, z, n_xz, t_xz, n, prior, states)
         }
     }
 
@@ -186,13 +212,16 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
+        // (conditional counts, conditional time spent, sample size)
+        type SS = (Array3<f64>, Array2<f64>, f64);
+
+        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.
             let (n_xz, t_xz, n) = SSE::new(self.dataset).par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(x, z, n_xz, t_xz, n, prior, states)
+            BE::<'_, CatTrj, _>::fit_transform_cim(x, z, n_xz, t_xz, n, prior, states)
         }
     }
 

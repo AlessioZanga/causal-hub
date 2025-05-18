@@ -6,7 +6,7 @@ use crate::datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset};
 /// A struct representing a random evidence generator.
 pub struct RandomEvidence<'a, R, D> {
     rng: &'a mut R,
-    data: &'a D,
+    dataset: &'a D,
     p: f64,
 }
 
@@ -19,7 +19,7 @@ impl<'a, R, D> RandomEvidence<'a, R, D> {
     /// # Arguments
     ///
     /// * `rng` - A mutable reference to a random number generator.
-    /// * `data` - A reference to the dataset.
+    /// * `dataset` - A reference to the dataset.
     /// * `p` - The probability of selecting an evidence.
     ///
     /// # Panics
@@ -29,11 +29,11 @@ impl<'a, R, D> RandomEvidence<'a, R, D> {
     /// # Returns
     ///
     /// A new `RandomEvidence` instance.
-    pub fn new(rng: &'a mut R, data: &'a D, p: f64) -> Self {
+    pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Self {
         // Assert that the probability is in [0, 1].
         assert!((0.0..=1.0).contains(&p), "Probability must be in [0, 1]");
 
-        Self { rng, data, p }
+        Self { rng, dataset, p }
     }
 }
 
@@ -49,13 +49,13 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
         use CatTrjEvT as E;
 
         // Get times.
-        let times = self.data.times();
+        let times = self.dataset.times();
         // Get events.
-        let events = self.data.values().rows();
+        let events = self.dataset.values().rows();
         // Zip times and events.
         let times_events = times.into_iter().zip(events);
         // Get the labels.
-        let labels = self.data.labels();
+        let labels = self.dataset.labels();
 
         // Iterate over (time, event) pairs.
         let evidence = times_events
@@ -87,7 +87,7 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
             .flatten();
 
         // Collect the evidence.
-        CatTrjEv::new(self.data.states(), evidence)
+        CatTrjEv::new(self.dataset.states(), evidence)
     }
 }
 
@@ -99,7 +99,7 @@ impl<R: Rng> RngEv<'_, R, CatTrjs> {
     /// A `CatTrjsEv` instance containing the random evidence.
     ///
     pub fn random(&mut self) -> CatTrjsEv {
-        self.data
+        self.dataset
             .values()
             .iter()
             .map(|trj| RngEv::new(&mut self.rng, trj, self.p).random())

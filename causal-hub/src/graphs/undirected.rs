@@ -82,6 +82,40 @@ impl Graph for UnGraph {
         }
     }
 
+    fn complete<I, V>(labels: I) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>,
+    {
+        // Initialize labels counter.
+        let mut n = 0;
+        // Collect the labels.
+        let mut labels: FxIndexSet<_> = labels
+            .into_iter()
+            .inspect(|_| n += 1)
+            .map(|x| x.as_ref().to_owned())
+            .collect();
+
+        // Assert no duplicate labels.
+        assert_eq!(labels.len(), n, "Labels must be unique.");
+
+        // Sort the labels.
+        labels.sort();
+
+        // Initialize the adjacency matrix with `true` values.
+        let mut adjacency_matrix: Array2<_> = Array::from_elem((n, n), true);
+        // Set the diagonal to `false` to avoid self-loops.
+        adjacency_matrix.diag_mut().fill(false);
+
+        // Debug assert to check the sorting of the labels.
+        debug_assert!(labels.iter().is_sorted(), "Vertices labels must be sorted.");
+
+        Self {
+            labels,
+            adjacency_matrix,
+        }
+    }
+
     fn labels(&self) -> &Self::Labels {
         &self.labels
     }
