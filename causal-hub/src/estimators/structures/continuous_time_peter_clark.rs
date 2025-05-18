@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
+use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
@@ -263,8 +264,10 @@ where
 
                 // For each parent ...
                 for &j in &pa_i {
+                    // Filter out the parent.
+                    let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
-                    for s_ij in pa_i.iter().filter(|&&z| z != j).cloned().combinations(k) {
+                    for s_ij in pa_i_not_j.combinations(k) {
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
                         if self.null_time.test(i, j, &s_ij) && self.null_state.test(i, j, &s_ij) {
                             // Add the parent to the set of vertices to remove.
@@ -287,6 +290,78 @@ where
                 k += 1;
             }
         }
+
+        // Return the fitted graph.
+        graph
+    }
+}
+
+impl<'a, T, S> ContinuousTimePeterClark<'a, T, S>
+where
+    T: CIT + Sync,
+    S: CIT + Sync,
+{
+    /// Execute the CTPC algorithm and return the fitted graph in parallel.
+    ///
+    /// # Returns
+    ///
+    /// The fitted graph.
+    ///
+    pub fn par_fit(&self) -> DiGraph {
+        // For each vertex in the graph ...
+        let parents: Vec<_> = self
+            .initial_graph
+            .vertices()
+            .into_par_iter()
+            .map(|i| {
+                // Get the parents of the vertex.
+                let mut pa_i = self.initial_graph.parents(i);
+
+                // Initialize the counter.
+                let mut k = 0;
+
+                // While the counter is smaller than the number of parents ...
+                while k < pa_i.len() {
+                    // Filter the parents in parallel.
+                    pa_i = pa_i
+                        .par_iter()
+                        .filter_map(|&j| {
+                            // Filter out the parent.
+                            let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
+                            // For any combination of size k of Pa(X_i) \ { X_j } ...
+                            for s_ij in pa_i_not_j.combinations(k) {
+                                // If X_i _||_ X_j | S_{X_i, X_j} ...
+                                if self.null_time.test(i, j, &s_ij)
+                                    && self.null_state.test(i, j, &s_ij)
+                                {
+                                    // Add the parent to the set of vertices to remove.
+                                    return None;
+                                }
+                            }
+                            // Otherwise, keep the parent.
+                            Some(j)
+                        })
+                        .collect();
+                    // Increment the counter.
+                    k += 1;
+                }
+
+                // Return the parents of the vertex.
+                pa_i
+            })
+            .collect();
+
+        // Initialize an empty graph.
+        let mut graph = DiGraph::empty(self.initial_graph.labels());
+
+        // Set the parents of each vertex.
+        parents.into_iter().enumerate().for_each(|(i, pa_i)| {
+            // For each parent ...
+            pa_i.into_iter().for_each(|j| {
+                // Add the edge to the graph.
+                graph.add_edge(j, i);
+            })
+        });
 
         // Return the fitted graph.
         graph
