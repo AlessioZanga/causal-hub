@@ -1,3 +1,2 @@
-mod bayesian;
-mod expectation_maximization;
-mod maximum_likelihood;
+mod parameters;
+mod structures;

@@ -38,7 +38,10 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
 }
 
 impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
-    fn fit(&self, x: usize, z: &[usize]) -> CatCPD {
+    // (conditional counts, marginal counts, sample size)
+    type SS = (Array2<f64>, Array1<f64>, f64);
+
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCPD) {
         // Get states and cardinality.
         let states = self.dataset.states();
 
@@ -54,8 +57,10 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
             self.dataset.labels()[x]
         );
 
+        // Align the dimensions of the counts.
+        let n_z = n_z.insert_axis(Axis(1));
         // Compute the parameters by normalizing the counts.
-        let parameters = &n_xz / n_z.insert_axis(Axis(1));
+        let parameters = &n_xz / &n_z;
 
         // Set the sample size.
         let sample_size = Some(n);
@@ -63,26 +68,32 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         // Set epsilon to avoid ln(0).
         let eps = f64::MIN_POSITIVE;
         // Compute the sample log-likelihood, avoiding ln(0).
-        let sample_log_likelihood = Some((n_xz * (&parameters + eps).mapv(f64::ln)).sum());
+        let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
 
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
-
-        CatCPD::with_sample_size(
+        // Construct the CPD.
+        let cpd_xz = CatCPD::with_sample_size(
             states,
             conditioning_states,
             parameters,
             sample_size,
             sample_log_likelihood,
-        )
+        );
+
+        // Remove the last axis of the counts.
+        let n_z = n_z.remove_axis(Axis(1));
+
+        // Return the sufficient statistics and the CPD.
+        ((n_xz, n_z, n), cpd_xz)
     }
 }
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
-    fn fit_cim(
+    fn fit_transform_cim(
         x: usize,
         z: &[usize],
         n_xz: Array3<f64>,
@@ -90,7 +101,7 @@ impl MLE<'_, CatTrj> {
         n: f64,
         labels: &FxIndexSet<String>,
         states: &FxIndexMap<String, FxIndexSet<String>>,
-    ) -> CatCIM {
+    ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
@@ -127,21 +138,27 @@ impl MLE<'_, CatTrj> {
                 q.diag_mut().fill(0.);
             });
             // Compute the sample log-likelihood as -t * q + n * ln(q + eps).
-            (-t_xz * &q_xz).sum() + (n_xz * (q_xz + eps).mapv(f64::ln)).sum()
+            (-&t_xz * &q_xz).sum() + (&n_xz * (q_xz + eps).ln()).sum()
         });
 
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
         let states = states.get_index(x).unwrap();
-
-        CatCIM::with_sample_size(
+        // Construct the CIM.
+        let cim_xz = CatCIM::with_sample_size(
             states,
             conditioning_states,
             parameters,
             sample_size,
             sample_log_likelihood,
-        )
+        );
+
+        // Remove the last axis of the times.
+        let t_xz = t_xz.remove_axis(Axis(2));
+
+        // Return the sufficient statistics and the CIM.
+        ((n_xz, t_xz, n), cim_xz)
     }
 }
 
@@ -149,7 +166,10 @@ impl MLE<'_, CatTrj> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {
-        fn fit(&self, x: usize, z: &[usize]) -> CatCIM {
+        // (conditional counts, conditional time spent, sample size)
+        type SS = (Array3<f64>, Array2<f64>, f64);
+
+        fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -159,7 +179,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             let (n_xz, t_xz, n) = sse.fit(x, z);
 
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, labels, states)
         }
     }
 
@@ -169,7 +189,10 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
-        fn par_fit(&self, x: usize, z: &[usize]) -> CatCIM {
+        // (conditional counts, conditional time spent, sample size)
+        type SS = (Array3<f64>, Array2<f64>, f64);
+
+        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -179,7 +202,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let (n_xz, t_xz, n) = sse.par_fit(x, z);
 
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_cim(x, z, n_xz, t_xz, n, labels, states)
+            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, labels, states)
         }
     }
 

@@ -9,8 +9,8 @@ mod tests {
             datasets::{CatTrjEv, CatTrjsEv, CatWtdTrjs, Dataset},
             distributions::CatCIM,
             estimators::{BE, EMBuilder, MLE, ParCTBNEstimator},
-            generators::RngEv,
             models::{CTBN, CatCTBN},
+            random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
         };
         use ndarray::prelude::*;
