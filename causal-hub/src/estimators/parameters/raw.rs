@@ -14,31 +14,21 @@ use crate::{
 /// Its purpose is to provide a starting point for the other estimators, like EM.
 ///
 #[derive(Clone, Copy, Debug)]
-pub struct RawEstimator<'a, E> {
-    evidence: &'a E,
+pub struct RawEstimator<D> {
+    dataset: D,
 }
 
 /// A type alias for a raw estimator.
-pub type RE<'a, E> = RawEstimator<'a, E>;
+pub type RE<D> = RawEstimator<D>;
 
-impl<'a, E> RawEstimator<'a, E> {
-    /// Creates a new raw estimator.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - A reference to the evidence to fit the estimator to.
-    ///
-    /// # Returns
-    ///
-    /// A new `RawEstimator` instance.
-    ///
-    #[inline]
-    pub const fn new(evidence: &'a E) -> Self {
-        Self { evidence }
+impl RE<CatTrj> {
+    pub fn new(evidence: &CatTrjEv) -> Self {
+        // Fill the evidence with the raw estimator.
+        let dataset = Self::fill(evidence);
+
+        Self { dataset }
     }
-}
 
-impl RE<'_, CatTrjEv> {
     /// Fills the evidence with the raw estimator.
     ///
     /// # Arguments
@@ -54,6 +44,12 @@ impl RE<'_, CatTrjEv> {
         use CatTrjEvT as E;
         // Set missing placeholder.
         const M: u8 = u8::MAX;
+
+        // Assert at least one evidence for each variable is present.
+        assert!(
+            evidence.values().iter().all(|(_, e)| e.len() > 0),
+            "At least one evidence for each variable is required."
+        );
 
         // Get labels and states.
         let states = evidence.states();
@@ -151,69 +147,45 @@ impl RE<'_, CatTrjEv> {
     }
 }
 
-impl CPDEstimator<CatCIM> for RE<'_, CatTrjEv> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
-        // Assert at least one evidence for each variable is present.
-        assert!(
-            self.evidence.values().iter().all(|(_, e)| e.len() > 0),
-            "At least one evidence for each variable is required."
-        );
+impl RE<CatTrjs> {
+    pub fn new(evidence: &CatTrjsEv) -> Self {
         // Fill the evidence with the raw estimator.
-        let dataset = Self::fill(self.evidence);
-        // Estimate the CIM with a uniform prior.
-        BE::new(&dataset, (1, 1.)).fit_transform(x, z)
-    }
-}
-
-impl CPDEstimator<CatCIM> for RE<'_, CatTrjsEv> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
-        // Assert at least one evidence for each variable is present.
-        assert!(
-            self.evidence
-                .values()
-                .iter()
-                .all(|e| e.values().iter().all(|(_, e)| e.len() > 0)),
-            "At least one evidence for each variable is required."
-        );
-        // Fill the evidence with the raw estimator.
-        let dataset: CatTrjs = self
-            .evidence
+        let dataset: CatTrjs = evidence
             .values()
-            .iter()
-            .map(RE::<CatTrjEv>::fill)
+            .par_iter()
+            .map(RE::<CatTrj>::fill)
             .collect();
-        // Estimate the CIM with a uniform prior.
-        BE::new(&dataset, (1, 1.)).fit_transform(x, z)
+
+        Self { dataset }
     }
 }
 
-impl ParCPDEstimator<CatCIM> for RE<'_, CatTrjsEv> {
+impl CPDEstimator<CatCIM> for RE<CatTrj> {
+    // (conditional counts, conditional time spent, sample size)
+    type SS = (Array3<f64>, Array2<f64>, f64);
+
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        // Estimate the CIM with a uniform prior.
+        BE::new(&self.dataset, (1, 1.)).fit_transform(x, z)
+    }
+}
+
+impl CPDEstimator<CatCIM> for RE<CatTrjs> {
+    // (conditional counts, conditional time spent, sample size)
+    type SS = (Array3<f64>, Array2<f64>, f64);
+
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        // Estimate the CIM with a uniform prior.
+        BE::new(&self.dataset, (1, 1.)).fit_transform(x, z)
+    }
+}
+
+impl ParCPDEstimator<CatCIM> for RE<CatTrjs> {
     // (conditional counts, conditional time spent, sample size)
     type SS = (Array3<f64>, Array2<f64>, f64);
 
     fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
-        // Assert at least one evidence for each variable is present.
-        assert!(
-            self.evidence
-                .values()
-                .iter()
-                .all(|e| e.values().iter().all(|(_, e)| e.len() > 0)),
-            "At least one evidence for each variable is required."
-        );
-        // Fill the evidence with the raw estimator.
-        let dataset: CatTrjs = self
-            .evidence
-            .values()
-            .par_iter()
-            .map(RE::<CatTrjEv>::fill)
-            .collect();
         // Estimate the CIM with a uniform prior.
-        BE::new(&dataset, (1, 1.)).par_fit_transform(x, z)
+        BE::new(&self.dataset, (1, 1.)).par_fit_transform(x, z)
     }
 }

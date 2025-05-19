@@ -6,8 +6,9 @@ mod tests {
         use approx::{assert_relative_eq, relative_eq};
         use causal_hub::{
             assets::load_eating,
-            datasets::{CatTrjEv, CatTrjsEv, CatWtdTrjs, Dataset},
-            estimators::{BE, EMBuilder, MLE, ParCPDEstimator, ParCTBNEstimator, RE},
+            datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
+            estimators::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RE},
+            graphs::Graph,
             models::{CTBN, CatCTBN},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
@@ -131,16 +132,13 @@ mod tests {
             let evidence = generator.random();
 
             // Initialize a raw estimator for an initial guess.
-            let raw = RE::new(&evidence);
+            let raw = RE::<CatTrjs>::new(&evidence);
             // Set the initial CIMs.
-            let initial_cims = vec![
-                // P(Hungry | FullStomach)
-                ParCPDEstimator::par_fit(&raw, 2, &[1]),
-                // P(Eating | Hungry)
-                ParCPDEstimator::par_fit(&raw, 0, &[2]),
-                // P(FullStomach | Eating)
-                ParCPDEstimator::par_fit(&raw, 1, &[0]),
-            ];
+            let initial_cims: Vec<_> = model
+                .graph()
+                .vertices()
+                .map(|i| CPDEstimator::fit(&raw, i, &model.graph().parents(i)))
+                .collect();
             // Set the initial model.
             let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);
 
