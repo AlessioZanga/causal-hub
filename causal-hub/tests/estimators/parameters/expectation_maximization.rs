@@ -112,7 +112,7 @@ mod tests {
         }
 
         #[test]
-        // FIXME: #[ignore = "this test is slow and should be run manually in release mode."]
+        #[ignore = "this test is slow and should be run manually in release mode."]
         fn test_em_with_evidence() {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);

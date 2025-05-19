@@ -123,18 +123,22 @@ impl RE<CatTrj> {
             // Set the first known state position as the last known state position.
             let mut last_known = first_known;
             // Get the first unknown state.
-            while let Some(fist_unknown) = event.iter().skip(last_known).position(|e| *e == M) {
+            while let Some(first_unknown) = event.iter().skip(last_known).position(|e| *e == M) {
+                // Add displacement to the first known state position because we skipped some elements.
+                let first_unknown = first_unknown + last_known;
                 // Get the last known state.
                 // NOTE: Safe because we know at least one state is present.
-                let e = event[fist_unknown - 1];
+                let e = event[first_unknown - 1];
                 // Get the last unknown state after the first unknown state.
                 // NOTE: We get the "first known state after the first unknown state",
                 // but we fill with an excluding range, so we can use the same position.
-                let last_unknown = event.iter().skip(fist_unknown).position(|e| *e != u8::MAX);
-                // Get the last unknown state position, or the end if none.
+                let last_unknown = event.iter().skip(first_unknown).position(|e| *e != M);
+                // Add displacement to the first unknown state position because we skipped some elements.
+                let last_unknown = last_unknown.map(|last_unknown| last_unknown + first_unknown);
+                // If no last unknown state, set the end.
                 let last_unknown = last_unknown.unwrap_or(event.len());
                 // Fill the unknown states with the last known state, or till the end if none.
-                event.slice_mut(s![fist_unknown..last_unknown]).fill(e);
+                event.slice_mut(s![first_unknown..last_unknown]).fill(e);
                 // Set the last known state position as the last unknown state position.
                 last_known = last_unknown;
             }
