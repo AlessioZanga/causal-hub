@@ -22,6 +22,16 @@ pub struct RawEstimator<D> {
 pub type RE<D> = RawEstimator<D>;
 
 impl RE<CatTrj> {
+    /// Constructs a new raw estimator from the evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `evidence` - A reference to the evidence to fill.
+    ///
+    /// # Returns
+    ///
+    /// A new `RE` instance.
+    ///
     pub fn new(evidence: &CatTrjEv) -> Self {
         // Fill the evidence with the raw estimator.
         let dataset = Self::fill(evidence);
@@ -98,9 +108,9 @@ impl RE<CatTrj> {
                     if let Some(e_i_t) = e_i_t {
                         match e_i_t {
                             E::CertainPositiveInterval { state, .. } => *e = *state as u8,
-                            E::CertainNegativeInterval { not_states, .. } => todo!(), // FIXME:
-                            E::UncertainPositiveInterval { p_states, .. } => todo!(), // FIXME:
-                            E::UncertainNegativeInterval { p_not_states, .. } => todo!(), // FIXME:
+                            E::CertainNegativeInterval { .. } => todo!(), // FIXME:
+                            E::UncertainPositiveInterval { .. } => todo!(), // FIXME:
+                            E::UncertainNegativeInterval { .. } => todo!(), // FIXME:
                         }
                     }
                 });
@@ -144,7 +154,7 @@ impl RE<CatTrj> {
             }
         });
 
-        // TODO: Random split events if multiple states transition at the same time.
+        // FIXME: Random split events if multiple states transition at the same time.
 
         // Construct the fully observed trajectory.
         CatTrj::new(states, events, times)
@@ -152,6 +162,16 @@ impl RE<CatTrj> {
 }
 
 impl RE<CatTrjs> {
+    /// Constructs a new raw estimator from the evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `evidence` - A reference to the evidence to fill.
+    ///
+    /// # Returns
+    ///
+    /// A new `RE` instance.
+    ///
     pub fn new(evidence: &CatTrjsEv) -> Self {
         // Fill the evidence with the raw estimator.
         let dataset: CatTrjs = evidence
