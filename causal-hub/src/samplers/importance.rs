@@ -61,8 +61,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .evidences()
             .iter()
             // Filter empty evidences.
-            .filter_map(|(l, e)| e.clone().map(|e| (l, e)))
-            .flat_map(|(l, e)| {
+            .filter_map(|(_, e)| e.clone())
+            .flat_map(|e| {
+                // Get the event index.
+                let event = e.event();
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositive { p_states, .. } => {
@@ -71,7 +73,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                         // Sample the state.
                         let state = state.sample(self.rng);
                         // Return the sample.
-                        E::CertainPositive { state }
+                        E::CertainPositive { event, state }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
                         // Allocate the not states.
@@ -89,13 +91,13 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                                 .collect();
                         }
                         // Return the sample and weight.
-                        E::CertainNegative { not_states }
+                        E::CertainNegative { event, not_states }
                     }
                     _ => e.clone(), // Due to evidence sampling.
                 };
 
                 // Return the certain evidence.
-                Some((l, e))
+                Some(e)
             });
 
         // Collect the certain evidence.
@@ -212,10 +214,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .values()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .flat_map(|(l, e)| std::iter::repeat(l).zip(e))
-            .flat_map(|(l, e)| {
+            .flat_map(|(_, e)| e)
+            .flat_map(|e| {
                 // Get the variable index, starting time, and ending time.
-                let (start_time, end_time) = (e.start_time(), e.end_time());
+                let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositiveInterval { p_states, .. } => {
@@ -225,6 +227,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                         let state = state.sample(self.rng);
                         // Return the sample.
                         E::CertainPositiveInterval {
+                            event,
                             state,
                             start_time,
                             end_time,
@@ -247,6 +250,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                         }
                         // Return the sample and weight.
                         E::CertainNegativeInterval {
+                            event,
                             not_states,
                             start_time,
                             end_time,
@@ -256,7 +260,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 };
 
                 // Return the certain evidence.
-                Some((l, e))
+                Some(e)
             });
 
         // Collect the certain evidence.

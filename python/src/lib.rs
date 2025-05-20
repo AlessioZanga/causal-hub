@@ -1,7 +1,9 @@
 pub mod assets;
+pub mod datasets;
 pub mod distributions;
 pub mod graphs;
 pub mod models;
+pub mod utils;
 
 use pyo3::prelude::*;
 
@@ -17,6 +19,8 @@ mod causal_hub {
         #[pymodule_init]
         fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
             // Set the module members.
+
+            // BNs
             m.add_function(wrap_pyfunction!(crate::assets::load_alarm, m)?)?;
             m.add_function(wrap_pyfunction!(crate::assets::load_andes, m)?)?;
             m.add_function(wrap_pyfunction!(crate::assets::load_asia, m)?)?;
@@ -38,11 +42,35 @@ mod causal_hub {
             m.add_function(wrap_pyfunction!(crate::assets::load_water, m)?)?;
             m.add_function(wrap_pyfunction!(crate::assets::load_win95pts, m)?)?;
 
+            // CTBNs
+            m.add_function(wrap_pyfunction!(crate::assets::load_eating, m)?)?;
+
             // Import the submodules.
             Python::with_gil(|py| {
                 py.import("sys")?
                     .getattr("modules")?
                     .set_item("causal_hub.assets", m)
+            })
+        }
+    }
+
+    #[pymodule]
+    mod datasets {
+        use super::*;
+
+        #[pymodule_init]
+        fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+            // Set the module members.
+            m.add_class::<crate::datasets::PyCatTrj>()?;
+            m.add_class::<crate::datasets::PyCatTrjs>()?;
+            m.add_class::<crate::datasets::PyCatTrjEv>()?;
+            m.add_class::<crate::datasets::PyCatTrjsEv>()?;
+
+            // Import the submodules.
+            Python::with_gil(|py| {
+                py.import("sys")?
+                    .getattr("modules")?
+                    .set_item("causal_hub.datasets", m)
             })
         }
     }
@@ -54,7 +82,8 @@ mod causal_hub {
         #[pymodule_init]
         fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
             // Set the module members.
-            m.add_class::<crate::distributions::PyCategoricalCPD>()?;
+            m.add_class::<crate::distributions::PyCatCPD>()?;
+            m.add_class::<crate::distributions::PyCatCIM>()?;
 
             // Import the submodules.
             Python::with_gil(|py| {
@@ -90,7 +119,8 @@ mod causal_hub {
         #[pymodule_init]
         fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
             // Set the module members.
-            m.add_class::<crate::models::PyCategoricalBN>()?;
+            m.add_class::<crate::models::PyCatBN>()?;
+            m.add_class::<crate::models::PyCatCTBN>()?;
 
             // Import the submodules.
             Python::with_gil(|py| {

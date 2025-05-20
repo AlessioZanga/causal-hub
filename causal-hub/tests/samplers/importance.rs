@@ -24,38 +24,30 @@ mod tests {
             let evidence = CatTrjEv::new(
                 ctbn.states(),
                 [
-                    (
-                        "Hungry",
-                        E::CertainPositiveInterval {
-                            state: 0,
-                            start_time: 0.,
-                            end_time: 0.2,
-                        },
-                    ),
-                    (
-                        "Eating",
-                        E::CertainNegativeInterval {
-                            not_states: [0].into_iter().collect(),
-                            start_time: 0.,
-                            end_time: 0.2,
-                        },
-                    ),
-                    (
-                        "FullStomach",
-                        E::UncertainPositiveInterval {
-                            p_states: array![0.3, 0.7],
-                            start_time: 0.1,
-                            end_time: 0.2,
-                        },
-                    ),
-                    (
-                        "Hungry",
-                        E::UncertainNegativeInterval {
-                            p_not_states: array![0.9, 0.1],
-                            start_time: 0.3,
-                            end_time: 0.5,
-                        },
-                    ),
+                    E::CertainPositiveInterval {
+                        event: 2, // "Hungry"
+                        state: 0,
+                        start_time: 0.,
+                        end_time: 0.2,
+                    },
+                    E::CertainNegativeInterval {
+                        event: 0, // "Eating"
+                        not_states: [0].into_iter().collect(),
+                        start_time: 0.,
+                        end_time: 0.2,
+                    },
+                    E::UncertainPositiveInterval {
+                        event: 1, // "FullStomach"
+                        p_states: array![0.3, 0.7],
+                        start_time: 0.1,
+                        end_time: 0.2,
+                    },
+                    E::UncertainNegativeInterval {
+                        event: 2, // "Hungry"
+                        p_not_states: array![0.9, 0.1],
+                        start_time: 0.3,
+                        end_time: 0.5,
+                    },
                 ],
             );
 

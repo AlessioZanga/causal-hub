@@ -6,6 +6,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::Dataset,
     types::{FxIndexMap, FxIndexSet},
+    utils::sort_states,
 };
 
 /// A struct representing a categorical sample.
@@ -65,7 +66,7 @@ impl CatData {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the variables.
-        let mut states: FxIndexMap<_, _> = states
+        let states: FxIndexMap<_, _> = states
             .into_iter()
             .inspect(|_| n += 1)
             .map(|(label, states)| {
@@ -97,24 +98,7 @@ impl CatData {
         );
 
         // Get the indices to sort the labels and states labels.
-        let mut indices: Vec<(_, Vec<_>)> = states
-            .values()
-            .enumerate()
-            .map(|(label_idx, states)| {
-                // Allocate the indices of the states labels.
-                let mut states_idx: Vec<_> = (0..states.len()).collect();
-                // Sort the indices by the states labels.
-                states_idx.sort_by_key(|&i| &states[i]);
-
-                (label_idx, states_idx)
-            })
-            .collect();
-        // Sort the indices by the states labels.
-        indices.sort_by_key(|&(i, _)| states.get_index(i).unwrap().0);
-        // Sort the states labels.
-        states.values_mut().for_each(|states| states.sort());
-        // Sort the labels.
-        states.sort_keys();
+        let (states, indices) = sort_states(states);
 
         // Allocate the new values array.
         let mut new_values = values.clone();

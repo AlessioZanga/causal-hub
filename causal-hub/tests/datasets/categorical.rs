@@ -38,6 +38,34 @@ mod tests {
     }
 
     #[test]
+    fn test_new_different_states() {
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no", "maybe"]),
+            ("A", vec!["no", "yes"]),
+        ];
+        let values = array![
+            [0, 1, 0], //
+            [0, 0, 0], //
+            [1, 0, 0], //
+            [1, 0, 1]
+        ];
+        let dataset = CatData::new(variables, values.clone());
+
+        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert!(dataset.labels().iter().is_sorted());
+        assert_eq!(
+            dataset.values(),
+            &array![
+                [0, 0, 1], //
+                [0, 0, 2], //
+                [0, 1, 2], //
+                [1, 1, 2]
+            ]
+        );
+    }
+
+    #[test]
     fn test_display() {
         let variables = vec![
             ("B", vec!["no", "yes"]),

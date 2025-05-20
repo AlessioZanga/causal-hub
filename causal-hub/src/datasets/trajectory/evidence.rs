@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatEv, Dataset},
     types::{FxIndexMap, FxIndexSet},
+    utils::sort_states,
 };
 
 /// A type representing the evidence type for categorical trajectories.
@@ -12,6 +13,8 @@ use crate::{
 pub enum CategoricalTrajectoryEvidenceType {
     /// Certain positive interval evidence.
     CertainPositiveInterval {
+        /// The observed event.
+        event: usize,
         /// The observed state.
         state: usize,
         /// The start time of the observed interval.
@@ -21,6 +24,8 @@ pub enum CategoricalTrajectoryEvidenceType {
     },
     /// Certain negative interval evidence.
     CertainNegativeInterval {
+        /// The observed event.
+        event: usize,
         /// The non-observed states.
         not_states: FxIndexSet<usize>,
         /// The start time of the non-observed interval.
@@ -30,6 +35,8 @@ pub enum CategoricalTrajectoryEvidenceType {
     },
     /// Uncertain positive interval evidence.
     UncertainPositiveInterval {
+        /// The observed event.
+        event: usize,
         /// The distribution of the observed states.
         p_states: Array1<f64>,
         /// The start time of the observed interval.
@@ -39,6 +46,8 @@ pub enum CategoricalTrajectoryEvidenceType {
     },
     /// Uncertain negative interval evidence.
     UncertainNegativeInterval {
+        /// The observed event.
+        event: usize,
         /// The distribution of the non-observed states.
         p_not_states: Array1<f64>,
         /// The start time of the non-observed interval.
@@ -52,6 +61,21 @@ pub enum CategoricalTrajectoryEvidenceType {
 pub type CatTrjEvT = CategoricalTrajectoryEvidenceType;
 
 impl CatTrjEvT {
+    /// Return the observed event of the evidence.
+    ///
+    /// # Returns
+    ///
+    /// The observed event of the evidence.
+    ///
+    pub const fn event(&self) -> usize {
+        match self {
+            Self::CertainPositiveInterval { event, .. }
+            | Self::CertainNegativeInterval { event, .. }
+            | Self::UncertainPositiveInterval { event, .. }
+            | Self::UncertainNegativeInterval { event, .. } => *event,
+        }
+    }
+
     /// Returns the start time of the evidence.
     ///
     /// # Returns
@@ -122,19 +146,18 @@ impl CatTrjEv {
     ///
     /// A new `CategoricalTrajectoryEvidence` instance.
     ///
-    pub fn new<I, J, K, L, M, N>(states: I, values: M) -> Self
+    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = L>,
         K: AsRef<str>,
         L: AsRef<str>,
-        M: IntoIterator<Item = (N, CatTrjEvT)>,
-        N: AsRef<str>,
+        M: IntoIterator<Item = CatTrjEvT>,
     {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the variables.
-        let mut states: FxIndexMap<_, _> = states
+        let states: FxIndexMap<_, _> = states
             .into_iter()
             .inspect(|_| n += 1)
             .map(|(label, states)| {
@@ -160,24 +183,7 @@ impl CatTrjEv {
         assert_eq!(states.len(), n, "Variables labels must be unique.");
 
         // Get the indices to sort the labels and states labels.
-        let mut indices: Vec<(_, Vec<_>)> = states
-            .values()
-            .enumerate()
-            .map(|(label_idx, states)| {
-                // Allocate the indices of the states labels.
-                let mut states_idx: Vec<_> = (0..states.len()).collect();
-                // Sort the indices by the states labels.
-                states_idx.sort_by_key(|&i| &states[i]);
-
-                (label_idx, states_idx)
-            })
-            .collect();
-        // Sort the indices by the states labels.
-        indices.sort_by_key(|&(i, _)| states.get_index(i).unwrap().0);
-        // Sort the states labels.
-        states.values_mut().for_each(|states| states.sort());
-        // Sort the labels.
-        states.sort_keys();
+        let (states, indices) = sort_states(states);
 
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
@@ -193,45 +199,52 @@ impl CatTrjEv {
             .map(|label| (label.clone(), Vec::new()))
             .collect();
 
-        // Iterate over the values and insert them into the events map using sorted indices.
-        values.into_iter().for_each(|(label, evidence)| {
-            // Convert the label to a string.
-            let label = label.as_ref().to_owned();
-            // Get the variable index.
-            let variable = states
-                .get_index_of(&label)
-                .expect("Variable label not found in states.");
-            // Get the variable index, starting time, and ending time.
-            let (start_time, end_time) = (evidence.start_time(), evidence.end_time());
-            // Sort variable index.
-            let (variable, states) = &indices[variable];
+        // Reverse the indices to get the argsort.
+        let mut argsort_indices = indices.clone();
+        indices
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, (j, states))| {
+                argsort_indices[j] = (i, states);
+            });
 
-            // Sort the variable states.
-            let e = match evidence {
+        // Iterate over the values and insert them into the events map using sorted indices.
+        values.into_iter().for_each(|e| {
+            // Get the event index, starting time, and ending time.
+            let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
+            // Sort event index.
+            let (event, states) = &argsort_indices[event];
+            // Get the event index.
+            let event = *event;
+
+            // Sort the event states.
+            let e = match e {
                 E::CertainPositiveInterval { state, .. } => {
-                    // Sort the variable states.
+                    // Sort the event states.
                     let state = states[state];
                     // Construct the sorted evidence.
                     E::CertainPositiveInterval {
+                        event,
                         state,
                         start_time,
                         end_time,
                     }
                 }
                 E::CertainNegativeInterval { not_states, .. } => {
-                    // Sort the variable states.
+                    // Sort the event states.
                     let not_states = not_states.iter().map(|state| states[*state]).collect();
                     // Construct the sorted evidence.
                     E::CertainNegativeInterval {
+                        event,
                         not_states,
                         start_time,
                         end_time,
                     }
                 }
                 E::UncertainPositiveInterval { p_states, .. } => {
-                    // Allocate new variable states.
+                    // Allocate new event states.
                     let mut new_p_states = Array::zeros(p_states.len());
-                    // Sort the variable states.
+                    // Sort the event states.
                     p_states.indexed_iter().for_each(|(i, &p)| {
                         new_p_states[states[i]] = p;
                     });
@@ -239,15 +252,16 @@ impl CatTrjEv {
                     let p_states = new_p_states;
                     // Construct the sorted evidence.
                     E::UncertainPositiveInterval {
+                        event,
                         p_states,
                         start_time,
                         end_time,
                     }
                 }
                 E::UncertainNegativeInterval { p_not_states, .. } => {
-                    // Allocate new variable states.
+                    // Allocate new event states.
                     let mut new_p_not_states = Array::zeros(p_not_states.len());
-                    // Sort the variable states.
+                    // Sort the event states.
                     p_not_states.indexed_iter().for_each(|(i, &p)| {
                         new_p_not_states[states[i]] = p;
                     });
@@ -255,6 +269,7 @@ impl CatTrjEv {
                     let p_not_states = new_p_not_states;
                     // Construct the sorted evidence.
                     E::UncertainNegativeInterval {
+                        event,
                         p_not_states,
                         start_time,
                         end_time,
@@ -262,8 +277,8 @@ impl CatTrjEv {
                 }
             };
 
-            // Push the value into the variable events.
-            evidences[*variable].push(e);
+            // Push the value into the events.
+            evidences[event].push(e);
         });
 
         // For each variable ...
@@ -386,13 +401,13 @@ impl CatTrjEv {
     ///
     pub fn initial_evidence(&self) -> CatEv {
         // Get the evidences at time zero.
-        let evidences = self.evidences.iter().filter_map(|(label, evidence)| {
+        let evidences = self.evidences.iter().filter_map(|(_, evidence)| {
             // Get the first evidence, if any.
             let evidence = evidence.iter().next().cloned();
             // Check if the evidence is at time zero.
             let evidence = evidence.filter(|e| relative_eq!(e.start_time(), 0.));
             // Map the evidence to its variable.
-            evidence.map(|e| (label, e.into()))
+            evidence.map(|e| e.into())
         });
 
         // Clone the states.

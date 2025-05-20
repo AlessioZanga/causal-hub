@@ -54,8 +54,6 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
         let events = self.dataset.values().rows();
         // Zip times and events.
         let times_events = times.into_iter().zip(events);
-        // Get the labels.
-        let labels = self.dataset.labels();
 
         // Iterate over (time, event) pairs.
         let evidence = times_events
@@ -71,15 +69,16 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
                 // Sample the events.
                 let evidence = sample(self.rng, v.len(), n).into_iter().map(move |index| {
                     // Get label and state.
-                    let (label, state) = (&labels[index], v[index] as usize);
+                    let (event, state) = (index, v[index] as usize);
                     // Create the evidence.
                     let evidence = E::CertainPositiveInterval {
+                        event,
                         state,
                         start_time,
                         end_time,
                     };
                     // Return the evidence.
-                    (label, evidence)
+                    evidence
                 });
                 // Return the evidences.
                 Some(evidence)

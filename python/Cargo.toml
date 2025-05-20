@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 causal-hub = { path = "../causal-hub" }
 dry.workspace = true
-numpy = "0.24.0"
+numpy = "^0.25"
 paste.workspace = true
-pyo3 = { version = "0.24.0", features = ["extension-module"] }
+pyo3 = { version = "^0.25", features = ["extension-module"] }

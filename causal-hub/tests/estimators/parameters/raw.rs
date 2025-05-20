@@ -17,30 +17,24 @@ mod tests {
         let evidence = CatTrjEv::new(
             model.states(),
             [
-                (
-                    "Hungry",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.1,
-                        end_time: 0.2,
-                    },
-                ),
-                (
-                    "Eating",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.3,
-                        end_time: 0.4,
-                    },
-                ),
-                (
-                    "FullStomach",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.5,
-                        end_time: 0.6,
-                    },
-                ),
+                E::CertainPositiveInterval {
+                    event: 2, // "Hungry"
+                    state: 0,
+                    start_time: 0.1,
+                    end_time: 0.2,
+                },
+                E::CertainPositiveInterval {
+                    event: 0, // "Eating"
+                    state: 0,
+                    start_time: 0.3,
+                    end_time: 0.4,
+                },
+                E::CertainPositiveInterval {
+                    event: 1, // "FullStomach"
+                    state: 0,
+                    start_time: 0.5,
+                    end_time: 0.6,
+                },
             ],
         );
         // Fill the evidence.
@@ -70,38 +64,30 @@ mod tests {
         let evidence = CatTrjEv::new(
             model.states(),
             [
-                (
-                    "Hungry",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.1,
-                        end_time: 0.2,
-                    },
-                ),
-                (
-                    "Eating",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.1,
-                        end_time: 0.3,
-                    },
-                ),
-                (
-                    "Eating",
-                    E::CertainPositiveInterval {
-                        state: 1,
-                        start_time: 0.3,
-                        end_time: 0.4,
-                    },
-                ),
-                (
-                    "FullStomach",
-                    E::CertainPositiveInterval {
-                        state: 0,
-                        start_time: 0.5,
-                        end_time: 0.6,
-                    },
-                ),
+                E::CertainPositiveInterval {
+                    event: 2, // "Hungry"
+                    state: 0,
+                    start_time: 0.1,
+                    end_time: 0.2,
+                },
+                E::CertainPositiveInterval {
+                    event: 0, // "Eating"
+                    state: 0,
+                    start_time: 0.1,
+                    end_time: 0.3,
+                },
+                E::CertainPositiveInterval {
+                    event: 0, // "Eating"
+                    state: 1,
+                    start_time: 0.3,
+                    end_time: 0.4,
+                },
+                E::CertainPositiveInterval {
+                    event: 1, // "FullStomach"
+                    state: 0,
+                    start_time: 0.5,
+                    end_time: 0.6,
+                },
             ],
         );
         // Fill the evidence.

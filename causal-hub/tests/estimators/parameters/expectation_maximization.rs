@@ -24,7 +24,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new([
                 // A single empty evidence.
-                CatTrjEv::new(model.states(), Vec::<(String, _)>::new()),
+                CatTrjEv::new(model.states(), []),
             ]);
 
             // Define the expectation step.
@@ -55,7 +55,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new(vec![
                 // A thousands empty evidence.
-                CatTrjEv::new(model.states(), Vec::<(String, _)>::new()); 10_000
+                CatTrjEv::new(model.states(), []); 10_000
             ]);
 
             // Initialize a new random number generator.
