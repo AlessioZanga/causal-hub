@@ -151,6 +151,11 @@ impl CatCIM {
         parameters.outer_iter().for_each(|q| {
             // Assert Q is square.
             assert_eq!(q.nrows(), q.ncols(), "Q must be square.");
+            // Assert Q has finite values.
+            assert!(
+                q.iter().all(|&x| x.is_finite()),
+                "Q must have finite values."
+            );
             // Assert Q has non-positive diagonal.
             assert!(
                 q.diag().iter().all(|&x| x <= 0.0),
@@ -163,7 +168,9 @@ impl CatCIM {
             );
             // Assert Q rows sum to zero.
             assert!(
-                q.rows().into_iter().all(|x| relative_eq!(x.sum(), 0.)),
+                q.rows()
+                    .into_iter()
+                    .all(|x| relative_eq!(x.sum(), 0., epsilon = 1e-8)),
                 "Q rows must sum to zero."
             );
         });

@@ -66,11 +66,15 @@ dependencies = [
 name = "causal-hub-python"
 version = "0.1.0"
 dependencies = [
+ "approx",
  "causal-hub",
  "dry",
  "numpy",
  "paste",
  "pyo3",
+ "rand 0.9.1",
+ "rand_xoshiro",
+ "rayon",
 ]
 
 [[package]]

@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod datasets;
 pub mod distributions;
+pub mod estimators;
 pub mod graphs;
 pub mod models;
 pub mod utils;
@@ -90,6 +91,24 @@ mod causal_hub {
                 py.import("sys")?
                     .getattr("modules")?
                     .set_item("causal_hub.distributions", m)
+            })
+        }
+    }
+
+    #[pymodule]
+    mod estimators {
+        use super::*;
+
+        #[pymodule_init]
+        fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+            // Set the module members.
+            m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
+
+            // Import the submodules.
+            Python::with_gil(|py| {
+                py.import("sys")?
+                    .getattr("modules")?
+                    .set_item("causal_hub.estimators", m)
             })
         }
     }

@@ -55,12 +55,6 @@ impl RE<CatTrj> {
         // Set missing placeholder.
         const M: u8 = u8::MAX;
 
-        // Assert at least one evidence for each variable is present.
-        assert!(
-            evidence.values().iter().all(|(_, e)| e.len() > 0),
-            "At least one evidence for each variable is required."
-        );
-
         // Get labels and states.
         let states = evidence.states();
 
@@ -90,6 +84,7 @@ impl RE<CatTrj> {
             // Deduplicate the times.
             .dedup()
             .collect();
+
         // Allocate the matrix of events with unknown states.
         let mut events = Array2::from_elem((times.len(), states.len()), M);
 
@@ -118,6 +113,10 @@ impl RE<CatTrj> {
 
         // Fill the unknown states by propagating the known states.
         events.columns_mut().into_iter().for_each(|mut event| {
+            // If no evidence is present at all, set the first state to a constant value.
+            if let None = event.iter().position(|e| *e != M) {
+                event[0] = 0;
+            }
             // Set the first known state position.
             let mut first_known = 0;
             // Check if the first state is known.
