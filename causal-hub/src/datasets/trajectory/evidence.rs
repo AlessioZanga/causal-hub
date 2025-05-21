@@ -1,6 +1,7 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
@@ -9,7 +10,7 @@ use crate::{
 };
 
 /// A type representing the evidence type for categorical trajectories.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum CategoricalTrajectoryEvidenceType {
     /// Certain positive interval evidence.
     CertainPositiveInterval {
@@ -122,7 +123,7 @@ impl CatTrjEvT {
 }
 
 /// A type representing a collection of evidences for a categorical trajectory.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalTrajectoryEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,
@@ -439,7 +440,7 @@ impl Dataset for CatTrjEv {
 }
 
 /// A collection of multivariate trajectories evidence.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalTrajectoriesEvidence {
     labels: FxIndexSet<String>,
     states: FxIndexMap<String, FxIndexSet<String>>,

@@ -5,11 +5,12 @@ use causal_hub::{
     models::{CTBN, CatCTBN},
 };
 use pyo3::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into};
 
 #[pyclass(name = "CatCTBN")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyCatCTBN {
     inner: CatCTBN,
 }

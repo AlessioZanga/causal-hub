@@ -10,6 +10,7 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyTuple},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
@@ -225,7 +226,7 @@ impl PyCatTrjEv {
 }
 
 #[pyclass(name = "CatTrjsEv")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyCatTrjsEv {
     inner: CatTrjsEv,
 }

@@ -19,9 +19,18 @@ use rayon::prelude::*;
 use crate::{datasets::PyCatTrjsEv, models::PyCatCTBN};
 
 #[pyfunction]
-#[pyo3(signature = (evidence, max_iter = 10, max_parents = 5, seed = 42))]
+#[pyo3(signature = (
+    evidence,
+    f_test = 1e-2,
+    c_test = 1e-2,
+    max_iter = 10,
+    max_parents = 10,
+    seed = 42
+))]
 pub fn sem(
     evidence: &Bound<'_, PyCatTrjsEv>,
+    f_test: f64,
+    c_test: f64,
     max_iter: usize,
     max_parents: usize,
     seed: u64,
@@ -114,9 +123,9 @@ pub fn sem(
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Initialize the F test.
-        let f_test = FTest::new(&cache, 1e-4);
+        let f_test = FTest::new(&cache, f_test);
         // Initialize the chi-squared test.
-        let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4);
+        let chi_sq_test = ChiSquaredTest::new(&cache, c_test);
         // Initialize the CTPC algorithm.
         let ctpc = CTPC::new(&inital_graph, &f_test, &chi_sq_test);
         // Fit the new structure using CTPC.

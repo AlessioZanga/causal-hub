@@ -1,12 +1,13 @@
 use causal_hub::graphs::{DiGraph, Graph};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};
+use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[pyclass(name = "DiGraph")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyDiGraph {
     inner: DiGraph,
 }

@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use ndarray::prelude::*;
+use ndarray::{Zip, prelude::*};
 use rayon::prelude::*;
 
 use super::{BE, CPDEstimator, ParCPDEstimator};
@@ -89,10 +89,9 @@ impl RE<CatTrj> {
         let mut events = Array2::from_elem((times.len(), states.len()), M);
 
         // Set the states of the events given the evidence.
-        times
-            .iter()
-            .zip(events.rows_mut())
-            .for_each(|(time, mut event)| {
+        Zip::from(&times)
+            .and(events.axis_iter_mut(Axis(0)))
+            .par_for_each(|time, mut event| {
                 // For each event, set the state of the variable at that time, if any.
                 event.iter_mut().enumerate().for_each(|(i, e)| {
                     // Get the evidence vector for that variable.
@@ -112,46 +111,51 @@ impl RE<CatTrj> {
             });
 
         // Fill the unknown states by propagating the known states.
-        events.columns_mut().into_iter().for_each(|mut event| {
-            // If no evidence is present at all, set the first state to a constant value.
-            if let None = event.iter().position(|e| *e != M) {
-                event[0] = 0;
-            }
-            // Set the first known state position.
-            let mut first_known = 0;
-            // Check if the first state is known.
-            if event[first_known] == M {
-                // If the first state is unknown, get the first known state.
-                // NOTE: Safe unwrap since we know at least one state is present.
-                first_known = event.iter().position(|e| *e != M).unwrap();
-                // Get the event to fill with.
-                let e = event[first_known];
-                // Backward fill the unknown states.
-                event.slice_mut(s![..first_known]).fill(e);
-            }
-            // Set the first known state position as the last known state position.
-            let mut last_known = first_known;
-            // Get the first unknown state.
-            while let Some(first_unknown) = event.iter().skip(last_known).position(|e| *e == M) {
-                // Add displacement to the first known state position because we skipped some elements.
-                let first_unknown = first_unknown + last_known;
-                // Get the last known state.
-                // NOTE: Safe because we know at least one state is present.
-                let e = event[first_unknown - 1];
-                // Get the last unknown state after the first unknown state.
-                // NOTE: We get the "first known state after the first unknown state",
-                // but we fill with an excluding range, so we can use the same position.
-                let last_unknown = event.iter().skip(first_unknown).position(|e| *e != M);
-                // Add displacement to the first unknown state position because we skipped some elements.
-                let last_unknown = last_unknown.map(|last_unknown| last_unknown + first_unknown);
-                // If no last unknown state, set the end.
-                let last_unknown = last_unknown.unwrap_or(event.len());
-                // Fill the unknown states with the last known state, or till the end if none.
-                event.slice_mut(s![first_unknown..last_unknown]).fill(e);
-                // Set the last known state position as the last unknown state position.
-                last_known = last_unknown;
-            }
-        });
+        events
+            .axis_iter_mut(Axis(0))
+            .into_par_iter()
+            .for_each(|mut event| {
+                // If no evidence is present at all, set the first state to a constant value.
+                if let None = event.iter().position(|e| *e != M) {
+                    event[0] = 0;
+                }
+                // Set the first known state position.
+                let mut first_known = 0;
+                // Check if the first state is known.
+                if event[first_known] == M {
+                    // If the first state is unknown, get the first known state.
+                    // NOTE: Safe unwrap since we know at least one state is present.
+                    first_known = event.iter().position(|e| *e != M).unwrap();
+                    // Get the event to fill with.
+                    let e = event[first_known];
+                    // Backward fill the unknown states.
+                    event.slice_mut(s![..first_known]).fill(e);
+                }
+                // Set the first known state position as the last known state position.
+                let mut last_known = first_known;
+                // Get the first unknown state.
+                while let Some(first_unknown) = event.iter().skip(last_known).position(|e| *e == M)
+                {
+                    // Add displacement to the first known state position because we skipped some elements.
+                    let first_unknown = first_unknown + last_known;
+                    // Get the last known state.
+                    // NOTE: Safe because we know at least one state is present.
+                    let e = event[first_unknown - 1];
+                    // Get the last unknown state after the first unknown state.
+                    // NOTE: We get the "first known state after the first unknown state",
+                    // but we fill with an excluding range, so we can use the same position.
+                    let last_unknown = event.iter().skip(first_unknown).position(|e| *e != M);
+                    // Add displacement to the first unknown state position because we skipped some elements.
+                    let last_unknown =
+                        last_unknown.map(|last_unknown| last_unknown + first_unknown);
+                    // If no last unknown state, set the end.
+                    let last_unknown = last_unknown.unwrap_or(event.len());
+                    // Fill the unknown states with the last known state, or till the end if none.
+                    event.slice_mut(s![first_unknown..last_unknown]).fill(e);
+                    // Set the last known state position as the last unknown state position.
+                    last_known = last_unknown;
+                }
+            });
 
         // FIXME: Random split events if multiple states transition at the same time.
 
