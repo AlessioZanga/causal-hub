@@ -13,6 +13,14 @@ use pyo3::prelude::*;
 mod causal_hub {
     use super::*;
 
+    #[pymodule_init]
+    fn init(_m: &Bound<'_, PyModule>) -> PyResult<()> {
+        // Initialize the logger.
+        pyo3_log::init();
+
+        Ok(())
+    }
+
     #[pymodule]
     mod assets {
         use super::*;
