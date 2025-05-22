@@ -112,7 +112,7 @@ impl RE<CatTrj> {
 
         // Fill the unknown states by propagating the known states.
         events
-            .axis_iter_mut(Axis(0))
+            .axis_iter_mut(Axis(1))
             .into_par_iter()
             .for_each(|mut event| {
                 // If no evidence is present at all, set the first state to a constant value.
