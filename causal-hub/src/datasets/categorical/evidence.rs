@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::CatTrjEvT,
     types::{FxIndexMap, FxIndexSet},
-    utils::sort_states,
+    utils::{collect_states, sort_states},
 };
 
 /// Categorical evidence type.
@@ -118,34 +118,8 @@ impl CategoricalEvidence {
         L: AsRef<str>,
         M: IntoIterator<Item = CatEvT>,
     {
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the variables.
-        let states: FxIndexMap<_, _> = states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|(label, states)| {
-                // Convert the variable label to a string.
-                let label = label.as_ref().to_owned();
-
-                // Initialize states counter.
-                let mut n = 0;
-                // Convert the variable states to a set of strings.
-                let states: FxIndexSet<_> = states
-                    .into_iter()
-                    .inspect(|_| n += 1)
-                    .map(|x| x.as_ref().to_owned())
-                    .collect();
-                // Assert unique states.
-                assert_eq!(states.len(), n, "Variables states must be unique.");
-
-                (label, states)
-            })
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(states.len(), n, "Variables labels must be unique.");
-
+        // Collect the states into a map.
+        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
         let (states, indices) = sort_states(states);
 

@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::Dataset,
     types::{FxIndexMap, FxIndexSet},
-    utils::sort_states,
+    utils::{collect_states, sort_states},
 };
 
 /// A struct representing a categorical sample.
@@ -63,33 +63,9 @@ impl CatData {
         K: AsRef<str>,
         V: AsRef<str>,
     {
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the variables.
-        let states: FxIndexMap<_, _> = states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|(label, states)| {
-                // Convert the variable label to a string.
-                let label = label.as_ref().to_owned();
+        // Collect the states into a map.
+        let states = collect_states(states);
 
-                // Initialize states counter.
-                let mut n = 0;
-                // Convert the variable states to a set of strings.
-                let states: FxIndexSet<_> = states
-                    .into_iter()
-                    .inspect(|_| n += 1)
-                    .map(|x| x.as_ref().to_owned())
-                    .collect();
-                // Assert unique states.
-                assert_eq!(states.len(), n, "Variables states must be unique.");
-
-                (label, states)
-            })
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(states.len(), n, "Variables labels must be unique.");
         // Check if the number of variables is equal to the number of columns.
         assert_eq!(
             states.len(),

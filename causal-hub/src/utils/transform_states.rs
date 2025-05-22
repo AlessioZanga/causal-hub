@@ -1,5 +1,44 @@
 use crate::types::{FxIndexMap, FxIndexSet};
 
+/// Utility function to collect states from an iterator.
+pub fn collect_states<I, J, K, V>(states: I) -> FxIndexMap<String, FxIndexSet<String>>
+where
+    I: IntoIterator<Item = (K, J)>,
+    J: IntoIterator<Item = V>,
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    // Initialize variables counter.
+    let mut n = 0;
+    // Get the states of the variables.
+    let states: FxIndexMap<_, _> = states
+        .into_iter()
+        .inspect(|_| n += 1)
+        .map(|(label, states)| {
+            // Convert the variable label to a string.
+            let label = label.as_ref().to_owned();
+
+            // Initialize states counter.
+            let mut n = 0;
+            // Convert the variable states to a set of strings.
+            let states: FxIndexSet<_> = states
+                .into_iter()
+                .inspect(|_| n += 1)
+                .map(|x| x.as_ref().to_owned())
+                .collect();
+            // Assert unique states.
+            assert_eq!(states.len(), n, "Variables states must be unique.");
+
+            (label, states)
+        })
+        .collect();
+
+    // Assert unique labels.
+    assert_eq!(states.len(), n, "Variables labels must be unique.");
+
+    states
+}
+
 /// Utility function to sort states and labels.
 pub fn sort_states(
     mut states: FxIndexMap<String, FxIndexSet<String>>,

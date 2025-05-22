@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::CPD;
 use crate::{
     types::{FxIndexMap, FxIndexSet},
-    utils::RMI,
+    utils::{RMI, collect_states},
 };
 
 /// A struct representing a categorical conditional intensity matrix.
@@ -85,39 +85,7 @@ impl CatCIM {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the conditioning variables.
-        let mut conditioning_states: FxIndexMap<_, _> = conditioning_states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|(_label, _states)| {
-                // Convert the variable label to a string.
-                let _label = _label.as_ref().to_owned();
-                // Assert conditioned variable is not a conditioning variable.
-                assert_ne!(
-                    _label, label,
-                    "Conditioned variable cannot be a conditioning variable."
-                );
-                // Initialize states counter.
-                let mut n = 0;
-                // Convert the variable states to a set of strings.
-                let _states: FxIndexSet<_> = _states
-                    .into_iter()
-                    .inspect(|_| n += 1)
-                    .map(|x| x.as_ref().to_owned())
-                    .collect();
-                // Assert unique states.
-                assert_eq!(_states.len(), n, "Variables states must be unique.");
-
-                (_label, _states)
-            })
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(
-            conditioning_states.len(),
-            n,
-            "Variables labels must be unique."
-        );
-
+        let mut conditioning_states = collect_states(conditioning_states);
         // Get the labels of the variables.
         let mut conditioning_labels: FxIndexSet<_> = conditioning_states.keys().cloned().collect();
 
