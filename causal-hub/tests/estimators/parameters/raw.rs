@@ -2,15 +2,19 @@
 mod tests {
     use causal_hub::{
         assets::load_eating,
-        datasets::{CatTrjEv, CatTrjEvT, Dataset},
+        datasets::{CatTrj, CatTrjEv, CatTrjEvT, Dataset},
         estimators::RE,
     };
     use ndarray::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
     fn test_raw_fill_1() {
         // Short the evidence name.
         use CatTrjEvT as E;
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
         let model = load_eating();
         // Initialize the evidence.
@@ -38,7 +42,7 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence = RE::fill(&evidence);
+        let filled_evidence = RE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.
@@ -58,6 +62,8 @@ mod tests {
     fn test_raw_fill_2() {
         // Short the evidence name.
         use CatTrjEvT as E;
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
         let model = load_eating();
         // Initialize the evidence.
@@ -91,7 +97,7 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence = RE::fill(&evidence);
+        let filled_evidence = RE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.

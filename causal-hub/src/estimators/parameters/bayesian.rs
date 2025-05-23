@@ -161,9 +161,9 @@ impl BE<'_, CatTrj, (usize, f64)> {
                 let t_z = t_xz.sum_axis(Axis(2));
                 // Compute the sample log-likelihood.
                 f64::ln(tau) * (alpha + 1.)
-                - ln_gamma(alpha + 1.)                  // .
-                + ((&n_z + 1.).mapv(ln_gamma)           // .
-                - t_z.ln() * (n_z + 1.))
+                    - ln_gamma(alpha + 1.)                  // .
+                    + ((&n_z + 1.).mapv(ln_gamma)           // .
+                    - t_z.ln() * (n_z + 1.))
             })
             .sum()
         });

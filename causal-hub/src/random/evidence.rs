@@ -71,14 +71,12 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
                     // Get label and state.
                     let (event, state) = (index, v[index] as usize);
                     // Create the evidence.
-                    let evidence = E::CertainPositiveInterval {
+                    E::CertainPositiveInterval {
                         event,
                         state,
                         start_time,
                         end_time,
-                    };
-                    // Return the evidence.
-                    evidence
+                    }
                 });
                 // Return the evidences.
                 Some(evidence)

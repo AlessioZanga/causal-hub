@@ -112,7 +112,7 @@ impl CatCPD {
         // Check if the product of the number of states of the remaining variables matches the number of rows.
         assert_eq!(
             parameters.nrows(),
-            conditioning_cardinality.iter().product(),
+            conditioning_cardinality.iter().product::<usize>(),
             "Product of the number of conditioning states must match the number of rows."
         );
 
@@ -131,8 +131,8 @@ impl CatCPD {
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
 
         // Sort the columns.
-        let mut col_indices: Vec<_> = (0..states.len()).collect();
-        col_indices.sort_by_key(|&i| &states[i]);
+        let mut columns_idx: Vec<_> = (0..states.len()).collect();
+        columns_idx.sort_by_key(|&i| &states[i]);
         // Sort the labels.
         states.sort();
 
@@ -162,7 +162,7 @@ impl CatCPD {
             .enumerate()
             .for_each(|(i, mut new_parameters_col)| {
                 // Assign the sorted values to the new values array.
-                new_parameters_col.assign(&parameters.column(col_indices[i]));
+                new_parameters_col.assign(&parameters.column(columns_idx[i]));
             });
         // Sort the values by multi indices.
         new_parameters.rows_mut().into_iter().enumerate().for_each(
@@ -324,8 +324,28 @@ impl CatCPD {
         N: AsRef<str>,
         O: AsRef<str>,
     {
+        // Assert the sample size is finite and non-negative.
+        sample_size.inspect(|&x| {
+            assert!(
+                x.is_finite() && x >= 0.,
+                "Sample size must be finite and non-negative: \n\
+                \t expected: sample_size >= 0, \n\
+                \t found:    sample_size == {x} ."
+            )
+        });
+        // Assert the sample log-likelihood is finite and non-positive.
+        sample_log_likelihood.inspect(|&x| {
+            assert!(
+                x.is_finite() && x <= 0.,
+                "Sample log-likelihood must be finite and non-positive: \n\
+                \t expected: sample_ll <= 0 , \n\
+                \t found:    sample_ll == {x} ."
+            )
+        });
+
         // Construct the categorical CPD.
         let mut cpd = Self::new(state, conditioning_states, parameters);
+
         // Set the sample size and log-likelihood.
         cpd.sample_size = sample_size;
         cpd.sample_log_likelihood = sample_log_likelihood;

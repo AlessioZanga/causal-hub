@@ -158,7 +158,7 @@ impl CatTrjEv {
         // Collect the states into a map.
         let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
-        let (states, indices) = sort_states(states);
+        let (states, sorted_idx) = sort_states(states);
 
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
@@ -175,12 +175,12 @@ impl CatTrjEv {
             .collect();
 
         // Reverse the indices to get the argsort.
-        let mut argsort_indices = indices.clone();
-        indices
+        let mut argsorted_idx = sorted_idx.clone();
+        sorted_idx
             .into_iter()
             .enumerate()
             .for_each(|(i, (j, states))| {
-                argsort_indices[j] = (i, states);
+                argsorted_idx[j] = (i, states);
             });
 
         // Iterate over the values and insert them into the events map using sorted indices.
@@ -188,7 +188,7 @@ impl CatTrjEv {
             // Get the event index, starting time, and ending time.
             let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
             // Sort event index.
-            let (event, states) = &argsort_indices[event];
+            let (event, states) = &argsorted_idx[event];
             // Get the event index.
             let event = *event;
 
@@ -256,86 +256,239 @@ impl CatTrjEv {
             evidences[event].push(e);
         });
 
-        // For each variable ...
-        for (i, evidence) in evidences.values_mut().enumerate() {
-            // Assert starting times must be positive and finite.
-            assert!(
-                evidence
-                    .iter()
-                    .all(|e| e.start_time().is_finite() && e.start_time() >= 0.0),
-                "Starting time must be positive and finite."
-            );
-            // Assert ending times must be positive and finite.
-            assert!(
-                evidence
-                    .iter()
-                    .all(|e| e.end_time().is_finite() && e.end_time() >= 0.0),
-                "Ending time must be positive and finite."
-            );
+        // Check and fix incoherent evidences.
+        evidences.values_mut().zip(&cardinality).for_each(
+            |(evidence, cardinality): (&mut Vec<E>, &usize)| {
+                // Assert state, starting and ending times are coherent.
+                evidence.iter().for_each(|e| {
+                    // Assert starting time must be positive and finite.
+                    assert!(
+                        e.start_time().is_finite() && e.start_time() >= 0.0,
+                        "Starting time must be positive and finite."
+                    );
+                    // Assert ending time must be positive and finite.
+                    assert!(
+                        e.end_time().is_finite() && e.end_time() >= 0.0,
+                        "Ending time must be positive and finite."
+                    );
+                    // Assert starting time is less or equal than ending time.
+                    assert!(
+                        e.start_time() <= e.end_time(),
+                        "Starting time must be less or equal than ending time."
+                    );
+                    // Assert states distributions have the correct size.
+                    assert!(
+                        match e {
+                            E::CertainPositiveInterval { .. } => true,
+                            E::CertainNegativeInterval { .. } => true,
+                            E::UncertainPositiveInterval { p_states, .. } => {
+                                p_states.len() == *cardinality
+                            }
+                            E::UncertainNegativeInterval { p_not_states, .. } => {
+                                p_not_states.len() == *cardinality
+                            }
+                        },
+                        "States distributions must have the correct size."
+                    );
+                    // Assert states distributions are not negative.
+                    assert!(
+                        match e {
+                            E::CertainPositiveInterval { .. } => true,
+                            E::CertainNegativeInterval { .. } => true,
+                            E::UncertainPositiveInterval { p_states, .. } => {
+                                p_states.iter().all(|&x| x >= 0.)
+                            }
+                            E::UncertainNegativeInterval { p_not_states, .. } => {
+                                p_not_states.iter().all(|&x| x >= 0.)
+                            }
+                        },
+                        "States distributions must be non-negative."
+                    );
+                    // Assert states distributions sum to 1.
+                    assert!(
+                        match e {
+                            E::CertainPositiveInterval { .. } => true,
+                            E::CertainNegativeInterval { .. } => true,
+                            E::UncertainPositiveInterval { p_states, .. } => {
+                                relative_eq!(p_states.sum(), 1., epsilon = 1e-8)
+                            }
+                            E::UncertainNegativeInterval { p_not_states, .. } => {
+                                relative_eq!(p_not_states.sum(), 1., epsilon = 1e-8)
+                            }
+                        },
+                        "States distributions must sum to one."
+                    );
+                });
 
-            // Sort the events by starting time.
-            evidence.sort_by(|a, b| {
-                a.start_time()
-                    .partial_cmp(&b.start_time())
-                    // Due to previous assertions, this should never fail.
-                    .unwrap_or_else(|| unreachable!())
-            });
+                // Sort the events by starting time.
+                evidence.sort_by(|a, b| {
+                    a.start_time()
+                        .partial_cmp(&b.start_time())
+                        // Due to previous assertions, this should never fail.
+                        .unwrap_or_else(|| unreachable!())
+                });
 
-            // Assert starting time is less or equal than ending time.
-            assert!(
-                evidence.iter().all(|e| e.start_time() <= e.end_time()),
-                "Starting time must be less or equal than ending time."
-            );
-            // Assert current ending time is less or equal than next starting time.
-            assert!(
-                evidence
-                    .windows(2)
-                    .all(|e| e[0].end_time() <= e[1].start_time()),
-                "Ending time must be less or equal than next starting time."
-            );
-            // Assert states distributions have the correct size.
-            assert!(
-                evidence.iter().all(|e| match e {
-                    E::CertainPositiveInterval { .. } => true,
-                    E::CertainNegativeInterval { .. } => true,
-                    E::UncertainPositiveInterval { p_states, .. } => {
-                        p_states.len() == cardinality[i]
+                // Handle overlapping intervals.
+                *evidence = evidence.iter().fold(Vec::new(), |mut e: Vec<E>, e_j: &E| {
+                    // Ii evence is empty ...
+                    if e.is_empty() {
+                        // ... push current evidence and exit.
+                        e.push(e_j.clone());
+                        return e;
                     }
-                    E::UncertainNegativeInterval { p_not_states, .. } => {
-                        p_not_states.len() == cardinality[i]
+
+                    // Get the last evidence.
+                    let e_i: &E = e.last().unwrap();
+                    // Assert intervals times are coherent.
+                    assert!(
+                        e_i.start_time() <= e_j.start_time(),
+                        "Two evidences for the same variable must have non-increasing starting time: \n\
+                        \t expected: e(i).start_time <= e(i+1).start_time, \n\
+                        \t found:    e(i).start_time >  e(i+1).start_time, \n\
+                        \t for:      e(i).start_time == {} , \n\
+                        \t and:    e(i+1).start_time == {} .",
+                        e_i.start_time(),
+                        e_j.start_time()
+                    );
+                    // If the current evidence ends before the next one starts ...
+                    if e_i.end_time() <= e_j.start_time() {
+                        // ... push current evidence and exit.
+                        e.push(e_j.clone());
+                        return e;
                     }
-                }),
-                "States distributions must have the correct size."
-            );
-            // Assert states distributions are not negative.
-            assert!(
-                evidence.iter().all(|e| match e {
-                    E::CertainPositiveInterval { .. } => true,
-                    E::CertainNegativeInterval { .. } => true,
-                    E::UncertainPositiveInterval { p_states, .. } => {
-                        p_states.iter().all(|&x| x >= 0.0)
+                    // Otherwise, we have overlapping intervals,
+                    // check if they are the same type of evidence.
+                    match (e_i, e_j) {
+                        // If they are the same type of evidence ...
+                        (
+                            E::CertainPositiveInterval { state: s_i, .. },
+                            E::CertainPositiveInterval { state: s_j, .. },
+                        ) => {
+                            // Check if they are the same state.
+                            if s_i == s_j {
+                                // Get evidence event, state, start time and end time.
+                                let (event, state, start_time) = (e_i.event(), *s_i, e_i.start_time());
+                                // Set end time to the maximum of both.
+                                let end_time = e_i.end_time().max(e_j.end_time());
+                                // Set the last evidence end time to the maximum of both.
+                                *e.last_mut().unwrap() = E::CertainPositiveInterval {
+                                    event,
+                                    state,
+                                    start_time,
+                                    end_time,
+                                };
+                            // Otherwise, merge the two certain evidences into an uncertain one.
+                            } else {
+                                // Construct uncertain positive evidence.
+                                let mut p_states = Array::zeros(*cardinality);
+                                // Set the state of the evidence with a weight proportion to the time.
+                                p_states[*s_i] = e_i.end_time() - e_i.start_time();
+                                p_states[*s_j] = e_j.end_time() - e_j.start_time();
+                                // Normalize the states.
+                                p_states /= p_states.sum();
+                                // Get evidence event, states, start time and end time.
+                                let event = e_i.event();
+                                let start_time = e_i.start_time().min(e_j.start_time());
+                                let end_time = e_i.end_time().max(e_j.end_time());
+                                // Set the last evidence end time to the maximum of both.
+                                *e.last_mut().unwrap() = E::UncertainPositiveInterval {
+                                    event,
+                                    p_states,
+                                    start_time,
+                                    end_time,
+                                };
+                            }
+                        }
+                        (
+                            E::CertainNegativeInterval {
+                                not_states: s_i, ..
+                            },
+                            E::CertainNegativeInterval {
+                                not_states: s_j, ..
+                            },
+                        ) => {
+                            // Check if they are the same states.
+                            assert_eq!(
+                                s_i, s_j,
+                                "Overlapping negative evidence must have the same states."
+                            );
+                            // Get evidence event, not states, start time and end time.
+                            let (event, not_states, start_time) =
+                                (e_i.event(), s_i.clone(), e_i.start_time());
+                            // Set end time to the maximum of both.
+                            let end_time = e_i.end_time().max(e_j.end_time());
+                            // Set the last evidence end time to the maximum of both.
+                            *e.last_mut().unwrap() = E::CertainNegativeInterval {
+                                event,
+                                not_states,
+                                start_time,
+                                end_time,
+                            };
+                        }
+                        (
+                            E::UncertainPositiveInterval { p_states: s_i, .. },
+                            E::UncertainPositiveInterval { p_states: s_j, .. },
+                        ) => {
+                            // Check if they are the same states.
+                            assert!(
+                                relative_eq!(s_i, s_j),
+                                "Overlapping uncertain evidence must have the same states."
+                            );
+                            // Get evidence event, states, start time and end time.
+                            let (event, p_states, start_time) =
+                                (e_i.event(), s_i.clone(), e_i.start_time());
+                            // Set end time to the maximum of both.
+                            let end_time = e_i.end_time().max(e_j.end_time());
+                            // Set the last evidence end time to the maximum of both.
+                            *e.last_mut().unwrap() = E::UncertainPositiveInterval {
+                                event,
+                                p_states,
+                                start_time,
+                                end_time,
+                            };
+                        }
+                        (
+                            E::UncertainNegativeInterval {
+                                p_not_states: s_i, ..
+                            },
+                            E::UncertainNegativeInterval {
+                                p_not_states: s_j, ..
+                            },
+                        ) => {
+                            // Check if they are the same states.
+                            assert!(
+                                relative_eq!(s_i, s_j),
+                                "Overlapping uncertain evidence must have the same states."
+                            );
+                            // Get evidence event, not states, start time and end time.
+                            let (event, p_not_states, start_time) =
+                                (e_i.event(), s_i.clone(), e_i.start_time());
+                            // Set end time to the maximum of both.
+                            let end_time = e_i.end_time().max(e_j.end_time());
+                            // Set the last evidence end time to the maximum of both.
+                            *e.last_mut().unwrap() = E::UncertainNegativeInterval {
+                                event,
+                                p_not_states,
+                                start_time,
+                                end_time,
+                            };
+                        }
+                        // If they are not the same type of evidence ...
+                        _ => panic!("Overlapping evidence must have the same type"),
                     }
-                    E::UncertainNegativeInterval { p_not_states, .. } => {
-                        p_not_states.iter().all(|&x| x >= 0.0)
-                    }
-                }),
-                "States distributions must be non-negative."
-            );
-            // Assert states distributions sum to 1.
-            assert!(
-                evidence.iter().all(|e| match e {
-                    E::CertainPositiveInterval { .. } => true,
-                    E::CertainNegativeInterval { .. } => true,
-                    E::UncertainPositiveInterval { p_states, .. } => {
-                        relative_eq!(p_states.sum(), 1.)
-                    }
-                    E::UncertainNegativeInterval { p_not_states, .. } => {
-                        relative_eq!(p_not_states.sum(), 1.)
-                    }
-                }),
-                "States distributions must sum to 1."
-            );
-        }
+
+                    e
+                });
+
+                // Assert current ending time is less or equal than next starting time.
+                assert!(
+                    evidence
+                        .windows(2)
+                        .all(|e| e[0].end_time() <= e[1].start_time()),
+                    "Ending time must be less or equal than next starting time."
+                );
+            },
+        );
 
         // Create a new categorical trajectory evidence instance.
         Self {

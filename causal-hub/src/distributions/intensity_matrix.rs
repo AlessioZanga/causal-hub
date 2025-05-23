@@ -111,7 +111,7 @@ impl CatCIM {
         // Check if the product of the number of states of the remaining variables matches the number of rows.
         assert_eq!(
             shape[0],
-            conditioning_cardinality.iter().product(),
+            conditioning_cardinality.iter().product::<usize>(),
             "Product of the number of conditioning states must match the first shape."
         );
 
@@ -126,12 +126,12 @@ impl CatCIM {
             );
             // Assert Q has non-positive diagonal.
             assert!(
-                q.diag().iter().all(|&x| x <= 0.0),
+                q.diag().iter().all(|&x| x <= 0.),
                 "Q diagonal must be non-positive."
             );
             // Assert Q has non-negative off-diagonal.
             assert!(
-                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.0),
+                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.),
                 "Q off-diagonal must be non-negative."
             );
             // Assert Q rows sum to zero.
@@ -298,8 +298,28 @@ impl CatCIM {
         N: AsRef<str>,
         O: AsRef<str>,
     {
+        // Assert the sample size is finite and non-negative.
+        sample_size.inspect(|&x| {
+            assert!(
+                x.is_finite() && x >= 0.,
+                "Sample size must be finite and non-negative: \n\
+                \t expected: sample_size >= 0, \n\
+                \t found:    sample_size == {x} ."
+            )
+        });
+        // Assert the sample log-likelihood is finite.
+        sample_log_likelihood.inspect(|&x| {
+            assert!(
+                x.is_finite(),
+                "Sample log-likelihood must be finite: \n\
+                \t expected: sample_ll is finite, \n\
+                \t found:    sample_ll is {x} ."
+            )
+        });
+
         // Construct the CIM.
         let mut cim = Self::new(state, conditioning_states, parameters);
+
         // Set the sample size and log-likelihood.
         cim.sample_size = sample_size;
         cim.sample_log_likelihood = sample_log_likelihood;

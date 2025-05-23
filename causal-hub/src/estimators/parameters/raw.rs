@@ -1,27 +1,44 @@
+use std::ops::Deref;
+
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
+use rand::{Rng, SeedableRng, seq::SliceRandom};
+use rand_distr::{Distribution, weighted::WeightedIndex};
 use rayon::prelude::*;
 
 use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
     distributions::CatCIM,
+    types::FxIndexSet,
 };
+
+// TODO: This must be refactored to be stateless.
 
 /// A struct representing a raw estimator.
 ///
 /// This estimator is used to find an initial guess of the parameters with the given evidence.
 /// Its purpose is to provide a starting point for the other estimators, like EM.
 ///
-#[derive(Clone, Copy, Debug)]
-pub struct RawEstimator<D> {
-    dataset: D,
+#[derive(Debug)]
+pub struct RawEstimator<'a, R, E, D> {
+    rng: &'a mut R,
+    evidence: &'a E,
+    dataset: Option<D>,
 }
 
 /// A type alias for a raw estimator.
-pub type RE<D> = RawEstimator<D>;
+pub type RE<'a, R, E, D> = RawEstimator<'a, R, E, D>;
 
-impl RE<CatTrj> {
+impl<R, E, D> Deref for RawEstimator<'_, R, E, D> {
+    type Target = D;
+
+    fn deref(&self) -> &Self::Target {
+        self.dataset.as_ref().unwrap()
+    }
+}
+
+impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
     /// Constructs a new raw estimator from the evidence.
     ///
     /// # Arguments
@@ -32,11 +49,84 @@ impl RE<CatTrj> {
     ///
     /// A new `RE` instance.
     ///
-    pub fn new(evidence: &CatTrjEv) -> Self {
-        // Fill the evidence with the raw estimator.
-        let dataset = Self::fill(evidence);
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Self {
+        // Initialize the estimator.
+        let mut estimator = Self {
+            rng,
+            evidence,
+            dataset: None,
+        };
 
-        Self { dataset }
+        // Fill the evidence with the raw estimator.
+        estimator.dataset = Some(estimator.par_fill());
+
+        estimator
+    }
+
+    /// Sample uncertain evidence.
+    /// TODO: Taken from importance sampling, deduplicate.
+    fn sample_evidence(&mut self) -> CatTrjEv {
+        // Get shortened variable type.
+        use CatTrjEvT as E;
+
+        // Sample the evidence for each variable.
+        let certain_evidence = self
+            .evidence
+            // Flatten the evidence.
+            .values()
+            .iter()
+            // Map (label, [evidence]) to (label, evidence) pairs.
+            .flat_map(|(_, e)| e)
+            .flat_map(|e| {
+                // Get the variable index, starting time, and ending time.
+                let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
+                // Sample the evidence.
+                let e = match e {
+                    E::UncertainPositiveInterval { p_states, .. } => {
+                        // Construct the sampler.
+                        let state = WeightedIndex::new(p_states).unwrap();
+                        // Sample the state.
+                        let state = state.sample(self.rng);
+                        // Return the sample.
+                        E::CertainPositiveInterval {
+                            event,
+                            state,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                    E::UncertainNegativeInterval { p_not_states, .. } => {
+                        // Allocate the not states.
+                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        // Repeat until only a subset of the not states are sampled.
+                        while not_states.len() == p_not_states.len() {
+                            // Sample the not states.
+                            not_states = p_not_states
+                                .indexed_iter()
+                                // For each (state, p_not_state) pair ...
+                                .filter_map(|(i, &p_i)| {
+                                    // ... with p_i probability, retain the state.
+                                    Some(i).filter(|_| self.rng.random_bool(p_i))
+                                })
+                                .collect();
+                        }
+                        // Return the sample and weight.
+                        E::CertainNegativeInterval {
+                            event,
+                            not_states,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                    _ => e.clone(), // Due to evidence sampling.
+                };
+
+                // Return the certain evidence.
+                Some(e)
+            });
+
+        // Collect the certain evidence.
+        CatTrjEv::new(self.evidence.states(), certain_evidence)
     }
 
     /// Fills the evidence with the raw estimator.
@@ -49,17 +139,18 @@ impl RE<CatTrj> {
     ///
     /// A new `CatTrj` instance.
     ///
-    pub fn fill(evidence: &CatTrjEv) -> CatTrj {
+    fn par_fill(&mut self) -> CatTrj {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Set missing placeholder.
         const M: u8 = u8::MAX;
 
         // Get labels and states.
-        let states = evidence.states();
+        let states = self.evidence.states();
 
         // Get the ending time of the last event.
-        let end_time = evidence
+        let end_time = self
+            .evidence
             .values()
             .iter()
             // Get the ending time of each event.
@@ -68,10 +159,11 @@ impl RE<CatTrj> {
             // Get the maximum time.
             .max_by(|a, b| a.partial_cmp(b).unwrap())
             // Unwrap the maximum time.
-            .unwrap();
+            .unwrap_or(0.);
 
-        // Deduplicate and sort the evidence by starting time.
-        let times: Array1<_> = evidence
+        // Sort the evidence by starting time, adding initial and ending time.
+        let times: Array1<_> = self
+            .evidence
             .values()
             .iter()
             // Get the starting time of each event.
@@ -81,12 +173,15 @@ impl RE<CatTrj> {
             .chain([0., end_time])
             // Sort the times.
             .sorted_by(|a, b| a.partial_cmp(b).unwrap())
-            // Deduplicate the times.
+            // Deduplicate the times to aggregate the events.
             .dedup()
             .collect();
 
         // Allocate the matrix of events with unknown states.
         let mut events = Array2::from_elem((times.len(), states.len()), M);
+
+        // Reduce the uncertain evidences to certain evidences.
+        let evidence = self.sample_evidence();
 
         // Set the states of the events given the evidence.
         Zip::from(&times)
@@ -103,8 +198,7 @@ impl RE<CatTrj> {
                         match e_i_t {
                             E::CertainPositiveInterval { state, .. } => *e = *state as u8,
                             E::CertainNegativeInterval { .. } => todo!(), // FIXME:
-                            E::UncertainPositiveInterval { .. } => todo!(), // FIXME:
-                            E::UncertainNegativeInterval { .. } => todo!(), // FIXME:
+                            _ => unreachable!(), // Due to the previous assertions, this should never happen.
                         }
                     }
                 });
@@ -116,7 +210,7 @@ impl RE<CatTrj> {
             .into_par_iter()
             .for_each(|mut event| {
                 // If no evidence is present at all, set the first state to a constant value.
-                if let None = event.iter().position(|e| *e != M) {
+                if event.iter().all(|e| *e == M) {
                     event[0] = 0;
                 }
                 // Set the first known state position.
@@ -157,14 +251,73 @@ impl RE<CatTrj> {
                 }
             });
 
-        // FIXME: Random split events if multiple states transition at the same time.
+        // Initialize the events and times with first event and time, if any.
+        let mut new_events: Vec<_> = events
+            .rows()
+            .into_iter()
+            .map(|x| x.to_owned())
+            .take(1)
+            .collect();
+        let mut new_times: Vec<_> = times.iter().cloned().take(1).collect();
+
+        // Check if there is at max one state change per transition.
+        events
+            .rows()
+            .into_iter()
+            .zip(&times)
+            .tuple_windows()
+            .for_each(|((e_i, t_i), (e_j, t_j))| {
+                // Count the number of state changes.
+                let mut diff: Vec<_> = e_i
+                    .indexed_iter()
+                    .zip(e_j.indexed_iter())
+                    .filter_map(|(i, j)| if i != j { Some(j) } else { None })
+                    .collect();
+                // Check if there is at most one state change.
+                if diff.len() <= 1 {
+                    // Add the event and time to the new events.
+                    new_events.push(e_j.to_owned());
+                    new_times.push(*t_j);
+                    // Nothing to fix, just return.
+                    return;
+                }
+                // Otherwise, we have multiple state changes.
+                // Shuffle them to generate a transition order.
+                diff.shuffle(self.rng);
+                // Ignore the last state change to avoid overlap with the next event.
+                diff.pop();
+                // Get the first state change.
+                let (mut e_k, mut t_k) = (e_i.to_owned(), *t_i);
+                // Compute uniform time delta.
+                let t_delta = (t_j - t_i) / (diff.len() + 1) as f64;
+                // Generate the events to add to fill the gaps between e_i and e_j.
+                diff.into_iter().for_each(|(i, x)| {
+                    // Set the state to the event.
+                    e_k[i] = *x;
+                    // Set the time to the event.
+                    t_k += t_delta;
+                    // Add the event and time to the new events.
+                    new_events.push(e_k.clone());
+                    new_times.push(t_k);
+                });
+                // Add the last event and time to the new events.
+                new_events.push(e_j.to_owned());
+                new_times.push(*t_j);
+            });
+
+        // Reshape the events to the number of events and states.
+        let events = Array::from_iter(new_events.into_iter().flatten())
+            .into_shape_with_order((new_times.len(), states.len()))
+            .expect("Failed to reshape events.");
+        // Reshape the times to the number of events.
+        let times = Array::from_iter(new_times);
 
         // Construct the fully observed trajectory.
         CatTrj::new(states, events, times)
     }
 }
 
-impl RE<CatTrjs> {
+impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
     /// Constructs a new raw estimator from the evidence.
     ///
     /// # Arguments
@@ -175,44 +328,61 @@ impl RE<CatTrjs> {
     ///
     /// A new `RE` instance.
     ///
-    pub fn new(evidence: &CatTrjsEv) -> Self {
-        // Fill the evidence with the raw estimator.
-        let dataset: CatTrjs = evidence
-            .values()
-            .par_iter()
-            .map(RE::<CatTrj>::fill)
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Self {
+        // Sample seed for parallel sampling.
+        let seeds: Vec<_> = (0..evidence.values().len())
+            .map(|_| rng.next_u64())
             .collect();
+        // Fill the evidence with the raw estimator.
+        let dataset: Option<CatTrjs> = Some(
+            seeds
+                .into_par_iter()
+                .zip(evidence.values())
+                .map(|(seed, e)| {
+                    // Create a new random number generator with the seed.
+                    let mut rng = R::seed_from_u64(seed);
+                    // Fill the evidence with the raw estimator.
+                    RE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)
+                        .dataset
+                        .unwrap()
+                })
+                .collect(),
+        );
 
-        Self { dataset }
+        Self {
+            rng,
+            evidence,
+            dataset,
+        }
     }
 }
 
-impl CPDEstimator<CatCIM> for RE<CatTrj> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> {
     // (conditional counts, conditional time spent, sample size)
     type SS = (Array3<f64>, Array2<f64>, f64);
 
     fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
-        BE::new(&self.dataset, (1, 1.)).fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
 }
 
-impl CPDEstimator<CatCIM> for RE<CatTrjs> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
     // (conditional counts, conditional time spent, sample size)
     type SS = (Array3<f64>, Array2<f64>, f64);
 
     fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
-        BE::new(&self.dataset, (1, 1.)).fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
 }
 
-impl ParCPDEstimator<CatCIM> for RE<CatTrjs> {
+impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
     // (conditional counts, conditional time spent, sample size)
     type SS = (Array3<f64>, Array2<f64>, f64);
 
     fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
-        BE::new(&self.dataset, (1, 1.)).par_fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit_transform(x, z)
     }
 }

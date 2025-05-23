@@ -59,7 +59,7 @@ pub fn sem(
     }
 
     // Initialize a raw estimator for an initial guess.
-    let raw = RE::<CatTrjs>::new(&evidence);
+    let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
     // Set the initial CIMs.
     let initial_cims: Vec<_> = inital_graph
         .vertices()

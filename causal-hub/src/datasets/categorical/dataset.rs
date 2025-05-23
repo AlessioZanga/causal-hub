@@ -65,16 +65,38 @@ impl CatData {
     {
         // Collect the states into a map.
         let states = collect_states(states);
+        // Get the indices to sort the labels and states labels.
+        let (states, sorted_idx) = sort_states(states);
+        // Get the labels of the variables.
+        let labels: FxIndexSet<_> = states.keys().cloned().collect();
+        // Get the cardinality of the states.
+        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
 
+        // Check if the number of states is less than `u8::MAX`.
+        states.iter().for_each(|(label, state)| {
+            assert!(
+                state.len() < u8::MAX as usize,
+                "Variable '{label}' should have less than 256 states.",
+            );
+        });
         // Check if the number of variables is equal to the number of columns.
         assert_eq!(
             states.len(),
             values.ncols(),
             "Number of variables must be equal to the number of columns."
         );
-
-        // Get the indices to sort the labels and states labels.
-        let (states, indices) = sort_states(states);
+        // Check if the maximum value of the values is less than the number of states.
+        values
+            .fold_axis(Axis(0), 0, |&a, &b| if a > b { a } else { b })
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, x)| {
+                assert!(
+                    x < states[i].len() as u8,
+                    "Values of variable '{}' must be less than the number of states.",
+                    labels[i]
+                );
+            });
 
         // Allocate the new values array.
         let mut new_values = values.clone();
@@ -85,10 +107,10 @@ impl CatData {
             .enumerate()
             .for_each(|(i, mut new_values_col)| {
                 // Get the indices of the states labels.
-                let (label_idx, states_idx) = &indices[i];
+                let (label_idx, states_idx) = &sorted_idx[i];
                 // Get the corresponding states labels.
                 let values_col = values.column(*label_idx);
-                // Sort the values by the indices of the states labels. TODO: Check `u8::MAX` limit.
+                // Sort the values by the indices of the states labels.
                 let values_col = values_col.mapv(|x| states_idx[x as usize] as u8);
                 // Assign the sorted values to the new values array.
                 new_values_col.assign(&values_col);
@@ -96,33 +118,48 @@ impl CatData {
         // Update the values with the new sorted values.
         let values = new_values;
 
-        // Get the labels of the variables.
-        let labels: FxIndexSet<_> = states.keys().cloned().collect();
-        // Get the cardinality of the set of states.
-        let cardinality: Array1<_> = states.values().map(|i| i.len()).collect();
-
-        // Check if the number of states is less than `u8::MAX`.
-        assert!(
-            cardinality.iter().all(|&x| x <= u8::MAX as usize),
-            "Number of states must be less than {}.",
-            u8::MAX
+        // Debug assert labels are unique.
+        debug_assert_eq!(
+            labels.iter().unique().count(),
+            labels.len(),
+            "Labels must be unique."
         );
-        // Check if the maximum value of the values is less than the number of states.
-        assert!(
-            values
-                .fold_axis(Axis(0), 0, |&a, &b| a.max(b))
-                .into_iter()
-                .zip(&cardinality)
-                .all(|(x, &y)| (x as usize) < y),
-            "Variables values must be smaller than the number of states."
-        );
-
-        // Debug assert to check the sorting of the labels.
+        // Debug assert labels are sorted.
         debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
-        debug_assert!(states.keys().is_sorted(), "Labels must be sorted.");
+        // Debug assert states keys are unique.
+        debug_assert_eq!(
+            states.keys().unique().count(),
+            states.len(),
+            "States keys must be unique."
+        );
+        // Debug assert states keys are sorted.
+        debug_assert!(states.keys().is_sorted(), "States keys must be sorted.");
+        // Debug assert states values are unique.
+        debug_assert_eq!(
+            states
+                .values()
+                .map(|x| x.iter().unique().count())
+                .sum::<usize>(),
+            states.values().map(|x| x.len()).sum::<usize>(),
+            "States values must be unique."
+        );
+        // Debug assert states values are sorted.
         debug_assert!(
             states.values().all(|x| x.iter().is_sorted()),
-            "States must be sorted."
+            "States values must be sorted."
+        );
+        // Debug assert labels and states keys are the same.
+        debug_assert!(
+            labels.iter().eq(states.keys()),
+            "Labels and states keys must be the same."
+        );
+        // Debug assert cardinality must match the number of states.
+        debug_assert!(
+            cardinality
+                .iter()
+                .zip(states.values())
+                .all(|(&a, b)| a == b.len()),
+            "Cardinality must match the number of states values."
         );
 
         Self {

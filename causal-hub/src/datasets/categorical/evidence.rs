@@ -121,8 +121,7 @@ impl CategoricalEvidence {
         // Collect the states into a map.
         let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
-        let (states, indices) = sort_states(states);
-
+        let (states, sorted_idx) = sort_states(states);
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
         // Get the cardinality of the states.
@@ -136,12 +135,12 @@ impl CategoricalEvidence {
             states.keys().map(|label| (label.clone(), None)).collect();
 
         // Reverse the indices to get the argsort.
-        let mut argsort_indices = indices.clone();
-        indices
+        let mut argsorted_idx = sorted_idx.clone();
+        sorted_idx
             .into_iter()
             .enumerate()
             .for_each(|(i, (j, states))| {
-                argsort_indices[j] = (i, states);
+                argsorted_idx[j] = (i, states);
             });
 
         // Iterate over the values and insert them into the events map using sorted indices.
@@ -149,7 +148,7 @@ impl CategoricalEvidence {
             // Get the event of the evidence.
             let event = e.event();
             // Sort event index.
-            let (event, states) = &argsort_indices[event];
+            let (event, states) = &argsorted_idx[event];
             // Get the event index.
             let event = *event;
 
