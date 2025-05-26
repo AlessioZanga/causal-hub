@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::load_eating,
         datasets::Dataset,
-        estimators::{BE, CTPC, ChiSquaredTest, FTest},
+        estimators::{CTPC, ChiSquaredTest, FTest, MLE},
         graphs::{DiGraph, Graph},
         models::CTBN,
         samplers::{ForwardSampler, ParCTBNSampler},
@@ -25,7 +25,7 @@ mod tests {
         let dataset = forward.par_sample_n_by_length(100, 100);
 
         // Initialize a parameter estimator.
-        let estimator = BE::new(&dataset, (1, 1.));
+        let estimator = MLE::new(&dataset);
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Initialize the F test.
@@ -57,7 +57,7 @@ mod tests {
         let dataset = forward.par_sample_n_by_length(100, 1_000);
 
         // Initialize a parameter estimator.
-        let estimator = BE::new(&dataset, (1, 1.));
+        let estimator = MLE::new(&dataset);
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Initialize the F test.

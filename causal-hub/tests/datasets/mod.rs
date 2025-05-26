@@ -1,1 +1,2 @@
 mod categorical;
+mod trajectory;

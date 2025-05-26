@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{FxIndexMap, FxIndexSet},
-    utils::RMI,
+    types::{EPSILON, FxIndexMap, FxIndexSet},
+    utils::{RMI, collect_states},
 };
 
 /// A struct representing a categorical conditional intensity matrix.
@@ -85,39 +85,7 @@ impl CatCIM {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the conditioning variables.
-        let mut conditioning_states: FxIndexMap<_, _> = conditioning_states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|(_label, _states)| {
-                // Convert the variable label to a string.
-                let _label = _label.as_ref().to_owned();
-                // Assert conditioned variable is not a conditioning variable.
-                assert_ne!(
-                    _label, label,
-                    "Conditioned variable cannot be a conditioning variable."
-                );
-                // Initialize states counter.
-                let mut n = 0;
-                // Convert the variable states to a set of strings.
-                let _states: FxIndexSet<_> = _states
-                    .into_iter()
-                    .inspect(|_| n += 1)
-                    .map(|x| x.as_ref().to_owned())
-                    .collect();
-                // Assert unique states.
-                assert_eq!(_states.len(), n, "Variables states must be unique.");
-
-                (_label, _states)
-            })
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(
-            conditioning_states.len(),
-            n,
-            "Variables labels must be unique."
-        );
-
+        let mut conditioning_states = collect_states(conditioning_states);
         // Get the labels of the variables.
         let mut conditioning_labels: FxIndexSet<_> = conditioning_states.keys().cloned().collect();
 
@@ -143,7 +111,7 @@ impl CatCIM {
         // Check if the product of the number of states of the remaining variables matches the number of rows.
         assert_eq!(
             shape[0],
-            conditioning_cardinality.iter().product(),
+            conditioning_cardinality.iter().product::<usize>(),
             "Product of the number of conditioning states must match the first shape."
         );
 
@@ -151,19 +119,26 @@ impl CatCIM {
         parameters.outer_iter().for_each(|q| {
             // Assert Q is square.
             assert_eq!(q.nrows(), q.ncols(), "Q must be square.");
+            // Assert Q has finite values.
+            assert!(
+                q.iter().all(|&x| x.is_finite()),
+                "Q must have finite values."
+            );
             // Assert Q has non-positive diagonal.
             assert!(
-                q.diag().iter().all(|&x| x <= 0.0),
+                q.diag().iter().all(|&x| x <= 0.),
                 "Q diagonal must be non-positive."
             );
             // Assert Q has non-negative off-diagonal.
             assert!(
-                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.0),
+                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.),
                 "Q off-diagonal must be non-negative."
             );
             // Assert Q rows sum to zero.
             assert!(
-                q.rows().into_iter().all(|x| relative_eq!(x.sum(), 0.)),
+                q.rows()
+                    .into_iter()
+                    .all(|x| relative_eq!(x.sum(), 0., epsilon = EPSILON)),
                 "Q rows must sum to zero."
             );
         });
@@ -323,8 +298,28 @@ impl CatCIM {
         N: AsRef<str>,
         O: AsRef<str>,
     {
+        // Assert the sample size is finite and non-negative.
+        sample_size.inspect(|&x| {
+            assert!(
+                x.is_finite() && x >= 0.,
+                "Sample size must be finite and non-negative: \n\
+                \t expected: sample_size >= 0, \n\
+                \t found:    sample_size == {x} ."
+            )
+        });
+        // Assert the sample log-likelihood is finite.
+        sample_log_likelihood.inspect(|&x| {
+            assert!(
+                x.is_finite(),
+                "Sample log-likelihood must be finite: \n\
+                \t expected: sample_ll is finite, \n\
+                \t found:    sample_ll is {x} ."
+            )
+        });
+
         // Construct the CIM.
         let mut cim = Self::new(state, conditioning_states, parameters);
+
         // Set the sample size and log-likelihood.
         cim.sample_size = sample_size;
         cim.sample_log_likelihood = sample_log_likelihood;

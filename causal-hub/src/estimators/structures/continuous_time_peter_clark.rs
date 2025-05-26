@@ -91,7 +91,7 @@ where
             // Compute the scaling factors.
             let k = &k_xz.sum_axis(Axis(1)) / &k_xs.sum_axis(Axis(1));
             let k = k.sqrt().insert_axis(Axis(1));
-            let l = (&k).recip();
+            let l = k.recip();
             // Compute the chi-squared statistic for uneven number of samples.
             let chi_sq_num = (&k * &k_xs - &l * &k_xz).powi(2);
             let chi_sq_den = &k_xs + &k_xz;

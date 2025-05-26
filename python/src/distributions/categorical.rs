@@ -4,27 +4,20 @@ use causal_hub::distributions::{CPD, CatCPD};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
 
+use crate::impl_deref_from_into;
+
 /// A struct representing a categorical conditional probability distribution (CPD).
 #[pyclass(name = "CatCPD")]
 #[derive(Clone, Debug)]
-pub struct PyCategoricalCPD {
+pub struct PyCatCPD {
     inner: CatCPD,
 }
 
-impl From<CatCPD> for PyCategoricalCPD {
-    fn from(inner: CatCPD) -> Self {
-        Self { inner }
-    }
-}
-
-impl From<PyCategoricalCPD> for CatCPD {
-    fn from(outer: PyCategoricalCPD) -> Self {
-        outer.inner
-    }
-}
+// Implement `Deref`, `From` and `Into` traits.
+impl_deref_from_into!(PyCatCPD, CatCPD);
 
 #[pymethods]
-impl PyCategoricalCPD {
+impl PyCatCPD {
     #[new]
     fn new(
         state: &Bound<'_, PyTuple>,

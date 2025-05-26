@@ -9,8 +9,14 @@ name = "causal_hub"
 crate-type = ["cdylib"]
 
 [dependencies]
+approx.workspace = true
 causal-hub = { path = "../causal-hub" }
 dry.workspace = true
-numpy = "0.24.0"
+numpy = "^0.25"
 paste.workspace = true
-pyo3 = { version = "0.24.0", features = ["extension-module"] }
+pyo3 = { version = "^0.25", features = ["extension-module"] }
+pyo3-log = "^0.12"
+rand.workspace = true
+rand_xoshiro = "^0.7"
+rayon.workspace = true
+serde.workspace = true

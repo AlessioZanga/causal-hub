@@ -14,6 +14,7 @@ use crate::{
     datasets::{CatData, CatTrj},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
+    types::EPSILON,
 };
 
 /// A forward sampler.
@@ -185,6 +186,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
                     // Sample the transition time.
                     times[j] = time + self.sample_time(&event, j);
                 });
+            // Add a small epsilon to avoid zero transition times.
+            times += EPSILON;
             // Get the variable to transition first.
             i = times.argmin().unwrap();
             // Update the global time.
@@ -200,8 +203,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             .into_shape_with_order(shape)
             .expect("Failed to convert events to 2D array.");
         // Convert the times to a 1D array.
-        let sample_times = Array::from_shape_vec((sample_times.len(),), sample_times)
-            .expect("Failed to convert times to 1D array.");
+        let sample_times = Array::from_iter(sample_times);
 
         // Return the trajectory.
         CatTrj::new(states, sample_events, sample_times)

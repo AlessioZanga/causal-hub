@@ -1,5 +1,3 @@
-use core::f64;
-
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
@@ -14,7 +12,7 @@ use crate::{
     datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
-    types::FxIndexSet,
+    types::{EPSILON, FxIndexSet},
 };
 
 /// A struct for sampling using importance sampling.
@@ -61,8 +59,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .evidences()
             .iter()
             // Filter empty evidences.
-            .filter_map(|(l, e)| e.clone().map(|e| (l, e)))
-            .flat_map(|(l, e)| {
+            .filter_map(|(_, e)| e.clone())
+            .flat_map(|e| {
+                // Get the event index.
+                let event = e.event();
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositive { p_states, .. } => {
@@ -71,7 +71,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                         // Sample the state.
                         let state = state.sample(self.rng);
                         // Return the sample.
-                        E::CertainPositive { state }
+                        E::CertainPositive { event, state }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
                         // Allocate the not states.
@@ -89,13 +89,13 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                                 .collect();
                         }
                         // Return the sample and weight.
-                        E::CertainNegative { not_states }
+                        E::CertainNegative { event, not_states }
                     }
                     _ => e.clone(), // Due to evidence sampling.
                 };
 
                 // Return the certain evidence.
-                Some((l, e))
+                Some(e)
             });
 
         // Collect the certain evidence.
@@ -212,10 +212,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .values()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .flat_map(|(l, e)| std::iter::repeat(l).zip(e))
-            .flat_map(|(l, e)| {
+            .flat_map(|(_, e)| e)
+            .flat_map(|e| {
                 // Get the variable index, starting time, and ending time.
-                let (start_time, end_time) = (e.start_time(), e.end_time());
+                let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositiveInterval { p_states, .. } => {
@@ -225,6 +225,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                         let state = state.sample(self.rng);
                         // Return the sample.
                         E::CertainPositiveInterval {
+                            event,
                             state,
                             start_time,
                             end_time,
@@ -247,6 +248,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                         }
                         // Return the sample and weight.
                         E::CertainNegativeInterval {
+                            event,
                             not_states,
                             start_time,
                             end_time,
@@ -256,7 +258,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 };
 
                 // Return the certain evidence.
-                Some((l, e))
+                Some(e)
             });
 
         // Collect the certain evidence.
@@ -597,6 +599,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                     });
             }
 
+            // Add a small epsilon to avoid zero transition times.
+            times += EPSILON;
             // Get the variable to transition first.
             i = times.argmin().unwrap();
             // Update the weight.
@@ -614,8 +618,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
             .into_shape_with_order(shape)
             .expect("Failed to convert events to 2D array.");
         // Convert the times to a 1D array.
-        let sample_times = Array::from_shape_vec((sample_times.len(),), sample_times)
-            .expect("Failed to convert times to 1D array.");
+        let sample_times = Array::from_iter(sample_times);
 
         // Construct the trajectory.
         let trajectory = CatTrj::new(states, sample_events, sample_times);

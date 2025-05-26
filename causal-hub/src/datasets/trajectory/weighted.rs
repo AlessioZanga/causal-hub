@@ -108,7 +108,7 @@ impl CatWtdTrj {
     ///
     #[inline]
     pub const fn times(&self) -> &Array1<f64> {
-        &self.trajectory.times()
+        self.trajectory.times()
     }
 }
 

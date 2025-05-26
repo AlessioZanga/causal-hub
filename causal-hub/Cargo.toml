@@ -11,6 +11,7 @@ dry.workspace = true
 fxhash.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
+log.workspace = true
 ndarray.workspace = true
 ndarray-stats.workspace = true
 paste.workspace = true

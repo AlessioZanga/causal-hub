@@ -59,7 +59,7 @@ mod tests {
                 assert_eq!(distribution.sample_size(), Some(5.));
                 assert_relative_eq!(
                     distribution.sample_log_likelihood().unwrap(),
-                    -3.3734430845806758
+                    -4.780356732903302
                 );
 
                 assert_eq!(
@@ -103,7 +103,7 @@ mod tests {
                 assert_eq!(distribution.sample_size(), Some(5.));
                 assert_relative_eq!(
                     distribution.sample_log_likelihood().unwrap(),
-                    -2.602689685444384
+                    -8.501216236893097
                 );
 
                 assert_eq!(

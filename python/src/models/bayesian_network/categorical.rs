@@ -11,28 +11,19 @@ use causal_hub::{
 };
 use pyo3::{prelude::*, types::PyType};
 
-use crate::{distributions::PyCategoricalCPD, graphs::PyDiGraph};
+use crate::{distributions::PyCatCPD, graphs::PyDiGraph, impl_deref_from_into};
 
 #[pyclass(name = "CatBN")]
 #[derive(Clone, Debug)]
-pub struct PyCategoricalBN {
+pub struct PyCatBN {
     inner: CatBN,
 }
 
-impl From<CatBN> for PyCategoricalBN {
-    fn from(inner: CatBN) -> Self {
-        Self { inner }
-    }
-}
-
-impl From<PyCategoricalBN> for CatBN {
-    fn from(outer: PyCategoricalBN) -> Self {
-        outer.inner
-    }
-}
+// Implement `Deref`, `From` and `Into` traits.
+impl_deref_from_into!(PyCatBN, CatBN);
 
 #[pymethods]
-impl PyCategoricalBN {
+impl PyCatBN {
     /// Constructs a new Bayesian network.
     ///
     /// # Arguments
@@ -51,9 +42,9 @@ impl PyCategoricalBN {
         // Convert PyAny to Vec<CatCPD>.
         let cpds: Vec<_> = cpds
             .try_iter()?
-            .map(|x| x?.extract::<PyCategoricalCPD>())
+            .map(|x| x?.extract::<PyCatCPD>())
             .collect::<PyResult<_>>()?;
-        // Convert Vec<PyCategoricalCPD> to Vec<CatCPD>.
+        // Convert Vec<PyCatCPD> to Vec<CatCPD>.
         let cpds = cpds.into_iter().map(|x| x.into());
         // Create a new CatBN with the given parameters.
         Ok(CatBN::new(graph, cpds).into())
@@ -83,9 +74,9 @@ impl PyCategoricalBN {
     ///
     /// # Returns
     ///
-    /// A reference to the cpds.
+    /// A reference to the CPDs.
     ///
-    fn cpds(&self) -> PyResult<BTreeMap<&str, PyCategoricalCPD>> {
+    fn cpds(&self) -> PyResult<BTreeMap<&str, PyCatCPD>> {
         Ok(self
             .inner
             .cpds()
@@ -93,7 +84,7 @@ impl PyCategoricalBN {
             .map(|(label, cpd)| {
                 // Convert the label to a string slice.
                 let label = label.as_ref();
-                // Convert the CPD to a PyCategoricalCPD.
+                // Convert the CPD to a PyCatCPD.
                 let cpd = cpd.clone().into();
                 // Return the label and CPD as a tuple.
                 (label, cpd)

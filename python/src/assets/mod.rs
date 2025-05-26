@@ -2,7 +2,7 @@ use dry::macro_for;
 use paste::paste;
 use pyo3::prelude::*;
 
-use crate::models::PyCategoricalBN;
+use crate::models::{PyCatBN, PyCatCTBN};
 
 macro_for!(
     $bn in [
@@ -13,8 +13,14 @@ macro_for!(
     paste! {
         #[doc = "Load the `" $bn:upper "` BN from the assets."]
         #[pyfunction]
-        pub fn [<load_ $bn>]() -> PyCategoricalBN {
+        pub fn [<load_ $bn>]() -> PyCatBN {
             causal_hub::assets::[<load_ $bn>]().into()
         }
     }
 });
+
+/// Load the "EATING" CTBN from the assets.
+#[pyfunction]
+pub fn load_eating() -> PyCatCTBN {
+    causal_hub::assets::load_eating().into()
+}

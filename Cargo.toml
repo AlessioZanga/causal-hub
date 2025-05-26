@@ -20,6 +20,7 @@ dry = "^0.1"
 fxhash = "^0.2"
 indexmap = { version = "^2.7", features = ["rayon", "serde"] }
 itertools = "^0.14"
+log = "^0.4"
 ndarray = { version = "^0.16", features = ["approx", "rayon", "serde"] }
 ndarray-stats = "^0.6"
 paste = "^1.0"

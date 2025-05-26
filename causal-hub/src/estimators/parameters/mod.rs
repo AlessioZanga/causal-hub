@@ -8,8 +8,11 @@ mod maximum_likelihood;
 pub use maximum_likelihood::*;
 
 mod sufficient_statistics;
-use rayon::prelude::*;
 pub use sufficient_statistics::*;
+
+mod raw;
+pub use raw::*;
+use rayon::prelude::*;
 
 use crate::{
     graphs::{DiGraph, Graph},
@@ -202,7 +205,7 @@ where
         // Fit the parameters of the distribution using the estimator.
         let cpds: Vec<_> = graph
             .vertices()
-            .par_bridge()
+            .into_par_iter()
             .map(|i| self.par_fit(i, &graph.parents(i)))
             .collect();
         // Construct the BN with the graph and the parameters.
@@ -274,7 +277,7 @@ where
         // Fit the parameters of the distribution using the estimator.
         let cims: Vec<_> = graph
             .vertices()
-            .par_bridge()
+            .into_par_iter()
             .map(|i| self.par_fit(i, &graph.parents(i)))
             .collect();
         // Construct the CTBN with the graph and the parameters.

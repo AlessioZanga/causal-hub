@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
@@ -29,56 +30,101 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new<I, J, K, V>(states: I, events: Array2<u8>, times: Array1<f64>) -> Self
+    pub fn new<I, J, K, V>(states: I, mut events: Array2<u8>, mut times: Array1<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
         K: AsRef<str>,
         V: AsRef<str>,
     {
-        // Assert times must be positive and finite.
-        assert!(
-            times.iter().all(|&t| t.is_finite() && t >= 0.0),
-            "Times must be positive and finite."
+        // Assert the number of rows in values and times are equal.
+        assert_eq!(
+            events.nrows(),
+            times.len(),
+            "Trajectory events and times must have the same length."
         );
+        // Assert times must be positive and finite.
+        times.iter().for_each(|&t| {
+            assert!(
+                t.is_finite() && t >= 0.,
+                "Trajectory times must be finite and positive: \n\
+                \t expected: time >= 0 , \n\
+                \t found:    time == {t} ."
+            );
+        });
 
         // Sort values by times.
-        let mut indices: Vec<_> = (0..events.nrows()).collect();
-        indices.sort_by(|&a, &b| {
+        let mut sorted_idx: Vec<_> = (0..events.nrows()).collect();
+        sorted_idx.sort_by(|&a, &b| {
             times[a]
                 .partial_cmp(&times[b])
                 // Due to previous assertions, this should never fail.
                 .unwrap_or_else(|| unreachable!())
         });
-        // Clone the events and times arrays to avoid borrowing issues.
-        let mut new_events = events.clone();
-        let mut new_times = times.clone();
-        // Sort the events and times arrays by the sorted indices.
-        new_events
-            .rows_mut()
+
+        // Check if the times are already sorted.
+        if !sorted_idx.iter().is_sorted() {
+            // Sort times.
+            let mut new_times = times.clone();
+            new_times
+                .iter_mut()
+                .enumerate()
+                .for_each(|(i, new_time)| *new_time = times[sorted_idx[i]]);
+            // Update the times with the sorted values.
+            times = new_times;
+
+            // Sort events by time.
+            let mut new_events = events.clone();
+            // Sort the events by the sorted indices.
+            new_events
+                .rows_mut()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, mut new_events_row)| {
+                    new_events_row.assign(&events.row(sorted_idx[i]));
+                });
+            // Update the events with the sorted values.
+            events = new_events;
+        }
+
+        // Assert no duplicate times.
+        {
+            // Count the number of unique times.
+            let count = times.iter().dedup().count();
+            // Get the length of the times array.
+            let length = times.len();
+            // Assert the number of unique times is equal to the length of the times array.
+            assert_eq!(
+                count, length,
+                "Trajectory times must be unique: \n\
+                \t expected: {count} deduplicated time-points, \n\
+                \t found:    {length} non-deduplicated time-points, \n\
+                \t for:      {times}."
+            );
+        }
+
+        // Assert at max one state change per transition.
+        events
+            .rows()
             .into_iter()
-            .zip(new_times.iter_mut())
-            .enumerate()
-            .for_each(|(i, (mut new_events_row, new_time))| {
-                new_events_row.assign(&events.row(indices[i]));
-                *new_time = times[indices[i]];
+            .zip(&times)
+            .tuple_windows()
+            .for_each(|((e_i, t_i), (e_j, t_j))| {
+                // Count the number of state changes.
+                let count = e_i.iter().zip(e_j).filter(|(a, b)| a != b).count();
+                // Assert there is one and only one state change.
+                assert!(
+                    count <= 1,
+                    "Trajectory events must contain at max one change per transition: \n\
+                    \t expected: count <= 1 state change, \n\
+                    \t found:    count == {count} state changes, \n\
+                    \t for:      {e_i} event with time {t_i}, \n\
+                    \t and:      {e_j} event with time {t_j}."
+                );
             });
-        // Update the events and times with the sorted values.
-        let events = new_events;
-        let times = new_times;
 
         // Create a new categorical dataset instance.
         let events = CatData::new(states, events);
-
-        // Assert the number of rows in values and times are equal.
-        assert_eq!(
-            events.values().nrows(),
-            times.len(),
-            "The number of events and times must be equal."
-        );
-
-        // Debug assert times are sorted.
-        debug_assert!(times.iter().is_sorted(), "Times must be sorted.");
 
         // Return a new trajectory instance.
         Self { events, times }

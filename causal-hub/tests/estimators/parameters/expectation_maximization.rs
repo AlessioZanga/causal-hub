@@ -6,14 +6,13 @@ mod tests {
         use approx::{assert_relative_eq, relative_eq};
         use causal_hub::{
             assets::load_eating,
-            datasets::{CatTrjEv, CatTrjsEv, CatWtdTrjs, Dataset},
-            distributions::CatCIM,
-            estimators::{BE, EMBuilder, MLE, ParCTBNEstimator},
+            datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
+            estimators::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RE},
+            graphs::Graph,
             models::{CTBN, CatCTBN},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
         };
-        use ndarray::prelude::*;
         use rand::{RngCore, SeedableRng};
         use rand_xoshiro::Xoshiro256PlusPlus;
         use rayon::prelude::*;
@@ -25,7 +24,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new([
                 // A single empty evidence.
-                CatTrjEv::new(model.states(), Vec::<(String, _)>::new()),
+                CatTrjEv::new(model.states(), []),
             ]);
 
             // Define the expectation step.
@@ -56,7 +55,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new(vec![
                 // A thousands empty evidence.
-                CatTrjEv::new(model.states(), Vec::<(String, _)>::new()); 1_000
+                CatTrjEv::new(model.states(), []); 10_000
             ]);
 
             // Initialize a new random number generator.
@@ -81,7 +80,7 @@ mod tests {
                         // Initialize a new sampler.
                         let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Sample the trajectories.
-                        importance.sample_by_length(1_000)
+                        importance.sample_by_length(100)
                     })
                     .collect()
             };
@@ -89,7 +88,7 @@ mod tests {
             // Define the maximization step.
             let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                 // Fit the new model using the expectation.
-                MLE::new(expectation).par_fit(prev_model.graph().clone())
+                ParCTBNEstimator::par_fit(&MLE::new(expectation), prev_model.graph().clone())
             };
 
             // Define the stopping criteria.
@@ -109,7 +108,7 @@ mod tests {
             let fitted_model = builder.fit();
 
             // Check if the models are equal.
-            assert_relative_eq!(fitted_model, model, epsilon = 5e-2);
+            assert_relative_eq!(model, fitted_model, epsilon = 5e-2);
         }
 
         #[test]
@@ -132,61 +131,27 @@ mod tests {
             // Sample the evidence from the fully-observed trajectories.
             let evidence = generator.random();
 
-            // Set uniform CIMs.
-            const E: f64 = 1.;
+            // Initialize a raw estimator for an initial guess.
+            let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
             // Set the initial CIMs.
-            let initial_cims = vec![
-                CatCIM::new(
-                    // P(Hungry | FullStomach)
-                    ("Hungry", vec!["no", "yes"]),
-                    [("FullStomach", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                    ],
-                ),
-                CatCIM::new(
-                    // P(Eating | Hungry)
-                    ("Eating", vec!["no", "yes"]),
-                    [("Hungry", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                    ],
-                ),
-                CatCIM::new(
-                    // P(FullStomach | Eating)
-                    ("FullStomach", vec!["no", "yes"]),
-                    [("Eating", vec!["no", "yes"])],
-                    array![
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                        [
-                            [-E, E], //
-                            [E, -E]  //
-                        ],
-                    ],
-                ),
-            ];
+            let initial_cims: Vec<_> = model
+                .graph()
+                .vertices()
+                .map(|i| CPDEstimator::fit(&raw, i, &model.graph().parents(i)))
+                .collect();
             // Set the initial model.
             let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
+
+            // Get the max length of the evidence.
+            let max_len = evidence
+                .values()
+                .iter()
+                .map(|e| e.values().len())
+                .max()
+                .unwrap_or(10);
 
             // Define the expectation step.
             let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
@@ -196,13 +161,6 @@ mod tests {
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
                     .collect();
-                // Get the max length of the evidence.
-                let max_len = evidence
-                    .values()
-                    .iter()
-                    .map(|e| e.values().len())
-                    .max()
-                    .unwrap_or(10);
                 // Fore each (seed, evidence) ...
                 seeds
                     .iter()
@@ -230,13 +188,16 @@ mod tests {
             // Define the maximization step.
             let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                 // Fit the new model using the expectation.
-                BE::new(expectation, (1, 1.0)).par_fit(prev_model.graph().clone())
+                ParCTBNEstimator::par_fit(
+                    &BE::new(expectation, (1, 1.)),
+                    prev_model.graph().clone(),
+                )
             };
 
             // Define the stopping criteria.
             let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
                 // Check if the models are equal or the counter is greater than the limit.
-                relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= 100
+                relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= 10
             };
 
             // Create a new builder.

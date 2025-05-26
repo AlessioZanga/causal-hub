@@ -1,24 +1,19 @@
 use causal_hub::graphs::{DiGraph, Graph};
+use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};
+use serde::{Deserialize, Serialize};
+
+use crate::impl_deref_from_into;
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[pyclass(name = "DiGraph")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyDiGraph {
     inner: DiGraph,
 }
 
-impl From<DiGraph> for PyDiGraph {
-    fn from(inner: DiGraph) -> Self {
-        Self { inner }
-    }
-}
-
-impl From<PyDiGraph> for DiGraph {
-    fn from(outer: PyDiGraph) -> Self {
-        outer.inner
-    }
-}
+// Implement `Deref`, `From` and `Into` traits.
+impl_deref_from_into!(PyDiGraph, DiGraph);
 
 #[pymethods]
 impl PyDiGraph {
@@ -37,7 +32,7 @@ impl PyDiGraph {
     /// A new graph instance.
     ///
     #[classmethod]
-    fn empty(_cls: &Bound<'_, PyType>, labels: &Bound<'_, PyAny>) -> PyResult<Self> {
+    pub fn empty(_cls: &Bound<'_, PyType>, labels: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert the PyIterator to a Vec<String>.
         let labels: Vec<_> = labels
             .try_iter()?
@@ -47,13 +42,39 @@ impl PyDiGraph {
         Ok(DiGraph::empty(labels).into())
     }
 
+    /// Creates a complete directed graph with the given labels.
+    ///
+    /// # Arguments
+    ///
+    /// * `labels` - The labels of the vertices in the graph.
+    ///
+    /// # Notes
+    ///
+    /// * Labels will be sorted in alphabetical order.
+    /// * No self-loops are created.
+    ///
+    /// # Returns
+    ///
+    /// A new graph instance.
+    ///
+    #[classmethod]
+    pub fn complete(_cls: &Bound<'_, PyType>, labels: &Bound<'_, PyAny>) -> PyResult<Self> {
+        // Convert the PyIterator to a Vec<String>.
+        let labels: Vec<_> = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        // Create a new DiGraph with the labels.
+        Ok(DiGraph::complete(labels).into())
+    }
+
     /// Returns the vertices of the graph.
     ///
     /// # Returns
     ///
     /// A list of vertices.
     ///
-    fn vertices(&self) -> PyResult<Vec<&str>> {
+    pub fn vertices(&self) -> PyResult<Vec<&str>> {
         // Get the labels of the vertices in the graph.
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
     }
@@ -64,7 +85,7 @@ impl PyDiGraph {
     ///
     /// A list of edges.
     ///
-    fn edges(&self) -> PyResult<Vec<(&str, &str)>> {
+    pub fn edges(&self) -> PyResult<Vec<(&str, &str)>> {
         // Get the edges of the graph.
         Ok(self
             .inner
@@ -91,7 +112,7 @@ impl PyDiGraph {
     ///
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
-    fn has_edge(&self, x: &str, y: &str) -> PyResult<bool> {
+    pub fn has_edge(&self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
@@ -110,7 +131,7 @@ impl PyDiGraph {
     ///
     /// `true` if the edge was added, `false` if it already existed.
     ///
-    fn add_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
+    pub fn add_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
@@ -129,11 +150,22 @@ impl PyDiGraph {
     ///
     /// `true` if the edge was deleted, `false` if it did not exist.
     ///
-    fn del_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
+    pub fn del_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
         let x = self.inner.label_to_index(&x);
         let y = self.inner.label_to_index(&y);
         // Delete the edge from the graph.
         Ok(self.inner.del_edge(x, y))
+    }
+
+    /// Returns the adjacency matrix of the graph.
+    ///
+    /// # Returns
+    ///
+    /// A 2D array representing the adjacency matrix.
+    ///
+    pub fn adjacency_matrix<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<bool>>> {
+        // Convert the matrix to a PyArray2 and return as PyResult.
+        Ok(self.inner.adjacency_matrix().to_pyarray(py))
     }
 }

@@ -4,6 +4,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::CatTrjEvT,
     types::{FxIndexMap, FxIndexSet},
+    utils::{collect_states, sort_states},
 };
 
 /// Categorical evidence type.
@@ -11,21 +12,29 @@ use crate::{
 pub enum CategoricalEvidenceType {
     /// Certain positive evidence.
     CertainPositive {
+        /// The observed event of the evidence.
+        event: usize,
         /// The state of the evidence.
         state: usize,
     },
     /// Certain negative evidence.
     CertainNegative {
+        /// The observed event of the evidence.
+        event: usize,
         /// The states of the evidence.
         not_states: FxIndexSet<usize>,
     },
     /// Uncertain positive evidence.
     UncertainPositive {
+        /// The observed event of the evidence.
+        event: usize,
         /// The probabilities of the states.
         p_states: Array1<f64>,
     },
     /// Uncertain negative evidence.
     UncertainNegative {
+        /// The observed event of the evidence.
+        event: usize,
         /// The probabilities of the states.
         p_not_states: Array1<f64>,
     },
@@ -41,12 +50,38 @@ impl From<CatTrjEvT> for CategoricalEvidenceType {
         use CatTrjEvT as T;
         // Match the evidence type discard the temporal information.
         match evidence {
-            T::CertainPositiveInterval { state, .. } => U::CertainPositive { state },
-            T::CertainNegativeInterval { not_states, .. } => U::CertainNegative { not_states },
-            T::UncertainPositiveInterval { p_states, .. } => U::UncertainPositive { p_states },
-            T::UncertainNegativeInterval { p_not_states, .. } => {
-                U::UncertainNegative { p_not_states }
-            }
+            T::CertainPositiveInterval { event, state, .. } => U::CertainPositive { event, state },
+            T::CertainNegativeInterval {
+                event, not_states, ..
+            } => U::CertainNegative { event, not_states },
+            T::UncertainPositiveInterval {
+                event, p_states, ..
+            } => U::UncertainPositive { event, p_states },
+            T::UncertainNegativeInterval {
+                event,
+                p_not_states,
+                ..
+            } => U::UncertainNegative {
+                event,
+                p_not_states,
+            },
+        }
+    }
+}
+
+impl CatEvT {
+    /// Return the observed event of the evidence.
+    ///
+    /// # Returns
+    ///
+    /// The observed event of the evidence.
+    ///
+    pub const fn event(&self) -> usize {
+        match self {
+            Self::CertainPositive { event, .. }
+            | Self::CertainNegative { event, .. }
+            | Self::UncertainPositive { event, .. }
+            | Self::UncertainNegative { event, .. } => *event,
         }
     }
 }
@@ -75,63 +110,18 @@ impl CategoricalEvidence {
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I, J, K, L, M, N>(states: I, values: M) -> Self
+    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = L>,
         K: AsRef<str>,
         L: AsRef<str>,
-        M: IntoIterator<Item = (N, CatEvT)>,
-        N: AsRef<str>,
+        M: IntoIterator<Item = CatEvT>,
     {
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the variables.
-        let mut states: FxIndexMap<_, _> = states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|(label, states)| {
-                // Convert the variable label to a string.
-                let label = label.as_ref().to_owned();
-
-                // Initialize states counter.
-                let mut n = 0;
-                // Convert the variable states to a set of strings.
-                let states: FxIndexSet<_> = states
-                    .into_iter()
-                    .inspect(|_| n += 1)
-                    .map(|x| x.as_ref().to_owned())
-                    .collect();
-                // Assert unique states.
-                assert_eq!(states.len(), n, "Variables states must be unique.");
-
-                (label, states)
-            })
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(states.len(), n, "Variables labels must be unique.");
-
+        // Collect the states into a map.
+        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
-        let mut indices: Vec<(_, Vec<_>)> = states
-            .values()
-            .enumerate()
-            .map(|(label_idx, states)| {
-                // Allocate the indices of the states labels.
-                let mut states_idx: Vec<_> = (0..states.len()).collect();
-                // Sort the indices by the states labels.
-                states_idx.sort_by_key(|&i| &states[i]);
-
-                (label_idx, states_idx)
-            })
-            .collect();
-        // Sort the indices by the states labels.
-        indices.sort_by_key(|&(i, _)| states.get_index(i).unwrap().0);
-        // Sort the states labels.
-        states.values_mut().for_each(|states| states.sort());
-        // Sort the labels.
-        states.sort_keys();
-
+        let (states, sorted_idx) = sort_states(states);
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
         // Get the cardinality of the states.
@@ -144,30 +134,37 @@ impl CategoricalEvidence {
         let mut evidences: FxIndexMap<_, Option<_>> =
             states.keys().map(|label| (label.clone(), None)).collect();
 
+        // Reverse the indices to get the argsort.
+        let mut argsorted_idx = sorted_idx.clone();
+        sorted_idx
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, (j, states))| {
+                argsorted_idx[j] = (i, states);
+            });
+
         // Iterate over the values and insert them into the events map using sorted indices.
-        values.into_iter().for_each(|(label, evidence)| {
-            // Convert the label to a string.
-            let label = label.as_ref().to_owned();
-            // Get the variable index.
-            let variable = states
-                .get_index_of(&label)
-                .expect("Variable label not found in states.");
-            // Sort variable index.
-            let (variable, states) = &indices[variable];
+        values.into_iter().for_each(|e| {
+            // Get the event of the evidence.
+            let event = e.event();
+            // Sort event index.
+            let (event, states) = &argsorted_idx[event];
+            // Get the event index.
+            let event = *event;
 
             // Sort the variable states.
-            let e = match evidence {
+            let e = match e {
                 E::CertainPositive { state, .. } => {
                     // Sort the variable states.
                     let state = states[state];
                     // Construct the sorted evidence.
-                    E::CertainPositive { state }
+                    E::CertainPositive { event, state }
                 }
                 E::CertainNegative { not_states, .. } => {
                     // Sort the variable states.
                     let not_states = not_states.iter().map(|state| states[*state]).collect();
                     // Construct the sorted evidence.
-                    E::CertainNegative { not_states }
+                    E::CertainNegative { event, not_states }
                 }
                 E::UncertainPositive { p_states, .. } => {
                     // Allocate new variable states.
@@ -179,7 +176,7 @@ impl CategoricalEvidence {
                     // Substitute the sorted states.
                     let p_states = new_p_states;
                     // Construct the sorted evidence.
-                    E::UncertainPositive { p_states }
+                    E::UncertainPositive { event, p_states }
                 }
                 E::UncertainNegative { p_not_states, .. } => {
                     // Allocate new variable states.
@@ -191,12 +188,15 @@ impl CategoricalEvidence {
                     // Substitute the sorted states.
                     let p_not_states = new_p_not_states;
                     // Construct the sorted evidence.
-                    E::UncertainNegative { p_not_states }
+                    E::UncertainNegative {
+                        event,
+                        p_not_states,
+                    }
                 }
             };
 
             // Push the value into the variable events.
-            evidences[*variable] = Some(e);
+            evidences[event] = Some(e);
         });
 
         // For each variable ...
