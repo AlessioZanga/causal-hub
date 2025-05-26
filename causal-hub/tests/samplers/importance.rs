@@ -14,7 +14,7 @@ mod tests {
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_forward_sampling_by_length() {
+        fn test_importance_sampling_by_length() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.

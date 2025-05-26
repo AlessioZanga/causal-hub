@@ -30,7 +30,7 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new<I, J, K, V>(states: I, events: Array2<u8>, times: Array1<f64>) -> Self
+    pub fn new<I, J, K, V>(states: I, mut events: Array2<u8>, mut times: Array1<f64>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
@@ -62,14 +62,30 @@ impl CatTrj {
                 .unwrap_or_else(|| unreachable!())
         });
 
-        // Sort times.
-        let mut new_times = times.clone();
-        new_times
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, new_time)| *new_time = times[sorted_idx[i]]);
-        // Update the times with the sorted values.
-        let times = new_times;
+        // Check if the times are already sorted.
+        if !sorted_idx.iter().is_sorted() {
+            // Sort times.
+            let mut new_times = times.clone();
+            new_times
+                .iter_mut()
+                .enumerate()
+                .for_each(|(i, new_time)| *new_time = times[sorted_idx[i]]);
+            // Update the times with the sorted values.
+            times = new_times;
+
+            // Sort events by time.
+            let mut new_events = events.clone();
+            // Sort the events by the sorted indices.
+            new_events
+                .rows_mut()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, mut new_events_row)| {
+                    new_events_row.assign(&events.row(sorted_idx[i]));
+                });
+            // Update the events with the sorted values.
+            events = new_events;
+        }
 
         // Assert no duplicate times.
         {
@@ -86,19 +102,6 @@ impl CatTrj {
                 \t for:      {times}."
             );
         }
-
-        // Sort events by time.
-        let mut new_events = events.clone();
-        // Sort the events by the sorted indices.
-        new_events
-            .rows_mut()
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, mut new_events_row)| {
-                new_events_row.assign(&events.row(sorted_idx[i]));
-            });
-        // Update the events with the sorted values.
-        let events = new_events;
 
         // Assert at max one state change per transition.
         events
@@ -122,9 +125,6 @@ impl CatTrj {
 
         // Create a new categorical dataset instance.
         let events = CatData::new(states, events);
-
-        // Debug assert times are sorted.
-        debug_assert!(times.iter().is_sorted(), "Times must be sorted.");
 
         // Return a new trajectory instance.
         Self { events, times }

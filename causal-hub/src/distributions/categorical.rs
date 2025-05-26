@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{FxIndexMap, FxIndexSet},
+    types::{EPSILON, FxIndexMap, FxIndexSet},
     utils::{RMI, collect_states},
 };
 
@@ -122,7 +122,7 @@ impl CatCPD {
             .iter()
             .enumerate()
             .for_each(|(i, &x)| {
-                if !relative_eq!(x, 1.0, epsilon = 1e-8) {
+                if !relative_eq!(x, 1.0, epsilon = EPSILON) {
                     panic!("Failed to sum probability to one: {}.", parameters.row(i));
                 }
             });

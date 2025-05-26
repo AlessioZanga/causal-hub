@@ -56,7 +56,7 @@ impl CatData {
     ///
     /// A new `CategoricalDataset` instance.
     ///
-    pub fn new<I, J, K, V>(states: I, values: Array2<u8>) -> Self
+    pub fn new<I, J, K, V>(states: I, mut values: Array2<u8>) -> Self
     where
         I: IntoIterator<Item = (K, J)>,
         J: IntoIterator<Item = V>,
@@ -98,25 +98,30 @@ impl CatData {
                 );
             });
 
-        // Allocate the new values array.
-        let mut new_values = values.clone();
-        // Sort the values by the indices of the states labels.
-        new_values
-            .columns_mut()
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, mut new_values_col)| {
-                // Get the indices of the states labels.
-                let (label_idx, states_idx) = &sorted_idx[i];
-                // Get the corresponding states labels.
-                let values_col = values.column(*label_idx);
-                // Sort the values by the indices of the states labels.
-                let values_col = values_col.mapv(|x| states_idx[x as usize] as u8);
-                // Assign the sorted values to the new values array.
-                new_values_col.assign(&values_col);
-            });
-        // Update the values with the new sorted values.
-        let values = new_values;
+        // Check if the values are already sorted.
+        if !sorted_idx.iter().map(|(x, _)| x).is_sorted()
+            || !sorted_idx.iter().all(|(_, y)| y.iter().is_sorted())
+        {
+            // Allocate the new values array.
+            let mut new_values = values.clone();
+            // Sort the values by the indices of the states labels.
+            new_values
+                .columns_mut()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, mut new_values_col)| {
+                    // Get the indices of the states labels.
+                    let (label_idx, states_idx) = &sorted_idx[i];
+                    // Get the corresponding states labels.
+                    let values_col = values.column(*label_idx);
+                    // Sort the values by the indices of the states labels.
+                    let values_col = values_col.mapv(|x| states_idx[x as usize] as u8);
+                    // Assign the sorted values to the new values array.
+                    new_values_col.assign(&values_col);
+                });
+            // Update the values with the new sorted values.
+            values = new_values;
+        }
 
         // Debug assert labels are unique.
         debug_assert_eq!(

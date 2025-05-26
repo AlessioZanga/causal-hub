@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{FxIndexMap, FxIndexSet},
+    types::{EPSILON, FxIndexMap, FxIndexSet},
     utils::{RMI, collect_states},
 };
 
@@ -138,7 +138,7 @@ impl CatCIM {
             assert!(
                 q.rows()
                     .into_iter()
-                    .all(|x| relative_eq!(x.sum(), 0., epsilon = 1e-8)),
+                    .all(|x| relative_eq!(x.sum(), 0., epsilon = EPSILON)),
                 "Q rows must sum to zero."
             );
         });

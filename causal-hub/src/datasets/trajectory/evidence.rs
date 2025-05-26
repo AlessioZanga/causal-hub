@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
-    types::{FxIndexMap, FxIndexSet},
+    types::{EPSILON, FxIndexMap, FxIndexSet},
     utils::{collect_states, sort_states},
 };
 
@@ -310,10 +310,10 @@ impl CatTrjEv {
                             E::CertainPositiveInterval { .. } => true,
                             E::CertainNegativeInterval { .. } => true,
                             E::UncertainPositiveInterval { p_states, .. } => {
-                                relative_eq!(p_states.sum(), 1., epsilon = 1e-8)
+                                relative_eq!(p_states.sum(), 1., epsilon = EPSILON)
                             }
                             E::UncertainNegativeInterval { p_not_states, .. } => {
-                                relative_eq!(p_not_states.sum(), 1., epsilon = 1e-8)
+                                relative_eq!(p_not_states.sum(), 1., epsilon = EPSILON)
                             }
                         },
                         "States distributions must sum to one."
