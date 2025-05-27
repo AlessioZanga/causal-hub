@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
-    distributions::CatCIM,
+    distributions::{CPD, CatCIM},
     types::FxIndexSet,
 };
 
@@ -358,20 +358,14 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }

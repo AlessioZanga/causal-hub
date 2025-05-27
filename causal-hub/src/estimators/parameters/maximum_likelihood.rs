@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
-    distributions::{CatCIM, CatCPD},
+    distributions::{CPD, CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -38,10 +38,7 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
 }
 
 impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
-    // (conditional counts, marginal counts, sample size)
-    type SS = (Array2<f64>, Array1<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCPD) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let states = self.dataset.states();
 
@@ -166,10 +163,8 @@ impl MLE<'_, CatTrj> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
 
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 

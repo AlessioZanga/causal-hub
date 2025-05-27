@@ -5,7 +5,7 @@ use statrs::function::gamma::ln_gamma;
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
-    distributions::{CatCIM, CatCPD},
+    distributions::{CPD, CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -50,10 +50,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
 impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
-    // (conditional counts, marginal counts, sample size)
-    type SS = (Array2<f64>, Array1<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCPD) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -193,10 +190,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
-
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.

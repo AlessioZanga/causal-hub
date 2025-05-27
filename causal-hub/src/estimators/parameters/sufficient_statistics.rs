@@ -6,6 +6,7 @@ use rayon::prelude::*;
 use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    distributions::{CPD, CatCIM, CatCPD},
     types::FxIndexSet,
     utils::RMI,
 };
@@ -33,10 +34,9 @@ impl<'a, D> SufficientStatisticsEstimator<'a, D> {
 pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
 impl CSSEstimator for SSE<'_, CatData> {
-    // (conditional counts, marginal counts, sample size)
-    type SS = (Array2<f64>, Array1<f64>, f64);
+    type Output = <CatCPD as CPD>::SS;
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::SS {
+    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Concat the variables to fit.
         let x_z: FxIndexSet<_> = std::iter::once(&x).chain(z).cloned().collect();
 
@@ -85,10 +85,9 @@ impl CSSEstimator for SSE<'_, CatData> {
 }
 
 impl CSSEstimator for SSE<'_, CatTrj> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
+    type Output = <CatCIM as CPD>::SS;
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::SS {
+    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
         // Construct the ravel multi index.
@@ -132,10 +131,9 @@ impl CSSEstimator for SSE<'_, CatTrj> {
 }
 
 impl CSSEstimator for SSE<'_, CatWtdTrj> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
+    type Output = <CatCIM as CPD>::SS;
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::SS {
+    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
@@ -149,10 +147,9 @@ impl CSSEstimator for SSE<'_, CatWtdTrj> {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl CSSEstimator for SSE<'_, $type> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
+        type Output = <CatCIM as CPD>::SS;
 
-        fn fit(&self, x: usize, z: &[usize]) -> Self::SS {
+        fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
             // Get the cardinality of the trajectory.
             let cards = self.dataset.cardinality();
             // Get the cardinality of the conditioned and conditioning variables.
@@ -177,10 +174,9 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
     }
 
     impl ParCSSEstimator for SSE<'_, $type> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
+        type Output = <CatCIM as CPD>::SS;
 
-        fn par_fit(&self, x: usize, z: &[usize]) -> Self::SS {
+        fn par_fit(&self, x: usize, z: &[usize]) -> Self::Output {
             // Get the cardinality of the trajectory.
             let cards = self.dataset.cardinality();
             // Get the cardinality of the conditioned and conditioning variables.

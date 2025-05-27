@@ -488,6 +488,7 @@ impl CPD for CatCPD {
     type Label = String;
     type ConditioningLabels = FxIndexSet<String>;
     type Parameters = Array2<f64>;
+    type SS = (Array2<f64>, Array1<f64>, f64);
 
     #[inline]
     fn label(&self) -> &Self::Label {

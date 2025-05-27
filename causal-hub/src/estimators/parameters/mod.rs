@@ -15,6 +15,7 @@ pub use raw::*;
 use rayon::prelude::*;
 
 use crate::{
+    distributions::CPD,
     graphs::{DiGraph, Graph},
     models::{BN, CTBN},
 };
@@ -22,7 +23,7 @@ use crate::{
 /// A trait for sufficient statistics estimators.
 pub trait ConditionalSufficientStatisticsEstimator {
     /// The type of sufficient statistics.
-    type SS;
+    type Output;
 
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics.
     ///
@@ -35,7 +36,7 @@ pub trait ConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, x: usize, z: &[usize]) -> Self::SS;
+    fn fit(&self, x: usize, z: &[usize]) -> Self::Output;
 }
 
 /// A type alias for a sufficient statistics estimator.
@@ -44,7 +45,7 @@ pub use ConditionalSufficientStatisticsEstimator as CSSEstimator;
 /// A trait for sufficient statistics estimators in parallel.
 pub trait ParallelConditionalSufficientStatisticsEstimator {
     /// The type of sufficient statistics.
-    type SS;
+    type Output;
 
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics in parallel.
     ///
@@ -57,17 +58,17 @@ pub trait ParallelConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn par_fit(&self, x: usize, z: &[usize]) -> Self::SS;
+    fn par_fit(&self, x: usize, z: &[usize]) -> Self::Output;
 }
 
 /// A type alias for a parallel sufficient statistics estimator.
 pub use ParallelConditionalSufficientStatisticsEstimator as ParCSSEstimator;
 
 /// A trait for conditional probability distribution estimators.
-pub trait ConditionalProbabilityDistributionEstimator<P> {
-    /// The type of sufficient statistics.
-    type SS;
-
+pub trait ConditionalProbabilityDistributionEstimator<P>
+where
+    P: CPD,
+{
     /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments
@@ -96,7 +97,7 @@ pub trait ConditionalProbabilityDistributionEstimator<P> {
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, P);
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
 }
 
 /// A type alias for a conditional probability distribution estimator.
@@ -163,6 +164,7 @@ pub use BayesianNetworkEstimator as BNEstimator;
 impl<T, E> BNEstimator<T> for E
 where
     T: BN,
+    T::CPD: CPD,
     E: CPDEstimator<T::CPD>,
 {
     fn fit(&self, graph: DiGraph) -> T {
@@ -235,6 +237,7 @@ pub use ContinuousTimeBayesianNetworkEstimator as CTBNEstimator;
 impl<T, E> CTBNEstimator<T> for E
 where
     T: CTBN,
+    T::CIM: CPD,
     E: CPDEstimator<T::CIM>,
 {
     fn fit(&self, graph: DiGraph) -> T {

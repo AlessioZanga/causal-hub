@@ -12,6 +12,8 @@ pub trait ConditionalProbabilityDistribution {
     type ConditioningLabels;
     /// The type of the parameters.
     type Parameters;
+    /// The type of the sufficient statistics.
+    type SS;
 
     /// Returns the label of the conditioned variable.
     ///
