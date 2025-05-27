@@ -21,7 +21,6 @@ use crate::{datasets::PyCatTrjsEv, models::PyCatCTBN};
     evidence,
     algorithm,
     max_iter = 10,
-    max_parents = 10,
     seed = 42,
     **kwargs
 ))]
@@ -30,7 +29,6 @@ pub fn sem(
     evidence: &Bound<'_, PyCatTrjsEv>,
     algorithm: &str,
     max_iter: usize,
-    max_parents: usize,
     seed: u64,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<PyCatCTBN> {
@@ -42,6 +40,11 @@ pub fn sem(
     // Get the keyword arguments.
     let kwargs: HashMap<String, PyObject> =
         kwargs.map(|x| x.extract()).transpose()?.unwrap_or_default();
+    // Get the maximum number of parents from the keyword arguments or set the maximum.
+    let max_parents: usize = kwargs
+        .get("max_parents")
+        .and_then(|x| x.extract(py).ok())
+        .unwrap_or_else(|| evidence.labels().len());
     // Get f_test and c_test from the keyword arguments or set defaults.
     let f_test: f64 = kwargs
         .get("f_test")
@@ -154,10 +157,10 @@ pub fn sem(
             "cthc" => {
                 // Initialize the scoring criterion.
                 let bic = BIC::new(&cache);
-                // Initialize the CTHC algorithm.
-                let cthc = CTHC::new(&initial_graph, &bic);
+                // Initialize the CTHC algorithm and set the maximum number of parents.
+                let cthc = CTHC::new(&initial_graph, &bic).with_max_parents(max_parents);
                 // Fit the new structure using CTHC.
-                cthc.fit()
+                cthc.par_fit()
             }
             _ => panic!(
                 "Failed to get the structure learning algorithm: \n\
