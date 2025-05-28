@@ -146,10 +146,10 @@ mod tests {
             let rng = RefCell::new(rng);
 
             // Get the max length of the evidence.
-            let max_len = evidence
+            let max_length = evidence
                 .values()
                 .iter()
-                .map(|e| e.values().len())
+                .map(|e| e.sample_size())
                 .max()
                 .unwrap_or(10);
 
@@ -172,7 +172,7 @@ mod tests {
                         // Initialize a new sampler.
                         let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Perform multiple imputation.
-                        let trjs = importance.sample_n_by_length(2 * max_len, 10);
+                        let trjs = importance.sample_n_by_length(max_length, 10);
                         // Get the one with the highest weight.
                         trjs.values()
                             .iter()
@@ -180,8 +180,6 @@ mod tests {
                             .unwrap()
                             .clone()
                     })
-                    // Reject trajectories with low weight.
-                    .filter(|trj| trj.weight() >= 1e-3)
                     .collect()
             };
 
