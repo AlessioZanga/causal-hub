@@ -3,12 +3,13 @@ use std::collections::BTreeMap;
 use causal_hub::distributions::{CPD, CatCPD};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
+use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional probability distribution (CPD).
 #[pyclass(name = "CatCPD")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyCatCPD {
     inner: CatCPD,
 }
