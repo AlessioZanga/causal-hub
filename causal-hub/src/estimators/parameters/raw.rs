@@ -204,15 +204,35 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
                 });
             });
 
+        // Get the events with no evidence at all.
+        let no_evidence: Vec<_> = events
+            .axis_iter(Axis(1))
+            .into_par_iter()
+            .enumerate()
+            .filter_map(|(i, e)| {
+                if e.iter().all(|&x| x == M) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        // If no evidence is present, fill it randomly.
+        for i in no_evidence {
+            // Sample a state uniformly at random.
+            let random_state = Array::from_iter({
+                let random_state = || self.rng.random_range(0..(states[i].len() as u8));
+                std::iter::repeat_with(random_state).take(events.nrows())
+            });
+            // Fill the event with the sampled state.
+            events.column_mut(i).assign(&random_state);
+        }
+
         // Fill the unknown states by propagating the known states.
         events
             .axis_iter_mut(Axis(1))
             .into_par_iter()
             .for_each(|mut event| {
-                // If no evidence is present at all, set the first state to a constant value.
-                if event.iter().all(|e| *e == M) {
-                    event[0] = 0;
-                }
                 // Set the first known state position.
                 let mut first_known = 0;
                 // Check if the first state is known.
