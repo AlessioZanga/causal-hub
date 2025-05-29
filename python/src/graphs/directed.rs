@@ -158,6 +158,50 @@ impl PyDiGraph {
         Ok(self.inner.del_edge(x, y))
     }
 
+    /// Returns the parents of a vertex `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex whose parents are to be returned.
+    ///
+    /// # Returns
+    ///
+    /// A list of parent vertices.
+    ///
+    pub fn parents(&self, x: &str) -> PyResult<Vec<&str>> {
+        // Get the index of the vertex.
+        let x = self.inner.label_to_index(&x);
+        // Get the parents of the vertex.
+        Ok(self
+            .inner
+            .parents(x)
+            .iter()
+            .map(|&i| self.inner.index_to_label(i))
+            .collect())
+    }
+
+    /// Returns the children of a vertex `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex whose children are to be returned.
+    ///
+    /// # Returns
+    ///
+    /// A list of child vertices.
+    ///
+    pub fn children(&self, x: &str) -> PyResult<Vec<&str>> {
+        // Get the index of the vertex.
+        let x = self.inner.label_to_index(&x);
+        // Get the children of the vertex.
+        Ok(self
+            .inner
+            .children(x)
+            .iter()
+            .map(|&i| self.inner.index_to_label(i))
+            .collect())
+    }
+
     /// Returns the adjacency matrix of the graph.
     ///
     /// # Returns
