@@ -259,11 +259,10 @@ impl Display for CatData {
 }
 
 impl Dataset for CatData {
-    type Labels = Labels;
     type Values = Array2<u8>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

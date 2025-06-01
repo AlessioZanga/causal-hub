@@ -547,11 +547,10 @@ impl CatTrjEv {
 }
 
 impl Dataset for CatTrjEv {
-    type Labels = Labels;
     type Values = FxIndexMap<String, Vec<CatTrjEvT>>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 
@@ -699,11 +698,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjsEv {
 }
 
 impl Dataset for CatTrjsEv {
-    type Labels = Labels;
     type Values = Vec<CatTrjEv>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

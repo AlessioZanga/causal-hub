@@ -165,11 +165,10 @@ impl CatTrj {
 }
 
 impl Dataset for CatTrj {
-    type Labels = Labels;
     type Values = Array2<u8>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.events.labels()
     }
 
@@ -317,11 +316,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
 }
 
 impl Dataset for CatTrjs {
-    type Labels = Labels;
     type Values = Vec<CatTrj>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

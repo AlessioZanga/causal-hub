@@ -46,7 +46,6 @@ impl UnGraph {
 }
 
 impl Graph for UnGraph {
-    type Labels = Labels;
     type Vertices = Range<usize>;
     type Edges = Vec<(usize, usize)>;
 
@@ -116,7 +115,7 @@ impl Graph for UnGraph {
         }
     }
 
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

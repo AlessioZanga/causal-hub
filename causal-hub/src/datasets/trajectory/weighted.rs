@@ -113,11 +113,10 @@ impl CatWtdTrj {
 }
 
 impl Dataset for CatWtdTrj {
-    type Labels = Labels;
     type Values = Array2<u8>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.trajectory.labels()
     }
 
@@ -265,11 +264,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
 }
 
 impl Dataset for CatWtdTrjs {
-    type Labels = Labels;
     type Values = Vec<CatWtdTrj>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

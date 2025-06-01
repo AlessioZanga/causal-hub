@@ -8,7 +8,7 @@ use crate::{
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
-    types::{FxIndexMap, States},
+    types::{FxIndexMap, Labels, States},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
@@ -82,7 +82,6 @@ impl RelativeEq for CatCTBN {
 }
 
 impl CTBN for CatCTBN {
-    type Labels = <DiGraph as Graph>::Labels;
     type CIM = CatCIM;
     type InitialDistribution = CatBN;
     type Event = (f64, Array1<u8>);
@@ -148,7 +147,7 @@ impl CTBN for CatCTBN {
         }
     }
 
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.graph.labels()
     }
 

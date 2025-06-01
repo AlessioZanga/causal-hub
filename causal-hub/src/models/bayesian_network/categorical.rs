@@ -7,7 +7,7 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    types::{FxIndexMap, States},
+    types::{FxIndexMap, Labels, States},
 };
 
 /// A categorical Bayesian network (BN).
@@ -85,7 +85,6 @@ impl RelativeEq for CatBN {
 }
 
 impl BN for CatBN {
-    type Labels = <DiGraph as Graph>::Labels;
     type CPD = CatCPD;
     type Sample = Array1<u8>;
     type Samples = CatData;
@@ -159,7 +158,7 @@ impl BN for CatBN {
     }
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.graph.labels()
     }
 

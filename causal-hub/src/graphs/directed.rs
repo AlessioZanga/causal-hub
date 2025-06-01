@@ -82,7 +82,6 @@ impl DiGraph {
 }
 
 impl Graph for DiGraph {
-    type Labels = Labels;
     type Vertices = Range<usize>;
     type Edges = Vec<(usize, usize)>;
 
@@ -152,7 +151,7 @@ impl Graph for DiGraph {
         }
     }
 
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 
