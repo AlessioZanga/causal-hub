@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
-    distributions::CatCIM,
+    distributions::{CPD, CatCIM},
     types::FxIndexSet,
 };
 
@@ -204,15 +204,35 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
                 });
             });
 
+        // Get the events with no evidence at all.
+        let no_evidence: Vec<_> = events
+            .axis_iter(Axis(1))
+            .into_par_iter()
+            .enumerate()
+            .filter_map(|(i, e)| {
+                if e.iter().all(|&x| x == M) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        // If no evidence is present, fill it randomly.
+        for i in no_evidence {
+            // Sample a state uniformly at random.
+            let random_state = Array::from_iter({
+                let random_state = || self.rng.random_range(0..(states[i].len() as u8));
+                std::iter::repeat_with(random_state).take(events.nrows())
+            });
+            // Fill the event with the sampled state.
+            events.column_mut(i).assign(&random_state);
+        }
+
         // Fill the unknown states by propagating the known states.
         events
             .axis_iter_mut(Axis(1))
             .into_par_iter()
             .for_each(|mut event| {
-                // If no evidence is present at all, set the first state to a constant value.
-                if event.iter().all(|e| *e == M) {
-                    event[0] = 0;
-                }
                 // Set the first known state position.
                 let mut first_known = 0;
                 // Check if the first state is known.
@@ -358,20 +378,14 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }

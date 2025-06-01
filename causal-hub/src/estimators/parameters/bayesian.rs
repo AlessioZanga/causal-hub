@@ -5,7 +5,7 @@ use statrs::function::gamma::ln_gamma;
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
-    distributions::{CatCIM, CatCPD},
+    distributions::{CPD, CatCIM, CatCPD},
     types::{FxIndexMap, FxIndexSet},
 };
 
@@ -50,10 +50,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
 impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
-    // (conditional counts, marginal counts, sample size)
-    type SS = (Array2<f64>, Array1<f64>, f64);
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCPD) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -149,23 +146,23 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let sample_size = Some(n);
         // Compute the sample log-likelihood.
         let sample_log_likelihood = Some({
-            //
-            // Compute the sample log-likelihood as the sum of:
-            //
-            //   1. ln(tau) * (alpha + 1) - ln_gamma(alpha + 1)
-            //   2. + ln_gamma(n_xz + alpha + 1) - ln(t_xz + tau) * (n_xz + alpha + 1)
-            //
-            ({
-                // Compute marginal sufficient statistics.
-                let n_z = n_xz.sum_axis(Axis(2));
-                let t_z = t_xz.sum_axis(Axis(2));
+            // Sum counts.
+            let n_z = n_xz.sum_axis(Axis(2));
+            let t_z = t_xz.sum_axis(Axis(2));
+            // Compute the sample log-likelihood.
+            let ll_q_xz = {
                 // Compute the sample log-likelihood.
-                f64::ln(tau) * (alpha + 1.)
-                    - ln_gamma(alpha + 1.)                  // .
-                    + ((&n_z + 1.).mapv(ln_gamma)           // .
-                    - t_z.ln() * (n_z + 1.))
-            })
-            .sum()
+                (&n_z + 1.).mapv(ln_gamma).sum() + (alpha + 1.) * f64::ln(tau) //.
+                - (ln_gamma(alpha + 1.) + ((&n_z + 1.) * &t_z.ln()).sum())
+            };
+            // Compute the sample log-likelihood.
+            let ll_p_xz = {
+                // Compute the sample log-likelihood.
+                (ln_gamma(alpha) - &n_z.mapv(ln_gamma).sum())     //.
+                + (ln_gamma(alpha) - &n_xz.mapv(ln_gamma).sum())
+            };
+            // Return the total log-likelihood.
+            ll_q_xz + ll_p_xz
         });
 
         // Subset the conditioning labels, states and cardinality.
@@ -193,10 +190,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
-
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.

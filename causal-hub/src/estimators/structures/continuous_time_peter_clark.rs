@@ -23,7 +23,7 @@ pub trait ConditionalIndependenceTest {
     ///
     /// `true` if X _||_ Y | Z, `false` otherwise.
     ///
-    fn test(&self, x: usize, y: usize, z: &[usize]) -> bool;
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
 }
 
 /// A type alias for a conditional independence test.
@@ -62,9 +62,9 @@ impl<'a, E> ChiSquaredTest<'a, E> {
 
 impl<E> CIT for ChiSquaredTest<'_, E>
 where
-    E: CPDEstimator<CatCIM, SS = (Array3<f64>, Array2<f64>, f64)>,
+    E: CPDEstimator<CatCIM>,
 {
-    fn test(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the extended separation set.
         let mut s = z.to_vec();
         // Get the ordered position of Y in the extended separation set.
@@ -153,9 +153,9 @@ impl<'a, E> FTest<'a, E> {
 
 impl<E> CIT for FTest<'_, E>
 where
-    E: CPDEstimator<CatCIM, SS = (Array3<f64>, Array2<f64>, f64)>,
+    E: CPDEstimator<CatCIM>,
 {
-    fn test(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
 
@@ -213,7 +213,7 @@ pub struct ContinuousTimePeterClark<'a, T, S> {
 /// A type alias for the continuous-time Peter-Clark estimator.
 pub type CTPC<'a, T, S> = ContinuousTimePeterClark<'a, T, S>;
 
-impl<'a, T, S> ContinuousTimePeterClark<'a, T, S>
+impl<'a, T, S> CTPC<'a, T, S>
 where
     T: CIT,
     S: CIT,
@@ -232,6 +232,8 @@ where
     ///
     #[inline]
     pub const fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
+        // FIXME: Check initial graph and tests have the same labels.
+
         Self {
             initial_graph,
             null_time,
@@ -239,7 +241,7 @@ where
         }
     }
 
-    /// Execute the CTPC algorithm and return the fitted graph.
+    /// Execute the CTPC algorithm.
     ///
     /// # Returns
     ///
@@ -269,7 +271,7 @@ where
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
                     for s_ij in pa_i_not_j.combinations(k) {
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
-                        if self.null_time.test(i, j, &s_ij) && self.null_state.test(i, j, &s_ij) {
+                        if self.null_time.call(i, j, &s_ij) && self.null_state.call(i, j, &s_ij) {
                             // Add the parent to the set of vertices to remove.
                             not_pa_i.push(j);
                             // Break the outer loop.
@@ -296,7 +298,7 @@ where
     }
 }
 
-impl<'a, T, S> ContinuousTimePeterClark<'a, T, S>
+impl<'a, T, S> CTPC<'a, T, S>
 where
     T: CIT + Sync,
     S: CIT + Sync,
@@ -331,8 +333,8 @@ where
                             // For any combination of size k of Pa(X_i) \ { X_j } ...
                             for s_ij in pa_i_not_j.combinations(k) {
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
-                                if self.null_time.test(i, j, &s_ij)
-                                    && self.null_state.test(i, j, &s_ij)
+                                if self.null_time.call(i, j, &s_ij)
+                                    && self.null_state.call(i, j, &s_ij)
                                 {
                                     // Add the parent to the set of vertices to remove.
                                     return None;

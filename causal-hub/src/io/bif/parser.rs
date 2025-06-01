@@ -71,41 +71,33 @@ impl BifReader {
                         .expect("Failed to get variable states."),
                 );
                 // Get the conditioning variables of the CPD.
-                let conditioning_variables = p.parents.iter().map(|x| {
-                    let states = states.get(x).expect("Failed to get variable states.");
-                    (x.as_str(), states.iter().map(|s| s.as_str()))
-                });
+                let conditioning_variables: Vec<(_, Vec<_>)> = p
+                    .parents
+                    .iter()
+                    .map(|x| {
+                        let states = states.get(x).expect("Failed to get variable states.");
+                        (x.as_str(), states.iter().cloned().collect())
+                    })
+                    .collect();
                 // Map the probability values.
                 let parameters = match (p.table, p.entries) {
                     (Some(table), None) => Array1::from_vec(table).insert_axis(Axis(0)),
                     (None, Some(entries)) => {
                         // Align the probability values with the states.
-                        let mut entries: FxIndexMap<_, _> = entries.into_iter().collect();
-                        let entries_order: FxIndexSet<_> = p
-                            .parents
+                        let entries: FxIndexMap<_, _> = entries.into_iter().collect();
+                        // Align the entries with the states.
+                        let entries: Vec<_> = conditioning_variables
                             .iter()
-                            .map(|x| {
-                                states
-                                    .get(x)
-                                    .expect("Failed to get variable states.")
-                                    .clone()
-                            })
+                            .map(|(_, states)| states)
+                            .cloned()
                             .multi_cartesian_product()
+                            .map(|states| &entries[&states])
                             .collect();
-                        entries.sort_by(|a, _, b, _| {
-                            let a = entries_order
-                                .get_index_of(a)
-                                .unwrap_or_else(|| panic!("Failed to get index of entry '{a:?}'."));
-                            let b = entries_order
-                                .get_index_of(b)
-                                .unwrap_or_else(|| panic!("Failed to get index of entry '{b:?}'."));
-                            // Sort by the first element of the tuple.
-                            a.cmp(&b)
-                        });
-                        // Get shape of the parameters.
+                        // Get the shape of the parameters.
                         let shape = (entries.len(), entries[0].len());
                         // Collect the parameters.
-                        let parameters: Array1<_> = entries.into_values().flatten().collect();
+                        let parameters: Array1<_> =
+                            entries.into_iter().flatten().copied().collect();
                         // Reshape the parameters.
                         parameters
                             .into_shape_with_order(shape)

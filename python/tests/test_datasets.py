@@ -1,5 +1,5 @@
 import pandas as pd
-from causal_hub.datasets import CatTrj, CatTrjs, CatTrjEv, CatTrjsEv
+from causal_hub.datasets import CatTrj, CatTrjs, CatTrjEv
 
 
 def test_categorical_trajectory():
@@ -7,8 +7,8 @@ def test_categorical_trajectory():
     df = pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     )
 
@@ -32,8 +32,8 @@ def test_categorical_trajectory_with_states():
     df = pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     )
     # Define some unobserved states.
@@ -62,15 +62,15 @@ def test_categorical_trajectories():
     dfs = [pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     ),
         pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     )]
 
@@ -97,15 +97,15 @@ def test_categorical_trajectories_with_states():
     dfs = [pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     ),
         pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
-            "column_1": ["A", "B", "A", "C", "B"],
-            "column_2": ["X", "Y", "X", "Z", "Y"]
+            "column_1": ["A", "A", "B", "C", "C"],
+            "column_2": ["X", "Y", "Y", "Y", "Z"]
         }
     )]
     # Define some unobserved states.

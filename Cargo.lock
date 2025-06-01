@@ -84,6 +84,7 @@ dependencies = [
  "rand_xoshiro",
  "rayon",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -540,6 +541,7 @@ dependencies = [
  "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
+ "serde",
  "unindent",
 ]
 

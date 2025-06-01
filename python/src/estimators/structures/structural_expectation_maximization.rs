@@ -1,17 +1,15 @@
-use std::{cell::RefCell, ops::Deref};
+use std::{cell::RefCell, collections::HashMap, ops::Deref};
 
 use approx::relative_eq;
 use causal_hub::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-    estimators::{
-        BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCPDEstimator, ParCTBNEstimator, RE,
-    },
+    estimators::{BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator, RE},
     graphs::{DiGraph, Graph},
-    models::{CTBN, CatCTBN},
+    models::CatCTBN,
     samplers::{CTBNSampler, ImportanceSampler},
     types::Cache,
 };
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 use rand::{RngCore, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
@@ -21,58 +19,80 @@ use crate::{datasets::PyCatTrjsEv, models::PyCatCTBN};
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
-    f_test = 1e-2,
-    c_test = 1e-2,
+    algorithm,
     max_iter = 10,
-    max_parents = 10,
-    seed = 42
+    seed = 42,
+    **kwargs
 ))]
 pub fn sem(
+    py: Python<'_>,
     evidence: &Bound<'_, PyCatTrjsEv>,
-    f_test: f64,
-    c_test: f64,
+    algorithm: &str,
     max_iter: usize,
-    max_parents: usize,
     seed: u64,
+    kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<PyCatCTBN> {
     // Get the evidence.
     let evidence: PyCatTrjsEv = evidence.extract()?;
     // Get the reference to the evidence.
     let evidence: &CatTrjsEv = evidence.deref();
 
+    // Get the keyword arguments.
+    let kwargs: HashMap<String, PyObject> =
+        kwargs.map(|x| x.extract()).transpose()?.unwrap_or_default();
+    // Get the maximum number of parents from the keyword arguments or set the maximum.
+    let max_parents: usize = kwargs
+        .get("max_parents")
+        .and_then(|x| x.extract(py).ok())
+        .unwrap_or_else(|| evidence.labels().len());
+    // Get f_test and c_test from the keyword arguments or set defaults.
+    let f_test: f64 = kwargs
+        .get("f_test")
+        .and_then(|x| x.extract(py).ok())
+        .unwrap_or_else(|| 0.01);
+    let c_test: f64 = kwargs
+        .get("c_test")
+        .and_then(|x| x.extract(py).ok())
+        .unwrap_or_else(|| 0.01);
+
     // Initialize the random number generator.
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
-    // Set the initial graph.
-    let mut inital_graph = DiGraph::complete(evidence.labels());
 
-    // Set the parents of the initial graph to max_parents.
-    for i in 0..inital_graph.vertices().len() {
-        // Get the parents.
-        let mut pa_i = inital_graph.parents(i);
-        // Choose nodes randomly.
-        pa_i.shuffle(&mut rng);
-        // Remove the excess parents.
-        for j in pa_i.split_off(max_parents) {
-            // Remove the edge.
-            inital_graph.del_edge(j, i);
+    // Set the initial graph depending on the algorithm.
+    let initial_graph = match algorithm {
+        "ctpc" => {
+            // Set the initial graph to a complete graph.
+            let mut initial_graph = DiGraph::complete(evidence.labels());
+            // Set the parents of the initial graph to max_parents.
+            for i in 0..initial_graph.vertices().len() {
+                // Get the parents.
+                let mut pa_i = initial_graph.parents(i);
+                // Choose nodes randomly.
+                pa_i.shuffle(&mut rng);
+                // Remove the excess parents.
+                for j in pa_i.split_off(max_parents) {
+                    // Remove the edge.
+                    initial_graph.del_edge(j, i);
+                }
+            }
+            // Return the initial graph.
+            initial_graph
         }
-    }
+        "cthc" => {
+            // Set the initial graph to an empty graph.
+            DiGraph::empty(evidence.labels())
+        }
+        _ => panic!(
+            "Failed to get the structure learning algorithm: \n\
+            \t expected:   'ctpc' or 'cthc', \n\
+            \t found:      '{algorithm}'"
+        ),
+    };
 
     // Initialize a raw estimator for an initial guess.
     let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
-    // Set the initial CIMs.
-    let initial_cims: Vec<_> = inital_graph
-        .vertices()
-        .into_par_iter()
-        .map(|i| {
-            // Get the parents.
-            let pa_i = inital_graph.parents(i);
-            // Fit the raw estimates.
-            ParCPDEstimator::par_fit(&raw, i, &pa_i)
-        })
-        .collect();
     // Set the initial model.
-    let initial_model = CatCTBN::new(inital_graph.clone(), initial_cims);
+    let initial_model = raw.par_fit(initial_graph.clone());
 
     // Wrap the random number generator in a RefCell to allow mutable borrowing.
     let rng = RefCell::new(rng);
@@ -86,10 +106,10 @@ pub fn sem(
             .map(|_| rng.next_u64())
             .collect();
         // Get the max length of the evidence.
-        let max_len = evidence
+        let max_length = evidence
             .values()
             .iter()
-            .map(|e| e.values().len())
+            .map(|e| e.sample_size())
             .max()
             .unwrap_or(10);
         // Fore each (seed, evidence) ...
@@ -103,7 +123,7 @@ pub fn sem(
                 // Initialize a new sampler.
                 let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
                 // Perform multiple imputation.
-                let trjs = importance.sample_n_by_length(2 * max_len, 10);
+                let trjs = importance.sample_n_by_length(max_length, 10);
                 // Get the one with the highest weight.
                 trjs.values()
                     .iter()
@@ -111,8 +131,6 @@ pub fn sem(
                     .unwrap()
                     .clone()
             })
-            // Reject trajectories with low weight.
-            .filter(|trj| trj.weight() >= 1e-3)
             .collect()
     };
 
@@ -122,16 +140,34 @@ pub fn sem(
         let estimator = BE::new(expectation, (1, 1.));
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
-        // Initialize the F test.
-        let f_test = FTest::new(&cache, f_test);
-        // Initialize the chi-squared test.
-        let chi_sq_test = ChiSquaredTest::new(&cache, c_test);
-        // Initialize the CTPC algorithm.
-        let ctpc = CTPC::new(&inital_graph, &f_test, &chi_sq_test);
-        // Fit the new structure using CTPC.
-        let fitted_graph = ctpc.par_fit();
+        // Learn the graph.
+        let fitted_graph = match algorithm {
+            "ctpc" => {
+                // Initialize the F test.
+                let f_test = FTest::new(&cache, f_test);
+                // Initialize the chi-squared test.
+                let chi_sq_test = ChiSquaredTest::new(&cache, c_test);
+                // Initialize the CTPC algorithm.
+                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+                // Fit the new structure using CTPC.
+                ctpc.par_fit()
+            }
+            "cthc" => {
+                // Initialize the scoring criterion.
+                let bic = BIC::new(&cache);
+                // Initialize the CTHC algorithm and set the maximum number of parents.
+                let cthc = CTHC::new(&initial_graph, &bic).with_max_parents(max_parents);
+                // Fit the new structure using CTHC.
+                cthc.par_fit()
+            }
+            _ => panic!(
+                "Failed to get the structure learning algorithm: \n\
+                \t expected:   'ctpc' or 'cthc', \n\
+                \t found:      '{algorithm}'"
+            ),
+        };
         // Fit the new model using the expectation.
-        ParCTBNEstimator::par_fit(&estimator, fitted_graph)
+        estimator.par_fit(fitted_graph)
     };
 
     // Define the stopping criteria.

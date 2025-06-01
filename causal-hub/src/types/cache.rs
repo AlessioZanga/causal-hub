@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use super::FxIndexMap;
-use crate::estimators::CPDEstimator;
+use crate::{distributions::CPD, estimators::CPDEstimator};
 
 /// A cache for calling a function with a key and value.
 #[derive(Clone, Debug)]
@@ -10,11 +10,10 @@ pub struct Cache<'a, C, K, V> {
     cache: Arc<RwLock<FxIndexMap<K, V>>>,
 }
 
-impl<'a, E, P> Cache<'a, E, (usize, Vec<usize>), (E::SS, P)>
+impl<'a, E, P> Cache<'a, E, (usize, Vec<usize>), (P::SS, P)>
 where
     E: CPDEstimator<P>,
-    E::SS: Clone,
-    P: Clone,
+    P: CPD + Clone,
 {
     /// Create a new cache.
     ///
@@ -35,15 +34,13 @@ where
     }
 }
 
-impl<E, P> CPDEstimator<P> for Cache<'_, E, (usize, Vec<usize>), (E::SS, P)>
+impl<E, P> CPDEstimator<P> for Cache<'_, E, (usize, Vec<usize>), (P::SS, P)>
 where
     E: CPDEstimator<P>,
-    E::SS: Clone,
-    P: Clone,
+    P: CPD + Clone,
+    P::SS: Clone,
 {
-    type SS = E::SS;
-
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, P) {
+    fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P) {
         // Get the key.
         let key = (x, z.to_vec());
         // Check if the key is in the cache.

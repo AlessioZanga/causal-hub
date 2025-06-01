@@ -10,11 +10,12 @@ use causal_hub::{
     models::{BN, CatBN},
 };
 use pyo3::{prelude::*, types::PyType};
+use serde::{Deserialize, Serialize};
 
 use crate::{distributions::PyCatCPD, graphs::PyDiGraph, impl_deref_from_into};
 
 #[pyclass(name = "CatBN")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatBN {
     inner: CatBN,
 }
@@ -36,7 +37,7 @@ impl PyCatBN {
     /// A new Bayesian network instance.
     ///
     #[new]
-    fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
+    pub fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
@@ -56,7 +57,7 @@ impl PyCatBN {
     ///
     /// A reference to the labels.
     ///
-    fn labels(&self) -> PyResult<Vec<&str>> {
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
     }
 
@@ -66,7 +67,7 @@ impl PyCatBN {
     ///
     /// A reference to the graph.
     ///
-    fn graph(&self) -> PyResult<PyDiGraph> {
+    pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.inner.graph().clone().into())
     }
 
@@ -76,7 +77,7 @@ impl PyCatBN {
     ///
     /// A reference to the CPDs.
     ///
-    fn cpds(&self) -> PyResult<BTreeMap<&str, PyCatCPD>> {
+    pub fn cpds(&self) -> PyResult<BTreeMap<&str, PyCatCPD>> {
         Ok(self
             .inner
             .cpds()
@@ -98,7 +99,7 @@ impl PyCatBN {
     ///
     /// The parameters size.
     ///
-    fn parameters_size(&self) -> PyResult<usize> {
+    pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
     }
 
@@ -113,7 +114,7 @@ impl PyCatBN {
     /// A new CatBN instance.
     ///
     #[classmethod]
-    fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+    pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         // Open file given by path.
         let file = File::open(path)?;
         // Read the file and parse it.
@@ -125,5 +126,16 @@ impl PyCatBN {
         let bn = BifReader::read(&bif);
         // Convert the BifReader to a CatBN.
         Ok(bn.into())
+    }
+
+    /// Parse a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(serde_json::from_str(json).unwrap())
+    }
+
+    /// Serialize to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(serde_json::to_string(&self).unwrap())
     }
 }
