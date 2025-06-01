@@ -8,7 +8,7 @@ use super::{
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -96,8 +96,8 @@ impl MLE<'_, CatTrj> {
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
-        labels: &FxIndexSet<String>,
-        states: &FxIndexMap<String, FxIndexSet<String>>,
+        labels: &Labels,
+        states: &States,
     ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Assert the conditional times counts are not zero.
         assert!(

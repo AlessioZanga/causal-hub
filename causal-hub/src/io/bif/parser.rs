@@ -7,7 +7,7 @@ use crate::{
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexMap, States},
 };
 
 #[derive(Debug)]
@@ -53,7 +53,7 @@ impl BifReader {
             .next()
             .expect("Failed to parse BIF file.");
         // Construct states.
-        let states: FxIndexMap<_, FxIndexSet<_>> = network
+        let states: States = network
             .variables
             .into_iter()
             .map(|v| (v.label, v.states.into_iter().collect()))

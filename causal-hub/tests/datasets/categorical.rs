@@ -66,6 +66,94 @@ mod tests {
     }
 
     #[test]
+    #[should_panic = "Variable states must be unique: \n\t expected:    |states['A'].unique()| == 3 , \n\t found:       |states['A'].unique()| == 2 ."]
+    fn test_new_non_unique_states() {
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no"]),
+            ("A", vec!["no", "yes", "no"]), // 'no' is repeated
+        ];
+        let values = array![
+            [0, 1, 0], //
+            [0, 0, 0], //
+            [1, 0, 0], //
+            [1, 0, 1]
+        ];
+        CatData::new(variables, values);
+    }
+
+    #[test]
+    #[should_panic = "Variable labels must be unique: \n\t expected:    |labels.unique()| == 4 , \n\t found:       |labels.unique()| == 3 ."]
+    fn test_new_non_unique_labels() {
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no"]),
+            ("A", vec!["no", "yes"]),
+            ("A", vec!["maybe"]), // 'A' is repeated
+        ];
+        let values = array![
+            [0, 1, 0, 0], //
+            [0, 0, 0, 1], //
+            [1, 0, 0, 1], //
+            [1, 0, 1, 0]
+        ];
+        CatData::new(variables, values);
+    }
+
+    #[test]
+    #[should_panic = "Variable 'A' should have less than 256 states: \n\t expected:    |states| <  256 , \n\t found:       |states| == 256 ."]
+    fn test_new_too_many_states() {
+        let too_many_states: Vec<_> = (0..256).map(|i| i.to_string()).collect();
+        let too_many_states: Vec<_> = too_many_states.iter().map(|s| s.as_str()).collect();
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no"]),
+            ("A", too_many_states),
+        ];
+        let values = array![
+            [0, 1, 0], //
+            [0, 0, 0], //
+            [1, 0, 0], //
+            [1, 0, 1]
+        ];
+        CatData::new(variables, values);
+    }
+
+    #[test]
+    #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 2 ."]
+    fn test_new_wrong_variables_and_columns() {
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no"]),
+            ("A", vec!["no", "yes"]),
+        ];
+        let values = array![
+            [0, 1], //
+            [0, 0], //
+            [1, 0], //
+            [1, 0]
+        ];
+        CatData::new(variables, values);
+    }
+
+    #[test]
+    #[should_panic = "Values of variable 'A' must be less than the number of states: \n\t expected: values[.., 'A'] < |states['A']| , \n\t found:    values[.., 'A'] == 2 and |states['A']| == 2 ."]
+    fn test_new_wrong_values() {
+        let variables = vec![
+            ("B", vec!["no", "yes"]),
+            ("C", vec!["yes", "no"]),
+            ("A", vec!["no", "yes"]),
+        ];
+        let values = array![
+            [0, 1, 2], // 'A' has a value of 2 which is not valid
+            [0, 0, 0],
+            [1, 0, 0],
+            [1, 0, 1]
+        ];
+        CatData::new(variables, values);
+    }
+
+    #[test]
     fn test_display() {
         let variables = vec![
             ("B", vec!["no", "yes"]),

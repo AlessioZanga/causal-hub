@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{EPSILON, FxIndexMap, FxIndexSet},
+    types::{EPSILON, FxIndexSet, Labels, States},
     utils::{RMI, collect_states},
 };
 
@@ -16,8 +16,8 @@ pub struct CategoricalConditionalIntensityMatrix {
     states: FxIndexSet<String>,
     cardinality: usize,
     // Labels of the conditioning variables.
-    conditioning_labels: FxIndexSet<String>,
-    conditioning_states: FxIndexMap<String, FxIndexSet<String>>,
+    conditioning_labels: Labels,
+    conditioning_states: States,
     conditioning_cardinality: Array1<usize>,
     // Ravel multi index.
     ravel_multi_index: RMI,
@@ -213,7 +213,7 @@ impl CatCIM {
     /// The states of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn conditioning_states(&self) -> &States {
         &self.conditioning_states
     }
 
@@ -395,7 +395,7 @@ impl RelativeEq for CatCIM {
 
 impl CPD for CatCIM {
     type Label = String;
-    type ConditioningLabels = FxIndexSet<String>;
+    type ConditioningLabels = Labels;
     type Parameters = Array3<f64>;
     type SS = (Array3<f64>, Array2<f64>, f64);
 

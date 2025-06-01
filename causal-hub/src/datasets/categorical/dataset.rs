@@ -1,11 +1,12 @@
 use std::fmt::Display;
 
 use itertools::Itertools;
+use log::debug;
 use ndarray::prelude::*;
 
 use crate::{
     datasets::Dataset,
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
     utils::{collect_states, sort_states},
 };
 
@@ -23,8 +24,8 @@ pub type CatSample = CategoricalSample;
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
 pub struct CategoricalDataset {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     values: Array2<u8>,
 }
@@ -64,26 +65,38 @@ impl CatData {
         V: AsRef<str>,
     {
         // Collect the states into a map.
-        let states = collect_states(states);
-        // Get the indices to sort the labels and states labels.
-        let (states, sorted_idx) = sort_states(states);
+        let mut states = collect_states(states);
         // Get the labels of the variables.
-        let labels: FxIndexSet<_> = states.keys().cloned().collect();
+        let mut labels: Labels = states.keys().cloned().collect();
         // Get the cardinality of the states.
-        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        let mut cardinality = Array::from_iter(states.values().map(|x| x.len()));
+
+        // Log the creation of the categorical dataset.
+        debug!(
+            "Creating a new categorical dataset with {} variables and {} samples.",
+            states.len(),
+            values.nrows()
+        );
 
         // Check if the number of states is less than `u8::MAX`.
         states.iter().for_each(|(label, state)| {
             assert!(
                 state.len() < u8::MAX as usize,
-                "Variable '{label}' should have less than 256 states.",
+                "Variable '{label}' should have less than 256 states: \n\
+                \t expected:    |states| <  256 , \n\
+                \t found:       |states| == {} .",
+                state.len()
             );
         });
         // Check if the number of variables is equal to the number of columns.
         assert_eq!(
             states.len(),
             values.ncols(),
-            "Number of variables must be equal to the number of columns."
+            "Number of variables must be equal to the number of columns: \n\
+            \t expected:    |states| == |values.columns()| , \n\
+            \t found:       |states| == {} and |values.columns()| == {} .",
+            states.len(),
+            values.ncols()
         );
         // Check if the maximum value of the values is less than the number of states.
         values
@@ -93,15 +106,22 @@ impl CatData {
             .for_each(|(i, x)| {
                 assert!(
                     x < states[i].len() as u8,
-                    "Values of variable '{}' must be less than the number of states.",
-                    labels[i]
+                    "Values of variable '{label}' must be less than the number of states: \n\
+                    \t expected: values[.., '{label}'] < |states['{label}']| , \n\
+                    \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
+                    states[i].len(),
+                    label = labels[i],
                 );
             });
 
         // Check if the values are already sorted.
-        if !sorted_idx.iter().map(|(x, _)| x).is_sorted()
-            || !sorted_idx.iter().all(|(_, y)| y.iter().is_sorted())
-        {
+        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
+            // Sort the states and labels.
+            let (new_states, sorted_idx) = sort_states(states);
+            // Update the states with the sorted states.
+            states = new_states;
+            labels = states.keys().cloned().collect();
+            cardinality = Array::from_iter(states.values().map(|x| x.len()));
             // Allocate the new values array.
             let mut new_values = values.clone();
             // Sort the values by the indices of the states labels.
@@ -182,7 +202,7 @@ impl CatData {
     /// A reference to the vector of states.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         &self.states
     }
 
@@ -239,7 +259,7 @@ impl Display for CatData {
 }
 
 impl Dataset for CatData {
-    type Labels = FxIndexSet<String>;
+    type Labels = Labels;
     type Values = Array2<u8>;
 
     #[inline]

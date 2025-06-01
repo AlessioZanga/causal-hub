@@ -8,7 +8,7 @@ use crate::{
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexMap, States},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
@@ -33,7 +33,7 @@ impl CatCTBN {
     /// A reference to the states of the variables.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         self.initial_distribution.states()
     }
 }

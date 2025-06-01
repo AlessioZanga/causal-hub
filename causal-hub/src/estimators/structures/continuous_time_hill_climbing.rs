@@ -165,7 +165,6 @@ where
                         // Get the vertices that are not in the current parent set.
                         self.initial_graph
                             .vertices()
-                            .into_iter()
                             .filter_map(move |j| {
                                 if i != j {
                                     // If the vertex is not in the current parent set ...
@@ -263,7 +262,6 @@ where
                             // Get the vertices that are not in the current parent set.
                             self.initial_graph
                                 .vertices()
-                                .into_iter()
                                 .filter_map(move |j| {
                                     if i != j {
                                         // If the vertex is not in the current parent set ...

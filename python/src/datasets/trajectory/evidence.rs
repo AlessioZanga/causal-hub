@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use causal_hub::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv, Dataset},
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexSet, States},
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{
@@ -129,7 +129,7 @@ impl PyCatTrjEv {
         );
 
         // Construct the states.
-        let states: FxIndexMap<_, FxIndexSet<_>> = with_states
+        let states: States = with_states
             // If `with_states` is provided, convert it to a FxIndexMap.
             .map(|states| {
                 // Iterate over the items.

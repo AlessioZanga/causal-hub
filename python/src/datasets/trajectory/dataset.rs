@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use causal_hub::{
     datasets::{CatTrj, CatTrjs, Dataset},
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexSet, States},
 };
 use numpy::{PyArray1, ndarray::prelude::*, prelude::*};
 use pyo3::{
@@ -93,7 +93,7 @@ impl PyCatTrj {
         assert!(!columns.is_empty(), "The data frame is empty.");
 
         // Construct the states.
-        let states: FxIndexMap<_, _> = with_states
+        let states: States = with_states
             // If `with_states` is provided, convert it to a FxIndexMap.
             .map(|states| {
                 // Iterate over the items.

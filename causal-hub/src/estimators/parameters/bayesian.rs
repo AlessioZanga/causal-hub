@@ -6,7 +6,7 @@ use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{FxIndexMap, FxIndexSet},
+    types::States,
 };
 
 /// A struct representing a Bayesian estimator.
@@ -110,7 +110,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         t_xz: Array2<f64>,
         n: f64,
         prior: (usize, f64),
-        states: &FxIndexMap<String, FxIndexSet<String>>,
+        states: &States,
     ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
@@ -158,8 +158,8 @@ impl BE<'_, CatTrj, (usize, f64)> {
             // Compute the sample log-likelihood.
             let ll_p_xz = {
                 // Compute the sample log-likelihood.
-                (ln_gamma(alpha) - &n_z.mapv(ln_gamma).sum())     //.
-                + (ln_gamma(alpha) - &n_xz.mapv(ln_gamma).sum())
+                (ln_gamma(alpha) - n_z.mapv(ln_gamma).sum())     //.
+                + (ln_gamma(alpha) - n_xz.mapv(ln_gamma).sum())
             };
             // Return the total log-likelihood.
             ll_q_xz + ll_p_xz

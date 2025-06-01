@@ -7,14 +7,14 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexMap, States},
 };
 
 /// A categorical Bayesian network (BN).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoricalBayesianNetwork {
     /// The states of the variables.
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    states: States,
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional probability distributions.
@@ -34,7 +34,7 @@ impl CatBN {
     /// A reference to the states of the variables.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         &self.states
     }
 }
@@ -109,7 +109,7 @@ impl BN for CatBN {
         );
 
         // Allocate the states of the variables.
-        let mut states: FxIndexMap<String, FxIndexSet<String>> = FxIndexMap::default();
+        let mut states: States = Default::default();
         // Insert the states of the variables into the map to check if they are the same.
         for cpd in cpds.values() {
             std::iter::once((cpd.label(), cpd.states()))

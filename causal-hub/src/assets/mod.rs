@@ -1,4 +1,5 @@
 use dry::macro_for;
+use log::debug;
 use ndarray::prelude::*;
 use paste::paste;
 
@@ -18,18 +19,23 @@ macro_for!(
     paste! {
         #[doc = "Load the `" $bn:upper "` BN from the assets."]
         pub fn [<load_ $bn>]() -> CatBN {
+            // Log the loading of the BN.
+            debug!("Loading the '{}' BN from assets.", stringify!($bn));
+            // Read the BIF file and return the BN.
             BifReader::read(include_str!(concat!(stringify!($bn), ".bif")))
         }
     }
 });
 
-/// Load the EATING CTBN.
+/// Load the 'eating' CTBN.
 ///
 /// See:
 ///     U. Nodelman, C.R. Shelton, and D. Koller (2003). "Learning Continuous Time Bayesian Networks."
 ///     Proc. Nineteenth Conference on Uncertainty in Artificial Intelligence (UAI) (pp. 451-458).
 ///
 pub fn load_eating() -> CatCTBN {
+    // Log the loading of the EATING CTBN.
+    debug!("Loading the 'eating' CTBN from assets.");
     // Initialize the graph.
     let mut graph = DiGraph::empty(vec!["Hungry", "Eating", "FullStomach"]);
     graph.add_edge(0, 1); // Hungry -> Eating
