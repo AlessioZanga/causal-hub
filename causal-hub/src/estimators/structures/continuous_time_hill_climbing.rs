@@ -5,10 +5,19 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
+    types::Labels,
 };
 
 /// A trait for scoring criteria used in score-based structure learning.
 pub trait ScoringCriterion {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Computes the score for a given variable and its conditioning set.
     ///
     /// # Arguments
@@ -56,6 +65,11 @@ where
     E: CPDEstimator<CatCIM>,
 {
     #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
+    #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, &z);
@@ -100,8 +114,17 @@ where
     /// A new `ContinuousTimeHillClimbing` instance.
     ///
     #[inline]
-    pub const fn new(initial_graph: &'a DiGraph, score: &'a S) -> Self {
-        // FIXME: Check initial graph and score have the same labels.
+    pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Self {
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            score.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            score.labels()
+        );
 
         Self {
             initial_graph,

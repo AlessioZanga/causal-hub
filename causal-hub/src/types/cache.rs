@@ -40,6 +40,10 @@ where
     P: CPD + Clone,
     P::SS: Clone,
 {
+    fn labels(&self) -> &super::Labels {
+        self.call.labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P) {
         // Get the key.
         let key = (x, z.to_vec());

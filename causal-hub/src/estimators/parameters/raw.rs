@@ -378,6 +378,10 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> {
+    fn labels(&self) -> &crate::types::Labels {
+        self.dataset.as_ref().unwrap().labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
@@ -385,6 +389,10 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> 
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
+    fn labels(&self) -> &crate::types::Labels {
+        self.dataset.as_ref().unwrap().labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)

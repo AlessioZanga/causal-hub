@@ -7,7 +7,7 @@ use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::FxIndexSet,
+    types::{FxIndexSet, Labels},
     utils::RMI,
 };
 
@@ -35,6 +35,11 @@ pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
 impl CSSEstimator for SSE<'_, CatData> {
     type Output = <CatCPD as CPD>::SS;
+
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Concat the variables to fit.
@@ -87,6 +92,11 @@ impl CSSEstimator for SSE<'_, CatData> {
 impl CSSEstimator for SSE<'_, CatTrj> {
     type Output = <CatCIM as CPD>::SS;
 
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
@@ -133,6 +143,11 @@ impl CSSEstimator for SSE<'_, CatTrj> {
 impl CSSEstimator for SSE<'_, CatWtdTrj> {
     type Output = <CatCIM as CPD>::SS;
 
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
@@ -148,6 +163,11 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl CSSEstimator for SSE<'_, $type> {
         type Output = <CatCIM as CPD>::SS;
+
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
 
         fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
             // Get the cardinality of the trajectory.

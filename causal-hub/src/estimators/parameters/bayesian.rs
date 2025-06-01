@@ -4,9 +4,9 @@ use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::States,
+    types::{Labels, States},
 };
 
 /// A struct representing a Bayesian estimator.
@@ -50,6 +50,11 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
 impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
@@ -190,6 +195,11 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
+
         fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());

@@ -38,6 +38,11 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
 }
 
 impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let states = self.dataset.states();
@@ -187,6 +192,10 @@ impl MLE<'_, CatTrj> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
 
         fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.

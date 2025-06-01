@@ -7,10 +7,19 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
+    types::Labels,
 };
 
 /// A trait for conditional independence testing.
 pub trait ConditionalIndependenceTest {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -64,6 +73,11 @@ impl<E> CIT for ChiSquaredTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the extended separation set.
         let mut s = z.to_vec();
@@ -155,6 +169,11 @@ impl<E> CIT for FTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
@@ -231,8 +250,27 @@ where
     /// A new `ContinuousTimePeterClark` instance.
     ///
     #[inline]
-    pub const fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
-        // FIXME: Check initial graph and tests have the same labels.
+    pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            null_time.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            null_time.labels()
+        );
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            null_state.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            null_state.labels()
+        );
 
         Self {
             initial_graph,

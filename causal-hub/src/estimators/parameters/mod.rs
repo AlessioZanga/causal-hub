@@ -18,12 +18,21 @@ use crate::{
     distributions::CPD,
     graphs::{DiGraph, Graph},
     models::{BN, CTBN},
+    types::Labels,
 };
 
 /// A trait for sufficient statistics estimators.
 pub trait ConditionalSufficientStatisticsEstimator {
     /// The type of sufficient statistics.
     type Output;
+
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
 
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics.
     ///
@@ -69,6 +78,14 @@ pub trait ConditionalProbabilityDistributionEstimator<P>
 where
     P: CPD,
 {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments
