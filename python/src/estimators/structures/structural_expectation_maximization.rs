@@ -84,8 +84,8 @@ pub fn sem(
         }
         _ => panic!(
             "Failed to get the structure learning algorithm: \n\
-            expected:   'ctpc' or 'cthc', \n\
-            found:      '{algorithm}'"
+            \t expected:   'ctpc' or 'cthc', \n\
+            \t found:      '{algorithm}'"
         ),
     };
 
@@ -162,8 +162,8 @@ pub fn sem(
             }
             _ => panic!(
                 "Failed to get the structure learning algorithm: \n\
-                expected:   'ctpc' or 'cthc', \n\
-                found:      '{algorithm}'"
+                \t expected:   'ctpc' or 'cthc', \n\
+                \t found:      '{algorithm}'"
             ),
         };
         // Fit the new model using the expectation.

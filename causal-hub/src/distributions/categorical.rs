@@ -95,7 +95,7 @@ impl CatCPD {
         // Get the labels of the variables.
         let mut conditioning_labels: FxIndexSet<_> = conditioning_states.keys().cloned().collect();
         // Get the cardinality of the set of states.
-        let conditioning_cardinality: Array1<_> =
+        let mut conditioning_cardinality: Array1<_> =
             conditioning_states.values().map(|i| i.len()).collect();
 
         // Check that label is not in the conditioning labels.
@@ -130,49 +130,70 @@ impl CatCPD {
         // Compute the parameters size.
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
 
-        // Sort the columns.
-        let mut columns_idx: Vec<_> = (0..states.len()).collect();
-        columns_idx.sort_by_key(|&i| &states[i]);
-        // Sort the labels.
-        states.sort();
+        // Make parameters mutable.
+        let mut parameters = parameters;
 
-        // Sort the rows.
-        let mut row_indices: Vec<_> = (0..conditioning_cardinality.product()).collect();
-        // Sort the conditioning labels.
-        conditioning_labels.sort();
-        conditioning_states.sort_keys();
-        // Compute the new multi index.
-        let row_multi_index: Vec<_> = conditioning_states
-            .values()
-            .multi_cartesian_product()
-            .collect();
-        row_indices.sort_by_key(|&i| &row_multi_index[i]);
-        // Sort the conditioning states.
-        conditioning_states.values_mut().for_each(|x| x.sort());
-        // Update conditioning cardinality.
-        let conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|i| i.len()).collect();
+        // Check if the states are sorted.
+        if !states.iter().is_sorted() {
+            // Initialize the sorted column indices.
+            let mut sorted_col_idx: Vec<_> = (0..parameters.ncols()).collect();
+            // Sort the columns indices.
+            sorted_col_idx.sort_by_key(|&i| &states[i]);
+            // Sort the labels.
+            states.sort();
+            // Allocate new parameters.
+            let mut new_parameters = parameters.clone();
+            // Sort the values by the indices of the states labels.
+            new_parameters
+                .columns_mut()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, mut new_parameters_col)| {
+                    // Assign the sorted values to the new values array.
+                    new_parameters_col.assign(&parameters.column(sorted_col_idx[i]));
+                });
+            // Update the values with the new sorted values.
+            parameters = new_parameters;
+        }
 
-        // Allocate new parameters.
-        let mut new_parameters = parameters.clone();
-        // Sort the values by the indices of the states labels.
-        new_parameters
-            .columns_mut()
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, mut new_parameters_col)| {
-                // Assign the sorted values to the new values array.
-                new_parameters_col.assign(&parameters.column(columns_idx[i]));
+        // Check if the conditioning states are sorted.
+        if !conditioning_states.keys().is_sorted()
+            || !conditioning_states.values().all(|x| x.iter().is_sorted())
+        {
+            // Compute the current states order.
+            let mut states: Vec<_> = conditioning_states
+                .values()
+                .multi_cartesian_product()
+                .collect();
+            // Sort the conditioning labels.
+            let mut sorted_labels_idx: Vec<_> = (0..conditioning_labels.len()).collect();
+            // Sort the conditioning labels.
+            sorted_labels_idx.sort_by_key(|&i| &conditioning_labels[i]);
+            // Sort the conditioning states by the labels.
+            states.iter_mut().for_each(|states| {
+                *states = sorted_labels_idx.iter().map(|&i| states[i]).collect();
             });
-        // Sort the values by multi indices.
-        new_parameters.rows_mut().into_iter().enumerate().for_each(
-            |(i, mut new_parameters_row)| {
-                // Assign the sorted values to the new values array.
-                new_parameters_row.assign(&parameters.row(row_indices[i]));
-            },
-        );
-        // Update the values with the new sorted values.
-        let parameters = new_parameters;
+            // Initialize the sorted row indices.
+            let mut sorted_row_idx: Vec<_> = (0..parameters.nrows()).collect();
+            // Sort the row indices.
+            sorted_row_idx.sort_by_key(|&i| &states[i]);
+            // Sort the labels.
+            conditioning_states.sort_keys();
+            conditioning_states.values_mut().for_each(|x| x.sort());
+            conditioning_labels = conditioning_states.keys().cloned().collect();
+            conditioning_cardinality = conditioning_states.values().map(|i| i.len()).collect();
+            // Allocate new parameters.
+            let mut new_parameters = parameters.clone();
+            // Sort the values by multi indices.
+            new_parameters.rows_mut().into_iter().enumerate().for_each(
+                |(i, mut new_parameters_row)| {
+                    // Assign the sorted values to the new values array.
+                    new_parameters_row.assign(&parameters.row(sorted_row_idx[i]));
+                },
+            );
+            // Update the values with the new sorted values.
+            parameters = new_parameters;
+        }
 
         // Construct the ravel multi index.
         let ravel_multi_index = RMI::new(conditioning_cardinality.iter().copied());
