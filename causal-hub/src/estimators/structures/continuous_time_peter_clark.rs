@@ -38,6 +38,8 @@ pub trait ConditionalIndependenceTest {
 /// A type alias for a conditional independence test.
 pub use ConditionalIndependenceTest as CIT;
 
+use super::PK;
+
 /// A struct representing the Chi-squared test.
 pub struct ChiSquaredTest<'a, E> {
     estimator: &'a E,
@@ -227,6 +229,7 @@ pub struct ContinuousTimePeterClark<'a, T, S> {
     initial_graph: &'a DiGraph,
     null_time: &'a T,
     null_state: &'a S,
+    prior_knowledge: Option<&'a PK>,
 }
 
 /// A type alias for the continuous-time Peter-Clark estimator.
@@ -276,7 +279,56 @@ where
             initial_graph,
             null_time,
             null_state,
+            prior_knowledge: None,
         }
+    }
+
+    /// Sets the prior knowledge for the algorithm.
+    ///
+    /// # Arguments
+    ///
+    /// * `prior_knowledge` - The prior knowledge to use.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current instance.
+    ///
+    #[inline]
+    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Self {
+        // Assert labels of prior knowledge and initial graph are the same.
+        assert_eq!(
+            self.initial_graph.labels(),
+            prior_knowledge.labels(),
+            "Labels of initial graph and prior knowledge must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            self.initial_graph.labels(),
+            prior_knowledge.labels()
+        );
+        // Assert prior knowledge is consistent with initial graph.
+        self.initial_graph
+            .vertices()
+            .permutations(2)
+            .for_each(|edge| {
+                // Get the edge indices.
+                let (i, j) = (edge[0], edge[1]);
+                // Assert edge must be either present and not forbidden ...
+                if self.initial_graph.has_edge(i, j) {
+                    assert!(
+                        !prior_knowledge.is_forbidden(i, j),
+                        "Initial graph contains forbidden edge ({i}, {j})."
+                    );
+                // ... or absent and not required.
+                } else {
+                    assert!(
+                        !prior_knowledge.is_required(i, j),
+                        "Initial graph does not contain required edge ({i}, {j})."
+                    );
+                }
+            });
+        // Set prior knowledge.
+        self.prior_knowledge = Some(prior_knowledge);
+        self
     }
 
     /// Execute the CTPC algorithm.
@@ -304,6 +356,15 @@ where
 
                 // For each parent ...
                 for &j in &pa_i {
+                    // Check prior knowledge, if available.
+                    if let Some(pk) = self.prior_knowledge {
+                        // If the edge is required, skip the tests.
+                        // NOTE: Since CTPC only removes edges,
+                        //  it is sufficient to check for required edges.
+                        if pk.is_required(j, i) {
+                            continue;
+                        }
+                    }
                     // Filter out the parent.
                     let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
