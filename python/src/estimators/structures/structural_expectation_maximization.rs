@@ -63,16 +63,19 @@ pub fn sem(
         "ctpc" => {
             // Set the initial graph to a complete graph.
             let mut initial_graph = DiGraph::complete(evidence.labels());
-            // Set the parents of the initial graph to max_parents.
-            for i in 0..initial_graph.vertices().len() {
-                // Get the parents.
-                let mut pa_i = initial_graph.parents(i);
-                // Choose nodes randomly.
-                pa_i.shuffle(&mut rng);
-                // Remove the excess parents.
-                for j in pa_i.split_off(max_parents) {
-                    // Remove the edge.
-                    initial_graph.del_edge(j, i);
+            // Check if the number of vertices is less than or equal to the maximum number of parents.
+            if initial_graph.vertices().len() > max_parents + 1 {
+                // Set the parents of the initial graph to max_parents.
+                for i in 0..initial_graph.vertices().len() {
+                    // Get the parents.
+                    let mut pa_i = initial_graph.parents(i);
+                    // Choose nodes randomly.
+                    pa_i.shuffle(&mut rng);
+                    // Remove the excess parents.
+                    for j in pa_i.split_off(max_parents) {
+                        // Remove the edge.
+                        initial_graph.del_edge(j, i);
+                    }
                 }
             }
             // Return the initial graph.
