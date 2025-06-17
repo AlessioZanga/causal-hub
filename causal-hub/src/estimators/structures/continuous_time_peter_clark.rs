@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use log::debug;
 use ndarray::{Zip, prelude::*};
 use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
@@ -362,6 +363,8 @@ where
                         // NOTE: Since CTPC only removes edges,
                         //  it is sufficient to check for required edges.
                         if pk.is_required(j, i) {
+                            // Log the skipped CIT.
+                            debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
                             continue;
                         }
                     }
@@ -369,8 +372,12 @@ where
                     let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
                     for s_ij in pa_i_not_j.combinations(k) {
+                        // Log the current combination.
+                        debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
                         if self.null_time.call(i, j, &s_ij) && self.null_state.call(i, j, &s_ij) {
+                            // Log the result of the CIT.
+                            debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
                             // Add the parent to the set of vertices to remove.
                             not_pa_i.push(j);
                             // Break the outer loop.
@@ -427,14 +434,29 @@ where
                     pa_i = pa_i
                         .par_iter()
                         .filter_map(|&j| {
+                            // Check prior knowledge, if available.
+                            if let Some(pk) = self.prior_knowledge {
+                                // If the edge is required, skip the tests.
+                                // NOTE: Since CTPC only removes edges,
+                                //  it is sufficient to check for required edges.
+                                if pk.is_required(j, i) {
+                                    // Log the skipped CIT.
+                                    debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
+                                    return Some(j);
+                                }
+                            }
                             // Filter out the parent.
                             let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                             // For any combination of size k of Pa(X_i) \ { X_j } ...
                             for s_ij in pa_i_not_j.combinations(k) {
+                                // Log the current combination.
+                                debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
                                 if self.null_time.call(i, j, &s_ij)
                                     && self.null_state.call(i, j, &s_ij)
                                 {
+                                    // Log the result of the CIT.
+                                    debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
                                     // Add the parent to the set of vertices to remove.
                                     return None;
                                 }

@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 approx.workspace = true
 causal-hub = { path = "../causal-hub" }
 dry.workspace = true
+log.workspace = true
 numpy = "^0.25"
 paste.workspace = true
 pyo3 = { version = "^0.25", features = ["extension-module", "serde"] }

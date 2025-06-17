@@ -76,6 +76,7 @@ dependencies = [
  "approx",
  "causal-hub",
  "dry",
+ "log",
  "numpy",
  "paste",
  "pyo3",

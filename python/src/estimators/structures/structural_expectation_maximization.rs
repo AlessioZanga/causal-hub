@@ -9,6 +9,7 @@ use causal_hub::{
     samplers::{CTBNSampler, ImportanceSampler},
     types::Cache,
 };
+use log::debug;
 use pyo3::{prelude::*, types::PyDict};
 use rand::{RngCore, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -61,10 +62,14 @@ pub fn sem(
     // Set the initial graph depending on the algorithm.
     let initial_graph = match algorithm {
         "ctpc" => {
+            // Log the graph initialization.
+            debug!("Setting initial graph for CTPC algorithm to a complete graph ...");
             // Set the initial graph to a complete graph.
             let mut initial_graph = DiGraph::complete(evidence.labels());
             // Check if the number of vertices is less than or equal to the maximum number of parents.
             if initial_graph.vertices().len() > max_parents + 1 {
+                // Log the maximum number of parents.
+                debug!("Reducing the number of parents to {max_parents}.");
                 // Set the parents of the initial graph to max_parents.
                 for i in 0..initial_graph.vertices().len() {
                     // Get the parents.
@@ -82,6 +87,8 @@ pub fn sem(
             initial_graph
         }
         "cthc" => {
+            // Log the graph initialization.
+            debug!("Setting initial graph for CTHC algorithm to an empty graph ...");
             // Set the initial graph to an empty graph.
             DiGraph::empty(evidence.labels())
         }
@@ -92,8 +99,12 @@ pub fn sem(
         ),
     };
 
+    // Log the raw estimator initialization.
+    debug!("Initializing the raw estimator for the initial guess ...");
     // Initialize a raw estimator for an initial guess.
     let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
+    // Log the initial model fitting.
+    debug!("Fitting the initial model using the raw estimator ...");
     // Set the initial model.
     let initial_model = raw.par_fit(initial_graph.clone());
 
