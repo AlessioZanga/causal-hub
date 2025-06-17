@@ -400,10 +400,7 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs
 }
 
 impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
-    // (conditional counts, conditional time spent, sample size)
-    type SS = (Array3<f64>, Array2<f64>, f64);
-
-    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit_transform(x, z)
     }

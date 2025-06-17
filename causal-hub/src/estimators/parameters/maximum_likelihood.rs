@@ -217,10 +217,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
-
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
