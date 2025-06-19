@@ -28,7 +28,7 @@ pub struct RawEstimator<'a, R, E, D> {
 }
 
 /// A type alias for a raw estimator.
-pub type RE<'a, R, E, D> = RawEstimator<'a, R, E, D>;
+pub type RAWE<'a, R, E, D> = RawEstimator<'a, R, E, D>;
 
 impl<R, E, D> Deref for RawEstimator<'_, R, E, D> {
     type Target = D;
@@ -38,7 +38,7 @@ impl<R, E, D> Deref for RawEstimator<'_, R, E, D> {
     }
 }
 
-impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
+impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     /// Constructs a new raw estimator from the evidence.
     ///
     /// # Arguments
@@ -47,7 +47,7 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// # Returns
     ///
-    /// A new `RE` instance.
+    /// A new `RAWE` instance.
     ///
     pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Self {
         // Initialize the estimator.
@@ -337,7 +337,7 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjEv, CatTrj> {
     }
 }
 
-impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
+impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     /// Constructs a new raw estimator from the evidence.
     ///
     /// # Arguments
@@ -346,7 +346,7 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
     ///
     /// # Returns
     ///
-    /// A new `RE` instance.
+    /// A new `RAWE` instance.
     ///
     pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Self {
         // Sample seed for parallel sampling.
@@ -362,7 +362,7 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
                     // Create a new random number generator with the seed.
                     let mut rng = R::seed_from_u64(seed);
                     // Fill the evidence with the raw estimator.
-                    RE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)
+                    RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)
                         .dataset
                         .unwrap()
                 })
@@ -377,7 +377,7 @@ impl<'a, R: Rng + SeedableRng> RE<'a, R, CatTrjsEv, CatTrjs> {
     }
 }
 
-impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
     fn labels(&self) -> &crate::types::Labels {
         self.dataset.as_ref().unwrap().labels()
     }
@@ -388,7 +388,7 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjEv, CatTrj> 
     }
 }
 
-impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn labels(&self) -> &crate::types::Labels {
         self.dataset.as_ref().unwrap().labels()
     }
@@ -399,7 +399,7 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs
     }
 }
 
-impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RE<'_, R, CatTrjsEv, CatTrjs> {
+impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit_transform(x, z)

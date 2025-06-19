@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, ops::Deref};
 use approx::relative_eq;
 use causal_hub::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-    estimators::{BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator, RE},
+    estimators::{BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator, RAWE},
     graphs::{DiGraph, Graph},
     models::CatCTBN,
     samplers::{CTBNSampler, ImportanceSampler},
@@ -102,7 +102,7 @@ pub fn sem(
     // Log the raw estimator initialization.
     debug!("Initializing the raw estimator for the initial guess ...");
     // Initialize a raw estimator for an initial guess.
-    let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
+    let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
     // Log the initial model fitting.
     debug!("Fitting the initial model using the raw estimator ...");
     // Set the initial model.
