@@ -10,7 +10,7 @@ use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
     distributions::{CPD, CatCIM},
-    types::FxIndexSet,
+    types::{FxIndexSet, Labels},
 };
 
 // TODO: This must be refactored to be stateless.
@@ -378,8 +378,8 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
-    fn labels(&self) -> &crate::types::Labels {
-        self.dataset.as_ref().unwrap().labels()
+    fn labels(&self) -> &Labels {
+        self.evidence.labels()
     }
 
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
@@ -389,8 +389,8 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn labels(&self) -> &crate::types::Labels {
-        self.dataset.as_ref().unwrap().labels()
+    fn labels(&self) -> &Labels {
+        self.evidence.labels()
     }
 
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
