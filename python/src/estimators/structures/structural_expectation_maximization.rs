@@ -5,8 +5,8 @@ use causal_hub::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
     estimators::{BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator, RAWE},
     graphs::{DiGraph, Graph},
-    models::CatCTBN,
-    samplers::{CTBNSampler, ImportanceSampler},
+    models::{CTBN, CatCTBN},
+    samplers::{ImportanceSampler, ParCTBNSampler},
     types::Cache,
 };
 use log::debug;
@@ -45,16 +45,16 @@ pub fn sem(
     let max_parents: usize = kwargs
         .get("max_parents")
         .and_then(|x| x.extract(py).ok())
-        .unwrap_or_else(|| evidence.labels().len());
+        .unwrap_or(evidence.labels().len());
     // Get f_test and c_test from the keyword arguments or set defaults.
     let f_test: f64 = kwargs
         .get("f_test")
         .and_then(|x| x.extract(py).ok())
-        .unwrap_or_else(|| 0.01);
+        .unwrap_or(0.01);
     let c_test: f64 = kwargs
         .get("c_test")
         .and_then(|x| x.extract(py).ok())
-        .unwrap_or_else(|| 0.01);
+        .unwrap_or(0.01);
 
     // Release the GIL to allow parallel execution.
     py.allow_threads(|| {
@@ -96,15 +96,15 @@ pub fn sem(
             }
             _ => panic!(
                 "Failed to get the structure learning algorithm: \n\
-            \t expected:   'ctpc' or 'cthc', \n\
-            \t found:      '{algorithm}'"
+                \t expected:   'ctpc' or 'cthc', \n\
+                \t found:      '{algorithm}'"
             ),
         };
 
         // Log the raw estimator initialization.
         debug!("Initializing the raw estimator for the initial guess ...");
         // Initialize a raw estimator for an initial guess.
-        let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
+        let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
         // Log the initial model fitting.
         debug!("Fitting the initial model using the raw estimator ...");
         // Set the initial model.
@@ -113,45 +113,78 @@ pub fn sem(
         // Wrap the random number generator in a RefCell to allow mutable borrowing.
         let rng = RefCell::new(rng);
 
-        // Define the expectation step.
-        let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
-            // Reference the random number generator.
-            let mut rng = rng.borrow_mut();
-            // Sample the seeds to parallelize the sampling.
-            let seeds: Vec<_> = (0..evidence.values().len())
-                .map(|_| rng.next_u64())
-                .collect();
-            // Get the max length of the evidence.
-            let max_length = evidence
-                .values()
-                .iter()
-                .map(|e| e.sample_size())
-                .max()
-                .unwrap_or(10);
-            // Fore each (seed, evidence) ...
-            seeds
-                .iter()
-                .zip(evidence)
-                .par_bridge()
-                .map(|(&s, e)| {
-                    // Initialize a new random number generator.
-                    let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
-                    // Initialize a new sampler.
-                    let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
-                    // Perform multiple imputation.
-                    let trjs = importance.sample_n_by_length(max_length, 10);
-                    // Get the one with the highest weight.
-                    trjs.values()
-                        .iter()
-                        .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
-                        .unwrap()
-                        .clone()
-                })
-                .collect()
+        // Define the expectation-maximization step.
+        let em_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
+            // Define the expectation step.
+            let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
+                // Reference the random number generator.
+                let mut rng = rng.borrow_mut();
+                // Sample the seeds to parallelize the sampling.
+                let seeds: Vec<_> = (0..evidence.values().len())
+                    .map(|_| rng.next_u64())
+                    .collect();
+                // Fore each (seed, evidence) ...
+                seeds
+                    .iter()
+                    .zip(evidence)
+                    .par_bridge()
+                    .map(|(&s, e)| {
+                        // Initialize a new random number generator.
+                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                        // Initialize a new sampler.
+                        let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        // Set the maximum length of the trajectories.
+                        let max_length = 1_000;
+                        // Get the maximum time of the trajectories.
+                        let max_time = e
+                            .values()
+                            .iter()
+                            .flat_map(|(_, e)| e.iter().map(|e| e.end_time()))
+                            .max_by(|a, b| a.partial_cmp(b).unwrap())
+                            .unwrap();
+                        // Perform multiple imputation.
+                        let trjs =
+                            importance.par_sample_n_by_length_or_time(max_length, max_time, 10);
+                        // Get the one with the highest weight.
+                        trjs.values()
+                            .iter()
+                            .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
+                            .unwrap()
+                            .clone()
+                    })
+                    .collect()
+            };
+
+            // Define the maximization step.
+            let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
+                // Initialize the parameter estimator.
+                let estimator = BE::new(expectation, (1, 1.));
+                // Fit the model using the parameter estimator.
+                estimator.par_fit(prev_model.graph().clone())
+            };
+
+            // Define the stopping criteria.
+            let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
+                // Check if the models are equal or the counter is greater than the limit.
+                relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter
+            };
+
+            // Create a new EM.
+            let em = EMBuilder::new(prev_model, evidence)
+                .with_e_step(&e_step)
+                .with_m_step(&m_step)
+                .with_stop(&stop)
+                .build();
+
+            // Fit the model.
+            let fitted_model = em.fit();
+
+            // Estimate the weighted trajectories.
+            e_step(&fitted_model, evidence)
         };
 
-        // Define the maximization step.
-        let m_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
+        // Define the structure learning step.
+        let sl_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
             // Initialize the parameter estimator.
             let estimator = BE::new(expectation, (1, 1.));
             // Cache the parameter estimator.
@@ -178,8 +211,8 @@ pub fn sem(
                 }
                 _ => panic!(
                     "Failed to get the structure learning algorithm: \n\
-                \t expected:   'ctpc' or 'cthc', \n\
-                \t found:      '{algorithm}'"
+                    \t expected:   'ctpc' or 'cthc', \n\
+                    \t found:      '{algorithm}'"
                 ),
             };
             // Fit the new model using the expectation.
@@ -187,20 +220,20 @@ pub fn sem(
         };
 
         // Define the stopping criteria.
-        let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
+        let sem_stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
             // Check if the models are equal or the counter is greater than the limit.
             relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter
         };
 
-        // Create a new builder.
-        let builder = EMBuilder::new(&initial_model, evidence)
-            .with_e_step(&e_step)
-            .with_m_step(&m_step)
-            .with_stop(&stop)
+        // Create a new SEM.
+        let sem = EMBuilder::new(&initial_model, evidence)
+            .with_e_step(&em_step)
+            .with_m_step(&sl_step)
+            .with_stop(&sem_stop)
             .build();
 
         // Fit the model.
-        let fitted_model = builder.fit();
+        let fitted_model = sem.fit();
 
         // Convert the fitted model into a PyDiGraph.
         Ok(fitted_model.into())
