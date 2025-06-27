@@ -3,7 +3,9 @@ use std::{cell::RefCell, collections::HashMap, ops::Deref};
 use approx::relative_eq;
 use causal_hub::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-    estimators::{BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator, RAWE},
+    estimators::{
+        BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, FTest, PK, ParCTBNEstimator, RAWE,
+    },
     graphs::{DiGraph, Graph},
     models::{CTBN, CatCTBN},
     samplers::{ImportanceSampler, ParCTBNSampler},
@@ -15,11 +17,12 @@ use rand::{RngCore, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 
-use crate::{datasets::PyCatTrjsEv, models::PyCatCTBN};
+use crate::{datasets::PyCatTrjsEv, estimators::PyPK, models::PyCatCTBN};
 
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
+    prior_knowledge,
     algorithm,
     max_iter = 10,
     seed = 42,
@@ -28,6 +31,7 @@ use crate::{datasets::PyCatTrjsEv, models::PyCatCTBN};
 pub fn sem(
     py: Python<'_>,
     evidence: &Bound<'_, PyCatTrjsEv>,
+    prior_knowledge: &Bound<'_, PyPK>,
     algorithm: &str,
     max_iter: usize,
     seed: u64,
@@ -37,6 +41,11 @@ pub fn sem(
     let evidence: PyCatTrjsEv = evidence.extract()?;
     // Get the reference to the evidence.
     let evidence: &CatTrjsEv = evidence.deref();
+
+    // Get the prior knowledge.
+    let prior_knowledge: PyPK = prior_knowledge.extract()?;
+    // Convert the prior knowledge into a PK.
+    let prior_knowledge: &PK = prior_knowledge.deref();
 
     // Get the keyword arguments.
     let kwargs: HashMap<String, PyObject> =
@@ -68,20 +77,28 @@ pub fn sem(
                 debug!("Setting initial graph for CTPC algorithm to a complete graph ...");
                 // Set the initial graph to a complete graph.
                 let mut initial_graph = DiGraph::complete(evidence.labels());
+                // Apply the prior knowledge to the initial graph.
+                for (i, j) in prior_knowledge.forbidden_edges() {
+                    // Remove the edge if it is forbidden.
+                    initial_graph.del_edge(i, j);
+                }
                 // Check if the number of vertices is less than or equal to the maximum number of parents.
                 if initial_graph.vertices().len() > max_parents + 1 {
                     // Log the maximum number of parents.
-                    debug!("Reducing the number of parents to {max_parents}.");
+                    debug!("Reducing the number of parents to {max_parents}, when needed.");
                     // Set the parents of the initial graph to max_parents.
                     for i in 0..initial_graph.vertices().len() {
                         // Get the parents.
                         let mut pa_i = initial_graph.parents(i);
-                        // Choose nodes randomly.
-                        pa_i.shuffle(&mut rng);
-                        // Remove the excess parents.
-                        for j in pa_i.split_off(max_parents) {
-                            // Remove the edge.
-                            initial_graph.del_edge(j, i);
+                        // Check the maximum number of parents.
+                        if pa_i.len() > max_parents + 1 {
+                            // Choose nodes randomly.
+                            pa_i.shuffle(&mut rng);
+                            // Remove the excess parents.
+                            for j in pa_i.split_off(max_parents) {
+                                // Remove the edge.
+                                initial_graph.del_edge(j, i);
+                            }
                         }
                     }
                 }
@@ -92,7 +109,14 @@ pub fn sem(
                 // Log the graph initialization.
                 debug!("Setting initial graph for CTHC algorithm to an empty graph ...");
                 // Set the initial graph to an empty graph.
-                DiGraph::empty(evidence.labels())
+                let mut initial_graph = DiGraph::empty(evidence.labels());
+                // Apply the prior knowledge to the initial graph.
+                for (i, j) in prior_knowledge.required_edges() {
+                    // Add the edge if it is required.
+                    initial_graph.add_edge(i, j);
+                }
+                // Return the initial graph.
+                initial_graph
             }
             _ => panic!(
                 "Failed to get the structure learning algorithm: \n\

@@ -4,7 +4,7 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::types::Labels;
+use crate::{types::Labels, utils::collect_labels};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[repr(C)]
@@ -67,13 +67,17 @@ impl PriorKnowledge {
     ///
     /// A new instance of prior knowledge.
     ///
-    pub fn new<I, J, K, L>(labels: Labels, forbidden: I, required: J, temporal_order: K) -> Self
+    pub fn new<I, J, K, L, M, N>(labels: I, forbidden: J, required: K, temporal_order: L) -> Self
     where
-        I: IntoIterator<Item = (usize, usize)>,
+        I: IntoIterator<Item = N>,
         J: IntoIterator<Item = (usize, usize)>,
-        K: IntoIterator<Item = L>,
-        L: IntoIterator<Item = usize>,
+        K: IntoIterator<Item = (usize, usize)>,
+        L: IntoIterator<Item = M>,
+        M: IntoIterator<Item = usize>,
+        N: AsRef<str>,
     {
+        // Collect the labels.
+        let labels = collect_labels(labels);
         // Get the number of labels.
         let n = labels.len();
         // Initialize an adjacency matrix with `Unknown` state.

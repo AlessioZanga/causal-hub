@@ -110,6 +110,7 @@ mod causal_hub {
         #[pymodule_init]
         fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
             // Set the module members.
+            m.add_class::<crate::estimators::PyPK>()?;
             m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
 
             // Import the submodules.
