@@ -1,5 +1,5 @@
 use causal_hub::{estimators::PK, types::Labels};
-use pyo3::{prelude::*, types::PyIterator};
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
@@ -17,10 +17,10 @@ impl_deref_from_into!(PyPK, PK);
 impl PyPK {
     #[new]
     fn new(
-        labels: &Bound<'_, PyIterator>,
-        forbidden: &Bound<'_, PyIterator>,
-        required: &Bound<'_, PyIterator>,
-        temporal_order: &Bound<'_, PyIterator>,
+        labels: &Bound<'_, PyAny>,
+        forbidden: &Bound<'_, PyAny>,
+        required: &Bound<'_, PyAny>,
+        temporal_order: &Bound<'_, PyAny>,
     ) -> PyResult<Self> {
         // Convert Python iterators on Python strings to Rust iterators on Rust strings.
         let labels: Labels = labels
