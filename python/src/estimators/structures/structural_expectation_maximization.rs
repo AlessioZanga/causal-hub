@@ -222,6 +222,8 @@ pub fn sem(
                     let chi_sq_test = ChiSquaredTest::new(&cache, c_test);
                     // Initialize the CTPC algorithm.
                     let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+                    // Set prior knowledge.
+                    let ctpc = ctpc.with_prior_knowledge(prior_knowledge);
                     // Fit the new structure using CTPC.
                     ctpc.par_fit()
                 }
@@ -230,6 +232,8 @@ pub fn sem(
                     let bic = BIC::new(&cache);
                     // Initialize the CTHC algorithm and set the maximum number of parents.
                     let cthc = CTHC::new(&initial_graph, &bic).with_max_parents(max_parents);
+                    // Set prior knowledge.
+                    let cthc = cthc.with_prior_knowledge(prior_knowledge);
                     // Fit the new structure using CTHC.
                     cthc.par_fit()
                 }
