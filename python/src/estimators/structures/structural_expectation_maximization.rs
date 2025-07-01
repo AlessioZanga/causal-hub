@@ -143,6 +143,14 @@ pub fn sem(
             let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
                 // Reference the random number generator.
                 let mut rng = rng.borrow_mut();
+                // Get the maximum length of the trajectories.
+                let max_length = evidence
+                    .values()
+                    .iter()
+                    .flat_map(|e| e.values())
+                    .map(|(_, e)| e.len())
+                    .max()
+                    .unwrap_or(0);
                 // Sample the seeds to parallelize the sampling.
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
@@ -157,18 +165,8 @@ pub fn sem(
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
                         let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
-                        // Set the maximum length of the trajectories.
-                        let max_length = 1_000;
-                        // Get the maximum time of the trajectories.
-                        let max_time = e
-                            .values()
-                            .iter()
-                            .flat_map(|(_, e)| e.iter().map(|e| e.end_time()))
-                            .max_by(|a, b| a.partial_cmp(b).unwrap())
-                            .unwrap();
                         // Perform multiple imputation.
-                        let trjs =
-                            importance.par_sample_n_by_length_or_time(max_length, max_time, 10);
+                        let trjs = importance.par_sample_n_by_length(max_length, 10);
                         // Get the one with the highest weight.
                         trjs.values()
                             .iter()
