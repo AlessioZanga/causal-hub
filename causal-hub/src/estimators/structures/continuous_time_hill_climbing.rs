@@ -5,10 +5,19 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
+    types::Labels,
 };
 
 /// A trait for scoring criteria used in score-based structure learning.
 pub trait ScoringCriterion {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Computes the score for a given variable and its conditioning set.
     ///
     /// # Arguments
@@ -25,6 +34,8 @@ pub trait ScoringCriterion {
 
 /// A type alias for a scoring criterion.
 pub use ScoringCriterion as SC;
+
+use super::PK;
 
 /// The Bayesian Information Criterion (BIC).
 pub struct BayesianInformationCriterion<'a, E> {
@@ -56,6 +67,11 @@ where
     E: CPDEstimator<CatCIM>,
 {
     #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
+    #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, &z);
@@ -79,6 +95,7 @@ pub struct ContinuousTimeHillClimbing<'a, S> {
     initial_graph: &'a DiGraph,
     score: &'a S,
     max_parents: Option<usize>,
+    prior_knowledge: Option<&'a PK>,
 }
 
 /// A type alias for the continuous time hill climbing algorithm.
@@ -100,13 +117,23 @@ where
     /// A new `ContinuousTimeHillClimbing` instance.
     ///
     #[inline]
-    pub const fn new(initial_graph: &'a DiGraph, score: &'a S) -> Self {
-        // FIXME: Check initial graph and score have the same labels.
+    pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Self {
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            score.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            score.labels()
+        );
 
         Self {
             initial_graph,
             score,
             max_parents: None,
+            prior_knowledge: None,
         }
     }
 
@@ -123,6 +150,54 @@ where
     #[inline]
     pub const fn with_max_parents(mut self, max_parents: usize) -> Self {
         self.max_parents = Some(max_parents);
+        self
+    }
+
+    /// Sets the prior knowledge for the algorithm.
+    ///
+    /// # Arguments
+    ///
+    /// * `prior_knowledge` - The prior knowledge to use.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current instance.
+    ///
+    #[inline]
+    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Self {
+        // Assert labels of prior knowledge and initial graph are the same.
+        assert_eq!(
+            self.initial_graph.labels(),
+            prior_knowledge.labels(),
+            "Labels of initial graph and prior knowledge must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            self.initial_graph.labels(),
+            prior_knowledge.labels()
+        );
+        // Assert prior knowledge is consistent with initial graph.
+        self.initial_graph
+            .vertices()
+            .permutations(2)
+            .for_each(|edge| {
+                // Get the edge indices.
+                let (i, j) = (edge[0], edge[1]);
+                // Assert edge must be either present and not forbidden ...
+                if self.initial_graph.has_edge(i, j) {
+                    assert!(
+                        !prior_knowledge.is_forbidden(i, j),
+                        "Initial graph contains forbidden edge ({i}, {j})."
+                    );
+                // ... or absent and not required.
+                } else {
+                    assert!(
+                        !prior_knowledge.is_required(i, j),
+                        "Initial graph does not contain required edge ({i}, {j})."
+                    );
+                }
+            });
+        // Set prior knowledge.
+        self.prior_knowledge = Some(prior_knowledge);
         self
     }
 
@@ -165,7 +240,6 @@ where
                         // Get the vertices that are not in the current parent set.
                         self.initial_graph
                             .vertices()
-                            .into_iter()
                             .filter_map(move |j| {
                                 if i != j {
                                     // If the vertex is not in the current parent set ...
@@ -263,7 +337,6 @@ where
                             // Get the vertices that are not in the current parent set.
                             self.initial_graph
                                 .vertices()
-                                .into_iter()
                                 .filter_map(move |j| {
                                     if i != j {
                                         // If the vertex is not in the current parent set ...

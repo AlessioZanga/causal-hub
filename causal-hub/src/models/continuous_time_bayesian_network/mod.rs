@@ -1,12 +1,13 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{graphs::DiGraph, types::FxIndexMap};
+use crate::{
+    graphs::DiGraph,
+    types::{FxIndexMap, Labels},
+};
 
 /// A trait for continuous time Bayesian networks (CTBNs).
 pub trait ContinuousTimeBayesianNetwork {
-    /// The type of the labels.
-    type Labels;
     /// The type of the CIM.
     type CIM;
     /// The type of the initial distribution.
@@ -44,7 +45,7 @@ pub trait ContinuousTimeBayesianNetwork {
     ///
     /// A reference to the labels.
     ///
-    fn labels(&self) -> &Self::Labels;
+    fn labels(&self) -> &Labels;
 
     /// Returns the underlying graph.
     ///

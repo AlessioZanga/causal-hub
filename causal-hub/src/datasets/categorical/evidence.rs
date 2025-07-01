@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
-    types::{FxIndexMap, FxIndexSet},
+    types::{FxIndexMap, FxIndexSet, Labels, States},
     utils::{collect_states, sort_states},
 };
 
@@ -89,8 +89,8 @@ impl CatEvT {
 /// Categorical evidence structure.
 #[derive(Clone, Debug)]
 pub struct CategoricalEvidence {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     evidences: FxIndexMap<String, Option<CatEvT>>,
 }
@@ -260,7 +260,7 @@ impl CategoricalEvidence {
     /// A reference to the labels of the evidence.
     ///
     #[inline]
-    pub const fn labels(&self) -> &FxIndexSet<String> {
+    pub const fn labels(&self) -> &Labels {
         &self.labels
     }
 
@@ -271,7 +271,7 @@ impl CategoricalEvidence {
     /// A reference to the states of the evidence.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         &self.states
     }
 

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
-    types::{EPSILON, FxIndexMap, FxIndexSet},
+    types::{EPSILON, FxIndexMap, FxIndexSet, Labels, States},
     utils::{collect_states, sort_states},
 };
 
@@ -125,8 +125,8 @@ impl CatTrjEvT {
 /// A type representing a collection of evidences for a categorical trajectory.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalTrajectoryEvidence {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     evidences: FxIndexMap<String, Vec<CatTrjEvT>>,
 }
@@ -506,7 +506,7 @@ impl CatTrjEv {
     /// A reference to the states of the trajectory evidence.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         &self.states
     }
 
@@ -547,11 +547,10 @@ impl CatTrjEv {
 }
 
 impl Dataset for CatTrjEv {
-    type Labels = FxIndexSet<String>;
     type Values = FxIndexMap<String, Vec<CatTrjEvT>>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 
@@ -569,8 +568,8 @@ impl Dataset for CatTrjEv {
 /// A collection of multivariate trajectories evidence.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalTrajectoriesEvidence {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     values: Vec<CatTrjEv>,
 }
@@ -648,7 +647,7 @@ impl CatTrjsEv {
     /// A reference to the states of the trajectories evidence.
     ///
     #[inline]
-    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub fn states(&self) -> &States {
         &self.states
     }
 
@@ -699,11 +698,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjsEv {
 }
 
 impl Dataset for CatTrjsEv {
-    type Labels = FxIndexSet<String>;
     type Values = Vec<CatTrjEv>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

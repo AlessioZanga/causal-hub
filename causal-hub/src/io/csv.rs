@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatData,
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A trait for reading CSV files.
@@ -52,7 +52,7 @@ impl FromCsvReader for CatData {
         // Initialize the counter.
         let mut n = 0;
         // Read the headers.
-        let labels: FxIndexSet<_> = reader
+        let labels: Labels = reader
             .headers()
             .expect("Failed to read the headers.")
             .into_iter()
@@ -63,7 +63,7 @@ impl FromCsvReader for CatData {
         assert_eq!(labels.len(), n, "Header labels must be unique.");
 
         // Get the states of the variables.
-        let mut states: FxIndexMap<_, FxIndexSet<String>> = labels
+        let mut states: States = labels
             .into_iter()
             .map(|x| (x, Default::default()))
             .collect();

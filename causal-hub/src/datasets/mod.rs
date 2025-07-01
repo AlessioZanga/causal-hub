@@ -4,10 +4,10 @@ pub use categorical::*;
 mod trajectory;
 pub use trajectory::*;
 
+use crate::types::Labels;
+
 /// A trait for dataset.
 pub trait Dataset {
-    /// The type of the labels.
-    type Labels;
     /// The type of the values.
     type Values;
 
@@ -17,7 +17,7 @@ pub trait Dataset {
     ///
     /// A reference to the labels.
     ///
-    fn labels(&self) -> &Self::Labels;
+    fn labels(&self) -> &Labels;
 
     /// The values of the variables.
     ///

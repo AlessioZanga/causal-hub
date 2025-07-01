@@ -4,7 +4,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatData, Dataset},
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A multivariate trajectory.
@@ -137,7 +137,7 @@ impl CatTrj {
     /// A reference to the states of the trajectory.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         self.events.states()
     }
 
@@ -165,11 +165,10 @@ impl CatTrj {
 }
 
 impl Dataset for CatTrj {
-    type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.events.labels()
     }
 
@@ -187,8 +186,8 @@ impl Dataset for CatTrj {
 /// A collection of multivariate trajectories.
 #[derive(Clone, Debug)]
 pub struct CategoricalTrajectories {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     values: Vec<CatTrj>,
 }
@@ -266,7 +265,7 @@ impl CatTrjs {
     /// A reference to the states of the trajectories.
     ///
     #[inline]
-    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub fn states(&self) -> &States {
         &self.states
     }
 
@@ -317,11 +316,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
 }
 
 impl Dataset for CatTrjs {
-    type Labels = FxIndexSet<String>;
     type Values = Vec<CatTrj>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

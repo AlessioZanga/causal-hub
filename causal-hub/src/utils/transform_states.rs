@@ -1,7 +1,35 @@
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::types::{FxIndexSet, Labels, States};
+
+/// Utility function to collect labels from an iterator.
+pub fn collect_labels<I, J>(labels: I) -> Labels
+where
+    I: IntoIterator<Item = J>,
+    J: AsRef<str>,
+{
+    // Initialize labels counter.
+    let mut n = 0;
+    // Convert the variable labels to a set of strings.
+    let labels: Labels = labels
+        .into_iter()
+        .inspect(|_| n += 1)
+        .map(|x| x.as_ref().to_owned())
+        .collect();
+    // Assert unique labels.
+    assert_eq!(
+        labels.len(),
+        n,
+        "Variable labels must be unique: \n\
+        \t expected:    |labels.unique()| == {} , \n\
+        \t found:       |labels.unique()| == {} .",
+        n,
+        labels.len(),
+    );
+
+    labels
+}
 
 /// Utility function to collect states from an iterator.
-pub fn collect_states<I, J, K, V>(states: I) -> FxIndexMap<String, FxIndexSet<String>>
+pub fn collect_states<I, J, K, V>(states: I) -> States
 where
     I: IntoIterator<Item = (K, J)>,
     J: IntoIterator<Item = V>,
@@ -11,7 +39,7 @@ where
     // Initialize variables counter.
     let mut n = 0;
     // Get the states of the variables.
-    let states: FxIndexMap<_, _> = states
+    let states: States = states
         .into_iter()
         .inspect(|_| n += 1)
         .map(|(label, states)| {
@@ -27,25 +55,36 @@ where
                 .map(|x| x.as_ref().to_owned())
                 .collect();
             // Assert unique states.
-            assert_eq!(states.len(), n, "Variables states must be unique.");
+            assert_eq!(
+                states.len(),
+                n,
+                "Variable states must be unique: \n\
+                \t expected:    |states['{label}'].unique()| == {} , \n\
+                \t found:       |states['{label}'].unique()| == {} .",
+                n,
+                states.len(),
+            );
 
             (label, states)
         })
         .collect();
 
     // Assert unique labels.
-    assert_eq!(states.len(), n, "Variables labels must be unique.");
+    assert_eq!(
+        states.len(),
+        n,
+        "Variable labels must be unique: \n\
+        \t expected:    |labels.unique()| == {} , \n\
+        \t found:       |labels.unique()| == {} .",
+        n,
+        states.len(),
+    );
 
     states
 }
 
 /// Utility function to sort states and labels.
-pub fn sort_states(
-    mut states: FxIndexMap<String, FxIndexSet<String>>,
-) -> (
-    FxIndexMap<String, FxIndexSet<String>>,
-    Vec<(usize, Vec<usize>)>,
-) {
+pub fn sort_states(mut states: States) -> (States, Vec<(usize, Vec<usize>)>) {
     // Get the indices to sort the labels and states labels.
     let mut sorted_indices: Vec<(_, Vec<_>)> = states
         .values()

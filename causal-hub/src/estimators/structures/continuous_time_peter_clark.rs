@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use log::debug;
 use ndarray::{Zip, prelude::*};
 use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
@@ -7,10 +8,19 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
+    types::Labels,
 };
 
 /// A trait for conditional independence testing.
 pub trait ConditionalIndependenceTest {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -28,6 +38,8 @@ pub trait ConditionalIndependenceTest {
 
 /// A type alias for a conditional independence test.
 pub use ConditionalIndependenceTest as CIT;
+
+use super::PK;
 
 /// A struct representing the Chi-squared test.
 pub struct ChiSquaredTest<'a, E> {
@@ -64,6 +76,11 @@ impl<E> CIT for ChiSquaredTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the extended separation set.
         let mut s = z.to_vec();
@@ -155,6 +172,11 @@ impl<E> CIT for FTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.estimator.labels()
+    }
+
     fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
@@ -208,6 +230,7 @@ pub struct ContinuousTimePeterClark<'a, T, S> {
     initial_graph: &'a DiGraph,
     null_time: &'a T,
     null_state: &'a S,
+    prior_knowledge: Option<&'a PK>,
 }
 
 /// A type alias for the continuous-time Peter-Clark estimator.
@@ -231,14 +254,82 @@ where
     /// A new `ContinuousTimePeterClark` instance.
     ///
     #[inline]
-    pub const fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
-        // FIXME: Check initial graph and tests have the same labels.
+    pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            null_time.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            null_time.labels()
+        );
+        // Assert labels of the initial graph and the estimator are the same.
+        assert_eq!(
+            initial_graph.labels(),
+            null_state.labels(),
+            "Labels of initial graph and estimator must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            initial_graph.labels(),
+            null_state.labels()
+        );
 
         Self {
             initial_graph,
             null_time,
             null_state,
+            prior_knowledge: None,
         }
+    }
+
+    /// Sets the prior knowledge for the algorithm.
+    ///
+    /// # Arguments
+    ///
+    /// * `prior_knowledge` - The prior knowledge to use.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current instance.
+    ///
+    #[inline]
+    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Self {
+        // Assert labels of prior knowledge and initial graph are the same.
+        assert_eq!(
+            self.initial_graph.labels(),
+            prior_knowledge.labels(),
+            "Labels of initial graph and prior knowledge must be the same: \n\
+            \t expected:    {:?}, \n\
+            \t found:       {:?}.",
+            self.initial_graph.labels(),
+            prior_knowledge.labels()
+        );
+        // Assert prior knowledge is consistent with initial graph.
+        self.initial_graph
+            .vertices()
+            .permutations(2)
+            .for_each(|edge| {
+                // Get the edge indices.
+                let (i, j) = (edge[0], edge[1]);
+                // Assert edge must be either present and not forbidden ...
+                if self.initial_graph.has_edge(i, j) {
+                    assert!(
+                        !prior_knowledge.is_forbidden(i, j),
+                        "Initial graph contains forbidden edge ({i}, {j})."
+                    );
+                // ... or absent and not required.
+                } else {
+                    assert!(
+                        !prior_knowledge.is_required(i, j),
+                        "Initial graph does not contain required edge ({i}, {j})."
+                    );
+                }
+            });
+        // Set prior knowledge.
+        self.prior_knowledge = Some(prior_knowledge);
+        self
     }
 
     /// Execute the CTPC algorithm.
@@ -266,12 +357,27 @@ where
 
                 // For each parent ...
                 for &j in &pa_i {
+                    // Check prior knowledge, if available.
+                    if let Some(pk) = self.prior_knowledge {
+                        // If the edge is required, skip the tests.
+                        // NOTE: Since CTPC only removes edges,
+                        //  it is sufficient to check for required edges.
+                        if pk.is_required(j, i) {
+                            // Log the skipped CIT.
+                            debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
+                            continue;
+                        }
+                    }
                     // Filter out the parent.
                     let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
                     for s_ij in pa_i_not_j.combinations(k) {
+                        // Log the current combination.
+                        debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
                         if self.null_time.call(i, j, &s_ij) && self.null_state.call(i, j, &s_ij) {
+                            // Log the result of the CIT.
+                            debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
                             // Add the parent to the set of vertices to remove.
                             not_pa_i.push(j);
                             // Break the outer loop.
@@ -328,14 +434,29 @@ where
                     pa_i = pa_i
                         .par_iter()
                         .filter_map(|&j| {
+                            // Check prior knowledge, if available.
+                            if let Some(pk) = self.prior_knowledge {
+                                // If the edge is required, skip the tests.
+                                // NOTE: Since CTPC only removes edges,
+                                //  it is sufficient to check for required edges.
+                                if pk.is_required(j, i) {
+                                    // Log the skipped CIT.
+                                    debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
+                                    return Some(j);
+                                }
+                            }
                             // Filter out the parent.
                             let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                             // For any combination of size k of Pa(X_i) \ { X_j } ...
                             for s_ij in pa_i_not_j.combinations(k) {
+                                // Log the current combination.
+                                debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
                                 if self.null_time.call(i, j, &s_ij)
                                     && self.null_state.call(i, j, &s_ij)
                                 {
+                                    // Log the result of the CIT.
+                                    debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
                                     // Add the parent to the set of vertices to remove.
                                     return None;
                                 }

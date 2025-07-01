@@ -7,7 +7,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-            estimators::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RE},
+            estimators::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
             graphs::Graph,
             models::{CTBN, CatCTBN},
             random::RngEv,
@@ -132,7 +132,7 @@ mod tests {
             let evidence = generator.random();
 
             // Initialize a raw estimator for an initial guess.
-            let raw = RE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
+            let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
             // Set the initial CIMs.
             let initial_cims: Vec<_> = model
                 .graph()

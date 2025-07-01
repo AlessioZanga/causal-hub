@@ -4,12 +4,12 @@ use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::types::FxIndexSet;
+use crate::types::Labels;
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DirectedGraph {
-    labels: FxIndexSet<String>,
+    labels: Labels,
     adjacency_matrix: Array2<bool>,
 }
 
@@ -82,7 +82,6 @@ impl DiGraph {
 }
 
 impl Graph for DiGraph {
-    type Labels = FxIndexSet<String>;
     type Vertices = Range<usize>;
     type Edges = Vec<(usize, usize)>;
 
@@ -94,7 +93,7 @@ impl Graph for DiGraph {
         // Initialize labels counter.
         let mut n = 0;
         // Collect the labels.
-        let mut labels: FxIndexSet<_> = labels
+        let mut labels: Labels = labels
             .into_iter()
             .inspect(|_| n += 1)
             .map(|x| x.as_ref().to_owned())
@@ -126,7 +125,7 @@ impl Graph for DiGraph {
         // Initialize labels counter.
         let mut n = 0;
         // Collect the labels.
-        let mut labels: FxIndexSet<_> = labels
+        let mut labels: Labels = labels
             .into_iter()
             .inspect(|_| n += 1)
             .map(|x| x.as_ref().to_owned())
@@ -152,7 +151,7 @@ impl Graph for DiGraph {
         }
     }
 
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

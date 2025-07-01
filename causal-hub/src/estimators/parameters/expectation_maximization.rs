@@ -23,7 +23,7 @@ where
 pub type EM<'a, M, E, EStep, E2M, MStep, Stop> =
     ExpectationMaximization<'a, M, E, EStep, E2M, MStep, Stop>;
 
-impl<'a, M, E, EStep, E2M, MStep, Stop> ExpectationMaximization<'a, M, E, EStep, E2M, MStep, Stop>
+impl<'a, M, E, EStep, E2M, MStep, Stop> EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     EStep: Fn(&M, &E) -> E2M,

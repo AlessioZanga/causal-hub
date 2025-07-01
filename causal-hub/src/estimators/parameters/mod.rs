@@ -18,12 +18,21 @@ use crate::{
     distributions::CPD,
     graphs::{DiGraph, Graph},
     models::{BN, CTBN},
+    types::Labels,
 };
 
 /// A trait for sufficient statistics estimators.
 pub trait ConditionalSufficientStatisticsEstimator {
     /// The type of sufficient statistics.
     type Output;
+
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
 
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics.
     ///
@@ -69,6 +78,14 @@ pub trait ConditionalProbabilityDistributionEstimator<P>
 where
     P: CPD,
 {
+    /// Returns a reference to the labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels.
+    ///
+    fn labels(&self) -> &Labels;
+
     /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments
@@ -104,10 +121,10 @@ where
 pub use ConditionalProbabilityDistributionEstimator as CPDEstimator;
 
 /// A trait for conditional probability distribution estimators in parallel.
-pub trait ParallelConditionalProbabilityDistributionEstimator<P> {
-    /// The type of sufficient statistics.
-    type SS;
-
+pub trait ParallelConditionalProbabilityDistributionEstimator<P>
+where
+    P: CPD,
+{
     /// Fits the estimator to the dataset and returns a CPD in parallel.
     ///
     /// # Arguments
@@ -136,7 +153,7 @@ pub trait ParallelConditionalProbabilityDistributionEstimator<P> {
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, P);
+    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
 }
 
 /// A type alias for a parallel conditional probability distribution estimator.
@@ -200,7 +217,7 @@ pub use ParallelBayesianNetworkEstimator as ParBNEstimator;
 impl<T, E> ParBNEstimator<T> for E
 where
     T: BN,
-    T::CPD: Send,
+    T::CPD: CPD + Send,
     E: ParCPDEstimator<T::CPD> + Sync,
 {
     fn par_fit(&self, graph: DiGraph) -> T {
@@ -273,7 +290,7 @@ pub use ParallelContinuousTimeBayesianNetworkEstimator as ParCTBNEstimator;
 impl<T, E> ParCTBNEstimator<T> for E
 where
     T: CTBN,
-    T::CIM: Send,
+    T::CIM: CPD + Send,
     E: ParCPDEstimator<T::CIM> + Sync,
 {
     fn par_fit(&self, graph: DiGraph) -> T {

@@ -7,10 +7,10 @@ pub use topological_order::*;
 mod undirected;
 pub use undirected::*;
 
+use crate::types::Labels;
+
 /// A trait for graphs.
 pub trait Graph {
-    /// The type of the labels.
-    type Labels;
     /// The type of the vertices.
     type Vertices: IntoIterator<Item = usize>;
     /// The type of the edges.
@@ -69,7 +69,7 @@ pub trait Graph {
     ///
     /// A reference to the vector of labels.
     ///
-    fn labels(&self) -> &Self::Labels;
+    fn labels(&self) -> &Labels;
 
     /// Return the vertex index for a given label.
     ///

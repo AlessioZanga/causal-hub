@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use super::CatTrj;
 use crate::{
     datasets::Dataset,
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A multivariate weighted trajectory.
@@ -85,7 +85,7 @@ impl CatWtdTrj {
     /// A reference to the states of the trajectory.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub const fn states(&self) -> &States {
         self.trajectory.states()
     }
 
@@ -113,11 +113,10 @@ impl CatWtdTrj {
 }
 
 impl Dataset for CatWtdTrj {
-    type Labels = FxIndexSet<String>;
     type Values = Array2<u8>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         self.trajectory.labels()
     }
 
@@ -135,8 +134,8 @@ impl Dataset for CatWtdTrj {
 /// A collection of weighted trajectories.
 #[derive(Clone, Debug)]
 pub struct CategoricalWeightedTrajectories {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
@@ -214,7 +213,7 @@ impl CatWtdTrjs {
     /// A reference to the states of the trajectories.
     ///
     #[inline]
-    pub fn states(&self) -> &FxIndexMap<String, FxIndexSet<String>> {
+    pub fn states(&self) -> &States {
         &self.states
     }
 
@@ -265,11 +264,10 @@ impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
 }
 
 impl Dataset for CatWtdTrjs {
-    type Labels = FxIndexSet<String>;
     type Values = Vec<CatWtdTrj>;
 
     #[inline]
-    fn labels(&self) -> &Self::Labels {
+    fn labels(&self) -> &Labels {
         &self.labels
     }
 

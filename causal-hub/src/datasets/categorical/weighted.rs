@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use super::CatSample;
-use crate::types::{FxIndexMap, FxIndexSet};
+use crate::types::{Labels, States};
 
 /// A struct representing a categorical weighted sample.
 #[derive(Clone, Debug)]
@@ -18,8 +18,8 @@ pub type CatWtdSample = CategoricalWeightedSample;
 /// A struct representing a dataset of categorical weighted samples.
 #[derive(Clone, Debug)]
 pub struct CategoricalWeightedDataset {
-    labels: FxIndexSet<String>,
-    states: FxIndexMap<String, FxIndexSet<String>>,
+    labels: Labels,
+    states: States,
     cardinality: Array1<usize>,
     values: Vec<CatWtdSample>,
 }

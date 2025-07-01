@@ -4,9 +4,9 @@ use statrs::function::gamma::ln_gamma;
 
 use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
+    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A struct representing a Bayesian estimator.
@@ -50,6 +50,11 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
 impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
@@ -110,7 +115,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         t_xz: Array2<f64>,
         n: f64,
         prior: (usize, f64),
-        states: &FxIndexMap<String, FxIndexSet<String>>,
+        states: &States,
     ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
@@ -158,8 +163,8 @@ impl BE<'_, CatTrj, (usize, f64)> {
             // Compute the sample log-likelihood.
             let ll_p_xz = {
                 // Compute the sample log-likelihood.
-                (ln_gamma(alpha) - &n_z.mapv(ln_gamma).sum())     //.
-                + (ln_gamma(alpha) - &n_xz.mapv(ln_gamma).sum())
+                (ln_gamma(alpha) - n_z.mapv(ln_gamma).sum())     //.
+                + (ln_gamma(alpha) - n_xz.mapv(ln_gamma).sum())
             };
             // Return the total log-likelihood.
             ll_q_xz + ll_p_xz
@@ -190,6 +195,11 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
+
         fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
@@ -206,10 +216,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
-
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.

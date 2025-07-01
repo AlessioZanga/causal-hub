@@ -8,7 +8,7 @@ use super::{
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{FxIndexMap, FxIndexSet},
+    types::{Labels, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -38,6 +38,11 @@ impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
 }
 
 impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
     fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let states = self.dataset.states();
@@ -96,8 +101,8 @@ impl MLE<'_, CatTrj> {
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
-        labels: &FxIndexSet<String>,
-        states: &FxIndexMap<String, FxIndexSet<String>>,
+        labels: &Labels,
+        states: &States,
     ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Assert the conditional times counts are not zero.
         assert!(
@@ -187,6 +192,10 @@ impl MLE<'_, CatTrj> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
 
         fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
@@ -208,10 +217,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
-        // (conditional counts, conditional time spent, sample size)
-        type SS = (Array3<f64>, Array2<f64>, f64);
-
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (Self::SS, CatCIM) {
+        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 

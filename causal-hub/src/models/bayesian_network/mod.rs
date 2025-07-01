@@ -1,12 +1,13 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{graphs::DiGraph, types::FxIndexMap};
+use crate::{
+    graphs::DiGraph,
+    types::{FxIndexMap, Labels},
+};
 
 /// A trait for Bayesian networks.
 pub trait BayesianNetwork {
-    /// The type of the labels.
-    type Labels;
     /// The type of the CPD.
     type CPD;
     /// The type of the sample.
@@ -35,7 +36,7 @@ pub trait BayesianNetwork {
     ///
     /// A reference to the labels.
     ///
-    fn labels(&self) -> &Self::Labels;
+    fn labels(&self) -> &Labels;
 
     /// Returns the underlying graph.
     ///
