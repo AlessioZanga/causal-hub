@@ -214,6 +214,16 @@ impl PyCatTrj {
             })
             .collect())
     }
+
+    /// Returns the times of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the times of the trajectory.
+    ///
+    pub fn times<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        Ok(self.inner.times().to_pyarray(py))
+    }
 }
 
 #[pyclass(name = "CatTrjs")]
@@ -294,6 +304,22 @@ impl PyCatTrjs {
                 // Return a tuple of the label and states.
                 (label, states)
             })
+            .collect())
+    }
+
+    /// Return the trajectories.
+    ///
+    /// # Returns
+    ///
+    /// A vector of categorical trajectories.
+    ///
+    pub fn values(&self) -> PyResult<Vec<PyCatTrj>> {
+        Ok(self
+            .inner
+            .values()
+            .iter()
+            .cloned()
+            .map(|trj| trj.into())
             .collect())
     }
 }

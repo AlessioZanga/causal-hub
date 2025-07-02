@@ -74,6 +74,8 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyCatTrjs>()?;
             m.add_class::<crate::datasets::PyCatTrjEv>()?;
             m.add_class::<crate::datasets::PyCatTrjsEv>()?;
+            m.add_class::<crate::datasets::PyCatWtdTrj>()?;
+            m.add_class::<crate::datasets::PyCatWtdTrjs>()?;
 
             // Import the submodules.
             Python::with_gil(|py| {

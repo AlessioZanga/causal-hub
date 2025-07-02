@@ -159,17 +159,17 @@ mod tests {
             };
 
             // Create a new builder.
-            let builder = EMBuilder::new(&initial_model, &evidence)
+            let em = EMBuilder::new(&initial_model, &evidence)
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
                 .build();
 
             // Fit the model.
-            let fitted_model = builder.fit();
+            let output = em.fit();
 
             // Check if the models are equal.
-            assert_eq!(model.graph(), fitted_model.graph());
+            assert_eq!(model.graph(), output.last_model.graph());
         }
     }
 }

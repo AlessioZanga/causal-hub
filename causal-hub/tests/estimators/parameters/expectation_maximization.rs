@@ -98,17 +98,17 @@ mod tests {
             };
 
             // Create a new builder.
-            let builder = EMBuilder::new(&model, &evidence)
+            let em = EMBuilder::new(&model, &evidence)
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
                 .build();
 
             // Fit the model.
-            let fitted_model = builder.fit();
+            let output = em.fit();
 
             // Check if the models are equal.
-            assert_relative_eq!(model, fitted_model, epsilon = 5e-2);
+            assert_relative_eq!(model, output.last_model, epsilon = 5e-2);
         }
 
         #[test]
@@ -199,17 +199,17 @@ mod tests {
             };
 
             // Create a new builder.
-            let builder = EMBuilder::new(&initial_model, &evidence)
+            let em = EMBuilder::new(&initial_model, &evidence)
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
                 .build();
 
             // Fit the model.
-            let fitted_model = builder.fit();
+            let output = em.fit();
 
             // Check if the models are equal.
-            assert_relative_eq!(model, fitted_model, epsilon = 5e-2);
+            assert_relative_eq!(model, output.last_model, epsilon = 5e-2);
         }
     }
 }
