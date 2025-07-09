@@ -1,13 +1,19 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops::Deref};
 
 use causal_hub::{
+    estimators::{BE, MLE, ParCTBNEstimator},
     graphs::DiGraph,
     models::{CTBN, CatCTBN},
 };
-use pyo3::prelude::*;
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use serde::{Deserialize, Serialize};
 
-use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into};
+use crate::{
+    datasets::PyCatTrjs, distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into,
+};
 
 #[pyclass(name = "CatCTBN")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -32,7 +38,7 @@ impl PyCatCTBN {
     /// A new continuous-time Bayesian network instance.
     ///
     #[new]
-    fn new(graph: &Bound<'_, PyDiGraph>, cims: &Bound<'_, PyAny>) -> PyResult<Self> {
+    pub fn new(graph: &Bound<'_, PyDiGraph>, cims: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
@@ -52,7 +58,7 @@ impl PyCatCTBN {
     ///
     /// A reference to the labels.
     ///
-    fn labels(&self) -> PyResult<Vec<&str>> {
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
     }
 
@@ -62,7 +68,7 @@ impl PyCatCTBN {
     ///
     /// A reference to the graph.
     ///
-    fn graph(&self) -> PyResult<PyDiGraph> {
+    pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.inner.graph().clone().into())
     }
 
@@ -72,7 +78,7 @@ impl PyCatCTBN {
     ///
     /// A reference to the CIMs.
     ///
-    fn cims(&self) -> PyResult<BTreeMap<&str, PyCatCIM>> {
+    pub fn cims(&self) -> PyResult<BTreeMap<&str, PyCatCIM>> {
         Ok(self
             .inner
             .cims()
@@ -94,7 +100,79 @@ impl PyCatCTBN {
     ///
     /// The parameters size.
     ///
-    fn parameters_size(&self) -> PyResult<usize> {
+    pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
+    }
+
+    /// Fits the model to the given dataset and graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - The dataset to fit the model to.
+    /// * `graph` - The graph to fit the model to.
+    /// * `method` - The estimation method to use, either "MLE" (default) or "BE".
+    ///
+    /// # Optional Arguments
+    ///
+    /// * `prior` - The prior for Bayesian estimation, a tuple of (size, value).
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `CatCTBN` with the estimated parameters.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        dataset,
+        graph,
+        method = "MLE",
+        **kwargs
+    ))]
+    pub fn from_estimator(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dataset: &Bound<'_, PyCatTrjs>,
+        graph: &Bound<'_, PyDiGraph>,
+        method: &str,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Extract the dataset.
+        let dataset = dataset.extract::<PyCatTrjs>()?;
+        // Extract the graph.
+        let graph = graph.extract::<PyDiGraph>()?;
+        // Clone the graph.
+        let graph = graph.deref().clone();
+
+        // Estimate the parameters for the given method.
+        let model: CatCTBN = match method {
+            // Maximum Likelihood Estimation (MLE).
+            "MLE" => {
+                // Construct the estimator.
+                let estimator = MLE::new(&*dataset);
+                // Estimate the parameters.
+                py.allow_threads(|| estimator.par_fit(graph))
+            }
+            // Bayesian Estimation (BE).
+            "BE" => {
+                // Get the prior from the kwargs, if it exists.
+                let prior = kwargs
+                    .and_then(|kwargs| {
+                        kwargs
+                            .get_item("prior")
+                            .ok()
+                            .flatten()
+                            .and_then(|x| x.extract::<(usize, f64)>().ok())
+                    })
+                    .unwrap_or((1, 1.));
+                // Construct the estimator.
+                let estimator = BE::new(&*dataset, prior);
+                // Estimate the parameters.
+                py.allow_threads(|| estimator.par_fit(graph))
+            }
+            // If the method is not supported, panic.
+            _ => panic!("Unsupported method: {}", method),
+        };
+
+        // Return the model as a PyCatCTBN.
+        Ok(model.into())
     }
 }
