@@ -16,6 +16,7 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
 };
+use pyo3_stub_gen::derive::*;
 use rand::{RngCore, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
@@ -27,6 +28,7 @@ use crate::{
 };
 
 /// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
+#[gen_stub_pyfunction]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,

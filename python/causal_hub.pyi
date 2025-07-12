@@ -852,3 +852,8 @@ def load_win95pts() -> CatBN:
     Load the `WIN95PTS` BN from the assets.
     """
 
+def sem(evidence:CatTrjsEv, prior_knowledge:PK, algorithm:builtins.str, max_iter:builtins.int=10, seed:builtins.int=42, **kwargs) -> dict:
+    r"""
+    A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
+    """
+
