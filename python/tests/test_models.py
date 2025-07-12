@@ -1,7 +1,7 @@
-from causal_hub.assets import load_asia, load_eating
+from causal_hub import load_asia, load_eating
 
 
-def test_load_asia():
+def test_load_asia() -> None:
     # Load the Asia BN.
     asia = load_asia()
     # Get the graph of the BN.
@@ -14,7 +14,7 @@ def test_load_asia():
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
-def test_load_eating():
+def test_load_eating() -> None:
     # Load the Eating BN.
     eating = load_eating()
     # Get the graph of the BN.

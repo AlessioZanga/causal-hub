@@ -692,3 +692,108 @@ class DiGraph:
 class PK:
     def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
+def load_alarm() -> CatBN:
+    r"""
+    Load the `ALARM` BN from the assets.
+    """
+
+def load_andes() -> CatBN:
+    r"""
+    Load the `ANDES` BN from the assets.
+    """
+
+def load_asia() -> CatBN:
+    r"""
+    Load the `ASIA` BN from the assets.
+    """
+
+def load_barley() -> CatBN:
+    r"""
+    Load the `BARLEY` BN from the assets.
+    """
+
+def load_cancer() -> CatBN:
+    r"""
+    Load the `CANCER` BN from the assets.
+    """
+
+def load_child() -> CatBN:
+    r"""
+    Load the `CHILD` BN from the assets.
+    """
+
+def load_diabetes() -> CatBN:
+    r"""
+    Load the `DIABETES` BN from the assets.
+    """
+
+def load_earthquake() -> CatBN:
+    r"""
+    Load the `EARTHQUAKE` BN from the assets.
+    """
+
+def load_eating() -> CatCTBN:
+    r"""
+    Load the "EATING" CTBN from the assets.
+    """
+
+def load_hailfinder() -> CatBN:
+    r"""
+    Load the `HAILFINDER` BN from the assets.
+    """
+
+def load_hepar2() -> CatBN:
+    r"""
+    Load the `HEPAR2` BN from the assets.
+    """
+
+def load_insurance() -> CatBN:
+    r"""
+    Load the `INSURANCE` BN from the assets.
+    """
+
+def load_link() -> CatBN:
+    r"""
+    Load the `LINK` BN from the assets.
+    """
+
+def load_mildew() -> CatBN:
+    r"""
+    Load the `MILDEW` BN from the assets.
+    """
+
+def load_munin1() -> CatBN:
+    r"""
+    Load the `MUNIN1` BN from the assets.
+    """
+
+def load_pathfinder() -> CatBN:
+    r"""
+    Load the `PATHFINDER` BN from the assets.
+    """
+
+def load_pigs() -> CatBN:
+    r"""
+    Load the `PIGS` BN from the assets.
+    """
+
+def load_sachs() -> CatBN:
+    r"""
+    Load the `SACHS` BN from the assets.
+    """
+
+def load_survey() -> CatBN:
+    r"""
+    Load the `SURVEY` BN from the assets.
+    """
+
+def load_water() -> CatBN:
+    r"""
+    Load the `WATER` BN from the assets.
+    """
+
+def load_win95pts() -> CatBN:
+    r"""
+    Load the `WIN95PTS` BN from the assets.
+    """
+
