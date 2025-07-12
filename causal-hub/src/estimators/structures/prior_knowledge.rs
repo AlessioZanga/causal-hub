@@ -44,7 +44,7 @@ impl Display for PKS {
 }
 
 /// A structure representing prior knowledge for structure learning.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PriorKnowledge {
     labels: Labels,
     adjacency_matrix: Array2<PKS>,

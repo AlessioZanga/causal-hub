@@ -10,8 +10,8 @@ use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional probability distribution (CPD).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCPD")]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[pyclass(name = "CatCPD", eq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatCPD {
     inner: CatCPD,
 }

@@ -10,8 +10,8 @@ use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional intensity matrix (CIM).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCIM")]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[pyclass(name = "CatCIM", eq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatCIM {
     inner: CatCIM,
 }

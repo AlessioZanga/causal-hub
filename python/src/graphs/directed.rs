@@ -8,7 +8,7 @@ use crate::impl_deref_from_into;
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
-#[pyclass(name = "DiGraph")]
+#[pyclass(name = "DiGraph", eq)]
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PyDiGraph {
     inner: DiGraph,

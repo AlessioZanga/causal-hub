@@ -18,7 +18,7 @@ use crate::{
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCTBN")]
+#[pyclass(name = "CatCTBN", eq)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatCTBN {
     inner: CatCTBN,
@@ -108,15 +108,34 @@ impl PyCatCTBN {
         Ok(self.inner.parameters_size())
     }
 
-    /// Read a JSON string.
+    /// Read class from a JSON string.
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(serde_json::from_str(json).unwrap())
     }
 
-    /// Write to a JSON string.
+    /// Write class to a JSON string.
     pub fn to_json(&self) -> PyResult<String> {
         Ok(serde_json::to_string(&self).unwrap())
+    }
+
+    /// Read class from a JSON file.
+    #[classmethod]
+    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        // Read the file content.
+        let content = std::fs::read_to_string(path)?;
+        // Deserialize the content to a CatCTBN.
+        Ok(serde_json::from_str(&content).unwrap())
+    }
+
+    /// Write class to a JSON file.
+    pub fn write_json(&self, path: &str) -> PyResult<()> {
+        // Serialize the CatCTBN to a JSON string.
+        let json = serde_json::to_string(self).unwrap();
+        // Write the JSON string to the file.
+        std::fs::write(path, json)?;
+        // Return Ok to indicate success.
+        Ok(())
     }
 
     /// Fits the model to the given dataset and graph.

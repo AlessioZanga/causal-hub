@@ -56,6 +56,24 @@ class CatBN:
         The parameters size.
         """
     @classmethod
+    def from_json(cls, _cls:type, json:builtins.str) -> CatBN:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, _cls:type, path:builtins.str) -> CatBN:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
+        """
+    @classmethod
     def read_bif(cls, _cls:type, path:builtins.str) -> CatBN:
         r"""
         Read a BIF file and return a CatBN.
@@ -67,15 +85,6 @@ class CatBN:
         # Returns
         
         A new CatBN instance.
-        """
-    @classmethod
-    def from_json(cls, _cls:type, json:builtins.str) -> CatBN:
-        r"""
-        Read a JSON string.
-        """
-    def to_json(self) -> builtins.str:
-        r"""
-        Write to a JSON string.
         """
 
 class CatCIM:
@@ -318,11 +327,20 @@ class CatCTBN:
     @classmethod
     def from_json(cls, _cls:type, json:builtins.str) -> CatCTBN:
         r"""
-        Read a JSON string.
+        Read class from a JSON string.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write to a JSON string.
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, _cls:type, path:builtins.str) -> CatCTBN:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
         """
     @classmethod
     def from_estimator(cls, dataset:CatTrjs, graph:DiGraph, method:builtins.str='MLE', **kwargs) -> CatCTBN:
