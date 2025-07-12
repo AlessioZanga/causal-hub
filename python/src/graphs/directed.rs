@@ -1,11 +1,13 @@
-use causal_hub::graphs::{DiGraph, Graph};
+use causal_hub_rust::graphs::{DiGraph, Graph};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a directed graph using an adjacency matrix.
+#[gen_stub_pyclass]
 #[pyclass(name = "DiGraph")]
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PyDiGraph {
@@ -15,6 +17,7 @@ pub struct PyDiGraph {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyDiGraph, DiGraph);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyDiGraph {
     /// Creates an empty directed graph with the given labels.
@@ -208,8 +211,12 @@ impl PyDiGraph {
     ///
     /// A 2D array representing the adjacency matrix.
     ///
-    pub fn adjacency_matrix<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<bool>>> {
+    pub fn adjacency_matrix<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<i64>>> {
         // Convert the matrix to a PyArray2 and return as PyResult.
-        Ok(self.inner.adjacency_matrix().to_pyarray(py))
+        Ok(self
+            .inner
+            .adjacency_matrix()
+            .mapv(|x| x as i64)
+            .to_pyarray(py))
     }
 }

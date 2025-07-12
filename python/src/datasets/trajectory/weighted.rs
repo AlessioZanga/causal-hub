@@ -1,11 +1,13 @@
 use std::collections::BTreeMap;
 
-use causal_hub::datasets::{CatWtdTrj, CatWtdTrjs, Dataset};
+use causal_hub_rust::datasets::{CatWtdTrj, CatWtdTrjs, Dataset};
 use numpy::{PyArray1, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
+use pyo3_stub_gen::derive::*;
 
 use crate::{datasets::PyCatTrj, impl_deref_from_into};
 
+#[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrj")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
@@ -15,6 +17,7 @@ pub struct PyCatWtdTrj {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatWtdTrj, CatWtdTrj);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatWtdTrj {
     /// Returns the labels of the categorical trajectory.
@@ -81,6 +84,7 @@ impl PyCatWtdTrj {
     }
 }
 
+#[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrjs")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
@@ -90,6 +94,7 @@ pub struct PyCatWtdTrjs {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatWtdTrjs, CatWtdTrjs);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatWtdTrjs {
     /// Returns the labels of the categorical trajectory.

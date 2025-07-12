@@ -1,9 +1,11 @@
-use causal_hub::{estimators::PK, types::Labels};
+use causal_hub_rust::{estimators::PK, types::Labels};
 use pyo3::prelude::*;
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
+#[gen_stub_pyclass]
 #[pyclass(name = "PK")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyPK {
@@ -13,6 +15,7 @@ pub struct PyPK {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyPK, PK);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyPK {
     #[new]

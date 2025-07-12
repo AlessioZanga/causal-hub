@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use causal_hub::{
+use causal_hub_rust::{
     datasets::{CatTrj, CatTrjs, Dataset},
     types::{FxIndexSet, States},
 };
@@ -9,9 +9,11 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyTuple},
 };
+use pyo3_stub_gen::derive::*;
 
 use crate::impl_deref_from_into;
 
+#[gen_stub_pyclass]
 #[pyclass(name = "CatTrj")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
@@ -21,6 +23,7 @@ pub struct PyCatTrj {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatTrj, CatTrj);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrj {
     /// Constructs a new categorical trajectory from a Pandas DataFrame.
@@ -226,6 +229,7 @@ impl PyCatTrj {
     }
 }
 
+#[gen_stub_pyclass]
 #[pyclass(name = "CatTrjs")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
@@ -235,6 +239,7 @@ pub struct PyCatTrjs {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatTrjs, CatTrjs);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrjs {
     /// Constructs a new categorical trajectories from an iterable of Pandas DataFrames.

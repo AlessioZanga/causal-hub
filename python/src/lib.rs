@@ -1,3 +1,9 @@
+#![warn(missing_docs)]
+//! # CausalHub
+//!
+//! CausalHub is a library for causal inference and causal discovery.
+//! It provides tools for estimating causal effects, learning causal structures, and more.
+
 pub mod assets;
 pub mod datasets;
 pub mod distributions;
@@ -7,6 +13,7 @@ pub mod models;
 pub mod utils;
 
 use pyo3::prelude::*;
+use pyo3_stub_gen::define_stub_info_gatherer;
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -161,3 +168,6 @@ mod causal_hub {
         }
     }
 }
+
+// Define a function to gather stub information.
+define_stub_info_gatherer!(stub_info);

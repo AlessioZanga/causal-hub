@@ -4,16 +4,19 @@ use std::{
     io::{BufReader, Read},
 };
 
-use causal_hub::{
+use causal_hub_rust::{
     graphs::DiGraph,
     io::BifReader,
     models::{BN, CatBN},
 };
 use pyo3::{prelude::*, types::PyType};
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{distributions::PyCatCPD, graphs::PyDiGraph, impl_deref_from_into};
 
+/// A categorical Bayesian network (BN).
+#[gen_stub_pyclass]
 #[pyclass(name = "CatBN")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatBN {
@@ -23,6 +26,7 @@ pub struct PyCatBN {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatBN, CatBN);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatBN {
     /// Constructs a new Bayesian network.
@@ -128,13 +132,13 @@ impl PyCatBN {
         Ok(bn.into())
     }
 
-    /// Parse a JSON string.
+    /// Read a JSON string.
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(serde_json::from_str(json).unwrap())
     }
 
-    /// Serialize to a JSON string.
+    /// Write to a JSON string.
     pub fn to_json(&self) -> PyResult<String> {
         Ok(serde_json::to_string(&self).unwrap())
     }

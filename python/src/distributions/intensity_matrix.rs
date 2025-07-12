@@ -1,13 +1,15 @@
 use std::collections::BTreeMap;
 
-use causal_hub::distributions::{CPD, CatCIM};
+use causal_hub_rust::distributions::{CPD, CatCIM};
 use numpy::{PyArray3, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional intensity matrix (CIM).
+#[gen_stub_pyclass]
 #[pyclass(name = "CatCIM")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PyCatCIM {
@@ -17,6 +19,7 @@ pub struct PyCatCIM {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatCIM, CatCIM);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatCIM {
     /// Returns the label of the conditioned variable.

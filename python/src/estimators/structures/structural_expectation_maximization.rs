@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, ops::Deref};
 
 use approx::relative_eq;
-use causal_hub::{
+use causal_hub_rust::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
     estimators::{
         BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, EMOutput, FTest, PK, ParCTBNEstimator, RAWE,

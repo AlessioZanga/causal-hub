@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, ops::Deref};
 
-use causal_hub::{
+use causal_hub_rust::{
     estimators::{BE, MLE, ParCTBNEstimator},
     graphs::DiGraph,
     models::{CTBN, CatCTBN},
@@ -9,12 +9,14 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyType},
 };
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::PyCatTrjs, distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into,
 };
 
+#[gen_stub_pyclass]
 #[pyclass(name = "CatCTBN")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatCTBN {
@@ -24,6 +26,7 @@ pub struct PyCatCTBN {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatCTBN, CatCTBN);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatCTBN {
     /// Constructs a new continuous-time Bayesian network.
@@ -102,6 +105,17 @@ impl PyCatCTBN {
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
+    }
+
+    /// Read a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(serde_json::from_str(json).unwrap())
+    }
+
+    /// Write to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(serde_json::to_string(&self).unwrap())
     }
 
     /// Fits the model to the given dataset and graph.

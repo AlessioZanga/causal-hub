@@ -14,7 +14,7 @@ macro_for!(
         #[doc = "Load the `" $bn:upper "` BN from the assets."]
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyCatBN {
-            causal_hub::assets::[<load_ $bn>]().into()
+            causal_hub_rust::assets::[<load_ $bn>]().into()
         }
     }
 });
@@ -22,5 +22,5 @@ macro_for!(
 /// Load the "EATING" CTBN from the assets.
 #[pyfunction]
 pub fn load_eating() -> PyCatCTBN {
-    causal_hub::assets::load_eating().into()
+    causal_hub_rust::assets::load_eating().into()
 }
