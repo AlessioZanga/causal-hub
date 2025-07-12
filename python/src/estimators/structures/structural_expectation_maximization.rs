@@ -26,6 +26,7 @@ use crate::{
     models::PyCatCTBN,
 };
 
+/// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
 #[pyfunction]
 #[pyo3(signature = (
     evidence,

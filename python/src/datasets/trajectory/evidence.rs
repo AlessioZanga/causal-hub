@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
+/// A categorical trajectory evidence.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjEv")]
 #[derive(Clone, Debug)]
@@ -228,6 +229,7 @@ impl PyCatTrjEv {
     }
 }
 
+/// A collection of categorical trajectory evidences.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjsEv")]
 #[derive(Clone, Debug, Serialize, Deserialize)]

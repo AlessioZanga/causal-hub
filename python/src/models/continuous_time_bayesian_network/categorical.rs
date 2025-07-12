@@ -16,6 +16,7 @@ use crate::{
     datasets::PyCatTrjs, distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into,
 };
 
+/// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCTBN")]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

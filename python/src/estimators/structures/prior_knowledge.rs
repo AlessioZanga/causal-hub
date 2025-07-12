@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
+/// A struct representing prior knowledge.
 #[gen_stub_pyclass]
 #[pyclass(name = "PK")]
 #[derive(Clone, Debug, Serialize, Deserialize)]

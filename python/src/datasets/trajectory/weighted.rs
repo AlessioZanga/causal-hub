@@ -7,6 +7,7 @@ use pyo3_stub_gen::derive::*;
 
 use crate::{datasets::PyCatTrj, impl_deref_from_into};
 
+/// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrj")]
 #[derive(Clone, Debug)]
@@ -84,6 +85,7 @@ impl PyCatWtdTrj {
     }
 }
 
+/// A collection of categorical trajectories with weights.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrjs")]
 #[derive(Clone, Debug)]

@@ -167,7 +167,20 @@ class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution (CPD).
     """
-    def __new__(cls, state:tuple, conditioning_states:typing.Any, parameters:numpy.typing.NDArray[numpy.float64]) -> CatCPD: ...
+    def __new__(cls, state:tuple, conditioning_states:typing.Any, parameters:numpy.typing.NDArray[numpy.float64]) -> CatCPD:
+        r"""
+        Constructs a new categorical CPD.
+        
+        # Arguments
+        
+        * `state` - A tuple containing the label of the conditioned variable and its states.
+        * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
+        * `parameters` - A 2D array of parameters for the CPD.
+        
+        # Returns
+        
+        A new `CatCPD` instance.
+        """
     def label(self) -> builtins.str:
         r"""
         Returns the label of the conditioned variable.
@@ -254,6 +267,9 @@ class CatCPD:
         """
 
 class CatCTBN:
+    r"""
+    A continuous-time Bayesian network (CTBN).
+    """
     def __new__(cls, graph:DiGraph, cims:typing.Any) -> CatCTBN:
         r"""
         Constructs a new continuous-time Bayesian network.
@@ -329,6 +345,9 @@ class CatCTBN:
         """
 
 class CatTrj:
+    r"""
+    A categorical trajectory.
+    """
     def __new__(cls, df:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrj:
         r"""
         Constructs a new categorical trajectory from a Pandas DataFrame.
@@ -373,6 +392,9 @@ class CatTrj:
         """
 
 class CatTrjEv:
+    r"""
+    A categorical trajectory evidence.
+    """
     def __new__(cls, df:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjEv:
         r"""
         Constructs a new categorical trajectory evidence from a Pandas DataFrame.
@@ -412,6 +434,9 @@ class CatTrjEv:
         """
 
 class CatTrjs:
+    r"""
+    A collection of categorical trajectories.
+    """
     def __new__(cls, dfs:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjs:
         r"""
         Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
@@ -456,6 +481,9 @@ class CatTrjs:
         """
 
 class CatTrjsEv:
+    r"""
+    A collection of categorical trajectory evidences.
+    """
     def __new__(cls, dfs:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjsEv:
         r"""
         Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
@@ -495,6 +523,9 @@ class CatTrjsEv:
         """
 
 class CatWtdTrj:
+    r"""
+    A categorical trajectory with a weight.
+    """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
@@ -537,6 +568,9 @@ class CatWtdTrj:
         """
 
 class CatWtdTrjs:
+    r"""
+    A collection of categorical trajectories with weights.
+    """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
@@ -690,6 +724,9 @@ class DiGraph:
         """
 
 class PK:
+    r"""
+    A struct representing prior knowledge.
+    """
     def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
 def load_alarm() -> CatBN:

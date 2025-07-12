@@ -13,6 +13,7 @@ use pyo3_stub_gen::derive::*;
 
 use crate::impl_deref_from_into;
 
+/// A categorical trajectory.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrj")]
 #[derive(Clone, Debug)]
@@ -229,6 +230,7 @@ impl PyCatTrj {
     }
 }
 
+/// A collection of categorical trajectories.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjs")]
 #[derive(Clone, Debug)]

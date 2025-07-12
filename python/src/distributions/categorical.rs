@@ -22,6 +22,18 @@ impl_deref_from_into!(PyCatCPD, CatCPD);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatCPD {
+    /// Constructs a new categorical CPD.
+    ///
+    /// # Arguments
+    ///
+    /// * `state` - A tuple containing the label of the conditioned variable and its states.
+    /// * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
+    /// * `parameters` - A 2D array of parameters for the CPD.
+    ///
+    /// # Returns
+    ///
+    /// A new `CatCPD` instance.
+    ///
     #[new]
     pub fn new(
         state: &Bound<'_, PyTuple>,
