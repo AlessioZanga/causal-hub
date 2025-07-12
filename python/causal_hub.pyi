@@ -747,6 +747,11 @@ class PK:
     """
     def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
+def em(evidence:CatTrjsEv, graph:DiGraph, max_iter:builtins.int=10, seed:builtins.int=42) -> dict:
+    r"""
+    A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
+    """
+
 def load_alarm() -> CatBN:
     r"""
     Load the `ALARM` BN from the assets.

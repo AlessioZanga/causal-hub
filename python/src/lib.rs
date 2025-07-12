@@ -72,8 +72,9 @@ mod causal_hub {
         m.add_class::<crate::distributions::PyCatCIM>()?;
 
         // `estimators` module
-        m.add_class::<crate::estimators::PyPK>()?;
+        m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
         m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
+        m.add_class::<crate::estimators::PyPK>()?;
 
         // `graphs` module
         m.add_class::<crate::graphs::PyDiGraph>()?;
