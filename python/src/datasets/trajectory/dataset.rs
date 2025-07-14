@@ -225,7 +225,7 @@ impl PyCatTrj {
     ///
     /// A reference to the times of the trajectory.
     ///
-    pub fn times<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
         Ok(self.inner.times().to_pyarray(py))
     }
 }

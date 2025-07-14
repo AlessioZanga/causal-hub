@@ -1,4 +1,7 @@
-use causal_hub_rust::graphs::{DiGraph, Graph};
+use causal_hub_rust::{
+    graphs::{DiGraph, Graph},
+    types::Labels,
+};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
@@ -211,12 +214,66 @@ impl PyDiGraph {
     ///
     /// A 2D array representing the adjacency matrix.
     ///
-    pub fn adjacency_matrix<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<i64>>> {
+    pub fn adjacency_matrix<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<i64>>> {
         // Convert the matrix to a PyArray2 and return as PyResult.
         Ok(self
             .inner
-            .adjacency_matrix()
+            .to_adjacency_matrix()
             .mapv(|x| x as i64)
             .to_pyarray(py))
+    }
+
+    /// Converts from a NetworkX DiGraph.
+    #[classmethod]
+    pub fn from_networkx(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        graph: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Load the NetworkX module.
+        let nx = py.import("networkx")?;
+
+        // Assume the input is a NetworkX DiGraph.
+        assert!(
+            graph.is_instance(&nx.getattr("DiGraph")?)?,
+            "Expected a NetworkX DiGraph, but '{}' found.",
+            graph.get_type().name()?
+        );
+
+        // Get the labels of the vertices.
+        let labels: Labels = graph
+            .getattr("nodes")?
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+
+        // Get the adjacency matrix from the NetworkX graph.
+        let adjacency_matrix = nx
+            .call_method1("adjacency_matrix", (graph,))?
+            .call_method0("toarray")?;
+        // Ensure the adjacency matrix is a 2D array.
+        let adjacency_matrix: &Bound<'_, PyArray2<i64>> = adjacency_matrix.downcast()?;
+        // Convert the adjacency matrix to a DiGraph.
+        let adjacency_matrix = adjacency_matrix.readonly().as_array().mapv(|x| x > 0);
+
+        // Create a new DiGraph from the adjacency matrix.
+        Ok(DiGraph::from_adjacency_matrix(labels, adjacency_matrix).into())
+    }
+
+    /// Converts to a NetworkX DiGraph.
+    pub fn to_networkx(&self, py: Python<'_>) -> PyResult<Bound<'_, PyAny>> {
+        /* FIXME:
+            # Construct the nx.DiGraph object.
+            G = nx.from_numpy_array(
+                (adjacency_matrix > 0),
+                create_using=nx.DiGraph,
+            )
+            # Set the labels.
+            G = nx.relabel_nodes(G, dict(enumerate(evidence.labels())))
+        */
+        // Load the NetworkX module.
+        let nx = py.import("networkx")?;
+
+        todo!() // FIXME:
     }
 }

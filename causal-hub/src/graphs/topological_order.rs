@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use ndarray::Axis;
 
 use super::DiGraph;
+use crate::graphs::Graph;
 
 /// Topological sort trait.
 pub trait TopologicalOrder {
@@ -20,7 +21,7 @@ impl TopologicalOrder for DiGraph {
     fn topological_order(&self) -> Option<Vec<usize>> {
         // Compute the in-degrees of the vertices.
         let mut in_degree = self
-            .adjacency_matrix()
+            .to_adjacency_matrix()
             .mapv(|x| x as usize)
             .sum_axis(Axis(0));
         // Initialize queue with vertices having in-degree 0
