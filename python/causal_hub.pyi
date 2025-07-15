@@ -56,7 +56,7 @@ class CatBN:
         The parameters size.
         """
     @classmethod
-    def from_json(cls, _cls:type, json:builtins.str) -> CatBN:
+    def from_json(cls, json:builtins.str) -> CatBN:
         r"""
         Read class from a JSON string.
         """
@@ -65,7 +65,7 @@ class CatBN:
         Write class to a JSON string.
         """
     @classmethod
-    def read_json(cls, _cls:type, path:builtins.str) -> CatBN:
+    def read_json(cls, path:builtins.str) -> CatBN:
         r"""
         Read class from a JSON file.
         """
@@ -74,7 +74,7 @@ class CatBN:
         Write class to a JSON file.
         """
     @classmethod
-    def read_bif(cls, _cls:type, path:builtins.str) -> CatBN:
+    def read_bif(cls, path:builtins.str) -> CatBN:
         r"""
         Read a BIF file and return a CatBN.
         
@@ -325,7 +325,7 @@ class CatCTBN:
         The parameters size.
         """
     @classmethod
-    def from_json(cls, _cls:type, json:builtins.str) -> CatCTBN:
+    def from_json(cls, json:builtins.str) -> CatCTBN:
         r"""
         Read class from a JSON string.
         """
@@ -334,7 +334,7 @@ class CatCTBN:
         Write class to a JSON string.
         """
     @classmethod
-    def read_json(cls, _cls:type, path:builtins.str) -> CatCTBN:
+    def read_json(cls, path:builtins.str) -> CatCTBN:
         r"""
         Read class from a JSON file.
         """
@@ -600,7 +600,7 @@ class DiGraph:
     A struct representing a directed graph using an adjacency matrix.
     """
     @classmethod
-    def empty(cls, _cls:type, labels:typing.Any) -> DiGraph:
+    def empty(cls, labels:typing.Any) -> DiGraph:
         r"""
         Creates an empty directed graph with the given labels.
         
@@ -617,7 +617,7 @@ class DiGraph:
         A new graph instance.
         """
     @classmethod
-    def complete(cls, _cls:type, labels:typing.Any) -> DiGraph:
+    def complete(cls, labels:typing.Any) -> DiGraph:
         r"""
         Creates a complete directed graph with the given labels.
         
@@ -714,7 +714,7 @@ class DiGraph:
         A list of child vertices.
         """
     @classmethod
-    def from_adjacency_matrix(cls, _cls:type, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
+    def from_adjacency_matrix(cls, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
         r"""
         Creates a graph from an adjacency matrix and labels.
         
@@ -736,7 +736,7 @@ class DiGraph:
         A 2D array representing the adjacency matrix.
         """
     @classmethod
-    def from_networkx(cls, _cls:type, graph:typing.Any) -> DiGraph:
+    def from_networkx(cls, graph:typing.Any) -> DiGraph:
         r"""
         Converts from a NetworkX DiGraph.
         """
