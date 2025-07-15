@@ -1,20 +1,14 @@
-use std::{collections::BTreeMap, ops::Deref};
+use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    estimators::{BE, MLE, ParCTBNEstimator},
     graphs::DiGraph,
     models::{CTBN, CatCTBN},
 };
-use pyo3::{
-    prelude::*,
-    types::{PyDict, PyType},
-};
+use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    datasets::PyCatTrjs, distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into,
-};
+use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into};
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]

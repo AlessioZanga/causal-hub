@@ -342,25 +342,6 @@ class CatCTBN:
         r"""
         Write class to a JSON file.
         """
-    @classmethod
-    def from_estimator(cls, dataset:CatTrjs, graph:DiGraph, method:builtins.str='MLE', **kwargs) -> CatCTBN:
-        r"""
-        Fits the model to the given dataset and graph.
-        
-        # Arguments
-        
-        * `dataset` - The dataset to fit the model to.
-        * `graph` - The graph to fit the model to.
-        * `method` - The estimation method to use, either "MLE" (default) or "BE".
-        
-        # Optional Arguments
-        
-        * `prior` - The prior for Bayesian estimation, a tuple of (size, value).
-        
-        # Returns
-        
-        A new instance of `CatCTBN` with the estimated parameters.
-        """
 
 class CatTrj:
     r"""
@@ -732,13 +713,36 @@ class DiGraph:
         
         A list of child vertices.
         """
-    def adjacency_matrix(self) -> numpy.typing.NDArray[numpy.int64]:
+    @classmethod
+    def from_adjacency_matrix(cls, _cls:type, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
+        r"""
+        Creates a graph from an adjacency matrix and labels.
+        
+        # Arguments
+        
+        * `labels` - An iterator over the labels of the vertices.
+        * `adjacency_matrix` - A reference to a 2D array representing the adjacency matrix.
+        
+        # Returns
+        
+        A new graph instance.
+        """
+    def to_adjacency_matrix(self) -> numpy.typing.NDArray[numpy.int64]:
         r"""
         Returns the adjacency matrix of the graph.
         
         # Returns
         
         A 2D array representing the adjacency matrix.
+        """
+    @classmethod
+    def from_networkx(cls, _cls:type, graph:typing.Any) -> DiGraph:
+        r"""
+        Converts from a NetworkX DiGraph.
+        """
+    def to_networkx(self) -> typing.Any:
+        r"""
+        Converts to a NetworkX DiGraph.
         """
 
 class PK:

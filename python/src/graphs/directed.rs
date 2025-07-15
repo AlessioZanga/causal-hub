@@ -1,9 +1,9 @@
-use causal_hub_rust::{
-    graphs::{DiGraph, Graph},
-    types::Labels,
-};
+use causal_hub_rust::graphs::{DiGraph, Graph};
 use numpy::{PyArray2, prelude::*};
-use pyo3::{prelude::*, types::PyType};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
@@ -208,13 +208,41 @@ impl PyDiGraph {
             .collect())
     }
 
+    /// Creates a graph from an adjacency matrix and labels.
+    ///
+    /// # Arguments
+    ///
+    /// * `labels` - An iterator over the labels of the vertices.
+    /// * `adjacency_matrix` - A reference to a 2D array representing the adjacency matrix.
+    ///
+    /// # Returns
+    ///
+    /// A new graph instance.
+    ///
+    #[classmethod]
+    pub fn from_adjacency_matrix(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        adjacency_matrix: &Bound<'_, PyArray2<i64>>,
+    ) -> PyResult<Self> {
+        // Convert the PyIterator to a Vec<String>.
+        let labels: Vec<_> = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        // Convert the adjacency matrix to a 2D array.
+        let adjacency_matrix = adjacency_matrix.readonly().as_array().mapv(|x| x > 0);
+        // Create a new DiGraph from the adjacency matrix.
+        Ok(DiGraph::from_adjacency_matrix(labels, adjacency_matrix).into())
+    }
+
     /// Returns the adjacency matrix of the graph.
     ///
     /// # Returns
     ///
     /// A 2D array representing the adjacency matrix.
     ///
-    pub fn adjacency_matrix<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<i64>>> {
+    pub fn to_adjacency_matrix<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<i64>>> {
         // Convert the matrix to a PyArray2 and return as PyResult.
         Ok(self
             .inner
@@ -241,7 +269,7 @@ impl PyDiGraph {
         );
 
         // Get the labels of the vertices.
-        let labels: Labels = graph
+        let labels: Vec<_> = graph
             .getattr("nodes")?
             .try_iter()?
             .map(|x| x?.extract::<String>())
@@ -261,19 +289,26 @@ impl PyDiGraph {
     }
 
     /// Converts to a NetworkX DiGraph.
-    pub fn to_networkx(&self, py: Python<'_>) -> PyResult<Bound<'_, PyAny>> {
-        /* FIXME:
-            # Construct the nx.DiGraph object.
-            G = nx.from_numpy_array(
-                (adjacency_matrix > 0),
-                create_using=nx.DiGraph,
-            )
-            # Set the labels.
-            G = nx.relabel_nodes(G, dict(enumerate(evidence.labels())))
-        */
+    pub fn to_networkx<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
         // Load the NetworkX module.
         let nx = py.import("networkx")?;
+        // Get the adjacency matrix.
+        let adjacency_matrix = self.to_adjacency_matrix(py)?;
+        // Create a new PyDict for keyword arguments.
+        let kwargs = PyDict::new(py);
+        // Set the `create_using` argument to `nx.DiGraph`.
+        kwargs.set_item("create_using", nx.getattr("DiGraph")?)?;
+        // Create a NetworkX DiGraph from the adjacency matrix.
+        let graph = nx.call_method("from_numpy_array", (adjacency_matrix,), Some(&kwargs))?;
+        // Create a new PyDict for index-label mapping.
+        let labels = PyDict::new(py);
+        // Set index-label pairs.
+        for (i, x) in self.inner.labels().iter().enumerate() {
+            labels.set_item(i, x)?;
+        }
+        // Relabel the nodes with the graph's labels.
+        let graph = nx.call_method1("relabel_nodes", (graph, labels))?;
 
-        todo!() // FIXME:
+        Ok(graph)
     }
 }
