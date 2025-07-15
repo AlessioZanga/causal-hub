@@ -1,4 +1,7 @@
-use causal_hub_rust::graphs::{DiGraph, Graph};
+use causal_hub_rust::{
+    graphs::{DiGraph, Graph},
+    types::Labels,
+};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
     prelude::*,
@@ -256,36 +259,40 @@ impl PyDiGraph {
     pub fn from_networkx(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
-        graph: &Bound<'_, PyAny>,
+        g: &Bound<'_, PyAny>,
     ) -> PyResult<Self> {
         // Load the NetworkX module.
         let nx = py.import("networkx")?;
 
         // Assume the input is a NetworkX DiGraph.
         assert!(
-            graph.is_instance(&nx.getattr("DiGraph")?)?,
+            g.is_instance(&nx.getattr("DiGraph")?)?,
             "Expected a NetworkX DiGraph, but '{}' found.",
-            graph.get_type().name()?
+            g.get_type().name()?
         );
 
         // Get the labels of the vertices.
-        let labels: Vec<_> = graph
+        let labels: Labels = g
             .getattr("nodes")?
             .try_iter()?
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;
 
         // Get the adjacency matrix from the NetworkX graph.
-        let adjacency_matrix = nx
-            .call_method1("adjacency_matrix", (graph,))?
-            .call_method0("toarray")?;
-        // Ensure the adjacency matrix is a 2D array.
-        let adjacency_matrix: &Bound<'_, PyArray2<i64>> = adjacency_matrix.downcast()?;
-        // Convert the adjacency matrix to a DiGraph.
-        let adjacency_matrix = adjacency_matrix.readonly().as_array().mapv(|x| x > 0);
+        let mut graph = DiGraph::empty(labels);
+        // Iterate over the edges and add them to the graph.
+        for edge in g.getattr("edges")?.try_iter()? {
+            // Extract the edge as a tuple of strings.
+            let (x, y): (String, String) = edge?.extract()?;
+            // Get the indices of the vertices.
+            let x = graph.label_to_index(&x);
+            let y = graph.label_to_index(&y);
+            // Add the edge to the graph.
+            graph.add_edge(x, y);
+        }
 
         // Create a new DiGraph from the adjacency matrix.
-        Ok(DiGraph::from_adjacency_matrix(labels, adjacency_matrix).into())
+        Ok(graph.into())
     }
 
     /// Converts to a NetworkX DiGraph.
@@ -299,7 +306,7 @@ impl PyDiGraph {
         // Set the `create_using` argument to `nx.DiGraph`.
         kwargs.set_item("create_using", nx.getattr("DiGraph")?)?;
         // Create a NetworkX DiGraph from the adjacency matrix.
-        let graph = nx.call_method("from_numpy_array", (adjacency_matrix,), Some(&kwargs))?;
+        let g = nx.call_method("from_numpy_array", (adjacency_matrix,), Some(&kwargs))?;
         // Create a new PyDict for index-label mapping.
         let labels = PyDict::new(py);
         // Set index-label pairs.
@@ -307,8 +314,8 @@ impl PyDiGraph {
             labels.set_item(i, x)?;
         }
         // Relabel the nodes with the graph's labels.
-        let graph = nx.call_method1("relabel_nodes", (graph, labels))?;
+        let g = nx.call_method1("relabel_nodes", (g, labels))?;
 
-        Ok(graph)
+        Ok(g)
     }
 }

@@ -736,7 +736,7 @@ class DiGraph:
         A 2D array representing the adjacency matrix.
         """
     @classmethod
-    def from_networkx(cls, graph:typing.Any) -> DiGraph:
+    def from_networkx(cls, g:typing.Any) -> DiGraph:
         r"""
         Converts from a NetworkX DiGraph.
         """
