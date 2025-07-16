@@ -1,8 +1,26 @@
+/// A struct representing the output of the expectation-maximization algorithm.
+#[derive(Clone, Debug)]
+pub struct ExpectationMaximizationOutput<M, E2M> {
+    /// The models fitted during the expectation-maximization process.
+    /// Each model is used to compute the expected sufficient statistics.
+    pub models: Vec<M>,
+    /// The expected sufficient statistics for each model.
+    pub expectations: Vec<E2M>,
+    /// The last model fitted by the maximization step.
+    pub last_model: M,
+    /// The number of iterations performed.
+    pub iterations: usize,
+}
+
+/// A type alias for the output of the expectation-maximization algorithm.
+pub type EMOutput<M, E2M> = ExpectationMaximizationOutput<M, E2M>;
+
 /// A struct representing the expectation-maximization algorithm.
 #[derive(Debug)]
 pub struct ExpectationMaximization<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
+    E2M: Clone,
     EStep: Fn(&M, &E) -> E2M,
     MStep: Fn(&M, &E2M) -> M,
     Stop: Fn(&M, &M, usize) -> bool,
@@ -26,6 +44,7 @@ pub type EM<'a, M, E, EStep, E2M, MStep, Stop> =
 impl<'a, M, E, EStep, E2M, MStep, Stop> EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
+    E2M: Clone,
     EStep: Fn(&M, &E) -> E2M,
     MStep: Fn(&M, &E2M) -> M,
     Stop: Fn(&M, &M, usize) -> bool,
@@ -36,31 +55,42 @@ where
     ///
     /// The fitted model.
     ///
-    pub fn fit(&self) -> M {
+    pub fn fit(&self) -> EMOutput<M, E2M> {
+        // Initialize the output.
+        let mut output = EMOutput {
+            models: Vec::new(),
+            expectations: Vec::new(),
+            last_model: self.initial_model.clone(),
+            iterations: 0,
+        };
+
         // Declare the previous model.
         let mut prev_model: M;
         // Set the current model to the initial model.
         let mut curr_model: M = self.initial_model.clone();
 
-        // Initialize the counter.
-        let mut counter = 0;
-
         // Do while ...
         while {
             // Set the previous model to the current model.
             prev_model = curr_model;
+            // Store the current model in the output.
+            output.models.push(prev_model.clone());
             // Expectation step.
             let expectation = (self.expectation)(&prev_model, self.evidence);
+            // Store the expected sufficient statistics in the output.
+            output.expectations.push(expectation.clone());
             // Maximization step.
             curr_model = (self.maximization)(&prev_model, &expectation);
+            // Store the last model in the output.
+            output.last_model = curr_model.clone();
             // Increment the counter.
-            counter += 1;
+            output.iterations += 1;
             // Check stopping criteria.
-            !(self.stop)(&prev_model, &curr_model, counter)
+            !(self.stop)(&prev_model, &curr_model, output.iterations)
         } {}
 
-        // Return the current model.
-        curr_model
+        // Return the output.
+        output
     }
 }
 
@@ -68,6 +98,7 @@ where
 pub struct ExpectationMaximizationBuilder<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
+    E2M: Clone,
     EStep: Fn(&M, &E) -> E2M,
     MStep: Fn(&M, &E2M) -> M,
     Stop: Fn(&M, &M, usize) -> bool,
@@ -86,6 +117,7 @@ pub type EMBuilder<'a, M, E, EStep, E2M, MStep, Stop> =
 impl<'a, M, E, EStep, E2M, MStep, Stop> EMBuilder<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
+    E2M: Clone,
     EStep: Fn(&M, &E) -> E2M,
     MStep: Fn(&M, &E2M) -> M,
     Stop: Fn(&M, &M, usize) -> bool,

@@ -5,6 +5,7 @@ mod topological_order;
 pub use topological_order::*;
 
 mod undirected;
+use ndarray::prelude::*;
 pub use undirected::*;
 
 use crate::types::Labels;
@@ -171,4 +172,28 @@ pub trait Graph {
     /// `true` if the edge was deleted, `false` if it did not exist.
     ///
     fn del_edge(&mut self, x: usize, y: usize) -> bool;
+
+    /// Creates a graph from an adjacency matrix and labels.
+    ///
+    /// # Arguments
+    ///
+    /// * `labels` - An iterator over the labels of the vertices.
+    /// * `adjacency_matrix` - A reference to a 2D array representing the adjacency matrix.
+    ///
+    /// # Returns
+    ///
+    /// A new graph instance.
+    ///
+    fn from_adjacency_matrix<I, V>(labels: I, adjacency_matrix: Array2<bool>) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>;
+
+    /// Converts the graph to an adjacency matrix.
+    ///
+    /// # Returns
+    ///
+    /// A 2D array representing the adjacency matrix of the graph.
+    ///
+    fn to_adjacency_matrix(&self) -> Array2<bool>;
 }

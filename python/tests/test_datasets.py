@@ -1,8 +1,8 @@
 import pandas as pd
-from causal_hub.datasets import CatTrj, CatTrjs, CatTrjEv
+from causal_hub import CatTrj, CatTrjs, CatTrjEv
 
 
-def test_categorical_trajectory():
+def test_categorical_trajectory() -> None:
     # Create a sample DataFrame with a time column and categorical columns.
     df = pd.DataFrame(
         {
@@ -27,7 +27,7 @@ def test_categorical_trajectory():
     assert trj.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
 
 
-def test_categorical_trajectory_with_states():
+def test_categorical_trajectory_with_states() -> None:
     # Create a sample DataFrame with a time column and categorical columns.
     df = pd.DataFrame(
         {
@@ -57,8 +57,8 @@ def test_categorical_trajectory_with_states():
     assert trj.states()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
 
 
-def test_categorical_trajectories():
-    # Create tww sample DataFrames with a time column and categorical columns.
+def test_categorical_trajectories() -> None:
+    # Create two sample DataFrames with a time column and categorical columns.
     dfs = [pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
@@ -92,8 +92,8 @@ def test_categorical_trajectories():
     assert trjs.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
 
 
-def test_categorical_trajectories_with_states():
-    # Create tww sample DataFrames with a time column and categorical columns.
+def test_categorical_trajectories_with_states() -> None:
+    # Create two sample DataFrames with a time column and categorical columns.
     dfs = [pd.DataFrame(
         {
             "time": [0, 1, 2, 3, 4],
@@ -132,7 +132,7 @@ def test_categorical_trajectories_with_states():
     assert trjs.states()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
 
 
-def test_categorical_trajectory_evidence():
+def test_categorical_trajectory_evidence() -> None:
     # Create a sample DataFrame with `event`, `state`, `start_time`, and `end_time` columns.
     df = pd.DataFrame(
         {

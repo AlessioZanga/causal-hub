@@ -1,15 +1,17 @@
 use std::collections::BTreeMap;
 
-use causal_hub::distributions::{CPD, CatCPD};
+use causal_hub_rust::distributions::{CPD, CatCPD};
 use numpy::{PyArray2, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional probability distribution (CPD).
-#[pyclass(name = "CatCPD")]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[gen_stub_pyclass]
+#[pyclass(name = "CatCPD", eq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatCPD {
     inner: CatCPD,
 }
@@ -17,10 +19,23 @@ pub struct PyCatCPD {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatCPD, CatCPD);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatCPD {
+    /// Constructs a new categorical CPD.
+    ///
+    /// # Arguments
+    ///
+    /// * `state` - A tuple containing the label of the conditioned variable and its states.
+    /// * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
+    /// * `parameters` - A 2D array of parameters for the CPD.
+    ///
+    /// # Returns
+    ///
+    /// A new `CatCPD` instance.
+    ///
     #[new]
-    fn new(
+    pub fn new(
         state: &Bound<'_, PyTuple>,
         conditioning_states: &Bound<'_, PyAny>,
         parameters: &Bound<'_, PyArray2<f64>>,
@@ -44,7 +59,7 @@ impl PyCatCPD {
     ///
     /// A reference to the label.
     ///
-    fn label(&self) -> PyResult<&str> {
+    pub fn label(&self) -> PyResult<&str> {
         Ok(self.inner.label().as_ref())
     }
 
@@ -54,7 +69,7 @@ impl PyCatCPD {
     ///
     /// The states of the conditioned variable.
     ///
-    fn states(&self) -> PyResult<Vec<&str>> {
+    pub fn states(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.states().iter().map(AsRef::as_ref).collect())
     }
 
@@ -64,7 +79,7 @@ impl PyCatCPD {
     ///
     /// The cardinality of the conditioned variable.
     ///
-    fn cardinality(&self) -> PyResult<usize> {
+    pub fn cardinality(&self) -> PyResult<usize> {
         Ok(self.inner.cardinality())
     }
 
@@ -74,7 +89,7 @@ impl PyCatCPD {
     ///
     /// A reference to the conditioning labels.
     ///
-    fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
+    pub fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
         Ok(self
             .inner
             .conditioning_labels()
@@ -89,7 +104,7 @@ impl PyCatCPD {
     ///
     /// The states of the conditioning variables.
     ///
-    fn conditioning_states<'a>(
+    pub fn conditioning_states<'a>(
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
@@ -115,7 +130,7 @@ impl PyCatCPD {
     ///
     /// The cardinality of the conditioning variables.
     ///
-    fn conditioning_cardinality(&self) -> PyResult<Vec<usize>> {
+    pub fn conditioning_cardinality(&self) -> PyResult<Vec<usize>> {
         Ok(self.inner.conditioning_cardinality().to_vec())
     }
 
@@ -125,7 +140,7 @@ impl PyCatCPD {
     ///
     /// A reference to the parameters.
     ///
-    fn parameters<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<f64>>> {
+    pub fn parameters<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<f64>>> {
         Ok(self.inner.parameters().to_pyarray(py))
     }
 
@@ -135,7 +150,7 @@ impl PyCatCPD {
     ///
     /// The parameters size.
     ///
-    fn parameters_size(&self) -> PyResult<usize> {
+    pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
     }
 
@@ -145,7 +160,7 @@ impl PyCatCPD {
     ///
     /// The sample size of the dataset used to fit the distribution.
     ///
-    fn sample_size(&self) -> PyResult<Option<f64>> {
+    pub fn sample_size(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_size())
     }
 
@@ -155,12 +170,12 @@ impl PyCatCPD {
     ///
     /// The sample log-likelihood of the dataset given the distribution.
     ///
-    fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
+    pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_log_likelihood())
     }
 
     /// Returns the string representation of the CatCPD.
-    fn __repr__(&self) -> PyResult<String> {
+    pub fn __repr__(&self) -> PyResult<String> {
         // Get the string representation of the CatCPD.
         Ok(self.inner.to_string())
     }

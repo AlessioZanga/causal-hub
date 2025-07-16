@@ -1,5 +1,3 @@
-/target
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 .pytest_cache/
@@ -12,7 +10,7 @@ __pycache__/
 .Python
 .venv/
 env/
-bin/
+bin/*
 build/
 develop-eggs/
 dist/
@@ -70,3 +68,7 @@ docs/_build/
 
 # Pyenv
 .python-version
+
+# Rust exceptions
+/target
+!bin/stub_gen.rs

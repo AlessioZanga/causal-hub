@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use causal_hub::{
+use causal_hub_rust::{
     datasets::{CatTrj, CatTrjs, Dataset},
     types::{FxIndexSet, States},
 };
@@ -9,9 +9,12 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyTuple},
 };
+use pyo3_stub_gen::derive::*;
 
 use crate::impl_deref_from_into;
 
+/// A categorical trajectory.
+#[gen_stub_pyclass]
 #[pyclass(name = "CatTrj")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
@@ -21,6 +24,7 @@ pub struct PyCatTrj {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatTrj, CatTrj);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrj {
     /// Constructs a new categorical trajectory from a Pandas DataFrame.
@@ -214,8 +218,20 @@ impl PyCatTrj {
             })
             .collect())
     }
+
+    /// Returns the times of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the times of the trajectory.
+    ///
+    pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
+        Ok(self.inner.times().to_pyarray(py))
+    }
 }
 
+/// A collection of categorical trajectories.
+#[gen_stub_pyclass]
 #[pyclass(name = "CatTrjs")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
@@ -225,6 +241,7 @@ pub struct PyCatTrjs {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatTrjs, CatTrjs);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrjs {
     /// Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
@@ -294,6 +311,22 @@ impl PyCatTrjs {
                 // Return a tuple of the label and states.
                 (label, states)
             })
+            .collect())
+    }
+
+    /// Return the trajectories.
+    ///
+    /// # Returns
+    ///
+    /// A vector of categorical trajectories.
+    ///
+    pub fn values(&self) -> PyResult<Vec<PyCatTrj>> {
+        Ok(self
+            .inner
+            .values()
+            .iter()
+            .cloned()
+            .map(|trj| trj.into())
             .collect())
     }
 }

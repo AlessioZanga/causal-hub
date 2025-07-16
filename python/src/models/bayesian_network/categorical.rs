@@ -4,17 +4,20 @@ use std::{
     io::{BufReader, Read},
 };
 
-use causal_hub::{
+use causal_hub_rust::{
     graphs::DiGraph,
     io::BifReader,
     models::{BN, CatBN},
 };
 use pyo3::{prelude::*, types::PyType};
+use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{distributions::PyCatCPD, graphs::PyDiGraph, impl_deref_from_into};
 
-#[pyclass(name = "CatBN")]
+/// A categorical Bayesian network (BN).
+#[gen_stub_pyclass]
+#[pyclass(name = "CatBN", eq)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PyCatBN {
     inner: CatBN,
@@ -23,6 +26,7 @@ pub struct PyCatBN {
 // Implement `Deref`, `From` and `Into` traits.
 impl_deref_from_into!(PyCatBN, CatBN);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyCatBN {
     /// Constructs a new Bayesian network.
@@ -103,6 +107,36 @@ impl PyCatBN {
         Ok(self.inner.parameters_size())
     }
 
+    /// Read class from a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(serde_json::from_str(json).unwrap())
+    }
+
+    /// Write class to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(serde_json::to_string(&self).unwrap())
+    }
+
+    /// Read class from a JSON file.
+    #[classmethod]
+    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        // Read the file content.
+        let content = std::fs::read_to_string(path)?;
+        // Deserialize the content to a CatCTBN.
+        Ok(serde_json::from_str(&content).unwrap())
+    }
+
+    /// Write class to a JSON file.
+    pub fn write_json(&self, path: &str) -> PyResult<()> {
+        // Serialize the CatCTBN to a JSON string.
+        let json = serde_json::to_string(self).unwrap();
+        // Write the JSON string to the file.
+        std::fs::write(path, json)?;
+        // Return Ok to indicate success.
+        Ok(())
+    }
+
     /// Read a BIF file and return a CatBN.
     ///
     /// # Arguments
@@ -126,16 +160,5 @@ impl PyCatBN {
         let bn = BifReader::read(&bif);
         // Convert the BifReader to a CatBN.
         Ok(bn.into())
-    }
-
-    /// Parse a JSON string.
-    #[classmethod]
-    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(serde_json::from_str(json).unwrap())
-    }
-
-    /// Serialize to a JSON string.
-    pub fn to_json(&self) -> PyResult<String> {
-        Ok(serde_json::to_string(&self).unwrap())
     }
 }

@@ -10,17 +10,6 @@ use crate::{
     utils::{collect_states, sort_states},
 };
 
-/// A struct representing a categorical sample.
-#[derive(Clone, Debug)]
-pub struct CategoricalSample {
-    values: Array2<u8>,
-}
-
-/// A type alias for a categorical sample.
-pub type CatSample = CategoricalSample;
-
-// FIXME: Implement `CatSample` methods.
-
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
 pub struct CategoricalDataset {

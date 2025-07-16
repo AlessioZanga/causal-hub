@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::types::Labels;
+use crate::{types::Labels, utils::collect_labels};
 
 /// A struct representing an undirected graph using an adjacency matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -197,5 +197,47 @@ impl Graph for UnGraph {
         self.adjacency_matrix[[y, x]] = false;
 
         true
+    }
+
+    fn from_adjacency_matrix<I, V>(labels: I, adjacency_matrix: Array2<bool>) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>,
+    {
+        // Collect the labels.
+        let labels = collect_labels(labels);
+
+        // FIXME: Workaround: assert labels are sorted.
+        assert!(labels.iter().is_sorted(), "Labels must be sorted.");
+
+        // Assert labels and adjacency matrix dimensions match.
+        assert_eq!(
+            labels.len(),
+            adjacency_matrix.nrows(),
+            "Number of labels must match the number of rows in the adjacency matrix."
+        );
+        // Assert adjacency matrix must be square.
+        assert_eq!(
+            adjacency_matrix.nrows(),
+            adjacency_matrix.ncols(),
+            "Adjacency matrix must be square."
+        );
+        // Assert the adjacency matrix is symmetric.
+        assert_eq!(
+            adjacency_matrix,
+            adjacency_matrix.t(),
+            "Adjacency matrix must be symmetric."
+        );
+
+        // Create a new graph instance.
+        Self {
+            labels,
+            adjacency_matrix,
+        }
+    }
+
+    fn to_adjacency_matrix(&self) -> Array2<bool> {
+        // Return the adjacency matrix.
+        self.adjacency_matrix.clone()
     }
 }

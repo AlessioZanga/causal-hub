@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::types::Labels;
+use crate::{types::Labels, utils::collect_labels};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -17,17 +17,6 @@ pub struct DirectedGraph {
 pub type DiGraph = DirectedGraph;
 
 impl DiGraph {
-    /// Returns the adjacency matrix of the graph.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the adjacency matrix.
-    ///
-    #[inline]
-    pub const fn adjacency_matrix(&self) -> &Array2<bool> {
-        &self.adjacency_matrix
-    }
-
     /// Returns the parents of a vertex.
     ///
     /// # Arguments
@@ -224,5 +213,41 @@ impl Graph for DiGraph {
         self.adjacency_matrix[[x, y]] = false;
 
         true
+    }
+
+    fn from_adjacency_matrix<I, V>(labels: I, adjacency_matrix: Array2<bool>) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>,
+    {
+        // Collect the labels.
+        let labels = collect_labels(labels);
+
+        // FIXME: Workaround: assert labels are sorted.
+        assert!(labels.iter().is_sorted(), "Labels must be sorted.");
+
+        // Assert labels and adjacency matrix dimensions match.
+        assert_eq!(
+            labels.len(),
+            adjacency_matrix.nrows(),
+            "Number of labels must match the number of rows in the adjacency matrix."
+        );
+        // Assert adjacency matrix must be square.
+        assert_eq!(
+            adjacency_matrix.nrows(),
+            adjacency_matrix.ncols(),
+            "Adjacency matrix must be square."
+        );
+
+        // Create a new graph instance.
+        Self {
+            labels,
+            adjacency_matrix,
+        }
+    }
+
+    fn to_adjacency_matrix(&self) -> Array2<bool> {
+        // Return the adjacency matrix.
+        self.adjacency_matrix.clone()
     }
 }
