@@ -1,6 +1,9 @@
 mod directed;
 pub use directed::*;
 
+mod graphical_separation;
+pub use graphical_separation::*;
+
 mod topological_order;
 pub use topological_order::*;
 
@@ -8,15 +11,10 @@ mod undirected;
 use ndarray::prelude::*;
 pub use undirected::*;
 
-use crate::types::Labels;
+use crate::types::{Labels, Set};
 
 /// A trait for graphs.
 pub trait Graph {
-    /// The type of the vertices.
-    type Vertices: IntoIterator<Item = usize>;
-    /// The type of the edges.
-    type Edges: IntoIterator<Item = (usize, usize)>;
-
     /// Creates an empty graph with the given labels.
     ///
     /// # Arguments
@@ -110,17 +108,29 @@ pub trait Graph {
     ///
     /// # Returns
     ///
-    /// A range representing the vertices in the graph.
+    /// A set representing the vertices in the graph.
     ///
-    fn vertices(&self) -> Self::Vertices;
+    fn vertices(&self) -> Set<usize>;
+
+    /// Checks if a vertex exists in the graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The index of the vertex.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the vertex exists, `false` otherwise.
+    ///
+    fn has_vertex(&self, x: usize) -> bool;
 
     /// Returns the iterator of edges in the graph.
     ///
     /// # Returns
     ///
-    /// A vector of tuples representing the edges in the graph.
+    /// A set of tuples representing the edges in the graph.
     ///
-    fn edges(&self) -> Self::Edges;
+    fn edges(&self) -> Set<(usize, usize)>;
 
     /// Checks if there is an edge between vertices `x` and `y`.
     ///

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{EPSILON, FxIndexSet, Labels, States},
+    types::{EPSILON, Labels, Set, States},
     utils::{RMI, collect_states},
 };
 
@@ -16,7 +16,7 @@ use crate::{
 pub struct CategoricalConditionalProbabilityDistribution {
     // Labels of the conditioned variable.
     label: String,
-    states: FxIndexSet<String>,
+    states: Set<String>,
     cardinality: usize,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
@@ -78,7 +78,7 @@ impl CatCPD {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the variable.
-        let mut states: FxIndexSet<_> = states
+        let mut states: Set<_> = states
             .into_iter()
             .inspect(|_| n += 1)
             .map(|state| state.as_ref().to_owned())
@@ -93,7 +93,7 @@ impl CatCPD {
         // Get the states of the conditioning variables.
         let mut conditioning_states = collect_states(conditioning_states);
         // Get the labels of the variables.
-        let mut conditioning_labels: FxIndexSet<_> = conditioning_states.keys().cloned().collect();
+        let mut conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
         // Get the cardinality of the set of states.
         let mut conditioning_cardinality: Array1<_> =
             conditioning_states.values().map(|i| i.len()).collect();
@@ -238,7 +238,7 @@ impl CatCPD {
     /// The states of the conditioned variable.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexSet<String> {
+    pub const fn states(&self) -> &Set<String> {
         &self.states
     }
 
@@ -399,7 +399,7 @@ impl Display for CatCPD {
         let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
             .chain([self.label().as_str()]) // Label for the first variable.
             .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining states.
-            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
 
@@ -412,7 +412,7 @@ impl Display for CatCPD {
             .conditioning_labels()
             .iter()
             .chain(self.states()) // Include states of the first variable.
-            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
         writeln!(f, "| {separator} |")?;
@@ -425,9 +425,9 @@ impl Display for CatCPD {
             .zip(self.parameters().rows())
         {
             // Format the states for the current row.
-            let states = states.iter().map(|x| format!("{x:width$}", width = n));
+            let states = states.iter().map(|x| format!("{x:n$}"));
             // Format the parameter values for the current row.
-            let values = values.iter().map(|x| format!("{:width$.6}", x, width = n));
+            let values = values.iter().map(|x| format!("{x:n$.6}"));
             // Join the states and values for the current row.
             let states_values = states.chain(values).join(" | ");
             writeln!(f, "| {states_values} |")?;

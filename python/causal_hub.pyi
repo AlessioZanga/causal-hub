@@ -642,6 +642,18 @@ class DiGraph:
         
         A list of vertices.
         """
+    def has_vertex(self, x:builtins.str) -> builtins.bool:
+        r"""
+        Checks if a vertex exists in the graph.
+        
+        # Arguments
+        
+        * `x` - The vertex.
+        
+        # Returns
+        
+        `true` if the vertex exists, `false` otherwise.
+        """
     def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:
         r"""
         Returns the edges of the graph.
@@ -701,6 +713,18 @@ class DiGraph:
         
         A list of parent vertices.
         """
+    def ancestors(self, x:builtins.str) -> builtins.list[builtins.str]:
+        r"""
+        Returns the ancestors of a vertex `x`.
+        
+        # Arguments
+        
+        * `x` - The vertex whose ancestors are to be returned.
+        
+        # Returns
+        
+        A list of ancestor vertices.
+        """
     def children(self, x:builtins.str) -> builtins.list[builtins.str]:
         r"""
         Returns the children of a vertex `x`.
@@ -712,6 +736,77 @@ class DiGraph:
         # Returns
         
         A list of child vertices.
+        """
+    def descendants(self, x:builtins.str) -> builtins.list[builtins.str]:
+        r"""
+        Returns the descendants of a vertex `x`.
+        
+        # Arguments
+        
+        * `x` - The vertex whose descendants are to be returned.
+        
+        # Returns
+        
+        A list of descendant vertices.
+        """
+    def is_separator(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+        r"""
+        Checks if the vertex set `Z` is a separator for `X` and `Y`.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        * `z` - An iterable collection of vertices representing set `Z`.
+        
+        # Panics
+        
+        * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+        * If `X`, `Y` or `Z` are not disjoint sets.
+        * If `X` and `Y` are empty sets.
+        
+        # Returns
+        
+        `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
+        """
+    def is_minimal_separator(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+        r"""
+        Checks if the vertex set `Z` is a minimal separator for `X` and `Y`.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        * `z` - An iterable collection of vertices representing set `Z`.
+        
+        # Panics
+        
+        * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+        * If `X`, `Y` or `Z` are not disjoint sets.
+        * If `X` and `Y` are empty sets.
+        
+        # Returns
+        
+        `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
+        """
+    def find_minimal_separator(self, x:typing.Any, y:typing.Any) -> typing.Optional[builtins.list[builtins.str]]:
+        r"""
+        Finds a minimal separator for the vertex sets `X` and `Y`, if any.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        
+        # Panics
+        
+        * If any of the vertex in `X` or `Y` are out of bounds.
+        * If `X` and `Y` are not disjoint sets.
+        * If `X` or `Y` are empty sets.
+        
+        # Returns
+        
+        `Some(Set)` containing the minimal separator, or `None` if no separator exists.
         """
     @classmethod
     def from_adjacency_matrix(cls, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:

@@ -188,6 +188,7 @@ where
         // Fit the parameters of the distribution using the estimator.
         let cpds: Vec<_> = graph
             .vertices()
+            .into_iter()
             .map(|i| self.fit(i, &graph.parents(i)))
             .collect();
         // Construct the BN with the graph and the parameters.
@@ -261,6 +262,7 @@ where
         // Fit the parameters of the distribution using the estimator.
         let cims: Vec<_> = graph
             .vertices()
+            .into_iter()
             .map(|i| self.fit(i, &graph.parents(i)))
             .collect();
         // Construct the CTBN with the graph and the parameters.

@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
-    types::{FxIndexMap, FxIndexSet, Labels, States},
+    types::{Labels, Map, Set, States},
     utils::{collect_states, sort_states},
 };
 
@@ -22,7 +22,7 @@ pub enum CategoricalEvidenceType {
         /// The observed event of the evidence.
         event: usize,
         /// The states of the evidence.
-        not_states: FxIndexSet<usize>,
+        not_states: Set<usize>,
     },
     /// Uncertain positive evidence.
     UncertainPositive {
@@ -92,7 +92,7 @@ pub struct CategoricalEvidence {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
-    evidences: FxIndexMap<String, Option<CatEvT>>,
+    evidences: Map<String, Option<CatEvT>>,
 }
 
 /// A type alias for the categorical evidence structure.
@@ -131,7 +131,7 @@ impl CategoricalEvidence {
         use CatEvT as E;
 
         // Allocate evidences.
-        let mut evidences: FxIndexMap<_, Option<_>> =
+        let mut evidences: Map<_, Option<_>> =
             states.keys().map(|label| (label.clone(), None)).collect();
 
         // Reverse the indices to get the argsort.
@@ -293,7 +293,7 @@ impl CategoricalEvidence {
     /// A reference to the evidences of the evidence.
     ///
     #[inline]
-    pub const fn evidences(&self) -> &FxIndexMap<String, Option<CatEvT>> {
+    pub const fn evidences(&self) -> &Map<String, Option<CatEvT>> {
         &self.evidences
     }
 }

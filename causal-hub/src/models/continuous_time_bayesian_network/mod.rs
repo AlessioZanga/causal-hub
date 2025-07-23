@@ -3,7 +3,7 @@ pub use categorical::*;
 
 use crate::{
     graphs::DiGraph,
-    types::{FxIndexMap, Labels},
+    types::{Labels, Map},
 };
 
 /// A trait for continuous time Bayesian networks (CTBNs).
@@ -61,7 +61,7 @@ pub trait ContinuousTimeBayesianNetwork {
     ///
     /// A reference to the CIMs.
     ///
-    fn cims(&self) -> &FxIndexMap<String, Self::CIM>;
+    fn cims(&self) -> &Map<String, Self::CIM>;
 
     /// Returns the parameters size.
     ///

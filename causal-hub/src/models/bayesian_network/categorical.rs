@@ -7,7 +7,7 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    types::{FxIndexMap, Labels, States},
+    types::{Labels, Map, States},
 };
 
 /// A categorical Bayesian network (BN).
@@ -18,7 +18,7 @@ pub struct CategoricalBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional probability distributions.
-    cpds: FxIndexMap<String, CatCPD>,
+    cpds: Map<String, CatCPD>,
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
@@ -94,7 +94,7 @@ impl BN for CatBN {
         I: IntoIterator<Item = Self::CPD>,
     {
         // Collect the CPDs into a map.
-        let mut cpds: FxIndexMap<_, _> = cpds
+        let mut cpds: Map<_, _> = cpds
             .into_iter()
             .map(|x| (x.label().to_owned(), x))
             .collect();
@@ -133,7 +133,7 @@ impl BN for CatBN {
         // Assert the labels of the parameters are the same as the graph parents.
         assert!(
             // Check if all vertices have the same labels as their parents.
-            graph.vertices().all(|i| {
+            graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
                     .parents(i)
@@ -168,7 +168,7 @@ impl BN for CatBN {
     }
 
     #[inline]
-    fn cpds(&self) -> &FxIndexMap<String, Self::CPD> {
+    fn cpds(&self) -> &Map<String, Self::CPD> {
         &self.cpds
     }
 

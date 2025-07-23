@@ -27,7 +27,7 @@ macro_for!(
     }
 });
 
-/// Load the 'eating' CTBN.
+/// Load the `EATING` CTBN from assets.
 ///
 /// See:
 ///     U. Nodelman, C.R. Shelton, and D. Koller (2003). "Learning Continuous Time Bayesian Networks."
@@ -35,7 +35,7 @@ macro_for!(
 ///
 pub fn load_eating() -> CatCTBN {
     // Log the loading of the EATING CTBN.
-    debug!("Loading the 'eating' CTBN from assets.");
+    debug!("Loading the 'EATING' CTBN from assets.");
     // Initialize the graph.
     let mut graph = DiGraph::empty(vec!["Hungry", "Eating", "FullStomach"]);
     graph.add_edge(0, 1); // Hungry -> Eating

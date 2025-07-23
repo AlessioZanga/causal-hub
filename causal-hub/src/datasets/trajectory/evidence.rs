@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
-    types::{EPSILON, FxIndexMap, FxIndexSet, Labels, States},
+    types::{EPSILON, Labels, Map, Set, States},
     utils::{collect_states, sort_states},
 };
 
@@ -28,7 +28,7 @@ pub enum CategoricalTrajectoryEvidenceType {
         /// The observed event.
         event: usize,
         /// The non-observed states.
-        not_states: FxIndexSet<usize>,
+        not_states: Set<usize>,
         /// The start time of the non-observed interval.
         start_time: f64,
         /// The end time of the non-observed interval.
@@ -128,7 +128,7 @@ pub struct CategoricalTrajectoryEvidence {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
-    evidences: FxIndexMap<String, Vec<CatTrjEvT>>,
+    evidences: Map<String, Vec<CatTrjEvT>>,
 }
 
 /// Type alias for `CategoricalTrajectoryEvidence`.
@@ -169,7 +169,7 @@ impl CatTrjEv {
         use CatTrjEvT as E;
 
         // Allocate evidences.
-        let mut evidences: FxIndexMap<_, Vec<_>> = states
+        let mut evidences: Map<_, Vec<_>> = states
             .keys()
             .map(|label| (label.clone(), Vec::new()))
             .collect();
@@ -547,7 +547,7 @@ impl CatTrjEv {
 }
 
 impl Dataset for CatTrjEv {
-    type Values = FxIndexMap<String, Vec<CatTrjEvT>>;
+    type Values = Map<String, Vec<CatTrjEvT>>;
 
     #[inline]
     fn labels(&self) -> &Labels {

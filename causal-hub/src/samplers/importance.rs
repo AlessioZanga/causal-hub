@@ -12,7 +12,7 @@ use crate::{
     datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
-    types::{EPSILON, FxIndexSet},
+    types::{EPSILON, Set},
 };
 
 /// A struct for sampling using importance sampling.
@@ -75,7 +75,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                     }
                     E::UncertainNegative { p_not_states, .. } => {
                         // Allocate the not states.
-                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
                         // Repeat until only a subset of the not states are sampled.
                         while not_states.len() == p_not_states.len() {
                             // Sample the not states.
@@ -233,7 +233,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
                         // Allocate the not states.
-                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
                         // Repeat until only a subset of the not states are sampled.
                         while not_states.len() == p_not_states.len() {
                             // Sample the not states.

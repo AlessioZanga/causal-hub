@@ -7,7 +7,7 @@ use super::{CSSEstimator, ParCSSEstimator};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{FxIndexSet, Labels},
+    types::{Labels, Set},
     utils::RMI,
 };
 
@@ -43,7 +43,7 @@ impl CSSEstimator for SSE<'_, CatData> {
 
     fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
         // Concat the variables to fit.
-        let x_z: FxIndexSet<_> = std::iter::once(&x).chain(z).cloned().collect();
+        let x_z: Set<_> = std::iter::once(&x).chain(z).cloned().collect();
 
         // Assert X_Z does not contain duplicates.
         assert_eq!(x_z.len(), 1 + z.len(), "Variables to fit must be unique.");

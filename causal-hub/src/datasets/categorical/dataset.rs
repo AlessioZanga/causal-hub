@@ -222,11 +222,7 @@ impl Display for CatData {
         let hline = std::iter::repeat_n("-", (n + 3) * self.labels().len() + 1).join("");
         writeln!(f, "{hline}")?;
         // Write the header.
-        let header = self
-            .labels()
-            .iter()
-            .map(|x| format!("{x:width$}", width = n))
-            .join(" | ");
+        let header = self.labels().iter().map(|x| format!("{x:n$}")).join(" | ");
         writeln!(f, "| {header} |")?;
         // Write the separator.
         let separator = (0..self.labels().len()).map(|_| "-".repeat(n)).join(" | ");
@@ -238,7 +234,7 @@ impl Display for CatData {
                 .iter()
                 .enumerate()
                 .map(|(i, &x)| &self.states()[i][x as usize])
-                .map(|x| format!("{x:width$}", width = n))
+                .map(|x| format!("{x:n$}"))
                 .join(" | ");
             writeln!(f, "| {row} |")?;
         }

@@ -74,7 +74,7 @@ where
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the intensity matrices for the sets.
-        let q_xz = self.estimator.fit(x, &z);
+        let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
         let n = q_xz.sample_size().expect("Failed to get the sample size.");
         // Get the log-likelihood.
@@ -178,6 +178,7 @@ where
         // Assert prior knowledge is consistent with initial graph.
         self.initial_graph
             .vertices()
+            .into_iter()
             .permutations(2)
             .for_each(|edge| {
                 // Get the edge indices.
@@ -240,6 +241,7 @@ where
                         // Get the vertices that are not in the current parent set.
                         self.initial_graph
                             .vertices()
+                            .into_iter()
                             .filter_map(move |j| {
                                 if i != j {
                                     // If the vertex is not in the current parent set ...
@@ -337,6 +339,7 @@ where
                             // Get the vertices that are not in the current parent set.
                             self.initial_graph
                                 .vertices()
+                                .into_iter()
                                 .filter_map(move |j| {
                                     if i != j {
                                         // If the vertex is not in the current parent set ...

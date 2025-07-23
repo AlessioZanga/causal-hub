@@ -7,7 +7,7 @@ use crate::{
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
-    types::{FxIndexMap, States},
+    types::{Map, States},
 };
 
 #[derive(Debug)]
@@ -84,7 +84,7 @@ impl BifReader {
                     (Some(table), None) => Array1::from_vec(table).insert_axis(Axis(0)),
                     (None, Some(entries)) => {
                         // Align the probability values with the states.
-                        let entries: FxIndexMap<_, _> = entries.into_iter().collect();
+                        let entries: Map<_, _> = entries.into_iter().collect();
                         // Align the entries with the states.
                         let entries: Vec<_> = conditioning_variables
                             .iter()
