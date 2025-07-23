@@ -7,7 +7,7 @@ use crate::{
 
 /// A trait for graphical separation.
 pub trait GraphicalSeparation {
-    /// Checks if the `Z` is a separator for `X` and `Y`.
+    /// Checks if the `Z` is a separator set for `X` and `Y`.
     ///
     /// # Arguments
     ///
@@ -25,13 +25,13 @@ pub trait GraphicalSeparation {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    fn is_separator_set<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = usize>,
         K: IntoIterator<Item = usize>;
 
-    /// Checks if the `Z` is a minimal separator for `X` and `Y`.
+    /// Checks if the `Z` is a minimal separator set for `X` and `Y`.
     ///
     /// # Arguments
     ///
@@ -50,9 +50,9 @@ pub trait GraphicalSeparation {
     ///
     /// # Returns
     ///
-    /// `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
+    /// `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
     ///
-    fn is_minimal_separator<I, J, K, L, M>(
+    fn is_minimal_separator_set<I, J, K, L, M>(
         &self,
         x: I,
         y: J,
@@ -67,7 +67,7 @@ pub trait GraphicalSeparation {
         L: IntoIterator<Item = usize>,
         M: IntoIterator<Item = usize>;
 
-    /// Finds a minimal separator for the vertex sets `X` and `Y`, if any.
+    /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
     ///
     /// # Arguments
     ///
@@ -83,9 +83,9 @@ pub trait GraphicalSeparation {
     ///
     /// # Returns
     ///
-    /// `Some(Set)` containing the minimal separator, or `None` if no separator exists.
+    /// `Some(Set)` containing the minimal separator set, or `None` if no separator set exists.
     ///
-    fn find_minimal_separator<I, J, K, L>(
+    fn find_minimal_separator_set<I, J, K, L>(
         &self,
         x: I,
         y: J,
@@ -105,7 +105,7 @@ mod digraph {
     use crate::{graphs::TopologicalOrder, set};
 
     impl GraphicalSeparation for DiGraph {
-        fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
+        fn is_separator_set<I, J, K>(&self, x: I, y: J, z: K) -> bool
         where
             I: IntoIterator<Item = usize>,
             J: IntoIterator<Item = usize>,
@@ -233,7 +233,7 @@ mod digraph {
             true
         }
 
-        fn is_minimal_separator<I, J, K, L, M>(
+        fn is_minimal_separator_set<I, J, K, L, M>(
             &self,
             x: I,
             y: J,
@@ -353,7 +353,7 @@ mod digraph {
             true
         }
 
-        fn find_minimal_separator<I, J, K, L>(
+        fn find_minimal_separator_set<I, J, K, L>(
             &self,
             x: I,
             y: J,

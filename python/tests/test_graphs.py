@@ -59,5 +59,5 @@ def test_digraph_graphical_separation() -> None:
         # Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
         non_de_x = v - de_x - pa_x - {x}
         # Assert every vertex is d-separated from its non-descendants given its parents.
-        assert not non_de_x or g.is_separator([x], non_de_x, pa_x), \
+        assert not non_de_x or g.is_separator_set([x], non_de_x, pa_x), \
             f"Vertex {x} is not d-separated from its non-descendants given its parents."

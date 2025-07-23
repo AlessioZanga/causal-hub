@@ -749,9 +749,9 @@ class DiGraph:
         
         A list of descendant vertices.
         """
-    def is_separator(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+    def is_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
         r"""
-        Checks if the vertex set `Z` is a separator for `X` and `Y`.
+        Checks if the vertex set `Z` is a separator set for `X` and `Y`.
         
         # Arguments
         
@@ -769,9 +769,9 @@ class DiGraph:
         
         `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
         """
-    def is_minimal_separator(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
+    def is_minimal_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
         r"""
-        Checks if the vertex set `Z` is a minimal separator for `X` and `Y`.
+        Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
         
         # Arguments
         
@@ -790,11 +790,11 @@ class DiGraph:
         
         # Returns
         
-        `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
+        `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
         """
-    def find_minimal_separator(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
+    def find_minimal_separator_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
         r"""
-        Finds a minimal separator for the vertex sets `X` and `Y`, if any.
+        Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
         
         # Arguments
         
@@ -812,7 +812,7 @@ class DiGraph:
         
         # Returns
         
-        `Some(Set)` containing the minimal separator, or `None` if no separator exists.
+        `Some(Set)` containing the minimal separator set, or `None` if no separator set exists.
         """
     @classmethod
     def from_adjacency_matrix(cls, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
