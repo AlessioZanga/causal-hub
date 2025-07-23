@@ -1,6 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::graphs::{DiGraph, Graph, GraphicalSeparation};
+    use causal_hub::{
+        assets::*,
+        graphs::{DiGraph, Graph, GraphicalSeparation},
+        models::BN,
+        types::FxIndexSet,
+    };
+    use dry::macro_for;
+    use paste::paste;
 
     #[test]
     #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
@@ -180,4 +187,37 @@ mod tests {
         assert!(graph.is_separated([5], [4], [3, 2, 0])); // {Z} _||_ {Y} | {X, W, T} ?
         assert!(graph.is_separated([4], [5], [3, 2, 0])); // {Y} _||_ {Z} | {X, W, T} ?
     }
+
+    macro_for!(
+        $bn in [
+            alarm, andes, asia, barley, cancer, child, diabetes, earthquake,
+            hailfinder, hepar2, insurance, link, mildew, munin1, pathfinder,
+            pigs, sachs, survey, water, win95pts
+        ] {
+        paste! {
+            #[test]
+            fn [<test_d_separation_ $bn>]() {
+                // Get the BN from the assets.
+                let bn = [<load_ $bn>]();
+                // Get the graph from the BN.
+                let g = bn.graph();
+                // Get the vertices of the graph.
+                let v: FxIndexSet<_> = g.vertices().into_iter().collect();
+                // For each vertex ...
+                for &x in &v {
+                    // Get the parents of the vertex.
+                    let pa_x: FxIndexSet<_> = g.parents(x).into_iter().collect();
+                    // Get the descendants of the vertex.
+                    let de_x: FxIndexSet<_> = g.descendants(x).into_iter().collect();
+                    // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
+                    let non_de_x = v.clone();
+                    let non_de_x = &non_de_x - &de_x;
+                    let mut non_de_x = &non_de_x - &pa_x;
+                    non_de_x.swap_remove(&x);
+                    // Assert every vertex is d-separated from its non-descendants given its parents.
+                    assert!(non_de_x.is_empty() || g.is_separated([x], non_de_x, pa_x));
+                }
+            }
+        }
+    });
 }
