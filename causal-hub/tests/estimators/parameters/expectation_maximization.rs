@@ -137,6 +137,7 @@ mod tests {
             let initial_cims: Vec<_> = model
                 .graph()
                 .vertices()
+                .into_iter()
                 .map(|i| CPDEstimator::fit(&raw, i, &model.graph().parents(i)))
                 .collect();
             // Set the initial model.

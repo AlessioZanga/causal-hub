@@ -109,7 +109,7 @@ impl CTBN for CatCTBN {
         // Assert the labels of the parameters are the same as the graph parents.
         assert!(
             // Check if all vertices have the same labels as their parents.
-            graph.vertices().all(|i| {
+            graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
                     .parents(i)

@@ -9,3 +9,25 @@ pub type Set<T> = IndexSet<T, FxBuildHasher>;
 pub type Labels = Set<String>;
 /// A type alias for a hash map of states, where keys are variable names and values are sets of states.
 pub type States = Map<String, Set<String>>;
+
+/// Create an `Set` from a list of values.
+#[macro_export]
+macro_rules! set {
+    [] => { $crate::types::Set::default() };
+    [$($value:expr,)+] => { $crate::set!($($value),+) };
+    [$($value:expr),*] => {
+        {
+            // Note: `stringify!($value)` is just here to consume the repetition,
+            // but we throw away that string literal during constant evaluation.
+            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($value); }),*]);
+            let mut set = $crate::types::Set::with_capacity_and_hasher(
+                CAPACITY,
+                fxhash::FxBuildHasher::default())
+            ;
+            $(
+                set.insert($value);
+            )*
+            set
+        }
+    };
+}

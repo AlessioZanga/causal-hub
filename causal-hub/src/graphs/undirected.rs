@@ -1,10 +1,11 @@
-use std::ops::Range;
-
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::{types::{Labels, Set}, utils::collect_labels};
+use crate::{
+    types::{Labels, Set},
+    utils::collect_labels,
+};
 
 /// A struct representing an undirected graph using an adjacency matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -46,9 +47,6 @@ impl UnGraph {
 }
 
 impl Graph for UnGraph {
-    type Vertices = Range<usize>;
-    type Edges = Vec<(usize, usize)>;
-
     fn empty<I, V>(labels: I) -> Self
     where
         I: IntoIterator<Item = V>,
@@ -138,8 +136,8 @@ impl Graph for UnGraph {
             .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
-    fn vertices(&self) -> Self::Vertices {
-        0..self.labels.len()
+    fn vertices(&self) -> Set<usize> {
+        (0..self.labels.len()).collect()
     }
 
     fn has_vertex(&self, x: usize) -> bool {
@@ -147,7 +145,7 @@ impl Graph for UnGraph {
         x < self.labels.len()
     }
 
-    fn edges(&self) -> Self::Edges {
+    fn edges(&self) -> Set<(usize, usize)> {
         // Iterate over the adjacency matrix and collect the edges.
         self.adjacency_matrix
             .indexed_iter()

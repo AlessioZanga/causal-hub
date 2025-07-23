@@ -30,7 +30,7 @@ mod tests {
         ]));
 
         // Check graph structure.
-        assert_eq!(bn.graph().vertices().count(), 8);
+        assert_eq!(bn.graph().vertices().len(), 8);
         assert!(bn.graph().has_edge(0, 6));
         assert!(bn.graph().has_edge(1, 2));
         assert!(bn.graph().has_edge(3, 2));

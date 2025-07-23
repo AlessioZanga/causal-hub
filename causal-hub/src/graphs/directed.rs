@@ -1,10 +1,11 @@
-use std::{collections::VecDeque, ops::Range};
+use std::collections::VecDeque;
 
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
 use crate::{
+    set,
     types::{Labels, Set},
     utils::collect_labels,
 };
@@ -66,7 +67,7 @@ impl DiGraph {
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
-        let mut visited = Set::default();
+        let mut visited = set![];
 
         // Start with the given vertex.
         stack.push_back(x);
@@ -135,7 +136,7 @@ impl DiGraph {
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
-        let mut visited = Set::default();
+        let mut visited = set![];
 
         // Start with the given vertex.
         stack.push_back(x);
@@ -160,9 +161,6 @@ impl DiGraph {
 }
 
 impl Graph for DiGraph {
-    type Vertices = Range<usize>;
-    type Edges = Vec<(usize, usize)>;
-
     fn empty<I, V>(labels: I) -> Self
     where
         I: IntoIterator<Item = V>,
@@ -252,8 +250,8 @@ impl Graph for DiGraph {
             .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
-    fn vertices(&self) -> Self::Vertices {
-        0..self.labels.len()
+    fn vertices(&self) -> Set<usize> {
+        (0..self.labels.len()).collect()
     }
 
     fn has_vertex(&self, x: usize) -> bool {
@@ -261,7 +259,7 @@ impl Graph for DiGraph {
         x < self.labels.len()
     }
 
-    fn edges(&self) -> Self::Edges {
+    fn edges(&self) -> Set<(usize, usize)> {
         // Iterate over the adjacency matrix and collect the edges.
         self.adjacency_matrix
             .indexed_iter()

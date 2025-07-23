@@ -309,6 +309,7 @@ where
         // Assert prior knowledge is consistent with initial graph.
         self.initial_graph
             .vertices()
+            .into_iter()
             .permutations(2)
             .for_each(|edge| {
                 // Get the edge indices.
