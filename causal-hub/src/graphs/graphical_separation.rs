@@ -25,7 +25,7 @@ pub trait GraphicalSeparation {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_separated<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = usize>,
@@ -33,7 +33,7 @@ pub trait GraphicalSeparation {
 }
 
 impl GraphicalSeparation for DiGraph {
-    fn is_separated<I, J, K>(&self, x: I, y: J, z: K) -> bool
+    fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
     where
         I: IntoIterator<Item = usize>,
         J: IntoIterator<Item = usize>,
