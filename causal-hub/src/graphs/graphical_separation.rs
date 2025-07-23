@@ -70,7 +70,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Returns
     ///
-    /// `Some(Set)` containing the minimal separator, or `None` if no minimal separator exists.
+    /// `Some(Set)` containing the minimal separator, or `None` if no separator exists.
     ///
     fn find_minimal_separator<I, J>(&self, x: I, y: J) -> Option<Set<usize>>
     where

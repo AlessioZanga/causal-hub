@@ -10,7 +10,7 @@ pub type Labels = Set<String>;
 /// A type alias for a hash map of states, where keys are variable names and values are sets of states.
 pub type States = Map<String, Set<String>>;
 
-/// Create an `Set` from a list of values.
+/// Create a `Set` from a list of values.
 #[macro_export]
 macro_rules! set {
     [] => { $crate::types::Set::default() };
