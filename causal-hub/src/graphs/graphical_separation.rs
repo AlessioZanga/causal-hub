@@ -17,7 +17,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Panics
     ///
-    /// * If any of the vertex indices in `X`, `Y`, or `Z` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * If `X`, `Y` or `Z` are not disjoint sets.
     /// * If `X` and `Y` are empty sets.
     ///
@@ -41,7 +41,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Panics
     ///
-    /// * If any of the vertex indices in `X`, `Y`, or `Z` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * If `X`, `Y` or `Z` are not disjoint sets.
     /// * If `X` and `Y` are empty sets.
     ///
@@ -64,7 +64,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Panics
     ///
-    /// * If any of the vertex indices in `X` or `Y` are out of bounds.
+    /// * If any of the vertex in `X` or `Y` are out of bounds.
     /// * If `X` and `Y` are not disjoint sets.
     /// * If `X` or `Y` are empty sets.
     ///

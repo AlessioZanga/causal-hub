@@ -1,5 +1,5 @@
 use causal_hub_rust::{
-    graphs::{DiGraph, Graph},
+    graphs::{DiGraph, Graph, GraphicalSeparation},
     types::Labels,
 };
 use numpy::{PyArray2, prelude::*};
@@ -86,6 +86,23 @@ impl PyDiGraph {
     pub fn vertices(&self) -> PyResult<Vec<&str>> {
         // Get the labels of the vertices in the graph.
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    }
+
+    /// Checks if a vertex exists in the graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the vertex exists, `false` otherwise.
+    ///
+    pub fn has_vertex(&self, x: &str) -> PyResult<bool> {
+        // Get the labels of the vertices.
+        let x = self.inner.label_to_index(&x);
+        // Check if the vertex exists in the graph.
+        Ok(self.inner.has_vertex(x))
     }
 
     /// Returns the edges of the graph.
@@ -189,6 +206,28 @@ impl PyDiGraph {
             .collect())
     }
 
+    /// Returns the ancestors of a vertex `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex whose ancestors are to be returned.
+    ///
+    /// # Returns
+    ///
+    /// A list of ancestor vertices.
+    ///
+    pub fn ancestors(&self, x: &str) -> PyResult<Vec<&str>> {
+        // Get the index of the vertex.
+        let x = self.inner.label_to_index(&x);
+        // Get the ancestors of the vertex.
+        Ok(self
+            .inner
+            .ancestors(x)
+            .iter()
+            .map(|&i| self.inner.index_to_label(i))
+            .collect())
+    }
+
     /// Returns the children of a vertex `x`.
     ///
     /// # Arguments
@@ -209,6 +248,182 @@ impl PyDiGraph {
             .iter()
             .map(|&i| self.inner.index_to_label(i))
             .collect())
+    }
+
+    /// Returns the descendants of a vertex `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex whose descendants are to be returned.
+    ///
+    /// # Returns
+    ///
+    /// A list of descendant vertices.
+    ///
+    pub fn descendants(&self, x: &str) -> PyResult<Vec<&str>> {
+        // Get the index of the vertex.
+        let x = self.inner.label_to_index(&x);
+        // Get the descendants of the vertex.
+        Ok(self
+            .inner
+            .descendants(x)
+            .iter()
+            .map(|&i| self.inner.index_to_label(i))
+            .collect())
+    }
+
+    /// Checks if the vertex set `Z` is a separator for `X` and `Y`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - An iterable collection of vertices representing set `X`.
+    /// * `y` - An iterable collection of vertices representing set `Y`.
+    /// * `z` - An iterable collection of vertices representing set `Z`.
+    ///
+    /// # Panics
+    ///
+    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * If `X`, `Y` or `Z` are not disjoint sets.
+    /// * If `X` and `Y` are empty sets.
+    ///
+    /// # Returns
+    ///
+    /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
+    ///
+    pub fn is_separator(
+        &self,
+        x: &Bound<'_, PyAny>,
+        y: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+    ) -> PyResult<bool> {
+        // Convert Python iterators into Rust iterators on indices.
+        let x: Vec<usize> = x
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+        let y: Vec<usize> = y
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+        let z: Vec<usize> = z
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+
+        // Delegate to the inner method.
+        Ok(self.inner.is_separator(x, y, z))
+    }
+
+    /// Checks if the vertex set `Z` is a minimal separator for `X` and `Y`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - An iterable collection of vertices representing set `X`.
+    /// * `y` - An iterable collection of vertices representing set `Y`.
+    /// * `z` - An iterable collection of vertices representing set `Z`.
+    ///
+    /// # Panics
+    ///
+    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * If `X`, `Y` or `Z` are not disjoint sets.
+    /// * If `X` and `Y` are empty sets.
+    ///
+    /// # Returns
+    ///
+    /// `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
+    ///
+    pub fn is_minimal_separator(
+        &self,
+        x: &Bound<'_, PyAny>,
+        y: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+    ) -> PyResult<bool> {
+        // Convert Python iterators into Rust iterators on indices.
+        let x: Vec<usize> = x
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+        let y: Vec<usize> = y
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+        let z: Vec<usize> = z
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+
+        // Delegate to the inner method.
+        Ok(self.inner.is_minimal_separator(x, y, z))
+    }
+
+    /// Finds a minimal separator for the vertex sets `X` and `Y`, if any.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - An iterable collection of vertices representing set `X`.
+    /// * `y` - An iterable collection of vertices representing set `Y`.
+    ///
+    /// # Panics
+    ///
+    /// * If any of the vertex in `X` or `Y` are out of bounds.
+    /// * If `X` and `Y` are not disjoint sets.
+    /// * If `X` or `Y` are empty sets.
+    ///
+    /// # Returns
+    ///
+    /// `Some(Set)` containing the minimal separator, or `None` if no separator exists.
+    ///
+    pub fn find_minimal_separator(
+        &self,
+        x: &Bound<'_, PyAny>,
+        y: &Bound<'_, PyAny>,
+    ) -> PyResult<Option<Vec<&str>>> {
+        // Convert Python iterators into Rust iterators on indices.
+        let x: Vec<usize> = x
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+        let y: Vec<usize> = y
+            .try_iter()?
+            .map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()?;
+
+        // Find the minimal separator.
+        let z = self.inner.find_minimal_separator(x, y);
+
+        // Convert the indices back to labels.
+        let z = z.map(|z| {
+            z.into_iter()
+                .map(|i| self.inner.index_to_label(i))
+                .collect()
+        });
+
+        // Return the result.
+        Ok(z)
     }
 
     /// Creates a graph from an adjacency matrix and labels.
