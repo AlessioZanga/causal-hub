@@ -3,7 +3,7 @@ pub use categorical::*;
 
 use crate::{
     graphs::DiGraph,
-    types::{FxIndexMap, Labels},
+    types::{Labels, Map},
 };
 
 /// A trait for Bayesian networks.
@@ -52,7 +52,7 @@ pub trait BayesianNetwork {
     ///
     /// A reference to the cpds.
     ///
-    fn cpds(&self) -> &FxIndexMap<String, Self::CPD>;
+    fn cpds(&self) -> &Map<String, Self::CPD>;
 
     /// Returns the parameters size.
     ///

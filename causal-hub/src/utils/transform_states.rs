@@ -1,4 +1,4 @@
-use crate::types::{FxIndexSet, Labels, States};
+use crate::types::{Labels, Set, States};
 
 /// Utility function to collect labels from an iterator.
 pub fn collect_labels<I, J>(labels: I) -> Labels
@@ -49,7 +49,7 @@ where
             // Initialize states counter.
             let mut n = 0;
             // Convert the variable states to a set of strings.
-            let states: FxIndexSet<_> = states
+            let states: Set<_> = states
                 .into_iter()
                 .inspect(|_| n += 1)
                 .map(|x| x.as_ref().to_owned())

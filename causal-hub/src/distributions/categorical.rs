@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
-    types::{EPSILON, FxIndexSet, Labels, States},
+    types::{EPSILON, Labels, Set, States},
     utils::{RMI, collect_states},
 };
 
@@ -16,7 +16,7 @@ use crate::{
 pub struct CategoricalConditionalProbabilityDistribution {
     // Labels of the conditioned variable.
     label: String,
-    states: FxIndexSet<String>,
+    states: Set<String>,
     cardinality: usize,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
@@ -78,7 +78,7 @@ impl CatCPD {
         // Initialize variables counter.
         let mut n = 0;
         // Get the states of the variable.
-        let mut states: FxIndexSet<_> = states
+        let mut states: Set<_> = states
             .into_iter()
             .inspect(|_| n += 1)
             .map(|state| state.as_ref().to_owned())
@@ -93,7 +93,7 @@ impl CatCPD {
         // Get the states of the conditioning variables.
         let mut conditioning_states = collect_states(conditioning_states);
         // Get the labels of the variables.
-        let mut conditioning_labels: FxIndexSet<_> = conditioning_states.keys().cloned().collect();
+        let mut conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
         // Get the cardinality of the set of states.
         let mut conditioning_cardinality: Array1<_> =
             conditioning_states.values().map(|i| i.len()).collect();
@@ -238,7 +238,7 @@ impl CatCPD {
     /// The states of the conditioned variable.
     ///
     #[inline]
-    pub const fn states(&self) -> &FxIndexSet<String> {
+    pub const fn states(&self) -> &Set<String> {
         &self.states
     }
 

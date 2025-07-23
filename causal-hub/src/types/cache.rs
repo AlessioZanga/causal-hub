@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
-use super::FxIndexMap;
+use super::Map;
 use crate::{distributions::CPD, estimators::CPDEstimator};
 
 /// A cache for calling a function with a key and value.
 #[derive(Clone, Debug)]
 pub struct Cache<'a, C, K, V> {
     call: &'a C,
-    cache: Arc<RwLock<FxIndexMap<K, V>>>,
+    cache: Arc<RwLock<Map<K, V>>>,
 }
 
 impl<'a, E, P> Cache<'a, E, (usize, Vec<usize>), (P::SS, P)>
@@ -28,7 +28,7 @@ where
     #[inline]
     pub fn new(call: &'a E) -> Self {
         // Create a new cache.
-        let cache = Arc::new(RwLock::new(FxIndexMap::default()));
+        let cache = Arc::new(RwLock::new(Map::default()));
 
         Self { call, cache }
     }

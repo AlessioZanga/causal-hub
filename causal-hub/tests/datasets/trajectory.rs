@@ -2,17 +2,17 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTrjEv, CatTrjEvT as E},
-        types::{FxIndexMap, FxIndexSet},
+        types::{Map, Set},
     };
     use ndarray::prelude::*;
 
     #[test]
     fn test_new_evidence() {
         // Initialize the model.
-        let states = FxIndexMap::from_iter([
-            ("B", FxIndexSet::from_iter(["0", "1"])),
-            ("A", FxIndexSet::from_iter(["2", "0", "1"])),
-            ("C", FxIndexSet::from_iter(["0", "1"])),
+        let states = Map::from_iter([
+            ("B", Set::from_iter(["0", "1"])),
+            ("A", Set::from_iter(["2", "0", "1"])),
+            ("C", Set::from_iter(["0", "1"])),
         ]);
 
         // Initialize evidence.

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::Graph;
 use crate::{
-    types::{FxIndexSet, Labels},
+    types::{Labels, Set},
     utils::collect_labels,
 };
 
@@ -66,7 +66,7 @@ impl DiGraph {
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
-        let mut visited = FxIndexSet::default();
+        let mut visited = Set::default();
 
         // Start with the given vertex.
         stack.push_back(x);
@@ -135,7 +135,7 @@ impl DiGraph {
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
-        let mut visited = FxIndexSet::default();
+        let mut visited = Set::default();
 
         // Start with the given vertex.
         stack.push_back(x);

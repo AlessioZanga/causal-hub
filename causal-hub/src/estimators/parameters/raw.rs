@@ -10,7 +10,7 @@ use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
     distributions::{CPD, CatCIM},
-    types::{FxIndexSet, Labels},
+    types::{Labels, Set},
 };
 
 // TODO: This must be refactored to be stateless.
@@ -97,7 +97,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     }
                     E::UncertainNegativeInterval { p_not_states, .. } => {
                         // Allocate the not states.
-                        let mut not_states: FxIndexSet<_> = (0..p_not_states.len()).collect();
+                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
                         // Repeat until only a subset of the not states are sampled.
                         while not_states.len() == p_not_states.len() {
                             // Sample the not states.

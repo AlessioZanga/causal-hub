@@ -8,7 +8,7 @@ use crate::{
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
-    types::{FxIndexMap, Labels, States},
+    types::{Labels, Map, States},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
@@ -19,7 +19,7 @@ pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The underlying graph.
     graph: DiGraph,
     /// The conditional intensity matrices.
-    cims: FxIndexMap<String, CatCIM>,
+    cims: Map<String, CatCIM>,
 }
 
 /// A type alias for the categorical CTBN.
@@ -93,7 +93,7 @@ impl CTBN for CatCTBN {
         I: IntoIterator<Item = Self::CIM>,
     {
         // Collect the CPDs into a map.
-        let mut cims: FxIndexMap<_, _> = cims
+        let mut cims: Map<_, _> = cims
             .into_iter()
             .map(|x| (x.label().to_owned(), x))
             .collect();
@@ -155,7 +155,7 @@ impl CTBN for CatCTBN {
         &self.graph
     }
 
-    fn cims(&self) -> &FxIndexMap<String, Self::CIM> {
+    fn cims(&self) -> &Map<String, Self::CIM> {
         &self.cims
     }
 

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use causal_hub_rust::{
     datasets::{CatTrj, CatTrjs, Dataset},
-    types::{FxIndexSet, States},
+    types::{Set, States},
 };
 use numpy::{PyArray1, ndarray::prelude::*, prelude::*};
 use pyo3::{
@@ -98,7 +98,7 @@ impl PyCatTrj {
 
         // Construct the states.
         let states: States = with_states
-            // If `with_states` is provided, convert it to a FxIndexMap.
+            // If `with_states` is provided, convert it to a Map.
             .map(|states| {
                 // Iterate over the items.
                 states
@@ -112,7 +112,7 @@ impl PyCatTrj {
                         // Convert the key to a String.
                         let key = key.extract::<String>().unwrap();
                         // Convert the value to a Vec<String>.
-                        let value: FxIndexSet<_> = value
+                        let value: Set<_> = value
                             .try_iter()?
                             .map(|x| x?.extract::<String>())
                             .collect::<PyResult<_>>()?;
@@ -144,7 +144,7 @@ impl PyCatTrj {
                         // Invoke the 'cat' accessory method.
                         let states = column.getattr("cat")?.getattr("categories")?;
                         // Iterate over the states and convert them to a Vec<String>.
-                        let states: FxIndexSet<String> = states
+                        let states: Set<String> = states
                             .try_iter()?
                             .map(|x| x?.extract::<String>())
                             .collect::<PyResult<_>>()?;

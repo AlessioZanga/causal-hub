@@ -4,7 +4,7 @@ mod tests {
         assets::*,
         graphs::{DiGraph, Graph, GraphicalSeparation},
         models::BN,
-        types::FxIndexSet,
+        types::Set,
     };
     use dry::macro_for;
     use paste::paste;
@@ -202,13 +202,13 @@ mod tests {
                 // Get the graph from the BN.
                 let g = bn.graph();
                 // Get the vertices of the graph.
-                let v: FxIndexSet<_> = g.vertices().into_iter().collect();
+                let v: Set<_> = g.vertices().into_iter().collect();
                 // For each vertex ...
                 for &x in &v {
                     // Get the parents of the vertex.
-                    let pa_x: FxIndexSet<_> = g.parents(x).into_iter().collect();
+                    let pa_x: Set<_> = g.parents(x).into_iter().collect();
                     // Get the descendants of the vertex.
-                    let de_x: FxIndexSet<_> = g.descendants(x).into_iter().collect();
+                    let de_x: Set<_> = g.descendants(x).into_iter().collect();
                     // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                     let non_de_x = v.clone();
                     let non_de_x = &non_de_x - &de_x;
