@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::graphs::{DiGraph, Graph};
+    use causal_hub::{
+        graphs::{DiGraph, Graph},
+        types::Set,
+    };
 
     const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
 
@@ -99,11 +102,11 @@ mod tests {
         assert!(graph.add_edge(2, 0));
         assert!(graph.add_edge(3, 1));
         assert!(graph.add_edge(4, 2));
-        assert_eq!(graph.ancestors(0), vec![1, 2, 4, 3]);
-        assert_eq!(graph.ancestors(1), vec![3]);
-        assert_eq!(graph.ancestors(2), vec![4]);
-        assert_eq!(graph.ancestors(3), Vec::<usize>::new());
-        assert_eq!(graph.ancestors(4), Vec::<usize>::new());
+        assert_eq!(graph.ancestors(0), Set::from_iter([1, 2, 4, 3]));
+        assert_eq!(graph.ancestors(1), Set::from_iter([3]));
+        assert_eq!(graph.ancestors(2), Set::from_iter([4]));
+        assert_eq!(graph.ancestors(3), Set::default());
+        assert_eq!(graph.ancestors(4), Set::default());
     }
 
     #[test]
@@ -138,11 +141,11 @@ mod tests {
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(1, 3));
         assert!(graph.add_edge(2, 4));
-        assert_eq!(graph.descendants(0), vec![1, 2, 4, 3]);
-        assert_eq!(graph.descendants(1), vec![3]);
-        assert_eq!(graph.descendants(2), vec![4]);
-        assert_eq!(graph.descendants(3), Vec::<usize>::new());
-        assert_eq!(graph.descendants(4), Vec::<usize>::new());
+        assert_eq!(graph.descendants(0), Set::from_iter([1, 2, 4, 3]));
+        assert_eq!(graph.descendants(1), Set::from_iter([3]));
+        assert_eq!(graph.descendants(2), Set::from_iter([4]));
+        assert_eq!(graph.descendants(3), Set::default());
+        assert_eq!(graph.descendants(4), Set::default());
     }
 
     #[test]

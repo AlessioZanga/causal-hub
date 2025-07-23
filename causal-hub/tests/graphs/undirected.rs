@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::graphs::{Graph, UnGraph};
+    use causal_hub::{graphs::{Graph, UnGraph}, types::Set};
 
     const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
 
@@ -82,9 +82,9 @@ mod tests {
         assert!(graph.add_edge(0, 1));
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(0, 3));
-        assert_eq!(graph.neighbors(0), vec![1, 2, 3]);
-        assert_eq!(graph.neighbors(1), vec![0]);
-        assert_eq!(graph.neighbors(4), Vec::<usize>::new());
+        assert_eq!(graph.neighbors(0), Set::from_iter([1, 2, 3]));
+        assert_eq!(graph.neighbors(1), Set::from_iter([0]));
+        assert_eq!(graph.neighbors(4), Set::default());
     }
 
     #[test]

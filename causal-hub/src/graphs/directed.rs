@@ -58,9 +58,9 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the ancestors of the vertex.
+    /// A set of indices representing the ancestors of the vertex.
     ///
-    pub fn ancestors(&self, x: usize) -> Vec<usize> {
+    pub fn ancestors(&self, x: usize) -> Set<usize> {
         // Assert the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
@@ -85,8 +85,8 @@ impl DiGraph {
             }
         }
 
-        // Convert the visited set to a vector and return it.
-        visited.into_iter().collect()
+        // Return the visited set.
+        visited
     }
 
     /// Returns the children of a vertex.
@@ -127,9 +127,9 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the descendants of the vertex.
+    /// A set of indices representing the descendants of the vertex.
     ///
-    pub fn descendants(&self, x: usize) -> Vec<usize> {
+    pub fn descendants(&self, x: usize) -> Set<usize> {
         // Assert the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
@@ -154,8 +154,8 @@ impl DiGraph {
             }
         }
 
-        // Convert the visited set to a vector and return it.
-        visited.into_iter().collect()
+        // Return the visited set.
+        visited
     }
 }
 

@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::{types::Labels, utils::collect_labels};
+use crate::{types::{Labels, Set}, utils::collect_labels};
 
 /// A struct representing an undirected graph using an adjacency matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,9 +29,9 @@ impl UnGraph {
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the neighbors of the vertex.
+    /// A set of indices representing the neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: usize) -> Vec<usize> {
+    pub fn neighbors(&self, x: usize) -> Set<usize> {
         // Check if the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 

@@ -208,7 +208,7 @@ mod tests {
                     // Get the parents of the vertex.
                     let pa_x: Set<_> = g.parents(x).into_iter().collect();
                     // Get the descendants of the vertex.
-                    let de_x: Set<_> = g.descendants(x).into_iter().collect();
+                    let de_x = g.descendants(x);
                     // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                     let non_de_x = v.clone();
                     let non_de_x = &non_de_x - &de_x;
