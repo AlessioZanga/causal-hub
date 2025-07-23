@@ -90,7 +90,7 @@ where
         s.insert(s_y, y);
 
         // Get the sufficient statistics and the intensity matrices for the sets.
-        let ((n_xz, _, _), _q_xz) = self.estimator.fit_transform(x, &z);
+        let ((n_xz, _, _), _q_xz) = self.estimator.fit_transform(x, z);
         let ((n_xs, _, _), _q_xs) = self.estimator.fit_transform(x, &s);
 
         // Get the cardinality of the extended separation set.
@@ -189,7 +189,7 @@ where
         s.insert(s_y, y);
 
         // Get the sufficient statistics and the intensity matrices for the sets.
-        let ((n_xz, _, _), q_xz) = self.estimator.fit_transform(x, &z);
+        let ((n_xz, _, _), q_xz) = self.estimator.fit_transform(x, z);
         let ((n_xs, _, _), q_xs) = self.estimator.fit_transform(x, &s);
 
         // Get the cardinality of the extended separation set.
@@ -364,7 +364,7 @@ where
                         //  it is sufficient to check for required edges.
                         if pk.is_required(j, i) {
                             // Log the skipped CIT.
-                            debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
+                            debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
                             continue;
                         }
                     }
@@ -373,11 +373,11 @@ where
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
                     for s_ij in pa_i_not_j.combinations(k) {
                         // Log the current combination.
-                        debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
+                        debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
                         if self.null_time.call(i, j, &s_ij) && self.null_state.call(i, j, &s_ij) {
                             // Log the result of the CIT.
-                            debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
+                            debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
                             // Add the parent to the set of vertices to remove.
                             not_pa_i.push(j);
                             // Break the outer loop.
@@ -441,7 +441,7 @@ where
                                 //  it is sufficient to check for required edges.
                                 if pk.is_required(j, i) {
                                     // Log the skipped CIT.
-                                    debug!("CIT for {} _||_ {} | [*] ... SKIPPED", j, i);
+                                    debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
                                     return Some(j);
                                 }
                             }
@@ -450,13 +450,13 @@ where
                             // For any combination of size k of Pa(X_i) \ { X_j } ...
                             for s_ij in pa_i_not_j.combinations(k) {
                                 // Log the current combination.
-                                debug!("CIT for {} _||_ {} | {:?} ...", i, j, s_ij);
+                                debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
                                 if self.null_time.call(i, j, &s_ij)
                                     && self.null_state.call(i, j, &s_ij)
                                 {
                                     // Log the result of the CIT.
-                                    debug!("CIT for {} _||_ {} | {:?} ... PASSED", i, j, s_ij);
+                                    debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
                                     // Add the parent to the set of vertices to remove.
                                     return None;
                                 }

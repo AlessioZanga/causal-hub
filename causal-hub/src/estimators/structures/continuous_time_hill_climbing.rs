@@ -74,7 +74,7 @@ where
     #[inline]
     fn call(&self, x: usize, z: &[usize]) -> f64 {
         // Compute the intensity matrices for the sets.
-        let q_xz = self.estimator.fit(x, &z);
+        let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
         let n = q_xz.sample_size().expect("Failed to get the sample size.");
         // Get the log-likelihood.

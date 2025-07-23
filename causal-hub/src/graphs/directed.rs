@@ -1,10 +1,13 @@
-use std::ops::Range;
+use std::{collections::VecDeque, ops::Range};
 
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::Graph;
-use crate::{types::Labels, utils::collect_labels};
+use crate::{
+    types::{FxIndexSet, Labels},
+    utils::collect_labels,
+};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -32,8 +35,8 @@ impl DiGraph {
     /// A vector of indices representing the parents of the vertex.
     ///
     pub fn parents(&self, x: usize) -> Vec<usize> {
-        // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        // Assert the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
         // Iterate over all vertices and filter the ones that are parents.
         self.adjacency_matrix
@@ -41,6 +44,49 @@ impl DiGraph {
             .indexed_iter()
             .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
             .collect()
+    }
+
+    /// Returns the ancestors of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the ancestors.
+    ///
+    /// # Panics
+    ///
+    /// * If the vertex is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the ancestors of the vertex.
+    ///
+    pub fn ancestors(&self, x: usize) -> Vec<usize> {
+        // Assert the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+
+        // Initialize a stack and a visited set.
+        let mut stack = VecDeque::new();
+        let mut visited = FxIndexSet::default();
+
+        // Start with the given vertex.
+        stack.push_back(x);
+
+        // While there are vertices to visit ...
+        while let Some(y) = stack.pop_back() {
+            // For each incoming edge ...
+            for z in self.parents(y) {
+                // If there is an edge from z to y and z has not been visited ...
+                if !visited.contains(&z) {
+                    // Mark z as visited.
+                    visited.insert(z);
+                    // Add z to the stack to visit its ancestors.
+                    stack.push_back(z);
+                }
+            }
+        }
+
+        // Convert the visited set to a vector and return it.
+        visited.into_iter().collect()
     }
 
     /// Returns the children of a vertex.
@@ -59,7 +105,7 @@ impl DiGraph {
     ///
     pub fn children(&self, x: usize) -> Vec<usize> {
         // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
         // Iterate over all vertices and filter the ones that are children.
         self.adjacency_matrix
@@ -67,6 +113,49 @@ impl DiGraph {
             .indexed_iter()
             .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
             .collect()
+    }
+
+    /// Returns the descendants of a vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The vertex for which to find the descendants.
+    ///
+    /// # Panics
+    ///
+    /// * If the vertex is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A vector of indices representing the descendants of the vertex.
+    ///
+    pub fn descendants(&self, x: usize) -> Vec<usize> {
+        // Assert the vertex is within bounds.
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+
+        // Initialize a stack and a visited set.
+        let mut stack = VecDeque::new();
+        let mut visited = FxIndexSet::default();
+
+        // Start with the given vertex.
+        stack.push_back(x);
+
+        // While there are vertices to visit ...
+        while let Some(y) = stack.pop_back() {
+            // For each outgoing edge ...
+            for z in self.children(y) {
+                // If z has not been visited ...
+                if !visited.contains(&z) {
+                    // Mark z as visited.
+                    visited.insert(z);
+                    // Add z to the stack to visit its descendants.
+                    stack.push_back(z);
+                }
+            }
+        }
+
+        // Convert the visited set to a vector and return it.
+        visited.into_iter().collect()
     }
 }
 
@@ -153,18 +242,23 @@ impl Graph for DiGraph {
         // Get the index of the label, if it exists.
         self.labels
             .get_index_of(x)
-            .unwrap_or_else(|| panic!("Vertex {} label does not exist", x))
+            .unwrap_or_else(|| panic!("Vertex `{x}` label does not exist"))
     }
 
     fn index_to_label(&self, x: usize) -> &str {
         // Get the label at the index, if it exists.
         self.labels
             .get_index(x)
-            .unwrap_or_else(|| panic!("Vertex {} index out of bounds", x))
+            .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
     fn vertices(&self) -> Self::Vertices {
         0..self.labels.len()
+    }
+
+    fn has_vertex(&self, x: usize) -> bool {
+        // Check if the vertex is within bounds.
+        x < self.labels.len()
     }
 
     fn edges(&self) -> Self::Edges {
@@ -177,16 +271,16 @@ impl Graph for DiGraph {
 
     fn has_edge(&self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         self.adjacency_matrix[[x, y]]
     }
 
     fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
@@ -201,8 +295,8 @@ impl Graph for DiGraph {
 
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {

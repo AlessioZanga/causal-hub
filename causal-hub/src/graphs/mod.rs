@@ -1,6 +1,9 @@
 mod directed;
 pub use directed::*;
 
+mod graphical_separation;
+pub use graphical_separation::*;
+
 mod topological_order;
 pub use topological_order::*;
 
@@ -113,6 +116,18 @@ pub trait Graph {
     /// A range representing the vertices in the graph.
     ///
     fn vertices(&self) -> Self::Vertices;
+
+    /// Checks if a vertex exists in the graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The index of the vertex.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the vertex exists, `false` otherwise.
+    ///
+    fn has_vertex(&self, x: usize) -> bool;
 
     /// Returns the iterator of edges in the graph.
     ///

@@ -35,42 +35,42 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_has_edge_out_of_bounds_x() {
         let graph = UnGraph::empty(LABELS.to_vec());
         graph.has_edge(5, 1);
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_has_edge_out_of_bounds_y() {
         let graph = UnGraph::empty(LABELS.to_vec());
         graph.has_edge(1, 5);
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_add_edge_out_of_bounds_x() {
         let mut graph = UnGraph::empty(LABELS.to_vec());
         graph.add_edge(5, 1);
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_add_edge_out_of_bounds_y() {
         let mut graph = UnGraph::empty(LABELS.to_vec());
         graph.add_edge(1, 5);
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_del_edge_out_of_bounds_x() {
         let mut graph = UnGraph::empty(LABELS.to_vec());
         graph.del_edge(5, 1);
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_del_edge_out_of_bounds_y() {
         let mut graph = UnGraph::empty(LABELS.to_vec());
         graph.del_edge(1, 5);
@@ -88,7 +88,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Vertex 5 index out of bounds")]
+    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_neighbors_out_of_bounds() {
         let graph = UnGraph::empty(LABELS.to_vec());
         graph.neighbors(5);

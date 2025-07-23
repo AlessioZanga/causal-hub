@@ -399,7 +399,7 @@ impl Display for CatCPD {
         let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
             .chain([self.label().as_str()]) // Label for the first variable.
             .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining states.
-            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
 
@@ -412,7 +412,7 @@ impl Display for CatCPD {
             .conditioning_labels()
             .iter()
             .chain(self.states()) // Include states of the first variable.
-            .map(|x| format!("{x:width$}", width = n)) // Format each column with fixed width.
+            .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
         writeln!(f, "| {separator} |")?;
@@ -425,9 +425,9 @@ impl Display for CatCPD {
             .zip(self.parameters().rows())
         {
             // Format the states for the current row.
-            let states = states.iter().map(|x| format!("{x:width$}", width = n));
+            let states = states.iter().map(|x| format!("{x:n$}"));
             // Format the parameter values for the current row.
-            let values = values.iter().map(|x| format!("{:width$.6}", x, width = n));
+            let values = values.iter().map(|x| format!("{x:n$.6}"));
             // Join the states and values for the current row.
             let states_values = states.chain(values).join(" | ");
             writeln!(f, "| {states_values} |")?;

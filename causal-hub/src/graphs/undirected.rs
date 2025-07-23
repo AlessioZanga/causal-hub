@@ -33,7 +33,7 @@ impl UnGraph {
     ///
     pub fn neighbors(&self, x: usize) -> Vec<usize> {
         // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
         // Iterate over all vertices and filter the ones that are neighbors.
         self.adjacency_matrix
@@ -128,18 +128,23 @@ impl Graph for UnGraph {
         // Get the index of the label, if it exists.
         self.labels
             .get_index_of(x)
-            .unwrap_or_else(|| panic!("Vertex {} label does not exist", x))
+            .unwrap_or_else(|| panic!("Vertex `{x}` label does not exist"))
     }
 
     fn index_to_label(&self, x: usize) -> &str {
         // Get the label at the index, if it exists.
         self.labels
             .get_index(x)
-            .unwrap_or_else(|| panic!("Vertex {} index out of bounds", x))
+            .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
     fn vertices(&self) -> Self::Vertices {
         0..self.labels.len()
+    }
+
+    fn has_vertex(&self, x: usize) -> bool {
+        // Check if the vertex is within bounds.
+        x < self.labels.len()
     }
 
     fn edges(&self) -> Self::Edges {
@@ -159,16 +164,16 @@ impl Graph for UnGraph {
 
     fn has_edge(&self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         self.adjacency_matrix[[x, y]]
     }
 
     fn add_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
@@ -184,8 +189,8 @@ impl Graph for UnGraph {
 
     fn del_edge(&mut self, x: usize, y: usize) -> bool {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex {} index out of bounds", x);
-        assert!(y < self.labels.len(), "Vertex {} index out of bounds", y);
+        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
