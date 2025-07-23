@@ -230,56 +230,56 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_is_minimal_separator_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([5], [1], []);
+            graph.is_minimal_separator([5], [1], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_is_minimal_separator_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [5], []);
+            graph.is_minimal_separator([0], [5], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn test_is_minimal_separator_out_of_bounds_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [1], [5]);
+            graph.is_minimal_separator([0], [1], [5], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_is_minimal_separator_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([], [1], []);
+            graph.is_minimal_separator([], [1], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_is_minimal_separator_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [], []);
+            graph.is_minimal_separator([0], [], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_is_minimal_separator_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [0], []);
+            graph.is_minimal_separator([0], [0], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn test_is_minimal_separator_non_disjoint_x_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [1], [0]);
+            graph.is_minimal_separator([0], [1], [0], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn test_is_minimal_separator_non_disjoint_y_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator([0], [1], [1]);
+            graph.is_minimal_separator([0], [1], [1], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
@@ -290,15 +290,15 @@ mod tests {
             graph.add_edge(0, 1);
 
             // Test for d-separation.
-            assert!(!graph.is_minimal_separator([0], [1], []));
-            assert!(!graph.is_minimal_separator([1], [0], []));
+            assert!(!graph.is_minimal_separator([0], [1], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator([1], [0], [], None::<Set<_>>, None::<Set<_>>));
 
             // Remove the edge and test again.
             graph.del_edge(0, 1);
 
             // Test for d-separation after removing the edge.
-            assert!(graph.is_minimal_separator([0], [1], []));
-            assert!(graph.is_minimal_separator([1], [0], []));
+            assert!(graph.is_minimal_separator([0], [1], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([1], [0], [], None::<Set<_>>, None::<Set<_>>));
         }
 
         #[test]
@@ -310,10 +310,10 @@ mod tests {
             graph.add_edge(1, 2);
 
             // Test for d-separation.
-            assert!(!graph.is_minimal_separator([0], [2], []));
-            assert!(!graph.is_minimal_separator([2], [0], []));
-            assert!(graph.is_minimal_separator([0], [2], [1]));
-            assert!(graph.is_minimal_separator([2], [0], [1]));
+            assert!(!graph.is_minimal_separator([0], [2], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator([2], [0], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([0], [2], [1], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([2], [0], [1], None::<Set<_>>, None::<Set<_>>));
         }
 
         #[test]
@@ -325,10 +325,10 @@ mod tests {
             graph.add_edge(0, 2);
 
             // Test for d-separation.
-            assert!(!graph.is_minimal_separator([1], [2], []));
-            assert!(!graph.is_minimal_separator([2], [1], []));
-            assert!(graph.is_minimal_separator([1], [2], [0]));
-            assert!(graph.is_minimal_separator([2], [1], [0]));
+            assert!(!graph.is_minimal_separator([1], [2], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator([2], [1], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([1], [2], [0], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([2], [1], [0], None::<Set<_>>, None::<Set<_>>));
         }
 
         #[test]
@@ -340,10 +340,10 @@ mod tests {
             graph.add_edge(2, 0);
 
             // Test for d-separation.
-            assert!(graph.is_minimal_separator([1], [2], []));
-            assert!(graph.is_minimal_separator([2], [1], []));
-            assert!(!graph.is_minimal_separator([1], [2], [0]));
-            assert!(!graph.is_minimal_separator([2], [1], [0]));
+            assert!(graph.is_minimal_separator([1], [2], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator([2], [1], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator([1], [2], [0], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator([2], [1], [0], None::<Set<_>>, None::<Set<_>>));
         }
 
         #[test]
@@ -356,11 +356,11 @@ mod tests {
             }
 
             // Test for d-separation.
-            assert!(graph.is_minimal_separator([3], [4], [])); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_minimal_separator([3], [4], [1])); // {Y} _|_ {Z} | {W} ?
-            assert!(!graph.is_minimal_separator([3], [4], [0])); // {Y} _|_ {Z} | {U} ?
-            assert!(!graph.is_minimal_separator([3], [4], [1, 2])); // {Y} _||_ {Z} | {W, X} ?
-            assert!(!graph.is_minimal_separator([3], [4], [2, 1])); // {Y} _||_ {Z} | {X, W} ?
+            assert!(graph.is_minimal_separator([3], [4], [], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {} ?
+            assert!(!graph.is_minimal_separator([3], [4], [1], None::<Set<_>>, None::<Set<_>>)); // {Y} _|_ {Z} | {W} ?
+            assert!(!graph.is_minimal_separator([3], [4], [0], None::<Set<_>>, None::<Set<_>>)); // {Y} _|_ {Z} | {U} ?
+            assert!(!graph.is_minimal_separator([3], [4], [1, 2], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {W, X} ?
+            assert!(!graph.is_minimal_separator([3], [4], [2, 1], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {X, W} ?
         }
 
         #[test]
@@ -380,11 +380,11 @@ mod tests {
             }
 
             // Test for d-separation.
-            assert!(!graph.is_minimal_separator([4], [5], [])); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_minimal_separator([5], [4], [])); // {Z} _||_ {Y} | {} ?
+            assert!(!graph.is_minimal_separator([4], [5], [], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {} ?
+            assert!(!graph.is_minimal_separator([5], [4], [], None::<Set<_>>, None::<Set<_>>)); // {Z} _||_ {Y} | {} ?
 
-            assert!(graph.is_minimal_separator([4], [5], [0])); // {Y} _||_ {Z} | {T} ?
-            assert!(graph.is_minimal_separator([5], [4], [0])); // {Z} _||_ {Y} | {T} ?
+            assert!(graph.is_minimal_separator([4], [5], [0], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {T} ?
+            assert!(graph.is_minimal_separator([5], [4], [0], None::<Set<_>>, None::<Set<_>>)); // {Z} _||_ {Y} | {T} ?
         }
 
         // Test for `find_minimal_separator` method.
@@ -393,35 +393,35 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_find_minimal_separator_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator([5], [1]);
+            graph.find_minimal_separator([5], [1], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_find_minimal_separator_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator([0], [5]);
+            graph.find_minimal_separator([0], [5], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_find_minimal_separator_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator([], [1]);
+            graph.find_minimal_separator([], [1], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_find_minimal_separator_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator([0], []);
+            graph.find_minimal_separator([0], [], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_find_minimal_separator_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator([0], [0]);
+            graph.find_minimal_separator([0], [0], None::<Set<_>>, None::<Set<_>>);
         }
 
         #[test]
@@ -432,15 +432,27 @@ mod tests {
             graph.add_edge(0, 1);
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([0], [1]), None);
-            assert_eq!(graph.find_minimal_separator([1], [0]), None);
+            assert_eq!(
+                graph.find_minimal_separator([0], [1], None::<Set<_>>, None::<Set<_>>),
+                None
+            );
+            assert_eq!(
+                graph.find_minimal_separator([1], [0], None::<Set<_>>, None::<Set<_>>),
+                None
+            );
 
             // Remove the edge and test again.
             graph.del_edge(0, 1);
 
             // Test for d-separation after removing the edge.
-            assert_eq!(graph.find_minimal_separator([0], [1]), Some(set![]));
-            assert_eq!(graph.find_minimal_separator([1], [0]), Some(set![]));
+            assert_eq!(
+                graph.find_minimal_separator([0], [1], None::<Set<_>>, None::<Set<_>>),
+                Some(set![])
+            );
+            assert_eq!(
+                graph.find_minimal_separator([1], [0], None::<Set<_>>, None::<Set<_>>),
+                Some(set![])
+            );
         }
 
         #[test]
@@ -452,8 +464,14 @@ mod tests {
             graph.add_edge(1, 2);
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([0], [2]), Some(set![1]));
-            assert_eq!(graph.find_minimal_separator([2], [0]), Some(set![1]));
+            assert_eq!(
+                graph.find_minimal_separator([0], [2], None::<Set<_>>, None::<Set<_>>),
+                Some(set![1])
+            );
+            assert_eq!(
+                graph.find_minimal_separator([2], [0], None::<Set<_>>, None::<Set<_>>),
+                Some(set![1])
+            );
         }
 
         #[test]
@@ -465,8 +483,14 @@ mod tests {
             graph.add_edge(0, 2);
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([1], [2]), Some(set![0]));
-            assert_eq!(graph.find_minimal_separator([2], [1]), Some(set![0]));
+            assert_eq!(
+                graph.find_minimal_separator([1], [2], None::<Set<_>>, None::<Set<_>>),
+                Some(set![0])
+            );
+            assert_eq!(
+                graph.find_minimal_separator([2], [1], None::<Set<_>>, None::<Set<_>>),
+                Some(set![0])
+            );
         }
 
         #[test]
@@ -478,8 +502,14 @@ mod tests {
             graph.add_edge(2, 0);
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([1], [2]), Some(set![]));
-            assert_eq!(graph.find_minimal_separator([2], [1]), Some(set![]));
+            assert_eq!(
+                graph.find_minimal_separator([1], [2], None::<Set<_>>, None::<Set<_>>),
+                Some(set![])
+            );
+            assert_eq!(
+                graph.find_minimal_separator([2], [1], None::<Set<_>>, None::<Set<_>>),
+                Some(set![])
+            );
         }
 
         #[test]
@@ -492,7 +522,10 @@ mod tests {
             }
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([3], [4]), Some(set![])); // {Y} _||_ {Z} | {} ?
+            assert_eq!(
+                graph.find_minimal_separator([3], [4], None::<Set<_>>, None::<Set<_>>),
+                Some(set![])
+            ); // {Y} _||_ {Z} | {} ?
         }
 
         #[test]
@@ -512,8 +545,14 @@ mod tests {
             }
 
             // Test for d-separation.
-            assert_eq!(graph.find_minimal_separator([4], [5]), Some(set![0])); // {Y} _||_ {Z} | {T} ?
-            assert_eq!(graph.find_minimal_separator([5], [4]), Some(set![0])); // {Z} _||_ {Y} | {T} ?
+            assert_eq!(
+                graph.find_minimal_separator([4], [5], None::<Set<_>>, None::<Set<_>>),
+                Some(set![0])
+            ); // {Y} _||_ {Z} | {T} ?
+            assert_eq!(
+                graph.find_minimal_separator([5], [4], None::<Set<_>>, None::<Set<_>>),
+                Some(set![0])
+            ); // {Z} _||_ {Y} | {T} ?
         }
     }
 }

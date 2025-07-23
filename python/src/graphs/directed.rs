@@ -330,22 +330,28 @@ impl PyDiGraph {
     /// * `x` - An iterable collection of vertices representing set `X`.
     /// * `y` - An iterable collection of vertices representing set `Y`.
     /// * `z` - An iterable collection of vertices representing set `Z`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Panics
     ///
-    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * If `X`, `Y` or `Z` are not disjoint sets.
     /// * If `X` and `Y` are empty sets.
+    /// * If not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
     /// `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
     ///
+    #[pyo3(signature = (x, y, z, w=None, v=None))]
     pub fn is_minimal_separator(
         &self,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
+        v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
         let x: Vec<usize> = x
@@ -369,9 +375,29 @@ impl PyDiGraph {
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
+        let w: Option<Vec<usize>> = w
+            .map(|w| {
+                w.try_iter()?
+                    .map(|x| {
+                        x?.extract::<String>()
+                            .map(|x| self.inner.label_to_index(&x))
+                    })
+                    .collect::<PyResult<_>>()
+            })
+            .transpose()?;
+        let v: Option<Vec<usize>> = v
+            .map(|v| {
+                v.try_iter()?
+                    .map(|x| {
+                        x?.extract::<String>()
+                            .map(|x| self.inner.label_to_index(&x))
+                    })
+                    .collect::<PyResult<_>>()
+            })
+            .transpose()?;
 
         // Delegate to the inner method.
-        Ok(self.inner.is_minimal_separator(x, y, z))
+        Ok(self.inner.is_minimal_separator(x, y, z, w, v))
     }
 
     /// Finds a minimal separator for the vertex sets `X` and `Y`, if any.
@@ -380,21 +406,27 @@ impl PyDiGraph {
     ///
     /// * `x` - An iterable collection of vertices representing set `X`.
     /// * `y` - An iterable collection of vertices representing set `Y`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Panics
     ///
-    /// * If any of the vertex in `X` or `Y` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * If `X` and `Y` are not disjoint sets.
     /// * If `X` or `Y` are empty sets.
+    /// * If not `W` <= `V`.
     ///
     /// # Returns
     ///
     /// `Some(Set)` containing the minimal separator, or `None` if no separator exists.
     ///
+    #[pyo3(signature = (x, y, w=None, v=None))]
     pub fn find_minimal_separator(
         &self,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
+        v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<Vec<&str>>> {
         // Convert Python iterators into Rust iterators on indices.
         let x: Vec<usize> = x
@@ -411,9 +443,29 @@ impl PyDiGraph {
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
+        let w: Option<Vec<usize>> = w
+            .map(|w| {
+                w.try_iter()?
+                    .map(|x| {
+                        x?.extract::<String>()
+                            .map(|x| self.inner.label_to_index(&x))
+                    })
+                    .collect::<PyResult<_>>()
+            })
+            .transpose()?;
+        let v: Option<Vec<usize>> = v
+            .map(|v| {
+                v.try_iter()?
+                    .map(|x| {
+                        x?.extract::<String>()
+                            .map(|x| self.inner.label_to_index(&x))
+                    })
+                    .collect::<PyResult<_>>()
+            })
+            .transpose()?;
 
         // Find the minimal separator.
-        let z = self.inner.find_minimal_separator(x, y);
+        let z = self.inner.find_minimal_separator(x, y, w, v);
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
