@@ -1,7 +1,8 @@
 use std::collections::VecDeque;
 
 use crate::{
-    graphs::{DiGraph, Graph},
+    graphs::{DiGraph, Graph, TopologicalOrder},
+    set,
     types::Set,
 };
 
@@ -100,9 +101,139 @@ pub trait GraphicalSeparation {
 }
 
 // Implementation of the `GraphicalSeparation` trait for directed graphs.
-mod digraph {
+pub(crate) mod digraph {
     use super::*;
-    use crate::{graphs::TopologicalOrder, set};
+
+    /// Asserts the validity of the sets and returns them as `Set<usize>`.
+    pub(crate) fn _assert<G, I, J, K, L, M>(
+        g: &G,
+        x: I,
+        y: J,
+        z: Option<K>,
+        w: Option<L>,
+        v: Option<M>,
+    ) -> (Set<usize>, Set<usize>, Set<usize>, Set<usize>, Set<usize>)
+    where
+        G: Graph,
+        I: IntoIterator<Item = usize>,
+        J: IntoIterator<Item = usize>,
+        K: IntoIterator<Item = usize>,
+        L: IntoIterator<Item = usize>,
+        M: IntoIterator<Item = usize>,
+    {
+        // Set included vertices, if not provided.
+        let w = w.map_or(set![], |w| {
+            w.into_iter()
+                .inspect(|&v| assert!(g.has_vertex(v), "Vertex `{v}` in set W is out of bounds."))
+                .collect()
+        });
+        // Set restricted vertices, if not provided.
+        let v = v.map_or(g.vertices(), |v| {
+            v.into_iter()
+                .inspect(|&v| assert!(g.has_vertex(v), "Vertex `{v}` in set V is out of bounds."))
+                .collect()
+        });
+
+        // Assert the included set is a subset of the restricted set.
+        assert!(w.is_subset(&v), "Set W must be a subset of set V.");
+
+        // Convert X to set, while checking for out of bounds.
+        let x: Set<usize> = x
+            .into_iter()
+            .inspect(|&v| assert!(g.has_vertex(v), "Vertex `{v}` in set X is out of bounds."))
+            .collect();
+        // Convert Y to set, while checking for out of bounds.
+        let y: Set<usize> = y
+            .into_iter()
+            .inspect(|&v| assert!(g.has_vertex(v), "Vertex `{v}` in set Y is out of bounds."))
+            .collect();
+        // Convert Z to set, while checking for out of bounds.
+        let z: Option<Set<usize>> = z.map(|z| {
+            z.into_iter()
+                .inspect(|&v| assert!(g.has_vertex(v), "Vertex `{v}` in set Z is out of bounds."))
+                .collect()
+        });
+
+        // Assert X is non-empty.
+        assert!(!x.is_empty(), "Set X must not be empty.");
+        // Assert Y is non-empty.
+        assert!(!y.is_empty(), "Set Y must not be empty.");
+
+        // Assert X and Y are disjoint.
+        assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
+
+        // If Z is provided, convert it to a set.
+        if let Some(z) = &z {
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(&z), "Sets X and Z must be disjoint.");
+            // Assert Y and Z are disjoint.
+            assert!(y.is_disjoint(&z), "Sets Y and Z must be disjoint.");
+            // Assert Z includes.
+            assert!(z.is_superset(&w), "Set Z must be a superset of set W.");
+            // Assert Z is restricted.
+            assert!(z.is_subset(&v), "Set Z must be a subset of set V.");
+        }
+
+        // If Z is not provided, initialize it as an empty set.
+        let z = z.unwrap_or(set![]);
+
+        // Return the sets.
+        (x, y, z, w, v)
+    }
+
+    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
+        // Assert the graph is a DAG.
+        assert!(g.topological_order().is_some(), "Graph must be a DAG.");
+
+        // Check if the ball passes or not.
+        let _pass = |e: bool, v: usize, f: bool, n: usize| {
+            let is_element_of_a = an_x.contains(&n);
+            let almost_definite_status = true; // NOTE: Always true for DAGs, not so for RCGs.
+            let collider_if_in_z = !z.contains(&v) || (e && !f);
+            // If the edge is forward, the vertex must be an ancestor or in Z.
+            is_element_of_a && collider_if_in_z && almost_definite_status
+        };
+
+        // Initialize the queue.
+        let mut queue: VecDeque<(bool, usize)> = Default::default();
+        // For each vertex in X ...
+        for &w in x {
+            // If the vertex has predecessors, add it to the queue as a backward edge.
+            if !g.parents(w).is_empty() {
+                queue.push_back((false, w));
+            }
+            // If the vertex has successors, add it to the queue as a forward edge.
+            if !g.children(w).is_empty() {
+                queue.push_back((true, w));
+            }
+        }
+
+        // Initialize the processed set with the queue.
+        let mut visited = queue.clone();
+
+        // For each element in the queue ...
+        while let Some((e, v)) = queue.pop_front() {
+            // Get the predecessors and successors of the vertex.
+            let pa_v = g.parents(v).into_iter().map(|n| (false, n));
+            let ch_v = g.children(v).into_iter().map(|n| (true, n));
+
+            // Create pairs of (forward, vertex) for predecessors and successors.
+            let f_n_pairs = pa_v.chain(ch_v);
+
+            // For each pair ...
+            for (f, n) in f_n_pairs {
+                // If the pair has not been processed and passes the condition ...
+                if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
+                    // Add it to the queue and mark it as processed.
+                    queue.push_back((f, n));
+                    visited.push_back((f, n));
+                }
+            }
+        }
+
+        // Return the set of visited vertices.
+        visited.into_iter().map(|(_, w)| w).collect()
+    }
 
     impl GraphicalSeparation for DiGraph {
         fn is_separator_set<I, J, K>(&self, x: I, y: J, z: K) -> bool
@@ -111,48 +242,8 @@ mod digraph {
             J: IntoIterator<Item = usize>,
             K: IntoIterator<Item = usize>,
         {
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Z to set, while checking for out of bounds.
-            let z: Set<usize> = z
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Z is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-            // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(&z), "Sets X and Z must be disjoint.");
-            // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(&z), "Sets Y and Z must be disjoint.");
+            // Perform sanity checks and convert sets.
+            let (x, y, z, _, _) = _assert(self, x, y, Some(z), None::<Set<_>>, None::<Set<_>>);
 
             // Initialize the forward and backward deques and visited sets.
 
@@ -248,84 +339,8 @@ mod digraph {
             L: IntoIterator<Item = usize>,
             M: IntoIterator<Item = usize>,
         {
-            // Set included vertices, if not provided.
-            let w = w
-                .map(|w| {
-                    w.into_iter()
-                        .inspect(|&v| {
-                            assert!(
-                                self.has_vertex(v),
-                                "Vertex `{v}` in set W is out of bounds."
-                            )
-                        })
-                        .collect()
-                })
-                // Or empty set if not provided.
-                .unwrap_or_else(|| set![]);
-            // Set restricted vertices, if not provided.
-            let v = v
-                .map(|v| {
-                    v.into_iter()
-                        .inspect(|&v| {
-                            assert!(
-                                self.has_vertex(v),
-                                "Vertex `{v}` in set V is out of bounds."
-                            )
-                        })
-                        .collect()
-                })
-                // Or all vertices if not provided.
-                .unwrap_or_else(|| self.vertices());
-
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Z to set, while checking for out of bounds.
-            let z: Set<usize> = z
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Z is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-            // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(&z), "Sets X and Z must be disjoint.");
-            // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(&z), "Sets Y and Z must be disjoint.");
-
-            // Assert the included set is a subset of the restricted set.
-            assert!(w.is_subset(&v), "Set W must be a subset of set V.");
-            // Assert Z includes.
-            assert!(z.is_superset(&w), "Set Z must be a superset of set W.");
-            // Assert Z is restricted.
-            assert!(z.is_subset(&v), "Set Z must be a subset of set V.");
+            // Perform sanity checks and convert sets.
+            let (x, y, z, w, _) = _assert(self, x, y, Some(z), w, v);
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(&x | &y) | &w;
@@ -366,66 +381,8 @@ mod digraph {
             K: IntoIterator<Item = usize>,
             L: IntoIterator<Item = usize>,
         {
-            // Set included vertices, if not provided.
-            let w = w
-                .map(|w| {
-                    w.into_iter()
-                        .inspect(|&v| {
-                            assert!(
-                                self.has_vertex(v),
-                                "Vertex `{v}` in set W is out of bounds."
-                            )
-                        })
-                        .collect()
-                })
-                // Or empty set if not provided.
-                .unwrap_or_else(|| set![]);
-            // Set restricted vertices, if not provided.
-            let v = v
-                .map(|v| {
-                    v.into_iter()
-                        .inspect(|&v| {
-                            assert!(
-                                self.has_vertex(v),
-                                "Vertex `{v}` in set V is out of bounds."
-                            )
-                        })
-                        .collect()
-                })
-                // Or all vertices if not provided.
-                .unwrap_or_else(|| self.vertices());
-
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-
-            // Assert the included set is a subset of the restricted set.
-            assert!(w.is_subset(&v), "Set W must be a subset of set V.");
+            // Perform sanity checks and convert sets.
+            let (x, y, _, w, v) = _assert(self, x, y, None::<Set<_>>, w, v);
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(&x | &y) | &w;
@@ -450,59 +407,5 @@ mod digraph {
             // Return the minimal separator.
             Some(&z & &(&y_closure | &w))
         }
-    }
-
-    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
-        // Assert the graph is a DAG.
-        assert!(g.topological_order().is_some(), "Graph must be a DAG.");
-
-        // Check if the ball passes or not.
-        let _pass = |e: bool, v: usize, f: bool, n: usize| {
-            let is_element_of_a = an_x.contains(&n);
-            let almost_definite_status = true; // NOTE: Always true for DAGs, not so for RCGs.
-            let collider_if_in_z = !z.contains(&v) || (e && !f);
-            // If the edge is forward, the vertex must be an ancestor or in Z.
-            is_element_of_a && collider_if_in_z && almost_definite_status
-        };
-
-        // Initialize the queue.
-        let mut queue: VecDeque<(bool, usize)> = Default::default();
-        // For each vertex in X ...
-        for &w in x {
-            // If the vertex has predecessors, add it to the queue as a backward edge.
-            if !g.parents(w).is_empty() {
-                queue.push_back((false, w));
-            }
-            // If the vertex has successors, add it to the queue as a forward edge.
-            if !g.children(w).is_empty() {
-                queue.push_back((true, w));
-            }
-        }
-
-        // Initialize the processed set with the queue.
-        let mut visited = queue.clone();
-
-        // For each element in the queue ...
-        while let Some((e, v)) = queue.pop_front() {
-            // Get the predecessors and successors of the vertex.
-            let pa_v = g.parents(v).into_iter().map(|n| (false, n));
-            let ch_v = g.children(v).into_iter().map(|n| (true, n));
-
-            // Create pairs of (forward, vertex) for predecessors and successors.
-            let f_n_pairs = pa_v.chain(ch_v);
-
-            // For each pair ...
-            for (f, n) in f_n_pairs {
-                // If the pair has not been processed and passes the condition ...
-                if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
-                    // Add it to the queue and mark it as processed.
-                    queue.push_back((f, n));
-                    visited.push_back((f, n));
-                }
-            }
-        }
-
-        // Return the set of visited vertices.
-        visited.into_iter().map(|(_, w)| w).collect()
     }
 }

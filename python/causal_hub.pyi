@@ -814,6 +814,71 @@ class DiGraph:
         
         `Some(Set)` containing the minimal separator set, or `None` if no separator set exists.
         """
+    def is_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+        r"""
+        Checks if the vertex set `Z` is a backdoor set for `X` and `Y`.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        * `z` - An iterable collection of vertices representing set `Z`.
+        
+        # Panics
+        
+        * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+        * If `X`, `Y` or `Z` are not disjoint sets.
+        * If `X` and `Y` are empty sets.
+        
+        # Returns
+        
+        `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
+        """
+    def is_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
+        r"""
+        Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        * `z` - An iterable collection of vertices representing set `Z`.
+        * `w` - An optional iterable collection of vertices representing set `W`.
+        * `v` - An optional iterable collection of vertices representing set `V`.
+        
+        # Panics
+        
+        * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+        * If `X`, `Y` or `Z` are not disjoint sets.
+        * If `X` and `Y` are empty sets.
+        * If not `W` <= `Z` <= `V`.
+        
+        # Returns
+        
+        `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
+        """
+    def find_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
+        r"""
+        Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
+        
+        # Arguments
+        
+        * `x` - An iterable collection of vertices representing set `X`.
+        * `y` - An iterable collection of vertices representing set `Y`.
+        * `w` - An optional iterable collection of vertices representing set `W`.
+        * `v` - An optional iterable collection of vertices representing set `V`.
+        
+        # Panics
+        
+        * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+        * If `X` and `Y` are not disjoint sets.
+        * If `X` or `Y` are empty sets.
+        * If not `W` <= `V`.
+        
+        # Returns
+        
+        `Some(Set)` containing the minimal backdoor set, or `None` if no backdoor set exists.
+        """
     @classmethod
     def from_adjacency_matrix(cls, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
         r"""
