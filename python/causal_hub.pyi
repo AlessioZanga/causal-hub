@@ -316,6 +316,14 @@ class CatCTBN:
         
         A reference to the CIMs.
         """
+    def initial_distribution(self) -> CatBN:
+        r"""
+        Returns the initial distribution.
+        
+        # Returns
+        
+        A reference to the initial distribution.
+        """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
