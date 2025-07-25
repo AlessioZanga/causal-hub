@@ -3,7 +3,7 @@ mod tests {
     mod digraph {
         use causal_hub::{
             graphs::{BackdoorCriterion, DiGraph, Graph},
-            types::Set,
+            set,
         };
 
         // Tests for `is_backdoor_set` method.
@@ -12,56 +12,56 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_is_backdoor_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([5], [1], []);
+            graph.is_backdoor_set(&set![5], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_is_backdoor_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [5], []);
+            graph.is_backdoor_set(&set![0], &set![5], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn test_is_backdoor_set_out_of_bounds_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [1], [5]);
+            graph.is_backdoor_set(&set![0], &set![1], &set![5]);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_is_backdoor_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([], [1], []);
+            graph.is_backdoor_set(&set![], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_is_backdoor_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [], []);
+            graph.is_backdoor_set(&set![0], &set![], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_is_backdoor_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [0], []);
+            graph.is_backdoor_set(&set![0], &set![0], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn test_is_backdoor_set_non_disjoint_x_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [1], [0]);
+            graph.is_backdoor_set(&set![0], &set![1], &set![0]);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn test_is_backdoor_set_non_disjoint_y_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_backdoor_set([0], [1], [1]);
+            graph.is_backdoor_set(&set![0], &set![1], &set![1]);
         }
 
         #[test]
@@ -72,15 +72,15 @@ mod tests {
             graph.add_edge(0, 1);
 
             // Test for backdoor criterion.
-            assert!(!graph.is_backdoor_set([0], [1], []));
-            assert!(!graph.is_backdoor_set([1], [0], []));
+            assert!(!graph.is_backdoor_set(&set![0], &set![1], &set![]));
+            assert!(!graph.is_backdoor_set(&set![1], &set![0], &set![]));
 
             // Remove the edge and test again.
             graph.del_edge(0, 1);
 
             // Test for backdoor criterion after removing the edge.
-            assert!(graph.is_backdoor_set([0], [1], []));
-            assert!(graph.is_backdoor_set([1], [0], []));
+            assert!(graph.is_backdoor_set(&set![0], &set![1], &set![]));
+            assert!(graph.is_backdoor_set(&set![1], &set![0], &set![]));
         }
 
         #[test]
@@ -92,8 +92,8 @@ mod tests {
             graph.add_edge(1, 2);
 
             // Test for backdoor criterion.
-            assert!(graph.is_backdoor_set([0], [2], []));
-            assert!(graph.is_backdoor_set([2], [0], [1]));
+            assert!(graph.is_backdoor_set(&set![0], &set![2], &set![]));
+            assert!(graph.is_backdoor_set(&set![2], &set![0], &set![1]));
         }
 
         #[test]
@@ -105,10 +105,10 @@ mod tests {
             graph.add_edge(0, 2);
 
             // Test for backdoor criterion.
-            assert!(!graph.is_backdoor_set([1], [2], []));
-            assert!(!graph.is_backdoor_set([2], [1], []));
-            assert!(graph.is_backdoor_set([1], [2], [0]));
-            assert!(graph.is_backdoor_set([2], [1], [0]));
+            assert!(!graph.is_backdoor_set(&set![1], &set![2], &set![]));
+            assert!(!graph.is_backdoor_set(&set![2], &set![1], &set![]));
+            assert!(graph.is_backdoor_set(&set![1], &set![2], &set![0]));
+            assert!(graph.is_backdoor_set(&set![2], &set![1], &set![0]));
         }
 
         #[test]
@@ -120,8 +120,8 @@ mod tests {
             graph.add_edge(2, 0);
 
             // Test for backdoor criterion.
-            assert!(graph.is_backdoor_set([1], [2], []));
-            assert!(graph.is_backdoor_set([2], [1], []));
+            assert!(graph.is_backdoor_set(&set![1], &set![2], &set![]));
+            assert!(graph.is_backdoor_set(&set![2], &set![1], &set![]));
         }
 
         // TODO:
@@ -132,56 +132,56 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_is_minimal_backdoor_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([5], [1], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![5], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_is_minimal_backdoor_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [5], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![5], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn test_is_minimal_backdoor_set_out_of_bounds_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [1], [5], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![1], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_is_minimal_backdoor_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([], [1], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_is_minimal_backdoor_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_is_minimal_backdoor_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [0], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn test_is_minimal_backdoor_set_non_disjoint_x_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [1], [0], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![1], &set![0], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn test_is_minimal_backdoor_set_non_disjoint_y_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_backdoor_set([0], [1], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_backdoor_set(&set![0], &set![1], &set![1], None, None);
         }
 
         // TODO:
@@ -192,35 +192,35 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_find_minimal_backdoor_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_backdoor_set([5], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_backdoor_set(&set![5], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_find_minimal_backdoor_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_backdoor_set([0], [5], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_backdoor_set(&set![0], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_find_minimal_backdoor_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_backdoor_set([], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_backdoor_set(&set![], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_find_minimal_backdoor_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_backdoor_set([0], [], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_backdoor_set(&set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_find_minimal_backdoor_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_backdoor_set([0], [0], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_backdoor_set(&set![0], &set![0], None, None);
         }
 
         // TODO:

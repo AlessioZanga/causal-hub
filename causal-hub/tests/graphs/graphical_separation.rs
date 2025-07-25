@@ -17,56 +17,56 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_is_separator_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([5], [1], []);
+            graph.is_separator_set(&set![5], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_is_separator_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [5], []);
+            graph.is_separator_set(&set![0], &set![5], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn test_is_separator_set_out_of_bounds_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [1], [5]);
+            graph.is_separator_set(&set![0], &set![1], &set![5]);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_is_separator_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([], [1], []);
+            graph.is_separator_set(&set![], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_is_separator_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [], []);
+            graph.is_separator_set(&set![0], &set![], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_is_separator_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [0], []);
+            graph.is_separator_set(&set![0], &set![0], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn test_is_separator_set_non_disjoint_x_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [1], [0]);
+            graph.is_separator_set(&set![0], &set![1], &set![0]);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn test_is_separator_set_non_disjoint_y_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_separator_set([0], [1], [1]);
+            graph.is_separator_set(&set![0], &set![1], &set![1]);
         }
 
         #[test]
@@ -76,16 +76,14 @@ mod tests {
             // Add edges to the graph.
             graph.add_edge(0, 1);
 
-            // Test for d-separation.
-            assert!(!graph.is_separator_set([0], [1], []));
-            assert!(!graph.is_separator_set([1], [0], []));
+            assert!(!graph.is_separator_set(&set![0], &set![1], &set![]));
+            assert!(!graph.is_separator_set(&set![1], &set![0], &set![]));
 
             // Remove the edge and test again.
             graph.del_edge(0, 1);
 
-            // Test for d-separation after removing the edge.
-            assert!(graph.is_separator_set([0], [1], []));
-            assert!(graph.is_separator_set([1], [0], []));
+            assert!(graph.is_separator_set(&set![0], &set![1], &set![]));
+            assert!(graph.is_separator_set(&set![1], &set![0], &set![]));
         }
 
         #[test]
@@ -96,11 +94,10 @@ mod tests {
             graph.add_edge(0, 1);
             graph.add_edge(1, 2);
 
-            // Test for d-separation.
-            assert!(!graph.is_separator_set([0], [2], []));
-            assert!(!graph.is_separator_set([2], [0], []));
-            assert!(graph.is_separator_set([0], [2], [1]));
-            assert!(graph.is_separator_set([2], [0], [1]));
+            assert!(!graph.is_separator_set(&set![0], &set![2], &set![]));
+            assert!(!graph.is_separator_set(&set![2], &set![0], &set![]));
+            assert!(graph.is_separator_set(&set![0], &set![2], &set![1]));
+            assert!(graph.is_separator_set(&set![2], &set![0], &set![1]));
         }
 
         #[test]
@@ -111,11 +108,10 @@ mod tests {
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);
 
-            // Test for d-separation.
-            assert!(!graph.is_separator_set([1], [2], []));
-            assert!(!graph.is_separator_set([2], [1], []));
-            assert!(graph.is_separator_set([1], [2], [0]));
-            assert!(graph.is_separator_set([2], [1], [0]));
+            assert!(!graph.is_separator_set(&set![1], &set![2], &set![]));
+            assert!(!graph.is_separator_set(&set![2], &set![1], &set![]));
+            assert!(graph.is_separator_set(&set![1], &set![2], &set![0]));
+            assert!(graph.is_separator_set(&set![2], &set![1], &set![0]));
         }
 
         #[test]
@@ -126,35 +122,29 @@ mod tests {
             graph.add_edge(1, 0);
             graph.add_edge(2, 0);
 
-            // Test for d-separation.
-            assert!(graph.is_separator_set([1], [2], []));
-            assert!(graph.is_separator_set([2], [1], []));
-            assert!(!graph.is_separator_set([1], [2], [0]));
-            assert!(!graph.is_separator_set([2], [1], [0]));
+            assert!(graph.is_separator_set(&set![1], &set![2], &set![]));
+            assert!(graph.is_separator_set(&set![2], &set![1], &set![]));
+            assert!(!graph.is_separator_set(&set![1], &set![2], &set![0]));
+            assert!(!graph.is_separator_set(&set![2], &set![1], &set![0]));
         }
 
         #[test]
         fn test_is_separator_set_primer_figure_2_7() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
-            assert!(graph.is_separator_set([3], [4], [])); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_separator_set([3], [4], [1])); // {Y} _|_ {Z} | {W} ?
-            assert!(!graph.is_separator_set([3], [4], [0])); // {Y} _|_ {Z} | {U} ?
-            assert!(graph.is_separator_set([3], [4], [1, 2])); // {Y} _||_ {Z} | {W, X} ?
-            assert!(graph.is_separator_set([3], [4], [2, 1])); // {Y} _||_ {Z} | {X, W} ?
+            assert!(graph.is_separator_set(&set![3], &set![4], &set![]));
+            assert!(!graph.is_separator_set(&set![3], &set![4], &set![1]));
+            assert!(!graph.is_separator_set(&set![3], &set![4], &set![0]));
+            assert!(graph.is_separator_set(&set![3], &set![4], &set![1, 2]));
+            assert!(graph.is_separator_set(&set![3], &set![4], &set![2, 1]));
         }
 
         #[test]
         fn test_is_separator_set_primer_figure_2_8() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),
@@ -166,30 +156,29 @@ mod tests {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
-            assert!(!graph.is_separator_set([4], [5], [])); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_separator_set([5], [4], [])); // {Z} _||_ {Y} | {} ?
+            assert!(!graph.is_separator_set(&set![4], &set![5], &set![]));
+            assert!(!graph.is_separator_set(&set![5], &set![4], &set![]));
 
-            assert!(graph.is_separator_set([4], [5], [0])); // {Y} _||_ {Z} | {T} ?
-            assert!(graph.is_separator_set([5], [4], [0])); // {Z} _||_ {Y} | {T} ?
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![0]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![0]));
 
-            assert!(!graph.is_separator_set([4], [5], [0, 2])); // {Y} _||_ {Z} | {T, W} ?
-            assert!(!graph.is_separator_set([5], [4], [0, 2])); // {Z} _||_ {Y} | {T, W} ?
-            assert!(!graph.is_separator_set([4], [5], [2, 0])); // {Y} _||_ {Z} | {W, T} ?
-            assert!(!graph.is_separator_set([5], [4], [2, 0])); // {Z} _||_ {Y} | {W, T} ?
+            assert!(!graph.is_separator_set(&set![4], &set![5], &set![0, 2]));
+            assert!(!graph.is_separator_set(&set![5], &set![4], &set![0, 2]));
+            assert!(!graph.is_separator_set(&set![4], &set![5], &set![2, 0]));
+            assert!(!graph.is_separator_set(&set![5], &set![4], &set![2, 0]));
 
-            assert!(graph.is_separator_set([4], [5], [0, 2, 3])); // {Y} _||_ {Z} | {T, W, X} ?
-            assert!(graph.is_separator_set([5], [4], [0, 2, 3])); // {Z} _||_ {Y} | {T, W, X} ?
-            assert!(graph.is_separator_set([4], [5], [0, 3, 2])); // {Y} _||_ {Z} | {T, X, W} ?
-            assert!(graph.is_separator_set([5], [4], [0, 3, 2])); // {Z} _||_ {Y} | {T, X, W} ?
-            assert!(graph.is_separator_set([4], [5], [2, 0, 3])); // {Y} _||_ {Z} | {W, T, X} ?
-            assert!(graph.is_separator_set([5], [4], [2, 0, 3])); // {Z} _||_ {Y} | {W, T, X} ?
-            assert!(graph.is_separator_set([4], [5], [2, 3, 0])); // {Y} _||_ {Z} | {W, X, T} ?
-            assert!(graph.is_separator_set([5], [4], [2, 3, 0])); // {Z} _||_ {Y} | {W, X, T} ?
-            assert!(graph.is_separator_set([5], [4], [3, 0, 2])); // {Z} _||_ {Y} | {X, T, W} ?
-            assert!(graph.is_separator_set([4], [5], [3, 0, 2])); // {Y} _||_ {Z} | {X, T, W} ?
-            assert!(graph.is_separator_set([5], [4], [3, 2, 0])); // {Z} _||_ {Y} | {X, W, T} ?
-            assert!(graph.is_separator_set([4], [5], [3, 2, 0])); // {Y} _||_ {Z} | {X, W, T} ?
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![0, 2, 3]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![0, 2, 3]));
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![0, 3, 2]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![0, 3, 2]));
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![2, 0, 3]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![2, 0, 3]));
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![2, 3, 0]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![2, 3, 0]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![3, 0, 2]));
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![3, 0, 2]));
+            assert!(graph.is_separator_set(&set![5], &set![4], &set![3, 2, 0]));
+            assert!(graph.is_separator_set(&set![4], &set![5], &set![3, 2, 0]));
         }
 
         macro_for!(
@@ -217,8 +206,7 @@ mod tests {
                         let non_de_x = &v - &de_x;
                         let mut non_de_x = &non_de_x - &pa_x;
                         non_de_x.swap_remove(&x);
-                        // Assert every vertex is d-separated from its non-descendants given its parents.
-                        assert!(non_de_x.is_empty() || g.is_separator_set([x], non_de_x, pa_x));
+                        assert!(non_de_x.is_empty() || g.is_separator_set(&set![x], &non_de_x, &pa_x));
                     }
                 }
             }
@@ -230,156 +218,125 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_is_minimal_separator_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([5], [1], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![5], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_is_minimal_separator_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [5], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![5], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn test_is_minimal_separator_set_out_of_bounds_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [1], [5], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![1], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_is_minimal_separator_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([], [1], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_is_minimal_separator_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_is_minimal_separator_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [0], [], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn test_is_minimal_separator_set_non_disjoint_x_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [1], [0], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![1], &set![0], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn test_is_minimal_separator_set_non_disjoint_y_z() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.is_minimal_separator_set([0], [1], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.is_minimal_separator_set(&set![0], &set![1], &set![1], None, None);
         }
 
         #[test]
         fn test_is_minimal_separator_set_edge() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
 
-            // Test for d-separation.
-            assert!(!graph.is_minimal_separator_set([0], [1], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(!graph.is_minimal_separator_set([1], [0], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator_set(&set![0], &set![1], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![1], &set![0], &set![], None, None));
 
-            // Remove the edge and test again.
             graph.del_edge(0, 1);
 
-            // Test for d-separation after removing the edge.
-            assert!(graph.is_minimal_separator_set([0], [1], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([1], [0], [], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator_set(&set![0], &set![1], &set![], None, None));
+            assert!(graph.is_minimal_separator_set(&set![1], &set![0], &set![], None, None));
         }
 
         #[test]
         fn test_is_minimal_separator_set_chain() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
             graph.add_edge(1, 2);
 
-            // Test for d-separation.
-            assert!(!graph.is_minimal_separator_set([0], [2], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(!graph.is_minimal_separator_set([2], [0], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([0], [2], [1], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([2], [0], [1], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator_set(&set![0], &set![2], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![2], &set![0], &set![], None, None));
+            assert!(graph.is_minimal_separator_set(&set![0], &set![2], &set![1], None, None));
+            assert!(graph.is_minimal_separator_set(&set![2], &set![0], &set![1], None, None));
         }
 
         #[test]
         fn test_is_minimal_separator_set_fork() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);
 
-            // Test for d-separation.
-            assert!(!graph.is_minimal_separator_set([1], [2], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(!graph.is_minimal_separator_set([2], [1], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([1], [2], [0], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([2], [1], [0], None::<Set<_>>, None::<Set<_>>));
+            assert!(!graph.is_minimal_separator_set(&set![1], &set![2], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![2], &set![1], &set![], None, None));
+            assert!(graph.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None));
+            assert!(graph.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None));
         }
 
         #[test]
         fn test_is_minimal_separator_set_collider() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(1, 0);
             graph.add_edge(2, 0);
 
-            // Test for d-separation.
-            assert!(graph.is_minimal_separator_set([1], [2], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(graph.is_minimal_separator_set([2], [1], [], None::<Set<_>>, None::<Set<_>>));
-            assert!(!graph.is_minimal_separator_set([1], [2], [0], None::<Set<_>>, None::<Set<_>>));
-            assert!(!graph.is_minimal_separator_set([2], [1], [0], None::<Set<_>>, None::<Set<_>>));
+            assert!(graph.is_minimal_separator_set(&set![1], &set![2], &set![], None, None));
+            assert!(graph.is_minimal_separator_set(&set![2], &set![1], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None));
         }
 
         #[test]
         fn test_is_minimal_separator_set_primer_figure_2_7() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
-            assert!(graph.is_minimal_separator_set([3], [4], [], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_minimal_separator_set([3], [4], [1], None::<Set<_>>, None::<Set<_>>)); // {Y} _|_ {Z} | {W} ?
-            assert!(!graph.is_minimal_separator_set([3], [4], [0], None::<Set<_>>, None::<Set<_>>)); // {Y} _|_ {Z} | {U} ?
-            assert!(!graph.is_minimal_separator_set(
-                [3],
-                [4],
-                [1, 2],
-                None::<Set<_>>,
-                None::<Set<_>>
-            )); // {Y} _||_ {Z} | {W, X} ?
-            assert!(!graph.is_minimal_separator_set(
-                [3],
-                [4],
-                [2, 1],
-                None::<Set<_>>,
-                None::<Set<_>>
-            )); // {Y} _||_ {Z} | {X, W} ?
+            assert!(graph.is_minimal_separator_set(&set![3], &set![4], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![3], &set![4], &set![1], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![3], &set![4], &set![0], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![3], &set![4], &set![1, 2], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![3], &set![4], &set![2, 1], None, None));
         }
 
         #[test]
         fn test_is_minimal_separator_set_primer_figure_2_8() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),
@@ -391,12 +348,11 @@ mod tests {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
-            assert!(!graph.is_minimal_separator_set([4], [5], [], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {} ?
-            assert!(!graph.is_minimal_separator_set([5], [4], [], None::<Set<_>>, None::<Set<_>>)); // {Z} _||_ {Y} | {} ?
+            assert!(!graph.is_minimal_separator_set(&set![4], &set![5], &set![], None, None));
+            assert!(!graph.is_minimal_separator_set(&set![5], &set![4], &set![], None, None));
 
-            assert!(graph.is_minimal_separator_set([4], [5], [0], None::<Set<_>>, None::<Set<_>>)); // {Y} _||_ {Z} | {T} ?
-            assert!(graph.is_minimal_separator_set([5], [4], [0], None::<Set<_>>, None::<Set<_>>)); // {Z} _||_ {Y} | {T} ?
+            assert!(graph.is_minimal_separator_set(&set![4], &set![5], &set![0], None, None));
+            assert!(graph.is_minimal_separator_set(&set![5], &set![4], &set![0], None, None));
         }
 
         // Test for `find_minimal_separator_set` method.
@@ -405,146 +361,127 @@ mod tests {
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn test_find_minimal_separator_set_out_of_bounds_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator_set([5], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_separator_set(&set![5], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn test_find_minimal_separator_set_out_of_bounds_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator_set([0], [5], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_separator_set(&set![0], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn test_find_minimal_separator_set_empty_x() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator_set([], [1], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_separator_set(&set![], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn test_find_minimal_separator_set_empty_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator_set([0], [], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_separator_set(&set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn test_find_minimal_separator_set_non_disjoint_x_y() {
             let graph = DiGraph::empty(vec!["A", "B", "C"]);
-            graph.find_minimal_separator_set([0], [0], None::<Set<_>>, None::<Set<_>>);
+            graph.find_minimal_separator_set(&set![0], &set![0], None, None);
         }
 
         #[test]
         fn test_find_minimal_separator_set_edge() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([0], [1], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![0], &set![1], None, None),
                 None
             );
             assert_eq!(
-                graph.find_minimal_separator_set([1], [0], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![1], &set![0], None, None),
                 None
             );
 
-            // Remove the edge and test again.
             graph.del_edge(0, 1);
 
-            // Test for d-separation after removing the edge.
             assert_eq!(
-                graph.find_minimal_separator_set([0], [1], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![0], &set![1], None, None),
                 Some(set![])
             );
             assert_eq!(
-                graph.find_minimal_separator_set([1], [0], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![1], &set![0], None, None),
                 Some(set![])
             );
         }
 
         #[test]
         fn test_find_minimal_separator_set_chain() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
             graph.add_edge(1, 2);
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([0], [2], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![0], &set![2], None, None),
                 Some(set![1])
             );
             assert_eq!(
-                graph.find_minimal_separator_set([2], [0], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![2], &set![0], None, None),
                 Some(set![1])
             );
         }
 
         #[test]
         fn test_find_minimal_separator_set_fork() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([1], [2], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![1], &set![2], None, None),
                 Some(set![0])
             );
             assert_eq!(
-                graph.find_minimal_separator_set([2], [1], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![2], &set![1], None, None),
                 Some(set![0])
             );
         }
 
         #[test]
         fn test_find_minimal_separator_set_collider() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
-            // Add edges to the graph.
             graph.add_edge(1, 0);
             graph.add_edge(2, 0);
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([1], [2], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![1], &set![2], None, None),
                 Some(set![])
             );
             assert_eq!(
-                graph.find_minimal_separator_set([2], [1], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![2], &set![1], None, None),
                 Some(set![])
             );
         }
 
         #[test]
         fn test_find_minimal_separator_set_primer_figure_2_7() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([3], [4], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![3], &set![4], None, None),
                 Some(set![])
-            ); // {Y} _||_ {Z} | {} ?
+            );
         }
 
         #[test]
         fn test_find_minimal_separator_set_primer_figure_2_8() {
-            // Initialize an empty graph.
             let mut graph = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
-            // Add edges to the graph.
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),
@@ -556,15 +493,14 @@ mod tests {
                 graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
             }
 
-            // Test for d-separation.
             assert_eq!(
-                graph.find_minimal_separator_set([4], [5], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![4], &set![5], None, None),
                 Some(set![0])
-            ); // {Y} _||_ {Z} | {T} ?
+            );
             assert_eq!(
-                graph.find_minimal_separator_set([5], [4], None::<Set<_>>, None::<Set<_>>),
+                graph.find_minimal_separator_set(&set![5], &set![4], None, None),
                 Some(set![0])
-            ); // {Z} _||_ {Y} | {T} ?
+            );
         }
     }
 }

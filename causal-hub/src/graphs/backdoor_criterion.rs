@@ -10,9 +10,9 @@ pub trait BackdoorCriterion {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
-    /// * `z` - An iterable collection of vertex indices representing set `Z`.
+    /// * `x` - A set vertices representing set `X`.
+    /// * `y` - A set vertices representing set `Y`.
+    /// * `z` - A set vertices representing set `Z`.
     ///
     /// # Panics
     ///
@@ -24,21 +24,17 @@ pub trait BackdoorCriterion {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_backdoor_set<I, J, K>(&self, x: I, y: J, z: K) -> bool
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>,
-        K: IntoIterator<Item = usize>;
+    fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
 
     /// Checks if the `Z` is a minimal backdoor adjustment set for `X` and `Y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
-    /// * `z` - An iterable collection of vertex indices representing set `Z`.
-    /// * `w` - An optional iterable collection of vertex indices representing set `W`.
-    /// * `v` - An optional iterable collection of vertex indices representing set `V`.
+    /// * `x` - A set vertices representing set `X`.
+    /// * `y` - A set vertices representing set `Y`.
+    /// * `z` - A set vertices representing set `Z`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Panics
     ///
@@ -51,27 +47,21 @@ pub trait BackdoorCriterion {
     ///
     /// `true` if `Z` is a minimal backdoor adjustment set for `X` and `Y`, `false` otherwise.
     ///
-    fn is_minimal_backdoor_set<I, J, K, L, M>(
+    fn is_minimal_backdoor_set(
         &self,
-        x: I,
-        y: J,
-        z: K,
-        w: Option<L>,
-        v: Option<M>,
-    ) -> bool
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>,
-        K: IntoIterator<Item = usize>,
-        L: IntoIterator<Item = usize>,
-        M: IntoIterator<Item = usize>;
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&Set<usize>>,
+        v: Option<&Set<usize>>,
+    ) -> bool;
 
     /// Finds a minimal backdoor adjustment set for the vertex sets `X` and `Y`, if any.
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
+    /// * `x` - A set vertices representing set `X`.
+    /// * `y` - A set vertices representing set `Y`.
     ///
     /// # Panics
     ///
@@ -85,18 +75,13 @@ pub trait BackdoorCriterion {
     /// `Some(Set)` containing the minimal backdoor adjustment set,
     ///  or `None` if no backdoor adjustment set exists.
     ///
-    fn find_minimal_backdoor_set<I, J, K, L>(
+    fn find_minimal_backdoor_set(
         &self,
-        x: I,
-        y: J,
-        w: Option<K>,
-        v: Option<L>,
-    ) -> Option<Set<usize>>
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>,
-        K: IntoIterator<Item = usize>,
-        L: IntoIterator<Item = usize>;
+        x: &Set<usize>,
+        y: &Set<usize>,
+        w: Option<&Set<usize>>,
+        v: Option<&Set<usize>>,
+    ) -> Option<Set<usize>>;
 }
 
 pub(crate) mod digraph {
@@ -164,14 +149,9 @@ pub(crate) mod digraph {
     }
 
     impl BackdoorCriterion for DiGraph {
-        fn is_backdoor_set<I, J, K>(&self, x: I, y: J, z: K) -> bool
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-            K: IntoIterator<Item = usize>,
-        {
+        fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
             // Perform sanity checks and convert sets.
-            let (x, y, z, _, _) = _assert(self, x, y, Some(z), None::<Set<_>>, None::<Set<_>>);
+            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
 
             // Constructive backdoor criterion:
             //
@@ -182,7 +162,7 @@ pub(crate) mod digraph {
             //
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, &x, &y);
+            let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
             let pde: Set<_> = pcp.iter().flat_map(|&p| self.descendants(p)).collect();
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
@@ -191,7 +171,7 @@ pub(crate) mod digraph {
             }
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, &x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
             // b) Check if Z separates X from Y in G^PDB.
             if !g_pdb.is_separator_set(x, y, z) {
                 return false;
@@ -201,71 +181,78 @@ pub(crate) mod digraph {
             true
         }
 
-        fn is_minimal_backdoor_set<I, J, K, L, M>(
+        fn is_minimal_backdoor_set(
             &self,
-            x: I,
-            y: J,
-            z: K,
-            w: Option<L>,
-            v: Option<M>,
-        ) -> bool
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-            K: IntoIterator<Item = usize>,
-            L: IntoIterator<Item = usize>,
-            M: IntoIterator<Item = usize>,
-        {
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&Set<usize>>,
+            v: Option<&Set<usize>>,
+        ) -> bool {
             // Perform sanity checks and convert sets.
-            let (x, y, z, w, v) = _assert(self, x, y, Some(z), w, v);
+            _assert(self, x, y, Some(z), w, v);
+
+            // Set default values for W and V if not provided.
+            let w = match w {
+                Some(w) => w,
+                None => &set![],
+            };
+            let v = match v {
+                Some(v) => v,
+                None => &self.vertices(),
+            };
 
             // Every minimal backdoor adjustment set is a
             // minimal separator in the proper backdoor graph
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, &x, &y);
+            let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            let pde: Set<_> = pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
             // Constraint the restricted vertices.
-            let v_prime = &v - &pde;
+            let v_prime = &(v - pde);
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, &x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
 
             // Check if Z is a minimal separator in G^PDB under the constraint V'.
             g_pdb.is_minimal_separator_set(x, y, z, Some(w), Some(v_prime))
         }
 
-        fn find_minimal_backdoor_set<I, J, K, L>(
+        fn find_minimal_backdoor_set(
             &self,
-            x: I,
-            y: J,
-            w: Option<K>,
-            v: Option<L>,
-        ) -> Option<Set<usize>>
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-            K: IntoIterator<Item = usize>,
-            L: IntoIterator<Item = usize>,
-        {
+            x: &Set<usize>,
+            y: &Set<usize>,
+            w: Option<&Set<usize>>,
+            v: Option<&Set<usize>>,
+        ) -> Option<Set<usize>> {
             // Perform sanity checks and convert sets.
-            let (x, y, _, w, v) = _assert(self, x, y, None::<Set<_>>, w, v);
+            _assert(self, x, y, None::<&Set<_>>, w, v);
+
+            // Set default values for W and V if not provided.
+            let w = match w {
+                Some(w) => w,
+                None => &set![],
+            };
+            let v = match v {
+                Some(v) => v,
+                None => &self.vertices(),
+            };
 
             // Every minimal backdoor adjustment set is a
             // minimal separator in the proper backdoor graph
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, &x, &y);
+            let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            let pde: Set<_> = pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
             // Constraint the restricted vertices.
-            let v_prime = &v - &pde;
+            let v_prime = &(v - pde);
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, &x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
 
             // Find a minimal separator in G^PDB under the constraint V'.
             g_pdb.find_minimal_separator_set(x, y, Some(w), Some(v_prime))

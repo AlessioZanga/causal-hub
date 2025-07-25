@@ -1,6 +1,6 @@
 use causal_hub_rust::{
     graphs::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
-    types::Labels,
+    types::{Labels, Set},
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
@@ -297,21 +297,21 @@ impl PyDiGraph {
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let z: Vec<usize> = z
+        let z: Set<usize> = z
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
@@ -320,7 +320,7 @@ impl PyDiGraph {
             .collect::<PyResult<_>>()?;
 
         // Delegate to the inner method.
-        Ok(self.inner.is_separator_set(x, y, z))
+        Ok(self.inner.is_separator_set(&x, &y, &z))
     }
 
     /// Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
@@ -354,28 +354,28 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let z: Vec<usize> = z
+        let z: Set<usize> = z
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let w: Option<Vec<usize>> = w
+        let w: Option<Set<usize>> = w
             .map(|w| {
                 w.try_iter()?
                     .map(|x| {
@@ -385,7 +385,7 @@ impl PyDiGraph {
                     .collect::<PyResult<_>>()
             })
             .transpose()?;
-        let v: Option<Vec<usize>> = v
+        let v: Option<Set<usize>> = v
             .map(|v| {
                 v.try_iter()?
                     .map(|x| {
@@ -397,7 +397,9 @@ impl PyDiGraph {
             .transpose()?;
 
         // Delegate to the inner method.
-        Ok(self.inner.is_minimal_separator_set(x, y, z, w, v))
+        Ok(self
+            .inner
+            .is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref()))
     }
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
@@ -429,21 +431,21 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<Vec<&str>>> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let w: Option<Vec<usize>> = w
+        let w: Option<Set<usize>> = w
             .map(|w| {
                 w.try_iter()?
                     .map(|x| {
@@ -453,7 +455,7 @@ impl PyDiGraph {
                     .collect::<PyResult<_>>()
             })
             .transpose()?;
-        let v: Option<Vec<usize>> = v
+        let v: Option<Set<usize>> = v
             .map(|v| {
                 v.try_iter()?
                     .map(|x| {
@@ -465,7 +467,9 @@ impl PyDiGraph {
             .transpose()?;
 
         // Find the minimal separator.
-        let z = self.inner.find_minimal_separator_set(x, y, w, v);
+        let z = self
+            .inner
+            .find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref());
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
@@ -503,21 +507,21 @@ impl PyDiGraph {
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let z: Vec<usize> = z
+        let z: Set<usize> = z
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
@@ -526,7 +530,7 @@ impl PyDiGraph {
             .collect::<PyResult<_>>()?;
 
         // Delegate to the inner method.
-        Ok(self.inner.is_backdoor_set(x, y, z))
+        Ok(self.inner.is_backdoor_set(&x, &y, &z))
     }
 
     /// Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
@@ -560,28 +564,28 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let z: Vec<usize> = z
+        let z: Set<usize> = z
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let w: Option<Vec<usize>> = w
+        let w: Option<Set<usize>> = w
             .map(|w| {
                 w.try_iter()?
                     .map(|x| {
@@ -591,7 +595,7 @@ impl PyDiGraph {
                     .collect::<PyResult<_>>()
             })
             .transpose()?;
-        let v: Option<Vec<usize>> = v
+        let v: Option<Set<usize>> = v
             .map(|v| {
                 v.try_iter()?
                     .map(|x| {
@@ -603,7 +607,9 @@ impl PyDiGraph {
             .transpose()?;
 
         // Delegate to the inner method.
-        Ok(self.inner.is_minimal_backdoor_set(x, y, z, w, v))
+        Ok(self
+            .inner
+            .is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref()))
     }
 
     /// Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
@@ -635,21 +641,21 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<Vec<&str>>> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Vec<usize> = x
+        let x: Set<usize> = x
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let y: Vec<usize> = y
+        let y: Set<usize> = y
             .try_iter()?
             .map(|x| {
                 x?.extract::<String>()
                     .map(|x| self.inner.label_to_index(&x))
             })
             .collect::<PyResult<_>>()?;
-        let w: Option<Vec<usize>> = w
+        let w: Option<Set<usize>> = w
             .map(|w| {
                 w.try_iter()?
                     .map(|x| {
@@ -659,7 +665,7 @@ impl PyDiGraph {
                     .collect::<PyResult<_>>()
             })
             .transpose()?;
-        let v: Option<Vec<usize>> = v
+        let v: Option<Set<usize>> = v
             .map(|v| {
                 v.try_iter()?
                     .map(|x| {
@@ -671,7 +677,9 @@ impl PyDiGraph {
             .transpose()?;
 
         // Find the minimal backdoor.
-        let z = self.inner.find_minimal_backdoor_set(x, y, w, v);
+        let z = self
+            .inner
+            .find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref());
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
