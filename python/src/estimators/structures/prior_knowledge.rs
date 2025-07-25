@@ -66,7 +66,6 @@ impl PyPK {
                             .map(|a| labels.get_index_of(&a).unwrap())
                     })
                     .collect::<PyResult<Vec<_>>>()
-                    .map_err(PyErr::from)
             })
             .collect::<PyResult<_>>()?;
 

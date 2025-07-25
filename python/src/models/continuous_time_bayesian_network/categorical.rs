@@ -8,7 +8,7 @@ use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into};
+use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into, models::PyCatBN};
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
@@ -90,6 +90,16 @@ impl PyCatCTBN {
                 (label, cim)
             })
             .collect())
+    }
+
+    /// Returns the initial distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the initial distribution.
+    ///
+    pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
+        Ok(self.inner.initial_distribution().clone().into())
     }
 
     /// Returns the parameters size.

@@ -1,19 +1,20 @@
 use std::collections::VecDeque;
 
 use crate::{
-    graphs::{DiGraph, Graph},
+    graphs::{DiGraph, Graph, TopologicalOrder},
+    set,
     types::Set,
 };
 
-/// A trait for graphical separation in graphs.
+/// A trait for graphical separation.
 pub trait GraphicalSeparation {
-    /// Checks if the vertex set `Z` is a separator for `X` and `Y`.
+    /// Checks if the `Z` is a separator set for `X` and `Y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
-    /// * `z` - An iterable collection of vertex indices representing set `Z`.
+    /// * `x` - A set of vertices representing set `X`.
+    /// * `y` - A set of vertices representing set `Y`.
+    /// * `z` - A set of vertices representing set `Z`.
     ///
     /// # Panics
     ///
@@ -25,113 +26,181 @@ pub trait GraphicalSeparation {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>,
-        K: IntoIterator<Item = usize>;
+    fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
 
-    /// Checks if the vertex set `Z` is a minimal separator for `X` and `Y`.
+    /// Checks if the `Z` is a minimal separator set for `X` and `Y`.
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
-    /// * `z` - An iterable collection of vertex indices representing set `Z`.
+    /// * `x` - A set of vertices representing set `X`.
+    /// * `y` - A set of vertices representing set `Y`.
+    /// * `z` - A set of vertices representing set `Z`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Panics
     ///
-    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * If `X`, `Y` or `Z` are not disjoint sets.
     /// * If `X` and `Y` are empty sets.
+    /// * If not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
-    /// `true` if `Z` is a minimal separator for `X` and `Y`, `false` otherwise.
+    /// `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
     ///
-    fn is_minimal_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>,
-        K: IntoIterator<Item = usize>;
+    fn is_minimal_separator_set(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&Set<usize>>,
+        v: Option<&Set<usize>>,
+    ) -> bool;
 
-    /// Finds a minimal separator for the vertex sets `X` and `Y`, if any.
+    /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertex indices representing set `X`.
-    /// * `y` - An iterable collection of vertex indices representing set `Y`.
+    /// * `x` - A set of vertices representing set `X`.
+    /// * `y` - A set of vertices representing set `Y`.
     ///
     /// # Panics
     ///
-    /// * If any of the vertex in `X` or `Y` are out of bounds.
+    /// * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * If `X` and `Y` are not disjoint sets.
     /// * If `X` or `Y` are empty sets.
+    /// * If not `W` <= `V`.
     ///
     /// # Returns
     ///
-    /// `Some(Set)` containing the minimal separator, or `None` if no separator exists.
+    /// `Some(Set)` containing the minimal separator set, or `None` if no separator set exists.
     ///
-    fn find_minimal_separator<I, J>(&self, x: I, y: J) -> Option<Set<usize>>
-    where
-        I: IntoIterator<Item = usize>,
-        J: IntoIterator<Item = usize>;
+    fn find_minimal_separator_set(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        w: Option<&Set<usize>>,
+        v: Option<&Set<usize>>,
+    ) -> Option<Set<usize>>;
 }
 
 // Implementation of the `GraphicalSeparation` trait for directed graphs.
-mod digraph {
+pub(crate) mod digraph {
     use super::*;
-    use crate::{graphs::TopologicalOrder, set};
+
+    /// Asserts the validity of the sets and returns them as `Set<usize>`.
+    pub(crate) fn _assert(
+        g: &DiGraph,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: Option<&Set<usize>>,
+        w: Option<&Set<usize>>,
+        v: Option<&Set<usize>>,
+    ) {
+        // Assert the included set is a subset of the restricted set.
+        if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref()) {
+            assert!(w.is_subset(v), "Set W must be a subset of set V.");
+        }
+
+        // Convert X to set, while checking for out of bounds.
+        for &x in x {
+            assert!(g.has_vertex(x), "Vertex `{x}` in set X is out of bounds.");
+        }
+        // Convert Y to set, while checking for out of bounds.
+        for &y in y {
+            assert!(g.has_vertex(y), "Vertex `{y}` in set Y is out of bounds.");
+        }
+        // Convert Z to set, while checking for out of bounds.
+        if let Some(z) = z {
+            for &z in z {
+                assert!(g.has_vertex(z), "Vertex `{z}` in set Z is out of bounds.");
+            }
+        }
+
+        // Assert X is non-empty.
+        assert!(!x.is_empty(), "Set X must not be empty.");
+        // Assert Y is non-empty.
+        assert!(!y.is_empty(), "Set Y must not be empty.");
+
+        // Assert X and Y are disjoint.
+        assert!(x.is_disjoint(y), "Sets X and Y must be disjoint.");
+
+        // If Z is provided, convert it to a set.
+        if let Some(z) = &z {
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(z), "Sets X and Z must be disjoint.");
+            // Assert Y and Z are disjoint.
+            assert!(y.is_disjoint(z), "Sets Y and Z must be disjoint.");
+            // Assert Z includes.
+            if let Some(w) = w {
+                assert!(z.is_superset(w), "Set Z must be a superset of set W.");
+            }
+            // Assert Z is restricted.
+            if let Some(v) = v {
+                assert!(z.is_subset(v), "Set Z must be a subset of set V.");
+            }
+        }
+    }
+
+    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
+        // Assert the graph is a DAG.
+        assert!(g.topological_order().is_some(), "Graph must be a DAG.");
+
+        // Check if the ball passes or not.
+        let _pass = |e: bool, v: usize, f: bool, n: usize| {
+            let is_element_of_a = an_x.contains(&n);
+            let almost_definite_status = true; // NOTE: Always true for DAGs, not so for RCGs.
+            let collider_if_in_z = !z.contains(&v) || (e && !f);
+            // If the edge is forward, the vertex must be an ancestor or in Z.
+            is_element_of_a && collider_if_in_z && almost_definite_status
+        };
+
+        // Initialize the queue.
+        let mut queue: VecDeque<(bool, usize)> = Default::default();
+        // For each vertex in X ...
+        for &w in x {
+            // If the vertex has predecessors, add it to the queue as a backward edge.
+            if !g.parents(w).is_empty() {
+                queue.push_back((false, w));
+            }
+            // If the vertex has successors, add it to the queue as a forward edge.
+            if !g.children(w).is_empty() {
+                queue.push_back((true, w));
+            }
+        }
+
+        // Initialize the processed set with the queue.
+        let mut visited = queue.clone();
+
+        // For each element in the queue ...
+        while let Some((e, v)) = queue.pop_front() {
+            // Get the predecessors and successors of the vertex.
+            let pa_v = g.parents(v).into_iter().map(|n| (false, n));
+            let ch_v = g.children(v).into_iter().map(|n| (true, n));
+
+            // Create pairs of (forward, vertex) for predecessors and successors.
+            let f_n_pairs = pa_v.chain(ch_v);
+
+            // For each pair ...
+            for (f, n) in f_n_pairs {
+                // If the pair has not been processed and passes the condition ...
+                if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
+                    // Add it to the queue and mark it as processed.
+                    queue.push_back((f, n));
+                    visited.push_back((f, n));
+                }
+            }
+        }
+
+        // Return the set of visited vertices.
+        visited.into_iter().map(|(_, w)| w).collect()
+    }
 
     impl GraphicalSeparation for DiGraph {
-        fn is_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-            K: IntoIterator<Item = usize>,
-        {
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Z to set, while checking for out of bounds.
-            let z: Set<usize> = z
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Z is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-            // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(&z), "Sets X and Z must be disjoint.");
-            // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(&z), "Sets Y and Z must be disjoint.");
+        fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+            // Perform sanity checks and convert sets.
+            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
 
             // Initialize the forward and backward deques and visited sets.
 
@@ -146,6 +215,7 @@ mod digraph {
             backward_deque.extend(x.iter().cloned());
 
             // Compute the ancestors of X and Z.
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
             let ancestors_or_z: Set<usize> = x
                 .iter()
                 .flat_map(|&x| self.ancestors(x))
@@ -212,94 +282,43 @@ mod digraph {
             true
         }
 
-        fn is_minimal_separator<I, J, K>(&self, x: I, y: J, z: K) -> bool
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-            K: IntoIterator<Item = usize>,
-        {
-            // TODO: Allocate included and restricted sets, for future use.
-            let included: Set<usize> = set![];
-            let restricted: Set<usize> = self.vertices();
+        fn is_minimal_separator_set(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&Set<usize>>,
+            v: Option<&Set<usize>>,
+        ) -> bool {
+            // Perform sanity checks and convert sets.
+            _assert(self, x, y, Some(z), w, v);
 
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Z to set, while checking for out of bounds.
-            let z: Set<usize> = z
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Z is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-            // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(&z), "Sets X and Z must be disjoint.");
-            // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(&z), "Sets Y and Z must be disjoint.");
-
-            // Assert the included set is a subset of the restricted set.
-            assert!(
-                included.is_subset(&restricted),
-                "Included set must be a subset of the restricted set."
-            );
-            // Assert Z includes.
-            assert!(
-                z.is_superset(&included),
-                "Set Z must be a superset of the included set."
-            );
-            // Assert Z is restricted.
-            assert!(
-                z.is_subset(&restricted),
-                "Set Z must be a subset of the restricted set."
-            );
+            // Set default values for W if not provided.
+            let w = match w {
+                Some(w) => w,
+                None => &set![],
+            };
 
             // Compute the ancestors of X and Y.
-            let x_y_in = &(&x | &y) | &included;
-            let an_x_y_in: Set<_> = x_y_in.iter().flat_map(|&v| self.ancestors(v)).collect();
-            let an_x_y_in = &an_x_y_in | &x_y_in;
+            let x_y_w = &(x | y) | w;
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
+            let an_x_y_w: Set<_> = x_y_w.iter().flat_map(|&v| self.ancestors(v)).collect();
+            let an_x_y_w = &an_x_y_w | &x_y_w;
 
             // a) Check that Z is a separator.
-            let x_closure = _reachable(self, &x, &an_x_y_in, &z);
-            if !x_closure.is_disjoint(&y) {
+            let x_closure = _reachable(self, x, &an_x_y_w, z);
+            if !x_closure.is_disjoint(y) {
                 return false;
             }
 
             // b) Check that Z is constrained to An(X, Y).
-            if !z.is_subset(&an_x_y_in) {
+            if !z.is_subset(&an_x_y_w) {
                 return false;
             }
 
             // c) Check that Z is minimal.
-            let y_closure = _reachable(self, &y, &an_x_y_in, &z);
-            if !((&z - &included).is_subset(&(&x_closure & &y_closure))) {
+            let y_closure = _reachable(self, y, &an_x_y_w, z);
+            if !((z - w).is_subset(&(&x_closure & &y_closure))) {
                 return false;
             }
 
@@ -307,126 +326,49 @@ mod digraph {
             true
         }
 
-        fn find_minimal_separator<I, J>(&self, x: I, y: J) -> Option<Set<usize>>
-        where
-            I: IntoIterator<Item = usize>,
-            J: IntoIterator<Item = usize>,
-        {
-            // TODO: Allocate included and restricted sets, for future use.
-            let included: Set<usize> = set![];
-            let restricted: Set<usize> = self.vertices();
+        fn find_minimal_separator_set(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            w: Option<&Set<usize>>,
+            v: Option<&Set<usize>>,
+        ) -> Option<Set<usize>> {
+            // Perform sanity checks and convert sets.
+            _assert(self, x, y, None::<&Set<_>>, w, v);
 
-            // Convert X to set, while checking for out of bounds.
-            let x: Set<usize> = x
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set X is out of bounds."
-                    )
-                })
-                .collect();
-            // Convert Y to set, while checking for out of bounds.
-            let y: Set<usize> = y
-                .into_iter()
-                .inspect(|&v| {
-                    assert!(
-                        self.has_vertex(v),
-                        "Vertex `{v}` in set Y is out of bounds."
-                    )
-                })
-                .collect();
-
-            // Assert X is non-empty.
-            assert!(!x.is_empty(), "Set X must not be empty.");
-            // Assert Y is non-empty.
-            assert!(!y.is_empty(), "Set Y must not be empty.");
-
-            // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(&y), "Sets X and Y must be disjoint.");
-
-            // Assert the included set is a subset of the restricted set.
-            assert!(
-                included.is_subset(&restricted),
-                "Included set must be a subset of the restricted set."
-            );
+            // Set default values for W and V if not provided.
+            let w = match w {
+                Some(w) => w,
+                None => &set![],
+            };
+            let v = match v {
+                Some(v) => v,
+                None => &self.vertices(),
+            };
 
             // Compute the ancestors of X and Y.
-            let x_y_in = &(&x | &y) | &included;
-            let an_x_y_in: Set<_> = x_y_in.iter().flat_map(|&v| self.ancestors(v)).collect();
-            let an_x_y_in = &an_x_y_in | &x_y_in;
+            let x_y_w = &(x | y) | w;
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
+            let an_x_y_w: Set<_> = x_y_w.iter().flat_map(|&v| self.ancestors(v)).collect();
+            let an_x_y_w = &an_x_y_w | &x_y_w;
 
             // Initialize the restricted set with the intersection of X, Y, and included.
-            let z: Set<_> = &restricted & &(&an_x_y_in - &(&x | &y));
+            let z: Set<_> = v & &(&an_x_y_w - &(x | y));
 
             // Check if Z is a separator.
-            let x_closure = _reachable(self, &x, &an_x_y_in, &z);
-            if !x_closure.is_disjoint(&y) {
+            let x_closure = _reachable(self, x, &an_x_y_w, &z);
+            if !x_closure.is_disjoint(y) {
                 return None; // No minimal separator exists.
             }
 
             // Update Z.
-            let z = &z & &(&x_closure | &included);
+            let z = &z & &(&x_closure | w);
 
             // Check if Z is a separator.
-            let y_closure = _reachable(self, &y, &an_x_y_in, &z);
+            let y_closure = _reachable(self, y, &an_x_y_w, &z);
 
             // Return the minimal separator.
-            Some(&z & &(&y_closure | &included))
+            Some(&z & &(&y_closure | w))
         }
-    }
-
-    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
-        // Assert the graph is a DAG.
-        assert!(g.topological_order().is_some(), "Graph must be a DAG.");
-
-        // Check if the ball passes or not.
-        let _pass = |e: bool, v: usize, f: bool, n: usize| {
-            let is_element_of_a = an_x.contains(&n);
-            let almost_definite_status = true; // NOTE: Always true for DAGs, not so for RCGs.
-            let collider_if_in_z = !z.contains(&v) || (e && !f);
-            // If the edge is forward, the vertex must be an ancestor or in Z.
-            is_element_of_a && collider_if_in_z && almost_definite_status
-        };
-
-        // Initialize the queue.
-        let mut queue: VecDeque<(bool, usize)> = Default::default();
-        // For each vertex in X ...
-        for &w in x {
-            // If the vertex has predecessors, add it to the queue as a backward edge.
-            if !g.parents(w).is_empty() {
-                queue.push_back((false, w));
-            }
-            // If the vertex has successors, add it to the queue as a forward edge.
-            if !g.children(w).is_empty() {
-                queue.push_back((true, w));
-            }
-        }
-
-        // Initialize the processed set with the queue.
-        let mut visited = queue.clone();
-
-        // For each element in the queue ...
-        while let Some((e, v)) = queue.pop_front() {
-            // Get the predecessors and successors of the vertex.
-            let pa_v = g.parents(v).into_iter().map(|n| (false, n));
-            let ch_v = g.children(v).into_iter().map(|n| (true, n));
-
-            // Create pairs of (forward, vertex) for predecessors and successors.
-            let f_n_pairs = pa_v.chain(ch_v);
-
-            // For each pair ...
-            for (f, n) in f_n_pairs {
-                // If the pair has not been processed and passes the condition ...
-                if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
-                    // Add it to the queue and mark it as processed.
-                    queue.push_back((f, n));
-                    visited.push_back((f, n));
-                }
-            }
-        }
-
-        // Return the set of visited vertices.
-        visited.into_iter().map(|(_, w)| w).collect()
     }
 }
