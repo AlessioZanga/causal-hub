@@ -124,7 +124,27 @@ mod tests {
             assert!(graph.is_backdoor_set(&set![2], &set![1], &set![]));
         }
 
-        // TODO:
+        #[test]
+        fn test_is_backdoor_set_primer_figure_3_7() {
+            let mut graph = DiGraph::empty(vec!["A", "E", "X", "Y", "Z"]);
+            for (i, j) in [
+                ("A", "Y"),
+                ("A", "Z"),
+                ("E", "X"),
+                ("E", "Z"),
+                ("X", "Y"),
+                ("Z", "X"),
+                ("Z", "Y"),
+            ] {
+                graph.add_edge(graph.label_to_index(&i), graph.label_to_index(&j));
+            }
+
+            assert!(!graph.is_backdoor_set(&set![2], &set![3], &set![]));
+            assert!(!graph.is_backdoor_set(&set![2], &set![3], &set![4]));
+            assert!(graph.is_backdoor_set(&set![2], &set![3], &set![0, 4]));
+            assert!(graph.is_backdoor_set(&set![2], &set![3], &set![1, 4]));
+            assert!(graph.is_backdoor_set(&set![2], &set![3], &set![0, 1, 4]));
+        }
 
         // Test for `is_minimal_backdoor_set` method.
 

@@ -215,6 +215,7 @@ pub(crate) mod digraph {
             backward_deque.extend(x.iter().cloned());
 
             // Compute the ancestors of X and Z.
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
             let ancestors_or_z: Set<usize> = x
                 .iter()
                 .flat_map(|&x| self.ancestors(x))
@@ -300,6 +301,7 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
             let an_x_y_w: Set<_> = x_y_w.iter().flat_map(|&v| self.ancestors(v)).collect();
             let an_x_y_w = &an_x_y_w | &x_y_w;
 
@@ -346,6 +348,7 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
+            // TODO: This can be optimized to avoid multiple calls to `ancestors`.
             let an_x_y_w: Set<_> = x_y_w.iter().flat_map(|&v| self.ancestors(v)).collect();
             let an_x_y_w = &an_x_y_w | &x_y_w;
 
