@@ -72,7 +72,7 @@ mod tests {
             graph.add_edge(0, 1);
 
             // Test for backdoor criterion.
-            assert!(!graph.is_backdoor_set(&set![0], &set![1], &set![]));
+            assert!(graph.is_backdoor_set(&set![0], &set![1], &set![]));
             assert!(!graph.is_backdoor_set(&set![1], &set![0], &set![]));
 
             // Remove the edge and test again.
