@@ -6,3 +6,4 @@ mod graphs;
 mod io;
 mod models;
 mod samplers;
+mod utils;

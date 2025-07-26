@@ -8,7 +8,7 @@ use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
     types::{Labels, Set},
-    utils::RMI,
+    utils::MI,
 };
 
 /// A struct representing a sufficient statistics estimator.
@@ -58,7 +58,7 @@ impl CSSEstimator for SSE<'_, CatData> {
         );
 
         // Initialize ravel multi index.
-        let idx = RMI::new(z.iter().map(|&i| cards[i]));
+        let idx = MI::new(z.iter().map(|&i| cards[i]));
         // Get the cardinality of the conditioned and conditioning variables.
         let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
 
@@ -101,7 +101,7 @@ impl CSSEstimator for SSE<'_, CatTrj> {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
         // Construct the ravel multi index.
-        let idx = RMI::new(z.iter().map(|&i| cards[i]));
+        let idx = MI::new(z.iter().map(|&i| cards[i]));
         // Get the cardinality of the conditioned and conditioning variables.
         let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
 

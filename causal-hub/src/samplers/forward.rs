@@ -58,7 +58,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             // NOTE: Labels and states are sorted (i.e. aligned).
             let pa_i = self.model.graph().parents(i);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
-            let pa_i = cpd_i.ravel_multi_index().ravel(pa_i);
+            let pa_i = cpd_i.multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
             let p_i = cpd_i.parameters().row(pa_i);
             // Construct the sampler.
@@ -98,7 +98,7 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(i);
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
-        let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
+        let pa_i = cim_i.multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
         // Initialize the exponential distribution.
@@ -165,7 +165,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(i);
             let pa_i = pa_i.iter().map(|&z| event[z] as usize);
-            let pa_i = cim_i.ravel_multi_index().ravel(pa_i);
+            let pa_i = cim_i.multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
             let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
             // Set the diagonal element to zero.

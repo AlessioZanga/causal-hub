@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::CPD;
 use crate::{
     types::{EPSILON, Labels, Set, States},
-    utils::{RMI, collect_states},
+    utils::{MI, collect_states},
 };
 
 /// A struct representing a categorical conditional intensity matrix.
@@ -20,7 +20,7 @@ pub struct CategoricalConditionalIntensityMatrix {
     conditioning_states: States,
     conditioning_cardinality: Array1<usize>,
     // Ravel multi index.
-    ravel_multi_index: RMI,
+    multi_index: MI,
     // Parameters.
     parameters: Array3<f64>,
     parameters_size: usize,
@@ -149,7 +149,7 @@ impl CatCIM {
         // FIXME: Sort states and labels.
 
         // Construct the ravel multi index.
-        let ravel_multi_index = RMI::new(conditioning_cardinality.iter().copied());
+        let multi_index = MI::new(conditioning_cardinality.iter().copied());
 
         // Debug assert to check the sorting of the labels.
         debug_assert!(
@@ -176,7 +176,7 @@ impl CatCIM {
             conditioning_labels,
             conditioning_states,
             conditioning_cardinality,
-            ravel_multi_index,
+            multi_index,
             parameters,
             parameters_size,
             sample_size: None,
@@ -235,8 +235,8 @@ impl CatCIM {
     /// The ravel multi index of the conditioning variables.
     ///
     #[inline]
-    pub const fn ravel_multi_index(&self) -> &RMI {
-        &self.ravel_multi_index
+    pub const fn multi_index(&self) -> &MI {
+        &self.multi_index
     }
 
     /// Returns the sample size of the dataset used to fit the distribution, if any.
@@ -339,7 +339,7 @@ impl PartialEq for CatCIM {
             && self
                 .conditioning_cardinality
                 .eq(&other.conditioning_cardinality)
-            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self.multi_index.eq(&other.multi_index)
             && self.parameters.eq(&other.parameters)
     }
 }
@@ -361,7 +361,7 @@ impl AbsDiffEq for CatCIM {
             && self
                 .conditioning_cardinality
                 .eq(&other.conditioning_cardinality)
-            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self.multi_index.eq(&other.multi_index)
             && self.parameters.abs_diff_eq(&other.parameters, epsilon)
     }
 }
@@ -386,7 +386,7 @@ impl RelativeEq for CatCIM {
             && self
                 .conditioning_cardinality
                 .eq(&other.conditioning_cardinality)
-            && self.ravel_multi_index.eq(&other.ravel_multi_index)
+            && self.multi_index.eq(&other.multi_index)
             && self
                 .parameters
                 .relative_eq(&other.parameters, epsilon, max_relative)
