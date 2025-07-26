@@ -10,9 +10,11 @@ mod tests {
             distributions::CatCIM,
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             graphs::{DiGraph, Graph},
+            map,
             models::{CTBN, CatCTBN},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
+            set,
             types::Cache,
         };
         use ndarray::prelude::*;
@@ -41,17 +43,21 @@ mod tests {
             let evidence = generator.random();
 
             // Set the initial graph.
-            let inital_graph = DiGraph::complete(model.labels());
+            let initial_graph = DiGraph::complete(model.labels());
+
+            // Set the states of the variables.
+            let states = set!["no".to_string(), "yes".to_string()];
+
             // Set uniform CIMs.
             const E: f64 = 10.;
             // Set the initial CIMs.
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    ("Hungry", vec!["no", "yes"]),
-                    [
-                        ("Eating", vec!["no", "yes"]),
-                        ("FullStomach", vec!["no", "yes"]),
+                    map![("Hungry".to_string(), states.clone())],
+                    map![
+                        ("Eating".to_string(), states.clone()),
+                        ("FullStomach".to_string(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -62,10 +68,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    ("Eating", vec!["no", "yes"]),
-                    [
-                        ("FullStomach", vec!["no", "yes"]),
-                        ("Hungry", vec!["no", "yes"]),
+                    map![("Eating".to_string(), states.clone())],
+                    map![
+                        ("FullStomach".to_string(), states.clone()),
+                        ("Hungry".to_string(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -76,10 +82,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    ("FullStomach", vec!["no", "yes"]),
-                    [
-                        ("Eating", vec!["no", "yes"]), //.
-                        ("Hungry", vec!["no", "yes"]), //.
+                    map![("FullStomach".to_string(), states.clone())],
+                    map![
+                        ("Eating".to_string(), states.clone()),
+                        ("Hungry".to_string(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -90,7 +96,7 @@ mod tests {
                 ),
             ];
             // Set the initial model.
-            let initial_model = CatCTBN::new(inital_graph.clone(), initial_cims);
+            let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims);
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
@@ -145,7 +151,7 @@ mod tests {
                 // Initialize the chi-squared test.
                 let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4);
                 // Initialize the CTPC algorithm.
-                let ctpc = CTPC::new(&inital_graph, &f_test, &chi_sq_test);
+                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
                 // Fit the new structure using CTPC.
                 let fitted_graph = ctpc.par_fit();
                 // Fit the new model using the expectation.

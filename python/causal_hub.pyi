@@ -91,7 +91,7 @@ class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
     """
-    def label(self) -> builtins.str:
+    def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
         
@@ -99,7 +99,7 @@ class CatCIM:
         
         A reference to the label.
         """
-    def states(self) -> builtins.list[builtins.str]:
+    def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
@@ -107,7 +107,7 @@ class CatCIM:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.int:
+    def cardinality(self) -> builtins.list[builtins.int]:
         r"""
         Returns the cardinality of the conditioned variable.
         
@@ -176,21 +176,7 @@ class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution (CPD).
     """
-    def __new__(cls, state:tuple, conditioning_states:typing.Any, parameters:numpy.typing.NDArray[numpy.float64]) -> CatCPD:
-        r"""
-        Constructs a new categorical CPD.
-        
-        # Arguments
-        
-        * `state` - A tuple containing the label of the conditioned variable and its states.
-        * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
-        * `parameters` - A 2D array of parameters for the CPD.
-        
-        # Returns
-        
-        A new `CatCPD` instance.
-        """
-    def label(self) -> builtins.str:
+    def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
         
@@ -198,7 +184,7 @@ class CatCPD:
         
         A reference to the label.
         """
-    def states(self) -> builtins.list[builtins.str]:
+    def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
@@ -206,7 +192,7 @@ class CatCPD:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.int:
+    def cardinality(self) -> builtins.list[builtins.int]:
         r"""
         Returns the cardinality of the conditioned variable.
         

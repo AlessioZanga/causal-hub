@@ -31,3 +31,23 @@ macro_rules! set {
         }
     };
 }
+
+/// Create a `Map` from a list of key-value pairs.
+#[macro_export]
+macro_rules! map {
+    [] => { $crate::types::Map::default() };
+    [$(($key:expr, $value:expr),)+] => { $crate::map!($(($key, $value)),+) };
+    [$(($key:expr, $value:expr)),*] => {
+        {
+            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($key); stringify!($value); }),*]);
+            let mut map = $crate::types::Map::with_capacity_and_hasher(
+                CAPACITY,
+                fxhash::FxBuildHasher::default())
+            ;
+            $(
+                map.insert($key, $value);
+            )*
+            map
+        }
+    };
+}

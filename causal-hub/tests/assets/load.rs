@@ -41,14 +41,14 @@ mod tests {
         assert!(bn.graph().has_edge(6, 3));
 
         // Check CPDs.
-        assert_eq!(bn.cpds()[0].label(), "asia");
-        assert_eq!(bn.cpds()[1].label(), "bronc");
-        assert_eq!(bn.cpds()[2].label(), "dysp");
-        assert_eq!(bn.cpds()[3].label(), "either");
-        assert_eq!(bn.cpds()[4].label(), "lung");
-        assert_eq!(bn.cpds()[5].label(), "smoke");
-        assert_eq!(bn.cpds()[6].label(), "tub");
-        assert_eq!(bn.cpds()[7].label(), "xray");
+        assert_eq!(bn.cpds()[0].labels()[0], "asia");
+        assert_eq!(bn.cpds()[1].labels()[0], "bronc");
+        assert_eq!(bn.cpds()[2].labels()[0], "dysp");
+        assert_eq!(bn.cpds()[3].labels()[0], "either");
+        assert_eq!(bn.cpds()[4].labels()[0], "lung");
+        assert_eq!(bn.cpds()[5].labels()[0], "smoke");
+        assert_eq!(bn.cpds()[6].labels()[0], "tub");
+        assert_eq!(bn.cpds()[7].labels()[0], "xray");
 
         assert!(
             bn.cpds()[0]
@@ -80,14 +80,14 @@ mod tests {
         assert!(bn.cpds()[7].conditioning_labels().iter().eq(["either"]));
 
         // Check CPDs states.
-        assert!(bn.cpds()[0].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[1].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[2].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[3].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[4].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[5].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[6].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[7].states().iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[0].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[1].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[2].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[3].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[4].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[5].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[6].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[7].states()[0].iter().eq(["no", "yes"]));
 
         // Check CPDs parameters.
         assert_eq!(
@@ -159,7 +159,7 @@ mod tests {
         let cpd = bn.cpds().get("HypDistrib").unwrap();
 
         // Check cardinality.
-        assert_eq!(cpd.cardinality(), 2);
+        assert_eq!(cpd.cardinality(), array![2]);
         assert_eq!(cpd.conditioning_cardinality(), array![4, 3]);
 
         // Check probability values with "." in it.

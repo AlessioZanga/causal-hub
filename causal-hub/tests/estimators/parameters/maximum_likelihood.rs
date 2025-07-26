@@ -33,8 +33,8 @@ mod tests {
                 // P(A)
                 let distribution = estimator.fit(&set![0], &set![]);
 
-                assert_eq!(distribution.label(), "A");
-                assert!(distribution.states().iter().eq(["no", "yes"]));
+                assert_eq!(distribution.labels()[0], "A");
+                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
                 assert!(
                     distribution
                         .conditioning_labels()
@@ -79,8 +79,8 @@ mod tests {
                 // P(A | B, C)
                 let distribution = estimator.fit(&set![0], &set![1, 2]);
 
-                assert_eq!(distribution.label(), "A");
-                assert!(distribution.states().iter().eq(["no", "yes"]));
+                assert_eq!(distribution.labels()[0], "A");
+                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
                 assert!(distribution.conditioning_labels().iter().eq(vec!["B", "C"]));
                 assert!(
                     distribution
@@ -215,8 +215,8 @@ mod tests {
                 // P(A)
                 let distribution = &bn.cpds()["A"];
 
-                assert_eq!(distribution.label(), "A");
-                assert!(distribution.states().iter().eq(["no", "yes"]));
+                assert_eq!(distribution.labels()[0], "A");
+                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
                 assert!(
                     distribution
                         .conditioning_labels()

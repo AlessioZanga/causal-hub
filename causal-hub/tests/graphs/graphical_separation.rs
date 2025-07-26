@@ -199,7 +199,7 @@ mod tests {
                     // For each vertex ...
                     for &x in &v {
                         // Get the parents of the vertex.
-                        let pa_x: Set<_> = g.parents(x).into_iter().collect();
+                        let pa_x = g.parents(x);
                         // Get the descendants of the vertex.
                         let de_x = g.descendants(x);
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.

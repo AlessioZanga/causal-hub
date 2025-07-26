@@ -73,9 +73,21 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
 
         // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
+        let conditioning_states = z
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
+        let states = x
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Construct the CPD.
         let cpd_xz = CatCPD::with_sample_size(
             states,
@@ -168,9 +180,21 @@ impl MLE<'_, CatTrj> {
         });
 
         // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
+        let conditioning_states = z
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
+        let states = x
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Construct the CIM.
         let cim_xz = CatCIM::with_sample_size(
             states,

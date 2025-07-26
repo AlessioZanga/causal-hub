@@ -22,45 +22,14 @@ impl_deref_from_into!(PyCatCPD, CatCPD);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatCPD {
-    /// Constructs a new categorical CPD.
-    ///
-    /// # Arguments
-    ///
-    /// * `state` - A tuple containing the label of the conditioned variable and its states.
-    /// * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
-    /// * `parameters` - A 2D array of parameters for the CPD.
-    ///
-    /// # Returns
-    ///
-    /// A new `CatCPD` instance.
-    ///
-    #[new]
-    pub fn new(
-        state: &Bound<'_, PyTuple>,
-        conditioning_states: &Bound<'_, PyAny>,
-        parameters: &Bound<'_, PyArray2<f64>>,
-    ) -> PyResult<Self> {
-        // Convert the PyTuple to a (String, Vec<String>).
-        let state = state.extract::<(String, Vec<String>)>()?;
-        // Convert the PyIterator to a Vec<(String, Vec<String>)>.
-        let conditioning_states: Vec<(String, Vec<String>)> = conditioning_states
-            .try_iter()?
-            .map(|x| x?.extract::<(String, Vec<String>)>())
-            .collect::<PyResult<_>>()?;
-        // Convert the PyArray2<f64> to a Array2<f64>.
-        let parameters = parameters.to_owned_array();
-        // Create a new CatCPD with the given parameters.
-        Ok(CatCPD::new(state, conditioning_states, parameters).into())
-    }
-
     /// Returns the label of the conditioned variable.
     ///
     /// # Returns
     ///
     /// A reference to the label.
     ///
-    pub fn label(&self) -> PyResult<&str> {
-        Ok(self.inner.label().as_ref())
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
+        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
     }
 
     /// Returns the states of the conditioned variable.
@@ -69,8 +38,21 @@ impl PyCatCPD {
     ///
     /// The states of the conditioned variable.
     ///
-    pub fn states(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.states().iter().map(AsRef::as_ref).collect())
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+        Ok(self
+            .inner
+            .states()
+            .iter()
+            .map(|(label, states)| {
+                // Get reference to the label and states.
+                let label = label.as_ref();
+                let states = states.iter().map(String::as_str);
+                // Convert the states to a PyTuple.
+                let states = PyTuple::new(py, states).unwrap();
+                // Return a tuple of the label and states.
+                (label, states)
+            })
+            .collect())
     }
 
     /// Returns the cardinality of the conditioned variable.
@@ -79,8 +61,8 @@ impl PyCatCPD {
     ///
     /// The cardinality of the conditioned variable.
     ///
-    pub fn cardinality(&self) -> PyResult<usize> {
-        Ok(self.inner.cardinality())
+    pub fn cardinality(&self) -> PyResult<Vec<usize>> {
+        Ok(self.inner.cardinality().to_vec())
     }
 
     /// Returns the labels of the conditioned variables.

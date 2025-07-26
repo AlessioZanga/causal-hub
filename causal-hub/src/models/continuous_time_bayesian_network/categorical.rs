@@ -95,7 +95,7 @@ impl CTBN for CatCTBN {
         // Collect the CPDs into a map.
         let mut cims: Map<_, _> = cims
             .into_iter()
-            .map(|x| (x.label().to_owned(), x))
+            .map(|x| (x.labels()[0].to_owned(), x)) // FIXME: This assumes `x` has a single element.
             .collect();
         // Sort the CPDs by their labels.
         cims.sort_keys();
@@ -127,9 +127,12 @@ impl CTBN for CatCTBN {
         // Initialize the CPDs as uniform distributions.
         let initial_cpds = cims.values().map(|cim| {
             // Get label and states of the CIM.
-            let state = (cim.label(), cim.states());
+            let state = {
+                let (k, v) = cim.states().get_index(0).unwrap(); // FIXME: This assumes `x` has a single state.
+                States::from_iter([(k.to_owned(), v.clone())])
+            };
             // Set empty conditioning states.
-            let conditioning_states: [(&str, Vec<&str>); 0] = [];
+            let conditioning_states = States::default();
             // Set uniform parameters.
             let alpha = cim.states().len();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
@@ -193,10 +196,10 @@ impl CTBN for CatCTBN {
         // Assert the initial distribution has same states.
         assert!(
             initial_distribution
-                .states()
+                .cpds()
                 .into_iter()
                 .zip(ctbn.cims())
-                .all(|((_, states), (_, cim))| states.eq(cim.states())),
+                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
             "Initial distribution states must be the same as the CIMs states."
         );
 

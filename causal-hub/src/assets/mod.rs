@@ -7,7 +7,9 @@ use crate::{
     distributions::CatCIM,
     graphs::{DiGraph, Graph},
     io::BifReader,
+    map,
     models::{CTBN, CatBN, CatCTBN},
+    set,
 };
 
 macro_for!(
@@ -42,12 +44,15 @@ pub fn load_eating() -> CatCTBN {
     graph.add_edge(1, 2); // Eating -> FullStomach
     graph.add_edge(2, 0); // FullStomach -> Hungry
 
+    // Set the states of the variables.
+    let states = set!["no".to_string(), "yes".to_string()];
+
     // Initialize the distributions.
     let cims = vec![
         CatCIM::new(
             // P(Hungry | FullStomach)
-            ("Hungry", vec!["no", "yes"]),
-            [("FullStomach", vec!["no", "yes"])],
+            map![("Hungry".to_string(), states.clone())],
+            map![("FullStomach".to_string(), states.clone())],
             array![
                 [
                     [-0.1, 0.1], //
@@ -61,8 +66,8 @@ pub fn load_eating() -> CatCTBN {
         ),
         CatCIM::new(
             // P(Eating | Hungry)
-            ("Eating", vec!["no", "yes"]),
-            [("Hungry", vec!["no", "yes"])],
+            map![("Eating".to_string(), states.clone())],
+            map![("Hungry".to_string(), states.clone())],
             array![
                 [
                     [-0.1, 0.1], //
@@ -76,8 +81,8 @@ pub fn load_eating() -> CatCTBN {
         ),
         CatCIM::new(
             // P(FullStomach | Eating)
-            ("FullStomach", vec!["no", "yes"]),
-            [("Eating", vec!["no", "yes"])],
+            map![("FullStomach".to_string(), states.clone())],
+            map![("Eating".to_string(), states.clone())],
             array![
                 [
                     [-0.1, 0.1], //

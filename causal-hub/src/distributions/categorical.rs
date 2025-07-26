@@ -15,15 +15,15 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CategoricalConditionalProbabilityDistribution {
     // Labels of the conditioned variable.
-    label: String,
-    states: Set<String>,
-    cardinality: usize,
+    labels: Labels,
+    states: States,
+    cardinality: Array1<usize>,
+    multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
     conditioning_states: States,
     conditioning_cardinality: Array1<usize>,
-    // Ravel multi index.
-    multi_index: MI,
+    conditioning_multi_index: MI,
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
@@ -56,20 +56,9 @@ impl CatCPD {
     ///
     /// A new `CatCPD` instance.
     ///
-    pub fn new<I, J, K, L, M, N, O>(
-        state: (L, I),
-        conditioning_states: J,
-        parameters: Array2<f64>,
-    ) -> Self
-    where
-        I: IntoIterator<Item = M>,
-        J: IntoIterator<Item = (N, K)>,
-        K: IntoIterator<Item = O>,
-        L: AsRef<str>,
-        M: AsRef<str>,
-        N: AsRef<str>,
-        O: AsRef<str>,
-    {
+    pub fn new(states: States, conditioning_states: States, parameters: Array2<f64>) -> Self {
+        /* FIXME:
+
         // Unpack label and states.
         let (label, states) = state;
         // Convert variable label to a string.
@@ -216,14 +205,27 @@ impl CatCPD {
             "Conditioning states must be sorted."
         );
 
+        */
+
+        // FIXME: This is a temporary solution to avoid the above commented code.
+        let labels = states.keys().cloned().collect();
+        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
+        let multi_index = MI::new(cardinality.iter().copied());
+        let conditioning_labels = conditioning_states.keys().cloned().collect();
+        let conditioning_cardinality: Array1<_> =
+            conditioning_states.values().map(|x| x.len()).collect();
+        let conditioning_multi_index = MI::new(conditioning_cardinality.iter().copied());
+        let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
+
         Self {
-            label,
+            labels,
             states,
             cardinality,
+            multi_index,
             conditioning_labels,
             conditioning_states,
             conditioning_cardinality,
-            multi_index,
+            conditioning_multi_index,
             parameters,
             parameters_size,
             sample_size: None,
@@ -238,7 +240,7 @@ impl CatCPD {
     /// The states of the conditioned variable.
     ///
     #[inline]
-    pub const fn states(&self) -> &Set<String> {
+    pub const fn states(&self) -> &States {
         &self.states
     }
 
@@ -249,8 +251,19 @@ impl CatCPD {
     /// The cardinality of the conditioned variable.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> usize {
-        self.cardinality
+    pub const fn cardinality(&self) -> &Array1<usize> {
+        &self.cardinality
+    }
+
+    /// Returns the ravel multi index of the conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The ravel multi index of the conditioning variables.
+    ///
+    #[inline]
+    pub const fn multi_index(&self) -> &MI {
+        &self.multi_index
     }
 
     /// Returns the states of the conditioning variables.
@@ -282,8 +295,8 @@ impl CatCPD {
     /// The ravel multi index of the conditioning variables.
     ///
     #[inline]
-    pub const fn multi_index(&self) -> &MI {
-        &self.multi_index
+    pub const fn conditioning_multi_index(&self) -> &MI {
+        &self.conditioning_multi_index
     }
 
     /// Returns the sample size of the dataset used to fit the distribution, if any.
@@ -329,22 +342,13 @@ impl CatCPD {
     ///
     /// A new `CatCPD` instance.
     ///
-    pub fn with_sample_size<I, J, K, L, M, N, O>(
-        state: (L, I),
-        conditioning_states: J,
+    pub fn with_sample_size(
+        state: States,
+        conditioning_states: States,
         parameters: Array2<f64>,
         sample_size: Option<f64>,
         sample_log_likelihood: Option<f64>,
-    ) -> Self
-    where
-        I: IntoIterator<Item = M>,
-        J: IntoIterator<Item = (N, K)>,
-        K: IntoIterator<Item = O>,
-        L: AsRef<str>,
-        M: AsRef<str>,
-        N: AsRef<str>,
-        O: AsRef<str>,
-    {
+    ) -> Self {
         // Assert the sample size is finite and non-negative.
         sample_size.inspect(|&x| {
             assert!(
@@ -377,6 +381,8 @@ impl CatCPD {
 
 impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        /* FIXME:
+
         // Determine the maximum width for formatting based on the labels and states.
         let n = std::iter::once(self.label())
             .chain(self.states())
@@ -436,6 +442,8 @@ impl Display for CatCPD {
         // Write the closing horizontal line for the table.
         writeln!(f, "{hline}")?;
 
+        */
+
         Ok(())
     }
 }
@@ -443,7 +451,7 @@ impl Display for CatCPD {
 impl PartialEq for CatCPD {
     fn eq(&self, other: &Self) -> bool {
         // Check for equality, excluding the sample values.
-        self.label.eq(&other.label)
+        self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
             && self.cardinality.eq(&other.cardinality)
             && self.conditioning_labels.eq(&other.conditioning_labels)
@@ -465,7 +473,7 @@ impl AbsDiffEq for CatCPD {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         // Check for equality, excluding the sample values.
-        self.label.eq(&other.label)
+        self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
             && self.cardinality.eq(&other.cardinality)
             && self.conditioning_labels.eq(&other.conditioning_labels)
@@ -490,7 +498,7 @@ impl RelativeEq for CatCPD {
         max_relative: Self::Epsilon,
     ) -> bool {
         // Check for equality, excluding the sample values.
-        self.label.eq(&other.label)
+        self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
             && self.cardinality.eq(&other.cardinality)
             && self.conditioning_labels.eq(&other.conditioning_labels)
@@ -506,18 +514,16 @@ impl RelativeEq for CatCPD {
 }
 
 impl CPD for CatCPD {
-    type Label = String;
-    type ConditioningLabels = Labels;
     type Parameters = Array2<f64>;
     type SS = (Array2<f64>, Array1<f64>, f64);
 
     #[inline]
-    fn label(&self) -> &Self::Label {
-        &self.label
+    fn labels(&self) -> &Labels {
+        &self.labels
     }
 
     #[inline]
-    fn conditioning_labels(&self) -> &Self::ConditioningLabels {
+    fn conditioning_labels(&self) -> &Labels {
         &self.conditioning_labels
     }
 
