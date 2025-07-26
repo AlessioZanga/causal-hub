@@ -33,9 +33,9 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the parents of the vertex.
+    /// A set of indices representing the parents of the vertex.
     ///
-    pub fn parents(&self, x: usize) -> Vec<usize> {
+    pub fn parents(&self, x: usize) -> Set<usize> {
         // Assert the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 
@@ -102,9 +102,9 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the children of the vertex.
+    /// A set of indices representing the children of the vertex.
     ///
-    pub fn children(&self, x: usize) -> Vec<usize> {
+    pub fn children(&self, x: usize) -> Set<usize> {
         // Check if the vertex is within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
 

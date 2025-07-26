@@ -8,7 +8,7 @@ use super::{
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -43,7 +43,7 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         self.dataset.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let states = self.dataset.states();
 
@@ -56,7 +56,7 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         assert!(
             n_z.iter().all(|&x| x > 0.),
             "Failed to get non-zero counts for variable '{}'.",
-            self.dataset.labels()[x]
+            self.dataset.labels()[x[0]] // FIXME: This assumes `x` has a single element.
         );
 
         // Align the dimensions of the counts.
@@ -75,7 +75,7 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
         // Construct the CPD.
         let cpd_xz = CatCPD::with_sample_size(
             states,
@@ -96,8 +96,8 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
     fn fit_transform_cim(
-        x: usize,
-        z: &[usize],
+        x: &Set<usize>,
+        z: &Set<usize>,
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
@@ -108,7 +108,7 @@ impl MLE<'_, CatTrj> {
         assert!(
             t_xz.iter().all(|&x| x > 0.),
             "Failed to get non-zero conditional times for variable '{}'.",
-            labels[x]
+            labels[x[0]] // FIXME: This assumes `x` has a single element.
         );
 
         // Align the dimensions of the counts and times.
@@ -170,7 +170,7 @@ impl MLE<'_, CatTrj> {
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
         // Construct the CIM.
         let cim_xz = CatCIM::with_sample_size(
             states,
@@ -197,7 +197,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             self.dataset.labels()
         }
 
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 
@@ -217,7 +217,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get labels and states.
             let (labels, states) = (self.dataset.labels(), self.dataset.states());
 

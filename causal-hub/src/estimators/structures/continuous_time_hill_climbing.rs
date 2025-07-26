@@ -5,7 +5,8 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
-    types::Labels,
+    set,
+    types::{Labels, Set},
 };
 
 /// A trait for scoring criteria used in score-based structure learning.
@@ -29,7 +30,7 @@ pub trait ScoringCriterion {
     ///
     /// The computed score.
     ///
-    fn call(&self, x: usize, z: &[usize]) -> f64;
+    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64;
 }
 
 /// A type alias for a scoring criterion.
@@ -72,7 +73,7 @@ where
     }
 
     #[inline]
-    fn call(&self, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64 {
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
@@ -220,7 +221,7 @@ where
             // Set the initial parent set as the current parent set.
             let mut curr_pa = self.initial_graph.parents(i);
             // Compute the score of the current parent set.
-            let mut curr_score = self.score.call(i, &curr_pa);
+            let mut curr_score = self.score.call(&set![i], &curr_pa);
 
             // While the score of the current parent set is higher than the previous score ...
             while prev_score < curr_score {
@@ -272,7 +273,7 @@ where
                 // For each candidate parent sets ...
                 for next_pa in poss_pa {
                     // Compute the score of the candidate parent set.
-                    let next_score = self.score.call(i, &next_pa);
+                    let next_score = self.score.call(&set![i], &next_pa);
                     // If the score of the candidate parent set is higher ...
                     if curr_score < next_score {
                         // Update the current parent set to the candidate parent set.
@@ -318,7 +319,7 @@ where
                 // Set the initial parent set as the current parent set.
                 let mut curr_pa = self.initial_graph.parents(i);
                 // Compute the score of the current parent set.
-                let mut curr_score = self.score.call(i, &curr_pa);
+                let mut curr_score = self.score.call(&set![i], &curr_pa);
 
                 // While the score of the current parent set is higher than the previous score ...
                 while prev_score < curr_score {
@@ -373,7 +374,7 @@ where
                     if let Some((next_score, next_pa)) = poss_pa
                         .into_par_iter()
                         // Compute the score of the candidate parent set in parallel.
-                        .map(|next_pa| (self.score.call(i, &next_pa), next_pa))
+                        .map(|next_pa| (self.score.call(&set![i], &next_pa), next_pa))
                         // Get the one with the highest score in parallel.
                         .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
                     {

@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use super::Map;
-use crate::{distributions::CPD, estimators::CPDEstimator};
+use crate::{distributions::CPD, estimators::CPDEstimator, types::Set};
 
 /// A cache for calling a function with a key and value.
 #[derive(Clone, Debug)]
@@ -10,7 +10,7 @@ pub struct Cache<'a, C, K, V> {
     cache: Arc<RwLock<Map<K, V>>>,
 }
 
-impl<'a, E, P> Cache<'a, E, (usize, Vec<usize>), (P::SS, P)>
+impl<'a, E, P> Cache<'a, E, (Vec<usize>, Vec<usize>), (P::SS, P)>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
@@ -34,7 +34,7 @@ where
     }
 }
 
-impl<E, P> CPDEstimator<P> for Cache<'_, E, (usize, Vec<usize>), (P::SS, P)>
+impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), (P::SS, P)>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
@@ -44,9 +44,12 @@ where
         self.call.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P) {
         // Get the key.
-        let key = (x, z.to_vec());
+        let key: (Vec<_>, Vec<_>) = (
+            x.into_iter().cloned().collect(),
+            z.into_iter().cloned().collect(),
+        );
         // Check if the key is in the cache.
         if let Some(value) = self.cache.read().unwrap().get(&key) {
             // If it is, return the value.

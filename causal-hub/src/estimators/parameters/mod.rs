@@ -18,7 +18,8 @@ use crate::{
     distributions::CPD,
     graphs::{DiGraph, Graph},
     models::{BN, CTBN},
-    types::Labels,
+    set,
+    types::{Labels, Set},
 };
 
 /// A trait for sufficient statistics estimators.
@@ -45,7 +46,7 @@ pub trait ConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Output;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
 /// A type alias for a sufficient statistics estimator.
@@ -67,7 +68,7 @@ pub trait ParallelConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn par_fit(&self, x: usize, z: &[usize]) -> Self::Output;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
 /// A type alias for a parallel sufficient statistics estimator.
@@ -98,7 +99,7 @@ where
     /// The estimated CDP.
     ///
     #[inline]
-    fn fit(&self, x: usize, z: &[usize]) -> P {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Return only the CPD.
         self.fit_transform(x, z).1
     }
@@ -114,7 +115,7 @@ where
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
 }
 
 /// A type alias for a conditional probability distribution estimator.
@@ -137,7 +138,7 @@ where
     /// The estimated CDP.
     ///
     #[inline]
-    fn par_fit(&self, x: usize, z: &[usize]) -> P {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Return only the CPD.
         self.par_fit_transform(x, z).1
     }
@@ -153,7 +154,7 @@ where
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
+    fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
 }
 
 /// A type alias for a parallel conditional probability distribution estimator.
@@ -189,7 +190,7 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(i, &graph.parents(i)))
+            .map(|i| self.fit(&set![i], &graph.parents(i)))
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -226,7 +227,7 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(i, &graph.parents(i)))
+            .map(|i| self.par_fit(&set![i], &graph.parents(i)))
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -263,7 +264,7 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(i, &graph.parents(i)))
+            .map(|i| self.fit(&set![i], &graph.parents(i)))
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)
@@ -300,7 +301,7 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(i, &graph.parents(i)))
+            .map(|i| self.par_fit(&set![i], &graph.parents(i)))
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)

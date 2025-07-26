@@ -6,7 +6,7 @@ use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A struct representing a Bayesian estimator.
@@ -55,7 +55,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         self.dataset.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
         let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
 
@@ -76,7 +76,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         let n_z = n_z.insert_axis(Axis(1));
         // Add the prior to the counts.
         let n_xz = n_xz + alpha;
-        let n_z = n_z + alpha * cards[x] as f64;
+        let n_z = n_z + alpha * cards[x[0]] as f64; // FIXME: This assumes `x` has a single element.
         // Compute the parameters by normalizing the counts with the prior.
         let parameters = &n_xz / &n_z;
 
@@ -88,7 +88,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
         // Construct the CPD.
         let cpd_xz = CatCPD::with_sample_size(
             states,
@@ -109,8 +109,8 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit_transform_cim(
-        x: usize,
-        z: &[usize],
+        x: &Set<usize>,
+        z: &Set<usize>,
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
@@ -173,7 +173,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Subset the conditioning labels, states and cardinality.
         let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = states.get_index(x[0]).unwrap(); // FIXME: This assumes `x` has a single element.
         // Construct the CIM.
         let cim_xz = CatCIM::with_sample_size(
             states,
@@ -200,7 +200,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             self.dataset.labels()
         }
 
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.
@@ -216,7 +216,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.

@@ -41,9 +41,9 @@ impl CSSEstimator for SSE<'_, CatData> {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Concat the variables to fit.
-        let x_z: Set<_> = std::iter::once(&x).chain(z).cloned().collect();
+        let x_z: Set<_> = std::iter::once(&x[0]).chain(z).cloned().collect(); // FIXME: This assumes `x` has a single element.
 
         // Assert X_Z does not contain duplicates.
         assert_eq!(x_z.len(), 1 + z.len(), "Variables to fit must be unique.");
@@ -60,7 +60,7 @@ impl CSSEstimator for SSE<'_, CatData> {
         // Initialize ravel multi index.
         let idx = RMI::new(z.iter().map(|&i| cards[i]));
         // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x], idx.cardinality().product());
+        let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
 
         // Initialize the joint counts.
         let mut n_xz: Array2<usize> = Array::zeros((c_z, c_x));
@@ -68,7 +68,7 @@ impl CSSEstimator for SSE<'_, CatData> {
         // Count the occurrences of the states.
         self.dataset.values().rows().into_iter().for_each(|row| {
             // Get the value of X as index.
-            let idx_x = row[x] as usize;
+            let idx_x = row[x[0]] as usize; // FIXME: This assumes `x` has a single element.
             // Get the value of Z as index using the strides.
             let idx_z = idx.ravel(z.iter().map(|&i| row[i] as usize));
             // Increment the joint counts.
@@ -97,13 +97,13 @@ impl CSSEstimator for SSE<'_, CatTrj> {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Get the cardinality of the trajectory.
         let cards = self.dataset.cardinality();
         // Construct the ravel multi index.
         let idx = RMI::new(z.iter().map(|&i| cards[i]));
         // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x], idx.cardinality().product());
+        let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
 
         // Initialize the joint counts.
         let mut n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
@@ -120,7 +120,7 @@ impl CSSEstimator for SSE<'_, CatTrj> {
             // Compare the current and next event.
             .for_each(|((e_i, t_i), (e_j, t_j))| {
                 // Get the value of X as index.
-                let (x_i, x_j) = (e_i[x] as usize, e_j[x] as usize);
+                let (x_i, x_j) = (e_i[x[0]] as usize, e_j[x[0]] as usize); // FIXME: This assumes `x` has a single element.
                 // Get the value of Z as index using the strides.
                 let z_i = idx.ravel(z.iter().map(|&i| e_i[i] as usize));
                 // Increment the count when conditioned variable transitions.
@@ -148,7 +148,7 @@ impl CSSEstimator for SSE<'_, CatWtdTrj> {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
@@ -169,11 +169,11 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             self.dataset.labels()
         }
 
-        fn fit(&self, x: usize, z: &[usize]) -> Self::Output {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
             // Get the cardinality of the trajectory.
             let cards = self.dataset.cardinality();
             // Get the cardinality of the conditioned and conditioning variables.
-            let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+            let (c_x, c_z) = (cards[x[0]], z.iter().map(|&i| cards[i]).product()); // FIXME: This assumes `x` has a single element.
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
@@ -196,11 +196,11 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
     impl ParCSSEstimator for SSE<'_, $type> {
         type Output = <CatCIM as CPD>::SS;
 
-        fn par_fit(&self, x: usize, z: &[usize]) -> Self::Output {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
             // Get the cardinality of the trajectory.
             let cards = self.dataset.cardinality();
             // Get the cardinality of the conditioned and conditioning variables.
-            let (c_x, c_z) = (cards[x], z.iter().map(|&i| cards[i]).product());
+            let (c_x, c_z) = (cards[x[0]], z.iter().map(|&i| cards[i]).product());  // FIXME: This assumes `x` has a single element.
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));

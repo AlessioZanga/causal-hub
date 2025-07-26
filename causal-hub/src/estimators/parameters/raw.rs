@@ -382,7 +382,7 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj
         self.evidence.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
@@ -393,14 +393,14 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTr
         self.evidence.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit_transform(x, z)
     }
