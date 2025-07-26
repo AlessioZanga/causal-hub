@@ -353,7 +353,7 @@ pub(crate) mod digraph {
             let an_x_y_w = &an_x_y_w | &x_y_w;
 
             // Initialize the restricted set with the intersection of X, Y, and included.
-            let z: Set<_> = v & &(&an_x_y_w - &(x | y));
+            let z = v & &(&an_x_y_w - &(x | y));
 
             // Check if Z is a separator.
             let x_closure = _reachable(self, x, &an_x_y_w, &z);

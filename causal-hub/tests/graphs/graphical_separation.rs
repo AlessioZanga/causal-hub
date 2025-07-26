@@ -195,7 +195,7 @@ mod tests {
                     // Get the g from the BN.
                     let g = bn.graph();
                     // Get the vertices of the g.
-                    let v: Set<_> = g.vertices();
+                    let v = g.vertices();
                     // For each vertex ...
                     for &x in &v {
                         // Get the parents of the vertex.
