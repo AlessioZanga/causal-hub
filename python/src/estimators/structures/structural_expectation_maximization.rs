@@ -99,9 +99,11 @@ pub fn sem<'a>(
                     // Set the parents of the initial graph to max_parents.
                     for i in 0..initial_graph.vertices().len() {
                         // Get the parents.
-                        let mut pa_i = initial_graph.parents(i);
+                        let pa_i = initial_graph.parents(i);
                         // Check the maximum number of parents.
                         if pa_i.len() > max_parents + 1 {
+                            // Convert to a mutable vector.
+                            let mut pa_i: Vec<_> = pa_i.into_iter().collect();
                             // Choose nodes randomly.
                             pa_i.shuffle(&mut rng);
                             // Remove the excess parents.

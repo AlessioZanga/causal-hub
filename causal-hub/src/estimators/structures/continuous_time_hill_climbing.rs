@@ -250,7 +250,7 @@ where
                                         // Clone the current parent set.
                                         let mut curr_pa = curr_pa.clone();
                                         // Insert the vertex in order.
-                                        curr_pa.insert(p_j, j);
+                                        curr_pa.shift_insert(p_j, j);
                                         // Return it as a candidate for addition.
                                         return Some(curr_pa);
                                     }
@@ -267,7 +267,7 @@ where
                     // Get the size of the candidate subset, avoid underflow.
                     let k = curr_pa.len().saturating_sub(1);
                     // Generate all the k-sized subsets.
-                    curr_pa.into_iter().combinations(k)
+                    curr_pa.into_iter().combinations(k).map(Set::from_iter)
                 });
 
                 // For each candidate parent sets ...
@@ -348,7 +348,7 @@ where
                                             // Clone the current parent set.
                                             let mut curr_pa = curr_pa.clone();
                                             // Insert the vertex in order.
-                                            curr_pa.insert(p_j, j);
+                                            curr_pa.shift_insert(p_j, j);
                                             // Return it as a candidate for addition.
                                             return Some(curr_pa);
                                         }
@@ -365,7 +365,7 @@ where
                         // Get the size of the candidate subset, avoid underflow.
                         let k = curr_pa.len().saturating_sub(1);
                         // Generate all the k-sized subsets.
-                        curr_pa.into_iter().combinations(k)
+                        curr_pa.into_iter().combinations(k).map(Set::from_iter)
                     })
                     // Collect to allow for parallel iteration.
                     .collect();
