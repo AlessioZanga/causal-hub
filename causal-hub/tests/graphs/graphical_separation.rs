@@ -205,7 +205,7 @@ mod tests {
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                         let non_de_x = &v - &de_x;
                         let mut non_de_x = &non_de_x - &pa_x;
-                        non_de_x.swap_remove(&x);
+                        non_de_x.shift_remove(&x);
                         assert!(non_de_x.is_empty() || g.is_separator_set(&set![x], &non_de_x, &pa_x));
                     }
                 }
