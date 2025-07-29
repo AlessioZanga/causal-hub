@@ -4,6 +4,6 @@ mod distributions;
 mod estimators;
 mod graphs;
 mod io;
-// FIXME: mod models;
+mod models;
 mod samplers;
 mod utils;

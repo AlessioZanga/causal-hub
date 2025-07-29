@@ -6,7 +6,6 @@ mod tests {
             graphs::{DiGraph, Graph, GraphicalSeparation},
             models::BN,
             set,
-            types::Set,
         };
         use dry::macro_for;
         use paste::paste;
