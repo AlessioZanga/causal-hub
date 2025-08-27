@@ -138,27 +138,6 @@ pub(crate) mod digraph {
         pcp
     }
 
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn test_proper_causal_path() {
-            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
-            graph.add_edge(0, 1);
-            graph.add_edge(0, 2);
-            graph.add_edge(1, 2);
-            graph.add_edge(1, 3);
-            graph.add_edge(2, 3);
-            graph.add_edge(3, 4);
-
-            assert_eq!(
-                _proper_causal_path(&graph, &set![0], &set![3]),
-                set![1, 2, 3]
-            );
-        }
-    }
-
     // Returns the proper backdoor graph:
     //
     //     G^PDB = G \ { X -> PCP(X, Y) }
@@ -287,6 +266,27 @@ pub(crate) mod digraph {
 
             // Find a minimal separator in G^PDB under the constraint V'.
             g_pdb.find_minimal_separator_set(x, y, Some(w), Some(v_prime))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_proper_causal_path() {
+            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
+            graph.add_edge(0, 1);
+            graph.add_edge(0, 2);
+            graph.add_edge(1, 2);
+            graph.add_edge(1, 3);
+            graph.add_edge(2, 3);
+            graph.add_edge(3, 4);
+
+            assert_eq!(
+                _proper_causal_path(&graph, &set![0], &set![3]),
+                set![1, 2, 3]
+            );
         }
     }
 }
