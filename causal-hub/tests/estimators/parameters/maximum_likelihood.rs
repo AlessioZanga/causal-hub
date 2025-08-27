@@ -125,7 +125,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Variables to fit must be unique.")]
+            #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn test_unique_variables() {
                 let variables = vec![
                     ("A", vec!["no", "yes"]),
@@ -149,7 +149,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Failed to get non-zero counts for variable 'A'.")]
+            #[should_panic(expected = "Failed to get non-zero counts.")]
             fn test_non_zero_counts() {
                 let variables = vec![
                     ("A", vec!["no", "yes"]),

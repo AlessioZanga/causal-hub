@@ -55,8 +55,7 @@ impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
         // Assert the marginal counts are not zero.
         assert!(
             n_z.iter().all(|&x| x > 0.),
-            "Failed to get non-zero counts for variable '{}'.",
-            self.dataset.labels()[x[0]] // FIXME: This assumes `x` has a single element.
+            "Failed to get non-zero counts.",
         );
 
         // Align the dimensions of the counts.
@@ -113,14 +112,12 @@ impl MLE<'_, CatTrj> {
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
-        labels: &Labels,
         states: &States,
     ) -> ((Array3<f64>, Array2<f64>, f64), CatCIM) {
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
-            "Failed to get non-zero conditional times for variable '{}'.",
-            labels[x[0]] // FIXME: This assumes `x` has a single element.
+            "Failed to get non-zero conditional times."
         );
 
         // Align the dimensions of the counts and times.
@@ -222,8 +219,8 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
         }
 
         fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
-            // Get labels and states.
-            let (labels, states) = (self.dataset.labels(), self.dataset.states());
+            // Get states.
+            let states = self.dataset.states();
 
             // Initialize the sufficient statistics estimator.
             let sse = SSE::new(self.dataset);
@@ -231,7 +228,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             let (n_xz, t_xz, n) = sse.fit(x, z);
 
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, labels, states)
+            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, states)
         }
     }
 
@@ -242,8 +239,8 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
         fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
-            // Get labels and states.
-            let (labels, states) = (self.dataset.labels(), self.dataset.states());
+            // Get states.
+            let states = self.dataset.states();
 
             // Initialize the sufficient statistics estimator.
             let sse = SSE::new(self.dataset);
@@ -251,7 +248,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let (n_xz, t_xz, n) = sse.par_fit(x, z);
 
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, labels, states)
+            MLE::<'_, CatTrj>::fit_transform_cim(x, z, n_xz, t_xz, n, states)
         }
     }
 

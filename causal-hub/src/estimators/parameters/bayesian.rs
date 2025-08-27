@@ -57,7 +57,8 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
 
     fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
-        let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
+        let states = self.dataset.states();
+        let cardinality = self.dataset.cardinality();
 
         // Initialize the sufficient statistics estimator.
         let sse = SSE::new(self.dataset);
@@ -76,7 +77,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         let n_z = n_z.insert_axis(Axis(1));
         // Add the prior to the counts.
         let n_xz = n_xz + alpha;
-        let n_z = n_z + alpha * cards[x[0]] as f64; // FIXME: This assumes `x` has a single element.
+        let n_z = n_z + alpha * x.iter().map(|&i| cardinality[i]).product::<usize>() as f64;
         // Compute the parameters by normalizing the counts with the prior.
         let parameters = &n_xz / &n_z;
 

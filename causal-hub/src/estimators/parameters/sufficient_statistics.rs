@@ -42,35 +42,30 @@ impl CSSEstimator for SSE<'_, CatData> {
     }
 
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
-        // Concat the variables to fit.
-        let x_z: Set<_> = std::iter::once(&x[0]).chain(z).cloned().collect(); // FIXME: This assumes `x` has a single element.
-
-        // Assert X_Z does not contain duplicates.
-        assert_eq!(x_z.len(), 1 + z.len(), "Variables to fit must be unique.");
-
-        // Get the reference to the labels, states and cardinality.
-        let (labels, cards) = (self.dataset.labels(), self.dataset.cardinality());
-
-        // Assert the variables to fit are in the dataset.
+        // Assert variables and conditioning variables must be disjoint..
         assert!(
-            x_z.iter().all(|&i| i < labels.len()),
-            "Variables to fit must be in the dataset."
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
         );
 
-        // Initialize ravel multi index.
-        let idx = MI::new(z.iter().map(|&i| cards[i]));
+        // Get the cardinality.
+        let cardinality = self.dataset.cardinality();
+
+        // Initialize the multi index.
+        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
         // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
+        let c_x = m_idx_x.cardinality().product();
+        let c_z = m_idx_z.cardinality().product();
 
         // Initialize the joint counts.
         let mut n_xz: Array2<usize> = Array::zeros((c_z, c_x));
 
         // Count the occurrences of the states.
         self.dataset.values().rows().into_iter().for_each(|row| {
-            // Get the value of X as index.
-            let idx_x = row[x[0]] as usize; // FIXME: This assumes `x` has a single element.
-            // Get the value of Z as index using the strides.
-            let idx_z = idx.ravel(z.iter().map(|&i| row[i] as usize));
+            // Get the value of X and Z as index.
+            let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
+            let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
             // Increment the joint counts.
             n_xz[[idx_z, idx_x]] += 1;
         });
@@ -98,12 +93,21 @@ impl CSSEstimator for SSE<'_, CatTrj> {
     }
 
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
-        // Get the cardinality of the trajectory.
-        let cards = self.dataset.cardinality();
-        // Construct the ravel multi index.
-        let idx = MI::new(z.iter().map(|&i| cards[i]));
+        // Assert variables and conditioning variables must be disjoint..
+        assert!(
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
+        );
+
+        // Get the cardinality.
+        let cardinality = self.dataset.cardinality();
+
+        // Initialize the multi index.
+        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
         // Get the cardinality of the conditioned and conditioning variables.
-        let (c_x, c_z) = (cards[x[0]], idx.cardinality().product()); // FIXME: This assumes `x` has a single element.
+        let c_x = m_idx_x.cardinality().product();
+        let c_z = m_idx_z.cardinality().product();
 
         // Initialize the joint counts.
         let mut n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
@@ -120,13 +124,14 @@ impl CSSEstimator for SSE<'_, CatTrj> {
             // Compare the current and next event.
             .for_each(|((e_i, t_i), (e_j, t_j))| {
                 // Get the value of X as index.
-                let (x_i, x_j) = (e_i[x[0]] as usize, e_j[x[0]] as usize); // FIXME: This assumes `x` has a single element.
+                let idx_x_i = m_idx_x.ravel(x.iter().map(|&i| e_i[i] as usize));
+                let idx_x_j = m_idx_x.ravel(x.iter().map(|&i| e_j[i] as usize));
                 // Get the value of Z as index using the strides.
-                let z_i = idx.ravel(z.iter().map(|&i| e_i[i] as usize));
+                let idx_z = m_idx_z.ravel(z.iter().map(|&i| e_i[i] as usize));
                 // Increment the count when conditioned variable transitions.
-                n_xz[[z_i, x_i, x_j]] += (x_i != x_j) as usize;
+                n_xz[[idx_z, idx_x_i, idx_x_j]] += (idx_x_i != idx_x_j) as usize;
                 // Increment the time in that state.
-                t_xz[[z_i, x_i]] += t_j - t_i;
+                t_xz[[idx_z, idx_x_i]] += t_j - t_i;
             });
 
         // Get the sample size.
@@ -170,10 +175,12 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         }
 
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
-            // Get the cardinality of the trajectory.
-            let cards = self.dataset.cardinality();
+            // Get the cardinality.
+            let cardinality = self.dataset.cardinality();
+
             // Get the cardinality of the conditioned and conditioning variables.
-            let (c_x, c_z) = (cards[x[0]], z.iter().map(|&i| cards[i]).product()); // FIXME: This assumes `x` has a single element.
+            let c_x = x.iter().map(|&i| cardinality[i]).product();
+            let c_z = z.iter().map(|&i| cardinality[i]).product();
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
@@ -197,10 +204,12 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         type Output = <CatCIM as CPD>::SS;
 
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
-            // Get the cardinality of the trajectory.
-            let cards = self.dataset.cardinality();
+            // Get the cardinality.
+            let cardinality = self.dataset.cardinality();
+
             // Get the cardinality of the conditioned and conditioning variables.
-            let (c_x, c_z) = (cards[x[0]], z.iter().map(|&i| cards[i]).product());  // FIXME: This assumes `x` has a single element.
+            let c_x = x.iter().map(|&i| cardinality[i]).product();
+            let c_z = z.iter().map(|&i| cardinality[i]).product();
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));

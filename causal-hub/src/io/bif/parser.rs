@@ -116,8 +116,10 @@ impl BifReader {
         // Construct the graph.
         let mut graph = DiGraph::empty(states.keys());
         cpds.iter().for_each(|p| {
+            // Assert the CPD has a single variable in the BIF file.
+            assert_eq!(p.labels().len(), 1);
             // Get child index.
-            let x = &p.labels()[0]; // FIXME: This assumes `x` has a single element.
+            let x = &p.labels()[0];
             let x = graph
                 .labels()
                 .get_index_of(x)
