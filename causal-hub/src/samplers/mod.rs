@@ -32,7 +32,7 @@ pub use importance::*;
 use crate::models::{BN, CTBN};
 
 /// A trait for sampling from a Bayesian network.
-pub trait BayesianNetworkSampler<T>
+pub trait BNSampler<T>
 where
     T: BN,
 {
@@ -62,10 +62,8 @@ where
     fn sample_n(&mut self, n: usize) -> Self::Samples;
 }
 
-pub use BayesianNetworkSampler as BNSampler;
-
 /// A trait for sampling from a CTBN.
-pub trait ContinuousTimeBayesianNetworkSampler<T>
+pub trait CTBNSampler<T>
 where
     T: CTBN,
 {
@@ -194,10 +192,8 @@ where
     ) -> Self::Samples;
 }
 
-pub use ContinuousTimeBayesianNetworkSampler as CTBNSampler;
-
 /// A trait for sampling from a CTBN.
-pub trait ParallelContinuousTimeBayesianNetworkSampler<T>
+pub trait ParCTBNSampler<T>
 where
     T: CTBN,
 {
@@ -271,5 +267,3 @@ where
         n: usize,
     ) -> Self::Samples;
 }
-
-pub use ParallelContinuousTimeBayesianNetworkSampler as ParCTBNSampler;

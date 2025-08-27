@@ -9,13 +9,10 @@ use crate::{
 
 /// A multivariate weighted trajectory.
 #[derive(Clone, Debug)]
-pub struct CategoricalWeightedTrajectory {
+pub struct CatWtdTrj {
     trajectory: CatTrj,
     weight: f64,
 }
-
-/// A type alias for a weighted trajectories.
-pub type CatWtdTrj = CategoricalWeightedTrajectory;
 
 impl From<(CatTrj, f64)> for CatWtdTrj {
     fn from((trajectory, weight): (CatTrj, f64)) -> Self {
@@ -132,15 +129,12 @@ impl Dataset for CatWtdTrj {
 
 /// A collection of weighted trajectories.
 #[derive(Clone, Debug)]
-pub struct CategoricalWeightedTrajectories {
+pub struct CatWtdTrjs {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
-
-/// A type alias for a collection of weighted trajectories.
-pub type CatWtdTrjs = CategoricalWeightedTrajectories;
 
 impl CatWtdTrjs {
     /// Constructs a new collection of trajectories.

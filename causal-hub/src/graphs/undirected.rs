@@ -9,13 +9,10 @@ use crate::{
 
 /// A struct representing an undirected graph using an adjacency matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UndirectedGraph {
+pub struct UnGraph {
     labels: Labels,
     adjacency_matrix: Array2<bool>,
 }
-
-/// A type alias for an undirected graph.
-pub type UnGraph = UndirectedGraph;
 
 impl UnGraph {
     /// Returns the neighbors of a vertex.

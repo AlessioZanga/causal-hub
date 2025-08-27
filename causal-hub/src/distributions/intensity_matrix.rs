@@ -11,7 +11,7 @@ use crate::{
 
 /// A struct representing a categorical conditional intensity matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalConditionalIntensityMatrix {
+pub struct CatCIM {
     // Labels of the conditioned variable.
     labels: Labels,
     states: States,
@@ -29,9 +29,6 @@ pub struct CategoricalConditionalIntensityMatrix {
     sample_size: Option<f64>,
     sample_log_likelihood: Option<f64>,
 }
-
-/// A type alias for the categorical conditional intensity matrix.
-pub type CatCIM = CategoricalConditionalIntensityMatrix;
 
 impl CatCIM {
     /// Creates a new categorical conditional intensity matrix.

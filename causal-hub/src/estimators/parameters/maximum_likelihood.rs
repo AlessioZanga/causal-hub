@@ -1,10 +1,7 @@
 use dry::macro_for;
 use ndarray::prelude::*;
 
-use super::{
-    CPDEstimator, CSSEstimator, ParCPDEstimator, ParallelConditionalSufficientStatisticsEstimator,
-    SSE,
-};
+use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
@@ -13,14 +10,11 @@ use crate::{
 
 /// A struct representing a maximum likelihood estimator.
 #[derive(Clone, Copy, Debug)]
-pub struct MaximumLikelihoodEstimator<'a, D> {
+pub struct MLE<'a, D> {
     dataset: &'a D,
 }
 
-/// A type alias for a maximum likelihood estimator.
-pub type MLE<'a, D> = MaximumLikelihoodEstimator<'a, D>;
-
-impl<'a, D> MaximumLikelihoodEstimator<'a, D> {
+impl<'a, D> MLE<'a, D> {
     /// Creates a new maximum likelihood estimator.
     ///
     /// # Arguments

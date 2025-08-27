@@ -12,7 +12,7 @@ use crate::{
 
 /// A categorical Bayesian network (BN).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CategoricalBayesianNetwork {
+pub struct CatBN {
     /// The states of the variables.
     states: States,
     /// The underlying graph.
@@ -22,9 +22,6 @@ pub struct CategoricalBayesianNetwork {
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
-
-/// A type alias for the categorical Bayesian network.
-pub type CatBN = CategoricalBayesianNetwork;
 
 impl CatBN {
     /// Returns the states of the variables.

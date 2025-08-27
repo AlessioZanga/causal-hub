@@ -13,7 +13,7 @@ use crate::{
 
 /// A struct representing a categorical distribution.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalConditionalProbabilityDistribution {
+pub struct CatCPD {
     // Labels of the conditioned variable.
     labels: Labels,
     states: States,
@@ -31,9 +31,6 @@ pub struct CategoricalConditionalProbabilityDistribution {
     sample_size: Option<f64>,
     sample_log_likelihood: Option<f64>,
 }
-
-/// A type alias for a categorical conditional probability distribution.
-pub type CatCPD = CategoricalConditionalProbabilityDistribution;
 
 impl CatCPD {
     /// Creates a new categorical conditional probability distribution.

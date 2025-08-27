@@ -7,7 +7,7 @@ pub use intensity_matrix::*;
 use crate::types::Labels;
 
 /// A trait for conditional probability distributions.
-pub trait ConditionalProbabilityDistribution {
+pub trait CPD {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
@@ -45,6 +45,3 @@ pub trait ConditionalProbabilityDistribution {
     ///
     fn parameters_size(&self) -> usize;
 }
-
-/// A type alias for the conditional probability distribution.
-pub use ConditionalProbabilityDistribution as CPD;

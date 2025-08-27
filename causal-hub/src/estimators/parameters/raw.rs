@@ -21,16 +21,13 @@ use crate::{
 /// Its purpose is to provide a starting point for the other estimators, like EM.
 ///
 #[derive(Debug)]
-pub struct RawEstimator<'a, R, E, D> {
+pub struct RAWE<'a, R, E, D> {
     rng: &'a mut R,
     evidence: &'a E,
     dataset: Option<D>,
 }
 
-/// A type alias for a raw estimator.
-pub type RAWE<'a, R, E, D> = RawEstimator<'a, R, E, D>;
-
-impl<R, E, D> Deref for RawEstimator<'_, R, E, D> {
+impl<R, E, D> Deref for RAWE<'_, R, E, D> {
     type Target = D;
 
     fn deref(&self) -> &Self::Target {

@@ -13,25 +13,22 @@ use crate::{
 
 /// A struct representing a sufficient statistics estimator.
 #[derive(Clone, Copy, Debug)]
-pub struct SufficientStatisticsEstimator<'a, D> {
+pub struct SSE<'a, D> {
     dataset: &'a D,
 }
 
-impl<'a, D> SufficientStatisticsEstimator<'a, D> {
+impl<'a, D> SSE<'a, D> {
     /// Constructs a new sufficient statistics estimator.
     ///
     /// # Returns
     ///
-    /// A new `SufficientStatisticsEstimator` instance.
+    /// A new `SSE` instance.
     ///
     #[inline]
     pub const fn new(dataset: &'a D) -> Self {
         Self { dataset }
     }
 }
-
-/// A type alias for a sufficient statistics estimator.
-pub type SSE<'a, D> = SufficientStatisticsEstimator<'a, D>;
 
 impl CSSEstimator for SSE<'_, CatData> {
     type Output = <CatCPD as CPD>::SS;

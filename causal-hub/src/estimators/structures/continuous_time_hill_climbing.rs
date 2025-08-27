@@ -33,18 +33,12 @@ pub trait ScoringCriterion {
     fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64;
 }
 
-/// A type alias for a scoring criterion.
-pub use ScoringCriterion as SC;
-
 use super::PK;
 
 /// The Bayesian Information Criterion (BIC).
-pub struct BayesianInformationCriterion<'a, E> {
+pub struct BIC<'a, E> {
     estimator: &'a E,
 }
-
-/// A type alias for the BIC.
-pub type BIC<'a, E> = BayesianInformationCriterion<'a, E>;
 
 impl<'a, E> BIC<'a, E> {
     /// Creates a new BIC instance.
@@ -63,7 +57,7 @@ impl<'a, E> BIC<'a, E> {
     }
 }
 
-impl<E> SC for BIC<'_, E>
+impl<E> ScoringCriterion for BIC<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
@@ -92,19 +86,16 @@ where
 
 /// The hill climbing algorithm for structure learning in CTBNs.
 #[derive(Clone, Debug)]
-pub struct ContinuousTimeHillClimbing<'a, S> {
+pub struct CTHC<'a, S> {
     initial_graph: &'a DiGraph,
     score: &'a S,
     max_parents: Option<usize>,
     prior_knowledge: Option<&'a PK>,
 }
 
-/// A type alias for the continuous time hill climbing algorithm.
-pub type CTHC<'a, S> = ContinuousTimeHillClimbing<'a, S>;
-
 impl<'a, S> CTHC<'a, S>
 where
-    S: SC,
+    S: ScoringCriterion,
 {
     /// Creates a new continuous time hill climbing instance.
     ///
@@ -298,7 +289,7 @@ where
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: SC + Sync,
+    S: ScoringCriterion + Sync,
 {
     /// Execute the CTHC algorithm in parallel.
     ///

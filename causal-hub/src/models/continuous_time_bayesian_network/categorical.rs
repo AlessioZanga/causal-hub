@@ -13,7 +13,7 @@ use crate::{
 
 /// A categorical continuous time Bayesian network (CTBN).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CategoricalContinuousTimeBayesianNetwork {
+pub struct CatCTBN {
     /// The initial distribution.
     initial_distribution: CatBN,
     /// The underlying graph.
@@ -21,9 +21,6 @@ pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The conditional intensity matrices.
     cims: Map<String, CatCIM>,
 }
-
-/// A type alias for the categorical CTBN.
-pub type CatCTBN = CategoricalContinuousTimeBayesianNetwork;
 
 impl CatCTBN {
     /// Returns the states of the variables.

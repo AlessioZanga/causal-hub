@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// A trait for continuous time Bayesian networks (CTBNs).
-pub trait ContinuousTimeBayesianNetwork {
+pub trait CTBN {
     /// The type of the CIM.
     type CIM;
     /// The type of the initial distribution.
@@ -107,6 +107,3 @@ pub trait ContinuousTimeBayesianNetwork {
     where
         I: IntoIterator<Item = Self::CIM>;
 }
-
-/// A type alias for a continuous time Bayesian network.
-pub use ContinuousTimeBayesianNetwork as CTBN;

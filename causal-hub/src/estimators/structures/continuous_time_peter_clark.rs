@@ -235,22 +235,19 @@ where
 
 /// A struct representing a continuous-time Peter-Clark estimator.
 #[derive(Clone, Debug)]
-pub struct ContinuousTimePeterClark<'a, T, S> {
+pub struct CTPC<'a, T, S> {
     initial_graph: &'a DiGraph,
     null_time: &'a T,
     null_state: &'a S,
     prior_knowledge: Option<&'a PK>,
 }
 
-/// A type alias for the continuous-time Peter-Clark estimator.
-pub type CTPC<'a, T, S> = ContinuousTimePeterClark<'a, T, S>;
-
 impl<'a, T, S> CTPC<'a, T, S>
 where
     T: CIT,
     S: CIT,
 {
-    /// Creates a new `ContinuousTimePeterClark` instance.
+    /// Creates a new `CTPC` instance.
     ///
     /// # Arguments
     ///
@@ -260,7 +257,7 @@ where
     ///
     /// # Returns
     ///
-    /// A new `ContinuousTimePeterClark` instance.
+    /// A new `CTPC` instance.
     ///
     #[inline]
     pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {

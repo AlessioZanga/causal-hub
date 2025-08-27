@@ -3,16 +3,13 @@ use serde::{Deserialize, Serialize};
 
 /// A structure to compute the ravel index of a multi-dimensional array.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct MultiIndex {
+pub struct MI {
     cardinality: Array1<usize>,
     strides: Array1<usize>,
 }
 
-/// A type alias for the ravel multi index.
-pub type MI = MultiIndex;
-
 impl MI {
-    /// Construct a new `MultiIndex` from the cardinality of each dimension.
+    /// Construct a new `MI` from the cardinality of each dimension.
     ///
     /// # Arguments
     ///
@@ -20,7 +17,7 @@ impl MI {
     ///
     /// # Returns
     ///
-    /// A new `MultiIndex` instance.
+    /// A new `MI` instance.
     ///
     pub fn new<I>(cardinality: I) -> Self
     where

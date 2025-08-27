@@ -11,15 +11,12 @@ use crate::{
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Copy, Debug)]
-pub struct BayesianEstimator<'a, D, Pi> {
+pub struct BE<'a, D, Pi> {
     dataset: &'a D,
     prior: Pi,
 }
 
-/// A type alias for a bayesian estimator.
-pub type BE<'a, D, Pi> = BayesianEstimator<'a, D, Pi>;
-
-impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
+impl<'a, D, Pi> BE<'a, D, Pi> {
     /// Creates a new Bayesian estimator.
     ///
     /// # Arguments
@@ -29,7 +26,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
     ///
     /// # Returns
     ///
-    /// A new `BayesianEstimator` instance.
+    /// A new `BE` instance.
     ///
     #[inline]
     pub const fn new(dataset: &'a D, prior: Pi) -> Self {

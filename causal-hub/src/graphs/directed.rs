@@ -12,13 +12,10 @@ use crate::{
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct DirectedGraph {
+pub struct DiGraph {
     labels: Labels,
     adjacency_matrix: Array2<bool>,
 }
-
-/// A type alias for a directed graph.
-pub type DiGraph = DirectedGraph;
 
 impl DiGraph {
     /// Returns the parents of a vertex.
