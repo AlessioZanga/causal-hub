@@ -10,6 +10,7 @@ class CatBN:
     r"""
     A categorical Bayesian network (BN).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, graph:DiGraph, cpds:typing.Any) -> CatBN:
         r"""
         Constructs a new Bayesian network.
@@ -91,6 +92,7 @@ class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
@@ -176,6 +178,7 @@ class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution (CPD).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
@@ -265,6 +268,7 @@ class CatCTBN:
     r"""
     A continuous-time Bayesian network (CTBN).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, graph:DiGraph, cims:typing.Any) -> CatCTBN:
         r"""
         Constructs a new continuous-time Bayesian network.
@@ -593,6 +597,7 @@ class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     @classmethod
     def empty(cls, labels:typing.Any) -> DiGraph:
         r"""
@@ -909,6 +914,7 @@ class PK:
     r"""
     A struct representing prior knowledge.
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
 def em(evidence:CatTrjsEv, graph:DiGraph, max_iter:builtins.int=10, seed:builtins.int=42) -> dict:
