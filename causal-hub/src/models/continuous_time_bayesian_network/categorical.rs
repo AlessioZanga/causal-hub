@@ -127,18 +127,15 @@ impl CTBN for CatCTBN {
         // Initialize the CPDs as uniform distributions.
         let initial_cpds = cims.values().map(|cim| {
             // Get label and states of the CIM.
-            let state = {
-                let (k, v) = cim.states().get_index(0).unwrap(); // FIXME: This assumes `x` has a single state.
-                States::from_iter([(k.to_owned(), v.clone())])
-            };
+            let states = cim.states().clone();
             // Set empty conditioning states.
             let conditioning_states = States::default();
             // Set uniform parameters.
-            let alpha = cim.states().len();
+            let alpha = cim.cardinality().product();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.
-            CatCPD::new(state, conditioning_states, parameters)
+            CatCPD::new(states, conditioning_states, parameters)
         });
         // Initialize a uniform initial distribution.
         let initial_distribution = CatBN::new(initial_graph, initial_cpds);

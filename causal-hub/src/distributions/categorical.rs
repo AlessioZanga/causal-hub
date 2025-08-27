@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::CPD;
 use crate::{
     types::{EPSILON, Labels, Set, States},
-    utils::{MI, collect_states},
+    utils::MI,
 };
 
 /// A struct representing a categorical distribution.
@@ -57,52 +57,42 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn new(states: States, conditioning_states: States, parameters: Array2<f64>) -> Self {
-        /* FIXME:
+        // Get the labels of the variables.
+        let labels: Set<_> = states.keys().cloned().collect();
+        // Get the labels of the variables.
+        let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
-        // Unpack label and states.
-        let (label, states) = state;
-        // Convert variable label to a string.
-        let label = label.as_ref().to_owned();
-
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the variable.
-        let mut states: Set<_> = states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|state| state.as_ref().to_owned())
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(states.len(), n, "Variables states must be unique.");
+        // Assert labels and conditioning labels are disjoint.
+        assert!(
+            labels.is_disjoint(&conditioning_labels),
+            "Labels and conditioning labels must be disjoint."
+        );
 
         // Get the states cardinality.
-        let cardinality = states.len();
+        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
 
-        // Get the states of the conditioning variables.
-        let mut conditioning_states = collect_states(conditioning_states);
-        // Get the labels of the variables.
-        let mut conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
-        // Get the cardinality of the set of states.
-        let mut conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|i| i.len()).collect();
-
-        // Check that label is not in the conditioning labels.
+        // Check that the product of the cardinality matches the number of columns.
         assert!(
-            !conditioning_states.contains_key(&label),
-            "Conditioned variable cannot be a conditioning variable."
-        );
-        // Check if the number of states of the first variable matches the number of columns.
-        assert_eq!(
+            parameters.is_empty() || parameters.ncols() == cardinality.product(),
+            "Product of the number of states must match the number of columns: \n\
+            \t expected:    parameters.ncols() == {} , \n\
+            \t found:       parameters.ncols() == {} .",
+            cardinality.product(),
             parameters.ncols(),
-            states.len(),
-            "Number of states must match the number of columns."
         );
-        // Check if the product of the number of states of the remaining variables matches the number of rows.
-        assert_eq!(
+
+        // Get the cardinality of the set of states.
+        let conditioning_cardinality: Array1<_> =
+            conditioning_states.values().map(|x| x.len()).collect();
+
+        // Check that the product of the conditioning cardinality matches the number of rows.
+        assert!(
+            parameters.is_empty() || parameters.nrows() == conditioning_cardinality.product(),
+            "Product of the number of conditioning states must match the number of rows: \n\
+            \t expected:    parameters.nrows() == {} , \n\
+            \t found:       parameters.nrows() == {} .",
+            conditioning_cardinality.product(),
             parameters.nrows(),
-            conditioning_cardinality.iter().product::<usize>(),
-            "Product of the number of conditioning states must match the number of rows."
         );
 
         // Assert the probabilities sum to one by row.
@@ -116,41 +106,69 @@ impl CatCPD {
                 }
             });
 
-        // Compute the parameters size.
-        let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
-
         // Make parameters mutable.
         let mut parameters = parameters;
 
-        // Check if the states are sorted.
-        if !states.iter().is_sorted() {
-            // Initialize the sorted column indices.
-            let mut sorted_col_idx: Vec<_> = (0..parameters.ncols()).collect();
-            // Sort the columns indices.
-            sorted_col_idx.sort_by_key(|&i| &states[i]);
+        // Make states mutable.
+        let mut labels = labels;
+        let mut states = states;
+        let mut cardinality = cardinality;
+
+        // Check if states are sorted.
+        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
+            // Compute the current states order.
+            let mut sorted_states_idx: Vec<_> = states.values().multi_cartesian_product().collect();
             // Sort the labels.
-            states.sort();
+            let mut sorted_labels_idx: Vec<_> = (0..labels.len()).collect();
+            // Sort the labels.
+            sorted_labels_idx.sort_by_key(|&i| &labels[i]);
+            // Sort the states by the labels.
+            sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
+                *sorted_states_idx = sorted_labels_idx
+                    .iter()
+                    .map(|&i| sorted_states_idx[i])
+                    .collect();
+            });
+            // Initialize the sorted row indices.
+            let mut sorted_row_idx: Vec<_> = (0..parameters.ncols()).collect();
+            // Sort the row indices.
+            sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
+            // Sort the labels.
+            states.sort_keys();
+            states.values_mut().for_each(|x| x.sort());
+            labels = states.keys().cloned().collect();
+            cardinality = states.values().map(|x| x.len()).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
-            // Sort the values by the indices of the states labels.
+            // Sort the values by multi indices.
             new_parameters
                 .columns_mut()
                 .into_iter()
                 .enumerate()
                 .for_each(|(i, mut new_parameters_col)| {
                     // Assign the sorted values to the new values array.
-                    new_parameters_col.assign(&parameters.column(sorted_col_idx[i]));
+                    new_parameters_col.assign(&parameters.column(sorted_row_idx[i]));
                 });
             // Update the values with the new sorted values.
             parameters = new_parameters;
         }
 
-        // Check if the conditioning states are sorted.
+        // Make states immutable.
+        let labels = labels;
+        let states = states;
+        let cardinality = cardinality;
+
+        // Make conditioning states mutable.
+        let mut conditioning_labels = conditioning_labels;
+        let mut conditioning_states = conditioning_states;
+        let mut conditioning_cardinality = conditioning_cardinality;
+
+        // Check if conditioning states are sorted.
         if !conditioning_states.keys().is_sorted()
             || !conditioning_states.values().all(|x| x.iter().is_sorted())
         {
             // Compute the current states order.
-            let mut states: Vec<_> = conditioning_states
+            let mut sorted_states_idx: Vec<_> = conditioning_states
                 .values()
                 .multi_cartesian_product()
                 .collect();
@@ -159,18 +177,21 @@ impl CatCPD {
             // Sort the conditioning labels.
             sorted_labels_idx.sort_by_key(|&i| &conditioning_labels[i]);
             // Sort the conditioning states by the labels.
-            states.iter_mut().for_each(|states| {
-                *states = sorted_labels_idx.iter().map(|&i| states[i]).collect();
+            sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
+                *sorted_states_idx = sorted_labels_idx
+                    .iter()
+                    .map(|&i| sorted_states_idx[i])
+                    .collect();
             });
             // Initialize the sorted row indices.
             let mut sorted_row_idx: Vec<_> = (0..parameters.nrows()).collect();
             // Sort the row indices.
-            sorted_row_idx.sort_by_key(|&i| &states[i]);
+            sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
             conditioning_states.sort_keys();
             conditioning_states.values_mut().for_each(|x| x.sort());
             conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_cardinality = conditioning_states.values().map(|i| i.len()).collect();
+            conditioning_cardinality = conditioning_states.values().map(|x| x.len()).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -184,13 +205,20 @@ impl CatCPD {
             parameters = new_parameters;
         }
 
-        // Construct the ravel multi index.
-        let multi_index = MI::new(conditioning_cardinality.iter().copied());
+        // Make conditioning states immutable.
+        let conditioning_labels = conditioning_labels;
+        let conditioning_states = conditioning_states;
+        let conditioning_cardinality = conditioning_cardinality;
+
+        // Make parameters immutable.
+        let parameters = parameters;
 
         // Debug assert to check the sorting of the labels.
+        debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
+        debug_assert!(states.keys().is_sorted(), "Labels must be sorted.");
         debug_assert!(
-            states.iter().is_sorted(),
-            "Conditioned states must be sorted."
+            states.values().all(|x| x.iter().is_sorted()),
+            "States must be sorted."
         );
         debug_assert!(
             conditioning_labels.iter().is_sorted(),
@@ -205,16 +233,11 @@ impl CatCPD {
             "Conditioning states must be sorted."
         );
 
-        */
-
-        // FIXME: This is a temporary solution to avoid the above commented code.
-        let labels = states.keys().cloned().collect();
-        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
+        // Compute the multi index.
         let multi_index = MI::new(cardinality.iter().copied());
-        let conditioning_labels = conditioning_states.keys().cloned().collect();
-        let conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|x| x.len()).collect();
+        // Compute the conditioning multi index.
         let conditioning_multi_index = MI::new(conditioning_cardinality.iter().copied());
+        // Compute the parameters size.
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
 
         Self {
@@ -381,11 +404,12 @@ impl CatCPD {
 
 impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        /* FIXME:
+        // FIXME: This assumes `x` has a single element.
+        assert_eq!(self.labels().len(), 1);
 
         // Determine the maximum width for formatting based on the labels and states.
-        let n = std::iter::once(self.label())
-            .chain(self.states())
+        let n = std::iter::once(&self.labels()[0])
+            .chain(&self.states()[0])
             .chain(self.conditioning_labels())
             .chain(self.conditioning_states().values().flatten())
             .map(|x| x.len())
@@ -395,7 +419,7 @@ impl Display for CatCPD {
         // Get the number of variables to condition on.
         let z = self.conditioning_cardinality().len();
         // Get the number of states for the first variable.
-        let s = self.cardinality();
+        let s = self.cardinality()[0];
 
         // Create a horizontal line for table formatting.
         let hline = "-".repeat((n + 3) * (z + s) + 1);
@@ -403,7 +427,7 @@ impl Display for CatCPD {
 
         // Create the header row for the table.
         let header = std::iter::repeat_n("", z) // Empty columns for the conditioning variables.
-            .chain([self.label().as_str()]) // Label for the first variable.
+            .chain([self.labels()[0].as_str()]) // Label for the first variable.
             .chain(std::iter::repeat_n("", s.saturating_sub(1))) // Empty columns for remaining states.
             .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
@@ -417,7 +441,7 @@ impl Display for CatCPD {
         let header = self
             .conditioning_labels()
             .iter()
-            .chain(self.states()) // Include states of the first variable.
+            .chain(&self.states()[0]) // Include states of the first variable.
             .map(|x| format!("{x:n$}")) // Format each column with fixed width.
             .join(" | ");
         writeln!(f, "| {header} |")?;
@@ -441,8 +465,6 @@ impl Display for CatCPD {
 
         // Write the closing horizontal line for the table.
         writeln!(f, "{hline}")?;
-
-        */
 
         Ok(())
     }

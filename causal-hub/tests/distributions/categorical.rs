@@ -27,20 +27,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Conditioned variable cannot be a conditioning variable.")]
+    #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
     fn test_unique_labels() {
         let s = set!["no".to_string(), "yes".to_string()];
         let x = map![("A".to_string(), s.clone())];
         let z = map![("A".to_string(), s.clone())];
-        let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CatCPD::new(x, z, p);
-    }
-
-    #[test]
-    #[should_panic(expected = "Variables states must be unique.")]
-    fn test_unique_states() {
-        let x = map![("A".to_string(), set!["no".to_string(), "no".to_string()])];
-        let z = map![("A".to_string(), set!["no".to_string(), "yes".to_string()])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         CatCPD::new(x, z, p);
     }

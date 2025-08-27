@@ -137,7 +137,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             // NOTE: Labels and states are sorted (i.e. aligned).
             let pa_i = self.model.graph().parents(i);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
-            let pa_i = cpd_i.multi_index().ravel(pa_i);
+            let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
             let p_i = cpd_i.parameters().row(pa_i);
 
@@ -292,7 +292,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(i);
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
-        let pa_i = cim_i.multi_index().ravel(pa_i);
+        let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
 
@@ -368,7 +368,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 // Compute the index on the parents to condition on.
                 let pa_j = self.model.graph().parents(j);
                 let pa_j = pa_j.iter().map(|&z| event[z] as usize);
-                let pa_j = cim_j.multi_index().ravel(pa_j);
+                let pa_j = cim_j.conditioning_multi_index().ravel(pa_j);
                 // Get the distribution of the vertex.
                 let q_j_y = -cim_j.parameters()[[pa_j, y, y]];
 
@@ -526,7 +526,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 // Compute the index on the parents to condition on.
                 let pa_i = self.model.graph().parents(i);
                 let pa_i = pa_i.iter().map(|&z| event[z] as usize);
-                let pa_i = cim_i.multi_index().ravel(pa_i);
+                let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
                 // Get the distribution of the vertex.
                 let mut q_i_zx = cim_i.parameters().slice(s![pa_i, x, ..]).to_owned();
                 // Set the diagonal element to zero.
