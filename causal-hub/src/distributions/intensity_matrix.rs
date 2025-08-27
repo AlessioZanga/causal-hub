@@ -1,11 +1,12 @@
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
+use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
     types::{EPSILON, Labels, Set, States},
-    utils::{MI, collect_states},
+    utils::MI,
 };
 
 /// A struct representing a categorical conditional intensity matrix.
@@ -42,66 +43,62 @@ impl CatCIM {
     ///
     /// # Panics
     ///
-    /// FIXME: Add panics.
+    /// * If the labels and conditioning labels are not disjoint.
+    /// * If the product of the cardinalities of the states does not match the length of the second and third axis.
+    /// * If the product of the cardinalities of the conditioning states does not match the length of the first axis.
+    /// * If the parameters are not valid intensity matrices, unless empty.
     ///
     /// # Returns
     ///
     /// A new `CatCIM` instance.
     ///
     pub fn new(states: States, conditioning_states: States, parameters: Array3<f64>) -> Self {
-        /* FIXME:
+        // Get the labels of the variables.
+        let labels: Set<_> = states.keys().cloned().collect();
+        // Get the labels of the variables.
+        let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
-        // Unpack label and states.
-        let (label, states) = state;
-        // Convert variable label to a string.
-        let label = label.as_ref().to_owned();
-
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the variable.
-        let mut states: Set<_> = states
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|state| state.as_ref().to_owned())
-            .collect();
-
-        // Assert unique labels.
-        assert_eq!(states.len(), n, "Variables states must be unique.");
+        // Assert labels and conditioning labels are disjoint.
+        assert!(
+            labels.is_disjoint(&conditioning_labels),
+            "Labels and conditioning labels must be disjoint."
+        );
 
         // Get the states cardinality.
-        let cardinality = states.len();
+        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
 
-        // Initialize variables counter.
-        let mut n = 0;
-        // Get the states of the conditioning variables.
-        let mut conditioning_states = collect_states(conditioning_states);
-        // Get the labels of the variables.
-        let mut conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
+        // Check that the product of the cardinality matches the number of columns.
+        assert!(
+            parameters.is_empty() || parameters.shape()[1] == cardinality.product(),
+            "Product of the number of states must match the number of columns: \n\
+            \t expected:    parameters.shape[1] == {} , \n\
+            \t found:       parameters.shape[1] == {} .",
+            cardinality.product(),
+            parameters.shape()[1],
+        );
+
+        // Check that the product of the cardinality matches the number of columns.
+        assert!(
+            parameters.is_empty() || parameters.shape()[2] == cardinality.product(),
+            "Product of the number of states must match the number of columns: \n\
+            \t expected:    parameters.shape[2] == {} , \n\
+            \t found:       parameters.shape[2] == {} .",
+            cardinality.product(),
+            parameters.shape()[2],
+        );
 
         // Get the cardinality of the set of states.
         let conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|i| i.len()).collect();
+            conditioning_states.values().map(|x| x.len()).collect();
 
-        // Get the shape of the parameters.
-        let shape = parameters.shape();
-
-        // Check if the number of states of the first variable matches the number of columns.
-        assert_eq!(
-            shape[1],
-            states.len(),
-            "Number of states must match the number of the second shape."
-        );
-        // Check if the number of states of the first variable matches the number of columns.
-        assert_eq!(
-            shape[2],
-            states.len(),
-            "Number of states must match the number of the third shape."
-        );
-        // Check if the product of the number of states of the remaining variables matches the number of rows.
-        assert_eq!(
-            shape[0],
-            conditioning_cardinality.iter().product::<usize>(),
-            "Product of the number of conditioning states must match the first shape."
+        // Check that the product of the conditioning cardinality matches the number of rows.
+        assert!(
+            parameters.is_empty() || parameters.shape()[0] == conditioning_cardinality.product(),
+            "Product of the number of conditioning states must match the number of rows: \n\
+            \t expected:    parameters.shape[0] == {} , \n\
+            \t found:       parameters.shape[0] == {} .",
+            conditioning_cardinality.product(),
+            parameters.shape()[0],
         );
 
         // Check parameters validity.
@@ -132,18 +129,128 @@ impl CatCIM {
             );
         });
 
-        // Compute the parameters size.
-        let parameters_size = shape[0] * shape[1] * shape[2].saturating_sub(1);
+        // Make parameters mutable.
+        let mut parameters = parameters;
 
-        // FIXME: Sort states and labels.
+        // Make states mutable.
+        let mut labels = labels;
+        let mut states = states;
+        let mut cardinality = cardinality;
 
-        // Construct the ravel multi index.
-        let multi_index = MI::new(conditioning_cardinality.iter().copied());
+        // Check if states are sorted.
+        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
+            // Compute the current states order.
+            let mut sorted_states_idx: Vec<_> = states.values().multi_cartesian_product().collect();
+            // Sort the labels.
+            let mut sorted_labels_idx: Vec<_> = (0..labels.len()).collect();
+            // Sort the labels.
+            sorted_labels_idx.sort_by_key(|&i| &labels[i]);
+            // Sort the states by the labels.
+            sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
+                *sorted_states_idx = sorted_labels_idx
+                    .iter()
+                    .map(|&i| sorted_states_idx[i])
+                    .collect();
+            });
+            // Initialize the sorted row indices.
+            let mut sorted_row_idx: Vec<_> = (0..parameters.shape()[1]).collect();
+            // Sort the row indices.
+            sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
+            // Sort the labels.
+            states.sort_keys();
+            states.values_mut().for_each(|x| x.sort());
+            labels = states.keys().cloned().collect();
+            cardinality = states.values().map(|x| x.len()).collect();
+            // Allocate new parameters, for axis 1.
+            let mut new_parameters = parameters.clone();
+            // Sort the values by multi indices.
+            new_parameters.axis_iter_mut(Axis(1)).enumerate().for_each(
+                |(i, mut new_parameters_axis)| {
+                    // Assign the sorted values to the new values array.
+                    new_parameters_axis.assign(&parameters.index_axis(Axis(1), sorted_row_idx[i]));
+                },
+            );
+            // Update the values with the new sorted values.
+            parameters = new_parameters;
+            // Allocate new parameters, for axis 2.
+            let mut new_parameters = parameters.clone();
+            // Sort the values by multi indices.
+            new_parameters.axis_iter_mut(Axis(2)).enumerate().for_each(
+                |(i, mut new_parameters_axis)| {
+                    // Assign the sorted values to the new values array.
+                    new_parameters_axis.assign(&parameters.index_axis(Axis(2), sorted_row_idx[i]));
+                },
+            );
+            // Update the values with the new sorted values.
+            parameters = new_parameters;
+        }
+
+        // Make states immutable.
+        let labels = labels;
+        let states = states;
+        let cardinality = cardinality;
+
+        // Make conditioning states mutable.
+        let mut conditioning_labels = conditioning_labels;
+        let mut conditioning_states = conditioning_states;
+        let mut conditioning_cardinality = conditioning_cardinality;
+
+        // Check if conditioning states are sorted.
+        if !conditioning_states.keys().is_sorted()
+            || !conditioning_states.values().all(|x| x.iter().is_sorted())
+        {
+            // Compute the current states order.
+            let mut sorted_states_idx: Vec<_> = conditioning_states
+                .values()
+                .multi_cartesian_product()
+                .collect();
+            // Sort the conditioning labels.
+            let mut sorted_labels_idx: Vec<_> = (0..conditioning_labels.len()).collect();
+            // Sort the conditioning labels.
+            sorted_labels_idx.sort_by_key(|&i| &conditioning_labels[i]);
+            // Sort the conditioning states by the labels.
+            sorted_states_idx.iter_mut().for_each(|sorted_states_idx| {
+                *sorted_states_idx = sorted_labels_idx
+                    .iter()
+                    .map(|&i| sorted_states_idx[i])
+                    .collect();
+            });
+            // Initialize the sorted row indices.
+            let mut sorted_row_idx: Vec<_> = (0..parameters.shape()[0]).collect();
+            // Sort the row indices.
+            sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
+            // Sort the labels.
+            conditioning_states.sort_keys();
+            conditioning_states.values_mut().for_each(|x| x.sort());
+            conditioning_labels = conditioning_states.keys().cloned().collect();
+            conditioning_cardinality = conditioning_states.values().map(|x| x.len()).collect();
+            // Allocate new parameters.
+            let mut new_parameters = parameters.clone();
+            // Sort the values by multi indices.
+            new_parameters.axis_iter_mut(Axis(0)).enumerate().for_each(
+                |(i, mut new_parameters_axis)| {
+                    // Assign the sorted values to the new values array.
+                    new_parameters_axis.assign(&parameters.index_axis(Axis(0), sorted_row_idx[i]));
+                },
+            );
+            // Update the values with the new sorted values.
+            parameters = new_parameters;
+        }
+
+        // Make conditioning states immutable.
+        let conditioning_labels = conditioning_labels;
+        let conditioning_states = conditioning_states;
+        let conditioning_cardinality = conditioning_cardinality;
+
+        // Make parameters immutable.
+        let parameters = parameters;
 
         // Debug assert to check the sorting of the labels.
+        debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
+        debug_assert!(states.keys().is_sorted(), "Labels must be sorted.");
         debug_assert!(
-            states.iter().is_sorted(),
-            "Conditioned states must be sorted."
+            states.values().all(|x| x.iter().is_sorted()),
+            "States must be sorted."
         );
         debug_assert!(
             conditioning_labels.iter().is_sorted(),
@@ -158,17 +265,14 @@ impl CatCIM {
             "Conditioning states must be sorted."
         );
 
-        */
-
-        // FIXME: This is a temporary solution to avoid the above commented code.
-        let labels = states.keys().cloned().collect();
-        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
+        // Compute the multi index.
         let multi_index = MI::new(cardinality.iter().copied());
-        let conditioning_labels = conditioning_states.keys().cloned().collect();
-        let conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|x| x.len()).collect();
+        // Compute the conditioning multi index.
         let conditioning_multi_index = MI::new(conditioning_cardinality.iter().copied());
+
+        // Get the shape of the parameters.
         let shape = parameters.shape();
+        // Compute the parameters size.
         let parameters_size = shape[0] * shape[1] * shape[2].saturating_sub(1);
 
         Self {

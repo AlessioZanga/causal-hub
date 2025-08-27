@@ -46,11 +46,10 @@ impl CatCPD {
     ///
     /// # Panics
     ///
-    /// * If the variable labels are not unique.
-    /// * If the variable states are not unique.
-    /// * If the number of states of the first variable does not match the number of columns.
-    /// * If the product of the number of states of the remaining variables does not match the number of rows.
-    /// * If the probabilities do not sum to one by row, unless empty.
+    /// * If the labels and conditioning labels are not disjoint.
+    /// * If the product of the cardinalities of the of states does not match the number of columns.
+    /// * If the product of the cardinalities of the of conditioning states does not match the number of rows.
+    /// * If the parameters do not sum to one by row, unless empty.
     ///
     /// # Returns
     ///
@@ -95,7 +94,7 @@ impl CatCPD {
             parameters.nrows(),
         );
 
-        // Assert the probabilities sum to one by row.
+        // Check parameters validity.
         parameters
             .sum_axis(Axis(1))
             .iter()
