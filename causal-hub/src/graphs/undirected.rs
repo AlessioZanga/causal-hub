@@ -210,7 +210,8 @@ impl Graph for UnGraph {
         // Collect the labels.
         let labels = collect_labels(labels);
 
-        // FIXME: Workaround: assert labels are sorted.
+        // Assert labels are sorted.
+        // TODO: Refactor code and remove this assumption.
         assert!(labels.iter().is_sorted(), "Labels must be sorted.");
 
         // Assert labels and adjacency matrix dimensions match.

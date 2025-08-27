@@ -96,7 +96,12 @@ impl BN for CatBN {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
             .into_iter()
-            .map(|x| (x.labels()[0].to_owned(), x)) // FIXME: This assumes `x` has a single element.
+            // Assert CPD contains exactly one label.
+            // TODO: Refactor code and remove this assumption.
+            .inspect(|x| {
+                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            })
+            .map(|x| (x.labels()[0].to_owned(), x))
             .collect();
         // Sort the CPDs by their labels.
         cpds.sort_keys();
@@ -111,7 +116,8 @@ impl BN for CatBN {
         let mut states: States = Default::default();
         // Insert the states of the variables into the map to check if they are the same.
         for cpd in cpds.values() {
-            std::iter::once(cpd.states().get_index(0).unwrap()) // FIXME: This assumes `x` has a single element.
+            cpd.states()
+                .iter()
                 .chain(cpd.conditioning_states())
                 .for_each(|(l, s)| {
                     // Check if the states are already in the map.

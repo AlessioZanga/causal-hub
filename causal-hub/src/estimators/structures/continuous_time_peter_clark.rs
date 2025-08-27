@@ -83,10 +83,14 @@ where
     }
 
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        // Assert Y contains exactly one label.
+        // TODO: Refactor code and remove this assumption.
+        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+
         // Compute the extended separation set.
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y[0]).unwrap_err(); // FIXME: This assumes `y` has a single element.
+        let s_y = z.binary_search(&y[0]).unwrap_err();
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 
@@ -179,13 +183,17 @@ where
     }
 
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        // Assert Y contains exactly one label.
+        // TODO: Refactor code and remove this assumption.
+        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
 
         // Compute the extended separation set.
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y[0]).unwrap_err(); // FIXME: This assumes `y` has a single element.
+        let s_y = z.binary_search(&y[0]).unwrap_err();
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 

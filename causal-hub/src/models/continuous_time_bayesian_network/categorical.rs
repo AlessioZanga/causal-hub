@@ -95,7 +95,12 @@ impl CTBN for CatCTBN {
         // Collect the CPDs into a map.
         let mut cims: Map<_, _> = cims
             .into_iter()
-            .map(|x| (x.labels()[0].to_owned(), x)) // FIXME: This assumes `x` has a single element.
+            // Assert CIM contains exactly one label.
+            // TODO: Refactor code and remove this assumption.
+            .inspect(|x| {
+                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            })
+            .map(|x| (x.labels()[0].to_owned(), x))
             .collect();
         // Sort the CPDs by their labels.
         cims.sort_keys();
