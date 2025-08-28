@@ -22,29 +22,16 @@
             }
         },
         "parameters": {
-            "type": "object",
-            "properties": {
-                "v": {
-                    "type": "integer"
-                },
-                "dim": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "data": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
                     "type": "array",
                     "items": {
                         "type": "number"
                     }
                 }
-            },
-            "required": [
-                "v",
-                "dim",
-                "data"
-            ]
+            }
         },
         "sample_size": {
             "type": [

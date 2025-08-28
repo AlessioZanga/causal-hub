@@ -2,69 +2,50 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "catcpd.schema.json",
     "type": "object",
-    "additionalProperties": {
-        "type": "object",
-        "properties": {
-            "states": {
-                "type": "object",
-                "additionalProperties": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+    "properties": {
+        "states": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
                 }
-            },
-            "conditioning_states": {
-                "type": "object",
-                "additionalProperties": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            },
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "v": {
-                        "type": "integer"
-                    },
-                    "dim": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "type": "number"
-                        }
-                    }
-                },
-                "required": [
-                    "v",
-                    "dim",
-                    "data"
-                ]
-            },
-            "sample_size": {
-                "type": [
-                    "integer",
-                    "null"
-                ]
-            },
-            "sample_log_likelihood": {
-                "type": [
-                    "number",
-                    "null"
-                ]
             }
         },
-        "required": [
-            "states",
-            "conditioning_states",
-            "parameters"
-        ]
-    }
+        "conditioning_states": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "parameters": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "number"
+                }
+            }
+        },
+        "sample_size": {
+            "type": [
+                "integer",
+                "null"
+            ]
+        },
+        "sample_log_likelihood": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "states",
+        "conditioning_states",
+        "parameters"
+    ]
 }

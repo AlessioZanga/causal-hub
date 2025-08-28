@@ -10,8 +10,8 @@
             "$ref": "digraph.schema.json"
         },
         "cims": {
-            "type": "object",
-            "additionalProperties": {
+            "type": "array",
+            "items": {
                 "$ref": "catcim.schema.json"
             }
         }

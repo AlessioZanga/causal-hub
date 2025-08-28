@@ -566,10 +566,19 @@ impl Serialize for CatCPD {
     where
         S: Serializer,
     {
+        // Convert parameters to a flat format.
+        let parameters: Vec<Vec<f64>> = self
+            .parameters
+            .rows()
+            .into_iter()
+            .map(|row| row.to_vec())
+            .collect();
+
         // Count the elements to serialize.
         let mut size = 3;
         size += self.sample_size.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
+
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
         // Serialize states.
@@ -577,7 +586,7 @@ impl Serialize for CatCPD {
         // Serialize conditioning states.
         map.serialize_entry("conditioning_states", &self.conditioning_states)?;
         // Serialize parameters.
-        map.serialize_entry("parameters", &self.parameters)?;
+        map.serialize_entry("parameters", &parameters)?;
         // Serialize sample size, if any.
         if let Some(sample_size) = self.sample_size {
             map.serialize_entry("sample_size", &sample_size)?;
@@ -586,6 +595,7 @@ impl Serialize for CatCPD {
         if let Some(sample_log_likelihood) = self.sample_log_likelihood {
             map.serialize_entry("sample_log_likelihood", &sample_log_likelihood)?;
         }
+
         // Finalize the map serialization.
         map.end()
     }
@@ -669,6 +679,13 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let conditioning_states =
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Convert parameters to ndarray.
+                let parameters: Vec<Vec<f64>> = parameters;
+                let shape = (parameters.len(), parameters[0].len());
+                let parameters = Array::from_iter(parameters.into_iter().flatten())
+                    .into_shape_with_order(shape)
+                    .map_err(|_| E::custom("Invalid parameters shape"))?;
 
                 Ok(CatCPD::with_sample_size(
                     states,

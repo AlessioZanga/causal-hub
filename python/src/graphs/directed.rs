@@ -760,7 +760,7 @@ impl PyDiGraph {
         adjacency_matrix: &Bound<'_, PyArray2<i64>>,
     ) -> PyResult<Self> {
         // Convert the PyIterator to a Vec<String>.
-        let labels: Vec<_> = labels
+        let labels: Labels = labels
             .try_iter()?
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;

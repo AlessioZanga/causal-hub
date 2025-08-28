@@ -197,10 +197,7 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn from_adjacency_matrix<I, V>(labels: I, adjacency_matrix: Array2<bool>) -> Self
-    where
-        I: IntoIterator<Item = V>,
-        V: AsRef<str>;
+    fn from_adjacency_matrix(labels: Labels, adjacency_matrix: Array2<bool>) -> Self;
 
     /// Converts the graph to an adjacency matrix.
     ///

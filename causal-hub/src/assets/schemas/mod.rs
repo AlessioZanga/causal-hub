@@ -1,9 +1,8 @@
 use std::sync::LazyLock;
 
 use dry::macro_for;
-use log::debug;
-
 use jsonschema::{Retrieve, Uri};
+use log::debug;
 use serde_json::Value;
 
 use crate::types::Map;

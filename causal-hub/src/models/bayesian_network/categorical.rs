@@ -1,6 +1,10 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::Array1;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use super::BN;
 use crate::{
@@ -12,7 +16,7 @@ use crate::{
 };
 
 /// A categorical Bayesian network (BN).
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct CatBN {
     /// The states of the variables.
     states: States,
@@ -183,6 +187,93 @@ impl BN for CatBN {
     #[inline]
     fn topological_order(&self) -> &[usize] {
         &self.topological_order
+    }
+}
+
+impl Serialize for CatBN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Convert the CPDs to a flat format.
+        let cpds: Vec<_> = self.cpds.values().cloned().collect();
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(2))?;
+
+        // Serialize graph.
+        map.serialize_entry("graph", &self.graph)?;
+        // Serialize CPDs.
+        map.serialize_entry("cpds", &cpds)?;
+
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CatBN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Graph,
+            Cpds,
+        }
+
+        struct CatBNVisitor;
+
+        impl<'de> Visitor<'de> for CatBNVisitor {
+            type Value = CatBN;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CatBN")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<CatBN, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate fields
+                let mut graph = None;
+                let mut cpds = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Graph => {
+                            if graph.is_some() {
+                                return Err(E::duplicate_field("graph"));
+                            }
+                            graph = Some(map.next_value()?);
+                        }
+                        Field::Cpds => {
+                            if cpds.is_some() {
+                                return Err(E::duplicate_field("cpds"));
+                            }
+                            cpds = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
+                let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
+
+                // Set helper types.
+                let cpds: Vec<_> = cpds;
+
+                Ok(CatBN::new(graph, cpds))
+            }
+        }
+
+        const FIELDS: &[&str] = &["graph", "cpds"];
+
+        deserializer.deserialize_struct("CatBN", FIELDS, CatBNVisitor)
     }
 }
 

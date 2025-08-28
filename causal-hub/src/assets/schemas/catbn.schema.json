@@ -3,32 +3,18 @@
     "$id": "catbn.schema.json",
     "type": "object",
     "properties": {
-        "states": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                }
-            }
-        },
         "graph": {
             "$ref": "digraph.schema.json"
         },
         "cpds": {
-            "$ref": "catcpd.schema.json"
-        },
-        "topological_order": {
             "type": "array",
             "items": {
-                "type": "integer"
+                "$ref": "catcpd.schema.json"
             }
         }
     },
     "required": [
-        "states",
         "graph",
-        "cpds",
-        "topological_order"
+        "cpds"
     ]
 }

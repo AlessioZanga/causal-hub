@@ -1,17 +1,20 @@
 use std::collections::VecDeque;
 
 use ndarray::prelude::*;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use super::Graph;
 use crate::{
     impl_json_io, set,
     types::{Labels, Set},
-    utils::collect_labels,
 };
 
 /// A struct representing a directed graph using an adjacency matrix.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DiGraph {
     labels: Labels,
     adjacency_matrix: Array2<bool>,
@@ -340,14 +343,7 @@ impl Graph for DiGraph {
         true
     }
 
-    fn from_adjacency_matrix<I, V>(labels: I, adjacency_matrix: Array2<bool>) -> Self
-    where
-        I: IntoIterator<Item = V>,
-        V: AsRef<str>,
-    {
-        // Collect the labels.
-        let labels = collect_labels(labels);
-
+    fn from_adjacency_matrix(labels: Labels, adjacency_matrix: Array2<bool>) -> Self {
         // Assert labels are sorted.
         // TODO: Refactor code and remove this assumption.
         assert!(labels.iter().is_sorted(), "Labels must be sorted.");
@@ -372,9 +368,117 @@ impl Graph for DiGraph {
         }
     }
 
+    #[inline]
     fn to_adjacency_matrix(&self) -> Array2<bool> {
-        // Return the adjacency matrix.
         self.adjacency_matrix.clone()
+    }
+}
+
+impl Serialize for DiGraph {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Convert adjacency matrix to a flat format.
+        let edges: Vec<_> = self
+            .edges()
+            .into_iter()
+            .map(|(x, y)| {
+                (
+                    self.index_to_label(x).to_string(),
+                    self.index_to_label(y).to_string(),
+                )
+            })
+            .collect();
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(2))?;
+
+        // Serialize labels.
+        map.serialize_entry("labels", &self.labels)?;
+        // Serialize edges.
+        map.serialize_entry("edges", &edges)?;
+
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for DiGraph {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Labels,
+            Edges,
+        }
+
+        struct DiGraphVisitor;
+
+        impl<'de> Visitor<'de> for DiGraphVisitor {
+            type Value = DiGraph;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct DiGraph")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<DiGraph, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate fields
+                let mut labels = None;
+                let mut edges = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Labels => {
+                            if labels.is_some() {
+                                return Err(E::duplicate_field("labels"));
+                            }
+                            labels = Some(map.next_value()?);
+                        }
+                        Field::Edges => {
+                            if edges.is_some() {
+                                return Err(E::duplicate_field("edges"));
+                            }
+                            edges = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let labels = labels.ok_or_else(|| E::missing_field("labels"))?;
+                let edges = edges.ok_or_else(|| E::missing_field("edges"))?;
+
+                // Convert edges to an adjacency matrix.
+                let labels: Labels = labels;
+                let edges: Vec<(String, String)> = edges;
+                let shape = (labels.len(), labels.len());
+                let mut adjacency_matrix = Array2::from_elem(shape, false);
+                for (x, y) in edges {
+                    let x = labels
+                        .get_index_of(&x)
+                        .ok_or_else(|| E::custom(format!("Vertex `{x}` label does not exist")))?;
+                    let y = labels
+                        .get_index_of(&y)
+                        .ok_or_else(|| E::custom(format!("Vertex `{y}` label does not exist")))?;
+                    adjacency_matrix[(x, y)] = true;
+                }
+
+                Ok(DiGraph::from_adjacency_matrix(labels, adjacency_matrix))
+            }
+        }
+
+        const FIELDS: &[&str] = &["labels", "edges"];
+
+        deserializer.deserialize_struct("DiGraph", FIELDS, DiGraphVisitor)
     }
 }
 
