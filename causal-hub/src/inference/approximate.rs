@@ -1,7 +1,7 @@
 use crate::types::Set;
 
 /// A trait for Bayesian network approximate inference.
-pub trait BNApproximateInference {
+pub trait BNApproxInference {
     /// The output type of the inference.
     type Output;
 
@@ -21,7 +21,7 @@ pub trait BNApproximateInference {
 }
 
 /// A trait for parallel Bayesian network approximate inference.
-pub trait ParBNApproximateInference {
+pub trait ParBNApproxInference {
     /// The output type of the inference.
     type Output;
 

@@ -14,7 +14,7 @@ use crate::{
     datasets::{CatData, CatTrj},
     distributions::CPD,
     estimators::{CPDEstimator, MLE},
-    inference::{BNApproximateInference, ParBNApproximateInference},
+    inference::{BNApproxInference, ParBNApproxInference},
     models::{BN, CTBN, CatBN, CatCTBN},
     set,
     types::{EPSILON, Set},
@@ -122,7 +122,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
     }
 }
 
-impl<R: Rng> BNApproximateInference for ForwardSampler<'_, R, CatBN> {
+impl<R: Rng> BNApproxInference for ForwardSampler<'_, R, CatBN> {
     type Output = <CatBN as BN>::CPD;
 
     fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
@@ -168,7 +168,7 @@ impl<R: Rng> BNApproximateInference for ForwardSampler<'_, R, CatBN> {
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNApproximateInference for ForwardSampler<'_, R, CatBN> {
+impl<R: Rng + SeedableRng> ParBNApproxInference for ForwardSampler<'_, R, CatBN> {
     type Output = <CatBN as BN>::CPD;
 
     fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
