@@ -1,0 +1,47 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "digraph.schema.json",
+    "type": "object",
+    "properties": {
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "adjacency_matrix": {
+            "type": "object",
+            "properties": {
+                "v": {
+                    "type": "integer"
+                },
+                "dim": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": [
+                            "number",
+                            "boolean",
+                            "integer",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "v",
+                "dim",
+                "data"
+            ]
+        }
+    },
+    "required": [
+        "labels",
+        "adjacency_matrix"
+    ]
+}

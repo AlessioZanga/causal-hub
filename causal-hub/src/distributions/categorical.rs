@@ -28,8 +28,10 @@ pub struct CatCPD {
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
-    // Fitted statistics.
+    // Fitted statistics, if any.
+    #[serde(default)]
     sample_size: Option<f64>,
+    #[serde(default)]
     sample_log_likelihood: Option<f64>,
 }
 

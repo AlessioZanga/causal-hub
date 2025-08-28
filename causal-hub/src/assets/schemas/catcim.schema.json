@@ -1,0 +1,257 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "catcim.schema.json",
+    "type": "object",
+    "properties": {
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "states": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "cardinality": {
+            "type": "object",
+            "properties": {
+                "v": {
+                    "type": "integer"
+                },
+                "dim": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "v",
+                "dim",
+                "data"
+            ]
+        },
+        "multi_index": {
+            "type": "object",
+            "properties": {
+                "cardinality": {
+                    "type": "object",
+                    "properties": {
+                        "v": {
+                            "type": "integer"
+                        },
+                        "dim": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "data": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "required": [
+                        "v",
+                        "dim",
+                        "data"
+                    ]
+                },
+                "strides": {
+                    "type": "object",
+                    "properties": {
+                        "v": {
+                            "type": "integer"
+                        },
+                        "dim": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "data": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "required": [
+                        "v",
+                        "dim",
+                        "data"
+                    ]
+                }
+            },
+            "required": [
+                "cardinality",
+                "strides"
+            ]
+        },
+        "conditioning_labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "conditioning_states": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "conditioning_cardinality": {
+            "type": "object",
+            "properties": {
+                "v": {
+                    "type": "integer"
+                },
+                "dim": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "v",
+                "dim",
+                "data"
+            ]
+        },
+        "conditioning_multi_index": {
+            "type": "object",
+            "properties": {
+                "cardinality": {
+                    "type": "object",
+                    "properties": {
+                        "v": {
+                            "type": "integer"
+                        },
+                        "dim": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "data": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "required": [
+                        "v",
+                        "dim",
+                        "data"
+                    ]
+                },
+                "strides": {
+                    "type": "object",
+                    "properties": {
+                        "v": {
+                            "type": "integer"
+                        },
+                        "dim": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "data": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "required": [
+                        "v",
+                        "dim",
+                        "data"
+                    ]
+                }
+            },
+            "required": [
+                "cardinality",
+                "strides"
+            ]
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "v": {
+                    "type": "integer"
+                },
+                "dim": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            },
+            "required": [
+                "v",
+                "dim",
+                "data"
+            ]
+        },
+        "parameters_size": {
+            "type": "integer"
+        },
+        "sample_size": {
+            "type": [
+                "integer",
+                "null"
+            ]
+        },
+        "sample_log_likelihood": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "labels",
+        "states",
+        "cardinality",
+        "multi_index",
+        "conditioning_labels",
+        "conditioning_states",
+        "conditioning_cardinality",
+        "conditioning_multi_index",
+        "parameters",
+        "parameters_size"
+    ]
+}
