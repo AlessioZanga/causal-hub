@@ -1,14 +1,13 @@
-use causal_hub_rust::{estimators::PK, types::Labels};
-use pyo3::prelude::*;
+use causal_hub_rust::{estimators::PK, io::JsonIO, types::Labels};
+use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
-use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
 #[pyclass(name = "PK", eq)]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PyPK {
     inner: PK,
 }
@@ -71,5 +70,31 @@ impl PyPK {
 
         // Create the prior knowledge structure.
         Ok(PK::new(labels, forbidden, required, temporal_order).into())
+    }
+
+    /// Read class from a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: PK::from_json(json),
+        })
+    }
+
+    /// Write class to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(self.inner.to_json())
+    }
+
+    /// Read class from a JSON file.
+    #[classmethod]
+    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: PK::read_json(path),
+        })
+    }
+
+    /// Write class to a JSON file.
+    pub fn write_json(&self, path: &str) -> PyResult<()> {
+        Ok(self.inner.write_json(path))
     }
 }

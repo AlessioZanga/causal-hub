@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
+    impl_json_io,
     types::{EPSILON, Labels, Map, Set, States},
     utils::{collect_states, sort_states},
 };
@@ -118,6 +119,9 @@ impl CatTrjEvT {
         (self.start_time()..self.end_time()).contains(time)
     }
 }
+
+// Implement `JsonIO` for `CatTrjEvT`.
+impl_json_io!(CatTrjEvT);
 
 /// A type representing a collection of evidences for a categorical trajectory.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -559,6 +563,9 @@ impl Dataset for CatTrjEv {
     }
 }
 
+// Implement `JsonIO` for `CatTrjEv`.
+impl_json_io!(CatTrjEv);
+
 /// A collection of multivariate trajectories evidence.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatTrjsEv {
@@ -706,3 +713,6 @@ impl Dataset for CatTrjsEv {
         self.values.iter().map(|x| x.sample_size()).sum()
     }
 }
+
+// Implement `JsonIO` for `CatTrjsEv`.
+impl_json_io!(CatTrjsEv);

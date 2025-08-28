@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::CPD;
 use crate::{
+    impl_json_io,
     types::{EPSILON, Labels, Set, States},
     utils::MI,
 };
@@ -523,3 +524,6 @@ impl CPD for CatCIM {
         self.parameters_size
     }
 }
+
+// Implement `JsonIO` for `CatCIM`.
+impl_json_io!(CatCIM);

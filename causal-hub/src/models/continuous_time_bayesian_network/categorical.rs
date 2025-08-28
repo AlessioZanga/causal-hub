@@ -7,6 +7,7 @@ use crate::{
     datasets::{CatTrj, CatTrjs},
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
+    impl_json_io,
     models::{BN, CatBN},
     set,
     types::{Labels, Map, States},
@@ -209,3 +210,6 @@ impl CTBN for CatCTBN {
         ctbn
     }
 }
+
+// Implement `JsonIO` for `CatCTBN`.
+impl_json_io!(CatCTBN);

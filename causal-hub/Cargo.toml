@@ -21,8 +21,8 @@ rand.workspace = true
 rand_distr.workspace = true
 rayon.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 statrs.workspace = true
 
 [dev-dependencies]
 rand_xoshiro = "^0.7"
-serde_json = "^1.0"

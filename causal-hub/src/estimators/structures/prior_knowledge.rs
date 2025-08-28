@@ -4,7 +4,7 @@ use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{types::Labels, utils::collect_labels};
+use crate::{impl_json_io, types::Labels, utils::collect_labels};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[repr(C)]
@@ -246,3 +246,6 @@ impl PK {
             .collect()
     }
 }
+
+// Implement `JsonIO` for `PK`.
+impl_json_io!(PK);

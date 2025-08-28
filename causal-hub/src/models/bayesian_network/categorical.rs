@@ -7,7 +7,7 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    set,
+    impl_json_io, set,
     types::{Labels, Map, States},
 };
 
@@ -185,3 +185,6 @@ impl BN for CatBN {
         &self.topological_order
     }
 }
+
+// Implement `JsonIO` for `CatBN`.
+impl_json_io!(CatBN);

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::Graph;
 use crate::{
-    set,
+    impl_json_io, set,
     types::{Labels, Set},
     utils::collect_labels,
 };
@@ -377,3 +377,6 @@ impl Graph for DiGraph {
         self.adjacency_matrix.clone()
     }
 }
+
+// Implement `JsonIO` for `DiGraph`.
+impl_json_io!(DiGraph);

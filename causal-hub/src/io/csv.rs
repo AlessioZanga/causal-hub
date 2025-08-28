@@ -8,6 +8,13 @@ use crate::{
     types::{Labels, States},
 };
 
+pub trait CsvIO {
+    fn from_csv(csv: &str) -> Self;
+    fn to_csv(&self) -> String;
+    fn read_csv(path: &str) -> Self;
+    fn write_csv(&self, path: &str);
+}
+
 /// A trait for reading CSV files.
 pub trait FromCsvReader {
     /// Reads a CSV file.

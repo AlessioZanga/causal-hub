@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::Graph;
 use crate::{
+    impl_json_io,
     types::{Labels, Set},
     utils::collect_labels,
 };
@@ -254,3 +255,6 @@ impl Graph for UnGraph {
         self.adjacency_matrix.clone()
     }
 }
+
+// Implement `JsonIO` for `UnGraph`.
+impl_json_io!(UnGraph);

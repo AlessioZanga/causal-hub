@@ -42,12 +42,12 @@ struct Probability {
 /// BIF parser for parsing Bayesian Interchange Format (BIF) files.
 #[derive(Parser)]
 #[grammar = "src/io/bif/bif.pest"]
-pub struct BifReader;
+pub struct BifParser;
 
-impl BifReader {
+impl BifParser {
     /// Read a BIF string and returns a `Network` object.
-    pub fn read(input: &str) -> CatBN {
-        let network = Self::parse(Rule::file, input)
+    pub fn parse_str(bif: &str) -> CatBN {
+        let network = Self::parse(Rule::file, bif)
             .expect("Failed to parse BIF file.")
             .map(build_ast)
             .next()

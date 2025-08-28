@@ -1,5 +1,6 @@
 use causal_hub_rust::{
     graphs::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
+    io::JsonIO,
     set,
     types::{Labels, Set},
 };
@@ -10,14 +11,13 @@ use pyo3::{
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
-use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
 #[pyclass(name = "DiGraph", eq)]
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PyDiGraph {
     inner: DiGraph,
 }
@@ -848,5 +848,31 @@ impl PyDiGraph {
         let g = nx.call_method1("relabel_nodes", (g, labels))?;
 
         Ok(g)
+    }
+
+    /// Read class from a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: DiGraph::from_json(json),
+        })
+    }
+
+    /// Write class to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(self.inner.to_json())
+    }
+
+    /// Read class from a JSON file.
+    #[classmethod]
+    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: DiGraph::read_json(path),
+        })
+    }
+
+    /// Write class to a JSON file.
+    pub fn write_json(&self, path: &str) -> PyResult<()> {
+        Ok(self.inner.write_json(path))
     }
 }

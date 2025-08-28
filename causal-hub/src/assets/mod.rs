@@ -6,7 +6,7 @@ use paste::paste;
 use crate::{
     distributions::CatCIM,
     graphs::{DiGraph, Graph},
-    io::BifReader,
+    io::BifParser,
     map,
     models::{CTBN, CatBN, CatCTBN},
     set,
@@ -24,7 +24,7 @@ macro_for!(
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));
             // Read the BIF file and return the BN.
-            BifReader::read(include_str!(concat!(stringify!($bn), ".bif")))
+            BifParser::parse_str(include_str!(concat!(stringify!($bn), ".bif")))
         }
     }
 });

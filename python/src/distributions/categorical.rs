@@ -1,17 +1,22 @@
 use std::collections::BTreeMap;
 
-use causal_hub_rust::distributions::{CPD, CatCPD};
+use causal_hub_rust::{
+    distributions::{CPD, CatCPD},
+    io::JsonIO,
+};
 use numpy::{PyArray2, prelude::*};
-use pyo3::{prelude::*, types::PyTuple};
+use pyo3::{
+    prelude::*,
+    types::{PyTuple, PyType},
+};
 use pyo3_stub_gen::derive::*;
-use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional probability distribution (CPD).
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCPD", eq)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PyCatCPD {
     inner: CatCPD,
 }
@@ -160,5 +165,31 @@ impl PyCatCPD {
     pub fn __repr__(&self) -> PyResult<String> {
         // Get the string representation of the CatCPD.
         Ok(self.inner.to_string())
+    }
+
+    /// Read class from a JSON string.
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: CatCPD::from_json(json),
+        })
+    }
+
+    /// Write class to a JSON string.
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(self.inner.to_json())
+    }
+
+    /// Read class from a JSON file.
+    #[classmethod]
+    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: CatCPD::read_json(path),
+        })
+    }
+
+    /// Write class to a JSON file.
+    pub fn write_json(&self, path: &str) -> PyResult<()> {
+        Ok(self.inner.write_json(path))
     }
 }
