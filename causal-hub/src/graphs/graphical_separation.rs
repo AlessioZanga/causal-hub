@@ -215,7 +215,7 @@ pub(crate) mod digraph {
             backward_deque.extend(x.iter().cloned());
 
             // Compute the ancestors of X and Z.
-            let ancestors_or_z = &self.ancestors(&z) | &(z | x);
+            let ancestors_or_z = &self.ancestors(z) | &(z | x);
 
             // While there are vertices to visit in the forward or backward deques ...
             while !forward_deque.is_empty() || !backward_deque.is_empty() {

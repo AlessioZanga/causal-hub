@@ -116,12 +116,11 @@ mod tests {
                     .map(|e| e.values().len())
                     .max()
                     .unwrap_or(10);
-                // Fore each (seed, evidence) ...
+                // For each (seed, evidence) ...
                 seeds
-                    .iter()
-                    .zip(evidence)
-                    .par_bridge()
-                    .map(|(&s, e)| {
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.

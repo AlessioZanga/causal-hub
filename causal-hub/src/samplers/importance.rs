@@ -679,7 +679,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, 
         n: usize,
     ) -> Self::Samples {
         // Generate a random seed for each trajectory.
-        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.
         seeds
             .into_par_iter()

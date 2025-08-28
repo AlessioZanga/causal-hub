@@ -70,12 +70,11 @@ mod tests {
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
                     .collect();
-                // Fore each (seed, evidence) ...
+                // For each (seed, evidence) ...
                 seeds
-                    .iter()
-                    .zip(evidence)
-                    .par_bridge()
-                    .map(|(&s, e)| {
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
@@ -166,12 +165,11 @@ mod tests {
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
                     .collect();
-                // Fore each (seed, evidence) ...
+                // For each (seed, evidence) ...
                 seeds
-                    .iter()
-                    .zip(evidence)
-                    .par_bridge()
-                    .map(|(&s, e)| {
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
