@@ -3,7 +3,11 @@ use std::fmt::Display;
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
 use ndarray::prelude::*;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use super::CPD;
 use crate::{
@@ -13,7 +17,7 @@ use crate::{
 };
 
 /// A struct representing a categorical distribution.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct CatCPD {
     // Labels of the conditioned variable.
     labels: Labels,
@@ -29,9 +33,7 @@ pub struct CatCPD {
     parameters: Array2<f64>,
     parameters_size: usize,
     // Fitted statistics, if any.
-    #[serde(default)]
     sample_size: Option<f64>,
-    #[serde(default)]
     sample_log_likelihood: Option<f64>,
 }
 
@@ -556,6 +558,137 @@ impl CPD for CatCPD {
     #[inline]
     fn parameters_size(&self) -> usize {
         self.parameters_size
+    }
+}
+
+impl Serialize for CatCPD {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Count the elements to serialize.
+        let mut size = 3;
+        size += self.sample_size.is_some() as usize;
+        size += self.sample_log_likelihood.is_some() as usize;
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(size))?;
+        // Serialize states.
+        map.serialize_entry("states", &self.states)?;
+        // Serialize conditioning states.
+        map.serialize_entry("conditioning_states", &self.conditioning_states)?;
+        // Serialize parameters.
+        map.serialize_entry("parameters", &self.parameters)?;
+        // Serialize sample size, if any.
+        if let Some(sample_size) = self.sample_size {
+            map.serialize_entry("sample_size", &sample_size)?;
+        }
+        // Serialize sample log likelihood, if any.
+        if let Some(sample_log_likelihood) = self.sample_log_likelihood {
+            map.serialize_entry("sample_log_likelihood", &sample_log_likelihood)?;
+        }
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CatCPD {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            States,
+            ConditioningStates,
+            Parameters,
+            SampleSize,
+            SampleLogLikelihood,
+        }
+
+        struct CatCPDVisitor;
+
+        impl<'de> Visitor<'de> for CatCPDVisitor {
+            type Value = CatCPD;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CatCPD")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<CatCPD, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate fields
+                let mut states = None;
+                let mut conditioning_states = None;
+                let mut parameters = None;
+                let mut sample_size = None;
+                let mut sample_log_likelihood = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::States => {
+                            if states.is_some() {
+                                return Err(E::duplicate_field("states"));
+                            }
+                            states = Some(map.next_value()?);
+                        }
+                        Field::ConditioningStates => {
+                            if conditioning_states.is_some() {
+                                return Err(E::duplicate_field("conditioning_states"));
+                            }
+                            conditioning_states = Some(map.next_value()?);
+                        }
+                        Field::Parameters => {
+                            if parameters.is_some() {
+                                return Err(E::duplicate_field("parameters"));
+                            }
+                            parameters = Some(map.next_value()?);
+                        }
+                        Field::SampleSize => {
+                            if sample_size.is_some() {
+                                return Err(E::duplicate_field("sample_size"));
+                            }
+                            sample_size = Some(map.next_value()?);
+                        }
+                        Field::SampleLogLikelihood => {
+                            if sample_log_likelihood.is_some() {
+                                return Err(E::duplicate_field("sample_log_likelihood"));
+                            }
+                            sample_log_likelihood = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let states = states.ok_or_else(|| E::missing_field("states"))?;
+                let conditioning_states =
+                    conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
+                let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                Ok(CatCPD::with_sample_size(
+                    states,
+                    conditioning_states,
+                    parameters,
+                    sample_size,
+                    sample_log_likelihood,
+                ))
+            }
+        }
+
+        const FIELDS: &[&str] = &[
+            "states",
+            "conditioning_states",
+            "parameters",
+            "sample_size",
+            "sample_log_likelihood",
+        ];
+
+        deserializer.deserialize_struct("CatCPD", FIELDS, CatCPDVisitor)
     }
 }
 
