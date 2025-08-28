@@ -1,6 +1,6 @@
 /// A struct representing the output of the expectation-maximization algorithm.
 #[derive(Clone, Debug)]
-pub struct ExpectationMaximizationOutput<M, E2M> {
+pub struct EMOutput<M, E2M> {
     /// The models fitted during the expectation-maximization process.
     /// Each model is used to compute the expected sufficient statistics.
     pub models: Vec<M>,
@@ -12,12 +12,9 @@ pub struct ExpectationMaximizationOutput<M, E2M> {
     pub iterations: usize,
 }
 
-/// A type alias for the output of the expectation-maximization algorithm.
-pub type EMOutput<M, E2M> = ExpectationMaximizationOutput<M, E2M>;
-
 /// A struct representing the expectation-maximization algorithm.
 #[derive(Debug)]
-pub struct ExpectationMaximization<'a, M, E, EStep, E2M, MStep, Stop>
+pub struct EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     E2M: Clone,
@@ -36,10 +33,6 @@ where
     /// The stopping criteria.
     stop: &'a Stop,
 }
-
-/// A type alias for the expectation-maximization algorithm.
-pub type EM<'a, M, E, EStep, E2M, MStep, Stop> =
-    ExpectationMaximization<'a, M, E, EStep, E2M, MStep, Stop>;
 
 impl<'a, M, E, EStep, E2M, MStep, Stop> EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
@@ -95,7 +88,7 @@ where
 }
 
 /// A builder for the expectation-maximization algorithm.
-pub struct ExpectationMaximizationBuilder<'a, M, E, EStep, E2M, MStep, Stop>
+pub struct EMBuilder<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     E2M: Clone,
@@ -109,10 +102,6 @@ where
     maximization: Option<&'a MStep>,
     stop: Option<&'a Stop>,
 }
-
-/// A type alias for the expectation-maximization algorithm builder.
-pub type EMBuilder<'a, M, E, EStep, E2M, MStep, Stop> =
-    ExpectationMaximizationBuilder<'a, M, E, EStep, E2M, MStep, Stop>;
 
 impl<'a, M, E, EStep, E2M, MStep, Stop> EMBuilder<'a, M, E, EStep, E2M, MStep, Stop>
 where

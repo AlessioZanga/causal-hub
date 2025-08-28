@@ -8,7 +8,8 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
-    types::Labels,
+    set,
+    types::{Labels, Set},
 };
 
 /// A trait for conditional independence testing.
@@ -33,7 +34,7 @@ pub trait ConditionalIndependenceTest {
     ///
     /// `true` if X _||_ Y | Z, `false` otherwise.
     ///
-    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool;
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
 }
 
 /// A type alias for a conditional independence test.
@@ -81,13 +82,17 @@ where
         self.estimator.labels()
     }
 
-    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        // Assert Y contains exactly one label.
+        // TODO: Refactor code and remove this assumption.
+        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+
         // Compute the extended separation set.
-        let mut s = z.to_vec();
+        let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y).unwrap_err();
+        let s_y = z.binary_search(&y[0]).unwrap_err();
         // Insert Y into the extended separation set in sorted order.
-        s.insert(s_y, y);
+        s.shift_insert(s_y, y[0]);
 
         // Get the sufficient statistics and the intensity matrices for the sets.
         let ((n_xz, _, _), _q_xz) = self.estimator.fit_transform(x, z);
@@ -177,16 +182,20 @@ where
         self.estimator.labels()
     }
 
-    fn call(&self, x: usize, y: usize, z: &[usize]) -> bool {
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        // Assert Y contains exactly one label.
+        // TODO: Refactor code and remove this assumption.
+        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
 
         // Compute the extended separation set.
-        let mut s = z.to_vec();
+        let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y).unwrap_err();
+        let s_y = z.binary_search(&y[0]).unwrap_err();
         // Insert Y into the extended separation set in sorted order.
-        s.insert(s_y, y);
+        s.shift_insert(s_y, y[0]);
 
         // Get the sufficient statistics and the intensity matrices for the sets.
         let ((n_xz, _, _), q_xz) = self.estimator.fit_transform(x, z);
@@ -226,22 +235,19 @@ where
 
 /// A struct representing a continuous-time Peter-Clark estimator.
 #[derive(Clone, Debug)]
-pub struct ContinuousTimePeterClark<'a, T, S> {
+pub struct CTPC<'a, T, S> {
     initial_graph: &'a DiGraph,
     null_time: &'a T,
     null_state: &'a S,
     prior_knowledge: Option<&'a PK>,
 }
 
-/// A type alias for the continuous-time Peter-Clark estimator.
-pub type CTPC<'a, T, S> = ContinuousTimePeterClark<'a, T, S>;
-
 impl<'a, T, S> CTPC<'a, T, S>
 where
     T: CIT,
     S: CIT,
 {
-    /// Creates a new `ContinuousTimePeterClark` instance.
+    /// Creates a new `CTPC` instance.
     ///
     /// # Arguments
     ///
@@ -251,7 +257,7 @@ where
     ///
     /// # Returns
     ///
-    /// A new `ContinuousTimePeterClark` instance.
+    /// A new `CTPC` instance.
     ///
     #[inline]
     pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
@@ -346,7 +352,7 @@ where
         // For each vertex in the graph ...
         for i in graph.vertices() {
             // Get the parents of the vertex.
-            let mut pa_i = graph.parents(i);
+            let mut pa_i = graph.parents(&set![i]);
 
             // Initialize the counter.
             let mut k = 0;
@@ -372,11 +378,13 @@ where
                     // Filter out the parent.
                     let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                     // For any combination of size k of Pa(X_i) \ { X_j } ...
-                    for s_ij in pa_i_not_j.combinations(k) {
+                    for s_ij in pa_i_not_j.combinations(k).map(Set::from_iter) {
                         // Log the current combination.
                         debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
                         // If X_i _||_ X_j | S_{X_i, X_j} ...
-                        if self.null_time.call(i, j, &s_ij) && self.null_state.call(i, j, &s_ij) {
+                        if self.null_time.call(&set![i], &set![j], &s_ij)
+                            && self.null_state.call(&set![i], &set![j], &s_ij)
+                        {
                             // Log the result of the CIT.
                             debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
                             // Add the parent to the set of vertices to remove.
@@ -424,7 +432,7 @@ where
             .into_par_iter()
             .map(|i| {
                 // Get the parents of the vertex.
-                let mut pa_i = self.initial_graph.parents(i);
+                let mut pa_i = self.initial_graph.parents(&set![i]);
 
                 // Initialize the counter.
                 let mut k = 0;
@@ -449,12 +457,12 @@ where
                             // Filter out the parent.
                             let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
                             // For any combination of size k of Pa(X_i) \ { X_j } ...
-                            for s_ij in pa_i_not_j.combinations(k) {
+                            for s_ij in pa_i_not_j.combinations(k).map(Set::from_iter) {
                                 // Log the current combination.
                                 debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
-                                if self.null_time.call(i, j, &s_ij)
-                                    && self.null_state.call(i, j, &s_ij)
+                                if self.null_time.call(&set![i], &set![j], &s_ij)
+                                    && self.null_state.call(&set![i], &set![j], &s_ij)
                                 {
                                     // Log the result of the CIT.
                                     debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");

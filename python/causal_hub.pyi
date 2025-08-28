@@ -10,6 +10,7 @@ class CatBN:
     r"""
     A categorical Bayesian network (BN).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, graph:DiGraph, cpds:typing.Any) -> CatBN:
         r"""
         Constructs a new Bayesian network.
@@ -91,7 +92,8 @@ class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
     """
-    def label(self) -> builtins.str:
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+    def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
         
@@ -99,7 +101,7 @@ class CatCIM:
         
         A reference to the label.
         """
-    def states(self) -> builtins.list[builtins.str]:
+    def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
@@ -107,7 +109,7 @@ class CatCIM:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.int:
+    def cardinality(self) -> builtins.list[builtins.int]:
         r"""
         Returns the cardinality of the conditioned variable.
         
@@ -176,21 +178,8 @@ class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution (CPD).
     """
-    def __new__(cls, state:tuple, conditioning_states:typing.Any, parameters:numpy.typing.NDArray[numpy.float64]) -> CatCPD:
-        r"""
-        Constructs a new categorical CPD.
-        
-        # Arguments
-        
-        * `state` - A tuple containing the label of the conditioned variable and its states.
-        * `conditioning_states` - A list of tuples, each containing a label and its states for the conditioning variables.
-        * `parameters` - A 2D array of parameters for the CPD.
-        
-        # Returns
-        
-        A new `CatCPD` instance.
-        """
-    def label(self) -> builtins.str:
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+    def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
         
@@ -198,7 +187,7 @@ class CatCPD:
         
         A reference to the label.
         """
-    def states(self) -> builtins.list[builtins.str]:
+    def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
@@ -206,7 +195,7 @@ class CatCPD:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.int:
+    def cardinality(self) -> builtins.list[builtins.int]:
         r"""
         Returns the cardinality of the conditioned variable.
         
@@ -279,6 +268,7 @@ class CatCTBN:
     r"""
     A continuous-time Bayesian network (CTBN).
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, graph:DiGraph, cims:typing.Any) -> CatCTBN:
         r"""
         Constructs a new continuous-time Bayesian network.
@@ -607,6 +597,7 @@ class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     @classmethod
     def empty(cls, labels:typing.Any) -> DiGraph:
         r"""
@@ -709,49 +700,49 @@ class DiGraph:
         
         `true` if the edge was deleted, `false` if it did not exist.
         """
-    def parents(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def parents(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the parents of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose parents are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of parent vertices.
         """
-    def ancestors(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def ancestors(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the ancestors of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose ancestors are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of ancestor vertices.
         """
-    def children(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def children(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the children of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose children are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of child vertices.
         """
-    def descendants(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def descendants(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the descendants of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose descendants are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
@@ -763,9 +754,9 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
         
         # Panics
         
@@ -783,11 +774,11 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -806,10 +797,10 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -828,9 +819,9 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
         
         # Panics
         
@@ -848,11 +839,11 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -871,10 +862,10 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -923,6 +914,7 @@ class PK:
     r"""
     A struct representing prior knowledge.
     """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
 def em(evidence:CatTrjsEv, graph:DiGraph, max_iter:builtins.int=10, seed:builtins.int=42) -> dict:

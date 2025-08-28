@@ -12,70 +12,82 @@ use crate::{
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct DirectedGraph {
+pub struct DiGraph {
     labels: Labels,
     adjacency_matrix: Array2<bool>,
 }
 
-/// A type alias for a directed graph.
-pub type DiGraph = DirectedGraph;
-
 impl DiGraph {
-    /// Returns the parents of a vertex.
+    /// Returns the parents of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the parents.
+    /// * `x` - The set of vertices for which to find the parents.
     ///
     /// # Panics
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the parents of the vertex.
+    /// A set of indices representing the parents of the vertices.
     ///
-    pub fn parents(&self, x: usize) -> Vec<usize> {
-        // Assert the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn parents(&self, x: &Set<usize>) -> Set<usize> {
+        // Assert the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Iterate over all vertices and filter the ones that are parents.
-        self.adjacency_matrix
-            .column(x)
-            .indexed_iter()
-            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
-            .collect()
+        let mut parents: Set<_> = x
+            .into_iter()
+            .flat_map(|&v| {
+                self.adjacency_matrix
+                    .column(v)
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            })
+            .collect();
+
+        // Sort the parents.
+        parents.sort();
+
+        // Return the parents.
+        parents
     }
 
-    /// Returns the ancestors of a vertex.
+    /// Returns the ancestors of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the ancestors.
+    /// * `x` - The set of vertices for which to find the ancestors.
     ///
     /// # Panics
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///
-    /// A set of indices representing the ancestors of the vertex.
+    /// A set of indices representing the ancestors of the vertices.
     ///
-    pub fn ancestors(&self, x: usize) -> Set<usize> {
-        // Assert the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn ancestors(&self, x: &Set<usize>) -> Set<usize> {
+        // Assert the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
         let mut visited = set![];
 
-        // Start with the given vertex.
-        stack.push_back(x);
+        // Start with the given vertices.
+        stack.extend(x);
 
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each incoming edge ...
-            for z in self.parents(y) {
+            for z in self.parents(&set![y]) {
                 // If there is an edge from z to y and z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -86,65 +98,83 @@ impl DiGraph {
             }
         }
 
+        // Sort the visited set.
+        visited.sort();
+
         // Return the visited set.
         visited
     }
 
-    /// Returns the children of a vertex.
+    /// Returns the children of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the children.
+    /// * `x` - The set of vertices for which to find the children.
     ///
     /// # Panics
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///
-    /// A vector of indices representing the children of the vertex.
+    /// A set of indices representing the children of the vertices.
     ///
-    pub fn children(&self, x: usize) -> Vec<usize> {
-        // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn children(&self, x: &Set<usize>) -> Set<usize> {
+        // Check if the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Iterate over all vertices and filter the ones that are children.
-        self.adjacency_matrix
-            .row(x)
-            .indexed_iter()
-            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
-            .collect()
+        let mut children: Set<_> = x
+            .into_iter()
+            .flat_map(|&v| {
+                self.adjacency_matrix
+                    .row(v)
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            })
+            .collect();
+
+        // Sort the children.
+        children.sort();
+
+        // Return the children.
+        children
     }
 
-    /// Returns the descendants of a vertex.
+    /// Returns the descendants of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the descendants.
+    /// * `x` - The set of vertices for which to find the descendants.
     ///
     /// # Panics
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///
-    /// A set of indices representing the descendants of the vertex.
+    /// A set of indices representing the descendants of the vertices.
     ///
-    pub fn descendants(&self, x: usize) -> Set<usize> {
-        // Assert the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn descendants(&self, x: &Set<usize>) -> Set<usize> {
+        // Assert the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
         let mut visited = set![];
 
-        // Start with the given vertex.
-        stack.push_back(x);
+        // Start with the given vertices.
+        stack.extend(x);
 
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each outgoing edge ...
-            for z in self.children(y) {
+            for z in self.children(&set![y]) {
                 // If z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -154,6 +184,9 @@ impl DiGraph {
                 }
             }
         }
+
+        // Sort the visited set.
+        visited.sort();
 
         // Return the visited set.
         visited
@@ -315,7 +348,8 @@ impl Graph for DiGraph {
         // Collect the labels.
         let labels = collect_labels(labels);
 
-        // FIXME: Workaround: assert labels are sorted.
+        // Assert labels are sorted.
+        // TODO: Refactor code and remove this assumption.
         assert!(labels.iter().is_sorted(), "Labels must be sorted.");
 
         // Assert labels and adjacency matrix dimensions match.

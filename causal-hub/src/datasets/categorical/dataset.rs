@@ -12,15 +12,12 @@ use crate::{
 
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
-pub struct CategoricalDataset {
+pub struct CatData {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     values: Array2<u8>,
 }
-
-/// A type alias for a categorical dataset.
-pub type CatData = CategoricalDataset;
 
 impl CatData {
     /// Creates a new categorical dataset.

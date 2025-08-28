@@ -22,9 +22,9 @@ mod tests {
         assert!(ctbn.graph().has_edge(2, 0));
         // Check the distributions.
         assert_eq!(ctbn.cims().len(), 3);
-        assert_eq!(ctbn.cims()[0].label(), "Eating");
-        assert_eq!(ctbn.cims()[1].label(), "FullStomach");
-        assert_eq!(ctbn.cims()[2].label(), "Hungry");
+        assert_eq!(ctbn.cims()[0].labels()[0], "Eating");
+        assert_eq!(ctbn.cims()[1].labels()[0], "FullStomach");
+        assert_eq!(ctbn.cims()[2].labels()[0], "Hungry");
         assert!(ctbn.cims()[0].conditioning_labels().iter().eq(["Hungry"]));
         assert!(ctbn.cims()[1].conditioning_labels().iter().eq(["Eating"]));
         assert!(
@@ -75,9 +75,9 @@ mod tests {
             ]
         );
         // Check the states.
-        assert!(ctbn.cims()[0].states().iter().eq(["no", "yes"]));
-        assert!(ctbn.cims()[1].states().iter().eq(["no", "yes"]));
-        assert!(ctbn.cims()[2].states().iter().eq(["no", "yes"]));
+        assert!(ctbn.cims()[0].states()[0].iter().eq(["no", "yes"]));
+        assert!(ctbn.cims()[1].states()[0].iter().eq(["no", "yes"]));
+        assert!(ctbn.cims()[2].states()[0].iter().eq(["no", "yes"]));
         // Check the parameters size.
         assert_eq!(ctbn.parameters_size(), 15);
 
@@ -90,9 +90,9 @@ mod tests {
         assert_eq!(initial_distribution.graph().vertices().len(), 3);
         // Check the distributions.
         assert_eq!(initial_distribution.cpds().len(), 3);
-        assert_eq!(initial_distribution.cpds()[0].label(), "Eating");
-        assert_eq!(initial_distribution.cpds()[1].label(), "FullStomach");
-        assert_eq!(initial_distribution.cpds()[2].label(), "Hungry");
+        assert_eq!(initial_distribution.cpds()[0].labels()[0], "Eating");
+        assert_eq!(initial_distribution.cpds()[1].labels()[0], "FullStomach");
+        assert_eq!(initial_distribution.cpds()[2].labels()[0], "Hungry");
         assert!(
             initial_distribution.cpds()[0]
                 .conditioning_labels()
@@ -126,20 +126,17 @@ mod tests {
         );
         // Check the states.
         assert!(
-            initial_distribution.cpds()[0]
-                .states()
+            initial_distribution.cpds()[0].states()[0]
                 .iter()
                 .eq(["no", "yes"])
         );
         assert!(
-            initial_distribution.cpds()[1]
-                .states()
+            initial_distribution.cpds()[1].states()[0]
                 .iter()
                 .eq(["no", "yes"])
         );
         assert!(
-            initial_distribution.cpds()[2]
-                .states()
+            initial_distribution.cpds()[2].states()[0]
                 .iter()
                 .eq(["no", "yes"])
         );

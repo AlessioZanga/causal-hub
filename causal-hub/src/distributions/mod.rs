@@ -4,12 +4,10 @@ pub use categorical::*;
 mod intensity_matrix;
 pub use intensity_matrix::*;
 
+use crate::types::Labels;
+
 /// A trait for conditional probability distributions.
-pub trait ConditionalProbabilityDistribution {
-    /// The type of the label.
-    type Label;
-    /// The type of the conditioning labels.
-    type ConditioningLabels;
+pub trait CPD {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
@@ -21,7 +19,7 @@ pub trait ConditionalProbabilityDistribution {
     ///
     /// A reference to the label.
     ///
-    fn label(&self) -> &Self::Label;
+    fn labels(&self) -> &Labels;
 
     /// Returns the labels of the conditioned variables.
     ///
@@ -29,7 +27,7 @@ pub trait ConditionalProbabilityDistribution {
     ///
     /// A reference to the conditioning labels.
     ///
-    fn conditioning_labels(&self) -> &Self::ConditioningLabels;
+    fn conditioning_labels(&self) -> &Labels;
 
     /// Returns the parameters.
     ///
@@ -47,6 +45,3 @@ pub trait ConditionalProbabilityDistribution {
     ///
     fn parameters_size(&self) -> usize;
 }
-
-/// A type alias for the conditional probability distribution.
-pub use ConditionalProbabilityDistribution as CPD;

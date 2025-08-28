@@ -8,12 +8,13 @@ use crate::{
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
+    set,
     types::{Labels, Map, States},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CategoricalContinuousTimeBayesianNetwork {
+pub struct CatCTBN {
     /// The initial distribution.
     initial_distribution: CatBN,
     /// The underlying graph.
@@ -21,9 +22,6 @@ pub struct CategoricalContinuousTimeBayesianNetwork {
     /// The conditional intensity matrices.
     cims: Map<String, CatCIM>,
 }
-
-/// A type alias for the categorical CTBN.
-pub type CatCTBN = CategoricalContinuousTimeBayesianNetwork;
 
 impl CatCTBN {
     /// Returns the states of the variables.
@@ -95,7 +93,12 @@ impl CTBN for CatCTBN {
         // Collect the CPDs into a map.
         let mut cims: Map<_, _> = cims
             .into_iter()
-            .map(|x| (x.label().to_owned(), x))
+            // Assert CIM contains exactly one label.
+            // TODO: Refactor code and remove this assumption.
+            .inspect(|x| {
+                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            })
+            .map(|x| (x.labels()[0].to_owned(), x))
             .collect();
         // Sort the CPDs by their labels.
         cims.sort_keys();
@@ -112,7 +115,7 @@ impl CTBN for CatCTBN {
             graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
-                    .parents(i)
+                    .parents(&set![i])
                     .into_iter()
                     .eq(cims[i].conditioning_labels().iter().map(|j| {
                         // Get the index of the label in the graph.
@@ -127,15 +130,15 @@ impl CTBN for CatCTBN {
         // Initialize the CPDs as uniform distributions.
         let initial_cpds = cims.values().map(|cim| {
             // Get label and states of the CIM.
-            let state = (cim.label(), cim.states());
+            let states = cim.states().clone();
             // Set empty conditioning states.
-            let conditioning_states: [(&str, Vec<&str>); 0] = [];
+            let conditioning_states = States::default();
             // Set uniform parameters.
-            let alpha = cim.states().len();
+            let alpha = cim.cardinality().product();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.
-            CatCPD::new(state, conditioning_states, parameters)
+            CatCPD::new(states, conditioning_states, parameters)
         });
         // Initialize a uniform initial distribution.
         let initial_distribution = CatBN::new(initial_graph, initial_cpds);
@@ -193,10 +196,10 @@ impl CTBN for CatCTBN {
         // Assert the initial distribution has same states.
         assert!(
             initial_distribution
-                .states()
+                .cpds()
                 .into_iter()
                 .zip(ctbn.cims())
-                .all(|((_, states), (_, cim))| states.eq(cim.states())),
+                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
             "Initial distribution states must be the same as the CIMs states."
         );
 

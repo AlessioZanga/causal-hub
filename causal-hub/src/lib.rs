@@ -8,21 +8,23 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
-/// Probability distributions.
+/// Probability distributions structures.
 pub mod distributions;
-/// Estimators for parameters and structures.
+/// Parameter and structure learning algorithms.
 pub mod estimators;
 /// Graph structures and algorithms.
 pub mod graphs;
-/// Input/output.
+/// Inference algorithms.
+pub mod inference;
+/// Input/output functions.
 pub mod io;
-/// Models.
+/// Models structures.
 pub mod models;
-/// Random data generators.
+/// Random generators.
 pub mod random;
-/// Sampling methods.
+/// Sampling algorithms.
 pub mod samplers;
-/// Types.
+/// Support types.
 pub mod types;
 /// Utility functions.
 pub mod utils;

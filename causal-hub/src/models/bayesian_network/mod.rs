@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// A trait for Bayesian networks.
-pub trait BayesianNetwork {
+pub trait BN {
     /// The type of the CPD.
     type CPD;
     /// The type of the sample.
@@ -70,6 +70,3 @@ pub trait BayesianNetwork {
     ///
     fn topological_order(&self) -> &[usize];
 }
-
-/// A type alias for a Bayesian network.
-pub use BayesianNetwork as BN;

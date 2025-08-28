@@ -9,6 +9,7 @@ use causal_hub_rust::{
     graphs::{DiGraph, Graph},
     models::{CTBN, CatCTBN},
     samplers::{ImportanceSampler, ParCTBNSampler},
+    set,
     types::Cache,
 };
 use log::debug;
@@ -99,9 +100,11 @@ pub fn sem<'a>(
                     // Set the parents of the initial graph to max_parents.
                     for i in 0..initial_graph.vertices().len() {
                         // Get the parents.
-                        let mut pa_i = initial_graph.parents(i);
+                        let pa_i = initial_graph.parents(&set![i]);
                         // Check the maximum number of parents.
                         if pa_i.len() > max_parents + 1 {
+                            // Convert to a mutable vector.
+                            let mut pa_i: Vec<_> = pa_i.into_iter().collect();
                             // Choose nodes randomly.
                             pa_i.shuffle(&mut rng);
                             // Remove the excess parents.
@@ -166,12 +169,11 @@ pub fn sem<'a>(
                     let seeds: Vec<_> = (0..evidence.values().len())
                         .map(|_| rng.next_u64())
                         .collect();
-                    // Fore each (seed, evidence) ...
+                    // For each (seed, evidence) ...
                     seeds
-                        .iter()
-                        .zip(evidence)
-                        .par_bridge()
-                        .map(|(&s, e)| {
+                        .into_par_iter()
+                        .zip(evidence.par_iter())
+                        .map(|(s, e)| {
                             // Initialize a new random number generator.
                             let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                             // Initialize a new sampler.

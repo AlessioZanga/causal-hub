@@ -3,7 +3,9 @@ mod tests {
     use causal_hub::{
         distributions::{CPD, CatCPD},
         graphs::{DiGraph, Graph},
+        map,
         models::{BN, CatBN},
+        set,
     };
     use ndarray::prelude::*;
 
@@ -15,18 +17,21 @@ mod tests {
         graph.add_edge(0, 2); // A -> C
         graph.add_edge(1, 2); // B -> C
 
+        // Set the states of the variables.
+        let states = set!["no".to_string(), "yes".to_string()];
+
         // Initialize the distributions.
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                ("A", vec!["no", "yes"]),        //
-                Vec::<(&str, Vec<&str>)>::new(), //
-                array![[0.1, 0.9]],              //
+                map![("A".to_string(), states.clone())], //
+                map![],                                  //
+                array![[0.1, 0.9]],                      //
             ),
             CatCPD::new(
                 // P(B | A)
-                ("B", vec!["no", "yes"]),       //
-                vec![("A", vec!["no", "yes"])], //
+                map![("B".to_string(), states.clone())], //
+                map![("A".to_string(), states.clone())], //
                 array![
                     [0.2, 0.8], //
                     [0.4, 0.6], //
@@ -34,10 +39,10 @@ mod tests {
             ),
             CatCPD::new(
                 // P(C | A, B)
-                ("C", vec!["no", "yes"]), //
-                vec![
-                    ("A", vec!["no", "yes"]), //
-                    ("B", vec!["no", "yes"]), //
+                map![("C".to_string(), states.clone())],
+                map![
+                    ("A".to_string(), states.clone()),
+                    ("B".to_string(), states.clone()),
                 ],
                 array![
                     [0.1, 0.9], //
@@ -61,9 +66,9 @@ mod tests {
 
         // Check the distributions.
         assert_eq!(bn.cpds().len(), 3);
-        assert_eq!(bn.cpds()[0].label(), "A");
-        assert_eq!(bn.cpds()[1].label(), "B");
-        assert_eq!(bn.cpds()[2].label(), "C");
+        assert_eq!(bn.cpds()[0].labels()[0], "A");
+        assert_eq!(bn.cpds()[1].labels()[0], "B");
+        assert_eq!(bn.cpds()[2].labels()[0], "C");
         assert!(
             bn.cpds()[0]
                 .conditioning_labels()
@@ -106,17 +111,18 @@ mod tests {
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
+        let states = set!["no".to_string(), "yes".to_string()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                ("A", vec!["no", "yes"]),
-                Vec::<(&str, Vec<&str>)>::new(),
+                map![("A".to_string(), states.clone())],
+                map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                ("B", vec!["no", "yes"]),
-                vec![("A", vec!["no", "yes"])],
+                map![("B".to_string(), states.clone())],
+                map![("A".to_string(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -130,23 +136,24 @@ mod tests {
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
+        let states = set!["no".to_string(), "yes".to_string()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                ("A", vec!["no", "yes"]),
-                Vec::<(&str, Vec<&str>)>::new(),
+                map![("A".to_string(), states.clone())],
+                map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(A)
-                ("A", vec!["no", "yes"]),
-                Vec::<(&str, Vec<&str>)>::new(),
+                map![("A".to_string(), states.clone())],
+                map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                ("B", vec!["no", "yes"]),
-                vec![("A", vec!["no", "yes"])],
+                map![("B".to_string(), states.clone())],
+                map![("A".to_string(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -159,23 +166,27 @@ mod tests {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
+        let states = set!["no".to_string(), "yes".to_string()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                ("A", vec!["no", "yes"]),
-                Vec::<(&str, Vec<&str>)>::new(),
+                map![("A".to_string(), states.clone())],
+                map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                ("B", vec!["no", "yes"]),
-                vec![("A", vec!["no", "yes"])],
+                map![("B".to_string(), states.clone())],
+                map![("A".to_string(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
             CatCPD::new(
                 // P(C | A, B)
-                ("C", vec!["no", "yes"]),
-                vec![("A", vec!["no", "yes"]), ("B", vec!["no", "yes"])],
+                map![("C".to_string(), states.clone())],
+                map![
+                    ("A".to_string(), states.clone()),
+                    ("B".to_string(), states.clone())
+                ],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             ),
         ];

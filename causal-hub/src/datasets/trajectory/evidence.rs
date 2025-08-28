@@ -11,7 +11,7 @@ use crate::{
 
 /// A type representing the evidence type for categorical trajectories.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum CategoricalTrajectoryEvidenceType {
+pub enum CatTrjEvT {
     /// Certain positive interval evidence.
     CertainPositiveInterval {
         /// The observed event.
@@ -57,9 +57,6 @@ pub enum CategoricalTrajectoryEvidenceType {
         end_time: f64,
     },
 }
-
-/// Type alias for `CategoricalTrajectoryEvidenceType`.
-pub type CatTrjEvT = CategoricalTrajectoryEvidenceType;
 
 impl CatTrjEvT {
     /// Return the observed event of the evidence.
@@ -124,18 +121,15 @@ impl CatTrjEvT {
 
 /// A type representing a collection of evidences for a categorical trajectory.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalTrajectoryEvidence {
+pub struct CatTrjEv {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     evidences: Map<String, Vec<CatTrjEvT>>,
 }
 
-/// Type alias for `CategoricalTrajectoryEvidence`.
-pub type CatTrjEv = CategoricalTrajectoryEvidence;
-
 impl CatTrjEv {
-    /// Constructs a new `CategoricalTrajectoryEvidence` instance.
+    /// Constructs a new `CatTrjEv` instance.
     ///
     /// # Arguments
     ///
@@ -567,22 +561,19 @@ impl Dataset for CatTrjEv {
 
 /// A collection of multivariate trajectories evidence.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CategoricalTrajectoriesEvidence {
+pub struct CatTrjsEv {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     values: Vec<CatTrjEv>,
 }
 
-/// A type alias for a collection of multivariate trajectories evidence.
-pub type CatTrjsEv = CategoricalTrajectoriesEvidence;
-
 impl CatTrjsEv {
     /// Constructs a new collection of trajectories evidence.
     ///
     /// # Arguments
     ///
-    /// * `trajectories` - An iterator of `CategoricalTrajectoryEvidence` instances.
+    /// * `trajectories` - An iterator of `CatTrjEv` instances.
     ///
     /// # Panics
     ///

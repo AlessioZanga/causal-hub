@@ -5,7 +5,8 @@ use crate::{
     distributions::{CPD, CatCIM},
     estimators::CPDEstimator,
     graphs::{DiGraph, Graph},
-    types::Labels,
+    set,
+    types::{Labels, Set},
 };
 
 /// A trait for scoring criteria used in score-based structure learning.
@@ -29,21 +30,15 @@ pub trait ScoringCriterion {
     ///
     /// The computed score.
     ///
-    fn call(&self, x: usize, z: &[usize]) -> f64;
+    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64;
 }
-
-/// A type alias for a scoring criterion.
-pub use ScoringCriterion as SC;
 
 use super::PK;
 
 /// The Bayesian Information Criterion (BIC).
-pub struct BayesianInformationCriterion<'a, E> {
+pub struct BIC<'a, E> {
     estimator: &'a E,
 }
-
-/// A type alias for the BIC.
-pub type BIC<'a, E> = BayesianInformationCriterion<'a, E>;
 
 impl<'a, E> BIC<'a, E> {
     /// Creates a new BIC instance.
@@ -62,7 +57,7 @@ impl<'a, E> BIC<'a, E> {
     }
 }
 
-impl<E> SC for BIC<'_, E>
+impl<E> ScoringCriterion for BIC<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
@@ -72,7 +67,7 @@ where
     }
 
     #[inline]
-    fn call(&self, x: usize, z: &[usize]) -> f64 {
+    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64 {
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
@@ -91,19 +86,16 @@ where
 
 /// The hill climbing algorithm for structure learning in CTBNs.
 #[derive(Clone, Debug)]
-pub struct ContinuousTimeHillClimbing<'a, S> {
+pub struct CTHC<'a, S> {
     initial_graph: &'a DiGraph,
     score: &'a S,
     max_parents: Option<usize>,
     prior_knowledge: Option<&'a PK>,
 }
 
-/// A type alias for the continuous time hill climbing algorithm.
-pub type CTHC<'a, S> = ContinuousTimeHillClimbing<'a, S>;
-
 impl<'a, S> CTHC<'a, S>
 where
-    S: SC,
+    S: ScoringCriterion,
 {
     /// Creates a new continuous time hill climbing instance.
     ///
@@ -218,9 +210,9 @@ where
             let mut prev_score = f64::NEG_INFINITY;
 
             // Set the initial parent set as the current parent set.
-            let mut curr_pa = self.initial_graph.parents(i);
+            let mut curr_pa = self.initial_graph.parents(&set![i]);
             // Compute the score of the current parent set.
-            let mut curr_score = self.score.call(i, &curr_pa);
+            let mut curr_score = self.score.call(&set![i], &curr_pa);
 
             // While the score of the current parent set is higher than the previous score ...
             while prev_score < curr_score {
@@ -249,7 +241,7 @@ where
                                         // Clone the current parent set.
                                         let mut curr_pa = curr_pa.clone();
                                         // Insert the vertex in order.
-                                        curr_pa.insert(p_j, j);
+                                        curr_pa.shift_insert(p_j, j);
                                         // Return it as a candidate for addition.
                                         return Some(curr_pa);
                                     }
@@ -266,13 +258,13 @@ where
                     // Get the size of the candidate subset, avoid underflow.
                     let k = curr_pa.len().saturating_sub(1);
                     // Generate all the k-sized subsets.
-                    curr_pa.into_iter().combinations(k)
+                    curr_pa.into_iter().combinations(k).map(Set::from_iter)
                 });
 
                 // For each candidate parent sets ...
                 for next_pa in poss_pa {
                     // Compute the score of the candidate parent set.
-                    let next_score = self.score.call(i, &next_pa);
+                    let next_score = self.score.call(&set![i], &next_pa);
                     // If the score of the candidate parent set is higher ...
                     if curr_score < next_score {
                         // Update the current parent set to the candidate parent set.
@@ -297,7 +289,7 @@ where
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: SC + Sync,
+    S: ScoringCriterion + Sync,
 {
     /// Execute the CTHC algorithm in parallel.
     ///
@@ -316,9 +308,9 @@ where
                 let mut prev_score = f64::NEG_INFINITY;
 
                 // Set the initial parent set as the current parent set.
-                let mut curr_pa = self.initial_graph.parents(i);
+                let mut curr_pa = self.initial_graph.parents(&set![i]);
                 // Compute the score of the current parent set.
-                let mut curr_score = self.score.call(i, &curr_pa);
+                let mut curr_score = self.score.call(&set![i], &curr_pa);
 
                 // While the score of the current parent set is higher than the previous score ...
                 while prev_score < curr_score {
@@ -347,7 +339,7 @@ where
                                             // Clone the current parent set.
                                             let mut curr_pa = curr_pa.clone();
                                             // Insert the vertex in order.
-                                            curr_pa.insert(p_j, j);
+                                            curr_pa.shift_insert(p_j, j);
                                             // Return it as a candidate for addition.
                                             return Some(curr_pa);
                                         }
@@ -364,7 +356,7 @@ where
                         // Get the size of the candidate subset, avoid underflow.
                         let k = curr_pa.len().saturating_sub(1);
                         // Generate all the k-sized subsets.
-                        curr_pa.into_iter().combinations(k)
+                        curr_pa.into_iter().combinations(k).map(Set::from_iter)
                     })
                     // Collect to allow for parallel iteration.
                     .collect();
@@ -373,7 +365,7 @@ where
                     if let Some((next_score, next_pa)) = poss_pa
                         .into_par_iter()
                         // Compute the score of the candidate parent set in parallel.
-                        .map(|next_pa| (self.score.call(i, &next_pa), next_pa))
+                        .map(|next_pa| (self.score.call(&set![i], &next_pa), next_pa))
                         // Get the one with the highest score in parallel.
                         .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
                     {

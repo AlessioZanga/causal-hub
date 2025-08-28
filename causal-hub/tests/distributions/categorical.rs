@@ -1,17 +1,21 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::distributions::{CPD, CatCPD};
+    use causal_hub::{
+        distributions::{CPD, CatCPD},
+        map, set,
+    };
     use ndarray::prelude::*;
 
     #[test]
     fn test_new() {
-        let x = ("A", vec!["no", "yes"]);
-        let z = vec![("B", vec!["no", "yes"]), ("C", vec!["no", "yes"])];
+        let s = set!["no".to_string(), "yes".to_string()];
+        let x = map![("A".to_string(), s.clone())];
+        let z = map![("B".to_string(), s.clone()), ("C".to_string(), s)];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
         let categorical = CatCPD::new(x, z, p.clone());
 
-        assert_eq!(categorical.label(), "A");
-        assert!(categorical.states().iter().eq(["no", "yes"]));
+        assert_eq!(categorical.labels()[0], "A");
+        assert!(categorical.states()[0].iter().eq(["no", "yes"]));
         assert!(categorical.conditioning_labels().iter().eq(["B", "C"]));
         assert!(
             categorical
@@ -23,19 +27,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Conditioned variable cannot be a conditioning variable.")]
+    #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
     fn test_unique_labels() {
-        let x = ("A", vec!["no", "yes"]);
-        let z = vec![("A", vec!["no", "yes"])];
-        let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CatCPD::new(x, z, p);
-    }
-
-    #[test]
-    #[should_panic(expected = "Variables states must be unique.")]
-    fn test_unique_states() {
-        let x = ("A", vec!["no", "no"]);
-        let z = vec![("B", vec!["no", "yes"])];
+        let s = set!["no".to_string(), "yes".to_string()];
+        let x = map![("A".to_string(), s.clone())];
+        let z = map![("A".to_string(), s.clone())];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         CatCPD::new(x, z, p);
     }
@@ -43,16 +39,17 @@ mod tests {
     #[test]
     #[should_panic(expected = "Failed to sum probability to one: [].")]
     fn test_empty_labels() {
-        let x: (&str, Vec<&str>) = ("", vec![]);
-        let z: Vec<(&str, Vec<&str>)> = vec![];
+        let x = map![];
+        let z = map![];
         let p = array![[]];
         CatCPD::new(x, z, p);
     }
 
     #[test]
     fn test_display() {
-        let x = ("A", vec!["no", "yes"]);
-        let z = vec![("B", vec!["no", "yes"])];
+        let s = set!["no".to_string(), "yes".to_string()];
+        let x = map![("A".to_string(), s.clone())];
+        let z = map![("B".to_string(), s.clone())];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         let categorical = CatCPD::new(x, z, p);
 

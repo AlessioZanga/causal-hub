@@ -8,13 +8,11 @@ use crate::{types::Labels, utils::collect_labels};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[repr(C)]
-enum PriorKnowledgeState {
+enum PKS {
     Unknown,
     Forbidden,
     Required,
 }
-
-type PKS = PriorKnowledgeState;
 
 impl PKS {
     #[inline]
@@ -45,15 +43,12 @@ impl Display for PKS {
 
 /// A structure representing prior knowledge for structure learning.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PriorKnowledge {
+pub struct PK {
     labels: Labels,
     adjacency_matrix: Array2<PKS>,
 }
 
-/// A type alias for prior knowledge.
-pub type PK = PriorKnowledge;
-
-impl PriorKnowledge {
+impl PK {
     /// Creates a new instance of prior knowledge.
     ///
     /// # Arguments

@@ -4,17 +4,14 @@ use rand::{Rng, seq::index::sample};
 use crate::datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset};
 
 /// A struct representing a random evidence generator.
-pub struct RandomEvidence<'a, R, D> {
+pub struct RngEv<'a, R, D> {
     rng: &'a mut R,
     dataset: &'a D,
     p: f64,
 }
 
-/// A type alias for the random evidence generator.
-pub type RngEv<'a, R, D> = RandomEvidence<'a, R, D>;
-
-impl<'a, R, D> RandomEvidence<'a, R, D> {
-    /// Creates a new `RandomEvidence` instance.
+impl<'a, R, D> RngEv<'a, R, D> {
+    /// Creates a new `RngEv` instance.
     ///
     /// # Arguments
     ///
@@ -28,7 +25,7 @@ impl<'a, R, D> RandomEvidence<'a, R, D> {
     ///
     /// # Returns
     ///
-    /// A new `RandomEvidence` instance.
+    /// A new `RngEv` instance.
     pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Self {
         // Assert that the probability is in [0, 1].
         assert!((0.0..=1.0).contains(&p), "Probability must be in [0, 1]");

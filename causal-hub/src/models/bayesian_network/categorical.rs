@@ -7,12 +7,13 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
+    set,
     types::{Labels, Map, States},
 };
 
 /// A categorical Bayesian network (BN).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CategoricalBayesianNetwork {
+pub struct CatBN {
     /// The states of the variables.
     states: States,
     /// The underlying graph.
@@ -22,9 +23,6 @@ pub struct CategoricalBayesianNetwork {
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
-
-/// A type alias for the categorical Bayesian network.
-pub type CatBN = CategoricalBayesianNetwork;
 
 impl CatBN {
     /// Returns the states of the variables.
@@ -96,7 +94,12 @@ impl BN for CatBN {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
             .into_iter()
-            .map(|x| (x.label().to_owned(), x))
+            // Assert CPD contains exactly one label.
+            // TODO: Refactor code and remove this assumption.
+            .inspect(|x| {
+                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            })
+            .map(|x| (x.labels()[0].to_owned(), x))
             .collect();
         // Sort the CPDs by their labels.
         cpds.sort_keys();
@@ -111,7 +114,8 @@ impl BN for CatBN {
         let mut states: States = Default::default();
         // Insert the states of the variables into the map to check if they are the same.
         for cpd in cpds.values() {
-            std::iter::once((cpd.label(), cpd.states()))
+            cpd.states()
+                .iter()
                 .chain(cpd.conditioning_states())
                 .for_each(|(l, s)| {
                     // Check if the states are already in the map.
@@ -136,7 +140,7 @@ impl BN for CatBN {
             graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
-                    .parents(i)
+                    .parents(&set![i])
                     .into_iter()
                     .eq(cpds[i].conditioning_labels().iter().map(|j| {
                         // Get the index of the label in the graph.

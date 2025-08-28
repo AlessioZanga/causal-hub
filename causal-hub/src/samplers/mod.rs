@@ -7,6 +7,7 @@
 //!
 //! and their parallel versions:
 //!
+//! * ParBNSampler - Parallel sampling from a BN.
 //! * ParCTBNSampler - Parallel sampling from a CTBN.
 //!
 //! This module contains the following samplers:
@@ -19,6 +20,7 @@
 //! | Trait          | ForwardSampler | ImportanceSampler |
 //! |----------------|:--------------:|:-----------------:|
 //! | BNSampler      | ✅             | ✅                |
+//! | ParBNSampler   | ✅             | ✅                |
 //! | CTBNSampler    | ✅             | ✅                |
 //! | ParCTBNSampler | ✅             | ✅                |
 //!
@@ -32,7 +34,7 @@ pub use importance::*;
 use crate::models::{BN, CTBN};
 
 /// A trait for sampling from a Bayesian network.
-pub trait BayesianNetworkSampler<T>
+pub trait BNSampler<T>
 where
     T: BN,
 {
@@ -62,10 +64,29 @@ where
     fn sample_n(&mut self, n: usize) -> Self::Samples;
 }
 
-pub use BayesianNetworkSampler as BNSampler;
+/// A trait for parallel sampling from a Bayesian network.
+pub trait ParBNSampler<T>
+where
+    T: BN,
+{
+    /// The samples type.
+    type Samples;
+
+    /// Sample from a Bayesian network in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The number of samples to generate.
+    ///
+    /// # Returns
+    ///
+    /// A dataset containing the samples.
+    ///
+    fn par_sample_n(&mut self, n: usize) -> Self::Samples;
+}
 
 /// A trait for sampling from a CTBN.
-pub trait ContinuousTimeBayesianNetworkSampler<T>
+pub trait CTBNSampler<T>
 where
     T: CTBN,
 {
@@ -194,10 +215,8 @@ where
     ) -> Self::Samples;
 }
 
-pub use ContinuousTimeBayesianNetworkSampler as CTBNSampler;
-
-/// A trait for sampling from a CTBN.
-pub trait ParallelContinuousTimeBayesianNetworkSampler<T>
+/// A trait for parallel sampling from a CTBN.
+pub trait ParCTBNSampler<T>
 where
     T: CTBN,
 {
@@ -271,5 +290,3 @@ where
         n: usize,
     ) -> Self::Samples;
 }
-
-pub use ParallelContinuousTimeBayesianNetworkSampler as ParCTBNSampler;

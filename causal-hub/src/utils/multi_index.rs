@@ -3,16 +3,13 @@ use serde::{Deserialize, Serialize};
 
 /// A structure to compute the ravel index of a multi-dimensional array.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct RavelMultiIndex {
+pub struct MI {
     cardinality: Array1<usize>,
     strides: Array1<usize>,
 }
 
-/// A type alias for the ravel multi index.
-pub type RMI = RavelMultiIndex;
-
-impl RMI {
-    /// Construct a new `RavelMultiIndex` from the cardinality of each dimension.
+impl MI {
+    /// Construct a new `MI` from the cardinality of each dimension.
     ///
     /// # Arguments
     ///
@@ -20,7 +17,7 @@ impl RMI {
     ///
     /// # Returns
     ///
-    /// A new `RavelMultiIndex` instance.
+    /// A new `MI` instance.
     ///
     pub fn new<I>(cardinality: I) -> Self
     where
@@ -71,5 +68,28 @@ impl RMI {
             .zip(multi_index)
             .map(|(i, j)| i * j)
             .sum()
+    }
+
+    /// Compute the multi-dimensional index from a ravelled index.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The ravelled index.
+    ///
+    /// # Returns
+    ///
+    /// A vector containing the multi-dimensional index.
+    ///
+    pub fn unravel(&self, index: usize) -> Vec<usize> {
+        let mut multi_index = Vec::with_capacity(self.cardinality.len());
+        let mut remaining_index = index;
+
+        for &stride in &self.strides {
+            let value = remaining_index / stride;
+            multi_index.push(value);
+            remaining_index -= value * stride;
+        }
+
+        multi_index
     }
 }

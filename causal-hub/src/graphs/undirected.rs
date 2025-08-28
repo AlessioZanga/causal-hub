@@ -9,13 +9,10 @@ use crate::{
 
 /// A struct representing an undirected graph using an adjacency matrix.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UndirectedGraph {
+pub struct UnGraph {
     labels: Labels,
     adjacency_matrix: Array2<bool>,
 }
-
-/// A type alias for an undirected graph.
-pub type UnGraph = UndirectedGraph;
 
 impl UnGraph {
     /// Returns the neighbors of a vertex.
@@ -32,17 +29,29 @@ impl UnGraph {
     ///
     /// A set of indices representing the neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: usize) -> Set<usize> {
-        // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
+        // Check if the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Iterate over all vertices and filter the ones that are neighbors.
-        self.adjacency_matrix
-            .row(x)
+        let mut neighbors: Set<_> = x
             .into_iter()
-            .enumerate()
-            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
-            .collect()
+            .flat_map(|&v| {
+                self.adjacency_matrix
+                    .row(v)
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            })
+            .collect();
+
+        // Sort the neighbors.
+        neighbors.sort();
+
+        // Return the neighbors.
+        neighbors
     }
 }
 
@@ -210,7 +219,8 @@ impl Graph for UnGraph {
         // Collect the labels.
         let labels = collect_labels(labels);
 
-        // FIXME: Workaround: assert labels are sorted.
+        // Assert labels are sorted.
+        // TODO: Refactor code and remove this assumption.
         assert!(labels.iter().is_sorted(), "Labels must be sorted.");
 
         // Assert labels and adjacency matrix dimensions match.

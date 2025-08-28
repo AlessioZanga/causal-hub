@@ -9,7 +9,7 @@ use crate::{
 
 /// Categorical evidence type.
 #[derive(Clone, Debug)]
-pub enum CategoricalEvidenceType {
+pub enum CatEvT {
     /// Certain positive evidence.
     CertainPositive {
         /// The observed event of the evidence.
@@ -40,10 +40,7 @@ pub enum CategoricalEvidenceType {
     },
 }
 
-/// A type alias for the categorical evidence type.
-pub type CatEvT = CategoricalEvidenceType;
-
-impl From<CatTrjEvT> for CategoricalEvidenceType {
+impl From<CatTrjEvT> for CatEvT {
     fn from(evidence: CatTrjEvT) -> Self {
         // Get shortened variable types.
         use CatEvT as U;
@@ -88,17 +85,14 @@ impl CatEvT {
 
 /// Categorical evidence structure.
 #[derive(Clone, Debug)]
-pub struct CategoricalEvidence {
+pub struct CatEv {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     evidences: Map<String, Option<CatEvT>>,
 }
 
-/// A type alias for the categorical evidence structure.
-pub type CatEv = CategoricalEvidence;
-
-impl CategoricalEvidence {
+impl CatEv {
     /// Creates a new categorical evidence structure.
     ///
     /// # Arguments

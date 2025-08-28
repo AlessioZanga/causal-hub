@@ -7,6 +7,7 @@ mod tests {
                 datasets::CatData,
                 distributions::CPD,
                 estimators::{BE, CPDEstimator},
+                set,
             };
             use ndarray::prelude::*;
 
@@ -30,10 +31,10 @@ mod tests {
                 let estimator = BE::new(&dataset, 1);
 
                 // P(A)
-                let distribution = estimator.fit(0, &[]);
+                let distribution = estimator.fit(&set![0], &set![]);
 
-                assert_eq!(distribution.label(), "A");
-                assert!(distribution.states().iter().eq(["no", "yes"]));
+                assert_eq!(distribution.labels()[0], "A");
+                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
                 assert!(
                     distribution
                         .conditioning_labels()
@@ -76,10 +77,10 @@ mod tests {
                 );
 
                 // P(A | B, C)
-                let distribution = estimator.fit(0, &[1, 2]);
+                let distribution = estimator.fit(&set![0], &set![1, 2]);
 
-                assert_eq!(distribution.label(), "A");
-                assert!(distribution.states().iter().eq(["no", "yes"]));
+                assert_eq!(distribution.labels()[0], "A");
+                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
                 assert!(distribution.conditioning_labels().iter().eq(vec!["B", "C"]));
                 assert!(
                     distribution
@@ -124,7 +125,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Variables to fit must be unique.")]
+            #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn test_unique_variables() {
                 let variables = vec![
                     ("A", vec!["no", "yes"]),
@@ -144,7 +145,7 @@ mod tests {
                 let estimator = BE::new(&dataset, 1);
 
                 // P(A | A, C)
-                let _ = estimator.fit(0, &[0, 2]);
+                let _ = estimator.fit(&set![0], &set![0, 2]);
             }
         }
     }

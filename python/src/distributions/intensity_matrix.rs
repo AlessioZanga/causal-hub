@@ -28,8 +28,8 @@ impl PyCatCIM {
     ///
     /// A reference to the label.
     ///
-    pub fn label(&self) -> PyResult<&str> {
-        Ok(self.inner.label().as_ref())
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
+        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
     }
 
     /// Returns the states of the conditioned variable.
@@ -38,8 +38,21 @@ impl PyCatCIM {
     ///
     /// The states of the conditioned variable.
     ///
-    pub fn states(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.states().iter().map(AsRef::as_ref).collect())
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+        Ok(self
+            .inner
+            .states()
+            .iter()
+            .map(|(label, states)| {
+                // Get reference to the label and states.
+                let label = label.as_ref();
+                let states = states.iter().map(String::as_str);
+                // Convert the states to a PyTuple.
+                let states = PyTuple::new(py, states).unwrap();
+                // Return a tuple of the label and states.
+                (label, states)
+            })
+            .collect())
     }
 
     /// Returns the cardinality of the conditioned variable.
@@ -48,8 +61,8 @@ impl PyCatCIM {
     ///
     /// The cardinality of the conditioned variable.
     ///
-    pub fn cardinality(&self) -> PyResult<usize> {
-        Ok(self.inner.cardinality())
+    pub fn cardinality(&self) -> PyResult<Vec<usize>> {
+        Ok(self.inner.cardinality().to_vec())
     }
 
     /// Returns the labels of the conditioned variables.

@@ -18,11 +18,12 @@ use crate::{
     distributions::CPD,
     graphs::{DiGraph, Graph},
     models::{BN, CTBN},
-    types::Labels,
+    set,
+    types::{Labels, Set},
 };
 
 /// A trait for sufficient statistics estimators.
-pub trait ConditionalSufficientStatisticsEstimator {
+pub trait CSSEstimator {
     /// The type of sufficient statistics.
     type Output;
 
@@ -45,14 +46,11 @@ pub trait ConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, x: usize, z: &[usize]) -> Self::Output;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
-/// A type alias for a sufficient statistics estimator.
-pub use ConditionalSufficientStatisticsEstimator as CSSEstimator;
-
 /// A trait for sufficient statistics estimators in parallel.
-pub trait ParallelConditionalSufficientStatisticsEstimator {
+pub trait ParCSSEstimator {
     /// The type of sufficient statistics.
     type Output;
 
@@ -67,14 +65,11 @@ pub trait ParallelConditionalSufficientStatisticsEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn par_fit(&self, x: usize, z: &[usize]) -> Self::Output;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
-/// A type alias for a parallel sufficient statistics estimator.
-pub use ParallelConditionalSufficientStatisticsEstimator as ParCSSEstimator;
-
 /// A trait for conditional probability distribution estimators.
-pub trait ConditionalProbabilityDistributionEstimator<P>
+pub trait CPDEstimator<P>
 where
     P: CPD,
 {
@@ -98,7 +93,7 @@ where
     /// The estimated CDP.
     ///
     #[inline]
-    fn fit(&self, x: usize, z: &[usize]) -> P {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Return only the CPD.
         self.fit_transform(x, z).1
     }
@@ -114,14 +109,11 @@ where
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
 }
 
-/// A type alias for a conditional probability distribution estimator.
-pub use ConditionalProbabilityDistributionEstimator as CPDEstimator;
-
 /// A trait for conditional probability distribution estimators in parallel.
-pub trait ParallelConditionalProbabilityDistributionEstimator<P>
+pub trait ParCPDEstimator<P>
 where
     P: CPD,
 {
@@ -137,7 +129,7 @@ where
     /// The estimated CDP.
     ///
     #[inline]
-    fn par_fit(&self, x: usize, z: &[usize]) -> P {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Return only the CPD.
         self.par_fit_transform(x, z).1
     }
@@ -153,14 +145,11 @@ where
     ///
     /// The estimated sufficient statistics and CPD.
     ///
-    fn par_fit_transform(&self, x: usize, z: &[usize]) -> (P::SS, P);
+    fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
 }
 
-/// A type alias for a parallel conditional probability distribution estimator.
-pub use ParallelConditionalProbabilityDistributionEstimator as ParCPDEstimator;
-
 /// A trait for Bayesian network estimators.
-pub trait BayesianNetworkEstimator<T> {
+pub trait BNEstimator<T> {
     /// Fits the estimator to the dataset and returns a Bayesian network.
     ///
     /// # Arguments
@@ -174,9 +163,6 @@ pub trait BayesianNetworkEstimator<T> {
     fn fit(&self, graph: DiGraph) -> T;
 }
 
-/// A type alias for a Bayesian network estimator.
-pub use BayesianNetworkEstimator as BNEstimator;
-
 /// Blanket implement for all BN estimators with a corresponding CPD estimator.
 impl<T, E> BNEstimator<T> for E
 where
@@ -189,7 +175,10 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(i, &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -197,7 +186,7 @@ where
 }
 
 /// A trait for parallel Bayesian network estimators.
-pub trait ParallelBayesianNetworkEstimator<T> {
+pub trait ParBNEstimator<T> {
     /// Fits the estimator to the dataset and returns a Bayesian network in parallel.
     ///
     /// # Arguments
@@ -211,9 +200,6 @@ pub trait ParallelBayesianNetworkEstimator<T> {
     fn par_fit(&self, graph: DiGraph) -> T;
 }
 
-/// A type alias for a parallel Bayesian network estimator.
-pub use ParallelBayesianNetworkEstimator as ParBNEstimator;
-
 /// Blanket implement for all BN estimators with a corresponding CPD estimator.
 impl<T, E> ParBNEstimator<T> for E
 where
@@ -226,7 +212,10 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(i, &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.par_fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -234,7 +223,7 @@ where
 }
 
 /// A trait for CTBN estimators.
-pub trait ContinuousTimeBayesianNetworkEstimator<T> {
+pub trait CTBNEstimator<T> {
     /// Fits the estimator to the trajectory and returns a CTBN.
     ///
     /// # Arguments
@@ -248,9 +237,6 @@ pub trait ContinuousTimeBayesianNetworkEstimator<T> {
     fn fit(&self, graph: DiGraph) -> T;
 }
 
-/// A type alias for a CTBN estimator.
-pub use ContinuousTimeBayesianNetworkEstimator as CTBNEstimator;
-
 /// Blanket implement for all CTBN estimators with a corresponding CPD estimator.
 impl<T, E> CTBNEstimator<T> for E
 where
@@ -263,7 +249,10 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(i, &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)
@@ -271,7 +260,7 @@ where
 }
 
 /// A trait for parallel CTBN estimators.
-pub trait ParallelContinuousTimeBayesianNetworkEstimator<T> {
+pub trait ParCTBNEstimator<T> {
     /// Fits the estimator to the trajectory and returns a CTBN in parallel.
     ///
     /// # Arguments
@@ -285,9 +274,6 @@ pub trait ParallelContinuousTimeBayesianNetworkEstimator<T> {
     fn par_fit(&self, graph: DiGraph) -> T;
 }
 
-/// A type alias for a parallel CTBN estimator.
-pub use ParallelContinuousTimeBayesianNetworkEstimator as ParCTBNEstimator;
-
 /// Blanket implement for all CTBN estimators with a corresponding CPD estimator.
 impl<T, E> ParCTBNEstimator<T> for E
 where
@@ -300,7 +286,10 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(i, &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.par_fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)

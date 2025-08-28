@@ -64,19 +64,20 @@ impl BifReader {
             .into_iter()
             .map(|p| {
                 // Get the variable of the CPD.
-                let variable = (
-                    &p.label,
+                let variable = States::from_iter([(
+                    p.label.clone(),
                     states
                         .get(&p.label)
-                        .expect("Failed to get variable states."),
-                );
+                        .expect("Failed to get variable states.")
+                        .clone(),
+                )]);
                 // Get the conditioning variables of the CPD.
-                let conditioning_variables: Vec<(_, Vec<_>)> = p
+                let conditioning_variables: States = p
                     .parents
                     .iter()
                     .map(|x| {
                         let states = states.get(x).expect("Failed to get variable states.");
-                        (x.as_str(), states.iter().cloned().collect())
+                        (x.to_string(), states.iter().cloned().collect())
                     })
                     .collect();
                 // Map the probability values.
@@ -115,8 +116,10 @@ impl BifReader {
         // Construct the graph.
         let mut graph = DiGraph::empty(states.keys());
         cpds.iter().for_each(|p| {
+            // Assert the CPD has a single variable in the BIF file.
+            assert_eq!(p.labels().len(), 1);
             // Get child index.
-            let x = p.label();
+            let x = &p.labels()[0];
             let x = graph
                 .labels()
                 .get_index_of(x)

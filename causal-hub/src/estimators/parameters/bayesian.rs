@@ -6,20 +6,17 @@ use super::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE};
 use crate::{
     datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::{CPD, CatCIM, CatCPD},
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Copy, Debug)]
-pub struct BayesianEstimator<'a, D, Pi> {
+pub struct BE<'a, D, Pi> {
     dataset: &'a D,
     prior: Pi,
 }
 
-/// A type alias for a bayesian estimator.
-pub type BE<'a, D, Pi> = BayesianEstimator<'a, D, Pi>;
-
-impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
+impl<'a, D, Pi> BE<'a, D, Pi> {
     /// Creates a new Bayesian estimator.
     ///
     /// # Arguments
@@ -29,7 +26,7 @@ impl<'a, D, Pi> BayesianEstimator<'a, D, Pi> {
     ///
     /// # Returns
     ///
-    /// A new `BayesianEstimator` instance.
+    /// A new `BE` instance.
     ///
     #[inline]
     pub const fn new(dataset: &'a D, prior: Pi) -> Self {
@@ -55,9 +52,10 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         self.dataset.labels()
     }
 
-    fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCPD as CPD>::SS, CatCPD) {
+    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCPD as CPD>::SS, CatCPD) {
         // Get states and cardinality.
-        let (states, cards) = (self.dataset.states(), self.dataset.cardinality());
+        let states = self.dataset.states();
+        let cardinality = self.dataset.cardinality();
 
         // Initialize the sufficient statistics estimator.
         let sse = SSE::new(self.dataset);
@@ -76,7 +74,7 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         let n_z = n_z.insert_axis(Axis(1));
         // Add the prior to the counts.
         let n_xz = n_xz + alpha;
-        let n_z = n_z + alpha * cards[x] as f64;
+        let n_z = n_z + alpha * x.iter().map(|&i| cardinality[i]).product::<usize>() as f64;
         // Compute the parameters by normalizing the counts with the prior.
         let parameters = &n_xz / &n_z;
 
@@ -86,9 +84,21 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
         let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
 
         // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
+        let conditioning_states = z
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = x
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Construct the CPD.
         let cpd_xz = CatCPD::with_sample_size(
             states,
@@ -109,8 +119,8 @@ impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit_transform_cim(
-        x: usize,
-        z: &[usize],
+        x: &Set<usize>,
+        z: &Set<usize>,
         n_xz: Array3<f64>,
         t_xz: Array2<f64>,
         n: f64,
@@ -171,9 +181,21 @@ impl BE<'_, CatTrj, (usize, f64)> {
         });
 
         // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z.iter().map(|&i| states.get_index(i).unwrap());
+        let conditioning_states = z
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Get the labels of the conditioned variables.
-        let states = states.get_index(x).unwrap();
+        let states = x
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
         // Construct the CIM.
         let cim_xz = CatCIM::with_sample_size(
             states,
@@ -200,7 +222,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             self.dataset.labels()
         }
 
-        fn fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.
@@ -216,7 +238,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        fn par_fit_transform(&self, x: usize, z: &[usize]) -> (<CatCIM as CPD>::SS, CatCIM) {
+        fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.

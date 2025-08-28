@@ -41,14 +41,14 @@ mod tests {
         assert!(bn.graph().has_edge(6, 3));
 
         // Check CPDs.
-        assert_eq!(bn.cpds()[0].label(), "asia");
-        assert_eq!(bn.cpds()[1].label(), "bronc");
-        assert_eq!(bn.cpds()[2].label(), "dysp");
-        assert_eq!(bn.cpds()[3].label(), "either");
-        assert_eq!(bn.cpds()[4].label(), "lung");
-        assert_eq!(bn.cpds()[5].label(), "smoke");
-        assert_eq!(bn.cpds()[6].label(), "tub");
-        assert_eq!(bn.cpds()[7].label(), "xray");
+        assert_eq!(bn.cpds()[0].labels()[0], "asia");
+        assert_eq!(bn.cpds()[1].labels()[0], "bronc");
+        assert_eq!(bn.cpds()[2].labels()[0], "dysp");
+        assert_eq!(bn.cpds()[3].labels()[0], "either");
+        assert_eq!(bn.cpds()[4].labels()[0], "lung");
+        assert_eq!(bn.cpds()[5].labels()[0], "smoke");
+        assert_eq!(bn.cpds()[6].labels()[0], "tub");
+        assert_eq!(bn.cpds()[7].labels()[0], "xray");
 
         assert!(
             bn.cpds()[0]
@@ -80,14 +80,14 @@ mod tests {
         assert!(bn.cpds()[7].conditioning_labels().iter().eq(["either"]));
 
         // Check CPDs states.
-        assert!(bn.cpds()[0].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[1].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[2].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[3].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[4].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[5].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[6].states().iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[7].states().iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[0].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[1].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[2].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[3].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[4].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[5].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[6].states()[0].iter().eq(["no", "yes"]));
+        assert!(bn.cpds()[7].states()[0].iter().eq(["no", "yes"]));
 
         // Check CPDs parameters.
         assert_eq!(
@@ -159,7 +159,7 @@ mod tests {
         let cpd = bn.cpds().get("HypDistrib").unwrap();
 
         // Check cardinality.
-        assert_eq!(cpd.cardinality(), 2);
+        assert_eq!(cpd.cardinality(), array![2]);
         assert_eq!(cpd.conditioning_cardinality(), array![4, 3]);
 
         // Check probability values with "." in it.
@@ -227,7 +227,7 @@ mod tests {
         // Assert the JSON string is correct.
         assert_eq!(
             json.as_str(),
-            r#"{"initial_distribution":{"states":{"Eating":["no","yes"],"FullStomach":["no","yes"],"Hungry":["no","yes"]},"graph":{"labels":["Eating","FullStomach","Hungry"],"adjacency_matrix":{"v":1,"dim":[3,3],"data":[false,false,false,false,false,false,false,false,false]}},"cpds":{"Eating":{"label":"Eating","states":["no","yes"],"cardinality":2,"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null},"FullStomach":{"label":"FullStomach","states":["no","yes"],"cardinality":2,"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null},"Hungry":{"label":"Hungry","states":["no","yes"],"cardinality":2,"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null}},"topological_order":[0,1,2]},"graph":{"labels":["Eating","FullStomach","Hungry"],"adjacency_matrix":{"v":1,"dim":[3,3],"data":[false,true,false,false,false,true,true,false,false]}},"cims":{"Eating":{"label":"Eating","states":["no","yes"],"cardinality":2,"conditioning_labels":["Hungry"],"conditioning_states":{"Hungry":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null},"FullStomach":{"label":"FullStomach","states":["no","yes"],"cardinality":2,"conditioning_labels":["Eating"],"conditioning_states":{"Eating":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null},"Hungry":{"label":"Hungry","states":["no","yes"],"cardinality":2,"conditioning_labels":["FullStomach"],"conditioning_states":{"FullStomach":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"ravel_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null}}}"#
+            r#"{"initial_distribution":{"states":{"Eating":["no","yes"],"FullStomach":["no","yes"],"Hungry":["no","yes"]},"graph":{"labels":["Eating","FullStomach","Hungry"],"adjacency_matrix":{"v":1,"dim":[3,3],"data":[false,false,false,false,false,false,false,false,false]}},"cpds":{"Eating":{"labels":["Eating"],"states":{"Eating":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null},"FullStomach":{"labels":["FullStomach"],"states":{"FullStomach":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null},"Hungry":{"labels":["Hungry"],"states":{"Hungry":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":[],"conditioning_states":{},"conditioning_cardinality":{"v":1,"dim":[0],"data":[]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[0],"data":[]},"strides":{"v":1,"dim":[0],"data":[]}},"parameters":{"v":1,"dim":[1,2],"data":[0.5,0.5]},"parameters_size":1,"sample_size":null,"sample_log_likelihood":null}},"topological_order":[0,1,2]},"graph":{"labels":["Eating","FullStomach","Hungry"],"adjacency_matrix":{"v":1,"dim":[3,3],"data":[false,true,false,false,false,true,true,false,false]}},"cims":{"Eating":{"labels":["Eating"],"states":{"Eating":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":["Hungry"],"conditioning_states":{"Hungry":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null},"FullStomach":{"labels":["FullStomach"],"states":{"FullStomach":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":["Eating"],"conditioning_states":{"Eating":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null},"Hungry":{"labels":["Hungry"],"states":{"Hungry":["no","yes"]},"cardinality":{"v":1,"dim":[1],"data":[2]},"multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"conditioning_labels":["FullStomach"],"conditioning_states":{"FullStomach":["no","yes"]},"conditioning_cardinality":{"v":1,"dim":[1],"data":[2]},"conditioning_multi_index":{"cardinality":{"v":1,"dim":[1],"data":[2]},"strides":{"v":1,"dim":[1],"data":[1]}},"parameters":{"v":1,"dim":[2,2,2],"data":[-0.1,0.1,10.0,-10.0,-2.0,2.0,0.1,-0.1]},"parameters_size":4,"sample_size":null,"sample_log_likelihood":null}}}"#
         );
     }
 }

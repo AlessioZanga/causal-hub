@@ -110,7 +110,7 @@ pub(crate) mod digraph {
             // While there are vertices to visit ...
             while let Some(z) = stack.pop() {
                 // For each child of the current node ...
-                for w in g.children(z) {
+                for w in g.children(&set![z]) {
                     // Skip if W is in X or already visited.
                     if x.contains(&w) || visited.contains(&w) {
                         continue;
@@ -136,27 +136,6 @@ pub(crate) mod digraph {
         }
 
         pcp
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn test_proper_causal_path() {
-            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
-            graph.add_edge(0, 1);
-            graph.add_edge(0, 2);
-            graph.add_edge(1, 2);
-            graph.add_edge(1, 3);
-            graph.add_edge(2, 3);
-            graph.add_edge(3, 4);
-
-            assert_eq!(
-                _proper_causal_path(&graph, &set![0], &set![3]),
-                set![1, 2, 3]
-            );
-        }
     }
 
     // Returns the proper backdoor graph:
@@ -192,8 +171,7 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: Set<_> = pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
             if !z.is_subset(&(&self.vertices() - &pde)) {
                 return false;
@@ -238,10 +216,9 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // Constraint the restricted vertices.
-            let v_prime = &(v - pde);
+            let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);
@@ -277,16 +254,36 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // Constraint the restricted vertices.
-            let v_prime = &(v - pde);
+            let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);
 
             // Find a minimal separator in G^PDB under the constraint V'.
             g_pdb.find_minimal_separator_set(x, y, Some(w), Some(v_prime))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_proper_causal_path() {
+            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
+            graph.add_edge(0, 1);
+            graph.add_edge(0, 2);
+            graph.add_edge(1, 2);
+            graph.add_edge(1, 3);
+            graph.add_edge(2, 3);
+            graph.add_edge(3, 4);
+
+            assert_eq!(
+                _proper_causal_path(&graph, &set![0], &set![3]),
+                set![1, 2, 3]
+            );
         }
     }
 }

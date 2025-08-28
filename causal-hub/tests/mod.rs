@@ -3,6 +3,8 @@ mod datasets;
 mod distributions;
 mod estimators;
 mod graphs;
+mod inference;
 mod io;
 mod models;
 mod samplers;
+mod utils;

@@ -12,6 +12,7 @@ mod tests {
             models::{CTBN, CatCTBN},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
+            set,
         };
         use rand::{RngCore, SeedableRng};
         use rand_xoshiro::Xoshiro256PlusPlus;
@@ -69,12 +70,11 @@ mod tests {
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
                     .collect();
-                // Fore each (seed, evidence) ...
+                // For each (seed, evidence) ...
                 seeds
-                    .iter()
-                    .zip(evidence)
-                    .par_bridge()
-                    .map(|(&s, e)| {
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
@@ -138,7 +138,10 @@ mod tests {
                 .graph()
                 .vertices()
                 .into_iter()
-                .map(|i| CPDEstimator::fit(&raw, i, &model.graph().parents(i)))
+                .map(|i| {
+                    let i = set![i];
+                    CPDEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                })
                 .collect();
             // Set the initial model.
             let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);
@@ -162,12 +165,11 @@ mod tests {
                 let seeds: Vec<_> = (0..evidence.values().len())
                     .map(|_| rng.next_u64())
                     .collect();
-                // Fore each (seed, evidence) ...
+                // For each (seed, evidence) ...
                 seeds
-                    .iter()
-                    .zip(evidence)
-                    .par_bridge()
-                    .map(|(&s, e)| {
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.

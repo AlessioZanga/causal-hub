@@ -9,13 +9,10 @@ use crate::{
 
 /// A multivariate trajectory.
 #[derive(Clone, Debug)]
-pub struct CategoricalTrajectory {
+pub struct CatTrj {
     events: CatData,
     times: Array1<f64>,
 }
-
-/// A type alias for a multivariate trajectory.
-pub type CatTrj = CategoricalTrajectory;
 
 impl CatTrj {
     /// Constructs a new trajectory instance.
@@ -185,15 +182,12 @@ impl Dataset for CatTrj {
 
 /// A collection of multivariate trajectories.
 #[derive(Clone, Debug)]
-pub struct CategoricalTrajectories {
+pub struct CatTrjs {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     values: Vec<CatTrj>,
 }
-
-/// A type alias for a collection of multivariate trajectories.
-pub type CatTrjs = CategoricalTrajectories;
 
 impl CatTrjs {
     /// Constructs a new collection of trajectories.
