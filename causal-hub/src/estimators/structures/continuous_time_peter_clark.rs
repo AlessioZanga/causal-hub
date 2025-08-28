@@ -352,7 +352,7 @@ where
         // For each vertex in the graph ...
         for i in graph.vertices() {
             // Get the parents of the vertex.
-            let mut pa_i = graph.parents(i);
+            let mut pa_i = graph.parents(&set![i]);
 
             // Initialize the counter.
             let mut k = 0;
@@ -432,7 +432,7 @@ where
             .into_par_iter()
             .map(|i| {
                 // Get the parents of the vertex.
-                let mut pa_i = self.initial_graph.parents(i);
+                let mut pa_i = self.initial_graph.parents(&set![i]);
 
                 // Initialize the counter.
                 let mut k = 0;

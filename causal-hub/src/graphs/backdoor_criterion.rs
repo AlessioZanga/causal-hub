@@ -110,7 +110,7 @@ pub(crate) mod digraph {
             // While there are vertices to visit ...
             while let Some(z) = stack.pop() {
                 // For each child of the current node ...
-                for w in g.children(z) {
+                for w in g.children(&set![z]) {
                     // Skip if W is in X or already visited.
                     if x.contains(&w) || visited.contains(&w) {
                         continue;
@@ -171,8 +171,7 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: Set<_> = pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
             if !z.is_subset(&(&self.vertices() - &pde)) {
                 return false;
@@ -217,10 +216,9 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // Constraint the restricted vertices.
-            let v_prime = &(v - pde);
+            let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);
@@ -256,10 +254,9 @@ pub(crate) mod digraph {
             // Compute the proper causal path.
             let pcp = _proper_causal_path(self, x, y);
             // Compute the descendants of the proper causal path.
-            // TODO: This can be optimized to avoid multiple calls to `descendants`.
-            let pde: &Set<_> = &pcp.iter().flat_map(|&p| self.descendants(p)).collect();
+            let pde = self.descendants(&pcp);
             // Constraint the restricted vertices.
-            let v_prime = &(v - pde);
+            let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);

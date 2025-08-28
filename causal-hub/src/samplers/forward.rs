@@ -9,12 +9,14 @@ use rand::{
 use rand_distr::Exp;
 use rayon::prelude::*;
 
-use super::{BNSampler, CTBNSampler, ParCTBNSampler};
+use super::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler};
 use crate::{
     datasets::{CatData, CatTrj},
     distributions::CPD,
+    estimators::{CPDEstimator, MLE},
     models::{BN, CTBN, CatBN, CatCTBN},
-    types::EPSILON,
+    set,
+    types::{EPSILON, Set},
 };
 
 /// A forward sampler.
@@ -56,7 +58,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             // NOTE: Labels and states are sorted (i.e. aligned).
-            let pa_i = self.model.graph().parents(i);
+            let pa_i = self.model.graph().parents(&set![i]);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
             let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -96,7 +98,7 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
-        let pa_i = self.model.graph().parents(i);
+        let pa_i = self.model.graph().parents(&set![i]);
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -163,7 +165,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Get the CIM.
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(i);
+            let pa_i = self.model.graph().parents(&set![i]);
             let pa_i = pa_i.iter().map(|&z| event[z] as usize);
             let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -181,7 +183,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             sample_times.push(time);
             // Update the transition times for { X } U Ch(X).
             std::iter::once(i)
-                .chain(self.model.graph().children(i))
+                .chain(self.model.graph().children(&set![i]))
                 .for_each(|j| {
                     // Sample the transition time.
                     times[j] = time + self.sample_time(&event, j);
@@ -252,7 +254,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
         n: usize,
     ) -> Self::Samples {
         // Generate a random seed for each trajectory.
-        let seeds: Vec<u64> = self.rng.random_iter().take(n).collect();
+        let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
         // Sample the trajectories in parallel.
         seeds
             .into_par_iter()

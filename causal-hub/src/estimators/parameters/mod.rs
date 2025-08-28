@@ -175,7 +175,10 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(&set![i], &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -209,7 +212,10 @@ where
         let cpds: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(&set![i], &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.par_fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
@@ -243,7 +249,10 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_iter()
-            .map(|i| self.fit(&set![i], &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)
@@ -277,7 +286,10 @@ where
         let cims: Vec<_> = graph
             .vertices()
             .into_par_iter()
-            .map(|i| self.par_fit(&set![i], &graph.parents(i)))
+            .map(|i| {
+                let i = set![i];
+                self.par_fit(&i, &graph.parents(&i))
+            })
             .collect();
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)

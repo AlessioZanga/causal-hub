@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 approx.workspace = true
 causal-hub-rust = { package = "causal-hub", path = "../causal-hub" }
 dry.workspace = true
+fxhash.workspace = true
 log.workspace = true
 numpy = "^0.25"
 paste.workspace = true

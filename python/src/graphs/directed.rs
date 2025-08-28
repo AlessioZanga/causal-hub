@@ -1,9 +1,11 @@
 use causal_hub_rust::{
     graphs::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
+    set,
     types::{Labels, Set},
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
+    exceptions::PyTypeError,
     prelude::*,
     types::{PyDict, PyType},
 };
@@ -188,19 +190,31 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex whose parents are to be returned.
+    /// * `x` - A vertex or an iterable of vertices.
     ///
     /// # Returns
     ///
     /// A list of parent vertices.
     ///
-    pub fn parents(&self, x: &str) -> PyResult<Vec<&str>> {
+    pub fn parents(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = self.inner.label_to_index(&x);
+        let x = if let Ok(x) = x.extract::<String>() {
+            Ok(set![self.inner.label_to_index(&x)])
+        } else if let Ok(x) = x.try_iter() {
+            x.map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()
+        } else {
+            Err(PyErr::new::<PyTypeError, _>(
+                "Expected a string or an iterable of strings.",
+            ))
+        }?;
         // Get the parents of the vertex.
         Ok(self
             .inner
-            .parents(x)
+            .parents(&x)
             .iter()
             .map(|&i| self.inner.index_to_label(i))
             .collect())
@@ -210,19 +224,31 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex whose ancestors are to be returned.
+    /// * `x` - A vertex or an iterable of vertices.
     ///
     /// # Returns
     ///
     /// A list of ancestor vertices.
     ///
-    pub fn ancestors(&self, x: &str) -> PyResult<Vec<&str>> {
+    pub fn ancestors(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = self.inner.label_to_index(&x);
+        let x = if let Ok(x) = x.extract::<String>() {
+            Ok(set![self.inner.label_to_index(&x)])
+        } else if let Ok(x) = x.try_iter() {
+            x.map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()
+        } else {
+            Err(PyErr::new::<PyTypeError, _>(
+                "Expected a string or an iterable of strings.",
+            ))
+        }?;
         // Get the ancestors of the vertex.
         Ok(self
             .inner
-            .ancestors(x)
+            .ancestors(&x)
             .iter()
             .map(|&i| self.inner.index_to_label(i))
             .collect())
@@ -232,19 +258,31 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex whose children are to be returned.
+    /// * `x` - A vertex or an iterable of vertices.
     ///
     /// # Returns
     ///
     /// A list of child vertices.
     ///
-    pub fn children(&self, x: &str) -> PyResult<Vec<&str>> {
+    pub fn children(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = self.inner.label_to_index(&x);
+        let x = if let Ok(x) = x.extract::<String>() {
+            Ok(set![self.inner.label_to_index(&x)])
+        } else if let Ok(x) = x.try_iter() {
+            x.map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()
+        } else {
+            Err(PyErr::new::<PyTypeError, _>(
+                "Expected a string or an iterable of strings.",
+            ))
+        }?;
         // Get the children of the vertex.
         Ok(self
             .inner
-            .children(x)
+            .children(&x)
             .iter()
             .map(|&i| self.inner.index_to_label(i))
             .collect())
@@ -254,19 +292,31 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex whose descendants are to be returned.
+    /// * `x` - A vertex or an iterable of vertices.
     ///
     /// # Returns
     ///
     /// A list of descendant vertices.
     ///
-    pub fn descendants(&self, x: &str) -> PyResult<Vec<&str>> {
+    pub fn descendants(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = self.inner.label_to_index(&x);
+        let x = if let Ok(x) = x.extract::<String>() {
+            Ok(set![self.inner.label_to_index(&x)])
+        } else if let Ok(x) = x.try_iter() {
+            x.map(|x| {
+                x?.extract::<String>()
+                    .map(|x| self.inner.label_to_index(&x))
+            })
+            .collect::<PyResult<_>>()
+        } else {
+            Err(PyErr::new::<PyTypeError, _>(
+                "Expected a string or an iterable of strings.",
+            ))
+        }?;
         // Get the descendants of the vertex.
         Ok(self
             .inner
-            .descendants(x)
+            .descendants(&x)
             .iter()
             .map(|&i| self.inner.index_to_label(i))
             .collect())
@@ -276,9 +326,9 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `z` - An iterable collection of vertices representing set `Z`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `z` - An iterable of vertices representing set `Z`.
     ///
     /// # Panics
     ///
@@ -327,11 +377,11 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `z` - An iterable collection of vertices representing set `Z`.
-    /// * `w` - An optional iterable collection of vertices representing set `W`.
-    /// * `v` - An optional iterable collection of vertices representing set `V`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `z` - An iterable of vertices representing set `Z`.
+    /// * `w` - An optional iterable of vertices representing set `W`.
+    /// * `v` - An optional iterable of vertices representing set `V`.
     ///
     /// # Panics
     ///
@@ -406,10 +456,10 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `w` - An optional iterable collection of vertices representing set `W`.
-    /// * `v` - An optional iterable collection of vertices representing set `V`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `w` - An optional iterable of vertices representing set `W`.
+    /// * `v` - An optional iterable of vertices representing set `V`.
     ///
     /// # Panics
     ///
@@ -486,9 +536,9 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `z` - An iterable collection of vertices representing set `Z`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `z` - An iterable of vertices representing set `Z`.
     ///
     /// # Panics
     ///
@@ -537,11 +587,11 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `z` - An iterable collection of vertices representing set `Z`.
-    /// * `w` - An optional iterable collection of vertices representing set `W`.
-    /// * `v` - An optional iterable collection of vertices representing set `V`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `z` - An iterable of vertices representing set `Z`.
+    /// * `w` - An optional iterable of vertices representing set `W`.
+    /// * `v` - An optional iterable of vertices representing set `V`.
     ///
     /// # Panics
     ///
@@ -616,10 +666,10 @@ impl PyDiGraph {
     ///
     /// # Arguments
     ///
-    /// * `x` - An iterable collection of vertices representing set `X`.
-    /// * `y` - An iterable collection of vertices representing set `Y`.
-    /// * `w` - An optional iterable collection of vertices representing set `W`.
-    /// * `v` - An optional iterable collection of vertices representing set `V`.
+    /// * `x` - An iterable of vertices representing set `X`.
+    /// * `y` - An iterable of vertices representing set `Y`.
+    /// * `w` - An optional iterable of vertices representing set `W`.
+    /// * `v` - An optional iterable of vertices representing set `V`.
     ///
     /// # Panics
     ///

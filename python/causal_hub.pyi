@@ -700,49 +700,49 @@ class DiGraph:
         
         `true` if the edge was deleted, `false` if it did not exist.
         """
-    def parents(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def parents(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the parents of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose parents are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of parent vertices.
         """
-    def ancestors(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def ancestors(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the ancestors of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose ancestors are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of ancestor vertices.
         """
-    def children(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def children(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the children of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose children are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
         A list of child vertices.
         """
-    def descendants(self, x:builtins.str) -> builtins.list[builtins.str]:
+    def descendants(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the descendants of a vertex `x`.
         
         # Arguments
         
-        * `x` - The vertex whose descendants are to be returned.
+        * `x` - A vertex or an iterable of vertices.
         
         # Returns
         
@@ -754,9 +754,9 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
         
         # Panics
         
@@ -774,11 +774,11 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -797,10 +797,10 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -819,9 +819,9 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
         
         # Panics
         
@@ -839,11 +839,11 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `z` - An iterable collection of vertices representing set `Z`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `z` - An iterable of vertices representing set `Z`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         
@@ -862,10 +862,10 @@ class DiGraph:
         
         # Arguments
         
-        * `x` - An iterable collection of vertices representing set `X`.
-        * `y` - An iterable collection of vertices representing set `Y`.
-        * `w` - An optional iterable collection of vertices representing set `W`.
-        * `v` - An optional iterable collection of vertices representing set `V`.
+        * `x` - An iterable of vertices representing set `X`.
+        * `y` - An iterable of vertices representing set `Y`.
+        * `w` - An optional iterable of vertices representing set `W`.
+        * `v` - An optional iterable of vertices representing set `V`.
         
         # Panics
         

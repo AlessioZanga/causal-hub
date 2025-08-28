@@ -197,15 +197,15 @@ mod tests {
                     let v = g.vertices();
                     // For each vertex ...
                     for &x in &v {
+                        // Map to a set.
+                        let x = set![x];
                         // Get the parents of the vertex.
-                        let pa_x = g.parents(x);
+                        let pa_x = g.parents(&x);
                         // Get the descendants of the vertex.
-                        let de_x = g.descendants(x);
+                        let de_x = g.descendants(&x);
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
-                        let non_de_x = &v - &de_x;
-                        let mut non_de_x = &non_de_x - &pa_x;
-                        non_de_x.shift_remove(&x);
-                        assert!(non_de_x.is_empty() || g.is_separator_set(&set![x], &non_de_x, &pa_x));
+                        let non_de_x = &(&(&v - &de_x) - &pa_x) - &x;
+                        assert!(non_de_x.is_empty() || g.is_separator_set(&x, &non_de_x, &pa_x));
                     }
                 }
             }

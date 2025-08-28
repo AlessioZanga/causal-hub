@@ -7,6 +7,7 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
+    set,
     types::{Labels, Map, States},
 };
 
@@ -139,7 +140,7 @@ impl BN for CatBN {
             graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
-                    .parents(i)
+                    .parents(&set![i])
                     .into_iter()
                     .eq(cpds[i].conditioning_labels().iter().map(|j| {
                         // Get the index of the label in the graph.

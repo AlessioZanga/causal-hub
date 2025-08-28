@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use ndarray::Axis;
 
 use super::DiGraph;
-use crate::graphs::Graph;
+use crate::{graphs::Graph, set};
 
 /// Topological sort trait.
 pub trait TopologicalOrder {
@@ -38,7 +38,7 @@ impl TopologicalOrder for DiGraph {
             // Add the vertex to the order.
             order.push(i);
             // For each neighbor, reduce its in-degree.
-            self.children(i).into_iter().for_each(|y| {
+            self.children(&set![i]).into_iter().for_each(|y| {
                 // Decrement the in-degree of the child.
                 in_degree[y] -= 1;
                 // If the in-degree becomes 0, add it to the queue.

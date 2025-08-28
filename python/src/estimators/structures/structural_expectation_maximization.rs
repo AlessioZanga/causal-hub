@@ -9,6 +9,7 @@ use causal_hub_rust::{
     graphs::{DiGraph, Graph},
     models::{CTBN, CatCTBN},
     samplers::{ImportanceSampler, ParCTBNSampler},
+    set,
     types::Cache,
 };
 use log::debug;
@@ -99,7 +100,7 @@ pub fn sem<'a>(
                     // Set the parents of the initial graph to max_parents.
                     for i in 0..initial_graph.vertices().len() {
                         // Get the parents.
-                        let pa_i = initial_graph.parents(i);
+                        let pa_i = initial_graph.parents(&set![i]);
                         // Check the maximum number of parents.
                         if pa_i.len() > max_parents + 1 {
                             // Convert to a mutable vector.

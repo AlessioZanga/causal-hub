@@ -103,6 +103,7 @@ dependencies = [
  "approx",
  "causal-hub",
  "dry",
+ "fxhash",
  "log",
  "numpy",
  "paste",

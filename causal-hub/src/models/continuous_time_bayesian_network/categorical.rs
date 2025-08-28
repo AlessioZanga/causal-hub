@@ -8,6 +8,7 @@ use crate::{
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
     models::{BN, CatBN},
+    set,
     types::{Labels, Map, States},
 };
 
@@ -114,7 +115,7 @@ impl CTBN for CatCTBN {
             graph.vertices().into_iter().all(|i| {
                 // Check if the labels of the parameters are in the parents.
                 graph
-                    .parents(i)
+                    .parents(&set![i])
                     .into_iter()
                     .eq(cims[i].conditioning_labels().iter().map(|j| {
                         // Get the index of the label in the graph.

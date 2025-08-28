@@ -210,7 +210,7 @@ where
             let mut prev_score = f64::NEG_INFINITY;
 
             // Set the initial parent set as the current parent set.
-            let mut curr_pa = self.initial_graph.parents(i);
+            let mut curr_pa = self.initial_graph.parents(&set![i]);
             // Compute the score of the current parent set.
             let mut curr_score = self.score.call(&set![i], &curr_pa);
 
@@ -308,7 +308,7 @@ where
                 let mut prev_score = f64::NEG_INFINITY;
 
                 // Set the initial parent set as the current parent set.
-                let mut curr_pa = self.initial_graph.parents(i);
+                let mut curr_pa = self.initial_graph.parents(&set![i]);
                 // Compute the score of the current parent set.
                 let mut curr_score = self.score.call(&set![i], &curr_pa);
 

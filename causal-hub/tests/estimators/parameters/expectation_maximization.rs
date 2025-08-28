@@ -139,7 +139,10 @@ mod tests {
                 .graph()
                 .vertices()
                 .into_iter()
-                .map(|i| CPDEstimator::fit(&raw, &set![i], &model.graph().parents(i)))
+                .map(|i| {
+                    let i = set![i];
+                    CPDEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                })
                 .collect();
             // Set the initial model.
             let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);

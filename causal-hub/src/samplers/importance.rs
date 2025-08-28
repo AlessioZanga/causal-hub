@@ -7,11 +7,12 @@ use rand::{
 use rand_distr::Exp;
 use rayon::prelude::*;
 
-use super::{BNSampler, CTBNSampler, ParCTBNSampler};
+use super::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler};
 use crate::{
     datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
     distributions::CPD,
     models::{BN, CTBN, CatBN, CatCTBN},
+    set,
     types::{EPSILON, Set},
 };
 
@@ -104,8 +105,8 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
 }
 
 impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
-    type Sample = (<CatBN as BN>::Sample, f64);
-    type Samples = (<CatBN as BN>::Samples, f64);
+    type Sample = (<CatBN as BN>::Sample, f64); // FIXME: Implement weighted sample.
+    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
 
     fn sample(&mut self) -> Self::Sample {
         // Get shortened variable type.
@@ -135,7 +136,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             // NOTE: Labels and states are sorted (i.e. aligned).
-            let pa_i = self.model.graph().parents(i);
+            let pa_i = self.model.graph().parents(&set![i]);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
             let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -195,6 +196,14 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
     }
 
     fn sample_n(&mut self, _n: usize) -> Self::Samples {
+        todo!() // FIXME:
+    }
+}
+
+impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
+
+    fn par_sample_n(&mut self, _n: usize) -> Self::Samples {
         todo!() // FIXME:
     }
 }
@@ -290,7 +299,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
-        let pa_i = self.model.graph().parents(i);
+        let pa_i = self.model.graph().parents(&set![i]);
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -366,7 +375,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 // Get the CIM.
                 let cim_j = &self.model.cims()[j];
                 // Compute the index on the parents to condition on.
-                let pa_j = self.model.graph().parents(j);
+                let pa_j = self.model.graph().parents(&set![j]);
                 let pa_j = pa_j.iter().map(|&z| event[z] as usize);
                 let pa_j = cim_j.conditioning_multi_index().ravel(pa_j);
                 // Get the distribution of the vertex.
@@ -524,7 +533,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 // Get the CIM.
                 let cim_i = &self.model.cims()[i];
                 // Compute the index on the parents to condition on.
-                let pa_i = self.model.graph().parents(i);
+                let pa_i = self.model.graph().parents(&set![i]);
                 let pa_i = pa_i.iter().map(|&z| event[z] as usize);
                 let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
                 // Get the distribution of the vertex.
@@ -592,7 +601,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 sample_times.push(time);
                 // Update the transition times for { X } U Ch(X).
                 std::iter::once(i)
-                    .chain(self.model.graph().children(i))
+                    .chain(self.model.graph().children(&set![i]))
                     .for_each(|j| {
                         // Sample the transition time.
                         times[j] = time + self.sample_time(&evidence, &event, j, time);

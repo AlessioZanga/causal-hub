@@ -85,16 +85,16 @@ mod tests {
         assert!(graph.add_edge(0, 1));
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(0, 3));
-        assert_eq!(graph.neighbors(0), set![1, 2, 3]);
-        assert_eq!(graph.neighbors(1), set![0]);
-        assert_eq!(graph.neighbors(4), set![]);
+        assert_eq!(graph.neighbors(&set![0]), set![1, 2, 3]);
+        assert_eq!(graph.neighbors(&set![1]), set![0]);
+        assert_eq!(graph.neighbors(&set![4]), set![]);
     }
 
     #[test]
     #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn test_neighbors_out_of_bounds() {
         let graph = UnGraph::empty(LABELS.to_vec());
-        graph.neighbors(5);
+        graph.neighbors(&set![5]);
     }
 
     #[test]

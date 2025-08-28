@@ -29,17 +29,29 @@ impl UnGraph {
     ///
     /// A set of indices representing the neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: usize) -> Set<usize> {
-        // Check if the vertex is within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
+    pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
+        // Check if the vertices are within bounds.
+        x.iter().for_each(|&v| {
+            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
+        });
 
         // Iterate over all vertices and filter the ones that are neighbors.
-        self.adjacency_matrix
-            .row(x)
+        let mut neighbors: Set<_> = x
             .into_iter()
-            .enumerate()
-            .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
-            .collect()
+            .flat_map(|&v| {
+                self.adjacency_matrix
+                    .row(v)
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+            })
+            .collect();
+
+        // Sort the neighbors.
+        neighbors.sort();
+
+        // Return the neighbors.
+        neighbors
     }
 }
 
