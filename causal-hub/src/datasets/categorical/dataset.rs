@@ -1,11 +1,13 @@
 use std::fmt::Display;
 
+use csv::ReaderBuilder;
 use itertools::Itertools;
 use log::debug;
 use ndarray::prelude::*;
 
 use crate::{
     datasets::Dataset,
+    io::CsvIO,
     types::{Labels, States},
     utils::{collect_states, sort_states},
 };
@@ -256,5 +258,85 @@ impl Dataset for CatData {
     #[inline]
     fn sample_size(&self) -> usize {
         self.values.nrows()
+    }
+}
+
+impl CsvIO for CatData {
+    fn from_csv(csv: &str) -> Self {
+        // Create a CSV reader from the string.
+        let mut reader = ReaderBuilder::new()
+            .has_headers(true)
+            .from_reader(csv.as_bytes());
+
+        // Assert that the reader has headers.
+        assert!(reader.has_headers(), "Reader must have headers.");
+
+        // Initialize the counter.
+        let mut n = 0;
+        // Read the headers.
+        let labels: Labels = reader
+            .headers()
+            .expect("Failed to read the headers.")
+            .into_iter()
+            .inspect(|_| n += 1)
+            .map(|x| x.to_owned())
+            .collect();
+        // Assert unique labels.
+        assert_eq!(labels.len(), n, "Header labels must be unique.");
+
+        // Get the states of the variables.
+        let mut states: States = labels
+            .into_iter()
+            .map(|x| (x, Default::default()))
+            .collect();
+
+        // Read the records.
+        let values: Array1<_> = reader
+            .into_records()
+            .enumerate()
+            .flat_map(|(i, row)| {
+                // Get the record row.
+                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                // Get the record values and convert to indices.
+                let row: Vec<_> = row
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, x)| {
+                        // Assert no missing values.
+                        assert!(!x.is_empty(), "Missing value on line {}.", i + 1);
+                        // Insert the value into the states, if not present.
+                        let (x, _) = states[i].insert_full(x.to_owned());
+                        // Cast the value.
+                        x as u8
+                    })
+                    .collect();
+                // Collect the values.
+                row
+            })
+            .collect();
+
+        // Get the number of rows and columns.
+        let ncols = states.len();
+        let nrows = values.len() / ncols;
+        // Reshape the values to the correct shape.
+        let values = values
+            .into_shape_with_order((nrows, ncols))
+            .expect("Failed to rearrange values to the correct shape.");
+
+        // Construct the categorical dataset.
+        Self::new(states, values)
+    }
+
+    fn to_csv(&self) -> String {
+        todo!() // FIXME:
+    }
+
+    fn read_csv(path: &str) -> Self {
+        // TODO: Reading the entire file to a string is not efficient.
+        Self::from_csv(&std::fs::read_to_string(path).expect("Failed to read CSV file."))
+    }
+
+    fn write_csv(&self, path: &str) {
+        std::fs::write(path, self.to_csv()).expect("Failed to write CSV file.");
     }
 }

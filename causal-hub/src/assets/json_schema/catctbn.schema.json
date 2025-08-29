@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "catctbn.schema.json",
+    "type": "object",
+    "properties": {
+        "initial_distribution": {
+            "$ref": "catbn.schema.json"
+        },
+        "graph": {
+            "$ref": "digraph.schema.json"
+        },
+        "cims": {
+            "type": "array",
+            "items": {
+                "$ref": "catcim.schema.json"
+            }
+        }
+    },
+    "required": [
+        "initial_distribution",
+        "graph",
+        "cims"
+    ]
+}

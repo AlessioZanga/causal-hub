@@ -1,19 +1,24 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use super::CTBN;
 use crate::{
     datasets::{CatTrj, CatTrjs},
     distributions::{CPD, CatCIM, CatCPD},
     graphs::{DiGraph, Graph},
+    impl_json_io,
     models::{BN, CatBN},
     set,
     types::{Labels, Map, States},
 };
 
 /// A categorical continuous time Bayesian network (CTBN).
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct CatCTBN {
     /// The initial distribution.
     initial_distribution: CatBN,
@@ -209,3 +214,109 @@ impl CTBN for CatCTBN {
         ctbn
     }
 }
+
+impl Serialize for CatCTBN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Convert the CIMs to a flat format.
+        let cims: Vec<_> = self.cims.values().cloned().collect();
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(3))?;
+
+        // Serialize initial distribution.
+        map.serialize_entry("initial_distribution", &self.initial_distribution)?;
+        // Serialize graph.
+        map.serialize_entry("graph", &self.graph)?;
+        // Serialize CIMs.
+        map.serialize_entry("cims", &cims)?;
+
+        // Finalize the map serialization.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CatCTBN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            InitialDistribution,
+            Graph,
+            Cims,
+        }
+
+        struct CatCTBNVisitor;
+
+        impl<'de> Visitor<'de> for CatCTBNVisitor {
+            type Value = CatCTBN;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CatCTBN")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<CatCTBN, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate fields
+                let mut initial_distribution = None;
+                let mut graph = None;
+                let mut cims = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::InitialDistribution => {
+                            if initial_distribution.is_some() {
+                                return Err(E::duplicate_field("initial_distribution"));
+                            }
+                            initial_distribution = Some(map.next_value()?);
+                        }
+                        Field::Graph => {
+                            if graph.is_some() {
+                                return Err(E::duplicate_field("graph"));
+                            }
+                            graph = Some(map.next_value()?);
+                        }
+                        Field::Cims => {
+                            if cims.is_some() {
+                                return Err(E::duplicate_field("cims"));
+                            }
+                            cims = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let initial_distribution =
+                    initial_distribution.ok_or_else(|| E::missing_field("initial_distribution"))?;
+                let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
+                let cims = cims.ok_or_else(|| E::missing_field("cims"))?;
+
+                // Set helper types.
+                let cims: Vec<_> = cims;
+
+                Ok(CatCTBN::with_initial_distribution(
+                    initial_distribution,
+                    graph,
+                    cims,
+                ))
+            }
+        }
+
+        const FIELDS: &[&str] = &["initial_distribution", "graph", "cims"];
+
+        deserializer.deserialize_struct("CatCTBN", FIELDS, CatCTBNVisitor)
+    }
+}
+
+// Implement `JsonIO` for `CatCTBN`.
+impl_json_io!(CatCTBN);

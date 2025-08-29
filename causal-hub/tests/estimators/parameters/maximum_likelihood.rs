@@ -179,15 +179,14 @@ mod tests {
                 distributions::CPD,
                 estimators::{BNEstimator, MLE},
                 graphs::{DiGraph, Graph},
-                io::FromCsvReader,
+                io::CsvIO,
                 models::{BN, CatBN},
             };
-            use csv::ReaderBuilder;
             use ndarray::prelude::*;
 
             #[test]
             fn test_fit() {
-                let dataset = concat!(
+                let csv = concat!(
                     "A,B,C\n",
                     "no,no,no\n",
                     "no,no,yes\n",
@@ -198,10 +197,7 @@ mod tests {
                     "yes,yes,no\n",
                     "yes,yes,yes"
                 );
-                let dataset = ReaderBuilder::new()
-                    .has_headers(true)
-                    .from_reader(dataset.as_bytes());
-                let dataset = CatData::from_csv_reader(dataset);
+                let dataset = CatData::from_csv(csv);
 
                 let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
                 graph.add_edge(0, 1);

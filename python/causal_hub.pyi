@@ -173,6 +173,24 @@ class CatCIM:
         
         The sample log-likelihood of the dataset given the distribution.
         """
+    @classmethod
+    def from_json(cls, json:builtins.str) -> CatCIM:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, path:builtins.str) -> CatCIM:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
+        """
 
 class CatCPD:
     r"""
@@ -262,6 +280,24 @@ class CatCPD:
     def __repr__(self) -> builtins.str:
         r"""
         Returns the string representation of the CatCPD.
+        """
+    @classmethod
+    def from_json(cls, json:builtins.str) -> CatCPD:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, path:builtins.str) -> CatCPD:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
         """
 
 class CatCTBN:
@@ -908,6 +944,24 @@ class DiGraph:
     def to_networkx(self) -> typing.Any:
         r"""
         Converts to a NetworkX DiGraph.
+        """
+    @classmethod
+    def from_json(cls, json:builtins.str) -> DiGraph:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, path:builtins.str) -> DiGraph:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
         """
 
 class PK:

@@ -1,14 +1,13 @@
 use causal_hub_rust::{estimators::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
-use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
 #[pyclass(name = "PK", eq)]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PyPK {
     inner: PK,
 }

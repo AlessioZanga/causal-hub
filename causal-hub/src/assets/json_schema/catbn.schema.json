@@ -1,0 +1,20 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "catbn.schema.json",
+    "type": "object",
+    "properties": {
+        "graph": {
+            "$ref": "digraph.schema.json"
+        },
+        "cpds": {
+            "type": "array",
+            "items": {
+                "$ref": "catcpd.schema.json"
+            }
+        }
+    },
+    "required": [
+        "graph",
+        "cpds"
+    ]
+}

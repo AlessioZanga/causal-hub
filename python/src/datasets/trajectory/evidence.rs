@@ -11,7 +11,6 @@ use pyo3::{
     types::{PyDict, PyTuple},
 };
 use pyo3_stub_gen::derive::*;
-use serde::{Deserialize, Serialize};
 
 use crate::impl_deref_from_into;
 
@@ -232,7 +231,7 @@ impl PyCatTrjEv {
 /// A collection of categorical trajectory evidences.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjsEv")]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct PyCatTrjsEv {
     inner: CatTrjsEv,
 }

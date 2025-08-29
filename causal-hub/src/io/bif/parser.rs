@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug)]
 struct Network {
-    pub _name: String,
+    pub _id: String,
     pub _properties: Vec<Property>,
     pub variables: Vec<Variable>,
     pub probabilities: Vec<Probability>,
@@ -42,12 +42,12 @@ struct Probability {
 /// BIF parser for parsing Bayesian Interchange Format (BIF) files.
 #[derive(Parser)]
 #[grammar = "src/io/bif/bif.pest"]
-pub struct BifReader;
+pub struct BifParser;
 
-impl BifReader {
+impl BifParser {
     /// Read a BIF string and returns a `Network` object.
-    pub fn read(input: &str) -> CatBN {
-        let network = Self::parse(Rule::file, input)
+    pub fn parse_str(bif: &str) -> CatBN {
+        let network = Self::parse(Rule::file, bif)
             .expect("Failed to parse BIF file.")
             .map(build_ast)
             .next()
@@ -144,7 +144,7 @@ impl BifReader {
 fn build_ast(pair: Pair<Rule>) -> Network {
     assert_eq!(pair.as_rule(), Rule::file);
 
-    let mut name = String::new();
+    let mut id = String::new();
     let mut properties = vec![];
     let mut variables = vec![];
     let mut probabilities = vec![];
@@ -153,7 +153,7 @@ fn build_ast(pair: Pair<Rule>) -> Network {
         match item.as_rule() {
             Rule::network => {
                 let mut inner = item.into_inner();
-                name = inner.next().unwrap().as_str().to_string();
+                id = inner.next().unwrap().as_str().to_string();
                 for p in inner {
                     if p.as_rule() == Rule::property {
                         properties.push(parse_property(p));
@@ -167,7 +167,7 @@ fn build_ast(pair: Pair<Rule>) -> Network {
     }
 
     Network {
-        _name: name,
+        _id: id,
         _properties: properties,
         variables,
         probabilities,
