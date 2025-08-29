@@ -1,4 +1,4 @@
-network unknown {
+network child {
 }
 variable BirthAsphyxia {
   type discrete [ 2 ] { yes, no };

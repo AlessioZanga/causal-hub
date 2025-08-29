@@ -1,4 +1,4 @@
-network unknown {
+network survey {
 }
 variable A {
   type discrete [ 3 ] { young, adult, old };

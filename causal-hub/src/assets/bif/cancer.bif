@@ -1,4 +1,4 @@
-network unknown {
+network cancer {
 }
 variable Pollution {
   type discrete [ 2 ] { low, high };

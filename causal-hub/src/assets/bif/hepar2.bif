@@ -1,4 +1,4 @@
-network unknown {
+network hepar2 {
 }
 variable alcoholism {
   type discrete [ 2 ] { present, absent };

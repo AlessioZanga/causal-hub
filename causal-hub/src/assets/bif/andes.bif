@@ -1,4 +1,4 @@
-network unknown {
+network andes {
 }
 variable GOAL_2 {
   type discrete [ 2 ] { false, true };

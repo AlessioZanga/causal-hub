@@ -1,4 +1,4 @@
-network unknown {
+network pathfinder {
 }
 variable Fault {
   type discrete [ 63 ] { AIDS_early, AILD, ALIP, Cat_scratch_disease, Dermatopathic_laden, Florid_follic_hyperp, GLH_hyaline_vacular, GLH_plasma_cell_type, Granulomatous_laden, Histiocytosis_x, Infectious_mono, Leprosy, Lymphangiographic, Mantle_zone_hyperl, Necrotizing_kikuchi, Necrotiz_nonKikuchi, Rheumatoid_arthritis, Sarcoidosis, SHML, Sinus_hyperplasia, Syphilis, Toxoplasmosis, Tuberculosis, Viral_NOS, Whipple_s_disease, L_H_nodular_HD, L_H_diffuse_HD, Nodular_sclerosis, Cellular_phase_NSHD, Syncytial_NSHD, Mixed_cellularity_HD, Interfollicular_HD, Diffuse_fibrosis_HD, Reticular_type_HD, Small_cleaved__fol, Mixed__fol, Large_cell__fol, Small_noncleaved_fol, Small_lymphocytic, Plasmacytoid_lyctic, Mantle_zone, Small_cleaved__dif, Mixed__fcc_dif, Large_cell__dif, B_immunoblastic, T_immunob_mix, IBL_like_T_cell_lym, Japanese_ATL, Lymphoblastic, Small_noncleaved_dif, True_histiocytic, Malig_histiocytosis, Multiple_myeloma, Mycosis_fungoides, AML, Hairy_cell_leukemia, Carcinoma, Melanoma, Em_plasmacytoma, Kaposis_sarcoma, Mast_cell_disease, AIDS_involutionary, T_immunob_lrg };

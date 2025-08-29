@@ -1,4 +1,4 @@
-network unknown {
+network hailfinder {
 }
 variable N0_7muVerMo {
   type discrete [ 4 ] { StrongUp, WeakUp, Neutral, Down };

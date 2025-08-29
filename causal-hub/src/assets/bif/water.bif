@@ -1,4 +1,4 @@
-network unknown {
+network water {
 }
 variable C_NI_12_00 {
   type discrete [ 4 ] { 3, 4, 5, 6 };

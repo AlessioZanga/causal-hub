@@ -1,4 +1,4 @@
-network unknown {
+network link {
 }
 variable D0_56_d_p {
   type discrete [ 2 ] { a, n };

@@ -1,4 +1,4 @@
-network unknown {
+network insurance {
 }
 variable GoodStudent {
   type discrete [ 2 ] { True, False };

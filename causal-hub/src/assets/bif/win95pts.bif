@@ -1,4 +1,4 @@
-network unknown {
+network win95pts {
 }
 variable AppOK {
   type discrete [ 2 ] { Correct, Incorrect_Corrupt };

@@ -1,4 +1,4 @@
-network unknown {
+network sachs {
 }
 variable Akt {
   type discrete [ 3 ] { LOW, AVG, HIGH };

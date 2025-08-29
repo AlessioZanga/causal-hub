@@ -1,4 +1,4 @@
-network unknown {
+network alarm {
 }
 variable HISTORY {
   type discrete [ 2 ] { TRUE, FALSE };

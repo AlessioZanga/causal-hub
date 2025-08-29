@@ -1,4 +1,4 @@
-network unknown {
+network munin1 {
 }
 variable R_LNLT1_APB_DENERV {
   type discrete [ 4 ] { NO, MILD, MOD, SEV };

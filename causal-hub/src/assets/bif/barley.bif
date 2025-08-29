@@ -1,4 +1,4 @@
-network unknown {
+network barley {
 }
 variable jordtype {
   type discrete [ 9 ] { Jb_1_, JB_2, JB_3, JB_4, JB_5, JB_6, Jb_7, JB_8, JB_9 };
