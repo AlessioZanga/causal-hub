@@ -8,17 +8,23 @@
             {
                 "states": { "Eating": ["no", "yes"] },
                 "conditioning_states": {},
-                "parameters": [[0.5, 0.5]]
+                "parameters": [
+                    [0.5, 0.5]
+                ]
             },
             {
                 "states": { "FullStomach": ["no", "yes"] },
                 "conditioning_states": {},
-                "parameters": [[0.5, 0.5]]
+                "parameters": [
+                    [0.5, 0.5]
+                ]
             },
             {
                 "states": { "Hungry": ["no", "yes"] },
                 "conditioning_states": {},
-                "parameters": [[0.5, 0.5]]
+                "parameters": [
+                    [0.5, 0.5]
+                ]
             }
         ]
     },
@@ -35,24 +41,42 @@
             "states": { "Eating": ["no", "yes"] },
             "conditioning_states": { "Hungry": ["no", "yes"] },
             "parameters": [
-                [[-0.1, 0.1], [10.0, -10.0]],
-                [[-2.0, 2.0], [0.1, -0.1]]
+                [
+                    [-0.1, 0.1],
+                    [10.0, -10.0]
+                ],
+                [
+                    [-2.0, 2.0],
+                    [0.1, -0.1]
+                ]
             ]
         },
         {
             "states": { "FullStomach": ["no", "yes"] },
             "conditioning_states": { "Eating": ["no", "yes"] },
             "parameters": [
-                [[-0.1, 0.1], [10.0, -10.0]],
-                [[-2.0, 2.0], [0.1, -0.1]]
+                [
+                    [-0.1, 0.1],
+                    [10.0, -10.0]
+                ],
+                [
+                    [-2.0, 2.0],
+                    [0.1, -0.1]
+                ]
             ]
         },
         {
             "states": { "Hungry": ["no", "yes"] },
             "conditioning_states": { "FullStomach": ["no", "yes"] },
             "parameters": [
-                [[-0.1, 0.1], [10.0, -10.0]],
-                [[-2.0, 2.0], [0.1, -0.1]]
+                [
+                    [-0.1, 0.1],
+                    [10.0, -10.0]
+                ],
+                [
+                    [-2.0, 2.0],
+                    [0.1, -0.1]
+                ]
             ]
         }
     ]
