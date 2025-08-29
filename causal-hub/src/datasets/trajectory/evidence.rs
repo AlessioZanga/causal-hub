@@ -1,17 +1,15 @@
 use approx::relative_eq;
 use ndarray::prelude::*;
 use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     datasets::{CatEv, Dataset},
-    impl_json_io,
     types::{EPSILON, Labels, Map, Set, States},
     utils::{collect_states, sort_states},
 };
 
 /// A type representing the evidence type for categorical trajectories.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum CatTrjEvT {
     /// Certain positive interval evidence.
     CertainPositiveInterval {
@@ -120,11 +118,8 @@ impl CatTrjEvT {
     }
 }
 
-// Implement `JsonIO` for `CatTrjEvT`.
-impl_json_io!(CatTrjEvT);
-
 /// A type representing a collection of evidences for a categorical trajectory.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct CatTrjEv {
     labels: Labels,
     states: States,
@@ -563,11 +558,8 @@ impl Dataset for CatTrjEv {
     }
 }
 
-// Implement `JsonIO` for `CatTrjEv`.
-impl_json_io!(CatTrjEv);
-
 /// A collection of multivariate trajectories evidence.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct CatTrjsEv {
     labels: Labels,
     states: States,
@@ -713,6 +705,3 @@ impl Dataset for CatTrjsEv {
         self.values.iter().map(|x| x.sample_size()).sum()
     }
 }
-
-// Implement `JsonIO` for `CatTrjsEv`.
-impl_json_io!(CatTrjsEv);

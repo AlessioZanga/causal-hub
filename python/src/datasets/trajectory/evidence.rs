@@ -3,13 +3,12 @@ use std::collections::BTreeMap;
 
 use causal_hub_rust::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv, Dataset},
-    io::JsonIO,
     types::{Set, States},
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple, PyType},
+    types::{PyDict, PyTuple},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -227,32 +226,6 @@ impl PyCatTrjEv {
             })
             .collect())
     }
-
-    /// Read class from a JSON string.
-    #[classmethod]
-    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: CatTrjEv::from_json(json),
-        })
-    }
-
-    /// Write class to a JSON string.
-    pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
-    }
-
-    /// Read class from a JSON file.
-    #[classmethod]
-    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: CatTrjEv::read_json(path),
-        })
-    }
-
-    /// Write class to a JSON file.
-    pub fn write_json(&self, path: &str) -> PyResult<()> {
-        Ok(self.inner.write_json(path))
-    }
 }
 
 /// A collection of categorical trajectory evidences.
@@ -340,31 +313,5 @@ impl PyCatTrjsEv {
                 (label, states)
             })
             .collect())
-    }
-
-    /// Read class from a JSON string.
-    #[classmethod]
-    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: CatTrjsEv::from_json(json),
-        })
-    }
-
-    /// Write class to a JSON string.
-    pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
-    }
-
-    /// Read class from a JSON file.
-    #[classmethod]
-    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: CatTrjsEv::read_json(path),
-        })
-    }
-
-    /// Write class to a JSON file.
-    pub fn write_json(&self, path: &str) -> PyResult<()> {
-        Ok(self.inner.write_json(path))
     }
 }

@@ -2,11 +2,10 @@ use std::fmt::Display;
 
 use itertools::Itertools;
 use ndarray::prelude::*;
-use serde::{Deserialize, Serialize};
 
-use crate::{impl_json_io, types::Labels, utils::collect_labels};
+use crate::{types::Labels, utils::collect_labels};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 enum PKS {
     Unknown,
@@ -42,7 +41,7 @@ impl Display for PKS {
 }
 
 /// A structure representing prior knowledge for structure learning.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PK {
     labels: Labels,
     adjacency_matrix: Array2<PKS>,
@@ -246,6 +245,3 @@ impl PK {
             .collect()
     }
 }
-
-// Implement `JsonIO` for `PK`.
-impl_json_io!(PK);
