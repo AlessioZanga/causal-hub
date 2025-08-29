@@ -2,7 +2,7 @@ use dry::macro_for;
 use log::debug;
 use paste::paste;
 
-use crate::{io::BifParser, models::CatBN};
+use crate::{io::BifIO, models::CatBN};
 
 macro_for!(
     $bn in [
@@ -16,7 +16,7 @@ macro_for!(
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));
             // Read the BIF file and return the BN.
-            BifParser::parse_str(include_str!(concat!(stringify!($bn), ".bif")))
+            CatBN::from_bif(include_str!(concat!(stringify!($bn), ".bif")))
         }
     }
 });

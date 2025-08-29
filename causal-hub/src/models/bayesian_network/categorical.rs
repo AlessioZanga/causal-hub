@@ -11,7 +11,9 @@ use crate::{
     datasets::CatData,
     distributions::{CPD, CatCPD},
     graphs::{DiGraph, Graph, TopologicalOrder},
-    impl_json_io, set,
+    impl_json_io,
+    io::{BifIO, BifParser},
+    set,
     types::{Labels, Map, States},
 };
 
@@ -279,3 +281,21 @@ impl<'de> Deserialize<'de> for CatBN {
 
 // Implement `JsonIO` for `CatBN`.
 impl_json_io!(CatBN);
+
+impl BifIO for CatBN {
+    fn from_bif(bif: &str) -> Self {
+        BifParser::parse_str(bif)
+    }
+
+    fn to_bif(&self) -> String {
+        unimplemented!("BIF serialization is not implemented yet.") // FIXME:
+    }
+
+    fn read_bif(path: &str) -> Self {
+        Self::from_bif(&std::fs::read_to_string(path).expect("Failed to read BIF file."))
+    }
+
+    fn write_bif(&self, path: &str) {
+        std::fs::write(path, self.to_bif()).expect("Failed to write BIF file.");
+    }
+}
