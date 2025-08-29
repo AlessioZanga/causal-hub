@@ -288,7 +288,7 @@ impl BifIO for CatBN {
     }
 
     fn to_bif(&self) -> String {
-        unimplemented!("BIF serialization is not implemented yet.") // FIXME:
+        todo!() // FIXME:
     }
 
     fn read_bif(path: &str) -> Self {
