@@ -18,11 +18,7 @@ impl Retrieve for &InMemoryRetriever {
         uri: &Uri<String>,
     ) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
         self.schemas
-            .get(
-                uri.as_str()
-                    .strip_prefix("json-schema:///")
-                    .unwrap_or_else(|| panic!("Failed to strip `json-schema:///` prefix")),
-            )
+            .get(uri.as_str())
             .cloned()
             .ok_or_else(|| format!("Schema not found: {uri}").into())
     }
@@ -39,16 +35,12 @@ pub(crate) static JSON_SCHEMA_RETRIEVER: LazyLock<InMemoryRetriever> = LazyLock:
             catbn, catcim, catcpd, catctbn, digraph, ungraph
         ] {
         // Load the JSON Schema file.
-        let schema_str = include_str!(concat!(stringify!($schema), ".schema.json"));
-        let schema_json: Value = serde_json::from_str(schema_str).unwrap();
-        // Get the $id of the schema, or use a default if not present.
-        let id = schema_json
-            .get("$id")
-            .and_then(|v| v.as_str())
-            .unwrap_or(concat!(stringify!($schema), ".schema.json"))
-            .to_string();
+        let schema = include_str!(concat!(stringify!($schema), ".schema.json"));
+        let schema: Value = serde_json::from_str(schema).unwrap();
+        // Get the URI of the schema.
+        let id = concat!("json-schema:///", stringify!($schema), ".schema.json");
         // Insert the schema into the map with its $id as the key.
-        schemas.insert(id, schema_json);
+        schemas.insert(id.to_string(), schema);
     });
     // Create the retriever.
     InMemoryRetriever { schemas }
