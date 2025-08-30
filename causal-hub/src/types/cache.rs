@@ -10,7 +10,7 @@ pub struct Cache<'a, C, K, V> {
     cache: Arc<RwLock<Map<K, V>>>,
 }
 
-impl<'a, E, P> Cache<'a, E, (Vec<usize>, Vec<usize>), (P::SS, P)>
+impl<'a, E, P> Cache<'a, E, (Vec<usize>, Vec<usize>), P>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
@@ -34,7 +34,7 @@ where
     }
 }
 
-impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), (P::SS, P)>
+impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
@@ -44,7 +44,7 @@ where
         self.call.labels()
     }
 
-    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P) {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Get the key.
         let key: (Vec<_>, Vec<_>) = (
             x.into_iter().cloned().collect(),
@@ -56,7 +56,7 @@ where
             return value.clone();
         }
         // If it is not, call the function.
-        let value = self.call.fit_transform(x, z);
+        let value = self.call.fit(x, z);
         // Insert the value into the cache.
         self.cache.write().unwrap().insert(key, value.clone());
         // Return the value.

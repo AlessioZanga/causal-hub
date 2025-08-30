@@ -94,12 +94,15 @@ where
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 
-        // Get the sufficient statistics and the intensity matrices for the sets.
-        let ((n_xz, _, _), _q_xz) = self.estimator.fit_transform(x, z);
-        let ((n_xs, _, _), _q_xs) = self.estimator.fit_transform(x, &s);
+        // Fit the intensity matrices.
+        let q_xz = self.estimator.fit(x, z);
+        let q_xs = self.estimator.fit(x, &s);
+        // Get the sufficient statistics for the sets.
+        let n_xz = q_xs.sample_conditional_counts().unwrap();
+        let n_xs = q_xz.sample_conditional_counts().unwrap();
 
         // Get the cardinality of the extended separation set.
-        let c_s = _q_xs.conditioning_cardinality();
+        let c_s = q_xs.conditioning_cardinality();
         // Get the cardinality of the parent and the remaining strides.
         let (c_y, c_s) = (c_s[s_y], c_s.slice(s![(s_y + 1)..]).product());
 
@@ -197,9 +200,12 @@ where
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 
-        // Get the sufficient statistics and the intensity matrices for the sets.
-        let ((n_xz, _, _), q_xz) = self.estimator.fit_transform(x, z);
-        let ((n_xs, _, _), q_xs) = self.estimator.fit_transform(x, &s);
+        // Fit the intensity matrices.
+        let q_xz = self.estimator.fit(x, z);
+        let q_xs = self.estimator.fit(x, &s);
+        // Get the sufficient statistics for the sets.
+        let n_xz = q_xz.sample_conditional_counts().unwrap();
+        let n_xs = q_xs.sample_conditional_counts().unwrap();
 
         // Get the cardinality of the extended separation set.
         let c_s = q_xs.conditioning_cardinality();

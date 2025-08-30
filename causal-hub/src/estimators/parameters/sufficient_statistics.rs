@@ -67,17 +67,8 @@ impl CSSEstimator for SSE<'_, CatData> {
             n_xz[[idx_z, idx_x]] += 1;
         });
 
-        // Marginalize the counts.
-        let n_z = n_xz.sum_axis(Axis(1));
-        // Compute the sample size.
-        let n = n_z.sum();
-
         // Cast the counts to floating point.
-        let n_xz = n_xz.mapv(|x| x as f64);
-        let n_z = n_z.mapv(|x| x as f64);
-        let n = n as f64;
-
-        (n_xz, n_z, n)
+        n_xz.mapv(|x| x as f64)
     }
 }
 
@@ -131,14 +122,12 @@ impl CSSEstimator for SSE<'_, CatTrj> {
                 t_xz[[idx_z, idx_x_i]] += t_j - t_i;
             });
 
-        // Get the sample size.
-        let n = n_xz.sum();
-
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);
-        let n = n as f64;
+        // Align the dimensions of the counts and times.
+        let t_xz = t_xz.insert_axis(Axis(2));
 
-        (n_xz, t_xz, n)
+        (n_xz, t_xz)
     }
 }
 
@@ -154,9 +143,9 @@ impl CSSEstimator for SSE<'_, CatWtdTrj> {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
-        let (n_xz, t_xz, n) = SSE::new(self.dataset.trajectory()).fit(x, z);
+        let (n_xz, t_xz) = SSE::new(self.dataset.trajectory()).fit(x, z);
         // Apply the weight to the sufficient statistics.
-        (n_xz * w, t_xz * w, n * w)
+        (n_xz * w, t_xz * w)
     }
 }
 
@@ -182,17 +171,17 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
             // Initialize the time spent in that state.
-            let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+            let t_xz: Array3<f64> = Array::zeros((c_z, c_x, 1));
 
             // Iterate over the trajectories.
             self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold((n_xz, t_xz, 0.), |(n_xz_a, t_xz_a, n_a), trj_b| {
+                .fold((n_xz, t_xz), |(n_xz_a, t_xz_a), trj_b| {
                     // Compute the sufficient statistics of the trajectory.
-                    let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
+                    let (n_xz_b, t_xz_b) = SSE::new(trj_b).fit(x, z);
                     // Sum the sufficient statistics.
-                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
                 })
         }
     }
@@ -211,26 +200,26 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
             // Initialize the time spent in that state.
-            let t_xz: Array2<f64> = Array::zeros((c_z, c_x));
+            let t_xz: Array3<f64> = Array::zeros((c_z, c_x, 1));
 
             // Iterate over the trajectories in parallel.
             self.dataset
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
                 .fold(
-                    || (n_xz.clone(), t_xz.clone(), 0.),
-                    |(n_xz_a, t_xz_a, n_a), trj_b| {
+                    || (n_xz.clone(), t_xz.clone()),
+                    |(n_xz_a, t_xz_a), trj_b| {
                         // Compute the sufficient statistics of the trajectory.
-                        let (n_xz_b, t_xz_b, n_b) = SSE::new(trj_b).fit(x, z);
+                        let (n_xz_b, t_xz_b) = SSE::new(trj_b).fit(x, z);
                         // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
                     },
                 )
                 .reduce(
-                    || (n_xz.clone(), t_xz.clone(), 0.),
-                    |(n_xz_a, t_xz_a, n_a), (n_xz_b, t_xz_b, n_b)| {
+                    || (n_xz.clone(), t_xz.clone()),
+                    |(n_xz_a, t_xz_a), (n_xz_b, t_xz_b)| {
                         // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
+                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
                     },
                 )
         }

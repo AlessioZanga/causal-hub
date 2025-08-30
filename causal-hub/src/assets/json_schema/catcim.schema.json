@@ -33,9 +33,39 @@
                 }
             }
         },
+        "sample_conditional_counts": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "sample_conditional_times": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
         "sample_size": {
             "type": [
-                "integer",
+                "number",
                 "null"
             ]
         },

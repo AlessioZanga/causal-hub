@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use super::{BE, CPDEstimator, ParCPDEstimator};
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
-    distributions::{CPD, CatCIM},
+    distributions::CatCIM,
     types::{Labels, Set},
 };
 
@@ -379,9 +379,9 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj
         self.evidence.labels()
     }
 
-    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)
     }
 }
 
@@ -390,15 +390,15 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTr
         self.evidence.labels()
     }
 
-    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (<CatCIM as CPD>::SS, CatCIM) {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit_transform(x, z)
+        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit(x, z)
     }
 }

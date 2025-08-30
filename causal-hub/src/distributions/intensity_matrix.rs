@@ -31,6 +31,8 @@ pub struct CatCIM {
     parameters: Array3<f64>,
     parameters_size: usize,
     // Fitted statistics, if any.
+    sample_conditional_counts: Option<Array3<f64>>,
+    sample_conditional_times: Option<Array3<f64>>,
     sample_size: Option<f64>,
     sample_log_likelihood: Option<f64>,
 }
@@ -288,6 +290,8 @@ impl CatCIM {
             conditioning_multi_index,
             parameters,
             parameters_size,
+            sample_conditional_counts: None,
+            sample_conditional_times: None,
             sample_size: None,
             sample_log_likelihood: None,
         }
@@ -359,7 +363,29 @@ impl CatCIM {
         &self.conditioning_multi_index
     }
 
-    /// Returns the sample size of the dataset used to fit the distribution, if any.
+    /// Returns the sample conditional counts used to fit the distribution, if any.
+    ///
+    /// # Returns
+    ///
+    /// The sample conditional counts used to fit the distribution.
+    ///
+    #[inline]
+    pub const fn sample_conditional_counts(&self) -> Option<&Array3<f64>> {
+        self.sample_conditional_counts.as_ref()
+    }
+
+    /// Returns the sample conditional times used to fit the distribution, if any.
+    ///
+    /// # Returns
+    ///
+    /// The sample conditional times used to fit the distribution.
+    ///
+    #[inline]
+    pub const fn sample_conditional_times(&self) -> Option<&Array3<f64>> {
+        self.sample_conditional_times.as_ref()
+    }
+
+    /// Returns the sample size used to fit the distribution, if any.
     ///
     /// # Note
     ///
@@ -367,18 +393,18 @@ impl CatCIM {
     ///
     /// # Returns
     ///
-    /// The sample size of the dataset used to fit the distribution.
+    /// The sample size used to fit the distribution.
     ///
     #[inline]
     pub const fn sample_size(&self) -> Option<f64> {
         self.sample_size
     }
 
-    /// Returns the sample log-likelihood of the dataset given the distribution, if any.
+    /// Returns the sample log-likelihood given the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample log-likelihood of the dataset given the distribution.
+    /// The sample log-likelihood given the distribution.
     ///
     #[inline]
     pub const fn sample_log_likelihood(&self) -> Option<f64> {
@@ -391,8 +417,10 @@ impl CatCIM {
     ///
     /// * `states` - The variables states.
     /// * `parameters` - The intensity matrices of the states.
-    /// * `sample_size` - The sample size of the dataset used to fit the distribution, if any.
-    /// * `sample_log_likelihood` - The sample log-likelihood of the dataset given the distribution, if any.
+    /// * `sample_conditional_counts` - The conditional counts used to fit the distribution, if any.
+    /// * `sample_conditional_times` - The conditional times used to fit the distribution, if any.
+    /// * `sample_size` - The sample size used to fit the distribution, if any.
+    /// * `sample_log_likelihood` - The sample log-likelihood given the distribution, if any.
     ///
     /// # Panics
     ///
@@ -402,36 +430,79 @@ impl CatCIM {
     ///
     /// A new `CatCIM` instance.
     ///
-    pub fn with_sample_size(
+    pub fn with_optionals(
         states: States,
         conditioning_states: States,
         parameters: Array3<f64>,
+        sample_conditional_counts: Option<Array3<f64>>,
+        sample_conditional_times: Option<Array3<f64>>,
         sample_size: Option<f64>,
         sample_log_likelihood: Option<f64>,
     ) -> Self {
-        // Assert the sample size is finite and non-negative.
-        sample_size.inspect(|&x| {
+        // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
+        if let Some(sample_conditional_counts) = &sample_conditional_counts {
             assert!(
-                x.is_finite() && x >= 0.,
+                sample_conditional_counts.shape() == parameters.shape(),
+                "Sample conditional counts must have the same shape as parameters: \n\
+                \t expected:    sample_conditional_counts.shape() == {:?} , \n\
+                \t found:       sample_conditional_counts.shape() == {:?} .",
+                parameters.shape(),
+                sample_conditional_counts.shape(),
+            );
+            assert!(
+                sample_conditional_counts
+                    .iter()
+                    .all(|x| x.is_finite() && *x >= 0.),
+                "Sample conditional counts must be finite and non-negative: \n\
+                \t expected: sample_conditional_counts >= 0, \n\
+                \t found:    sample_conditional_counts == {sample_conditional_counts:?} ."
+            )
+        }
+        // Assert the sample conditional times are finite and non-negative,
+        // with first two shapes same as parameters and the last one equal to one.
+        if let Some(sample_conditional_times) = &sample_conditional_times {
+            assert!(
+                sample_conditional_times.shape() == [&parameters.shape()[..2], &[1]].concat(),
+                "Sample conditional times must have the same shape as parameters: \n\
+                \t expected:    sample_conditional_times.shape() == {:?} , \n\
+                \t found:       sample_conditional_times.shape() == {:?} .",
+                [&parameters.shape()[..2], &[1]].concat(),
+                sample_conditional_times.shape(),
+            );
+            assert!(
+                sample_conditional_times
+                    .iter()
+                    .all(|x| x.is_finite() && *x >= 0.),
+                "Sample conditional times must be finite and non-negative: \n\
+                \t expected: sample_conditional_times >= 0, \n\
+                \t found:    sample_conditional_times == {sample_conditional_times:?} ."
+            )
+        }
+        // Assert the sample size is finite and non-negative.
+        if let Some(sample_size) = &sample_size {
+            assert!(
+                sample_size.is_finite() && *sample_size >= 0.,
                 "Sample size must be finite and non-negative: \n\
                 \t expected: sample_size >= 0, \n\
-                \t found:    sample_size == {x} ."
+                \t found:    sample_size == {sample_size} ."
             )
-        });
+        }
         // Assert the sample log-likelihood is finite.
-        sample_log_likelihood.inspect(|&x| {
+        if let Some(sample_log_likelihood) = &sample_log_likelihood {
             assert!(
-                x.is_finite(),
+                sample_log_likelihood.is_finite(),
                 "Sample log-likelihood must be finite: \n\
                 \t expected: sample_ll is finite, \n\
-                \t found:    sample_ll is {x} ."
+                \t found:    sample_ll is {sample_log_likelihood} ."
             )
-        });
+        }
 
         // Construct the CIM.
         let mut cim = Self::new(states, conditioning_states, parameters);
 
         // Set the sample size and log-likelihood.
+        cim.sample_conditional_counts = sample_conditional_counts;
+        cim.sample_conditional_times = sample_conditional_times;
         cim.sample_size = sample_size;
         cim.sample_log_likelihood = sample_log_likelihood;
 
@@ -506,7 +577,7 @@ impl RelativeEq for CatCIM {
 
 impl CPD for CatCIM {
     type Parameters = Array3<f64>;
-    type SS = (Array3<f64>, Array2<f64>, f64);
+    type SS = (Array3<f64>, Array3<f64>);
 
     #[inline]
     fn labels(&self) -> &Labels {
@@ -534,6 +605,14 @@ impl Serialize for CatCIM {
     where
         S: Serializer,
     {
+        // Count the elements to serialize.
+        let mut size = 3;
+        size += self.sample_size.is_some() as usize;
+        size += self.sample_log_likelihood.is_some() as usize;
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(size))?;
+
         // Convert parameters to a flat format.
         let parameters: Vec<Vec<Vec<f64>>> = self
             .parameters
@@ -547,19 +626,54 @@ impl Serialize for CatCIM {
             })
             .collect();
 
-        // Count the elements to serialize.
-        let mut size = 3;
-        size += self.sample_size.is_some() as usize;
-        size += self.sample_log_likelihood.is_some() as usize;
+        // Convert the sample conditional counts to a flat format.
+        let sample_conditional_counts: Option<Vec<Vec<Vec<f64>>>> = self
+            .sample_conditional_counts
+            .as_ref()
+            .map(|sample_conditional_counts| {
+                sample_conditional_counts
+                    .outer_iter()
+                    .map(|sample_conditional_counts| {
+                        sample_conditional_counts
+                            .rows()
+                            .into_iter()
+                            .map(|row| row.to_vec())
+                            .collect()
+                    })
+                    .collect()
+            });
 
-        // Allocate the map.
-        let mut map = serializer.serialize_map(Some(size))?;
+        // Convert the sample conditional times to a flat format.
+        let sample_conditional_times: Option<Vec<Vec<Vec<f64>>>> = self
+            .sample_conditional_times
+            .as_ref()
+            .map(|sample_conditional_times| {
+                sample_conditional_times
+                    .outer_iter()
+                    .map(|sample_conditional_times| {
+                        sample_conditional_times
+                            .rows()
+                            .into_iter()
+                            .map(|row| row.to_vec())
+                            .collect()
+                    })
+                    .collect()
+            });
+
         // Serialize states.
         map.serialize_entry("states", &self.states)?;
         // Serialize conditioning states.
         map.serialize_entry("conditioning_states", &self.conditioning_states)?;
         // Serialize parameters.
         map.serialize_entry("parameters", &parameters)?;
+        // Serialize sample conditional counts, if any.
+        if let Some(sample_conditional_counts) = &sample_conditional_counts {
+            map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
+        }
+        // Serialize sample conditional times, if any.
+        if let Some(sample_conditional_times) = &sample_conditional_times {
+            map.serialize_entry("sample_conditional_times", &sample_conditional_times)?;
+        }
         // Serialize sample size, if any.
         if let Some(sample_size) = self.sample_size {
             map.serialize_entry("sample_size", &sample_size)?;
@@ -585,6 +699,8 @@ impl<'de> Deserialize<'de> for CatCIM {
             States,
             ConditioningStates,
             Parameters,
+            SampleConditionalCounts,
+            SampleConditionalTimes,
             SampleSize,
             SampleLogLikelihood,
         }
@@ -608,6 +724,8 @@ impl<'de> Deserialize<'de> for CatCIM {
                 let mut states = None;
                 let mut conditioning_states = None;
                 let mut parameters = None;
+                let mut sample_conditional_counts = None;
+                let mut sample_conditional_times = None;
                 let mut sample_size = None;
                 let mut sample_log_likelihood = None;
 
@@ -631,6 +749,18 @@ impl<'de> Deserialize<'de> for CatCIM {
                                 return Err(E::duplicate_field("parameters"));
                             }
                             parameters = Some(map.next_value()?);
+                        }
+                        Field::SampleConditionalCounts => {
+                            if sample_conditional_counts.is_some() {
+                                return Err(E::duplicate_field("sample_conditional_counts"));
+                            }
+                            sample_conditional_counts = Some(map.next_value()?);
+                        }
+                        Field::SampleConditionalTimes => {
+                            if sample_conditional_times.is_some() {
+                                return Err(E::duplicate_field("sample_conditional_times"));
+                            }
+                            sample_conditional_times = Some(map.next_value()?);
                         }
                         Field::SampleSize => {
                             if sample_size.is_some() {
@@ -665,10 +795,36 @@ impl<'de> Deserialize<'de> for CatCIM {
                     .into_shape_with_order(shape)
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
-                Ok(CatCIM::with_sample_size(
+                // Convert sample conditional counts to ndarray.
+                let sample_conditional_counts = sample_conditional_counts
+                    .map(|sample_conditional_counts| {
+                        let counts: Vec<Vec<Vec<f64>>> = sample_conditional_counts;
+                        let shape = (counts.len(), counts[0].len(), counts[0][0].len());
+                        let counts = counts.into_iter().flatten().flatten();
+                        Array::from_iter(counts)
+                            .into_shape_with_order(shape)
+                            .map_err(|_| E::custom("Invalid sample conditional counts shape"))
+                    })
+                    .transpose()?;
+
+                // Convert sample conditional times to ndarray.
+                let sample_conditional_times = sample_conditional_times
+                    .map(|sample_conditional_times| {
+                        let times: Vec<Vec<Vec<f64>>> = sample_conditional_times;
+                        let shape = (times.len(), times[0].len(), times[0][0].len());
+                        let times = times.into_iter().flatten().flatten();
+                        Array::from_iter(times)
+                            .into_shape_with_order(shape)
+                            .map_err(|_| E::custom("Invalid sample conditional times shape"))
+                    })
+                    .transpose()?;
+
+                Ok(CatCIM::with_optionals(
                     states,
                     conditioning_states,
                     parameters,
+                    sample_conditional_counts,
+                    sample_conditional_times,
                     sample_size,
                     sample_log_likelihood,
                 ))
@@ -679,6 +835,8 @@ impl<'de> Deserialize<'de> for CatCIM {
             "states",
             "conditioning_states",
             "parameters",
+            "sample_conditional_counts",
+            "sample_conditional_times",
             "sample_size",
             "sample_log_likelihood",
         ];

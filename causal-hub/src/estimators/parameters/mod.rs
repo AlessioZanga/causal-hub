@@ -92,24 +92,7 @@ where
     ///
     /// The estimated CDP.
     ///
-    #[inline]
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
-        // Return only the CPD.
-        self.fit_transform(x, z).1
-    }
-
-    /// Fits the estimator to the dataset and returns the sufficient statistics and the CPD.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit the estimator to.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Returns
-    ///
-    /// The estimated sufficient statistics and CPD.
-    ///
-    fn fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P;
 }
 
 /// A trait for conditional probability distribution estimators in parallel.
@@ -128,24 +111,7 @@ where
     ///
     /// The estimated CDP.
     ///
-    #[inline]
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
-        // Return only the CPD.
-        self.par_fit_transform(x, z).1
-    }
-
-    /// Fits the estimator to the dataset and returns the sufficient statistics and the CPD is parallel.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit the estimator to.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Returns
-    ///
-    /// The estimated sufficient statistics and CPD.
-    ///
-    fn par_fit_transform(&self, x: &Set<usize>, z: &Set<usize>) -> (P::SS, P);
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> P;
 }
 
 /// A trait for Bayesian network estimators.
