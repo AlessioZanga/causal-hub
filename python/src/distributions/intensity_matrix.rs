@@ -141,21 +141,53 @@ impl PyCatCIM {
         Ok(self.inner.parameters_size())
     }
 
-    /// Returns the sample size of the dataset used to fit the distribution, if any.
+    /// Returns the sample conditional counts used to fit the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample size of the dataset used to fit the distribution.
+    /// The sample conditional counts used to fit the distribution, if any.
+    ///
+    pub fn sample_conditional_counts<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<Option<Bound<'a, PyArray3<f64>>>> {
+        Ok(self
+            .inner
+            .sample_conditional_counts()
+            .map(|counts| counts.to_pyarray(py)))
+    }
+
+    /// Returns the sample conditional times used to fit the distribution, if any.
+    ///
+    /// # Returns
+    ///
+    /// The sample conditional times used to fit the distribution, if any.
+    ///
+    pub fn sample_conditional_times<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<Option<Bound<'a, PyArray3<f64>>>> {
+        Ok(self
+            .inner
+            .sample_conditional_times()
+            .map(|times| times.to_pyarray(py)))
+    }
+
+    /// Returns the sample size used to fit the distribution, if any.
+    ///
+    /// # Returns
+    ///
+    /// The sample size used to fit the distribution.
     ///
     pub fn sample_size(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_size())
     }
 
-    /// Returns the sample log-likelihood of the dataset given the distribution, if any.
+    /// Returns the sample log-likelihood given the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample log-likelihood of the dataset given the distribution.
+    /// The sample log-likelihood given the distribution.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_log_likelihood())

@@ -157,21 +157,37 @@ class CatCIM:
         
         The parameters size.
         """
-    def sample_size(self) -> typing.Optional[builtins.float]:
+    def sample_conditional_counts(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
         r"""
-        Returns the sample size of the dataset used to fit the distribution, if any.
+        Returns the sample conditional counts used to fit the distribution, if any.
         
         # Returns
         
-        The sample size of the dataset used to fit the distribution.
+        The sample conditional counts used to fit the distribution, if any.
+        """
+    def sample_conditional_times(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
+        r"""
+        Returns the sample conditional times used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample conditional times used to fit the distribution, if any.
+        """
+    def sample_size(self) -> typing.Optional[builtins.float]:
+        r"""
+        Returns the sample size used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample size used to fit the distribution.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood of the dataset given the distribution, if any.
+        Returns the sample log-likelihood given the distribution, if any.
         
         # Returns
         
-        The sample log-likelihood of the dataset given the distribution.
+        The sample log-likelihood given the distribution.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCIM:
@@ -261,21 +277,29 @@ class CatCPD:
         
         The parameters size.
         """
-    def sample_size(self) -> typing.Optional[builtins.float]:
+    def sample_conditional_counts(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
         r"""
-        Returns the sample size of the dataset used to fit the distribution, if any.
+        Returns the sample conditional counts used to fit the distribution, if any.
         
         # Returns
         
-        The sample size of the dataset used to fit the distribution.
+        The sample conditional counts used to fit the distribution, if any.
+        """
+    def sample_size(self) -> typing.Optional[builtins.float]:
+        r"""
+        Returns the sample size used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample size used to fit the distribution.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood of the dataset given the distribution, if any.
+        Returns the sample log-likelihood given the distribution, if any.
         
         # Returns
         
-        The sample log-likelihood of the dataset given the distribution.
+        The sample log-likelihood given the distribution.
         """
     def __repr__(self) -> builtins.str:
         r"""
