@@ -20,17 +20,43 @@ use crate::{
 /// A categorical Bayesian network (BN).
 #[derive(Clone, Debug, PartialEq)]
 pub struct CatBN {
+    /// The name of the model.
+    name: Option<String>,
+    /// The description of the model.
+    description: Option<String>,
     /// The states of the variables.
     states: States,
-    /// The underlying graph.
+    /// The graph of the model.
     graph: DiGraph,
-    /// The conditional probability distributions.
+    /// The parameters of the model.
     cpds: Map<String, CatCPD>,
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
 
 impl CatBN {
+    /// Returns the name of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The name of the model, if it exists.
+    ///
+    #[inline]
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    /// Returns the description of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The description of the model, if it exists.
+    ///
+    #[inline]
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -40,6 +66,38 @@ impl CatBN {
     #[inline]
     pub const fn states(&self) -> &States {
         &self.states
+    }
+
+    /// Creates a new categorical Bayesian network with optional fields.
+    pub fn with_optionals<I>(
+        name: Option<String>,
+        description: Option<String>,
+        graph: DiGraph,
+        cpds: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = CatCPD>,
+    {
+        // Assert name is not empty string.
+        if let Some(name) = &name {
+            assert!(!name.is_empty(), "Name cannot be an empty string.");
+        }
+        // Assert description is not empty string.
+        if let Some(description) = &description {
+            assert!(
+                !description.is_empty(),
+                "Description cannot be an empty string."
+            );
+        }
+
+        // Construct the categorical BN.
+        let mut bn = Self::new(graph, cpds);
+
+        // Set the optional fields.
+        bn.name = name;
+        bn.description = description;
+
+        bn
     }
 }
 
@@ -160,6 +218,8 @@ impl BN for CatBN {
         let topological_order = graph.topological_order().expect("Graph must be acyclic.");
 
         Self {
+            name: None,
+            description: None,
             states,
             graph,
             cpds,
@@ -197,12 +257,25 @@ impl Serialize for CatBN {
     where
         S: Serializer,
     {
+        // Count the elements to serialize.
+        let mut size = 2;
+        size += self.name.is_some() as usize;
+        size += self.description.is_some() as usize;
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(size))?;
+
         // Convert the CPDs to a flat format.
         let cpds: Vec<_> = self.cpds.values().cloned().collect();
 
-        // Allocate the map.
-        let mut map = serializer.serialize_map(Some(2))?;
-
+        // Serialize name, if any.
+        if let Some(name) = &self.name {
+            map.serialize_entry("name", name)?;
+        }
+        // Serialize description, if any.
+        if let Some(description) = &self.description {
+            map.serialize_entry("description", description)?;
+        }
         // Serialize graph.
         map.serialize_entry("graph", &self.graph)?;
         // Serialize CPDs.
@@ -221,6 +294,8 @@ impl<'de> Deserialize<'de> for CatBN {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
+            Name,
+            Description,
             Graph,
             Cpds,
         }
@@ -241,12 +316,26 @@ impl<'de> Deserialize<'de> for CatBN {
                 use serde::de::Error as E;
 
                 // Allocate fields
+                let mut name = None;
+                let mut description = None;
                 let mut graph = None;
                 let mut cpds = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
+                        Field::Name => {
+                            if name.is_some() {
+                                return Err(E::duplicate_field("name"));
+                            }
+                            name = Some(map.next_value()?);
+                        }
+                        Field::Description => {
+                            if description.is_some() {
+                                return Err(E::duplicate_field("description"));
+                            }
+                            description = Some(map.next_value()?);
+                        }
                         Field::Graph => {
                             if graph.is_some() {
                                 return Err(E::duplicate_field("graph"));
@@ -269,11 +358,11 @@ impl<'de> Deserialize<'de> for CatBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(CatBN::new(graph, cpds))
+                Ok(CatBN::with_optionals(name, description, graph, cpds))
             }
         }
 
-        const FIELDS: &[&str] = &["graph", "cpds"];
+        const FIELDS: &[&str] = &["name", "description", "graph", "cpds"];
 
         deserializer.deserialize_struct("CatBN", FIELDS, CatBNVisitor)
     }

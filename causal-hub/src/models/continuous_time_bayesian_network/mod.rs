@@ -47,6 +47,14 @@ pub trait CTBN {
     ///
     fn labels(&self) -> &Labels;
 
+    /// Returns the initial distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the initial distribution.
+    ///
+    fn initial_distribution(&self) -> &Self::InitialDistribution;
+
     /// Returns the underlying graph.
     ///
     /// # Returns
@@ -70,40 +78,4 @@ pub trait CTBN {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
-
-    /// Returns the initial distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the initial distribution.
-    ///
-    fn initial_distribution(&self) -> &Self::InitialDistribution;
-
-    /// Construct a new categorical CTBN with the given graph, CIMs and initial distribution.
-    ///
-    /// # Arguments
-    ///
-    /// * `graph` - The underlying graph.
-    /// * `cims` - The conditional intensity matrices.
-    /// * `initial_distribution` - The initial distribution as a categorical BN.
-    ///
-    /// # Panics
-    ///
-    /// Panics if:
-    ///
-    /// * the initial distribution labels do not match the CIMs labels.
-    /// * the initial distribution states do not match the CIMs states.
-    /// * see `new` for more details.
-    ///
-    /// # Returns
-    ///
-    /// A new categorical CTBN.
-    ///
-    fn with_initial_distribution<I>(
-        initial_distribution: Self::InitialDistribution,
-        graph: DiGraph,
-        cims: I,
-    ) -> Self
-    where
-        I: IntoIterator<Item = Self::CIM>;
 }

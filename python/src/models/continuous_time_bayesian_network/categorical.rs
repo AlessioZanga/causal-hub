@@ -50,6 +50,26 @@ impl PyCatCTBN {
         Ok(CatCTBN::new(graph, cims).into())
     }
 
+    /// Returns the name of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The name of the model, if it exists.
+    ///
+    pub fn name(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.name())
+    }
+
+    /// Returns the description of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The description of the model, if it exists.
+    ///
+    pub fn description(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.description())
+    }
+
     /// Returns the labels of the variables.
     ///
     /// # Returns
@@ -58,6 +78,16 @@ impl PyCatCTBN {
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    }
+
+    /// Returns the initial distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the initial distribution.
+    ///
+    pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
+        Ok(self.inner.initial_distribution().clone().into())
     }
 
     /// Returns the underlying graph.
@@ -90,16 +120,6 @@ impl PyCatCTBN {
                 (label, cim)
             })
             .collect())
-    }
-
-    /// Returns the initial distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the initial distribution.
-    ///
-    pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
-        Ok(self.inner.initial_distribution().clone().into())
     }
 
     /// Returns the parameters size.

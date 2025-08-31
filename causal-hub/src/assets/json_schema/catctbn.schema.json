@@ -3,6 +3,18 @@
     "$id": "catctbn.schema.json",
     "type": "object",
     "properties": {
+        "name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
         "initial_distribution": {
             "$ref": "catbn.schema.json"
         },

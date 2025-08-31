@@ -1,12 +1,8 @@
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::{BufReader, Read},
-};
+use std::collections::BTreeMap;
 
 use causal_hub_rust::{
     graphs::DiGraph,
-    io::{BifParser, JsonIO},
+    io::{BifIO, JsonIO},
     models::{BN, CatBN},
 };
 use pyo3::{prelude::*, types::PyType};
@@ -52,6 +48,26 @@ impl PyCatBN {
         let cpds = cpds.into_iter().map(|x| x.into());
         // Create a new CatBN with the given parameters.
         Ok(CatBN::new(graph, cpds).into())
+    }
+
+    /// Returns the name of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The name of the model, if it exists.
+    ///
+    pub fn name(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.name())
+    }
+
+    /// Returns the description of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The description of the model, if it exists.
+    ///
+    pub fn description(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.description())
     }
 
     /// Returns the labels of the variables.
@@ -106,6 +122,32 @@ impl PyCatBN {
         Ok(self.inner.parameters_size())
     }
 
+    /// Read class from a BIF string.
+    #[classmethod]
+    pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: CatBN::from_bif(bif),
+        })
+    }
+
+    /// Write class to a BIF string.
+    pub fn to_bif(&self) -> PyResult<String> {
+        Ok(self.inner.to_bif())
+    }
+
+    /// Read class from a BIF file.
+    #[classmethod]
+    pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: CatBN::read_bif(path),
+        })
+    }
+
+    /// Write class to a BIF file.
+    pub fn write_bif(&self, path: &str) -> PyResult<()> {
+        Ok(self.inner.write_bif(path))
+    }
+
     /// Read class from a JSON string.
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
@@ -130,30 +172,5 @@ impl PyCatBN {
     /// Write class to a JSON file.
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         Ok(self.inner.write_json(path))
-    }
-
-    /// Read a BIF file and return a CatBN.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The path to the BIF file.
-    ///
-    /// # Returns
-    ///
-    /// A new CatBN instance.
-    ///
-    #[classmethod]
-    pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        // Open file given by path.
-        let file = File::open(path)?;
-        // Read the file and parse it.
-        let mut reader = BufReader::new(file);
-        // Read the BIF file.
-        let mut bif = String::new();
-        reader.read_to_string(&mut bif)?;
-        // Read the BIF file and return a CatBN.
-        let bn = BifParser::parse_str(&bif);
-        // Convert the BifParser to a CatBN.
-        Ok(bn.into())
     }
 }

@@ -21,7 +21,7 @@ macro_for!(
     }
 });
 
-/// Load the "EATING" CTBN from the assets.
+/// Load the `EATING` CTBN from the assets.
 #[gen_stub_pyfunction]
 #[pyfunction]
 pub fn load_eating() -> PyCatCTBN {

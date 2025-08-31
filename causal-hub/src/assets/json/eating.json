@@ -1,4 +1,5 @@
 {
+    "name": "eating",
     "initial_distribution": {
         "graph": {
             "labels": ["Eating", "FullStomach", "Hungry"],

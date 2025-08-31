@@ -20,6 +20,10 @@ use crate::{
 /// A categorical continuous time Bayesian network (CTBN).
 #[derive(Clone, Debug, PartialEq)]
 pub struct CatCTBN {
+    /// The name of the model.
+    name: Option<String>,
+    /// The description of the model.
+    description: Option<String>,
     /// The initial distribution.
     initial_distribution: CatBN,
     /// The underlying graph.
@@ -29,6 +33,28 @@ pub struct CatCTBN {
 }
 
 impl CatCTBN {
+    /// Returns the name of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The name of the model, if it exists.
+    ///
+    #[inline]
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    /// Returns the description of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The description of the model, if it exists.
+    ///
+    #[inline]
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -38,6 +64,55 @@ impl CatCTBN {
     #[inline]
     pub const fn states(&self) -> &States {
         self.initial_distribution.states()
+    }
+
+    /// Creates a new categorical continuous-time Bayesian network with optional fields.
+    pub fn with_optionals<I>(
+        name: Option<String>,
+        description: Option<String>,
+        initial_distribution: CatBN,
+        graph: DiGraph,
+        cims: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = CatCIM>,
+    {
+        // Assert name is not empty string.
+        if let Some(name) = &name {
+            assert!(!name.is_empty(), "Name cannot be an empty string.");
+        }
+        // Assert description is not empty string.
+        if let Some(description) = &description {
+            assert!(
+                !description.is_empty(),
+                "Description cannot be an empty string."
+            );
+        }
+
+        // Construct the categorical CTBN.
+        let mut ctbn = Self::new(graph, cims);
+
+        // Assert the initial distribution has same labels.
+        assert!(
+            initial_distribution.labels().eq(ctbn.labels()),
+            "Initial distribution labels must be the same as the CIMs labels."
+        );
+        // Assert the initial distribution has same states.
+        assert!(
+            initial_distribution
+                .cpds()
+                .into_iter()
+                .zip(ctbn.cims())
+                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
+            "Initial distribution states must be the same as the CIMs states."
+        );
+
+        // Set the optional fields.
+        ctbn.name = name;
+        ctbn.description = description;
+        ctbn.initial_distribution = initial_distribution;
+
+        ctbn
     }
 }
 
@@ -149,6 +224,8 @@ impl CTBN for CatCTBN {
         let initial_distribution = CatBN::new(initial_graph, initial_cpds);
 
         Self {
+            name: None,
+            description: None,
             initial_distribution,
             graph,
             cims,
@@ -157,6 +234,10 @@ impl CTBN for CatCTBN {
 
     fn labels(&self) -> &Labels {
         self.graph.labels()
+    }
+
+    fn initial_distribution(&self) -> &Self::InitialDistribution {
+        &self.initial_distribution
     }
 
     fn graph(&self) -> &DiGraph {
@@ -177,42 +258,6 @@ impl CTBN for CatCTBN {
                 .map(|x| x.parameters_size())
                 .sum::<usize>()
     }
-
-    fn initial_distribution(&self) -> &Self::InitialDistribution {
-        &self.initial_distribution
-    }
-
-    fn with_initial_distribution<I>(
-        initial_distribution: Self::InitialDistribution,
-        graph: DiGraph,
-        cims: I,
-    ) -> Self
-    where
-        I: IntoIterator<Item = Self::CIM>,
-    {
-        // Construct the CTBN.
-        let mut ctbn = Self::new(graph, cims);
-
-        // Assert the initial distribution has same labels.
-        assert!(
-            initial_distribution.labels().eq(ctbn.labels()),
-            "Initial distribution labels must be the same as the CIMs labels."
-        );
-        // Assert the initial distribution has same states.
-        assert!(
-            initial_distribution
-                .cpds()
-                .into_iter()
-                .zip(ctbn.cims())
-                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
-            "Initial distribution states must be the same as the CIMs states."
-        );
-
-        // Set the initial distribution.
-        ctbn.initial_distribution = initial_distribution;
-
-        ctbn
-    }
 }
 
 impl Serialize for CatCTBN {
@@ -220,12 +265,25 @@ impl Serialize for CatCTBN {
     where
         S: Serializer,
     {
+        // Count the elements to serialize.
+        let mut size = 3;
+        size += self.name.is_some() as usize;
+        size += self.description.is_some() as usize;
+
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(size))?;
+
         // Convert the CIMs to a flat format.
         let cims: Vec<_> = self.cims.values().cloned().collect();
 
-        // Allocate the map.
-        let mut map = serializer.serialize_map(Some(3))?;
-
+        // Serialize name, if any.
+        if let Some(name) = &self.name {
+            map.serialize_entry("name", name)?;
+        }
+        // Serialize description, if any.
+        if let Some(description) = &self.description {
+            map.serialize_entry("description", description)?;
+        }
         // Serialize initial distribution.
         map.serialize_entry("initial_distribution", &self.initial_distribution)?;
         // Serialize graph.
@@ -246,6 +304,8 @@ impl<'de> Deserialize<'de> for CatCTBN {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
+            Name,
+            Description,
             InitialDistribution,
             Graph,
             Cims,
@@ -267,6 +327,8 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 use serde::de::Error as E;
 
                 // Allocate fields
+                let mut name = None;
+                let mut description = None;
                 let mut initial_distribution = None;
                 let mut graph = None;
                 let mut cims = None;
@@ -274,6 +336,18 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
+                        Field::Name => {
+                            if name.is_some() {
+                                return Err(E::duplicate_field("name"));
+                            }
+                            name = Some(map.next_value()?);
+                        }
+                        Field::Description => {
+                            if description.is_some() {
+                                return Err(E::duplicate_field("description"));
+                            }
+                            description = Some(map.next_value()?);
+                        }
                         Field::InitialDistribution => {
                             if initial_distribution.is_some() {
                                 return Err(E::duplicate_field("initial_distribution"));
@@ -304,7 +378,9 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 // Set helper types.
                 let cims: Vec<_> = cims;
 
-                Ok(CatCTBN::with_initial_distribution(
+                Ok(CatCTBN::with_optionals(
+                    name,
+                    description,
                     initial_distribution,
                     graph,
                     cims,
@@ -312,7 +388,13 @@ impl<'de> Deserialize<'de> for CatCTBN {
             }
         }
 
-        const FIELDS: &[&str] = &["initial_distribution", "graph", "cims"];
+        const FIELDS: &[&str] = &[
+            "name",
+            "description",
+            "initial_distribution",
+            "graph",
+            "cims",
+        ];
 
         deserializer.deserialize_struct("CatCTBN", FIELDS, CatCTBNVisitor)
     }
