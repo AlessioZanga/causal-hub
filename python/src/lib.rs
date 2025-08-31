@@ -8,12 +8,8 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
-/// Probability distributions.
-pub mod distributions;
 /// Estimators for parameters and structures.
-pub mod estimators;
-/// Graph structures and algorithms.
-pub mod graphs;
+pub mod estimation;
 /// Models.
 pub mod models;
 /// Utility functions.
@@ -67,21 +63,21 @@ mod causal_hub {
         m.add_class::<crate::datasets::PyCatWtdTrj>()?;
         m.add_class::<crate::datasets::PyCatWtdTrjs>()?;
 
-        // `distributions` module
-        m.add_class::<crate::distributions::PyCatCPD>()?;
-        m.add_class::<crate::distributions::PyCatCIM>()?;
-
         // `estimators` module
-        m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
-        m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
-        m.add_class::<crate::estimators::PyPK>()?;
-
-        // `graphs` module
-        m.add_class::<crate::graphs::PyDiGraph>()?;
+        m.add_function(wrap_pyfunction!(crate::estimation::em, m)?)?;
+        m.add_function(wrap_pyfunction!(crate::estimation::sem, m)?)?;
+        m.add_class::<crate::estimation::PyPK>()?;
 
         // `models` module
         m.add_class::<crate::models::PyCatBN>()?;
         m.add_class::<crate::models::PyCatCTBN>()?;
+
+        // `distributions` module
+        m.add_class::<crate::models::PyCatCPD>()?;
+        m.add_class::<crate::models::PyCatCIM>()?;
+
+        // `graphs` module
+        m.add_class::<crate::models::PyDiGraph>()?;
 
         Ok(())
     }

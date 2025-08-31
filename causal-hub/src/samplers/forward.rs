@@ -9,13 +9,12 @@ use rand::{
 use rand_distr::Exp;
 use rayon::prelude::*;
 
-use super::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler};
 use crate::{
     datasets::{CatData, CatTrj},
-    distributions::CPD,
-    estimators::{CPDEstimator, MLE},
+    estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
-    models::{BN, CTBN, CatBN, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
 };

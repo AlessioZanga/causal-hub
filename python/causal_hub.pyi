@@ -24,6 +24,22 @@ class CatBN:
         
         A new Bayesian network instance.
         """
+    def name(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the name of the model, if any.
+        
+        # Returns
+        
+        The name of the model, if it exists.
+        """
+    def description(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the description of the model, if any.
+        
+        # Returns
+        
+        The description of the model, if it exists.
+        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
@@ -57,6 +73,24 @@ class CatBN:
         The parameters size.
         """
     @classmethod
+    def from_bif(cls, bif:builtins.str) -> CatBN:
+        r"""
+        Read class from a BIF string.
+        """
+    def to_bif(self) -> builtins.str:
+        r"""
+        Write class to a BIF string.
+        """
+    @classmethod
+    def read_bif(cls, path:builtins.str) -> CatBN:
+        r"""
+        Read class from a BIF file.
+        """
+    def write_bif(self, path:builtins.str) -> None:
+        r"""
+        Write class to a BIF file.
+        """
+    @classmethod
     def from_json(cls, json:builtins.str) -> CatBN:
         r"""
         Read class from a JSON string.
@@ -73,19 +107,6 @@ class CatBN:
     def write_json(self, path:builtins.str) -> None:
         r"""
         Write class to a JSON file.
-        """
-    @classmethod
-    def read_bif(cls, path:builtins.str) -> CatBN:
-        r"""
-        Read a BIF file and return a CatBN.
-        
-        # Arguments
-        
-        * `path` - The path to the BIF file.
-        
-        # Returns
-        
-        A new CatBN instance.
         """
 
 class CatCIM:
@@ -157,21 +178,37 @@ class CatCIM:
         
         The parameters size.
         """
-    def sample_size(self) -> typing.Optional[builtins.float]:
+    def sample_conditional_counts(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
         r"""
-        Returns the sample size of the dataset used to fit the distribution, if any.
+        Returns the sample conditional counts used to fit the distribution, if any.
         
         # Returns
         
-        The sample size of the dataset used to fit the distribution.
+        The sample conditional counts used to fit the distribution, if any.
+        """
+    def sample_conditional_times(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
+        r"""
+        Returns the sample conditional times used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample conditional times used to fit the distribution, if any.
+        """
+    def sample_size(self) -> typing.Optional[builtins.float]:
+        r"""
+        Returns the sample size used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample size used to fit the distribution.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood of the dataset given the distribution, if any.
+        Returns the sample log-likelihood given the distribution, if any.
         
         # Returns
         
-        The sample log-likelihood of the dataset given the distribution.
+        The sample log-likelihood given the distribution.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCIM:
@@ -261,21 +298,29 @@ class CatCPD:
         
         The parameters size.
         """
-    def sample_size(self) -> typing.Optional[builtins.float]:
+    def sample_conditional_counts(self) -> typing.Optional[numpy.typing.NDArray[numpy.float64]]:
         r"""
-        Returns the sample size of the dataset used to fit the distribution, if any.
+        Returns the sample conditional counts used to fit the distribution, if any.
         
         # Returns
         
-        The sample size of the dataset used to fit the distribution.
+        The sample conditional counts used to fit the distribution, if any.
+        """
+    def sample_size(self) -> typing.Optional[builtins.float]:
+        r"""
+        Returns the sample size used to fit the distribution, if any.
+        
+        # Returns
+        
+        The sample size used to fit the distribution.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood of the dataset given the distribution, if any.
+        Returns the sample log-likelihood given the distribution, if any.
         
         # Returns
         
-        The sample log-likelihood of the dataset given the distribution.
+        The sample log-likelihood given the distribution.
         """
     def __repr__(self) -> builtins.str:
         r"""
@@ -318,6 +363,22 @@ class CatCTBN:
         
         A new continuous-time Bayesian network instance.
         """
+    def name(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the name of the model, if any.
+        
+        # Returns
+        
+        The name of the model, if it exists.
+        """
+    def description(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the description of the model, if any.
+        
+        # Returns
+        
+        The description of the model, if it exists.
+        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
@@ -325,6 +386,14 @@ class CatCTBN:
         # Returns
         
         A reference to the labels.
+        """
+    def initial_distribution(self) -> CatBN:
+        r"""
+        Returns the initial distribution.
+        
+        # Returns
+        
+        A reference to the initial distribution.
         """
     def graph(self) -> DiGraph:
         r"""
@@ -341,14 +410,6 @@ class CatCTBN:
         # Returns
         
         A reference to the CIMs.
-        """
-    def initial_distribution(self) -> CatBN:
-        r"""
-        Returns the initial distribution.
-        
-        # Returns
-        
-        A reference to the initial distribution.
         """
     def parameters_size(self) -> builtins.int:
         r"""
@@ -1018,7 +1079,7 @@ def load_earthquake() -> CatBN:
 
 def load_eating() -> CatCTBN:
     r"""
-    Load the "EATING" CTBN from the assets.
+    Load the `EATING` CTBN from the assets.
     """
 
 def load_hailfinder() -> CatBN:

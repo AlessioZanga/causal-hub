@@ -5,7 +5,7 @@ mod tests {
         use causal_hub::{
             assets::{load_cancer, load_child},
             datasets::Dataset,
-            estimators::{BNEstimator, MLE},
+            estimation::{BNEstimator, MLE},
             models::{BN, CatBN},
             samplers::{BNSampler, ForwardSampler},
         };
@@ -76,7 +76,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::Dataset,
-            estimators::{MLE, ParCTBNEstimator},
+            estimation::{MLE, ParCTBNEstimator},
             models::{CTBN, CatCTBN},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };

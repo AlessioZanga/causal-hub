@@ -4,24 +4,22 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    distributions::{CPD, CatCPD},
-    graphs::{DiGraph, Graph},
-    models::{BN, CatBN},
+    models::{CPD, CatBN, CatCPD, DiGraph, Graph},
     types::{Map, States},
 };
 
 #[derive(Debug)]
 struct Network {
-    pub _id: String,
-    pub _properties: Vec<Property>,
+    pub name: String,
+    pub properties: Vec<Property>,
     pub variables: Vec<Variable>,
     pub probabilities: Vec<Probability>,
 }
 
 #[derive(Debug)]
 struct Property {
-    pub _key: String,
-    pub _value: String,
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Debug)]
@@ -52,6 +50,15 @@ impl BifParser {
             .map(build_ast)
             .next()
             .expect("Failed to parse BIF file.");
+        // Get network properties.
+        let properties: Map<_, _> = network
+            .properties
+            .into_iter()
+            .map(|p| (p.key, p.value))
+            .collect();
+        // Get network name and description.
+        let name = Some(network.name);
+        let description = properties.get("description").cloned();
         // Construct states.
         let states: States = network
             .variables
@@ -137,14 +144,14 @@ impl BifParser {
         });
 
         // Construct the Bayesian network.
-        CatBN::new(graph, cpds)
+        CatBN::with_optionals(name, description, graph, cpds)
     }
 }
 
 fn build_ast(pair: Pair<Rule>) -> Network {
     assert_eq!(pair.as_rule(), Rule::file);
 
-    let mut id = String::new();
+    let mut name = String::new();
     let mut properties = vec![];
     let mut variables = vec![];
     let mut probabilities = vec![];
@@ -153,7 +160,7 @@ fn build_ast(pair: Pair<Rule>) -> Network {
         match item.as_rule() {
             Rule::network => {
                 let mut inner = item.into_inner();
-                id = inner.next().unwrap().as_str().to_string();
+                name = inner.next().unwrap().as_str().to_string();
                 for p in inner {
                     if p.as_rule() == Rule::property {
                         properties.push(parse_property(p));
@@ -167,8 +174,8 @@ fn build_ast(pair: Pair<Rule>) -> Network {
     }
 
     Network {
-        _id: id,
-        _properties: properties,
+        name,
+        properties,
         variables,
         probabilities,
     }
@@ -179,10 +186,7 @@ fn parse_property(pair: Pair<Rule>) -> Property {
     let key = inner.next().unwrap().as_str().to_string();
     let value = inner.next().unwrap().as_str().to_string();
 
-    Property {
-        _key: key,
-        _value: value,
-    }
+    Property { key, value }
 }
 
 fn parse_variable(pair: Pair<Rule>) -> Variable {

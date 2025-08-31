@@ -1,2 +1,2 @@
-mod categorical;
+mod table;
 mod trajectory;

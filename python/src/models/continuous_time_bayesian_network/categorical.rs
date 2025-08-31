@@ -1,14 +1,16 @@
 use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    graphs::DiGraph,
     io::JsonIO,
-    models::{CTBN, CatCTBN},
+    models::{CTBN, CatCTBN, DiGraph},
 };
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 
-use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into, models::PyCatBN};
+use crate::{
+    impl_deref_from_into,
+    models::{PyCatBN, PyCatCIM, PyDiGraph},
+};
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
@@ -50,6 +52,26 @@ impl PyCatCTBN {
         Ok(CatCTBN::new(graph, cims).into())
     }
 
+    /// Returns the name of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The name of the model, if it exists.
+    ///
+    pub fn name(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.name())
+    }
+
+    /// Returns the description of the model, if any.
+    ///
+    /// # Returns
+    ///
+    /// The description of the model, if it exists.
+    ///
+    pub fn description(&self) -> PyResult<Option<&str>> {
+        Ok(self.inner.description())
+    }
+
     /// Returns the labels of the variables.
     ///
     /// # Returns
@@ -58,6 +80,16 @@ impl PyCatCTBN {
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    }
+
+    /// Returns the initial distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the initial distribution.
+    ///
+    pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
+        Ok(self.inner.initial_distribution().clone().into())
     }
 
     /// Returns the underlying graph.
@@ -90,16 +122,6 @@ impl PyCatCTBN {
                 (label, cim)
             })
             .collect())
-    }
-
-    /// Returns the initial distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the initial distribution.
-    ///
-    pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
-        Ok(self.inner.initial_distribution().clone().into())
     }
 
     /// Returns the parameters size.

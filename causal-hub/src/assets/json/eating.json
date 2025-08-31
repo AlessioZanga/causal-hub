@@ -1,4 +1,6 @@
 {
+    "name": "eating",
+    "description": "See: U. Nodelman, C.R. Shelton, and D. Koller (2003). \"Learning Continuous Time Bayesian Networks.\" Proc. Nineteenth Conference on Uncertainty in Artificial Intelligence (UAI) (pp. 451-458).",
     "initial_distribution": {
         "graph": {
             "labels": ["Eating", "FullStomach", "Hungry"],

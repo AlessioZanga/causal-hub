@@ -3,6 +3,18 @@
     "$id": "catbn.schema.json",
     "type": "object",
     "properties": {
+        "name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
         "graph": {
             "$ref": "digraph.schema.json"
         },

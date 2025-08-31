@@ -8,12 +8,8 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
-/// Probability distributions structures.
-pub mod distributions;
 /// Parameter and structure learning algorithms.
-pub mod estimators;
-/// Graph structures and algorithms.
-pub mod graphs;
+pub mod estimation;
 /// Inference algorithms.
 pub mod inference;
 /// Input/output functions.
