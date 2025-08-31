@@ -1,7 +1,10 @@
 use std::sync::{Arc, RwLock};
 
-use super::Map;
-use crate::{distributions::CPD, estimators::CPDEstimator, types::Set};
+use crate::{
+    estimation::CPDEstimator,
+    models::CPD,
+    types::{Labels, Map, Set},
+};
 
 /// A cache for calling a function with a key and value.
 #[derive(Clone, Debug)]
@@ -40,7 +43,7 @@ where
     P: CPD + Clone,
     P::SS: Clone,
 {
-    fn labels(&self) -> &super::Labels {
+    fn labels(&self) -> &Labels {
         self.call.labels()
     }
 

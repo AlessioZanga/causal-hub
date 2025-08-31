@@ -5,7 +5,7 @@ mod tests {
             use approx::assert_relative_eq;
             use causal_hub::{
                 assets::*,
-                estimators::{BE, BNEstimator},
+                estimation::{BE, BNEstimator},
                 io::JsonIO,
                 models::{BN, CatBN},
                 samplers::{BNSampler, ForwardSampler},
@@ -91,7 +91,7 @@ mod tests {
             use approx::assert_relative_eq;
             use causal_hub::{
                 assets::load_eating,
-                estimators::{BE, CTBNEstimator},
+                estimation::{BE, CTBNEstimator},
                 io::JsonIO,
                 models::{CTBN, CatCTBN},
                 samplers::{CTBNSampler, ForwardSampler},

@@ -2,7 +2,7 @@ mod categorical;
 pub use categorical::*;
 
 use crate::{
-    graphs::DiGraph,
+    models::graphs::DiGraph,
     types::{Labels, Map},
 };
 

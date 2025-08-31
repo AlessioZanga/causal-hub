@@ -5,9 +5,9 @@ mod tests {
             use approx::assert_relative_eq;
             use causal_hub::{
                 assets::load_asia,
-                distributions::CatCPD,
                 inference::{BNApproxInference, ParBNApproxInference},
                 map,
+                models::CatCPD,
                 samplers::ForwardSampler,
                 set,
             };

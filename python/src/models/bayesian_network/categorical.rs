@@ -1,14 +1,16 @@
 use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    graphs::DiGraph,
     io::{BifIO, JsonIO},
-    models::{BN, CatBN},
+    models::{BN, CatBN, DiGraph},
 };
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 
-use crate::{distributions::PyCatCPD, graphs::PyDiGraph, impl_deref_from_into};
+use crate::{
+    impl_deref_from_into,
+    models::{PyCatCPD, PyDiGraph},
+};
 
 /// A categorical Bayesian network (BN).
 #[gen_stub_pyclass]

@@ -4,9 +4,7 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    distributions::{CPD, CatCPD},
-    graphs::{DiGraph, Graph},
-    models::CatBN,
+    models::{CPD, CatBN, CatCPD, DiGraph, Graph},
     types::{Map, States},
 };
 

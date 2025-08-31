@@ -7,11 +7,10 @@ use rand::{
 use rand_distr::Exp;
 use rayon::prelude::*;
 
-use super::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler};
 use crate::{
     datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
-    distributions::CPD,
-    models::{BN, CTBN, CatBN, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
 };

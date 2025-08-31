@@ -1,14 +1,16 @@
 use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    graphs::DiGraph,
     io::JsonIO,
-    models::{CTBN, CatCTBN},
+    models::{CTBN, CatCTBN, DiGraph},
 };
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 
-use crate::{distributions::PyCatCIM, graphs::PyDiGraph, impl_deref_from_into, models::PyCatBN};
+use crate::{
+    impl_deref_from_into,
+    models::{PyCatBN, PyCatCIM, PyDiGraph},
+};
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]

@@ -1,1 +1,2 @@
-mod categorical;
+mod model;
+mod parameters;
