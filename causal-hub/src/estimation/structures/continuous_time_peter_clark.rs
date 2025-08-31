@@ -95,8 +95,8 @@ where
         let q_xz = self.estimator.fit(x, z);
         let q_xs = self.estimator.fit(x, &s);
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xs.sample_conditional_counts().unwrap();
-        let n_xs = q_xz.sample_conditional_counts().unwrap();
+        let n_xz = q_xz.sample_conditional_counts().unwrap();
+        let n_xs = q_xs.sample_conditional_counts().unwrap();
 
         // Get the cardinality of the extended separation set.
         let c_s = q_xs.conditioning_cardinality();
