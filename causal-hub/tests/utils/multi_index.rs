@@ -5,13 +5,13 @@ mod tests {
 
     #[test]
     fn test_multi_index_ravel() {
-        // Set dimensions.
-        let dim = array![2, 3, 4];
+        // Set shape.
+        let shape = array![2, 3, 4];
         // Create a multi index.
-        let multi_index = MI::new(dim.clone());
+        let multi_index = MI::new(shape.clone());
 
         // Assert the cardinality.
-        assert_eq!(multi_index.cardinality(), &dim);
+        assert_eq!(multi_index.cardinality(), &shape);
 
         // Assert the ravel multi index explicitly.
         assert_eq!(multi_index.ravel([0, 0, 0]), 0);
@@ -23,11 +23,11 @@ mod tests {
         assert_eq!(multi_index.ravel([1, 0, 0]), 12);
 
         // Assert the ravel multi index implicitly.
-        for i in 0..dim[0] {
-            for j in 0..dim[1] {
-                for k in 0..dim[2] {
+        for i in 0..shape[0] {
+            for j in 0..shape[1] {
+                for k in 0..shape[2] {
                     let ravel_index = multi_index.ravel([i, j, k]);
-                    let expected_index = i * dim[1] * dim[2] + j * dim[2] + k;
+                    let expected_index = i * shape[1] * shape[2] + j * shape[2] + k;
                     assert_eq!(ravel_index, expected_index);
                 }
             }
@@ -36,10 +36,10 @@ mod tests {
 
     #[test]
     fn test_multi_index_unravel() {
-        // Set dimensions.
-        let dim = array![2, 3, 4];
+        // Set shape.
+        let shape = array![2, 3, 4];
         // Create a multi index.
-        let multi_index = MI::new(dim.clone());
+        let multi_index = MI::new(shape.clone());
 
         // Assert the unravel multi index explicitly.
         assert_eq!(multi_index.unravel(0), vec![0, 0, 0]);
@@ -51,10 +51,10 @@ mod tests {
         assert_eq!(multi_index.unravel(12), vec![1, 0, 0]);
 
         // Assert the unravel multi index implicitly.
-        for i in 0..dim[0] {
-            for j in 0..dim[1] {
-                for k in 0..dim[2] {
-                    let ravel_index = i * dim[1] * dim[2] + j * dim[2] + k;
+        for i in 0..shape[0] {
+            for j in 0..shape[1] {
+                for k in 0..shape[2] {
+                    let ravel_index = i * shape[1] * shape[2] + j * shape[2] + k;
                     let multi_index_value = multi_index.unravel(ravel_index);
                     assert_eq!(multi_index_value, vec![i, j, k]);
                 }

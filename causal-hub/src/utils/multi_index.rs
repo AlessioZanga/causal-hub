@@ -80,16 +80,14 @@ impl MI {
     ///
     /// A vector containing the multi-dimensional index.
     ///
-    pub fn unravel(&self, index: usize) -> Vec<usize> {
-        let mut multi_index = Vec::with_capacity(self.cardinality.len());
-        let mut remaining_index = index;
-
-        for &stride in &self.strides {
-            let value = remaining_index / stride;
-            multi_index.push(value);
-            remaining_index -= value * stride;
-        }
-
-        multi_index
+    pub fn unravel(&self, mut index: usize) -> Vec<usize> {
+        self.strides
+            .iter()
+            .map(|stride| {
+                let offset = index / stride;
+                index %= stride;
+                offset
+            })
+            .collect()
     }
 }
