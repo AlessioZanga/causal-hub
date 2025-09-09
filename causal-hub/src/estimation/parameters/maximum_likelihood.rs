@@ -2,7 +2,7 @@ use dry::macro_for;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCPD},
     types::{Labels, Set, States},
@@ -31,7 +31,7 @@ impl<'a, D> MLE<'a, D> {
     }
 }
 
-impl CPDEstimator<CatCPD> for MLE<'_, CatData> {
+impl CPDEstimator<CatCPD> for MLE<'_, CatTable> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()

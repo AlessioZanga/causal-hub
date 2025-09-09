@@ -7,9 +7,9 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatTrj, CatTrjs},
+    datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
-    models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph},
+    models::{CatBN, CatCIM, CatCPD, DiGraph, Graph, BN, CPD, CTBN},
     set,
     types::{Labels, Map, States},
 };
@@ -159,7 +159,7 @@ impl RelativeEq for CatCTBN {
 impl CTBN for CatCTBN {
     type CIM = CatCIM;
     type InitialDistribution = CatBN;
-    type Event = (f64, Array1<u8>);
+    type Event = (f64, CatSample);
     type Trajectory = CatTrj;
     type Trajectories = CatTrjs;
 

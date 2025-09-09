@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::datasets::{CatData, Dataset};
+    use causal_hub::datasets::{CatTable, Dataset};
     use ndarray::prelude::*;
 
     #[test]
@@ -16,7 +16,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatData::new(variables, values.clone());
+        let dataset = CatTable::new(variables, values.clone());
 
         assert!(dataset.labels().iter().eq(["A", "B", "C"]));
         assert!(dataset.labels().iter().is_sorted());
@@ -50,7 +50,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatData::new(variables, values.clone());
+        let dataset = CatTable::new(variables, values.clone());
 
         assert!(dataset.labels().iter().eq(["A", "B", "C"]));
         assert!(dataset.labels().iter().is_sorted());
@@ -79,7 +79,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        CatData::new(variables, values);
+        CatTable::new(variables, values);
     }
 
     #[test]
@@ -97,7 +97,7 @@ mod tests {
             [1, 0, 0, 1], //
             [1, 0, 1, 0]
         ];
-        CatData::new(variables, values);
+        CatTable::new(variables, values);
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        CatData::new(variables, values);
+        CatTable::new(variables, values);
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
             [1, 0], //
             [1, 0]
         ];
-        CatData::new(variables, values);
+        CatTable::new(variables, values);
     }
 
     #[test]
@@ -150,7 +150,7 @@ mod tests {
             [1, 0, 0],
             [1, 0, 1]
         ];
-        CatData::new(variables, values);
+        CatTable::new(variables, values);
     }
 
     #[test]
@@ -166,7 +166,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatData::new(variables, values);
+        let dataset = CatTable::new(variables, values);
 
         assert_eq!(
             dataset.to_string(),

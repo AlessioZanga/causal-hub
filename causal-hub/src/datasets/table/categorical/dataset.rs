@@ -12,16 +12,19 @@ use crate::{
     utils::{collect_states, sort_states},
 };
 
+/// A type alias for a categorical sample.
+pub type CatSample = Array1<u8>;
+
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
-pub struct CatData {
+pub struct CatTable {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
     values: Array2<u8>,
 }
 
-impl CatData {
+impl CatTable {
     /// Creates a new categorical dataset.
     ///
     /// # Arguments
@@ -43,7 +46,7 @@ impl CatData {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalDataset` instance.
+    /// A new categorical dataset instance.
     ///
     pub fn new<I, J, K, V>(states: I, mut values: Array2<u8>) -> Self
     where
@@ -206,7 +209,7 @@ impl CatData {
     }
 }
 
-impl Display for CatData {
+impl Display for CatTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Get the maximum length of the labels and states.
         let n = self
@@ -242,7 +245,7 @@ impl Display for CatData {
     }
 }
 
-impl Dataset for CatData {
+impl Dataset for CatTable {
     type Values = Array2<u8>;
 
     #[inline]
@@ -261,7 +264,7 @@ impl Dataset for CatData {
     }
 }
 
-impl CsvIO for CatData {
+impl CsvIO for CatTable {
     fn from_csv(csv: &str) -> Self {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new()

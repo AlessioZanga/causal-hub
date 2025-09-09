@@ -10,13 +10,13 @@ use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatData, CatTrj},
+    datasets::{CatSample, CatTable, CatTrj},
     estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    models::{CatBN, CatCTBN, BN, CPD, CTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{EPSILON, Set},
+    types::{Set, EPSILON},
 };
 
 /// A forward sampler.
@@ -86,7 +86,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         let states = self.model.states();
 
         // Construct the dataset.
-        CatData::new(states, dataset)
+        CatTable::new(states, dataset)
     }
 }
 
@@ -117,7 +117,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
         let states = self.model.states();
 
         // Construct the dataset.
-        CatData::new(states, samples)
+        CatTable::new(states, samples)
     }
 }
 
@@ -160,7 +160,7 @@ impl<R: Rng> BNApproxInference for ForwardSampler<'_, R, CatBN> {
         // Get the states.
         let states = self.model.states();
         // Construct the dataset.
-        let dataset = CatData::new(states, samples);
+        let dataset = CatTable::new(states, samples);
 
         // Compute the CPD.
         CPDEstimator::fit(&MLE::new(&dataset), x, z)
@@ -214,7 +214,7 @@ impl<R: Rng + SeedableRng> ParBNApproxInference for ForwardSampler<'_, R, CatBN>
         // Get the states.
         let states = self.model.states();
         // Construct the dataset.
-        let dataset = CatData::new(states, samples);
+        let dataset = CatTable::new(states, samples);
 
         // Compute the CPD.
         CPDEstimator::fit(&MLE::new(&dataset), x, z)
@@ -223,7 +223,7 @@ impl<R: Rng + SeedableRng> ParBNApproxInference for ForwardSampler<'_, R, CatBN>
 
 impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&mut self, event: &Array1<u8>, i: usize) -> f64 {
+    fn sample_time(&mut self, event: &CatSample, i: usize) -> f64 {
         // Cast the state to usize.
         let x = event[i] as usize;
         // Get the CIM.

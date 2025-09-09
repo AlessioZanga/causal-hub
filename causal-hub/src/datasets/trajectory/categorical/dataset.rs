@@ -3,14 +3,14 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatData, Dataset},
+    datasets::{CatTable, Dataset},
     types::{Labels, States},
 };
 
 /// A multivariate trajectory.
 #[derive(Clone, Debug)]
 pub struct CatTrj {
-    events: CatData,
+    events: CatTable,
     times: Array1<f64>,
 }
 
@@ -121,7 +121,7 @@ impl CatTrj {
             });
 
         // Create a new categorical dataset instance.
-        let events = CatData::new(states, events);
+        let events = CatTable::new(states, events);
 
         // Return a new trajectory instance.
         Self { events, times }

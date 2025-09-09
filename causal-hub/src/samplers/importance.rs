@@ -8,7 +8,10 @@ use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{
+        CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatWtdSample, CatWtdTable,
+        CatWtdTrj, CatWtdTrjs, Dataset,
+    },
     models::{BN, CPD, CTBN, CatBN, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
@@ -104,8 +107,8 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
 }
 
 impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
-    type Sample = (<CatBN as BN>::Sample, f64); // FIXME: Implement weighted sample.
-    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
+    type Sample = CatWtdSample;
+    type Samples = CatWtdTable;
 
     fn sample(&mut self) -> Self::Sample {
         // Get shortened variable type.
@@ -194,16 +197,68 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         (sample, weight)
     }
 
-    fn sample_n(&mut self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+    fn sample_n(&mut self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples = Array2::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights = Array1::zeros(n);
+
+        // Sample the weighted samples.
+        samples
+            .rows_mut()
+            .into_iter()
+            .zip(weights.iter_mut())
+            .for_each(|(mut s, w)| {
+                // Sample a weighted sample.
+                let (s_i, w_i) = self.sample();
+                // Assign the sample.
+                s.assign(&s_i);
+                // Assign the weight.
+                *w = w_i;
+            });
+
+        // Construct the samples.
+        let samples = CatTable::new(self.model.states().clone(), samples);
+
+        // Return the weighted samples.
+        CatWtdTable::new(samples, weights)
     }
 }
 
 impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
-    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
+    type Samples = CatWtdTable;
 
-    fn par_sample_n(&mut self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+    fn par_sample_n(&mut self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples: Array2<u8> = Array::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights: Array1<f64> = Array::zeros(n);
+
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .zip(samples.axis_iter_mut(Axis(0)))
+            .zip(weights.axis_iter_mut(Axis(0)))
+            .for_each(|((seed, mut s), mut w)| {
+                // Create a new RNG with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the RNG.
+                let mut sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                // Sample a weighted sample.
+                let (s_i, w_i) = sampler.sample();
+                // Assign the sample.
+                s.assign(&s_i);
+                // Assign the weight.
+                w.fill(w_i);
+            });
+
+        // Construct the samples.
+        let samples = CatTable::new(self.model.states().clone(), samples);
+
+        // Return the weighted samples.
+        CatWtdTable::new(samples, weights)
     }
 }
 
@@ -274,7 +329,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
     }
 
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&mut self, evidence: &CatTrjEv, event: &Array1<u8>, i: usize, t: f64) -> f64 {
+    fn sample_time(&mut self, evidence: &CatTrjEv, event: &CatSample, i: usize, t: f64) -> f64 {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -354,7 +409,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
     fn update_weight(
         &self,
         evidence: &CatTrjEv,
-        event: &Array1<u8>,
+        event: &CatSample,
         i: usize,
         t_a: f64,
         t_b: f64,

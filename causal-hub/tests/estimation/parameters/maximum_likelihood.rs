@@ -4,7 +4,7 @@ mod tests {
         mod conditional_probability_distribution {
             use approx::*;
             use causal_hub::{
-                datasets::CatData,
+                datasets::CatTable,
                 estimation::{CPDEstimator, MLE},
                 models::CPD,
                 set,
@@ -26,7 +26,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(variables, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -140,7 +140,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(variables, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -163,7 +163,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(variables, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -175,7 +175,7 @@ mod tests {
         mod bayesian_network {
             use approx::*;
             use causal_hub::{
-                datasets::CatData,
+                datasets::CatTable,
                 estimation::{BNEstimator, MLE},
                 io::CsvIO,
                 models::{BN, CPD, CatBN, DiGraph, Graph},
@@ -195,7 +195,7 @@ mod tests {
                     "yes,yes,no\n",
                     "yes,yes,yes"
                 );
-                let dataset = CatData::from_csv(csv);
+                let dataset = CatTable::from_csv(csv);
 
                 let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
                 graph.add_edge(0, 1);

@@ -4,7 +4,7 @@ mod tests {
         mod conditional_probability_distribution {
             use approx::*;
             use causal_hub::{
-                datasets::CatData,
+                datasets::CatTable,
                 estimation::{BE, CPDEstimator},
                 models::CPD,
                 set,
@@ -26,7 +26,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(variables, values);
 
                 let estimator = BE::new(&dataset, 1);
 
@@ -140,7 +140,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(variables, values);
 
                 let estimator = BE::new(&dataset, 1);
 

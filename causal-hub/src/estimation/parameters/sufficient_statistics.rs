@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CSSEstimator, ParCSSEstimator},
     models::{CPD, CatCIM, CatCPD},
     types::{Labels, Set},
@@ -30,7 +30,7 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl CSSEstimator for SSE<'_, CatData> {
+impl CSSEstimator for SSE<'_, CatTable> {
     type Output = <CatCPD as CPD>::SS;
 
     #[inline]

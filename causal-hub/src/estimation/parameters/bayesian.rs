@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use statrs::function::gamma::ln_gamma;
 
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCPD},
     types::{Labels, Set, States},
@@ -46,7 +46,7 @@ impl<'a, D, Pi> BE<'a, D, Pi> {
 }
 
 // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
+impl CPDEstimator<CatCPD> for BE<'_, CatTable, usize> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()

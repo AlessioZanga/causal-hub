@@ -122,6 +122,7 @@ impl Dataset for CatWtdTrj {
 
     #[inline]
     fn sample_size(&self) -> usize {
+        // TODO: Should this return the weight instead?
         self.trajectory.values().nrows()
     }
 }
@@ -270,6 +271,7 @@ impl Dataset for CatWtdTrjs {
 
     #[inline]
     fn sample_size(&self) -> usize {
+        // TODO: Should this return the sum of weights instead?
         self.values.iter().map(|x| x.sample_size()).sum()
     }
 }
