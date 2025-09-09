@@ -9,7 +9,7 @@ use crate::{
     datasets::{CatSample, CatTable},
     impl_json_io,
     io::{BifIO, BifParser},
-    models::{CatCPD, DiGraph, Graph, TopologicalOrder, BN, CPD},
+    models::{BN, CPD, CatCPD, DiGraph, Graph, TopologicalOrder},
     set,
     types::{Labels, Map, States},
 };

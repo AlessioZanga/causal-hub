@@ -13,10 +13,10 @@ use crate::{
     datasets::{CatSample, CatTable, CatTrj},
     estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
-    models::{CatBN, CatCTBN, BN, CPD, CTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{Set, EPSILON},
+    types::{EPSILON, Set},
 };
 
 /// A forward sampler.
