@@ -4,38 +4,35 @@ use serde::{Deserialize, Serialize};
 /// A structure to compute the ravel index of a multi-dimensional array.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MI {
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     strides: Array1<usize>,
 }
 
 impl MI {
-    /// Construct a new `MI` from the cardinality of each dimension.
+    /// Construct a new `MI` from the shape of each dimension.
     ///
     /// # Arguments
     ///
-    /// * `cardinality` - An iterator over the cardinality of each dimension.
+    /// * `shape` - An iterator over the shape of each dimension.
     ///
     /// # Returns
     ///
     /// A new `MI` instance.
     ///
-    pub fn new<I>(cardinality: I) -> Self
+    pub fn new<I>(shape: I) -> Self
     where
         I: IntoIterator<Item = usize>,
     {
         // Collect the multi index.
-        let cardinality: Array1<_> = cardinality.into_iter().collect();
+        let shape: Array1<_> = shape.into_iter().collect();
         // Allocate the strides of the parameters.
-        let mut strides = Array1::from_elem(cardinality.len(), 1);
+        let mut strides = Array1::from_elem(shape.len(), 1);
         // Compute cumulative product in reverse order (row-major strides).
-        for i in (0..cardinality.len().saturating_sub(1)).rev() {
-            strides[i] = strides[i + 1] * cardinality[i + 1];
+        for i in (0..shape.len().saturating_sub(1)).rev() {
+            strides[i] = strides[i + 1] * shape[i + 1];
         }
 
-        Self {
-            cardinality,
-            strides,
-        }
+        Self { shape, strides }
     }
 
     /// Return the number of dimensions.
@@ -45,8 +42,8 @@ impl MI {
     /// The number of dimensions.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// Compute the ravel index from a multi-dimensional index.
@@ -81,7 +78,7 @@ impl MI {
     /// A vector containing the multi-dimensional index.
     ///
     pub fn unravel(&self, index: usize) -> Vec<usize> {
-        let mut multi_index = Vec::with_capacity(self.cardinality.len());
+        let mut multi_index = Vec::with_capacity(self.shape.len());
         let mut remaining_index = index;
 
         for &stride in &self.strides {

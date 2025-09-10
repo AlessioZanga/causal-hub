@@ -147,7 +147,8 @@ impl PyCatBN {
 
     /// Write class to a BIF file.
     pub fn write_bif(&self, path: &str) -> PyResult<()> {
-        Ok(self.inner.write_bif(path))
+        self.inner.write_bif(path);
+        Ok(())
     }
 
     /// Read class from a JSON string.
@@ -173,6 +174,7 @@ impl PyCatBN {
 
     /// Write class to a JSON file.
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        Ok(self.inner.write_json(path))
+        self.inner.write_json(path);
+        Ok(())
     }
 }

@@ -10,10 +10,10 @@ use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatData, CatTrj},
+    datasets::{CatSample, CatTable, CatTrj},
     estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCPD, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
@@ -82,11 +82,8 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             row.assign(&self.sample());
         });
 
-        // Get the states.
-        let states = self.model.states();
-
         // Construct the dataset.
-        CatData::new(states, dataset)
+        CatTable::new(self.model.states().clone(), dataset)
     }
 }
 
@@ -113,117 +110,42 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
                 row.assign(&sampler.sample());
             });
 
-        // Get the states.
-        let states = self.model.states();
-
         // Construct the dataset.
-        CatData::new(states, samples)
+        CatTable::new(self.model.states().clone(), samples)
     }
 }
 
-impl<R: Rng> BNApproxInference for ForwardSampler<'_, R, CatBN> {
-    type Output = <CatBN as BN>::CPD;
-
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
-        // Get the upward closure of X_Z := X \cup Z, i.e. the An(X_Z) \cup X_Z.
-        let x_z = x | z;
-        let an_x_z = &self.model.graph().ancestors(&x_z) | &x_z;
-        // Get the topological order.
-        let mut restricted_order = self.model.topological_order().to_vec();
-        // Filter the order to keep only the ancestors of X_Z.
-        restricted_order.retain(|i| an_x_z.contains(i));
-
-        // Allocate the samples.
-        // TODO: Refactor to allocate only the variables in An(X_Z).
-        let mut samples = Array::zeros((n, self.model.labels().len()));
-
-        // For each sample ...
-        samples.rows_mut().into_iter().for_each(|mut row| {
-            // For each vertex in the restricted topological order ...
-            restricted_order.iter().for_each(|&i| {
-                // Get the CPD.
-                let cpd_i = &self.model.cpds()[i];
-                // Compute the index on the parents to condition on.
-                // NOTE: Labels and states are sorted (i.e. aligned).
-                let pa_i = self.model.graph().parents(&set![i]);
-                let pa_i = pa_i.iter().map(|&z| row[z] as usize);
-                let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
-                // Get the distribution of the vertex.
-                let p_i = cpd_i.parameters().row(pa_i);
-                // Construct the sampler.
-                let s_i = WeightedIndex::new(&p_i).unwrap();
-                // Sample from the distribution.
-                row[i] = s_i.sample(self.rng) as u8;
-            });
-        });
-
-        // Get the states.
-        let states = self.model.states();
-        // Construct the dataset.
-        let dataset = CatData::new(states, samples);
-
-        // Compute the CPD.
-        CPDEstimator::fit(&MLE::new(&dataset), x, z)
+impl<R: Rng> BNApproxInference<CatCPD> for ForwardSampler<'_, R, CatBN> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNApproxInference for ForwardSampler<'_, R, CatBN> {
-    type Output = <CatBN as BN>::CPD;
-
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
-        // Generate a random seed for each sample.
-        let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
-
-        // Get the upward closure of X_Z := X \cup Z, i.e. the An(X_Z) \cup X_Z.
-        let x_z = x | z;
-        let an_x_z = &self.model.graph().ancestors(&x_z) | &x_z;
-        // Get the topological order.
-        let mut restricted_order = self.model.topological_order().to_vec();
-        // Filter the order to keep only the ancestors of X_Z.
-        restricted_order.retain(|i| an_x_z.contains(i));
-
-        // Allocate the samples.
-        // TODO: Refactor to allocate only the variables in An(X_Z).
-        let mut samples = Array::zeros((n, self.model.labels().len()));
-
-        // For each sample ...
-        seeds
-            .into_par_iter()
-            .zip(samples.axis_iter_mut(Axis(0)))
-            .for_each(|(seed, mut row)| {
-                // Create a new random number generator with the seed.
-                let mut rng = R::seed_from_u64(seed);
-                // For each vertex in the restricted topological order ...
-                restricted_order.iter().for_each(|&i| {
-                    // Get the CPD.
-                    let cpd_i = &self.model.cpds()[i];
-                    // Compute the index on the parents to condition on.
-                    // NOTE: Labels and states are sorted (i.e. aligned).
-                    let pa_i = self.model.graph().parents(&set![i]);
-                    let pa_i = pa_i.iter().map(|&z| row[z] as usize);
-                    let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
-                    // Get the distribution of the vertex.
-                    let p_i = cpd_i.parameters().row(pa_i);
-                    // Construct the sampler.
-                    let s_i = WeightedIndex::new(&p_i).unwrap();
-                    // Sample from the distribution.
-                    row[i] = s_i.sample(&mut rng) as u8;
-                });
-            });
-
-        // Get the states.
-        let states = self.model.states();
-        // Construct the dataset.
-        let dataset = CatData::new(states, samples);
-
-        // Compute the CPD.
-        CPDEstimator::fit(&MLE::new(&dataset), x, z)
+impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD> for ForwardSampler<'_, R, CatBN> {
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.par_sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
     }
 }
 
 impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&mut self, event: &Array1<u8>, i: usize) -> f64 {
+    fn sample_time(&mut self, event: &CatSample, i: usize) -> f64 {
         // Cast the state to usize.
         let x = event[i] as usize;
         // Get the CIM.
@@ -328,7 +250,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         }
 
         // Get the states of the CIMs.
-        let states = self.model.states();
+        let states = self.model.states().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());

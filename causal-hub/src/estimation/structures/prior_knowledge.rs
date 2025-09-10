@@ -5,6 +5,7 @@ use ndarray::prelude::*;
 
 use crate::{types::Labels, utils::collect_labels};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 enum PKS {

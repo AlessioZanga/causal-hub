@@ -3,8 +3,8 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
-    types::{Labels, Map, Set, States},
-    utils::{collect_states, sort_states},
+    types::{Labels, Set, States},
+    utils::sort_states,
 };
 
 /// Categorical evidence type.
@@ -88,8 +88,8 @@ impl CatEvT {
 pub struct CatEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
-    evidences: Map<String, Option<CatEvT>>,
+    shape: Array1<usize>,
+    evidences: Vec<Option<CatEvT>>,
 }
 
 impl CatEv {
@@ -104,29 +104,22 @@ impl CatEv {
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
+    pub fn new<I>(states: States, values: I) -> Self
     where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = L>,
-        K: AsRef<str>,
-        L: AsRef<str>,
-        M: IntoIterator<Item = CatEvT>,
+        I: IntoIterator<Item = CatEvT>,
     {
-        // Collect the states into a map.
-        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
         let (states, sorted_idx) = sort_states(states);
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
         use CatEvT as E;
 
         // Allocate evidences.
-        let mut evidences: Map<_, Option<_>> =
-            states.keys().map(|label| (label.clone(), None)).collect();
+        let mut evidences: Vec<Option<_>> = vec![None; states.len()];
 
         // Reverse the indices to get the argsort.
         let mut argsorted_idx = sorted_idx.clone();
@@ -194,20 +187,20 @@ impl CatEv {
         });
 
         // For each variable ...
-        for (i, evidence) in evidences.values_mut().enumerate() {
+        for (i, evidence) in evidences.iter_mut().enumerate() {
             // Assert states distributions have the correct size.
             assert!(
                 evidence.as_ref().is_none_or(|e| match e {
                     E::CertainPositive { .. } => true,
                     E::CertainNegative { .. } => true,
                     E::UncertainPositive { p_states, .. } => {
-                        p_states.len() == cardinality[i]
+                        p_states.len() == shape[i]
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        p_not_states.len() == cardinality[i]
+                        p_not_states.len() == shape[i]
                     }
                 }),
-                "States distributions must have the correct size."
+                "Evidence states distributions must have the correct size."
             );
             // Assert states distributions are not negative.
             assert!(
@@ -221,7 +214,7 @@ impl CatEv {
                         p_not_states.iter().all(|&x| x >= 0.0)
                     }
                 }),
-                "States distributions must be non-negative."
+                "Evidence states distributions must be non-negative."
             );
             // Assert states distributions sum to 1.
             assert!(
@@ -235,14 +228,14 @@ impl CatEv {
                         relative_eq!(p_not_states.sum(), 1.)
                     }
                 }),
-                "States distributions must sum to 1."
+                "Evidence states distributions must sum to 1."
             );
         }
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             evidences,
         }
     }
@@ -269,15 +262,15 @@ impl CatEv {
         &self.states
     }
 
-    /// The cardinality of the evidence.
+    /// The shape of the evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the evidence.
+    /// A reference to the shape of the evidence.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// The evidences of the evidence.
@@ -287,7 +280,7 @@ impl CatEv {
     /// A reference to the evidences of the evidence.
     ///
     #[inline]
-    pub const fn evidences(&self) -> &Map<String, Option<CatEvT>> {
+    pub const fn evidences(&self) -> &Vec<Option<CatEvT>> {
         &self.evidences
     }
 }

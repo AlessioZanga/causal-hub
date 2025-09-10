@@ -2,7 +2,7 @@ use core::panic;
 use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv, Dataset},
+    datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
     types::{Set, States},
 };
 use numpy::{PyArray1, prelude::*};

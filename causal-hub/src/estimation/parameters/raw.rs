@@ -7,7 +7,7 @@ use rand_distr::{Distribution, weighted::WeightedIndex};
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
+    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
     estimation::{BE, CPDEstimator, ParCPDEstimator},
     models::CatCIM,
     types::{Labels, Set},
@@ -70,10 +70,10 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         let certain_evidence = self
             .evidence
             // Flatten the evidence.
-            .values()
+            .evidences()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .flat_map(|(_, e)| e)
+            .flatten()
             .flat_map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
@@ -123,7 +123,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             });
 
         // Collect the certain evidence.
-        CatTrjEv::new(self.evidence.states(), certain_evidence)
+        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
     }
 
     /// Fills the evidence with the raw estimator.
@@ -143,15 +143,15 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         const M: u8 = u8::MAX;
 
         // Get labels and states.
-        let states = self.evidence.states();
+        let states = self.evidence.states().clone();
 
         // Get the ending time of the last event.
         let end_time = self
             .evidence
-            .values()
+            .evidences()
             .iter()
             // Get the ending time of each event.
-            .flat_map(|(_, e)| e.iter())
+            .flatten()
             .map(|e| e.end_time())
             // Get the maximum time.
             .max_by(|a, b| a.partial_cmp(b).unwrap())
@@ -161,10 +161,10 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Sort the evidence by starting time, adding initial and ending time.
         let times: Array1<_> = self
             .evidence
-            .values()
+            .evidences()
             .iter()
             // Get the starting time of each event.
-            .flat_map(|(_, e)| e.iter())
+            .flatten()
             .map(|e| e.start_time())
             // Add initial and ending time.
             .chain([0., end_time])
@@ -187,7 +187,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                 // For each event, set the state of the variable at that time, if any.
                 event.iter_mut().enumerate().for_each(|(i, e)| {
                     // Get the evidence vector for that variable.
-                    let e_i = &evidence.values()[i];
+                    let e_i = &evidence.evidences()[i];
                     // Get the evidence for that time.
                     let e_i_t = e_i.iter().find(|e| e.contains(time));
                     // If the evidence is present, set the state.
@@ -346,15 +346,15 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     /// A new `RAWE` instance.
     ///
     pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Self {
+        // Get evidence.
+        let _evidence = evidence.evidences();
         // Sample seed for parallel sampling.
-        let seeds: Vec<_> = (0..evidence.values().len())
-            .map(|_| rng.next_u64())
-            .collect();
+        let seeds: Vec<_> = (0.._evidence.len()).map(|_| rng.next_u64()).collect();
         // Fill the evidence with the raw estimator.
         let dataset: Option<CatTrjs> = Some(
             seeds
                 .into_par_iter()
-                .zip(evidence.values())
+                .zip(_evidence)
                 .map(|(seed, e)| {
                     // Create a new random number generator with the seed.
                     let mut rng = R::seed_from_u64(seed);

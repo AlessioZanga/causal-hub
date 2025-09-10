@@ -104,14 +104,14 @@ mod tests {
                 // Reference the random number generator.
                 let mut rng = rng.borrow_mut();
                 // Sample the seeds to parallelize the sampling.
-                let seeds: Vec<_> = (0..evidence.values().len())
+                let seeds: Vec<_> = (0..evidence.evidences().len())
                     .map(|_| rng.next_u64())
                     .collect();
                 // Get the max length of the evidence.
                 let max_len = evidence
-                    .values()
+                    .evidences()
                     .iter()
-                    .map(|e| e.values().len())
+                    .map(|e| e.evidences().iter().map(|x| x.len()).sum())
                     .max()
                     .unwrap_or(10);
                 // For each (seed, evidence) ...

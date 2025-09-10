@@ -8,8 +8,13 @@ use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatEv, CatEvT, CatTrj, CatTrjEv, CatTrjEvT, CatWtdTrj, CatWtdTrjs, Dataset},
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    datasets::{
+        CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatWtdSample, CatWtdTable,
+        CatWtdTrj, CatWtdTrjs,
+    },
+    estimation::{CPDEstimator, MLE},
+    inference::{BNApproxInference, ParBNApproxInference},
+    models::{BN, CPD, CTBN, CatBN, CatCPD, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
@@ -59,63 +64,69 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .evidences()
             .iter()
             // Filter empty evidences.
-            .filter_map(|(_, e)| e.clone())
-            .flat_map(|e| {
-                // Get the event index.
-                let event = e.event();
-                // Sample the evidence.
-                let e = match e {
-                    E::UncertainPositive { p_states, .. } => {
-                        // Construct the sampler.
-                        let state = WeightedIndex::new(p_states).unwrap();
-                        // Sample the state.
-                        let state = state.sample(self.rng);
-                        // Return the sample.
-                        E::CertainPositive { event, state }
-                    }
-                    E::UncertainNegative { p_not_states, .. } => {
-                        // Allocate the not states.
-                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                        // Repeat until only a subset of the not states are sampled.
-                        while not_states.len() == p_not_states.len() {
-                            // Sample the not states.
-                            not_states = p_not_states
-                                .indexed_iter()
-                                // For each (state, p_not_state) pair ...
-                                .filter_map(|(i, &p_i)| {
-                                    // ... with p_i probability, retain the state.
-                                    Some(i).filter(|_| self.rng.random_bool(p_i))
-                                })
-                                .collect();
+            .filter_map(|e| {
+                e.as_ref().map(|e| {
+                    // Get the event index.
+                    let event = e.event();
+                    // Sample the evidence.
+                    match e {
+                        E::UncertainPositive { p_states, .. } => {
+                            // Construct the sampler.
+                            let state = WeightedIndex::new(p_states).unwrap();
+                            // Sample the state.
+                            let state = state.sample(self.rng);
+                            // Return the sample.
+                            E::CertainPositive { event, state }
                         }
-                        // Return the sample and weight.
-                        E::CertainNegative { event, not_states }
+                        E::UncertainNegative { p_not_states, .. } => {
+                            // Allocate the not states.
+                            let mut not_states: Set<_> = (0..p_not_states.len()).collect();
+                            // Repeat until only a subset of the not states are sampled.
+                            while not_states.len() == p_not_states.len() {
+                                // Sample the not states.
+                                not_states = p_not_states
+                                    .indexed_iter()
+                                    // For each (state, p_not_state) pair ...
+                                    .filter_map(|(i, &p_i)| {
+                                        // ... with p_i probability, retain the state.
+                                        Some(i).filter(|_| self.rng.random_bool(p_i))
+                                    })
+                                    .collect();
+                            }
+                            // Return the sample and weight.
+                            E::CertainNegative { event, not_states }
+                        }
+                        _ => e.clone(), // Due to evidence sampling.
                     }
-                    _ => e.clone(), // Due to evidence sampling.
-                };
-
-                // Return the certain evidence.
-                Some(e)
+                })
             });
 
         // Collect the certain evidence.
-        CatEv::new(self.evidence.states(), certain_evidence)
+        CatEv::new(self.evidence.states().clone(), certain_evidence)
     }
 }
 
 impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
-    type Sample = (<CatBN as BN>::Sample, f64); // FIXME: Implement weighted sample.
-    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
+    type Sample = CatWtdSample;
+    type Samples = CatWtdTable;
 
     fn sample(&mut self) -> Self::Sample {
         // Get shortened variable type.
         use CatEvT as E;
 
         // Assert the model and the evidences have the same labels.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.labels(),
             self.evidence.labels(),
             "The model and the evidences must have the same variables."
+        );
+        // Assert the model and the evidences have the same states.
+        // TODO: Move this assertion to the constructor.
+        assert_eq!(
+            self.model.states(),
+            self.evidence.states(),
+            "The model and the evidences must have the same states."
         );
 
         // Allocate the sample.
@@ -194,16 +205,96 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         (sample, weight)
     }
 
-    fn sample_n(&mut self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+    fn sample_n(&mut self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples = Array2::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights = Array1::zeros(n);
+
+        // Sample the weighted samples.
+        samples
+            .rows_mut()
+            .into_iter()
+            .zip(weights.iter_mut())
+            .for_each(|(mut sample, weight)| {
+                // Sample a weighted sample.
+                let (s_i, w_i) = self.sample();
+                // Assign the sample.
+                sample.assign(&s_i);
+                // Assign the weight.
+                *weight = w_i;
+            });
+
+        // Construct the samples.
+        let samples = CatTable::new(self.model.states().clone(), samples);
+
+        // Return the weighted samples.
+        CatWtdTable::new(samples, weights)
     }
 }
 
 impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
-    type Samples = (<CatBN as BN>::Samples, f64); // FIXME: Implement weighted samples.
+    type Samples = CatWtdTable;
 
-    fn par_sample_n(&mut self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+    fn par_sample_n(&mut self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples: Array2<u8> = Array::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights: Array1<f64> = Array::zeros(n);
+
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .zip(samples.axis_iter_mut(Axis(0)))
+            .zip(weights.axis_iter_mut(Axis(0)))
+            .for_each(|((seed, mut sample), mut weight)| {
+                // Create a new RNG with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the RNG.
+                let mut sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                // Sample a weighted sample.
+                let (s_i, w_i) = sampler.sample();
+                // Assign the sample.
+                sample.assign(&s_i);
+                // Assign the weight.
+                weight.fill(w_i);
+            });
+
+        // Construct the samples.
+        let samples = CatTable::new(self.model.states().clone(), samples);
+
+        // Return the weighted samples.
+        CatWtdTable::new(samples, weights)
+    }
+}
+
+impl<R: Rng> BNApproxInference<CatCPD> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
+    }
+}
+
+impl<R: Rng> ParBNApproxInference<CatCPD> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
     }
 }
 
@@ -217,10 +308,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         let certain_evidence = self
             .evidence
             // Flatten the evidence.
-            .values()
+            .evidences()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .flat_map(|(_, e)| e)
+            .flatten()
             .flat_map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
@@ -270,16 +361,16 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             });
 
         // Collect the certain evidence.
-        CatTrjEv::new(self.evidence.states(), certain_evidence)
+        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
     }
 
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&mut self, evidence: &CatTrjEv, event: &Array1<u8>, i: usize, t: f64) -> f64 {
+    fn sample_time(&mut self, evidence: &CatTrjEv, event: &CatSample, i: usize, t: f64) -> f64 {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
         // Get the evidence of the vertex.
-        let e_i = &evidence.values()[i];
+        let e_i = &evidence.evidences()[i];
 
         // Check if there is certain positive evidence at this point in time.
         let e = e_i.iter().find(|e| match e {
@@ -354,7 +445,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
     fn update_weight(
         &self,
         evidence: &CatTrjEv,
-        event: &Array1<u8>,
+        event: &CatSample,
         i: usize,
         t_a: f64,
         t_b: f64,
@@ -367,7 +458,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .indexed_iter()
             .map(|(j, &y)| {
                 // Get the evidence of the vertex.
-                let e_j = &evidence.values()[j];
+                let e_j = &evidence.evidences()[j];
 
                 // Cast the state to usize.
                 let y = y as usize;
@@ -456,12 +547,14 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         use CatTrjEvT as E;
 
         // Assert the model and the evidences have the same labels.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.labels(),
             self.evidence.labels(),
             "The model and the evidences must have the same variables."
         );
         // Assert the model and the evidences have the same states.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.states(),
             self.evidence.states(),
@@ -513,7 +606,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         //  2. the time is less than max_time ...
         while sample_events.len() < max_length && time < max_time {
             // Get evidence of the vertex.
-            let e_i = &evidence.values()[i];
+            let e_i = &evidence.evidences()[i];
 
             // Cast the state to usize.
             let x = event[i] as usize;
@@ -618,7 +711,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         }
 
         // Get the states of the CIMs.
-        let states = self.model.states();
+        let states = self.model.states().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());

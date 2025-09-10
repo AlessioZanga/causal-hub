@@ -9,19 +9,22 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     types::{Labels, States},
-    utils::{collect_states, sort_states},
+    utils::sort_states,
 };
+
+/// A type alias for a categorical sample.
+pub type CatSample = Array1<u8>;
 
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
-pub struct CatData {
+pub struct CatTable {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     values: Array2<u8>,
 }
 
-impl CatData {
+impl CatTable {
     /// Creates a new categorical dataset.
     ///
     /// # Arguments
@@ -43,21 +46,13 @@ impl CatData {
     ///
     /// # Returns
     ///
-    /// A new `CategoricalDataset` instance.
+    /// A new categorical dataset instance.
     ///
-    pub fn new<I, J, K, V>(states: I, mut values: Array2<u8>) -> Self
-    where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = V>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
-        // Collect the states into a map.
-        let mut states = collect_states(states);
+    pub fn new(mut states: States, mut values: Array2<u8>) -> Self {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let mut cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let mut shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Log the creation of the categorical dataset.
         debug!(
@@ -109,7 +104,7 @@ impl CatData {
             // Update the states with the sorted states.
             states = new_states;
             labels = states.keys().cloned().collect();
-            cardinality = Array::from_iter(states.values().map(|x| x.len()));
+            shape = Array::from_iter(states.values().map(|x| x.len()));
             // Allocate the new values array.
             let mut new_values = values.clone();
             // Sort the values by the indices of the states labels.
@@ -166,19 +161,19 @@ impl CatData {
             labels.iter().eq(states.keys()),
             "Labels and states keys must be the same."
         );
-        // Debug assert cardinality must match the number of states.
+        // Debug assert shape must match the number of states.
         debug_assert!(
-            cardinality
+            shape
                 .iter()
                 .zip(states.values())
                 .all(|(&a, b)| a == b.len()),
-            "Cardinality must match the number of states values."
+            "Shape must match the number of states values."
         );
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             values,
         }
     }
@@ -194,19 +189,19 @@ impl CatData {
         &self.states
     }
 
-    /// Returns the cardinality of the set of states in the categorical distribution.
+    /// Returns the shape of the set of states in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the array of cardinality.
+    /// A reference to the array of shape.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 }
 
-impl Display for CatData {
+impl Display for CatTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Get the maximum length of the labels and states.
         let n = self
@@ -242,7 +237,7 @@ impl Display for CatData {
     }
 }
 
-impl Dataset for CatData {
+impl Dataset for CatTable {
     type Values = Array2<u8>;
 
     #[inline]
@@ -256,12 +251,12 @@ impl Dataset for CatData {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.nrows()
+    fn sample_size(&self) -> f64 {
+        self.values.nrows() as f64
     }
 }
 
-impl CsvIO for CatData {
+impl CsvIO for CatTable {
     fn from_csv(csv: &str) -> Self {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new()

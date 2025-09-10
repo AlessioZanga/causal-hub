@@ -16,7 +16,7 @@ fxhash.workspace = true
 log.workspace = true
 numpy = "^0.25"
 paste.workspace = true
-pyo3 = { version = "^0.25" }
+pyo3 = "^0.25"
 pyo3-log = "^0.12"
 pyo3-stub-gen = { version = "^0.13", features = ["numpy"] }
 pyo3-stub-gen-derive = "^0.13"

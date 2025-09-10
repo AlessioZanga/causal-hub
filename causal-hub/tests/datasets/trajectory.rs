@@ -2,19 +2,21 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTrjEv, CatTrjEvT as E},
-        set,
-        types::Map,
+        map, set,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn test_new_evidence() {
         // Initialize the model.
-        let states = Map::from_iter([
-            ("B", set!["0", "1"]),
-            ("A", set!["0", "1", "2"]),
-            ("C", set!["0", "1"]),
-        ]);
+        let states = map![
+            ("B".to_string(), set!["0".to_string(), "1".to_string()]),
+            (
+                "A".to_string(),
+                set!["0".to_string(), "1".to_string(), "2".to_string()]
+            ),
+            ("C".to_string(), set!["0".to_string(), "1".to_string()]),
+        ];
 
         // Initialize evidence.
         let _evidence = CatTrjEv::new(

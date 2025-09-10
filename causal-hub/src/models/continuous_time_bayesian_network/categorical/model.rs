@@ -7,7 +7,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatTrj, CatTrjs},
+    datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
     models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph},
     set,
@@ -159,7 +159,7 @@ impl RelativeEq for CatCTBN {
 impl CTBN for CatCTBN {
     type CIM = CatCIM;
     type InitialDistribution = CatBN;
-    type Event = (f64, Array1<u8>);
+    type Event = (f64, CatSample);
     type Trajectory = CatTrj;
     type Trajectories = CatTrjs;
 
@@ -211,7 +211,7 @@ impl CTBN for CatCTBN {
             // Set empty conditioning states.
             let conditioning_states = States::default();
             // Set uniform parameters.
-            let alpha = cim.cardinality().product();
+            let alpha = cim.shape().product();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.

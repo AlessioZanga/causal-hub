@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use statrs::function::gamma::ln_gamma;
 
 use crate::{
-    datasets::{CatData, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCPD},
     types::{Labels, Set, States},
@@ -45,78 +45,83 @@ impl<'a, D, Pi> BE<'a, D, Pi> {
     }
 }
 
-// NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-impl CPDEstimator<CatCPD> for BE<'_, CatData, usize> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
+// Implement the CPD estimator for the BE struct.
+macro_for!($type in [CatTable, CatWtdTable] {
+
+    // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
+    impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
+
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+            // Get states and shape.
+            let states = self.dataset.states();
+            let shape = self.dataset.shape();
+
+            // Initialize the sufficient statistics estimator.
+            let sse = SSE::new(self.dataset);
+            // Compute sufficient statistics.
+            let n_xz = sse.fit(x, z);
+
+            // Marginalize the counts.
+            let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
+            // Compute the sample size.
+            let n = n_z.sum();
+
+            // Get the prior, as the alpha of the Dirichlet distribution.
+            let alpha = *self.prior();
+            // Assert alpha is positive.
+            assert!(alpha > 0, "Alpha must be positive.");
+
+            // Cast alpha to floating point.
+            let alpha = alpha as f64;
+
+            // Add the prior to the counts.
+            let n_xz = n_xz + alpha;
+            let n_z = n_z + alpha * x.iter().map(|&i| shape[i]).product::<usize>() as f64;
+            // Compute the parameters by normalizing the counts with the prior.
+            let parameters = &n_xz / &n_z;
+
+            // Compute the sample log-likelihood.
+            let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
+
+            // Set the sample conditional counts.
+            let sample_conditional_counts = Some(n_xz);
+            // Set the sample size.
+            let sample_size = Some(n);
+
+            // Subset the conditioning labels, states and shape.
+            let conditioning_states = z
+                .iter()
+                .map(|&i| {
+                    let (k, v) = states.get_index(i).unwrap();
+                    (k.clone(), v.clone())
+                })
+                .collect();
+            // Get the labels of the conditioned variables.
+            let states = x
+                .iter()
+                .map(|&i| {
+                    let (k, v) = states.get_index(i).unwrap();
+                    (k.clone(), v.clone())
+                })
+                .collect();
+
+            // Construct the CPD.
+            CatCPD::with_optionals(
+                states,
+                conditioning_states,
+                parameters,
+                sample_conditional_counts,
+                sample_size,
+                sample_log_likelihood,
+            )
+        }
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-        // Get states and cardinality.
-        let states = self.dataset.states();
-        let cardinality = self.dataset.cardinality();
-
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let n_xz = sse.fit(x, z);
-
-        // Marginalize the counts.
-        let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
-        // Compute the sample size.
-        let n = n_z.sum();
-
-        // Get the prior, as the alpha of the Dirichlet distribution.
-        let alpha = *self.prior();
-        // Assert alpha is positive.
-        assert!(alpha > 0, "Alpha must be positive.");
-
-        // Cast alpha to floating point.
-        let alpha = alpha as f64;
-
-        // Add the prior to the counts.
-        let n_xz = n_xz + alpha;
-        let n_z = n_z + alpha * x.iter().map(|&i| cardinality[i]).product::<usize>() as f64;
-        // Compute the parameters by normalizing the counts with the prior.
-        let parameters = &n_xz / &n_z;
-
-        // Compute the sample log-likelihood.
-        let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
-
-        // Set the sample conditional counts.
-        let sample_conditional_counts = Some(n_xz);
-        // Set the sample size.
-        let sample_size = Some(n);
-
-        // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z
-            .iter()
-            .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
-            })
-            .collect();
-        // Get the labels of the conditioned variables.
-        let states = x
-            .iter()
-            .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
-            })
-            .collect();
-
-        // Construct the CPD.
-        CatCPD::with_optionals(
-            states,
-            conditioning_states,
-            parameters,
-            sample_conditional_counts,
-            sample_size,
-            sample_log_likelihood,
-        )
-    }
-}
+});
 
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
@@ -138,11 +143,11 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Compute the sample size.
         let n = n_xz.sum();
 
-        // Get the cardinality of the conditioning variables.
-        let c_z = n_xz.shape()[0] as f64;
-        // Scale the prior by the cardinality.
-        let alpha = alpha as f64 / c_z;
-        let tau = tau / c_z;
+        // Get the shape of the conditioning variables.
+        let s_z = n_xz.shape()[0] as f64;
+        // Scale the prior by the shape.
+        let alpha = alpha as f64 / s_z;
+        let tau = tau / s_z;
 
         // Add the prior to the counts and times.
         let n_xz = n_xz + alpha;
@@ -187,7 +192,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Set the sample size.
         let sample_size = Some(n);
 
-        // Subset the conditioning labels, states and cardinality.
+        // Subset the conditioning labels, states and shape.
         let conditioning_states = z
             .iter()
             .map(|&i| {

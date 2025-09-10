@@ -3,9 +3,9 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatEv, Dataset},
-    types::{EPSILON, Labels, Map, Set, States},
-    utils::{collect_states, sort_states},
+    datasets::CatEv,
+    types::{EPSILON, Labels, Set, States},
+    utils::sort_states,
 };
 
 /// A type representing the evidence type for categorical trajectories.
@@ -123,8 +123,8 @@ impl CatTrjEvT {
 pub struct CatTrjEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
-    evidences: Map<String, Vec<CatTrjEvT>>,
+    shape: Array1<usize>,
+    evidences: Vec<Vec<CatTrjEvT>>,
 }
 
 impl CatTrjEv {
@@ -140,32 +140,23 @@ impl CatTrjEv {
     ///
     /// A new `CategoricalTrajectoryEvidence` instance.
     ///
-    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
+    pub fn new<I>(states: States, values: I) -> Self
     where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = L>,
-        K: AsRef<str>,
-        L: AsRef<str>,
-        M: IntoIterator<Item = CatTrjEvT>,
+        I: IntoIterator<Item = CatTrjEvT>,
     {
-        // Collect the states into a map.
-        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
         let (states, sorted_idx) = sort_states(states);
 
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
         use CatTrjEvT as E;
 
         // Allocate evidences.
-        let mut evidences: Map<_, Vec<_>> = states
-            .keys()
-            .map(|label| (label.clone(), Vec::new()))
-            .collect();
+        let mut evidences: Vec<Vec<_>> = vec![Vec::new(); states.len()];
 
         // Reverse the indices to get the argsort.
         let mut argsorted_idx = sorted_idx.clone();
@@ -250,8 +241,8 @@ impl CatTrjEv {
         });
 
         // Check and fix incoherent evidences.
-        evidences.values_mut().zip(&cardinality).for_each(
-            |(evidence, cardinality): (&mut Vec<E>, &usize)| {
+        evidences.iter_mut().zip(&shape).for_each(
+            |(evidence, shape): (&mut Vec<E>, &usize)| {
                 // Assert state, starting and ending times are coherent.
                 evidence.iter().for_each(|e| {
                     // Assert starting time must be positive and finite.
@@ -275,10 +266,10 @@ impl CatTrjEv {
                             E::CertainPositiveInterval { .. } => true,
                             E::CertainNegativeInterval { .. } => true,
                             E::UncertainPositiveInterval { p_states, .. } => {
-                                p_states.len() == *cardinality
+                                p_states.len() == *shape
                             }
                             E::UncertainNegativeInterval { p_not_states, .. } => {
-                                p_not_states.len() == *cardinality
+                                p_not_states.len() == *shape
                             }
                         },
                         "States distributions must have the correct size."
@@ -373,7 +364,7 @@ impl CatTrjEv {
                             // Otherwise, merge the two certain evidences into an uncertain one.
                             } else {
                                 // Construct uncertain positive evidence.
-                                let mut p_states = Array::zeros(*cardinality);
+                                let mut p_states = Array::zeros(*shape);
                                 // Set the state of the evidence with a weight proportion to the time.
                                 p_states[*s_i] = e_i.end_time() - e_i.start_time();
                                 p_states[*s_j] = e_j.end_time() - e_j.start_time();
@@ -487,9 +478,20 @@ impl CatTrjEv {
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             evidences,
         }
+    }
+
+    /// Returns the labels of the trajectory evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels of the trajectory evidence.
+    ///
+    #[inline]
+    pub fn labels(&self) -> &Labels {
+        &self.labels
     }
 
     /// Returns the states of the trajectory evidence.
@@ -503,15 +505,26 @@ impl CatTrjEv {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectory evidence.
+    /// Returns the shape of the trajectory evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectory evidence.
+    /// A reference to the shape of the trajectory evidence.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
+    }
+
+    /// Returns the evidences of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the evidences of the trajectory.
+    ///
+    #[inline]
+    pub fn evidences(&self) -> &Vec<Vec<CatTrjEvT>> {
+        &self.evidences
     }
 
     /// Returns the evidences at time zero.
@@ -522,13 +535,13 @@ impl CatTrjEv {
     ///
     pub fn initial_evidence(&self) -> CatEv {
         // Get the evidences at time zero.
-        let evidences = self.evidences.iter().filter_map(|(_, evidence)| {
+        let evidences = self.evidences.iter().filter_map(|e| {
             // Get the first evidence, if any.
-            let evidence = evidence.iter().next().cloned();
+            let e = e.iter().next().cloned();
             // Check if the evidence is at time zero.
-            let evidence = evidence.filter(|e| relative_eq!(e.start_time(), 0.));
+            let e = e.filter(|e| relative_eq!(e.start_time(), 0.));
             // Map the evidence to its variable.
-            evidence.map(|e| e.into())
+            e.map(|e| e.into())
         });
 
         // Clone the states.
@@ -539,32 +552,13 @@ impl CatTrjEv {
     }
 }
 
-impl Dataset for CatTrjEv {
-    type Values = Map<String, Vec<CatTrjEvT>>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn values(&self) -> &Self::Values {
-        &self.evidences
-    }
-
-    #[inline]
-    fn sample_size(&self) -> usize {
-        self.evidences.values().map(|x| x.len()).sum()
-    }
-}
-
 /// A collection of multivariate trajectories evidence.
 #[derive(Clone, Debug)]
 pub struct CatTrjsEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
-    values: Vec<CatTrjEv>,
+    shape: Array1<usize>,
+    evidences: Vec<CatTrjEv>,
 }
 
 impl CatTrjsEv {
@@ -580,54 +574,65 @@ impl CatTrjsEv {
     ///
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
-    /// * The trajectories have different cardinality.
+    /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
     /// # Returns
     ///
     /// A new instance of `CategoricalTrajectoriesEvidence`.
     ///
-    pub fn new<I>(values: I) -> Self
+    pub fn new<I>(evidences: I) -> Self
     where
         I: IntoIterator<Item = CatTrjEv>,
     {
         // Collect the trajectories into a vector.
-        let values: Vec<_> = values.into_iter().collect();
+        let evidences: Vec<_> = evidences.into_iter().collect();
 
         // Assert every trajectory has the same labels.
         assert!(
-            values
+            evidences
                 .windows(2)
                 .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
             "All trajectories must have the same labels."
         );
         // Assert every trajectory has the same states.
         assert!(
-            values
+            evidences
                 .windows(2)
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
-        // Assert every trajectory has the same cardinality.
+        // Assert every trajectory has the same shape.
         assert!(
-            values
+            evidences
                 .windows(2)
-                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
-            "All trajectories must have the same cardinality."
+                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
+            "All trajectories must have the same shape."
         );
 
-        // Get the labels, states and cardinality from the first trajectory.
-        let trj = values.first().expect("No trajectory in the dataset.");
+        // Get the labels, states and shape from the first trajectory.
+        let trj = evidences.first().expect("No trajectory in the dataset.");
         let labels = trj.labels().clone();
         let states = trj.states().clone();
-        let cardinality = trj.cardinality().clone();
+        let shape = trj.shape().clone();
 
         Self {
             labels,
             states,
-            cardinality,
-            values,
+            shape,
+            evidences,
         }
+    }
+
+    /// Returns the labels of the trajectories evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels of the trajectories evidence.
+    ///
+    #[inline]
+    pub fn labels(&self) -> &Labels {
+        &self.labels
     }
 
     /// Returns the states of the trajectories evidence.
@@ -641,15 +646,26 @@ impl CatTrjsEv {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectories evidence.
+    /// Returns the shape of the trajectories evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectories evidence.
+    /// A reference to the shape of the trajectories evidence.
     ///
     #[inline]
-    pub fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub fn shape(&self) -> &Array1<usize> {
+        &self.shape
+    }
+
+    /// Returns the evidences of the trajectories.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the evidences of the trajectories.
+    ///
+    #[inline]
+    pub fn evidences(&self) -> &Vec<CatTrjEv> {
+        &self.evidences
     }
 }
 
@@ -673,7 +689,7 @@ impl<'a> IntoIterator for &'a CatTrjsEv {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.values.iter()
+        self.evidences.iter()
     }
 }
 
@@ -683,25 +699,6 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjsEv {
 
     #[inline]
     fn par_iter(&'a self) -> Self::Iter {
-        self.values.par_iter()
-    }
-}
-
-impl Dataset for CatTrjsEv {
-    type Values = Vec<CatTrjEv>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn values(&self) -> &Self::Values {
-        &self.values
-    }
-
-    #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.iter().map(|x| x.sample_size()).sum()
+        self.evidences.par_iter()
     }
 }

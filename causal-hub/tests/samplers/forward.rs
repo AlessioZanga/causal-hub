@@ -26,7 +26,7 @@ mod tests {
             // Check labels.
             assert!(dataset.labels().eq(bn.labels()));
             // Check sample size.
-            assert_eq!(dataset.sample_size(), 10);
+            assert_eq!(dataset.sample_size(), 10.);
 
             // Check dataset layout.
             assert_eq!(
@@ -97,7 +97,7 @@ mod tests {
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
             // Check sample size.
-            assert_eq!(trajectory.sample_size(), 10);
+            assert_eq!(trajectory.sample_size(), 10.);
         }
 
         #[test]

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        datasets::{CatData, Dataset},
+        datasets::{CatTable, Dataset},
         io::CsvIO,
     };
     use ndarray::prelude::*;
@@ -15,7 +15,7 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let dataset = CatData::from_csv(csv);
+        let dataset = CatTable::from_csv(csv);
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
@@ -53,7 +53,7 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let _ = CatData::from_csv(csv);
+        let _ = CatTable::from_csv(csv);
     }
 
     #[test]
@@ -66,6 +66,6 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let _ = CatData::from_csv(csv);
+        let _ = CatTable::from_csv(csv);
     }
 }

@@ -158,14 +158,14 @@ pub fn sem<'a>(
                     let mut rng = rng.borrow_mut();
                     // Get the maximum length of the trajectories.
                     let max_length = evidence
-                        .values()
+                        .evidences()
                         .iter()
-                        .flat_map(|e| e.values())
-                        .map(|(_, e)| e.len())
+                        .flat_map(|e| e.evidences())
+                        .map(|e| e.len())
                         .max()
                         .unwrap_or(0);
                     // Sample the seeds to parallelize the sampling.
-                    let seeds: Vec<_> = (0..evidence.values().len())
+                    let seeds: Vec<_> = (0..evidence.evidences().len())
                         .map(|_| rng.next_u64())
                         .collect();
                     // For each (seed, evidence) ...

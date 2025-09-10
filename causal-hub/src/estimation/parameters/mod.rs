@@ -21,10 +21,7 @@ use crate::{
 };
 
 /// A trait for sufficient statistics estimators.
-pub trait CSSEstimator {
-    /// The type of sufficient statistics.
-    type Output;
-
+pub trait CSSEstimator<T> {
     /// Returns a reference to the labels of the dataset.
     ///
     /// # Returns
@@ -44,14 +41,11 @@ pub trait CSSEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
 
 /// A trait for sufficient statistics estimators in parallel.
-pub trait ParCSSEstimator {
-    /// The type of sufficient statistics.
-    type Output;
-
+pub trait ParCSSEstimator<T> {
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics in parallel.
     ///
     /// # Arguments
@@ -63,13 +57,13 @@ pub trait ParCSSEstimator {
     ///
     /// The sufficient statistics.
     ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
 
 /// A trait for conditional probability distribution estimators.
-pub trait CPDEstimator<P>
+pub trait CPDEstimator<T>
 where
-    P: CPD,
+    T: CPD,
 {
     /// Returns a reference to the labels of the dataset.
     ///
@@ -90,13 +84,13 @@ where
     ///
     /// The estimated CDP.
     ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
 
 /// A trait for conditional probability distribution estimators in parallel.
-pub trait ParCPDEstimator<P>
+pub trait ParCPDEstimator<T>
 where
-    P: CPD,
+    T: CPD,
 {
     /// Fits the estimator to the dataset and returns a CPD in parallel.
     ///
@@ -109,7 +103,7 @@ where
     ///
     /// The estimated CDP.
     ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> P;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
 
 /// A trait for Bayesian network estimators.

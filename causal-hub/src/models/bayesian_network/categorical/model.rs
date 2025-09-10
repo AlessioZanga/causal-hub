@@ -1,5 +1,4 @@
 use approx::{AbsDiffEq, RelativeEq};
-use ndarray::Array1;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -7,7 +6,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::CatData,
+    datasets::{CatSample, CatTable},
     impl_json_io,
     io::{BifIO, BifParser},
     models::{BN, CPD, CatCPD, DiGraph, Graph, TopologicalOrder},
@@ -146,8 +145,8 @@ impl RelativeEq for CatBN {
 
 impl BN for CatBN {
     type CPD = CatCPD;
-    type Sample = Array1<u8>;
-    type Samples = CatData;
+    type Sample = CatSample;
+    type Samples = CatTable;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where

@@ -130,13 +130,13 @@ class CatCIM:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.list[builtins.int]:
+    def shape(self) -> builtins.list[builtins.int]:
         r"""
-        Returns the cardinality of the conditioned variable.
+        Returns the shape of the conditioned variable.
         
         # Returns
         
-        The cardinality of the conditioned variable.
+        The shape of the conditioned variable.
         """
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
@@ -154,13 +154,13 @@ class CatCIM:
         
         The states of the conditioning variables.
         """
-    def conditioning_cardinality(self) -> builtins.list[builtins.int]:
+    def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
-        Returns the cardinality of the conditioning variables.
+        Returns the shape of the conditioning variables.
         
         # Returns
         
-        The cardinality of the conditioning variables.
+        The shape of the conditioning variables.
         """
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
@@ -250,13 +250,13 @@ class CatCPD:
         
         The states of the conditioned variable.
         """
-    def cardinality(self) -> builtins.list[builtins.int]:
+    def shape(self) -> builtins.list[builtins.int]:
         r"""
-        Returns the cardinality of the conditioned variable.
+        Returns the shape of the conditioned variable.
         
         # Returns
         
-        The cardinality of the conditioned variable.
+        The shape of the conditioned variable.
         """
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
@@ -274,13 +274,13 @@ class CatCPD:
         
         The states of the conditioning variables.
         """
-    def conditioning_cardinality(self) -> builtins.list[builtins.int]:
+    def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
-        Returns the cardinality of the conditioning variables.
+        Returns the shape of the conditioning variables.
         
         # Returns
         
-        The cardinality of the conditioning variables.
+        The shape of the conditioning variables.
         """
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""

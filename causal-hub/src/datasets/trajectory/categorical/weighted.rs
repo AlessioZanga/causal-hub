@@ -84,15 +84,15 @@ impl CatWtdTrj {
         self.trajectory.states()
     }
 
-    /// Returns the cardinality of the trajectory.
+    /// Returns the shape of the trajectory.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectory.
+    /// A reference to the shape of the trajectory.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        self.trajectory.cardinality()
+    pub const fn shape(&self) -> &Array1<usize> {
+        self.trajectory.shape()
     }
 
     /// Returns the times of the trajectory.
@@ -121,8 +121,8 @@ impl Dataset for CatWtdTrj {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.trajectory.values().nrows()
+    fn sample_size(&self) -> f64 {
+        self.weight * (self.trajectory.values().nrows() as f64)
     }
 }
 
@@ -131,7 +131,7 @@ impl Dataset for CatWtdTrj {
 pub struct CatWtdTrjs {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
 
@@ -148,7 +148,7 @@ impl CatWtdTrjs {
     ///
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
-    /// * The trajectories have different cardinality.
+    /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
     /// # Returns
@@ -176,24 +176,24 @@ impl CatWtdTrjs {
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
-        // Assert every trajectory has the same cardinality.
+        // Assert every trajectory has the same shape.
         assert!(
             values
                 .windows(2)
-                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
-            "All trajectories must have the same cardinality."
+                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
+            "All trajectories must have the same shape."
         );
 
-        // Get the labels, states and cardinality from the first trajectory.
+        // Get the labels, states and shape from the first trajectory.
         let trj = values.first().expect("No trajectory in the dataset.");
         let labels = trj.labels().clone();
         let states = trj.states().clone();
-        let cardinality = trj.cardinality().clone();
+        let shape = trj.shape().clone();
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             values,
         }
     }
@@ -209,15 +209,15 @@ impl CatWtdTrjs {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectories.
+    /// Returns the shape of the trajectories.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectories.
+    /// A reference to the shape of the trajectories.
     ///
     #[inline]
-    pub fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 }
 
@@ -269,7 +269,7 @@ impl Dataset for CatWtdTrjs {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.iter().map(|x| x.sample_size()).sum()
+    fn sample_size(&self) -> f64 {
+        self.values.iter().map(Dataset::sample_size).sum()
     }
 }

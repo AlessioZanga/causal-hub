@@ -4,8 +4,9 @@ mod tests {
         mod conditional_probability_distribution {
             use approx::*;
             use causal_hub::{
-                datasets::CatData,
+                datasets::CatTable,
                 estimation::{CPDEstimator, MLE},
+                map,
                 models::CPD,
                 set,
             };
@@ -13,10 +14,10 @@ mod tests {
 
             #[test]
             fn test_fit() {
-                let variables = vec![
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                    ("C", vec!["no", "yes"]),
+                let states = map![
+                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -26,7 +27,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(states, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -127,10 +128,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn test_unique_variables() {
-                let variables = vec![
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                    ("C", vec!["no", "yes"]),
+                let states = map![
+                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -140,7 +141,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(states, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -151,10 +152,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Failed to get non-zero counts.")]
             fn test_non_zero_counts() {
-                let variables = vec![
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                    ("C", vec!["no", "yes"]),
+                let states = map![
+                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -163,7 +164,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatData::new(variables, values);
+                let dataset = CatTable::new(states, values);
 
                 let estimator = MLE::new(&dataset);
 
@@ -175,7 +176,7 @@ mod tests {
         mod bayesian_network {
             use approx::*;
             use causal_hub::{
-                datasets::CatData,
+                datasets::CatTable,
                 estimation::{BNEstimator, MLE},
                 io::CsvIO,
                 models::{BN, CPD, CatBN, DiGraph, Graph},
@@ -195,7 +196,7 @@ mod tests {
                     "yes,yes,no\n",
                     "yes,yes,yes"
                 );
-                let dataset = CatData::from_csv(csv);
+                let dataset = CatTable::from_csv(csv);
 
                 let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
                 graph.add_edge(0, 1);
