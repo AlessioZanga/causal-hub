@@ -9,7 +9,7 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     types::{Labels, States},
-    utils::{collect_states, sort_states},
+    utils::sort_states,
 };
 
 /// A type alias for a categorical sample.
@@ -48,15 +48,7 @@ impl CatTable {
     ///
     /// A new categorical dataset instance.
     ///
-    pub fn new<I, J, K, V>(states: I, mut values: Array2<u8>) -> Self
-    where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = V>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
-        // Collect the states into a map.
-        let mut states = collect_states(states);
+    pub fn new(mut states: States, mut values: Array2<u8>) -> Self {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.

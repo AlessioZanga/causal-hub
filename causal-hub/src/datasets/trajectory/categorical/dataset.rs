@@ -27,13 +27,7 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new<I, J, K, V>(states: I, mut events: Array2<u8>, mut times: Array1<f64>) -> Self
-    where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = V>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
+    pub fn new(states: States, mut events: Array2<u8>, mut times: Array1<f64>) -> Self {
         // Assert the number of rows in values and times are equal.
         assert_eq!(
             events.nrows(),

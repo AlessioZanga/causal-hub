@@ -16,7 +16,7 @@ mod tests {
             use rand_xoshiro::Xoshiro256PlusPlus;
 
             #[test]
-            fn predict() {
+            fn predict_without_evidence() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
@@ -44,7 +44,63 @@ mod tests {
             }
 
             #[test]
-            fn par_predict() {
+            fn par_predict_without_evidence() {
+                // Initialize RNG.
+                let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+                // Initialize the model.
+                let model = load_asia();
+                // Initialize the inference engine.
+                let mut engine = ForwardSampler::new(&mut rng, &model);
+
+                // Predict without evidence.
+                let pred_query = engine.par_predict(&set![0], &set![], 1000);
+                // Set the expected results.
+                let true_query = CatCPD::new(
+                    // X
+                    map![(
+                        "asia".to_string(),
+                        set!["no".to_string(), "yes".to_string()]
+                    )],
+                    // Z
+                    map![],
+                    // Theta
+                    array![[0.99, 0.01]],
+                );
+
+                // Assert that the prediction is correct.
+                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+            }
+
+            #[test]
+            fn predict_with_evidence() {
+                // Initialize RNG.
+                let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+                // Initialize the model.
+                let model = load_asia();
+                // Initialize the inference engine.
+                let mut engine = ForwardSampler::new(&mut rng, &model);
+
+                // Predict P(asia) without evidence.
+                let pred_query = engine.predict(&set![0], &set![], 1000);
+                // Set the expected results.
+                let true_query = CatCPD::new(
+                    // X
+                    map![(
+                        "asia".to_string(),
+                        set!["no".to_string(), "yes".to_string()]
+                    )],
+                    // Z
+                    map![],
+                    // Theta
+                    array![[0.99, 0.01]],
+                );
+
+                // Assert that the prediction is correct.
+                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+            }
+
+            #[test]
+            fn par_predict_with_evidence() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.

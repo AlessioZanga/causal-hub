@@ -269,9 +269,9 @@ impl CatCIM {
         );
 
         // Compute the multi index.
-        let multi_index = MI::new(shape.iter().copied());
+        let multi_index = MI::new(shape.clone());
         // Compute the conditioning multi index.
-        let conditioning_multi_index = MI::new(conditioning_shape.iter().copied());
+        let conditioning_multi_index = MI::new(conditioning_shape.clone());
 
         // Get the shape of the parameters.
         let s = parameters.shape();

@@ -83,7 +83,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         });
 
         // Construct the dataset.
-        CatTable::new(self.model.states(), dataset)
+        CatTable::new(self.model.states().clone(), dataset)
     }
 }
 
@@ -111,7 +111,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
             });
 
         // Construct the dataset.
-        CatTable::new(self.model.states(), samples)
+        CatTable::new(self.model.states().clone(), samples)
     }
 }
 
@@ -250,7 +250,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         }
 
         // Get the states of the CIMs.
-        let states = self.model.states();
+        let states = self.model.states().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());

@@ -207,7 +207,7 @@ impl CatEv {
                         p_not_states.len() == shape[i]
                     }
                 }),
-                "States distributions must have the correct size."
+                "Evidence states distributions must have the correct size."
             );
             // Assert states distributions are not negative.
             assert!(
@@ -221,7 +221,7 @@ impl CatEv {
                         p_not_states.iter().all(|&x| x >= 0.0)
                     }
                 }),
-                "States distributions must be non-negative."
+                "Evidence states distributions must be non-negative."
             );
             // Assert states distributions sum to 1.
             assert!(
@@ -235,7 +235,7 @@ impl CatEv {
                         relative_eq!(p_not_states.sum(), 1.)
                     }
                 }),
-                "States distributions must sum to 1."
+                "Evidence states distributions must sum to 1."
             );
         }
 

@@ -144,10 +144,10 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let n = n_xz.sum();
 
         // Get the shape of the conditioning variables.
-        let c_z = n_xz.shape()[0] as f64;
+        let s_z = n_xz.shape()[0] as f64;
         // Scale the prior by the shape.
-        let alpha = alpha as f64 / c_z;
-        let tau = tau / c_z;
+        let alpha = alpha as f64 / s_z;
+        let tau = tau / s_z;
 
         // Add the prior to the counts and times.
         let n_xz = n_xz + alpha;

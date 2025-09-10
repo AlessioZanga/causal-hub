@@ -6,6 +6,7 @@ mod tests {
             use causal_hub::{
                 datasets::CatTable,
                 estimation::{BE, CPDEstimator},
+                map,
                 models::CPD,
                 set,
             };
@@ -13,10 +14,10 @@ mod tests {
 
             #[test]
             fn test_fit() {
-                let variables = vec![
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                    ("C", vec!["no", "yes"]),
+                let states = map![
+                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -26,7 +27,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(variables, values);
+                let dataset = CatTable::new(states, values);
 
                 let estimator = BE::new(&dataset, 1);
 
@@ -127,10 +128,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn test_unique_variables() {
-                let variables = vec![
-                    ("A", vec!["no", "yes"]),
-                    ("B", vec!["no", "yes"]),
-                    ("C", vec!["no", "yes"]),
+                let states = map![
+                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -140,7 +141,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(variables, values);
+                let dataset = CatTable::new(states, values);
 
                 let estimator = BE::new(&dataset, 1);
 

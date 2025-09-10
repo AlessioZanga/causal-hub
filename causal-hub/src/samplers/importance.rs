@@ -703,7 +703,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         }
 
         // Get the states of the CIMs.
-        let states = self.model.states();
+        let states = self.model.states().clone();
 
         // Convert the events to a 2D array.
         let shape = (sample_events.len(), sample_events[0].len());

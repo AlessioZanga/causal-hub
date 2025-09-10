@@ -143,7 +143,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         const M: u8 = u8::MAX;
 
         // Get labels and states.
-        let states = self.evidence.states();
+        let states = self.evidence.states().clone();
 
         // Get the ending time of the last event.
         let end_time = self
