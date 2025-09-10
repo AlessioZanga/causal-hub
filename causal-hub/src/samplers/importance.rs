@@ -12,7 +12,9 @@ use crate::{
         CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatWtdSample, CatWtdTable,
         CatWtdTrj, CatWtdTrjs,
     },
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    estimation::{CPDEstimator, MLE},
+    inference::{BNApproxInference, ParBNApproxInference},
+    models::{BN, CPD, CTBN, CatBN, CatCPD, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
@@ -259,6 +261,34 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
+    }
+}
+
+impl<R: Rng> BNApproxInference<CatCPD> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
+    }
+}
+
+impl<R: Rng> ParBNApproxInference<CatCPD> for ImportanceSampler<'_, R, CatBN, CatEv> {
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+        // Generate n samples from the model.
+        // TODO: Avoid generating the full dataset,
+        //       e.g., by only sampling the variables in X U Z, and
+        //       by using batching to reduce memory usage.
+        let dataset = self.sample_n(n);
+        // Initialize the estimator.
+        let estimator = MLE::new(&dataset);
+        // Fit the CPD.
+        estimator.fit(x, z)
     }
 }
 
