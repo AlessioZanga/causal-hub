@@ -361,6 +361,124 @@ impl CatCPD {
         self.sample_log_likelihood
     }
 
+    pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+        // TODO: Assert X is a subset of the variables.
+        // TODO: Assert Z is a subset of the conditioning variables.
+
+        // Clone states, conditioning states and parameters.
+        let mut states = self.states.clone();
+        let mut conditioning_states = self.conditioning_states.clone();
+        let mut parameters = self.parameters.clone();
+
+        // Marginalize the parameters over the variables X, i.e. along the columns.
+        if !x.is_empty() {
+            // Set a new shape where the dimensions of X are set to one.
+            let new_shape: Array1<_> = self
+                .shape
+                .iter()
+                .enumerate()
+                .map(|(i, &s)| if x.contains(&i) { 1 } else { s })
+                .collect();
+            // Create a new multi index for the new shape.
+            let new_multi_index = MI::new(new_shape.clone());
+            // Allocate the new parameters.
+            let new_parameters = (parameters.nrows(), new_shape.product());
+            let mut new_parameters: Array2<f64> = Array::zeros(new_parameters);
+            // Generate all the multi indices of the current shape with zeros in the dimensions of X.
+            new_shape
+                .iter()
+                .map(|&i| (0..i))
+                .multi_cartesian_product()
+                .for_each(|mut new_idx| {
+                    // Get the flat index of the current multi index.
+                    let new_flat_idx = new_multi_index.ravel(new_idx.clone());
+                    let mut new_col = new_parameters.column_mut(new_flat_idx);
+                    // Generate all the multi indices of the previous shape that match the current multi index.
+                    self.shape
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, &s)| if x.contains(&i) { Some(0..s) } else { None })
+                        .multi_cartesian_product()
+                        .for_each(|idx| {
+                            // Set the previous dimensions of X to the current multi index.
+                            x.iter().zip(idx).for_each(|(&x, i)| {
+                                new_idx[x] = i;
+                            });
+                            // Get the flat index of the previous multi index.
+                            let flat_idx = self.multi_index.ravel(new_idx.clone());
+                            // Sum the parameters over the matching multi indices.
+                            new_col += &parameters.column(flat_idx);
+                        });
+                });
+            // Filter the states.
+            states = states
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, s)| if !x.contains(&i) { Some(s) } else { None })
+                .collect();
+            // Update the parameters.
+            parameters = new_parameters;
+        }
+
+        // Marginalize the parameters over the conditioning variables Z, i.e. along the rows.
+        if !z.is_empty() {
+            // Set a new shape where the dimensions of Z are set to one.
+            let new_shape: Array1<_> = self
+                .conditioning_shape
+                .iter()
+                .enumerate()
+                .map(|(i, &s)| if z.contains(&i) { 1 } else { s })
+                .collect();
+            // Create a new multi index for the new shape.
+            let new_multi_index = MI::new(new_shape.clone());
+            // Allocate the new parameters.
+            let new_parameters = (new_shape.product(), parameters.ncols());
+            let mut new_parameters: Array2<f64> = Array::zeros(new_parameters);
+            // Generate all the multi indices of the current shape with zeros in the dimensions of X.
+            new_shape
+                .iter()
+                .map(|&i| (0..i))
+                .multi_cartesian_product()
+                .for_each(|mut new_idx| {
+                    // Get the flat index of the current multi index.
+                    let new_flat_idx = new_multi_index.ravel(new_idx.clone());
+                    let mut new_row = new_parameters.row_mut(new_flat_idx);
+                    // Generate all the multi indices of the previous shape that match the current multi index.
+                    self.conditioning_shape
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, &s)| if x.contains(&i) { Some(0..s) } else { None })
+                        .multi_cartesian_product()
+                        .for_each(|idx| {
+                            // Set the previous dimensions of X to the current multi index.
+                            x.iter().zip(idx).for_each(|(&x, i)| {
+                                new_idx[x] = i;
+                            });
+                            // Get the flat index of the previous multi index.
+                            let flat_idx = self.conditioning_multi_index.ravel(new_idx.clone());
+                            // Sum the parameters over the matching multi indices.
+                            new_row += &parameters.row(flat_idx);
+                        });
+                });
+            // Filter the conditioning states.
+            conditioning_states = conditioning_states
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, s)| if !z.contains(&i) { Some(s) } else { None })
+                .collect();
+            // Update the parameters.
+            parameters = new_parameters;
+        }
+
+        // Normalize the parameters.
+        parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
+
+        // TODO: Handle optionals?
+
+        // Construct the new probability distribution from the marginalized parameters.
+        Self::new(states, conditioning_states, parameters)
+    }
+
     /// Creates a new categorical conditional probability distribution with optional fields.
     ///
     /// # Arguments
