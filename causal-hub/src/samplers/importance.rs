@@ -64,47 +64,45 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .evidences()
             .iter()
             // Filter empty evidences.
-            .filter_map(|(_, e)| e.clone())
-            .flat_map(|e| {
-                // Get the event index.
-                let event = e.event();
-                // Sample the evidence.
-                let e = match e {
-                    E::UncertainPositive { p_states, .. } => {
-                        // Construct the sampler.
-                        let state = WeightedIndex::new(p_states).unwrap();
-                        // Sample the state.
-                        let state = state.sample(self.rng);
-                        // Return the sample.
-                        E::CertainPositive { event, state }
-                    }
-                    E::UncertainNegative { p_not_states, .. } => {
-                        // Allocate the not states.
-                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                        // Repeat until only a subset of the not states are sampled.
-                        while not_states.len() == p_not_states.len() {
-                            // Sample the not states.
-                            not_states = p_not_states
-                                .indexed_iter()
-                                // For each (state, p_not_state) pair ...
-                                .filter_map(|(i, &p_i)| {
-                                    // ... with p_i probability, retain the state.
-                                    Some(i).filter(|_| self.rng.random_bool(p_i))
-                                })
-                                .collect();
+            .filter_map(|e| {
+                e.as_ref().map(|e| {
+                    // Get the event index.
+                    let event = e.event();
+                    // Sample the evidence.
+                    match e {
+                        E::UncertainPositive { p_states, .. } => {
+                            // Construct the sampler.
+                            let state = WeightedIndex::new(p_states).unwrap();
+                            // Sample the state.
+                            let state = state.sample(self.rng);
+                            // Return the sample.
+                            E::CertainPositive { event, state }
                         }
-                        // Return the sample and weight.
-                        E::CertainNegative { event, not_states }
+                        E::UncertainNegative { p_not_states, .. } => {
+                            // Allocate the not states.
+                            let mut not_states: Set<_> = (0..p_not_states.len()).collect();
+                            // Repeat until only a subset of the not states are sampled.
+                            while not_states.len() == p_not_states.len() {
+                                // Sample the not states.
+                                not_states = p_not_states
+                                    .indexed_iter()
+                                    // For each (state, p_not_state) pair ...
+                                    .filter_map(|(i, &p_i)| {
+                                        // ... with p_i probability, retain the state.
+                                        Some(i).filter(|_| self.rng.random_bool(p_i))
+                                    })
+                                    .collect();
+                            }
+                            // Return the sample and weight.
+                            E::CertainNegative { event, not_states }
+                        }
+                        _ => e.clone(), // Due to evidence sampling.
                     }
-                    _ => e.clone(), // Due to evidence sampling.
-                };
-
-                // Return the certain evidence.
-                Some(e)
+                })
             });
 
         // Collect the certain evidence.
-        CatEv::new(self.evidence.states(), certain_evidence)
+        CatEv::new(self.evidence.states().clone(), certain_evidence)
     }
 }
 
@@ -117,10 +115,18 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         use CatEvT as E;
 
         // Assert the model and the evidences have the same labels.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.labels(),
             self.evidence.labels(),
             "The model and the evidences must have the same variables."
+        );
+        // Assert the model and the evidences have the same states.
+        // TODO: Move this assertion to the constructor.
+        assert_eq!(
+            self.model.states(),
+            self.evidence.states(),
+            "The model and the evidences must have the same states."
         );
 
         // Allocate the sample.
@@ -305,7 +311,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .evidences()
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
-            .flat_map(|(_, e)| e)
+            .flatten()
             .flat_map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
@@ -355,7 +361,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             });
 
         // Collect the certain evidence.
-        CatTrjEv::new(self.evidence.states(), certain_evidence)
+        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
     }
 
     /// Sample transition time for variable X_i with state x_i.
@@ -541,12 +547,14 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         use CatTrjEvT as E;
 
         // Assert the model and the evidences have the same labels.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.labels(),
             self.evidence.labels(),
             "The model and the evidences must have the same variables."
         );
         // Assert the model and the evidences have the same states.
+        // TODO: Move this assertion to the constructor.
         assert_eq!(
             self.model.states(),
             self.evidence.states(),

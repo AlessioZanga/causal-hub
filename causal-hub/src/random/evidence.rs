@@ -81,7 +81,7 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
             .flatten();
 
         // Collect the evidence.
-        CatTrjEv::new(self.dataset.states(), evidence)
+        CatTrjEv::new(self.dataset.states().clone(), evidence)
     }
 }
 

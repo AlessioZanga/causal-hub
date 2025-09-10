@@ -24,7 +24,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new([
                 // A single empty evidence.
-                CatTrjEv::new(model.states(), []),
+                CatTrjEv::new(model.states().clone(), []),
             ]);
 
             // Define the expectation step.
@@ -55,7 +55,7 @@ mod tests {
             // Set the evidence.
             let evidence = CatTrjsEv::new(vec![
                 // A thousands empty evidence.
-                CatTrjEv::new(model.states(), []); 10_000
+                CatTrjEv::new(model.states().clone(), []); 10_000
             ]);
 
             // Initialize a new random number generator.
@@ -152,7 +152,7 @@ mod tests {
             let max_length = evidence
                 .evidences()
                 .iter()
-                .map(|e| e.evidences().values().map(|x| x.len()).sum())
+                .map(|e| e.evidences().iter().map(|x| x.len()).sum())
                 .max()
                 .unwrap_or(10);
 

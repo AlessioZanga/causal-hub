@@ -111,7 +111,7 @@ mod tests {
                 let max_len = evidence
                     .evidences()
                     .iter()
-                    .map(|e| e.evidences().values().map(|x| x.len()).sum())
+                    .map(|e| e.evidences().iter().map(|x| x.len()).sum())
                     .max()
                     .unwrap_or(10);
                 // For each (seed, evidence) ...

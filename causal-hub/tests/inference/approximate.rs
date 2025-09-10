@@ -5,10 +5,11 @@ mod tests {
             use approx::assert_relative_eq;
             use causal_hub::{
                 assets::load_asia,
+                datasets::{CatEv, CatEvT},
                 inference::{BNApproxInference, ParBNApproxInference},
                 map,
-                models::CatCPD,
-                samplers::ForwardSampler,
+                models::{BN, CatCPD},
+                samplers::{ForwardSampler, ImportanceSampler},
                 set,
             };
             use ndarray::prelude::*;
@@ -77,8 +78,22 @@ mod tests {
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
                 let model = load_asia();
+                // Initialize the evidence.
+                let evidence = CatEv::new(
+                    model.states().clone(),
+                    [
+                        CatEvT::CertainPositive {
+                            event: model.labels().get_index_of("lung").unwrap(), // lung
+                            state: 1,                                            // yes
+                        },
+                        CatEvT::CertainPositive {
+                            event: model.labels().get_index_of("tub").unwrap(), // tub
+                            state: 0,                                           // no
+                        },
+                    ],
+                );
                 // Initialize the inference engine.
-                let mut engine = ForwardSampler::new(&mut rng, &model);
+                let mut engine = ImportanceSampler::new(&mut rng, &model, &evidence);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![], 1000);
@@ -105,8 +120,22 @@ mod tests {
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
                 let model = load_asia();
+                // Initialize the evidence.
+                let evidence = CatEv::new(
+                    model.states().clone(),
+                    [
+                        CatEvT::CertainPositive {
+                            event: model.labels().get_index_of("lung").unwrap(), // lung
+                            state: 1,                                            // yes
+                        },
+                        CatEvT::CertainPositive {
+                            event: model.labels().get_index_of("tub").unwrap(), // tub
+                            state: 0,                                           // no
+                        },
+                    ],
+                );
                 // Initialize the inference engine.
-                let mut engine = ForwardSampler::new(&mut rng, &model);
+                let mut engine = ImportanceSampler::new(&mut rng, &model, &evidence);
 
                 // Predict without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![], 1000);

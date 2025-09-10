@@ -161,7 +161,7 @@ pub fn sem<'a>(
                         .evidences()
                         .iter()
                         .flat_map(|e| e.evidences())
-                        .map(|(_, e)| e.len())
+                        .map(|e| e.len())
                         .max()
                         .unwrap_or(0);
                     // Sample the seeds to parallelize the sampling.

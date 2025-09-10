@@ -4,8 +4,8 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::CatEv,
-    types::{EPSILON, Labels, Map, Set, States},
-    utils::{collect_states, sort_states},
+    types::{EPSILON, Labels, Set, States},
+    utils::sort_states,
 };
 
 /// A type representing the evidence type for categorical trajectories.
@@ -124,7 +124,7 @@ pub struct CatTrjEv {
     labels: Labels,
     states: States,
     shape: Array1<usize>,
-    evidences: Map<String, Vec<CatTrjEvT>>,
+    evidences: Vec<Vec<CatTrjEvT>>,
 }
 
 impl CatTrjEv {
@@ -140,16 +140,10 @@ impl CatTrjEv {
     ///
     /// A new `CategoricalTrajectoryEvidence` instance.
     ///
-    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
+    pub fn new<I>(states: States, values: I) -> Self
     where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = L>,
-        K: AsRef<str>,
-        L: AsRef<str>,
-        M: IntoIterator<Item = CatTrjEvT>,
+        I: IntoIterator<Item = CatTrjEvT>,
     {
-        // Collect the states into a map.
-        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
         let (states, sorted_idx) = sort_states(states);
 
@@ -162,10 +156,7 @@ impl CatTrjEv {
         use CatTrjEvT as E;
 
         // Allocate evidences.
-        let mut evidences: Map<_, Vec<_>> = states
-            .keys()
-            .map(|label| (label.clone(), Vec::new()))
-            .collect();
+        let mut evidences: Vec<Vec<_>> = vec![Vec::new(); states.len()];
 
         // Reverse the indices to get the argsort.
         let mut argsorted_idx = sorted_idx.clone();
@@ -250,7 +241,7 @@ impl CatTrjEv {
         });
 
         // Check and fix incoherent evidences.
-        evidences.values_mut().zip(&shape).for_each(
+        evidences.iter_mut().zip(&shape).for_each(
             |(evidence, shape): (&mut Vec<E>, &usize)| {
                 // Assert state, starting and ending times are coherent.
                 evidence.iter().for_each(|e| {
@@ -532,7 +523,7 @@ impl CatTrjEv {
     /// A reference to the evidences of the trajectory.
     ///
     #[inline]
-    pub fn evidences(&self) -> &Map<String, Vec<CatTrjEvT>> {
+    pub fn evidences(&self) -> &Vec<Vec<CatTrjEvT>> {
         &self.evidences
     }
 
@@ -544,13 +535,13 @@ impl CatTrjEv {
     ///
     pub fn initial_evidence(&self) -> CatEv {
         // Get the evidences at time zero.
-        let evidences = self.evidences.iter().filter_map(|(_, evidence)| {
+        let evidences = self.evidences.iter().filter_map(|e| {
             // Get the first evidence, if any.
-            let evidence = evidence.iter().next().cloned();
+            let e = e.iter().next().cloned();
             // Check if the evidence is at time zero.
-            let evidence = evidence.filter(|e| relative_eq!(e.start_time(), 0.));
+            let e = e.filter(|e| relative_eq!(e.start_time(), 0.));
             // Map the evidence to its variable.
-            evidence.map(|e| e.into())
+            e.map(|e| e.into())
         });
 
         // Clone the states.

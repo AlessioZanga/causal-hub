@@ -3,8 +3,8 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
-    types::{Labels, Map, Set, States},
-    utils::{collect_states, sort_states},
+    types::{Labels, Set, States},
+    utils::sort_states,
 };
 
 /// Categorical evidence type.
@@ -89,7 +89,7 @@ pub struct CatEv {
     labels: Labels,
     states: States,
     shape: Array1<usize>,
-    evidences: Map<String, Option<CatEvT>>,
+    evidences: Vec<Option<CatEvT>>,
 }
 
 impl CatEv {
@@ -104,16 +104,10 @@ impl CatEv {
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I, J, K, L, M>(states: I, values: M) -> Self
+    pub fn new<I>(states: States, values: I) -> Self
     where
-        I: IntoIterator<Item = (K, J)>,
-        J: IntoIterator<Item = L>,
-        K: AsRef<str>,
-        L: AsRef<str>,
-        M: IntoIterator<Item = CatEvT>,
+        I: IntoIterator<Item = CatEvT>,
     {
-        // Collect the states into a map.
-        let states = collect_states(states);
         // Get the indices to sort the labels and states labels.
         let (states, sorted_idx) = sort_states(states);
         // Get the sorted labels.
@@ -125,8 +119,7 @@ impl CatEv {
         use CatEvT as E;
 
         // Allocate evidences.
-        let mut evidences: Map<_, Option<_>> =
-            states.keys().map(|label| (label.clone(), None)).collect();
+        let mut evidences: Vec<Option<_>> = vec![None; states.len()];
 
         // Reverse the indices to get the argsort.
         let mut argsorted_idx = sorted_idx.clone();
@@ -194,7 +187,7 @@ impl CatEv {
         });
 
         // For each variable ...
-        for (i, evidence) in evidences.values_mut().enumerate() {
+        for (i, evidence) in evidences.iter_mut().enumerate() {
             // Assert states distributions have the correct size.
             assert!(
                 evidence.as_ref().is_none_or(|e| match e {
@@ -287,7 +280,7 @@ impl CatEv {
     /// A reference to the evidences of the evidence.
     ///
     #[inline]
-    pub const fn evidences(&self) -> &Map<String, Option<CatEvT>> {
+    pub const fn evidences(&self) -> &Vec<Option<CatEvT>> {
         &self.evidences
     }
 }
