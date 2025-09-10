@@ -66,7 +66,7 @@ mod tests {
                 // Reference the random number generator.
                 let mut rng = rng.borrow_mut();
                 // Sample the seeds to parallelize the sampling.
-                let seeds: Vec<_> = (0..evidence.values().len())
+                let seeds: Vec<_> = (0..evidence.evidences().len())
                     .map(|_| rng.next_u64())
                     .collect();
                 // For each (seed, evidence) ...
@@ -150,9 +150,9 @@ mod tests {
 
             // Get the max length of the evidence.
             let max_length = evidence
-                .values()
+                .evidences()
                 .iter()
-                .map(|e| e.sample_size() as usize)
+                .map(|e| e.evidences().values().map(|x| x.len()).sum())
                 .max()
                 .unwrap_or(10);
 
@@ -161,7 +161,7 @@ mod tests {
                 // Reference the random number generator.
                 let mut rng = rng.borrow_mut();
                 // Sample the seeds to parallelize the sampling.
-                let seeds: Vec<_> = (0..evidence.values().len())
+                let seeds: Vec<_> = (0..evidence.evidences().len())
                     .map(|_| rng.next_u64())
                     .collect();
                 // For each (seed, evidence) ...

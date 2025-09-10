@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatEv, Dataset},
+    datasets::CatEv,
     types::{EPSILON, Labels, Map, Set, States},
     utils::{collect_states, sort_states},
 };
@@ -492,6 +492,17 @@ impl CatTrjEv {
         }
     }
 
+    /// Returns the labels of the trajectory evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels of the trajectory evidence.
+    ///
+    #[inline]
+    pub fn labels(&self) -> &Labels {
+        &self.labels
+    }
+
     /// Returns the states of the trajectory evidence.
     ///
     /// # Returns
@@ -512,6 +523,17 @@ impl CatTrjEv {
     #[inline]
     pub const fn cardinality(&self) -> &Array1<usize> {
         &self.cardinality
+    }
+
+    /// Returns the evidences of the trajectory.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the evidences of the trajectory.
+    ///
+    #[inline]
+    pub fn evidences(&self) -> &Map<String, Vec<CatTrjEvT>> {
+        &self.evidences
     }
 
     /// Returns the evidences at time zero.
@@ -539,32 +561,13 @@ impl CatTrjEv {
     }
 }
 
-impl Dataset for CatTrjEv {
-    type Values = Map<String, Vec<CatTrjEvT>>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn values(&self) -> &Self::Values {
-        &self.evidences
-    }
-
-    #[inline]
-    fn sample_size(&self) -> f64 {
-        self.evidences.values().map(|x| x.len()).sum::<usize>() as f64
-    }
-}
-
 /// A collection of multivariate trajectories evidence.
 #[derive(Clone, Debug)]
 pub struct CatTrjsEv {
     labels: Labels,
     states: States,
     cardinality: Array1<usize>,
-    values: Vec<CatTrjEv>,
+    evidences: Vec<CatTrjEv>,
 }
 
 impl CatTrjsEv {
@@ -587,37 +590,37 @@ impl CatTrjsEv {
     ///
     /// A new instance of `CategoricalTrajectoriesEvidence`.
     ///
-    pub fn new<I>(values: I) -> Self
+    pub fn new<I>(evidences: I) -> Self
     where
         I: IntoIterator<Item = CatTrjEv>,
     {
         // Collect the trajectories into a vector.
-        let values: Vec<_> = values.into_iter().collect();
+        let evidences: Vec<_> = evidences.into_iter().collect();
 
         // Assert every trajectory has the same labels.
         assert!(
-            values
+            evidences
                 .windows(2)
                 .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
             "All trajectories must have the same labels."
         );
         // Assert every trajectory has the same states.
         assert!(
-            values
+            evidences
                 .windows(2)
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
         // Assert every trajectory has the same cardinality.
         assert!(
-            values
+            evidences
                 .windows(2)
                 .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
             "All trajectories must have the same cardinality."
         );
 
         // Get the labels, states and cardinality from the first trajectory.
-        let trj = values.first().expect("No trajectory in the dataset.");
+        let trj = evidences.first().expect("No trajectory in the dataset.");
         let labels = trj.labels().clone();
         let states = trj.states().clone();
         let cardinality = trj.cardinality().clone();
@@ -626,8 +629,19 @@ impl CatTrjsEv {
             labels,
             states,
             cardinality,
-            values,
+            evidences,
         }
+    }
+
+    /// Returns the labels of the trajectories evidence.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the labels of the trajectories evidence.
+    ///
+    #[inline]
+    pub fn labels(&self) -> &Labels {
+        &self.labels
     }
 
     /// Returns the states of the trajectories evidence.
@@ -651,6 +665,17 @@ impl CatTrjsEv {
     pub fn cardinality(&self) -> &Array1<usize> {
         &self.cardinality
     }
+
+    /// Returns the evidences of the trajectories.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the evidences of the trajectories.
+    ///
+    #[inline]
+    pub fn evidences(&self) -> &Vec<CatTrjEv> {
+        &self.evidences
+    }
 }
 
 impl FromIterator<CatTrjEv> for CatTrjsEv {
@@ -673,7 +698,7 @@ impl<'a> IntoIterator for &'a CatTrjsEv {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.values.iter()
+        self.evidences.iter()
     }
 }
 
@@ -683,25 +708,6 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjsEv {
 
     #[inline]
     fn par_iter(&'a self) -> Self::Iter {
-        self.values.par_iter()
-    }
-}
-
-impl Dataset for CatTrjsEv {
-    type Values = Vec<CatTrjEv>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    #[inline]
-    fn values(&self) -> &Self::Values {
-        &self.values
-    }
-
-    #[inline]
-    fn sample_size(&self) -> f64 {
-        self.values.iter().map(Dataset::sample_size).sum()
+        self.evidences.par_iter()
     }
 }
