@@ -873,6 +873,7 @@ impl PyDiGraph {
 
     /// Write class to a JSON file.
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        Ok(self.inner.write_json(path))
+        self.inner.write_json(path);
+        Ok(())
     }
 }
