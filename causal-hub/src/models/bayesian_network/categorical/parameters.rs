@@ -470,8 +470,11 @@ impl CatCPD {
             parameters = new_parameters;
         }
 
-        // Normalize the parameters.
-        parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
+        // Normalize the parameters if we marginalized over X and Z.
+        if !x.is_empty() && !z.is_empty() {
+            // Normalize the parameters.
+            parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
+        }
 
         // TODO: Handle optionals?
 
