@@ -20,12 +20,12 @@ pub struct CatCIM {
     // Labels of the conditioned variable.
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
     conditioning_states: States,
-    conditioning_cardinality: Array1<usize>,
+    conditioning_shape: Array1<usize>,
     conditioning_multi_index: MI,
     // Parameters.
     parameters: Array3<f64>,
@@ -48,8 +48,8 @@ impl CatCIM {
     /// # Panics
     ///
     /// * If the labels and conditioning labels are not disjoint.
-    /// * If the product of the cardinalities of the states does not match the length of the second and third axis.
-    /// * If the product of the cardinalities of the conditioning states does not match the length of the first axis.
+    /// * If the product of the shape of the states does not match the length of the second and third axis.
+    /// * If the product of the shape of the conditioning states does not match the length of the first axis.
     /// * If the parameters are not valid intensity matrices, unless empty.
     ///
     /// # Returns
@@ -68,40 +68,39 @@ impl CatCIM {
             "Labels and conditioning labels must be disjoint."
         );
 
-        // Get the states cardinality.
-        let cardinality: Array1<_> = states.values().map(|x| x.len()).collect();
+        // Get the states shape.
+        let shape: Array1<_> = states.values().map(|x| x.len()).collect();
 
-        // Check that the product of the cardinality matches the number of columns.
+        // Check that the product of the shape matches the number of columns.
         assert!(
-            parameters.is_empty() || parameters.shape()[1] == cardinality.product(),
+            parameters.is_empty() || parameters.shape()[1] == shape.product(),
             "Product of the number of states must match the number of columns: \n\
             \t expected:    parameters.shape[1] == {} , \n\
             \t found:       parameters.shape[1] == {} .",
-            cardinality.product(),
+            shape.product(),
             parameters.shape()[1],
         );
 
-        // Check that the product of the cardinality matches the number of columns.
+        // Check that the product of the shape matches the number of columns.
         assert!(
-            parameters.is_empty() || parameters.shape()[2] == cardinality.product(),
+            parameters.is_empty() || parameters.shape()[2] == shape.product(),
             "Product of the number of states must match the number of columns: \n\
             \t expected:    parameters.shape[2] == {} , \n\
             \t found:       parameters.shape[2] == {} .",
-            cardinality.product(),
+            shape.product(),
             parameters.shape()[2],
         );
 
-        // Get the cardinality of the set of states.
-        let conditioning_cardinality: Array1<_> =
-            conditioning_states.values().map(|x| x.len()).collect();
+        // Get the shape of the set of states.
+        let conditioning_shape: Array1<_> = conditioning_states.values().map(|x| x.len()).collect();
 
-        // Check that the product of the conditioning cardinality matches the number of rows.
+        // Check that the product of the conditioning shape matches the number of rows.
         assert!(
-            parameters.is_empty() || parameters.shape()[0] == conditioning_cardinality.product(),
+            parameters.is_empty() || parameters.shape()[0] == conditioning_shape.product(),
             "Product of the number of conditioning states must match the number of rows: \n\
             \t expected:    parameters.shape[0] == {} , \n\
             \t found:       parameters.shape[0] == {} .",
-            conditioning_cardinality.product(),
+            conditioning_shape.product(),
             parameters.shape()[0],
         );
 
@@ -139,7 +138,7 @@ impl CatCIM {
         // Make states mutable.
         let mut labels = labels;
         let mut states = states;
-        let mut cardinality = cardinality;
+        let mut shape = shape;
 
         // Check if states are sorted.
         if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
@@ -164,7 +163,7 @@ impl CatCIM {
             states.sort_keys();
             states.values_mut().for_each(|x| x.sort());
             labels = states.keys().cloned().collect();
-            cardinality = states.values().map(|x| x.len()).collect();
+            shape = states.values().map(|x| x.len()).collect();
             // Allocate new parameters, for axis 1.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -192,12 +191,12 @@ impl CatCIM {
         // Make states immutable.
         let labels = labels;
         let states = states;
-        let cardinality = cardinality;
+        let shape = shape;
 
         // Make conditioning states mutable.
         let mut conditioning_labels = conditioning_labels;
         let mut conditioning_states = conditioning_states;
-        let mut conditioning_cardinality = conditioning_cardinality;
+        let mut conditioning_shape = conditioning_shape;
 
         // Check if conditioning states are sorted.
         if !conditioning_states.keys().is_sorted()
@@ -227,7 +226,7 @@ impl CatCIM {
             conditioning_states.sort_keys();
             conditioning_states.values_mut().for_each(|x| x.sort());
             conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_cardinality = conditioning_states.values().map(|x| x.len()).collect();
+            conditioning_shape = conditioning_states.values().map(|x| x.len()).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -244,7 +243,7 @@ impl CatCIM {
         // Make conditioning states immutable.
         let conditioning_labels = conditioning_labels;
         let conditioning_states = conditioning_states;
-        let conditioning_cardinality = conditioning_cardinality;
+        let conditioning_shape = conditioning_shape;
 
         // Make parameters immutable.
         let parameters = parameters;
@@ -270,23 +269,23 @@ impl CatCIM {
         );
 
         // Compute the multi index.
-        let multi_index = MI::new(cardinality.iter().copied());
+        let multi_index = MI::new(shape.iter().copied());
         // Compute the conditioning multi index.
-        let conditioning_multi_index = MI::new(conditioning_cardinality.iter().copied());
+        let conditioning_multi_index = MI::new(conditioning_shape.iter().copied());
 
         // Get the shape of the parameters.
-        let shape = parameters.shape();
+        let s = parameters.shape();
         // Compute the parameters size.
-        let parameters_size = shape[0] * shape[1] * shape[2].saturating_sub(1);
+        let parameters_size = s[0] * s[1] * s[2].saturating_sub(1);
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             multi_index,
             conditioning_labels,
             conditioning_states,
-            conditioning_cardinality,
+            conditioning_shape,
             conditioning_multi_index,
             parameters,
             parameters_size,
@@ -308,15 +307,15 @@ impl CatCIM {
         &self.states
     }
 
-    /// Returns the cardinality of the conditioned variable.
+    /// Returns the shape of the conditioned variable.
     ///
     /// # Returns
     ///
-    /// The cardinality of the conditioned variable.
+    /// The shape of the conditioned variable.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// Returns the ravel multi index of the conditioning variables.
@@ -341,15 +340,15 @@ impl CatCIM {
         &self.conditioning_states
     }
 
-    /// Returns the cardinality of the conditioning variables.
+    /// Returns the shape of the conditioning variables.
     ///
     /// # Returns
     ///
-    /// The cardinality of the conditioning variables.
+    /// The shape of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_cardinality(&self) -> &Array1<usize> {
-        &self.conditioning_cardinality
+    pub const fn conditioning_shape(&self) -> &Array1<usize> {
+        &self.conditioning_shape
     }
 
     /// Returns the ravel multi index of the conditioning variables.
@@ -515,12 +514,10 @@ impl PartialEq for CatCIM {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
-            && self.cardinality.eq(&other.cardinality)
+            && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
             && self.conditioning_states.eq(&other.conditioning_states)
-            && self
-                .conditioning_cardinality
-                .eq(&other.conditioning_cardinality)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.eq(&other.parameters)
     }
@@ -537,12 +534,10 @@ impl AbsDiffEq for CatCIM {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
-            && self.cardinality.eq(&other.cardinality)
+            && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
             && self.conditioning_states.eq(&other.conditioning_states)
-            && self
-                .conditioning_cardinality
-                .eq(&other.conditioning_cardinality)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self.parameters.abs_diff_eq(&other.parameters, epsilon)
     }
@@ -562,12 +557,10 @@ impl RelativeEq for CatCIM {
         // Check for equality, excluding the sample values.
         self.labels.eq(&other.labels)
             && self.states.eq(&other.states)
-            && self.cardinality.eq(&other.cardinality)
+            && self.shape.eq(&other.shape)
             && self.conditioning_labels.eq(&other.conditioning_labels)
             && self.conditioning_states.eq(&other.conditioning_states)
-            && self
-                .conditioning_cardinality
-                .eq(&other.conditioning_cardinality)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
             && self.multi_index.eq(&other.multi_index)
             && self
                 .parameters

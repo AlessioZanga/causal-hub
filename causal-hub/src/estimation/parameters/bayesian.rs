@@ -56,9 +56,9 @@ macro_for!($type in [CatTable, CatWtdTable] {
         }
 
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-            // Get states and cardinality.
+            // Get states and shape.
             let states = self.dataset.states();
-            let cardinality = self.dataset.cardinality();
+            let shape = self.dataset.shape();
 
             // Initialize the sufficient statistics estimator.
             let sse = SSE::new(self.dataset);
@@ -80,7 +80,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
 
             // Add the prior to the counts.
             let n_xz = n_xz + alpha;
-            let n_z = n_z + alpha * x.iter().map(|&i| cardinality[i]).product::<usize>() as f64;
+            let n_z = n_z + alpha * x.iter().map(|&i| shape[i]).product::<usize>() as f64;
             // Compute the parameters by normalizing the counts with the prior.
             let parameters = &n_xz / &n_z;
 
@@ -92,7 +92,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
             // Set the sample size.
             let sample_size = Some(n);
 
-            // Subset the conditioning labels, states and cardinality.
+            // Subset the conditioning labels, states and shape.
             let conditioning_states = z
                 .iter()
                 .map(|&i| {
@@ -143,9 +143,9 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Compute the sample size.
         let n = n_xz.sum();
 
-        // Get the cardinality of the conditioning variables.
+        // Get the shape of the conditioning variables.
         let c_z = n_xz.shape()[0] as f64;
-        // Scale the prior by the cardinality.
+        // Scale the prior by the shape.
         let alpha = alpha as f64 / c_z;
         let tau = tau / c_z;
 
@@ -192,7 +192,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Set the sample size.
         let sample_size = Some(n);
 
-        // Subset the conditioning labels, states and cardinality.
+        // Subset the conditioning labels, states and shape.
         let conditioning_states = z
             .iter()
             .map(|&i| {

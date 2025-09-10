@@ -43,15 +43,15 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
             "Variables and conditioning variables must be disjoint."
         );
 
-        // Get the cardinality.
-        let cardinality = self.dataset.cardinality();
+        // Get the shape.
+        let shape = self.dataset.shape();
 
         // Initialize the multi index.
-        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
-        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
-        // Get the cardinality of the conditioned and conditioning variables.
-        let c_x = m_idx_x.cardinality().product();
-        let c_z = m_idx_z.cardinality().product();
+        let m_idx_x = MI::new(x.iter().map(|&i| shape[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| shape[i]));
+        // Get the shape of the conditioned and conditioning variables.
+        let c_x = m_idx_x.shape().product();
+        let c_z = m_idx_z.shape().product();
 
         // Initialize the joint counts.
         let mut n_xz: Array2<usize> = Array::zeros((c_z, c_x));
@@ -83,15 +83,15 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
             "Variables and conditioning variables must be disjoint."
         );
 
-        // Get the cardinality.
-        let cardinality = self.dataset.cardinality();
+        // Get the shape.
+        let shape = self.dataset.shape();
 
         // Initialize the multi index.
-        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
-        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
-        // Get the cardinality of the conditioned and conditioning variables.
-        let c_x = m_idx_x.cardinality().product();
-        let c_z = m_idx_z.cardinality().product();
+        let m_idx_x = MI::new(x.iter().map(|&i| shape[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| shape[i]));
+        // Get the shape of the conditioned and conditioning variables.
+        let c_x = m_idx_x.shape().product();
+        let c_z = m_idx_z.shape().product();
 
         // Initialize the joint counts.
         let mut n_xz: Array2<f64> = Array::zeros((c_z, c_x));
@@ -130,15 +130,15 @@ impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
             "Variables and conditioning variables must be disjoint."
         );
 
-        // Get the cardinality.
-        let cardinality = self.dataset.cardinality();
+        // Get the shape.
+        let shape = self.dataset.shape();
 
         // Initialize the multi index.
-        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
-        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
-        // Get the cardinality of the conditioned and conditioning variables.
-        let c_x = m_idx_x.cardinality().product();
-        let c_z = m_idx_z.cardinality().product();
+        let m_idx_x = MI::new(x.iter().map(|&i| shape[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| shape[i]));
+        // Get the shape of the conditioned and conditioning variables.
+        let c_x = m_idx_x.shape().product();
+        let c_z = m_idx_z.shape().product();
 
         // Initialize the joint counts.
         let mut n_xz: Array3<usize> = Array::zeros((c_z, c_x, c_x));
@@ -200,12 +200,12 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         }
 
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
-            // Get the cardinality.
-            let cardinality = self.dataset.cardinality();
+            // Get the shape.
+            let shape = self.dataset.shape();
 
-            // Get the cardinality of the conditioned and conditioning variables.
-            let c_x = x.iter().map(|&i| cardinality[i]).product();
-            let c_z = z.iter().map(|&i| cardinality[i]).product();
+            // Get the shape of the conditioned and conditioning variables.
+            let c_x = x.iter().map(|&i| shape[i]).product();
+            let c_z = z.iter().map(|&i| shape[i]).product();
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));
@@ -227,12 +227,12 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
-            // Get the cardinality.
-            let cardinality = self.dataset.cardinality();
+            // Get the shape.
+            let shape = self.dataset.shape();
 
-            // Get the cardinality of the conditioned and conditioning variables.
-            let c_x = x.iter().map(|&i| cardinality[i]).product();
-            let c_z = z.iter().map(|&i| cardinality[i]).product();
+            // Get the shape of the conditioned and conditioning variables.
+            let c_x = x.iter().map(|&i| shape[i]).product();
+            let c_z = z.iter().map(|&i| shape[i]).product();
 
             // Initialize the joint counts.
             let n_xz: Array3<f64> = Array::zeros((c_z, c_x, c_x));

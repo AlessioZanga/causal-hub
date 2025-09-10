@@ -161,9 +161,9 @@ mod tests {
         // Get CPD.
         let cpd = bn.cpds().get("HypDistrib").unwrap();
 
-        // Check cardinality.
-        assert_eq!(cpd.cardinality(), array![2]);
-        assert_eq!(cpd.conditioning_cardinality(), array![4, 3]);
+        // Check shape.
+        assert_eq!(cpd.shape(), array![2]);
+        assert_eq!(cpd.conditioning_shape(), array![4, 3]);
 
         // Check probability values with "." in it.
         assert_eq!(

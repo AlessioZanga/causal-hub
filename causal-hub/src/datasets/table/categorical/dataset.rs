@@ -20,7 +20,7 @@ pub type CatSample = Array1<u8>;
 pub struct CatTable {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     values: Array2<u8>,
 }
 
@@ -59,8 +59,8 @@ impl CatTable {
         let mut states = collect_states(states);
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let mut cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let mut shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Log the creation of the categorical dataset.
         debug!(
@@ -112,7 +112,7 @@ impl CatTable {
             // Update the states with the sorted states.
             states = new_states;
             labels = states.keys().cloned().collect();
-            cardinality = Array::from_iter(states.values().map(|x| x.len()));
+            shape = Array::from_iter(states.values().map(|x| x.len()));
             // Allocate the new values array.
             let mut new_values = values.clone();
             // Sort the values by the indices of the states labels.
@@ -169,19 +169,19 @@ impl CatTable {
             labels.iter().eq(states.keys()),
             "Labels and states keys must be the same."
         );
-        // Debug assert cardinality must match the number of states.
+        // Debug assert shape must match the number of states.
         debug_assert!(
-            cardinality
+            shape
                 .iter()
                 .zip(states.values())
                 .all(|(&a, b)| a == b.len()),
-            "Cardinality must match the number of states values."
+            "Shape must match the number of states values."
         );
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             values,
         }
     }
@@ -197,15 +197,15 @@ impl CatTable {
         &self.states
     }
 
-    /// Returns the cardinality of the set of states in the categorical distribution.
+    /// Returns the shape of the set of states in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the array of cardinality.
+    /// A reference to the array of shape.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 }
 

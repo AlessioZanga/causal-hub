@@ -60,14 +60,14 @@ impl PyCatCPD {
             .collect())
     }
 
-    /// Returns the cardinality of the conditioned variable.
+    /// Returns the shape of the conditioned variable.
     ///
     /// # Returns
     ///
-    /// The cardinality of the conditioned variable.
+    /// The shape of the conditioned variable.
     ///
-    pub fn cardinality(&self) -> PyResult<Vec<usize>> {
-        Ok(self.inner.cardinality().to_vec())
+    pub fn shape(&self) -> PyResult<Vec<usize>> {
+        Ok(self.inner.shape().to_vec())
     }
 
     /// Returns the labels of the conditioned variables.
@@ -111,14 +111,14 @@ impl PyCatCPD {
             .collect())
     }
 
-    /// Returns the cardinality of the conditioning variables.
+    /// Returns the shape of the conditioning variables.
     ///
     /// # Returns
     ///
-    /// The cardinality of the conditioning variables.
+    /// The shape of the conditioning variables.
     ///
-    pub fn conditioning_cardinality(&self) -> PyResult<Vec<usize>> {
-        Ok(self.inner.conditioning_cardinality().to_vec())
+    pub fn conditioning_shape(&self) -> PyResult<Vec<usize>> {
+        Ok(self.inner.conditioning_shape().to_vec())
     }
 
     /// Returns the parameters.

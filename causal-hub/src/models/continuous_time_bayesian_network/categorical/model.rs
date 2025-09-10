@@ -211,7 +211,7 @@ impl CTBN for CatCTBN {
             // Set empty conditioning states.
             let conditioning_states = States::default();
             // Set uniform parameters.
-            let alpha = cim.cardinality().product();
+            let alpha = cim.shape().product();
             let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
             let parameters = parameters.insert_axis(Axis(0));
             // Construct the CPD.

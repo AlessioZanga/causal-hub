@@ -98,9 +98,9 @@ where
         let n_xz = q_xz.sample_conditional_counts().unwrap();
         let n_xs = q_xs.sample_conditional_counts().unwrap();
 
-        // Get the cardinality of the extended separation set.
-        let c_s = q_xs.conditioning_cardinality();
-        // Get the cardinality of the parent and the remaining strides.
+        // Get the shape of the extended separation set.
+        let c_s = q_xs.conditioning_shape();
+        // Get the shape of the parent and the remaining strides.
         let (c_y, c_s) = (c_s[s_y], c_s.slice(s![(s_y + 1)..]).product());
 
         // For each combination of the extended parent set ...
@@ -204,9 +204,9 @@ where
         let n_xz = q_xz.sample_conditional_counts().unwrap();
         let n_xs = q_xs.sample_conditional_counts().unwrap();
 
-        // Get the cardinality of the extended separation set.
-        let c_s = q_xs.conditioning_cardinality();
-        // Get the cardinality of the parent and the remaining strides.
+        // Get the shape of the extended separation set.
+        let c_s = q_xs.conditioning_shape();
+        // Get the shape of the parent and the remaining strides.
         let (c_y, c_s) = (c_s[s_y], c_s.slice(s![(s_y + 1)..]).product());
 
         // For each combination of the extended parent set ...

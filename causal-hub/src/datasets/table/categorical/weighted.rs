@@ -57,15 +57,15 @@ impl CatWtdTable {
         self.data.states()
     }
 
-    /// Returns the cardinality of the set of states in the categorical distribution.
+    /// Returns the shape of the set of states in the categorical distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the array of cardinality.
+    /// A reference to the array of shape.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        self.data.cardinality()
+    pub const fn shape(&self) -> &Array1<usize> {
+        self.data.shape()
     }
 
     /// Returns the weights of the samples in the categorical distribution.

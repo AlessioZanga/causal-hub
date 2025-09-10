@@ -88,7 +88,7 @@ impl CatEvT {
 pub struct CatEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     evidences: Map<String, Option<CatEvT>>,
 }
 
@@ -118,8 +118,8 @@ impl CatEv {
         let (states, sorted_idx) = sort_states(states);
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
         use CatEvT as E;
@@ -201,10 +201,10 @@ impl CatEv {
                     E::CertainPositive { .. } => true,
                     E::CertainNegative { .. } => true,
                     E::UncertainPositive { p_states, .. } => {
-                        p_states.len() == cardinality[i]
+                        p_states.len() == shape[i]
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        p_not_states.len() == cardinality[i]
+                        p_not_states.len() == shape[i]
                     }
                 }),
                 "States distributions must have the correct size."
@@ -242,7 +242,7 @@ impl CatEv {
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             evidences,
         }
     }
@@ -269,15 +269,15 @@ impl CatEv {
         &self.states
     }
 
-    /// The cardinality of the evidence.
+    /// The shape of the evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the evidence.
+    /// A reference to the shape of the evidence.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// The evidences of the evidence.

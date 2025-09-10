@@ -123,7 +123,7 @@ impl CatTrjEvT {
 pub struct CatTrjEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     evidences: Map<String, Vec<CatTrjEvT>>,
 }
 
@@ -155,8 +155,8 @@ impl CatTrjEv {
 
         // Get the sorted labels.
         let labels = states.keys().cloned().collect();
-        // Get the cardinality of the states.
-        let cardinality = Array::from_iter(states.values().map(|x| x.len()));
+        // Get the shape of the states.
+        let shape = Array::from_iter(states.values().map(|x| x.len()));
 
         // Get shortened variable type.
         use CatTrjEvT as E;
@@ -250,8 +250,8 @@ impl CatTrjEv {
         });
 
         // Check and fix incoherent evidences.
-        evidences.values_mut().zip(&cardinality).for_each(
-            |(evidence, cardinality): (&mut Vec<E>, &usize)| {
+        evidences.values_mut().zip(&shape).for_each(
+            |(evidence, shape): (&mut Vec<E>, &usize)| {
                 // Assert state, starting and ending times are coherent.
                 evidence.iter().for_each(|e| {
                     // Assert starting time must be positive and finite.
@@ -275,10 +275,10 @@ impl CatTrjEv {
                             E::CertainPositiveInterval { .. } => true,
                             E::CertainNegativeInterval { .. } => true,
                             E::UncertainPositiveInterval { p_states, .. } => {
-                                p_states.len() == *cardinality
+                                p_states.len() == *shape
                             }
                             E::UncertainNegativeInterval { p_not_states, .. } => {
-                                p_not_states.len() == *cardinality
+                                p_not_states.len() == *shape
                             }
                         },
                         "States distributions must have the correct size."
@@ -373,7 +373,7 @@ impl CatTrjEv {
                             // Otherwise, merge the two certain evidences into an uncertain one.
                             } else {
                                 // Construct uncertain positive evidence.
-                                let mut p_states = Array::zeros(*cardinality);
+                                let mut p_states = Array::zeros(*shape);
                                 // Set the state of the evidence with a weight proportion to the time.
                                 p_states[*s_i] = e_i.end_time() - e_i.start_time();
                                 p_states[*s_j] = e_j.end_time() - e_j.start_time();
@@ -487,7 +487,7 @@ impl CatTrjEv {
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             evidences,
         }
     }
@@ -514,15 +514,15 @@ impl CatTrjEv {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectory evidence.
+    /// Returns the shape of the trajectory evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectory evidence.
+    /// A reference to the shape of the trajectory evidence.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// Returns the evidences of the trajectory.
@@ -566,7 +566,7 @@ impl CatTrjEv {
 pub struct CatTrjsEv {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     evidences: Vec<CatTrjEv>,
 }
 
@@ -583,7 +583,7 @@ impl CatTrjsEv {
     ///
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
-    /// * The trajectories have different cardinality.
+    /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
     /// # Returns
@@ -611,24 +611,24 @@ impl CatTrjsEv {
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
-        // Assert every trajectory has the same cardinality.
+        // Assert every trajectory has the same shape.
         assert!(
             evidences
                 .windows(2)
-                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
-            "All trajectories must have the same cardinality."
+                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
+            "All trajectories must have the same shape."
         );
 
-        // Get the labels, states and cardinality from the first trajectory.
+        // Get the labels, states and shape from the first trajectory.
         let trj = evidences.first().expect("No trajectory in the dataset.");
         let labels = trj.labels().clone();
         let states = trj.states().clone();
-        let cardinality = trj.cardinality().clone();
+        let shape = trj.shape().clone();
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             evidences,
         }
     }
@@ -655,15 +655,15 @@ impl CatTrjsEv {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectories evidence.
+    /// Returns the shape of the trajectories evidence.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectories evidence.
+    /// A reference to the shape of the trajectories evidence.
     ///
     #[inline]
-    pub fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// Returns the evidences of the trajectories.

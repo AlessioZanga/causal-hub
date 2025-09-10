@@ -138,15 +138,15 @@ impl CatTrj {
         self.events.states()
     }
 
-    /// Returns the cardinality of the trajectory.
+    /// Returns the shape of the trajectory.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectory.
+    /// A reference to the shape of the trajectory.
     ///
     #[inline]
-    pub const fn cardinality(&self) -> &Array1<usize> {
-        self.events.cardinality()
+    pub const fn shape(&self) -> &Array1<usize> {
+        self.events.shape()
     }
 
     /// Returns the times of the trajectory.
@@ -185,7 +185,7 @@ impl Dataset for CatTrj {
 pub struct CatTrjs {
     labels: Labels,
     states: States,
-    cardinality: Array1<usize>,
+    shape: Array1<usize>,
     values: Vec<CatTrj>,
 }
 
@@ -202,7 +202,7 @@ impl CatTrjs {
     ///
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
-    /// * The trajectories have different cardinality.
+    /// * The trajectories have different shape.
     /// * The trajectories are empty.
     ///
     /// # Returns
@@ -230,24 +230,24 @@ impl CatTrjs {
                 .all(|trjs| trjs[0].states().eq(trjs[1].states())),
             "All trajectories must have the same states."
         );
-        // Assert every trajectory has the same cardinality.
+        // Assert every trajectory has the same shape.
         assert!(
             values
                 .windows(2)
-                .all(|trjs| trjs[0].cardinality().eq(trjs[1].cardinality())),
-            "All trajectories must have the same cardinality."
+                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
+            "All trajectories must have the same shape."
         );
 
-        // Get the labels, states and cardinality from the first trajectory.
+        // Get the labels, states and shape from the first trajectory.
         let trj = values.first().expect("No trajectory in the dataset.");
         let labels = trj.labels().clone();
         let states = trj.states().clone();
-        let cardinality = trj.cardinality().clone();
+        let shape = trj.shape().clone();
 
         Self {
             labels,
             states,
-            cardinality,
+            shape,
             values,
         }
     }
@@ -263,15 +263,15 @@ impl CatTrjs {
         &self.states
     }
 
-    /// Returns the cardinality of the trajectories.
+    /// Returns the shape of the trajectories.
     ///
     /// # Returns
     ///
-    /// A reference to the cardinality of the trajectories.
+    /// A reference to the shape of the trajectories.
     ///
     #[inline]
-    pub fn cardinality(&self) -> &Array1<usize> {
-        &self.cardinality
+    pub fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 }
 

@@ -41,7 +41,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
         }
 
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-            // Get states and cardinality.
+            // Get states and shape.
             let states = self.dataset.states();
 
             // Initialize the sufficient statistics estimator.
@@ -74,7 +74,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
             // Set the sample size.
             let sample_size = Some(n);
 
-            // Subset the conditioning labels, states and cardinality.
+            // Subset the conditioning labels, states and shape.
             let conditioning_states = z
                 .iter()
                 .map(|&i| {
@@ -181,7 +181,7 @@ impl MLE<'_, CatTrj> {
         // Set the sample size.
         let sample_size = Some(n);
 
-        // Subset the conditioning labels, states and cardinality.
+        // Subset the conditioning labels, states and shape.
         let conditioning_states = z
             .iter()
             .map(|&i| {

@@ -10,8 +10,8 @@ mod tests {
         // Create a multi index.
         let multi_index = MI::new(dim.clone());
 
-        // Assert the cardinality.
-        assert_eq!(multi_index.cardinality(), &dim);
+        // Assert the shape.
+        assert_eq!(multi_index.shape(), &dim);
 
         // Assert the ravel multi index explicitly.
         assert_eq!(multi_index.ravel([0, 0, 0]), 0);
