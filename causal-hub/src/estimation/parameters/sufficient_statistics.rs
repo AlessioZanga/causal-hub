@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CSSEstimator, ParCSSEstimator},
     models::{CPD, CatCIM, CatCPD},
     types::{Labels, Set},
@@ -30,15 +30,13 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl CSSEstimator for SSE<'_, CatTable> {
-    type Output = <CatCPD as CPD>::SS;
-
+impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -72,15 +70,60 @@ impl CSSEstimator for SSE<'_, CatTable> {
     }
 }
 
-impl CSSEstimator for SSE<'_, CatTrj> {
-    type Output = <CatCIM as CPD>::SS;
-
+impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
+        // Assert variables and conditioning variables must be disjoint..
+        assert!(
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
+        );
+
+        // Get the cardinality.
+        let cardinality = self.dataset.cardinality();
+
+        // Initialize the multi index.
+        let m_idx_x = MI::new(x.iter().map(|&i| cardinality[i]));
+        let m_idx_z = MI::new(z.iter().map(|&i| cardinality[i]));
+        // Get the cardinality of the conditioned and conditioning variables.
+        let c_x = m_idx_x.cardinality().product();
+        let c_z = m_idx_z.cardinality().product();
+
+        // Initialize the joint counts.
+        let mut n_xz: Array2<f64> = Array::zeros((c_z, c_x));
+
+        // Get the unweighted values and weights.
+        let values = self.dataset.values().values();
+        let weights = self.dataset.weights();
+
+        // Count the occurrences of the states.
+        values
+            .rows()
+            .into_iter()
+            .zip(weights)
+            .for_each(|(row, &weight)| {
+                // Get the value of X and Z as index.
+                let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
+                let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
+                // Increment the joint counts.
+                n_xz[[idx_z, idx_x]] += weight;
+            });
+
+        n_xz
+    }
+}
+
+impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -131,15 +174,13 @@ impl CSSEstimator for SSE<'_, CatTrj> {
     }
 }
 
-impl CSSEstimator for SSE<'_, CatWtdTrj> {
-    type Output = <CatCIM as CPD>::SS;
-
+impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatWtdTrj> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
@@ -152,15 +193,13 @@ impl CSSEstimator for SSE<'_, CatWtdTrj> {
 // Implement the CSSEstimator and ParCSSEstimator traits for both CatTrjs and CatWtdTrjs.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl CSSEstimator for SSE<'_, $type> {
-        type Output = <CatCIM as CPD>::SS;
-
+    impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
         #[inline]
         fn labels(&self) -> &Labels {
             self.dataset.labels()
         }
 
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
             // Get the cardinality.
             let cardinality = self.dataset.cardinality();
 
@@ -186,10 +225,8 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         }
     }
 
-    impl ParCSSEstimator for SSE<'_, $type> {
-        type Output = <CatCIM as CPD>::SS;
-
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    impl ParCSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
             // Get the cardinality.
             let cardinality = self.dataset.cardinality();
 

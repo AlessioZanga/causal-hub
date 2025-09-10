@@ -2,7 +2,7 @@ use dry::macro_for;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCPD},
     types::{Labels, Set, States},
@@ -31,74 +31,79 @@ impl<'a, D> MLE<'a, D> {
     }
 }
 
-impl CPDEstimator<CatCPD> for MLE<'_, CatTable> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
+// Implement the CPD estimator for the MLE struct.
+macro_for!($type in [CatTable, CatWtdTable] {
+
+    impl CPDEstimator<CatCPD> for MLE<'_, $type> {
+        #[inline]
+        fn labels(&self) -> &Labels {
+            self.dataset.labels()
+        }
+
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+            // Get states and cardinality.
+            let states = self.dataset.states();
+
+            // Initialize the sufficient statistics estimator.
+            let sse = SSE::new(self.dataset);
+            // Compute sufficient statistics.
+            let n_xz = sse.fit(x, z);
+
+            // Marginalize the counts.
+            let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
+
+            // Assert the marginal counts are not zero.
+            assert!(
+                n_z.iter().all(|&x| x > 0.),
+                "Failed to get non-zero counts.",
+            );
+
+            // Compute the sample size.
+            let n = n_z.sum();
+
+            // Compute the parameters by normalizing the counts.
+            let parameters = &n_xz / &n_z;
+
+            // Set epsilon to avoid ln(0).
+            let eps = f64::MIN_POSITIVE;
+            // Compute the sample log-likelihood, avoiding ln(0).
+            let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
+
+            // Set the sample conditional counts.
+            let sample_conditional_counts = Some(n_xz.clone());
+            // Set the sample size.
+            let sample_size = Some(n);
+
+            // Subset the conditioning labels, states and cardinality.
+            let conditioning_states = z
+                .iter()
+                .map(|&i| {
+                    let (k, v) = states.get_index(i).unwrap();
+                    (k.clone(), v.clone())
+                })
+                .collect();
+            // Get the labels of the conditioned variables.
+            let states = x
+                .iter()
+                .map(|&i| {
+                    let (k, v) = states.get_index(i).unwrap();
+                    (k.clone(), v.clone())
+                })
+                .collect();
+
+            // Construct the CPD.
+            CatCPD::with_optionals(
+                states,
+                conditioning_states,
+                parameters,
+                sample_conditional_counts,
+                sample_size,
+                sample_log_likelihood,
+            )
+        }
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-        // Get states and cardinality.
-        let states = self.dataset.states();
-
-        // Initialize the sufficient statistics estimator.
-        let sse = SSE::new(self.dataset);
-        // Compute sufficient statistics.
-        let n_xz = sse.fit(x, z);
-
-        // Marginalize the counts.
-        let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
-
-        // Assert the marginal counts are not zero.
-        assert!(
-            n_z.iter().all(|&x| x > 0.),
-            "Failed to get non-zero counts.",
-        );
-
-        // Compute the sample size.
-        let n = n_z.sum();
-
-        // Compute the parameters by normalizing the counts.
-        let parameters = &n_xz / &n_z;
-
-        // Set epsilon to avoid ln(0).
-        let eps = f64::MIN_POSITIVE;
-        // Compute the sample log-likelihood, avoiding ln(0).
-        let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
-
-        // Set the sample conditional counts.
-        let sample_conditional_counts = Some(n_xz.clone());
-        // Set the sample size.
-        let sample_size = Some(n);
-
-        // Subset the conditioning labels, states and cardinality.
-        let conditioning_states = z
-            .iter()
-            .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
-            })
-            .collect();
-        // Get the labels of the conditioned variables.
-        let states = x
-            .iter()
-            .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
-            })
-            .collect();
-
-        // Construct the CPD.
-        CatCPD::with_optionals(
-            states,
-            conditioning_states,
-            parameters,
-            sample_conditional_counts,
-            sample_size,
-            sample_log_likelihood,
-        )
-    }
-}
+});
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.

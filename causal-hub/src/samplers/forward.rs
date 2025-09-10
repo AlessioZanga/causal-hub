@@ -121,10 +121,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
     }
 }
 
-impl<R: Rng> BNApproxInference for ForwardSampler<'_, R, CatBN> {
-    type Output = <CatBN as BN>::CPD;
-
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
+impl<R: Rng> BNApproxInference<<CatBN as BN>::CPD> for ForwardSampler<'_, R, CatBN> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> <CatBN as BN>::CPD {
         // Get the upward closure of X_Z := X \cup Z, i.e. the An(X_Z) \cup X_Z.
         let x_z = x | z;
         let an_x_z = &self.model.graph().ancestors(&x_z) | &x_z;
@@ -167,10 +165,10 @@ impl<R: Rng> BNApproxInference for ForwardSampler<'_, R, CatBN> {
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNApproxInference for ForwardSampler<'_, R, CatBN> {
-    type Output = <CatBN as BN>::CPD;
-
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output {
+impl<R: Rng + SeedableRng> ParBNApproxInference<<CatBN as BN>::CPD>
+    for ForwardSampler<'_, R, CatBN>
+{
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> <CatBN as BN>::CPD {
         // Generate a random seed for each sample.
         let seeds: Vec<_> = self.rng.random_iter().take(n).collect();
 

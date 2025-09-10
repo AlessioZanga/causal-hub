@@ -1,10 +1,7 @@
 use crate::types::Set;
 
 /// A trait for Bayesian network approximate inference.
-pub trait BNApproxInference {
-    /// The output type of the inference.
-    type Output;
-
+pub trait BNApproxInference<T> {
     /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
     ///
     /// # Arguments
@@ -17,14 +14,11 @@ pub trait BNApproxInference {
     ///
     /// The predicted values of `x` conditioned on `z`.
     ///
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output;
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> T;
 }
 
 /// A trait for parallel Bayesian network approximate inference.
-pub trait ParBNApproxInference {
-    /// The output type of the inference.
-    type Output;
-
+pub trait ParBNApproxInference<T> {
     /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence, in parallel.
     ///
     /// # Arguments
@@ -37,5 +31,5 @@ pub trait ParBNApproxInference {
     ///
     /// The predicted values of `x` conditioned on `z`.
     ///
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> Self::Output;
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> T;
 }
