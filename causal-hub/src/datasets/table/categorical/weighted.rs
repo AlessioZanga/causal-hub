@@ -34,7 +34,7 @@ impl CatWtdTable {
     ///
     pub fn new(data: CatTable, weights: Array1<f64>) -> Self {
         assert_eq!(
-            data.sample_size(),
+            data.values().nrows(),
             weights.len(),
             "The number of weights must be equal to the number of samples."
         );
@@ -94,8 +94,7 @@ impl Dataset for CatWtdTable {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        // TODO: Should this return the sum of weights instead?
-        self.data.sample_size()
+    fn sample_size(&self) -> f64 {
+        self.weights.sum()
     }
 }

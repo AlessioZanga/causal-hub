@@ -62,7 +62,7 @@ mod tests {
             // Check labels.
             assert!(trajectory.labels().eq(ctbn.labels()));
             // Check sample size.
-            assert_eq!(trajectory.sample_size(), 10);
+            assert_eq!(trajectory.sample_size(), 10.);
         }
     }
 }

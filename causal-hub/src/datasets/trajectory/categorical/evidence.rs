@@ -553,8 +553,8 @@ impl Dataset for CatTrjEv {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.evidences.values().map(|x| x.len()).sum()
+    fn sample_size(&self) -> f64 {
+        self.evidences.values().map(|x| x.len()).sum::<usize>() as f64
     }
 }
 
@@ -701,7 +701,7 @@ impl Dataset for CatTrjsEv {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.iter().map(|x| x.sample_size()).sum()
+    fn sample_size(&self) -> f64 {
+        self.values.iter().map(Dataset::sample_size).sum()
     }
 }

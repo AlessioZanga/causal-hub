@@ -152,7 +152,7 @@ mod tests {
             let max_length = evidence
                 .values()
                 .iter()
-                .map(|e| e.sample_size())
+                .map(|e| e.sample_size() as usize)
                 .max()
                 .unwrap_or(10);
 

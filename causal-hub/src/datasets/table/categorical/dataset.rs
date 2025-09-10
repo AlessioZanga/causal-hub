@@ -259,8 +259,8 @@ impl Dataset for CatTable {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.nrows()
+    fn sample_size(&self) -> f64 {
+        self.values.nrows() as f64
     }
 }
 

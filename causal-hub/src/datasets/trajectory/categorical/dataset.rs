@@ -175,8 +175,8 @@ impl Dataset for CatTrj {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.events.values().nrows()
+    fn sample_size(&self) -> f64 {
+        self.events.values().nrows() as f64
     }
 }
 
@@ -323,7 +323,7 @@ impl Dataset for CatTrjs {
     }
 
     #[inline]
-    fn sample_size(&self) -> usize {
-        self.values.iter().map(|x| x.sample_size()).sum()
+    fn sample_size(&self) -> f64 {
+        self.values.iter().map(Dataset::sample_size).sum()
     }
 }

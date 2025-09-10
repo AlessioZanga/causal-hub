@@ -208,13 +208,13 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             .rows_mut()
             .into_iter()
             .zip(weights.iter_mut())
-            .for_each(|(mut s, w)| {
+            .for_each(|(mut sample, weight)| {
                 // Sample a weighted sample.
                 let (s_i, w_i) = self.sample();
                 // Assign the sample.
-                s.assign(&s_i);
+                sample.assign(&s_i);
                 // Assign the weight.
-                *w = w_i;
+                *weight = w_i;
             });
 
         // Construct the samples.
@@ -241,7 +241,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
             .into_par_iter()
             .zip(samples.axis_iter_mut(Axis(0)))
             .zip(weights.axis_iter_mut(Axis(0)))
-            .for_each(|((seed, mut s), mut w)| {
+            .for_each(|((seed, mut sample), mut weight)| {
                 // Create a new RNG with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the RNG.
@@ -249,9 +249,9 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
                 // Sample a weighted sample.
                 let (s_i, w_i) = sampler.sample();
                 // Assign the sample.
-                s.assign(&s_i);
+                sample.assign(&s_i);
                 // Assign the weight.
-                w.fill(w_i);
+                weight.fill(w_i);
             });
 
         // Construct the samples.
