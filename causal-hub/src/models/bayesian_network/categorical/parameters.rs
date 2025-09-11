@@ -373,8 +373,28 @@ impl CatCPD {
     /// A new instance with the marginalized variables.
     ///
     pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
-        // TODO: Assert X is a subset of the variables.
-        // TODO: Assert Z is a subset of the conditioning variables.
+        // Assert X is a subset of the variables.
+        x.iter().for_each(|&x| {
+            assert!(
+                x < self.labels.len(),
+                "Variable index out of bounds: \n\
+                \t expected:    x <  {} , \n\
+                \t found:       x == {} .",
+                self.labels.len(),
+                x,
+            );
+        });
+        // Assert Z is a subset of the conditioning variables.
+        z.iter().for_each(|&z| {
+            assert!(
+                z < self.conditioning_labels.len(),
+                "Conditioning variable index out of bounds: \n\
+                \t expected:    z <  {} , \n\
+                \t found:       z == {} .",
+                self.conditioning_labels.len(),
+                z,
+            );
+        });
 
         // Clone states, conditioning states and parameters.
         let mut states = self.states.clone();
@@ -427,6 +447,8 @@ impl CatCPD {
                 .enumerate()
                 .filter_map(|(i, s)| if !x.contains(&i) { Some(s) } else { None })
                 .collect();
+            // Normalize the parameters by row.
+            new_parameters /= &new_parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
             // Update the parameters.
             parameters = new_parameters;
         }
@@ -448,7 +470,7 @@ impl CatCPD {
             // Generate all the multi indices of the current shape with zeros in the dimensions of X.
             new_shape
                 .iter()
-                .map(|&i| (0..i))
+                .map(|&i| 0..i)
                 .multi_cartesian_product()
                 .for_each(|mut new_idx| {
                     // Get the flat index of the current multi index.
@@ -458,12 +480,12 @@ impl CatCPD {
                     self.conditioning_shape
                         .iter()
                         .enumerate()
-                        .filter_map(|(i, &s)| if x.contains(&i) { Some(0..s) } else { None })
+                        .filter_map(|(i, &s)| if z.contains(&i) { Some(0..s) } else { None })
                         .multi_cartesian_product()
                         .for_each(|idx| {
-                            // Set the previous dimensions of X to the current multi index.
-                            x.iter().zip(idx).for_each(|(&x, i)| {
-                                new_idx[x] = i;
+                            // Set the previous dimensions of Z to the current multi index.
+                            z.iter().zip(idx).for_each(|(&z, i)| {
+                                new_idx[z] = i;
                             });
                             // Get the flat index of the previous multi index.
                             let flat_idx = self.conditioning_multi_index.ravel(new_idx.clone());
@@ -477,14 +499,10 @@ impl CatCPD {
                 .enumerate()
                 .filter_map(|(i, s)| if !z.contains(&i) { Some(s) } else { None })
                 .collect();
+            // Normalize the parameters by row.
+            new_parameters /= &new_parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
             // Update the parameters.
             parameters = new_parameters;
-        }
-
-        // Normalize the parameters if we marginalized over X and Z.
-        if !x.is_empty() && !z.is_empty() {
-            // Normalize the parameters.
-            parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
         }
 
         // TODO: Handle optionals?
