@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, Dataset},
+    datasets::{CatTable, CatType, Dataset},
     types::{Labels, States},
 };
 
@@ -27,7 +27,7 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new(states: States, mut events: Array2<u8>, mut times: Array1<f64>) -> Self {
+    pub fn new(states: States, mut events: Array2<CatType>, mut times: Array1<f64>) -> Self {
         // Assert the number of rows in values and times are equal.
         assert_eq!(
             events.nrows(),
@@ -156,7 +156,7 @@ impl CatTrj {
 }
 
 impl Dataset for CatTrj {
-    type Values = Array2<u8>;
+    type Values = Array2<CatType>;
 
     #[inline]
     fn labels(&self) -> &Labels {

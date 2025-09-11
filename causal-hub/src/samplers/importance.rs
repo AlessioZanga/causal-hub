@@ -2,15 +2,15 @@ use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
     Rng, SeedableRng,
-    distr::{Distribution as _Distribution, weighted::WeightedIndex},
+    distr::{Distribution, weighted::WeightedIndex},
 };
 use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
     datasets::{
-        CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatWtdSample, CatWtdTable,
-        CatWtdTrj, CatWtdTrjs,
+        CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatType, CatWtdSample,
+        CatWtdTable, CatWtdTrj, CatWtdTrjs,
     },
     estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
@@ -158,7 +158,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                 Some(e_i) => match e_i {
                     E::CertainPositive { state, .. } => {
                         // Get the state.
-                        let s_i = *state as u8;
+                        let s_i = *state as CatType;
                         // Return the state and its weight.
                         (s_i, p_i[*state])
                     }
@@ -179,7 +179,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                         // Construct the sampler.
                         let s_i = WeightedIndex::new(&p_i).unwrap();
                         // Sample the state.
-                        let s_i = s_i.sample(self.rng) as u8;
+                        let s_i = s_i.sample(self.rng) as CatType;
                         // Return the sample and weight.
                         (s_i, w_i)
                     }
@@ -190,7 +190,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                     // Construct the sampler.
                     let s_i = WeightedIndex::new(&p_i).unwrap();
                     // Sample the state.
-                    let s_i = s_i.sample(self.rng) as u8;
+                    let s_i = s_i.sample(self.rng) as CatType;
                     // Return the sample and weight.
                     (s_i, 1.)
                 }
@@ -238,7 +238,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 
     fn par_sample_n(&mut self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples: Array2<u8> = Array::zeros((n, self.model.labels().len()));
+        let mut samples: Array2<CatType> = Array::zeros((n, self.model.labels().len()));
         // Allocate the weights.
         let mut weights: Array1<f64> = Array::zeros(n);
 
@@ -643,7 +643,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                     // Get the state of the certain positive interval.
                     match e {
                         Some(E::CertainPositiveInterval { state, .. }) => {
-                            (*state as u8, q_i_zx[*state])
+                            (*state as CatType, q_i_zx[*state])
                         }
                         _ => unreachable!(), // Due to previous checks.
                     }
@@ -667,7 +667,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                             // Construct the sampler.
                             let s_i = WeightedIndex::new(&q_i_zx).unwrap();
                             // Sample the state.
-                            let s_i = s_i.sample(self.rng) as u8;
+                            let s_i = s_i.sample(self.rng) as CatType;
                             // Return the sample and weight.
                             (s_i, w_i)
                         }
@@ -675,7 +675,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                             // Initialize a weighted index sampler.
                             let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
                             // Sample the next event.
-                            let s_i = s_i_zx.sample(self.rng) as u8;
+                            let s_i = s_i_zx.sample(self.rng) as CatType;
                             // Return the sample and weight.
                             (s_i, 1.)
                         }

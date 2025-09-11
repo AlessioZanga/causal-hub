@@ -4,13 +4,13 @@ use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
     Rng, SeedableRng,
-    distr::{Distribution as _Distribution, weighted::WeightedIndex},
+    distr::{Distribution, weighted::WeightedIndex},
 };
 use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatSample, CatTable, CatTrj},
+    datasets::{CatSample, CatTable, CatTrj, CatType},
     estimation::{CPDEstimator, MLE},
     inference::{BNApproxInference, ParBNApproxInference},
     models::{BN, CPD, CTBN, CatBN, CatCPD, CatCTBN},
@@ -66,7 +66,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             // Construct the sampler.
             let s_i = WeightedIndex::new(&p_i).unwrap();
             // Sample from the distribution.
-            sample[i] = s_i.sample(self.rng) as u8;
+            sample[i] = s_i.sample(self.rng) as CatType;
         });
 
         sample
@@ -230,7 +230,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Initialize a weighted index sampler.
             let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
             // Sample the next event.
-            event[i] = s_i_zx.sample(self.rng) as u8;
+            event[i] = s_i_zx.sample(self.rng) as CatType;
             // Append the event to the trajectory.
             sample_events.push(event.clone());
             sample_times.push(time);

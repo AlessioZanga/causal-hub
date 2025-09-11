@@ -7,7 +7,7 @@ use rand_distr::{Distribution, weighted::WeightedIndex};
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
+    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
     estimation::{BE, CPDEstimator, ParCPDEstimator},
     models::CatCIM,
     types::{Labels, Set},
@@ -140,7 +140,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Set missing placeholder.
-        const M: u8 = u8::MAX;
+        const M: CatType = CatType::MAX;
 
         // Get labels and states.
         let states = self.evidence.states().clone();
@@ -193,7 +193,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     // If the evidence is present, set the state.
                     if let Some(e_i_t) = e_i_t {
                         match e_i_t {
-                            E::CertainPositiveInterval { state, .. } => *e = *state as u8,
+                            E::CertainPositiveInterval { state, .. } => *e = *state as CatType,
                             E::CertainNegativeInterval { .. } => todo!(), // FIXME:
                             _ => unreachable!(), // Due to the previous assertions, this should never happen.
                         }
@@ -218,7 +218,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         for i in no_evidence {
             // Sample a state uniformly at random.
             let random_state = Array::from_iter({
-                let random_state = || self.rng.random_range(0..(states[i].len() as u8));
+                let random_state = || self.rng.random_range(0..(states[i].len() as CatType));
                 std::iter::repeat_with(random_state).take(events.nrows())
             });
             // Fill the event with the sampled state.

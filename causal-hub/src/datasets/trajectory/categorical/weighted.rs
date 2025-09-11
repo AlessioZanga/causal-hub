@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, Dataset},
+    datasets::{CatTrj, CatType, Dataset},
     types::{Labels, States},
 };
 
@@ -108,7 +108,7 @@ impl CatWtdTrj {
 }
 
 impl Dataset for CatWtdTrj {
-    type Values = Array2<u8>;
+    type Values = Array2<CatType>;
 
     #[inline]
     fn labels(&self) -> &Labels {

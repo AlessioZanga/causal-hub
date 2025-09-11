@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use causal_hub_rust::{
-    datasets::{CatTrj, CatTrjs, Dataset},
+    datasets::{CatTrj, CatTrjs, CatType, Dataset},
     types::{Set, States},
 };
 use numpy::{PyArray1, ndarray::prelude::*, prelude::*};
@@ -156,7 +156,7 @@ impl PyCatTrj {
             .unwrap();
 
         // Initialize the categorical variables values.
-        let mut values = Array2::from_elem(shape, 0u8);
+        let mut values = Array2::from_elem(shape, CatType::default());
         // Extract the categorical variables values.
         values.columns_mut().into_iter().zip(&states).try_for_each(
             |(mut value, (name, states))| {
@@ -166,12 +166,12 @@ impl PyCatTrj {
                 let column = column.getattr("to_numpy")?.call0()?;
                 // Extract the column as a PyArray1<PyObject>.
                 let column = column.downcast::<PyArray1<PyObject>>()?.to_owned_array();
-                // Map the PyObject to String and convert it to u8
+                // Map the PyObject to String and convert it to CatType.
                 let column = column.map(|x| {
                     // Get the value.
                     let x = x.extract::<String>(py).unwrap();
-                    // Map the value to u8.
-                    states.get_index_of(&x).unwrap() as u8
+                    // Map the value to CatType.
+                    states.get_index_of(&x).unwrap() as CatType
                 });
                 // Extract the column from the data frame.
                 value.assign(&column);

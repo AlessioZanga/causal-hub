@@ -361,6 +361,17 @@ impl CatCPD {
         self.sample_log_likelihood
     }
 
+    /// Marginalizes the over the variables `X` and conditioning variables `Z`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variables to marginalize over.
+    /// * `z` - The conditioning variables to marginalize over.
+    ///
+    /// # Returns
+    ///
+    /// A new instance with the marginalized variables.
+    ///
     pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
         // TODO: Assert X is a subset of the variables.
         // TODO: Assert Z is a subset of the conditioning variables.
