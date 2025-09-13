@@ -8,8 +8,9 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTable},
     impl_json_io,
+    inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph, TopologicalOrder},
+    models::{BN, CPD, CatCPD, DiGraph, Graph},
     set,
     types::{Labels, Map, States},
 };

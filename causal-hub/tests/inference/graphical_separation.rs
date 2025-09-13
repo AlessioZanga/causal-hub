@@ -3,7 +3,8 @@ mod tests {
     mod digraph {
         use causal_hub::{
             assets::*,
-            models::{BN, DiGraph, Graph, GraphicalSeparation},
+            inference::GraphicalSeparation,
+            models::{BN, DiGraph, Graph},
             set,
         };
         use dry::macro_for;

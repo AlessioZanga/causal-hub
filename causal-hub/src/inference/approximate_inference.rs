@@ -59,7 +59,7 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
     }
 }
 
-/// A trait for Bayesian network approximate inference.
+/// A trait for approximate inference with Bayesian Networks.
 pub trait BNApproxInference<T> {
     /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
     ///

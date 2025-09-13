@@ -31,7 +31,7 @@ impl UnGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the neighbors of the vertex.
+    /// The neighbors of the vertex.
     ///
     pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
         // Check if the vertices are within bounds.

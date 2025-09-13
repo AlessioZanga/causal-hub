@@ -1,6 +1,7 @@
 use backend::{
+    inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
-    models::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
+    models::{DiGraph, Graph},
     set,
     types::{Labels, Set},
 };

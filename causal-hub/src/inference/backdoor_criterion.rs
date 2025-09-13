@@ -1,5 +1,5 @@
 use crate::{
-    models::{DiGraph, Graph, GraphicalSeparation},
+    models::{DiGraph, Graph},
     set,
     types::Set,
 };
@@ -86,7 +86,7 @@ pub trait BackdoorCriterion {
 
 mod digraph {
     use super::*;
-    use crate::models::digraph::_assert;
+    use crate::inference::{GraphicalSeparation, digraph::_assert};
 
     // Returns the set of vertices:
     //

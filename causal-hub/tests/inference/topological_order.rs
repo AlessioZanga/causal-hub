@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::models::{DiGraph, Graph, TopologicalOrder};
+    use causal_hub::{
+        inference::TopologicalOrder,
+        models::{DiGraph, Graph},
+    };
 
     #[test]
     fn test_topological_order_simple() {

@@ -2,7 +2,8 @@
 mod tests {
     mod digraph {
         use causal_hub::{
-            models::{BackdoorCriterion, DiGraph, Graph},
+            inference::BackdoorCriterion,
+            models::{DiGraph, Graph},
             set,
         };
 

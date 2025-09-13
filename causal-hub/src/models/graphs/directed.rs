@@ -34,7 +34,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the parents of the vertices.
+    /// The parents of the vertices.
     ///
     pub fn parents(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
@@ -73,7 +73,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the ancestors of the vertices.
+    /// The ancestors of the vertices.
     ///
     pub fn ancestors(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
@@ -121,7 +121,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the children of the vertices.
+    /// The children of the vertices.
     ///
     pub fn children(&self, x: &Set<usize>) -> Set<usize> {
         // Check if the vertices are within bounds.
@@ -160,7 +160,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the descendants of the vertices.
+    /// The descendants of the vertices.
     ///
     pub fn descendants(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
