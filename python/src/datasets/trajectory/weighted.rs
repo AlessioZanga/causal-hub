@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use causal_hub_rust::datasets::{CatWtdTrj, CatWtdTrjs, Dataset};
+use backend::datasets::{CatWtdTrj, CatWtdTrjs, Dataset};
 use numpy::{PyArray1, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
 use pyo3_stub_gen::derive::*;

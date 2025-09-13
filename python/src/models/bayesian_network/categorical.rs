@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use causal_hub_rust::{
+use backend::{
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph},
 };

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use causal_hub_rust::{
+use backend::{
     datasets::{CatTrj, CatTrjs, CatType, Dataset},
     types::{Set, States},
 };

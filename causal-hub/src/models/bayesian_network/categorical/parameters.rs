@@ -428,11 +428,13 @@ impl CatCPD {
         let mut parameters = self.parameters.clone();
         // If Z is not empty, marginalize over Z.
         if !z.is_empty() {
-            let not_z: Set<_> = (0..self.conditioning_shape.len())
-                .filter(|i| !z.contains(i))
-                .collect();
-            let mask_z = mask(&not_z, &self.conditioning_shape);
+            // Select the indices not in Z.
+            let shape_z = &self.conditioning_shape;
+            let not_z: Set<_> = (0..shape_z.len()).filter(|i| !z.contains(i)).collect();
+            // Apply the marginalization mask.
+            let mask_z = mask(&not_z, shape_z);
             parameters = mask_z.t().dot(&parameters);
+            // Update the conditioning states.
             conditioning_states = conditioning_states
                 .into_iter()
                 .enumerate()
@@ -441,9 +443,13 @@ impl CatCPD {
         }
         // If X is not empty, marginalize over X.
         if !x.is_empty() {
-            let not_x: Set<_> = (0..self.shape.len()).filter(|i| !x.contains(i)).collect();
-            let mask_x = mask(&not_x, &self.shape);
+            // Select the indices not in X.
+            let shape_x = &self.shape;
+            let not_x: Set<_> = (0..shape_x.len()).filter(|i| !x.contains(i)).collect();
+            // Apply the marginalization mask.
+            let mask_x = mask(&not_x, shape_x);
             parameters = parameters.dot(&mask_x);
+            // Update the states.
             states = states
                 .into_iter()
                 .enumerate()

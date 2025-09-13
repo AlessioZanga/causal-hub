@@ -1,7 +1,7 @@
 use core::panic;
 use std::collections::BTreeMap;
 
-use causal_hub_rust::{
+use backend::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
     types::{Set, States},
 };

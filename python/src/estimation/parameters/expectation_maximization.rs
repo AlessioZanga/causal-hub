@@ -1,7 +1,7 @@
 use std::{cell::RefCell, ops::Deref};
 
 use approx::*;
-use causal_hub_rust::{
+use backend::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
     estimation::{BE, EMBuilder, ParCTBNEstimator, RAWE},
     models::{CTBN, CatCTBN, DiGraph},

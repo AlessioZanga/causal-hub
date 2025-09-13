@@ -1,4 +1,4 @@
-use causal_hub_rust::{
+use backend::{
     io::JsonIO,
     models::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
     set,

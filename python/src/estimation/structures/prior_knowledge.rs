@@ -1,4 +1,4 @@
-use causal_hub_rust::{estimation::PK, types::Labels};
+use backend::{estimation::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 

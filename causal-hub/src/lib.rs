@@ -4,6 +4,12 @@
 //! CausalHub is a library for causal inference and causal discovery.
 //! It provides tools for estimating causal effects, learning causal structures, and more.
 
+// Link to the BLAS library.
+#[cfg(any(feature = "openblas-static", feature = "openblas-system"))]
+extern crate blas_src;
+#[cfg(all(feature = "openblas-static", feature = "openblas-system"))]
+compile_error!("Features `openblas-static` and `openblas-system` cannot be enabled at the same time.");
+
 /// Assets such as datasets, models, and other resources.
 pub mod assets;
 /// Dataset structures.
