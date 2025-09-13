@@ -6,10 +6,9 @@ mod tests {
             use causal_hub::{
                 assets::load_asia,
                 datasets::{CatEv, CatEvT},
-                inference::{BNApproxInference, ParBNApproxInference},
+                inference::{ApproximateInference, BNApproxInference, ParBNApproxInference},
                 map,
                 models::{BN, CatCPD},
-                samplers::{ForwardSampler, ImportanceSampler},
                 set,
             };
             use ndarray::prelude::*;
@@ -23,7 +22,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ForwardSampler::new(&mut rng, &model);
+                let mut engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![], 1000);
@@ -51,7 +50,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ForwardSampler::new(&mut rng, &model);
+                let mut engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![], 1000);
@@ -93,7 +92,8 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine = ImportanceSampler::new(&mut rng, &model, &evidence);
+                let mut engine =
+                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![], 1000);
@@ -135,7 +135,8 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine = ImportanceSampler::new(&mut rng, &model, &evidence);
+                let mut engine =
+                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![], 1000);

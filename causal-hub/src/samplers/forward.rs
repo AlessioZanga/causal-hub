@@ -11,12 +11,10 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatSample, CatTable, CatTrj, CatType},
-    estimation::{CPDEstimator, MLE},
-    inference::{BNApproxInference, ParBNApproxInference},
-    models::{BN, CPD, CTBN, CatBN, CatCPD, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{EPSILON, Set},
+    types::EPSILON,
 };
 
 /// A forward sampler.
@@ -112,34 +110,6 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
 
         // Construct the dataset.
         CatTable::new(self.model.states().clone(), samples)
-    }
-}
-
-impl<R: Rng> BNApproxInference<CatCPD> for ForwardSampler<'_, R, CatBN> {
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
-        // Generate n samples from the model.
-        // TODO: Avoid generating the full dataset,
-        //       e.g., by only sampling the variables in X U Z, and
-        //       by using batching to reduce memory usage.
-        let dataset = self.sample_n(n);
-        // Initialize the estimator.
-        let estimator = MLE::new(&dataset);
-        // Fit the CPD.
-        estimator.fit(x, z)
-    }
-}
-
-impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD> for ForwardSampler<'_, R, CatBN> {
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
-        // Generate n samples from the model.
-        // TODO: Avoid generating the full dataset,
-        //       e.g., by only sampling the variables in X U Z, and
-        //       by using batching to reduce memory usage.
-        let dataset = self.par_sample_n(n);
-        // Initialize the estimator.
-        let estimator = MLE::new(&dataset);
-        // Fit the CPD.
-        estimator.fit(x, z)
     }
 }
 
