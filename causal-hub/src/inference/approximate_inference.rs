@@ -5,7 +5,6 @@ use rand::{Rng, SeedableRng};
 use crate::{
     datasets::CatEv,
     estimation::{CPDEstimator, MLE},
-    inference::{BNInference, ParBNInference},
     models::{BN, CatBN, CatCPD},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     types::Set,
@@ -108,8 +107,50 @@ impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
     }
 }
 
-impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+/// A trait for inference with Bayesian Networks.
+pub trait BNInference<T>
+where
+    T: BN,
+{
+    /// The output type.
+    type Output;
+
+    /// Get the model.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the model.
+    ///
+    fn model(&self) -> &T;
+
+    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `x` is empty.
+    /// * Panics if `x` and `z` are not disjoint.
+    /// * Panics if `x` or `z` are not in the model.
+    ///
+    /// # Returns
+    ///
+    /// The predicted values of `x` conditioned on `z`.
+    ///
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+}
+
+impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
+    type Output = CatCPD;
+
+    fn model(&self) -> &CatBN {
+        self.model
+    }
+
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -138,8 +179,14 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
     }
 }
 
-impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
-    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
+    type Output = CatCPD;
+
+    fn model(&self) -> &CatBN {
+        self.model
+    }
+
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -178,8 +225,38 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+/// A trait for parallel inference with Bayesian Networks.
+pub trait ParBNInference<T>
+where
+    T: BN,
+{
+    /// The output type.
+    type Output;
+
+    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence, in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `x` is empty.
+    /// * Panics if `x` and `z` are not disjoint.
+    /// * Panics if `x` or `z` are not in the model.
+    ///
+    /// # Returns
+    ///
+    /// The predicted values of `x` conditioned on `z`.
+    ///
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+}
+
+impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
+    type Output = CatCPD;
+
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -208,8 +285,10 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
-    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
+    type Output = CatCPD;
+
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
