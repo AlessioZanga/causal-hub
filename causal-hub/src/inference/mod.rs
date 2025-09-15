@@ -24,6 +24,12 @@ pub trait BNInference<T> {
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
+    /// # Panics
+    ///
+    /// * Panics if `x` is empty.
+    /// * Panics if `x` and `z` are not disjoint.
+    /// * Panics if `x` or `z` are not in the model.
+    ///
     /// # Returns
     ///
     /// The predicted values of `x` conditioned on `z`.
@@ -39,6 +45,12 @@ pub trait ParBNInference<T> {
     ///
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `x` is empty.
+    /// * Panics if `x` and `z` are not disjoint.
+    /// * Panics if `x` or `z` are not in the model.
     ///
     /// # Returns
     ///

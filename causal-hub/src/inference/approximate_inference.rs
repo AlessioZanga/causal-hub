@@ -4,7 +4,7 @@ use crate::{
     datasets::CatEv,
     estimation::{CPDEstimator, MLE},
     inference::{BNInference, ParBNInference},
-    models::{CatBN, CatCPD},
+    models::{BN, CatBN, CatCPD},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     types::Set,
 };
@@ -82,14 +82,32 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
 impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
     #[inline]
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
+        // Get the sample size or compute it if not provided.
         self.sample_size.unwrap_or_else(|| {
-            1000 // FIXME:
+            // Get the shape of the variables X.
+            let x_shape: usize = x.iter().map(|&i| self.model.shape()[i]).product();
+            // Get the shape of the variables Z.
+            let z_shape: usize = z.iter().map(|&i| self.model.shape()[i]).product();
+            // Return the sample size as PAC-like bounds:
+            //  (|Z| * (|X| - 1) * ln(1 / delta) / epsilon^2), or approximately
+            //  (|Z| * (|X| - 1) * 1200 for delta = 0.05 and epsilon = 0.05.
+            z_shape * (x_shape - 1) * 1200
         })
     }
 }
 
 impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
     fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Assert X is not empty.
+        assert!(!x.is_empty(), "Variables X must not be empty.");
+        // Assert X and Z are disjoint.
+        assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+        // Assert X and Z are in the model.
+        assert!(
+            x.union(z).all(|&i| i < self.model.labels().len()),
+            "Variables X and Z must be in the model."
+        );
+
         // Get the sample size.
         let n = self.sample_size(x, z);
         // Initialize the sampler.
@@ -108,6 +126,16 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
 
 impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
     fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Assert X is not empty.
+        assert!(!x.is_empty(), "Variables X must not be empty.");
+        // Assert X and Z are disjoint.
+        assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+        // Assert X and Z are in the model.
+        assert!(
+            x.union(z).all(|&i| i < self.model.labels().len()),
+            "Variables X and Z must be in the model."
+        );
+
         // Get the sample size.
         let n = self.sample_size(x, z);
         // Check if evidence is actually provided.
@@ -136,6 +164,16 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
 
 impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
     fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Assert X is not empty.
+        assert!(!x.is_empty(), "Variables X must not be empty.");
+        // Assert X and Z are disjoint.
+        assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+        // Assert X and Z are in the model.
+        assert!(
+            x.union(z).all(|&i| i < self.model.labels().len()),
+            "Variables X and Z must be in the model."
+        );
+
         // Get the sample size.
         let n = self.sample_size(x, z);
         // Initialize the sampler.
@@ -154,6 +192,16 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
 
 impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
     fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Assert X is not empty.
+        assert!(!x.is_empty(), "Variables X must not be empty.");
+        // Assert X and Z are disjoint.
+        assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+        // Assert X and Z are in the model.
+        assert!(
+            x.union(z).all(|&i| i < self.model.labels().len()),
+            "Variables X and Z must be in the model."
+        );
+
         // Get the sample size.
         let n = self.sample_size(x, z);
         // Check if evidence is actually provided.
