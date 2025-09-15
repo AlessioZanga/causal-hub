@@ -115,12 +115,21 @@ where
                 // Estimate P(Y | X, Z, S) and P(S).
                 let p_y_x_z_s = self.engine.predict(y, &(x | s));
                 let p_s = self.engine.predict(s, &set![]);
-                // TODO: Compute P(Y | X, Z, S) * P(S).
-                let p_y_s_do_x_z = p_y_x_z_s; // FIXME: Placeholder.
-                // TODO: Map global S indices to the local S indices.
+                // Convert to potentials for aligned multiplication.
+                let p_y_x_z_s = p_y_x_z_s.into_phi();
+                let p_s = p_s.into_phi();
+                // Compute P(Y | X, Z, S) * P(S) using potentials.
+                let p_y_s_do_x_z = p_y_x_z_s * p_s;
+                // TODO: Map BN indices to the potential indices.
                 let s = s; // FIXME: Placeholder.
                 // Marginalize over S.
-                let p_y_do_x_z = p_y_s_do_x_z.marginalize(s, &set![]);
+                let p_y_do_x_z = p_y_s_do_x_z.marginalize(s);
+                // TODO: Map BN indices to the potential indices.
+                let x = x; // FIXME: Placeholder.
+                let y = y; // FIXME: Placeholder.
+                let z = z; // FIXME: Placeholder.
+                // Convert back to CPD.
+                let p_y_do_x_z = p_y_do_x_z.into_cpd(y, &(x | z));
                 // Return the result.
                 Some(p_y_do_x_z)
             }

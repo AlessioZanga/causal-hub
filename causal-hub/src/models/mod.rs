@@ -7,6 +7,9 @@ pub use continuous_time_bayesian_network::*;
 mod graphs;
 pub use graphs::*;
 
+mod potentials;
+pub use potentials::*;
+
 use crate::types::Labels;
 
 /// A trait for conditional probability distributions.

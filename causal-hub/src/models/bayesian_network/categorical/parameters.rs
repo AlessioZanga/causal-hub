@@ -11,7 +11,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::CPD,
+    models::{CPD, CatPhi},
     types::{EPSILON, Labels, Set, States},
     utils::MI,
 };
@@ -373,87 +373,15 @@ impl CatCPD {
     /// A new instance with the marginalized variables.
     ///
     pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
-        // Base case: if no variables to marginalize, return self.
-        if x.is_empty() && z.is_empty() {
-            return self.clone();
-        }
-
-        // Assert X is a subset of the variables.
-        x.iter().for_each(|&x| {
-            assert!(
-                x < self.labels.len(),
-                "Variable index out of bounds: \n\
-                \t expected:    x <  {} , \n\
-                \t found:       x == {} .",
-                self.labels.len(),
-                x,
-            );
-        });
-        // Assert Z is a subset of the conditioning variables.
-        z.iter().for_each(|&z| {
-            assert!(
-                z < self.conditioning_labels.len(),
-                "Conditioning variable index out of bounds: \n\
-                \t expected:    z <  {} , \n\
-                \t found:       z == {} .",
-                self.conditioning_labels.len(),
-                z,
-            );
-        });
-
-        // Allocate new states, conditioning states, and parameters.
-        let states_x = self.states.clone();
-        let states_z = self.conditioning_states.clone();
-        let parameters = self.parameters.clone();
-
-        // Get the length of the conditioning states.
-        let z_len = states_z.len();
-
-        // Filter the states.
-        let states_x: States = states_x
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, s)| if !x.contains(&i) { Some(s) } else { None })
-            .collect();
-        // Filter the conditioning states.
-        let states_z: States = states_z
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, s)| if !z.contains(&i) { Some(s) } else { None })
-            .collect();
-
-        // Get (|Z0|, ... , |Zn|, |X0|, ... , |Xm|) shape.
-        let s_x = &self.shape;
-        let s_z = &self.conditioning_shape;
-        let shape: Vec<_> = s_z.iter().chain(s_x).cloned().collect();
-        // Map parameters to shape (|Z0|, ... , |Zn|, |X0|, ... , |Xm|).
-        let mut parameters = parameters
-            .into_dyn()
-            .into_shape_with_order(shape)
-            .expect("Failed to reshape parameters.");
-
-        // Map axes to (Z0, ... , Zn, X0 + |Z|, ... , Xm + |Z|).
-        let axes_z_x = z.iter().cloned().chain(x.iter().map(|&x| x + z_len));
-        // Sum over the axes in reverse order to avoid shifting.
-        axes_z_x.sorted().rev().for_each(|i| {
-            parameters = parameters.sum_axis(Axis(i));
-        });
-
-        // Get the new 2D shape.
-        let shape: (usize, usize) = (
-            states_z.values().map(|s| s.len()).product(),
-            states_x.values().map(|s| s.len()).product(),
-        );
-        // Reshape the parameters to the new 2D shape.
-        let mut parameters = parameters
-            .into_shape_clone(shape)
-            .expect("Failed to reshape parameters.");
-
-        // Normalize the parameters.
-        parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
-
-        // Create the new CPD.
-        Self::new(states_x, states_z, parameters)
+        // Convert to potential.
+        let phi = self.clone().into_phi();
+        // Marginalize the potential.
+        let phi = phi.marginalize(&(x | z));
+        // Map CPD indices to potential indices.
+        let x = x; // FIXME: Placeholder.
+        let z = z; // FIXME: Placeholder.
+        // Convert back to CPD.
+        phi.into_cpd(x, z)
     }
 
     /// Creates a new categorical conditional probability distribution with optional fields.
@@ -529,6 +457,37 @@ impl CatCPD {
         cpd.sample_log_likelihood = sample_log_likelihood;
 
         cpd
+    }
+
+    /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding CPD.
+    ///
+    #[inline]
+    pub fn from_phi(phi: CatPhi, x: &Set<usize>, z: &Set<usize>) -> Self {
+        phi.into_cpd(x, z)
+    }
+
+    /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `cpd` - The CPD to convert.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding potential.
+    ///
+    #[inline]
+    pub fn into_phi(self) -> CatPhi {
+        CatPhi::from_cpd(self)
     }
 }
 
