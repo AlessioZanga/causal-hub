@@ -22,8 +22,14 @@ where
     ///
     /// # Arguments
     ///
-    /// * `x` - The treatment variables.
-    /// * `y` - The outcome variables.
+    /// * `x` - The cause variables.
+    /// * `y` - The effect variables.
+    ///
+    /// # Panics
+    ///
+    /// * If `X` is empty.
+    /// * If `Y` is empty.
+    /// * If `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
@@ -37,9 +43,17 @@ where
     ///
     /// # Arguments
     ///
-    /// * `x` - The treatment variables.
-    /// * `y` - The outcome variables.
+    /// * `x` - The cause variables.
+    /// * `y` - The effect variables.
     /// * `z` - The conditioning variables.
+    ///
+    /// # Panics
+    ///
+    /// * If `X` is empty.
+    /// * If `Y` is empty.
+    /// * If `X` and `Y` are not disjoint.
+    /// * If `X` and `Z` are not disjoint.
+    /// * If `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///
@@ -65,10 +79,26 @@ where
         y: &Set<usize>,
         z: &Set<usize>,
     ) -> Option<Self::Output> {
+        // Assert X is not empty.
+        assert!(!x.is_empty(), "Variables X must not be empty.");
+        // Assert Y is not empty.
+        assert!(!y.is_empty(), "Variables Y must not be empty.");
+        // Assert X and Y are disjoint.
+        assert!(x.is_disjoint(y), "Variables X and Y must be disjoint.");
+        // Assert X and Z are disjoint.
+        assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+        // Assert Y and Z are disjoint.
+        assert!(y.is_disjoint(z), "Variables Y and Z must be disjoint.");
+
+        /* Effect Identification */
+
         // Get the graph.
         let g = self.engine.model().graph();
         // Find a minimal backdoor adjustment set Z \cup S, if any.
         let z_s = g.find_minimal_backdoor_set(x, y, Some(z), None);
+
+        /* Effect Estimation */
+
         // Match on the backdoor adjustment set.
         match z_s {
             // If no backdoor adjustment set exists, return None.
