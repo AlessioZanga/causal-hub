@@ -19,7 +19,7 @@ mod tests {
             // Load BN.
             let bn = load_child();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &bn);
+            let forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
             let dataset = forward.sample_n(10);
 
@@ -57,7 +57,7 @@ mod tests {
             // Load BN.
             let bn = load_cancer();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &bn);
+            let forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
             let dataset = forward.sample_n(150_000);
 
@@ -90,7 +90,7 @@ mod tests {
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.sample_by_length(10);
 
@@ -107,7 +107,7 @@ mod tests {
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.sample_by_time(100.);
 
@@ -124,7 +124,7 @@ mod tests {
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.par_sample_n_by_length(1_000, 1_000);
 

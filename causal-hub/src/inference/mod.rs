@@ -34,7 +34,7 @@ pub trait BNInference<T> {
     ///
     /// The predicted values of `x` conditioned on `z`.
     ///
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
 
 /// A trait for parallel inference with Bayesian Networks.
@@ -56,5 +56,5 @@ pub trait ParBNInference<T> {
     ///
     /// The predicted values of `x` conditioned on `z`.
     ///
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }

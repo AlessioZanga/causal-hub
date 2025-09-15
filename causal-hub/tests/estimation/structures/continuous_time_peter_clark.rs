@@ -19,7 +19,7 @@ mod tests {
         // Load Eating.
         let model = load_eating();
         // Initialize a sampler.
-        let mut forward = ForwardSampler::new(&mut rng, &model);
+        let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
         let dataset = forward.par_sample_n_by_length(100, 100);
 
@@ -51,7 +51,7 @@ mod tests {
         // Load Eating.
         let model = load_eating();
         // Initialize a sampler.
-        let mut forward = ForwardSampler::new(&mut rng, &model);
+        let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
         let dataset = forward.par_sample_n_by_length(100, 1_000);
 

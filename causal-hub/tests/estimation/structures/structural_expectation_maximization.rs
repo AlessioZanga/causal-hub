@@ -29,7 +29,7 @@ mod tests {
             // Load eating.
             let model = load_eating();
             // Initialize a new sampler with no evidence.
-            let mut forward = ForwardSampler::new(&mut rng, &model);
+            let forward = ForwardSampler::new(&mut rng, &model);
             // Sample the fully-observed trajectories from the model.
             let trajectories = forward.par_sample_n_by_length(100, 10_000);
 
@@ -122,7 +122,7 @@ mod tests {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
-                        let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Perform multiple imputation.
                         let trjs = importance.sample_n_by_length(2 * max_len, 10);
                         // Get the one with the highest weight.

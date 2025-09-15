@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use rand::{Rng, SeedableRng};
 
 use crate::{
@@ -12,7 +14,7 @@ use crate::{
 /// An approximate inference engine.
 #[derive(Debug)]
 pub struct ApproximateInference<'a, R, M, E> {
-    rng: &'a mut R,
+    rng: RefCell<&'a mut R>,
     model: &'a M,
     evidence: Option<&'a E>,
     sample_size: Option<usize>,
@@ -32,6 +34,9 @@ impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
     ///
     #[inline]
     pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
+        // Wrap the RNG in a RefCell.
+        let rng = RefCell::new(rng);
+
         Self {
             rng,
             model,
@@ -104,7 +109,7 @@ impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
 }
 
 impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -117,8 +122,10 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
 
         // Get the sample size.
         let n = self.sample_size(x, z);
+        // Get the RNG.
+        let mut rng = self.rng.borrow_mut();
         // Initialize the sampler.
-        let mut sampler = ForwardSampler::new(self.rng, self.model);
+        let sampler = ForwardSampler::new(&mut rng, self.model);
         // Generate n samples from the model.
         // TODO: Avoid generating the full dataset,
         //       e.g., by only sampling the variables in X U Z, and
@@ -132,7 +139,7 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
 }
 
 impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -145,12 +152,14 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
 
         // Get the sample size.
         let n = self.sample_size(x, z);
+        // Get the RNG.
+        let mut rng = self.rng.borrow_mut();
         // Check if evidence is actually provided.
         match self.evidence {
             // Get the evidence.
             Some(evidence) => {
                 // Initialize the sampler.
-                let mut sampler = ImportanceSampler::new(self.rng, self.model, evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, evidence);
                 // Generate n samples from the model.
                 // TODO: Avoid generating the full dataset,
                 //       e.g., by only sampling the variables in X U Z, and
@@ -162,7 +171,7 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
                 estimator.fit(x, z)
             }
             // Delegate to empty evidence case.
-            None => ApproximateInference::new(self.rng, self.model)
+            None => ApproximateInference::new(&mut rng, self.model)
                 .with_sample_size(n)
                 .predict(x, z),
         }
@@ -170,7 +179,7 @@ impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -183,8 +192,10 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
 
         // Get the sample size.
         let n = self.sample_size(x, z);
+        // Get the RNG.
+        let mut rng = self.rng.borrow_mut();
         // Initialize the sampler.
-        let mut sampler = ForwardSampler::new(self.rng, self.model);
+        let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model);
         // Generate n samples from the model.
         // TODO: Avoid generating the full dataset,
         //       e.g., by only sampling the variables in X U Z, and
@@ -198,7 +209,7 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -211,12 +222,14 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
 
         // Get the sample size.
         let n = self.sample_size(x, z);
+        // Get the RNG.
+        let mut rng = self.rng.borrow_mut();
         // Check if evidence is actually provided.
         match self.evidence {
             // Get the evidence.
             Some(evidence) => {
                 // Initialize the sampler.
-                let mut sampler = ImportanceSampler::new(self.rng, self.model, evidence);
+                let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence);
                 // Generate n samples from the model.
                 // TODO: Avoid generating the full dataset,
                 //       e.g., by only sampling the variables in X U Z, and
@@ -228,7 +241,7 @@ impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R
                 estimator.fit(x, z)
             }
             // Delegate to empty evidence case.
-            None => ApproximateInference::new(self.rng, self.model)
+            None => ApproximateInference::new(&mut rng, self.model)
                 .with_sample_size(n)
                 .predict(x, z),
         }

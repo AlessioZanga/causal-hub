@@ -1,7 +1,9 @@
 use crate::{set, types::Set};
 
 /// A causal inference engine.
-pub struct CausalInference;
+pub struct CausalInference<'a, M> {
+    model: &'a M,
+}
 
 /// A trait for causal inference with Bayesian Networks.
 pub trait BNCausalInference<T> {

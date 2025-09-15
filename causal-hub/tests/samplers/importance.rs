@@ -52,7 +52,7 @@ mod tests {
             );
 
             // Initialize sampler.
-            let mut importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
+            let importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
             // Sample from CTBN.
             let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
 

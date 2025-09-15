@@ -23,7 +23,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.predict(&set![], &set![]);
@@ -36,7 +36,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.predict(&set![0], &set![0]);
@@ -50,7 +50,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.predict(&set![10], &set![]);
@@ -74,7 +74,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![]);
@@ -102,7 +102,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![]);
@@ -144,8 +144,7 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine =
-                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.predict(&set![0], &set![]);
@@ -174,7 +173,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.par_predict(&set![], &set![]);
@@ -188,7 +187,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.predict(&set![0], &set![0]);
@@ -202,7 +201,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
                 let _ = engine.par_predict(&set![10], &set![]);
@@ -215,7 +214,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
 
                 // Predict P(asia) without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![]);
@@ -243,7 +242,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![]);
@@ -285,8 +284,7 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine =
-                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict without evidence.
                 let pred_query = engine.par_predict(&set![0], &set![]);
