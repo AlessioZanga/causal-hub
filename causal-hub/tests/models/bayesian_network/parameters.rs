@@ -98,7 +98,7 @@ mod tests {
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
         let true_cpd = CatCPD::new(true_x, true_z, true_p);
 
-        assert_eq!(true_cpd, pred_cpd);
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
         let true_cpd = CatCPD::new(true_x, true_z, true_p);
 
-        assert_eq!(true_cpd, pred_cpd);
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod tests {
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
         let true_cpd = CatCPD::new(true_x, true_z, true_p);
 
-        assert_eq!(true_cpd, pred_cpd);
+        assert_relative_eq!(true_cpd, pred_cpd);
 
         let pred_cpd = cpd.marginalize(&set![], &set![1]);
 
@@ -234,7 +234,7 @@ mod tests {
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
         let true_cpd = CatCPD::new(true_x, true_z, true_p);
 
-        assert_eq!(true_cpd, pred_cpd);
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
         let true_cpd = CatCPD::new(true_x, true_z, true_p);
 
-        assert_eq!(true_cpd, pred_cpd);
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 
     #[test]

@@ -373,6 +373,11 @@ impl CatCPD {
     /// A new instance with the marginalized variables.
     ///
     pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+        // Base case: if no variables to marginalize, return self.
+        if x.is_empty() && z.is_empty() {
+            return self.clone();
+        }
+
         // Assert X is a subset of the variables.
         x.iter().for_each(|&x| {
             assert!(
@@ -396,73 +401,59 @@ impl CatCPD {
             );
         });
 
-        // Helper function to compute the marginalization mask.
-        fn mask(not_x: &Set<usize>, shape: &Array1<usize>) -> Array2<f64> {
-            // Get the number of variables and states.
-            let n = shape.len();
-            let _2_n = shape.product();
-            // Allocate the mask.
-            let mask = Array::from_shape_fn((_2_n, n), |(i, j)| {
-                let stride: usize = shape.iter().skip(j + 1).product();
-                (i / stride) % shape[j]
-            });
-            // Get the number of states for the variables to marginalize over.
-            let _2_n_x = not_x.iter().map(|&i| shape[i]).product();
-            // Compute the marginalization mask.
-            Array::from_shape_fn((_2_n, _2_n_x), |(i, j)| {
-                let mut idx = j;
-                for &k in not_x.iter().rev() {
-                    let v = idx % shape[k];
-                    if mask[[i, k]] != v {
-                        return 0.;
-                    }
-                    idx /= shape[k];
-                }
-                1.
-            })
-        }
-
         // Allocate new states, conditioning states, and parameters.
-        let mut states = self.states.clone();
-        let mut conditioning_states = self.conditioning_states.clone();
-        let mut parameters = self.parameters.clone();
-        // If Z is not empty, marginalize over Z.
-        if !z.is_empty() {
-            // Select the indices not in Z.
-            let shape_z = &self.conditioning_shape;
-            let not_z: Set<_> = (0..shape_z.len()).filter(|i| !z.contains(i)).collect();
-            // Apply the marginalization mask.
-            let mask_z = mask(&not_z, shape_z);
-            parameters = mask_z.t().dot(&parameters);
-            // Update the conditioning states.
-            conditioning_states = conditioning_states
-                .into_iter()
-                .enumerate()
-                .filter_map(|(i, s)| if not_z.contains(&i) { Some(s) } else { None })
-                .collect();
-        }
-        // If X is not empty, marginalize over X.
-        if !x.is_empty() {
-            // Select the indices not in X.
-            let shape_x = &self.shape;
-            let not_x: Set<_> = (0..shape_x.len()).filter(|i| !x.contains(i)).collect();
-            // Apply the marginalization mask.
-            let mask_x = mask(&not_x, shape_x);
-            parameters = parameters.dot(&mask_x);
-            // Update the states.
-            states = states
-                .into_iter()
-                .enumerate()
-                .filter_map(|(i, s)| if not_x.contains(&i) { Some(s) } else { None })
-                .collect();
-        }
-        // If either X or Z is non-empty, normalize the parameters.
-        if !x.is_empty() || !z.is_empty() {
-            parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
-        }
+        let states_x = self.states.clone();
+        let states_z = self.conditioning_states.clone();
+        let parameters = self.parameters.clone();
+
+        // Get the length of the conditioning states.
+        let z_len = states_z.len();
+
+        // Filter the states.
+        let states_x: States = states_x
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, s)| if !x.contains(&i) { Some(s) } else { None })
+            .collect();
+        // Filter the conditioning states.
+        let states_z: States = states_z
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, s)| if !z.contains(&i) { Some(s) } else { None })
+            .collect();
+
+        // Get (|Z0|, ... , |Zn|, |X0|, ... , |Xm|) shape.
+        let s_x = &self.shape;
+        let s_z = &self.conditioning_shape;
+        let shape: Vec<_> = s_z.iter().chain(s_x).cloned().collect();
+        // Map parameters to shape (|Z0|, ... , |Zn|, |X0|, ... , |Xm|).
+        let mut parameters = parameters
+            .into_dyn()
+            .into_shape_with_order(shape)
+            .expect("Failed to reshape parameters.");
+
+        // Map axes to (Z0, ... , Zn, X0 + |Z|, ... , Xm + |Z|).
+        let axes_z_x = z.iter().cloned().chain(x.iter().map(|&x| x + z_len));
+        // Sum over the axes in reverse order to avoid shifting.
+        axes_z_x.sorted().rev().for_each(|i| {
+            parameters = parameters.sum_axis(Axis(i));
+        });
+
+        // Get the new 2D shape.
+        let shape: (usize, usize) = (
+            states_z.values().map(|s| s.len()).product(),
+            states_x.values().map(|s| s.len()).product(),
+        );
+        // Reshape the parameters to the new 2D shape.
+        let mut parameters = parameters
+            .into_shape_clone(shape)
+            .expect("Failed to reshape parameters.");
+
+        // Normalize the parameters.
+        parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
 
         // Create the new CPD.
-        Self::new(states, conditioning_states, parameters)
+        Self::new(states_x, states_z, parameters)
     }
 
     /// Creates a new categorical conditional probability distribution with optional fields.

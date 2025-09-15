@@ -89,7 +89,7 @@ pub fn em<'a>(
                     // Initialize a new random number generator.
                     let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                     // Initialize a new sampler.
-                    let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                    let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                     // Perform multiple imputation.
                     let trjs = importance.par_sample_n_by_length(max_length, 10);
                     // Get the one with the highest weight.
