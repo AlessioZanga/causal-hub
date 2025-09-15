@@ -16,7 +16,7 @@ pub trait BNCausalInference<T> {
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn average_causal_effect(&mut self, x: &Set<usize>, y: &Set<usize>) -> T {
+    fn average_causal_effect(&mut self, x: &Set<usize>, y: &Set<usize>) -> Option<T> {
         self.conditional_average_causal_effect(x, y, &set![])
     }
 
@@ -37,5 +37,5 @@ pub trait BNCausalInference<T> {
         x: &Set<usize>,
         y: &Set<usize>,
         z: &Set<usize>,
-    ) -> T;
+    ) -> Option<T>;
 }

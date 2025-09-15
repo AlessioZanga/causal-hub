@@ -3,6 +3,7 @@ use rand::{Rng, SeedableRng};
 use crate::{
     datasets::CatEv,
     estimation::{CPDEstimator, MLE},
+    inference::{BNInference, ParBNInference},
     models::{CatBN, CatCPD},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     types::Set,
@@ -14,6 +15,7 @@ pub struct ApproximateInference<'a, R, M, E> {
     rng: &'a mut R,
     model: &'a M,
     evidence: Option<&'a E>,
+    sample_size: Option<usize>,
 }
 
 impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
@@ -34,6 +36,7 @@ impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
             rng,
             model,
             evidence: None,
+            sample_size: None,
         }
     }
 }
@@ -55,29 +58,40 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
             rng: self.rng,
             model: self.model,
             evidence: Some(evidence),
+            sample_size: self.sample_size,
         }
     }
-}
 
-/// A trait for approximate inference with Bayesian Networks.
-pub trait BNApproxInference<T> {
-    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
+    /// Set the sample size for the approximate inference instance.
     ///
     /// # Arguments
     ///
-    /// * `x` - The set of variables.
-    /// * `z` - The set of conditioning variables.
-    /// * `n` - The number of samples to use for the prediction.
+    /// * `n` - The sample size.
     ///
     /// # Returns
     ///
-    /// The predicted values of `x` conditioned on `z`.
+    /// Return a new approximate inference instance with the specified sample size.
     ///
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> T;
+    #[inline]
+    pub const fn with_sample_size(mut self, n: usize) -> Self {
+        self.sample_size = Some(n);
+        self
+    }
 }
 
-impl<R: Rng> BNApproxInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
+    #[inline]
+    fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
+        self.sample_size.unwrap_or_else(|| {
+            1000 // FIXME:
+        })
+    }
+}
+
+impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Get the sample size.
+        let n = self.sample_size(x, z);
         // Initialize the sampler.
         let mut sampler = ForwardSampler::new(self.rng, self.model);
         // Generate n samples from the model.
@@ -92,8 +106,10 @@ impl<R: Rng> BNApproxInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()
     }
 }
 
-impl<R: Rng> BNApproxInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
-    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+impl<R: Rng> BNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Get the sample size.
+        let n = self.sample_size(x, z);
         // Check if evidence is actually provided.
         match self.evidence {
             // Get the evidence.
@@ -111,30 +127,17 @@ impl<R: Rng> BNApproxInference<CatCPD> for ApproximateInference<'_, R, CatBN, Ca
                 estimator.fit(x, z)
             }
             // Delegate to empty evidence case.
-            None => ApproximateInference::new(self.rng, self.model).predict(x, z, n),
+            None => ApproximateInference::new(self.rng, self.model)
+                .with_sample_size(n)
+                .predict(x, z),
         }
     }
 }
 
-/// A trait for parallel Bayesian network approximate inference.
-pub trait ParBNApproxInference<T> {
-    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence, in parallel.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The set of variables.
-    /// * `z` - The set of conditioning variables.
-    /// * `n` - The number of samples to use for the prediction.
-    ///
-    /// # Returns
-    ///
-    /// The predicted values of `x` conditioned on `z`.
-    ///
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> T;
-}
-
-impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, ()> {
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Get the sample size.
+        let n = self.sample_size(x, z);
         // Initialize the sampler.
         let mut sampler = ForwardSampler::new(self.rng, self.model);
         // Generate n samples from the model.
@@ -149,10 +152,10 @@ impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD> for ApproximateInference
     }
 }
 
-impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD>
-    for ApproximateInference<'_, R, CatBN, CatEv>
-{
-    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>, n: usize) -> CatCPD {
+impl<R: Rng + SeedableRng> ParBNInference<CatCPD> for ApproximateInference<'_, R, CatBN, CatEv> {
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        // Get the sample size.
+        let n = self.sample_size(x, z);
         // Check if evidence is actually provided.
         match self.evidence {
             // Get the evidence.
@@ -170,7 +173,9 @@ impl<R: Rng + SeedableRng> ParBNApproxInference<CatCPD>
                 estimator.fit(x, z)
             }
             // Delegate to empty evidence case.
-            None => ApproximateInference::new(self.rng, self.model).predict(x, z, n),
+            None => ApproximateInference::new(self.rng, self.model)
+                .with_sample_size(n)
+                .predict(x, z),
         }
     }
 }

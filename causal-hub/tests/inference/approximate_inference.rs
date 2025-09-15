@@ -6,7 +6,7 @@ mod tests {
             use causal_hub::{
                 assets::load_asia,
                 datasets::{CatEv, CatEvT},
-                inference::{ApproximateInference, BNApproxInference, ParBNApproxInference},
+                inference::{ApproximateInference, BNInference, ParBNInference},
                 map,
                 models::{BN, CatCPD},
                 set,
@@ -22,10 +22,10 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let mut engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.predict(&set![0], &set![], 1000);
+                let pred_query = engine.predict(&set![0], &set![]);
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -50,10 +50,10 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let mut engine = ApproximateInference::new(&mut rng, &model);
+                let mut engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
 
                 // Predict without evidence.
-                let pred_query = engine.par_predict(&set![0], &set![], 1000);
+                let pred_query = engine.par_predict(&set![0], &set![]);
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -92,11 +92,12 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine =
-                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let mut engine = ApproximateInference::new(&mut rng, &model)
+                    .with_evidence(&evidence)
+                    .with_sample_size(1000);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.predict(&set![0], &set![], 1000);
+                let pred_query = engine.predict(&set![0], &set![]);
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -135,11 +136,12 @@ mod tests {
                     ],
                 );
                 // Initialize the inference engine.
-                let mut engine =
-                    ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let mut engine = ApproximateInference::new(&mut rng, &model)
+                    .with_evidence(&evidence)
+                    .with_sample_size(1000);
 
                 // Predict without evidence.
-                let pred_query = engine.par_predict(&set![0], &set![], 1000);
+                let pred_query = engine.par_predict(&set![0], &set![]);
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X

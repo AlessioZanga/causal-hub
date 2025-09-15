@@ -12,3 +12,37 @@ pub use graphical_separation::*;
 
 mod topological_order;
 pub use topological_order::*;
+
+use crate::types::Set;
+
+/// A trait for inference with Bayesian Networks.
+pub trait BNInference<T> {
+    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The predicted values of `x` conditioned on `z`.
+    ///
+    fn predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> T;
+}
+
+/// A trait for parallel inference with Bayesian Networks.
+pub trait ParBNInference<T> {
+    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence, in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The predicted values of `x` conditioned on `z`.
+    ///
+    fn par_predict(&mut self, x: &Set<usize>, z: &Set<usize>) -> T;
+}
