@@ -68,12 +68,19 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
     ///
     /// * `n` - The sample size.
     ///
+    /// # Panics
+    ///
+    /// * Panics if `n` is zero.
+    ///
     /// # Returns
     ///
     /// Return a new approximate inference instance with the specified sample size.
     ///
     #[inline]
     pub const fn with_sample_size(mut self, n: usize) -> Self {
+        // Assert the sample size is positive.
+        assert!(n > 0, "Sample size must be positive.");
+        // Set the sample size.
         self.sample_size = Some(n);
         self
     }

@@ -57,6 +57,17 @@ mod tests {
             }
 
             #[test]
+            #[should_panic(expected = "Sample size must be positive.")]
+            fn predict_zero_sample_size() {
+                // Initialize RNG.
+                let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+                // Initialize the model.
+                let model = load_asia();
+                // Initialize the inference engine.
+                let _ = ApproximateInference::new(&mut rng, &model).with_sample_size(0);
+            }
+
+            #[test]
             fn predict_with_sample_size() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
