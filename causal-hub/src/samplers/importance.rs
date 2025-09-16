@@ -14,7 +14,7 @@ use crate::{
         CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatType, CatWtdSample,
         CatWtdTable, CatWtdTrj, CatWtdTrjs,
     },
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},

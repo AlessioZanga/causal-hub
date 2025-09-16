@@ -11,7 +11,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::{CPD, CatPhi},
+    models::{CPD, CatPhi, Labelled},
     types::{EPSILON, Labels, Set, States},
     utils::MI,
 };
@@ -373,15 +373,28 @@ impl CatCPD {
     /// A new instance with the marginalized variables.
     ///
     pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+        // Base case: if no variables to marginalize, return self clone.
+        if x.is_empty() && z.is_empty() {
+            return self.clone();
+        }
+        // Get labels.
+        let labels_x = self.labels();
+        let labels_z = self.conditioning_labels();
+        // Get indices to preserve.
+        let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
+        let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
         // Convert to potential.
         let phi = self.clone().into_phi();
-        // Marginalize the potential.
-        let phi = phi.marginalize(&(x | z));
         // Map CPD indices to potential indices.
-        let x = x; // FIXME: Placeholder.
-        let z = z; // FIXME: Placeholder.
+        let x = phi.indices_from(x, labels_x);
+        let z = phi.indices_from(z, labels_z);
+        // Marginalize the potential.
+        let phi = phi.marginalize(&(&x | &z));
+        // Map CPD indices to potential indices.
+        let not_x = phi.indices_from(&not_x, labels_x);
+        let not_z = phi.indices_from(&not_z, labels_z);
         // Convert back to CPD.
-        phi.into_cpd(x, z)
+        phi.into_cpd(&not_x, &not_z)
     }
 
     /// Creates a new categorical conditional probability distribution with optional fields.
@@ -618,14 +631,16 @@ impl RelativeEq for CatCPD {
     }
 }
 
-impl CPD for CatCPD {
-    type Parameters = Array2<f64>;
-    type SS = Array2<f64>;
-
+impl Labelled for CatCPD {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
+}
+
+impl CPD for CatCPD {
+    type Parameters = Array2<f64>;
+    type SS = Array2<f64>;
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {

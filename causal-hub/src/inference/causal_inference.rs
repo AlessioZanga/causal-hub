@@ -1,6 +1,6 @@
 use crate::{
     inference::{BNInference, BackdoorCriterion},
-    models::{BN, CatBN, CatCPD},
+    models::{BN, CatBN, CatCPD, Labelled},
     set,
     types::Set,
 };
@@ -92,10 +92,10 @@ where
 
         /* Effect Identification */
 
-        // Get the graph.
-        let g = self.engine.model().graph();
+        // Get the model.
+        let m = self.engine.model();
         // Find a minimal backdoor adjustment set Z \cup S, if any.
-        let z_s = g.find_minimal_backdoor_set(x, y, Some(z), None);
+        let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None);
 
         /* Effect Estimation */
 
@@ -120,16 +120,16 @@ where
                 let p_s = p_s.into_phi();
                 // Compute P(Y | X, Z, S) * P(S) using potentials.
                 let p_y_s_do_x_z = p_y_x_z_s * p_s;
-                // TODO: Map BN indices to the potential indices.
-                let s = s; // FIXME: Placeholder.
+                // Map BN indices to the potential indices.
+                let s = p_y_s_do_x_z.indices_from(s, m.labels());
                 // Marginalize over S.
-                let p_y_do_x_z = p_y_s_do_x_z.marginalize(s);
-                // TODO: Map BN indices to the potential indices.
-                let x = x; // FIXME: Placeholder.
-                let y = y; // FIXME: Placeholder.
-                let z = z; // FIXME: Placeholder.
+                let p_y_do_x_z = p_y_s_do_x_z.marginalize(&s);
+                // Map BN indices to the potential indices.
+                let x = p_y_do_x_z.indices_from(x, m.labels());
+                let y = p_y_do_x_z.indices_from(y, m.labels());
+                let z = p_y_do_x_z.indices_from(z, m.labels());
                 // Convert back to CPD.
-                let p_y_do_x_z = p_y_do_x_z.into_cpd(y, &(x | z));
+                let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z));
                 // Return the result.
                 Some(p_y_do_x_z)
             }

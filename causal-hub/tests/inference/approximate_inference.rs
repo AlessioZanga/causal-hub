@@ -8,7 +8,7 @@ mod tests {
                 datasets::{CatEv, CatEvT},
                 inference::{ApproximateInference, BNInference, ParBNInference},
                 map,
-                models::{BN, CatCPD},
+                models::{CatCPD, Labelled},
                 set,
             };
             use ndarray::prelude::*;

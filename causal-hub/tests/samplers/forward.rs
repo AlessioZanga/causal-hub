@@ -6,7 +6,7 @@ mod tests {
             assets::{load_cancer, load_child},
             datasets::Dataset,
             estimation::{BNEstimator, MLE},
-            models::{BN, CatBN},
+            models::{BN, CatBN, Labelled},
             samplers::{BNSampler, ForwardSampler},
         };
         use rand::SeedableRng;
@@ -77,7 +77,7 @@ mod tests {
             assets::load_eating,
             datasets::Dataset,
             estimation::{MLE, ParCTBNEstimator},
-            models::{CTBN, CatCTBN},
+            models::{CTBN, CatCTBN, Labelled},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
         use rand::SeedableRng;

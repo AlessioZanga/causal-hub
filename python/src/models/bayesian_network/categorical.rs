@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use backend::{
     io::{BifIO, JsonIO},
-    models::{BN, CatBN, DiGraph},
+    models::{BN, CatBN, DiGraph, Labelled},
 };
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;

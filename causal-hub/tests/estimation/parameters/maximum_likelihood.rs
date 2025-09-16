@@ -7,7 +7,7 @@ mod tests {
                 datasets::CatTable,
                 estimation::{CPDEstimator, MLE},
                 map,
-                models::CPD,
+                models::{CPD, Labelled},
                 set,
             };
             use ndarray::prelude::*;
@@ -179,7 +179,7 @@ mod tests {
                 datasets::CatTable,
                 estimation::{BNEstimator, MLE},
                 io::CsvIO,
-                models::{BN, CPD, CatBN, DiGraph, Graph},
+                models::{BN, CPD, CatBN, DiGraph, Graph, Labelled},
             };
             use ndarray::prelude::*;
 

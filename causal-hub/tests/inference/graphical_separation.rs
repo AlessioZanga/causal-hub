@@ -4,7 +4,7 @@ mod tests {
         use causal_hub::{
             assets::*,
             inference::GraphicalSeparation,
-            models::{BN, DiGraph, Graph},
+            models::{BN, DiGraph, Graph, Labelled},
             set,
         };
         use dry::macro_for;
@@ -131,7 +131,7 @@ mod tests {
         fn test_is_separator_set_primer_figure_2_7() {
             let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(g.is_separator_set(&set![3], &set![4], &set![]));
@@ -152,7 +152,7 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(!g.is_separator_set(&set![4], &set![5], &set![]));
@@ -323,7 +323,7 @@ mod tests {
         fn test_is_minimal_separator_set_primer_figure_2_7() {
             let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(g.is_minimal_separator_set(&set![3], &set![4], &set![], None, None));
@@ -344,7 +344,7 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(!g.is_minimal_separator_set(&set![4], &set![5], &set![], None, None));
@@ -469,7 +469,7 @@ mod tests {
         fn test_find_minimal_separator_set_primer_figure_2_7() {
             let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert_eq!(
@@ -489,7 +489,7 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert_eq!(

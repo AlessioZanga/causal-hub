@@ -9,7 +9,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::CPD,
+    models::{CPD, Labelled},
     types::{EPSILON, Labels, Set, States},
     utils::MI,
 };
@@ -568,14 +568,16 @@ impl RelativeEq for CatCIM {
     }
 }
 
-impl CPD for CatCIM {
-    type Parameters = Array3<f64>;
-    type SS = (Array3<f64>, Array3<f64>);
-
+impl Labelled for CatCIM {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
+}
+
+impl CPD for CatCIM {
+    type Parameters = Array3<f64>;
+    type SS = (Array3<f64>, Array3<f64>);
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {

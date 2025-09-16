@@ -7,7 +7,7 @@ mod tests {
                 datasets::CatTable,
                 estimation::{BE, CPDEstimator},
                 map,
-                models::CPD,
+                models::{CPD, Labelled},
                 set,
             };
             use ndarray::prelude::*;

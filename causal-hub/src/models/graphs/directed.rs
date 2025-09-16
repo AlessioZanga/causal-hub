@@ -9,7 +9,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::Graph,
+    models::{Graph, Labelled},
     set,
     types::{Labels, Set},
 };
@@ -197,6 +197,12 @@ impl DiGraph {
     }
 }
 
+impl Labelled for DiGraph {
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl Graph for DiGraph {
     fn empty<I, V>(labels: I) -> Self
     where
@@ -262,29 +268,6 @@ impl Graph for DiGraph {
             labels,
             adjacency_matrix,
         }
-    }
-
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    fn label_to_index<V>(&self, x: &V) -> usize
-    where
-        V: AsRef<str>,
-    {
-        // Get the label as a string reference.
-        let x = x.as_ref();
-        // Get the index of the label, if it exists.
-        self.labels
-            .get_index_of(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` label does not exist"))
-    }
-
-    fn index_to_label(&self, x: usize) -> &str {
-        // Get the label at the index, if it exists.
-        self.labels
-            .get_index(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
     fn vertices(&self) -> Set<usize> {

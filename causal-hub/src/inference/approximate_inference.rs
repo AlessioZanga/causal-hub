@@ -5,7 +5,7 @@ use rand::{Rng, SeedableRng};
 use crate::{
     datasets::CatEv,
     estimation::{CPDEstimator, MLE},
-    models::{BN, CatBN, CatCPD},
+    models::{BN, CatBN, CatCPD, Labelled},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
     types::Set,
 };

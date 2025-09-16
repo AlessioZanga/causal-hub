@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         map,
-        models::{CPD, CatCPD},
+        models::{CPD, CatCPD, Labelled},
         set,
     };
     use ndarray::prelude::*;

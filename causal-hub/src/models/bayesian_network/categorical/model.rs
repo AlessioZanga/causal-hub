@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph},
+    models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Map, States},
 };
@@ -160,6 +160,13 @@ impl RelativeEq for CatBN {
     }
 }
 
+impl Labelled for CatBN {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl BN for CatBN {
     type CPD = CatCPD;
     type Sample = CatSample;
@@ -213,7 +220,7 @@ impl BN for CatBN {
         states.sort_keys();
 
         // Get the labels of the variables.
-        let labels: Labels = graph.labels().clone();
+        let labels: Labels = states.keys().cloned().collect();
         // Get the shape of the variables.
         let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
 
@@ -246,11 +253,6 @@ impl BN for CatBN {
             cpds,
             topological_order,
         }
-    }
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
     }
 
     #[inline]

@@ -3,7 +3,7 @@ mod tests {
     mod digraph {
         use causal_hub::{
             inference::BackdoorCriterion,
-            models::{DiGraph, Graph},
+            models::{DiGraph, Graph, Labelled},
             set,
         };
 
@@ -137,7 +137,7 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(!g.is_backdoor_set(&set![2], &set![3], &set![]));
@@ -217,7 +217,7 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert!(!g.is_minimal_backdoor_set(&set![2], &set![3], &set![], None, None));
@@ -283,7 +283,7 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(&i), g.label_to_index(&j));
+                g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
 
             assert_eq!(

@@ -12,7 +12,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatSample, CatTable, CatTrj, CatType},
-    models::{BN, CPD, CTBN, CatBN, CatCTBN},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::EPSILON,

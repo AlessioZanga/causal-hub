@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use backend::{
     io::JsonIO,
-    models::{CPD, CatCPD},
+    models::{CPD, CatCPD, Labelled},
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{

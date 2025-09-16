@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         map,
-        models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph},
+        models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
         set,
     };
     use ndarray::prelude::*;

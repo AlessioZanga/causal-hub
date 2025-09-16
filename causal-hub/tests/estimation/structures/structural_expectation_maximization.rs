@@ -9,7 +9,7 @@ mod tests {
             datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
             estimation::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             map,
-            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph},
+            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             set,

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        models::{DiGraph, Graph},
+        models::{DiGraph, Graph, Labelled},
         set,
     };
 

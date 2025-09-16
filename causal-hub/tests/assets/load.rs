@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         assets::*,
-        models::{BN, CPD, Graph},
+        models::{BN, CPD, Graph, Labelled},
     };
     use dry::macro_for;
     use ndarray::prelude::*;
