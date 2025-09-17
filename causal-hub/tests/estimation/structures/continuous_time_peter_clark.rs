@@ -2,9 +2,8 @@
 mod tests {
     use causal_hub::{
         assets::load_eating,
-        datasets::Dataset,
         estimation::{CTPC, ChiSquaredTest, FTest, MLE},
-        models::{CTBN, DiGraph, Graph},
+        models::{CTBN, DiGraph, Graph, Labelled},
         samplers::{ForwardSampler, ParCTBNSampler},
         types::Cache,
     };

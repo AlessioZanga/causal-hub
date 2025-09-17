@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use backend::{
     datasets::{CatTrj, CatTrjs, CatType, Dataset},
+    models::Labelled,
     types::{Set, States},
 };
 use numpy::{PyArray1, ndarray::prelude::*, prelude::*};

@@ -4,6 +4,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTable, CatType, Dataset},
+    models::Labelled,
     types::{Labels, States},
 };
 
@@ -155,13 +156,15 @@ impl CatTrj {
     }
 }
 
-impl Dataset for CatTrj {
-    type Values = Array2<CatType>;
-
+impl Labelled for CatTrj {
     #[inline]
     fn labels(&self) -> &Labels {
         self.events.labels()
     }
+}
+
+impl Dataset for CatTrj {
+    type Values = Array2<CatType>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
@@ -303,13 +306,15 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
     }
 }
 
-impl Dataset for CatTrjs {
-    type Values = Vec<CatTrj>;
-
+impl Labelled for CatTrjs {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
+}
+
+impl Dataset for CatTrjs {
+    type Values = Vec<CatTrj>;
 
     #[inline]
     fn values(&self) -> &Self::Values {

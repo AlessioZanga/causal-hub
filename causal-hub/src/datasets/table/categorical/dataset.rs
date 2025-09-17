@@ -8,6 +8,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::Dataset,
     io::CsvIO,
+    models::Labelled,
     types::{Labels, States},
     utils::sort_states,
 };
@@ -24,6 +25,13 @@ pub struct CatTable {
     states: States,
     shape: Array1<usize>,
     values: Array2<CatType>,
+}
+
+impl Labelled for CatTable {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
 }
 
 impl CatTable {
@@ -241,11 +249,6 @@ impl Display for CatTable {
 
 impl Dataset for CatTable {
     type Values = Array2<CatType>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
 
     #[inline]
     fn values(&self) -> &Self::Values {

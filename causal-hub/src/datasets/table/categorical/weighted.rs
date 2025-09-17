@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatSample, CatTable, Dataset},
+    models::Labelled,
     types::{Labels, States},
 };
 
@@ -13,6 +14,13 @@ pub type CatWtdSample = (CatSample, f64);
 pub struct CatWtdTable {
     data: CatTable,
     weights: Array1<f64>,
+}
+
+impl Labelled for CatWtdTable {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.data.labels()
+    }
 }
 
 impl CatWtdTable {
@@ -82,11 +90,6 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.data.labels()
-    }
 
     #[inline]
     fn values(&self) -> &Self::Values {

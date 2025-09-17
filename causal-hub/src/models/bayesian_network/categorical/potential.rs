@@ -4,8 +4,9 @@ use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
 
 use crate::{
+    datasets::{CatEv, CatEvT},
     models::{CPD, CatCPD, Labelled},
-    types::{Labels, Set, States},
+    types::{Labels, Map, Set, States},
 };
 
 /// A categorical potential.
@@ -99,14 +100,65 @@ impl CatPhi {
     ///
     /// # Arguments
     ///
-    /// * `x` - A map from variable indices to their observed states.
+    /// * `e` - A map from variable indices to their observed states.
     ///
     /// # Returns
     ///
     /// A new categorical potential instance.
     ///
-    pub fn condition(&self, _x: ()) -> Self {
-        todo!() // FIXME:
+    pub fn condition(&self, e: &CatEv) -> Self {
+        // Get states and parameters.
+        let states = self.states.clone();
+        let mut parameters = self.parameters.clone();
+
+        // Get the evidence and remove nones.
+        let e = e.evidences().iter().flatten();
+        // Sort by variable index.
+        let e = e.sorted_by_key(|e| e.event());
+        // Assert that the evidence is certain and positive.
+        let e = e.cloned().map(|e| match e {
+            CatEvT::CertainPositive { event, state } => (event, state),
+            _ => panic!(
+                "Failed to condition on evidence: \n
+                \t expected:    CertainPositive , \n\
+                \t found:       {:?} .",
+                e
+            ),
+        });
+        // Collect evidence into a map.
+        let e: Map<_, _> = e.collect();
+
+        // Filter the states.
+        let states = states.into_iter().enumerate();
+        let states = states.filter_map(|(i, s)| (!e.contains_key(&i)).then_some(s));
+        let states: States = states.collect();
+
+        // Condition in reverse order to avoid axis shifting.
+        e.iter().rev().for_each(|(&event, &state)| {
+            // Assert that the event is in bounds.
+            assert!(
+                event < states.len(),
+                "Variable index out of bounds: \n\
+                \t expected:    event <  {} , \n\
+                \t found:       event == {} .",
+                states.len(),
+                event,
+            );
+            // Assert that the state is in bounds.
+            assert!(
+                state < states[event].len(),
+                "State index out of bounds: \n\
+                \t expected:    state <  {} , \n\
+                \t found:       state == {} .",
+                states[event].len(),
+                state,
+            );
+            // Index axis.
+            parameters.index_axis_inplace(Axis(event), state);
+        });
+
+        // Return self.
+        Self::new(states, parameters)
     }
 
     /// Marginalizes the potential over a set of variables.

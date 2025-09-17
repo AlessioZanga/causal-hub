@@ -2,7 +2,9 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
-        map, set,
+        map,
+        models::Labelled,
+        set,
         types::Set,
     };
     use ndarray::prelude::*;

@@ -3,6 +3,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
+    models::Labelled,
     types::{Labels, Set, States},
     utils::sort_states,
 };
@@ -90,6 +91,12 @@ pub struct CatEv {
     states: States,
     shape: Array1<usize>,
     evidences: Vec<Option<CatEvT>>,
+}
+
+impl Labelled for CatEv {
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
 }
 
 impl CatEv {
@@ -238,17 +245,6 @@ impl CatEv {
             shape,
             evidences,
         }
-    }
-
-    /// The labels of the evidence.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the evidence.
-    ///
-    #[inline]
-    pub const fn labels(&self) -> &Labels {
-        &self.labels
     }
 
     /// The states of the evidence.

@@ -3,6 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
         io::CsvIO,
+        models::Labelled,
     };
     use ndarray::prelude::*;
 
