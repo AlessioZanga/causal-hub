@@ -143,7 +143,7 @@ impl CatPhi {
 
         // Filter the states.
         let states = states.into_iter().enumerate();
-        let states = states.filter_map(|(i, s)| if !x.contains(&i) { Some(s) } else { None });
+        let states = states.filter_map(|(i, s)| (!x.contains(&i)).then_some(s));
         let states = states.collect();
 
         // Sum over the axes in reverse order to avoid shifting.
@@ -227,11 +227,11 @@ impl CatPhi {
 
         // Split states into states.
         let states_x = self.states.clone().into_iter().enumerate();
-        let states_x = states_x.filter_map(|(i, s)| if x.contains(&i) { Some(s) } else { None });
+        let states_x = states_x.filter_map(|(i, s)| x.contains(&i).then_some(s));
         let states_x: States = states_x.collect();
         // Split states into conditioning states.
         let states_z = self.states.clone().into_iter().enumerate();
-        let states_z = states_z.filter_map(|(i, s)| if z.contains(&i) { Some(s) } else { None });
+        let states_z = states_z.filter_map(|(i, s)| z.contains(&i).then_some(s));
         let states_z: States = states_z.collect();
 
         // Get new axes order.
@@ -259,8 +259,52 @@ impl CatPhi {
 }
 
 impl MulAssign for CatPhi {
-    fn mul_assign(&mut self, _rhs: Self) {
-        todo!() // FIXME:
+    fn mul_assign(&mut self, rhs: Self) {
+        // Get the union of the states.
+        let mut states = self.states.clone();
+        states.extend(rhs.states.clone());
+        // Sort the states by labels.
+        states.sort_keys();
+
+        // Order LHS axes w.r.t. new states.
+        let mut lhs_axes: Vec<_> = (0..self.states.len()).collect();
+        lhs_axes.sort_by_key(|&i| self.states.get_index(i).unwrap().0);
+        let mut lhs_parameters = self.parameters.clone().permuted_axes(lhs_axes);
+        // Get the axes to insert for LHS broadcasting.
+        let lhs_axes = states.keys().enumerate();
+        let lhs_axes = lhs_axes.filter_map(|(i, k)| (!self.states.contains_key(k)).then_some(i));
+        let lhs_axes: Vec<_> = lhs_axes.sorted().collect();
+        // Insert axes in sorted order for LHS broadcasting.
+        lhs_axes.into_iter().for_each(|i| {
+            lhs_parameters.insert_axis_inplace(Axis(i));
+        });
+
+        // Order RHS axes w.r.t. new states.
+        let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
+        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        let mut rhs_parameters = rhs.parameters.permuted_axes(rhs_axes);
+        // Get the axes to insert for RHS broadcasting.
+        let rhs_axes = states.keys().enumerate();
+        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.states.contains_key(k)).then_some(i));
+        let rhs_axes: Vec<_> = rhs_axes.sorted().collect();
+        // Insert axes in sorted order for RHS broadcasting.
+        rhs_axes.into_iter().for_each(|i| {
+            rhs_parameters.insert_axis_inplace(Axis(i));
+        });
+
+        // Perform element-wise multiplication.
+        let parameters = lhs_parameters * rhs_parameters;
+
+        // Get new labels.
+        let labels: Labels = states.keys().cloned().collect();
+        // Get new shape.
+        let shape: Array1<_> = states.values().map(|s| s.len()).collect();
+
+        // Update self.
+        self.states = states;
+        self.labels = labels;
+        self.shape = shape;
+        self.parameters = parameters;
     }
 }
 
