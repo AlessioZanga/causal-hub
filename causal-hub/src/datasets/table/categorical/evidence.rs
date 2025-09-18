@@ -105,7 +105,7 @@ impl CatEv {
     /// # Arguments
     ///
     /// * `states` - A collection of states, where each state is a tuple of a string and an iterator of strings.
-    /// * `values` - A collection of values, where each value is a tuple of a string and a categorical evidence type.
+    /// * `values` - A collection of values, where each value is a categorical evidence type.
     ///
     /// # Returns
     ///

@@ -15,9 +15,9 @@ mod tests {
             #[test]
             fn test_fit() {
                 let states = map![
-                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -129,9 +129,9 @@ mod tests {
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn test_unique_variables() {
                 let states = map![
-                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -153,9 +153,9 @@ mod tests {
             #[should_panic(expected = "Failed to get non-zero counts.")]
             fn test_non_zero_counts() {
                 let states = map![
-                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                 ];
                 let values = array![
                     // A, B, C

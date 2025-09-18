@@ -119,7 +119,7 @@ where
                 let p_y_x_z_s = p_y_x_z_s.into_phi();
                 let p_s = p_s.into_phi();
                 // Compute P(Y | X, Z, S) * P(S) using potentials.
-                let p_y_s_do_x_z = p_y_x_z_s * p_s;
+                let p_y_s_do_x_z = &p_y_x_z_s * &p_s;
                 // Map BN indices to the potential indices.
                 let s = p_y_s_do_x_z.indices_from(s, m.labels());
                 // Marginalize over S.

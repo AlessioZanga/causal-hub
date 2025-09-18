@@ -81,10 +81,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta
@@ -109,10 +106,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta
@@ -151,10 +145,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta
@@ -221,10 +212,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta
@@ -249,10 +237,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta
@@ -291,10 +276,7 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![(
-                        "asia".to_string(),
-                        set!["no".to_string(), "yes".to_string()]
-                    )],
+                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
                     // Z
                     map![],
                     // Theta

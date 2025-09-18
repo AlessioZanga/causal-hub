@@ -246,8 +246,8 @@ impl Serialize for UnGraph {
             .into_iter()
             .map(|(x, y)| {
                 (
-                    self.index_to_label(x).to_string(),
-                    self.index_to_label(y).to_string(),
+                    self.index_to_label(x).to_owned(),
+                    self.index_to_label(y).to_owned(),
                 )
             })
             .collect();

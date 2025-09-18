@@ -10,9 +10,9 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let s = set!["no".to_string(), "yes".to_string()];
-        let x = map![("A".to_string(), s.clone())];
-        let z = map![("B".to_string(), s.clone()), ("C".to_string(), s)];
+        let s = set!["no".to_owned(), "yes".to_owned()];
+        let x = map![("A".to_owned(), s.clone())];
+        let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s)];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
         let cpd = CatCPD::new(x, z, p.clone());
 
@@ -30,9 +30,9 @@ mod tests {
     #[test]
     #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
     fn test_unique_labels() {
-        let s = set!["no".to_string(), "yes".to_string()];
-        let x = map![("A".to_string(), s.clone())];
-        let z = map![("A".to_string(), s.clone())];
+        let s = set!["no".to_owned(), "yes".to_owned()];
+        let x = map![("A".to_owned(), s.clone())];
+        let z = map![("A".to_owned(), s.clone())];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         CatCPD::new(x, z, p);
     }
@@ -48,9 +48,9 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let s = set!["no".to_string(), "yes".to_string()];
-        let x = map![("A".to_string(), s.clone())];
-        let z = map![("B".to_string(), s.clone())];
+        let s = set!["no".to_owned(), "yes".to_owned()];
+        let x = map![("A".to_owned(), s.clone())];
+        let z = map![("B".to_owned(), s.clone())];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         let cpd = CatCPD::new(x, z, p);
 
@@ -71,9 +71,9 @@ mod tests {
 
     #[test]
     fn test_marginalize_single_x() {
-        let s = set!["no".to_string(), "yes".to_string()];
-        let x = map![("A".to_string(), s.clone()), ("B".to_string(), s.clone())];
-        let z = map![("C".to_string(), s.clone()), ("D".to_string(), s.clone())];
+        let s = set!["no".to_owned(), "yes".to_owned()];
+        let x = map![("A".to_owned(), s.clone()), ("B".to_owned(), s.clone())];
+        let z = map![("C".to_owned(), s.clone()), ("D".to_owned(), s.clone())];
         let p = array![
             // A0,    0,    1,    1
             // B0     1     0     1
@@ -86,8 +86,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0], &set![]);
 
-        let true_x = map![("B".to_string(), s.clone())];
-        let true_z = map![("C".to_string(), s.clone()), ("D".to_string(), s.clone())];
+        let true_x = map![("B".to_owned(), s.clone())];
+        let true_z = map![("C".to_owned(), s.clone()), ("D".to_owned(), s.clone())];
         let true_p = array![
             // B                 0,                      1,     (C, D)
             [p[[0, 0]] + p[[0, 2]], p[[0, 1]] + p[[0, 3]]], //  (0, 0)
@@ -103,16 +103,16 @@ mod tests {
 
     #[test]
     fn test_marginalize_multiple_x() {
-        let s = set!["no".to_string(), "yes".to_string()];
+        let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
-            ("A".to_string(), s.clone()),
-            ("B".to_string(), s.clone()),
-            ("C".to_string(), s.clone())
+            ("A".to_owned(), s.clone()),
+            ("B".to_owned(), s.clone()),
+            ("C".to_owned(), s.clone())
         ];
         let z = map![
-            ("D".to_string(), s.clone()),
-            ("E".to_string(), s.clone()),
-            ("F".to_string(), s.clone())
+            ("D".to_owned(), s.clone()),
+            ("E".to_owned(), s.clone()),
+            ("F".to_owned(), s.clone())
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -131,11 +131,11 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0, 2], &set![]);
 
-        let true_x = map![("B".to_string(), s.clone())];
+        let true_x = map![("B".to_owned(), s.clone())];
         let true_z = map![
-            ("D".to_string(), s.clone()),
-            ("E".to_string(), s.clone()),
-            ("F".to_string(), s.clone())
+            ("D".to_owned(), s.clone()),
+            ("E".to_owned(), s.clone()),
+            ("F".to_owned(), s.clone())
         ];
         let true_p = array![
             // B                                                    (D, E, F)
@@ -196,9 +196,9 @@ mod tests {
 
     #[test]
     fn test_marginalize_single_z() {
-        let s = set!["no".to_string(), "yes".to_string()];
-        let x = map![("A".to_string(), s.clone())];
-        let z = map![("B".to_string(), s.clone()), ("C".to_string(), s.clone())];
+        let s = set!["no".to_owned(), "yes".to_owned()];
+        let x = map![("A".to_owned(), s.clone())];
+        let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s.clone())];
         let p = array![
             //                  (B, C)
             [0.10, 0.90], //    (0, 0)
@@ -210,8 +210,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![0]);
 
-        let true_x = map![("A".to_string(), s.clone())];
-        let true_z = map![("C".to_string(), s.clone())];
+        let true_x = map![("A".to_owned(), s.clone())];
+        let true_z = map![("C".to_owned(), s.clone())];
         let true_p = array![
             //                                                      (C)
             [(p[[0, 0]] + p[[2, 0]]), (p[[0, 1]] + p[[2, 1]])], //  (0)
@@ -224,8 +224,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![1]);
 
-        let true_x = map![("A".to_string(), s.clone())];
-        let true_z = map![("B".to_string(), s.clone())];
+        let true_x = map![("A".to_owned(), s.clone())];
+        let true_z = map![("B".to_owned(), s.clone())];
         let true_p = array![
             //                                                      (B)
             [(p[[0, 0]] + p[[1, 0]]), (p[[0, 1]] + p[[1, 1]])], //  (0)
@@ -239,16 +239,16 @@ mod tests {
 
     #[test]
     fn test_marginalize_multiple_z() {
-        let s = set!["no".to_string(), "yes".to_string()];
+        let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
-            ("A".to_string(), s.clone()),
-            ("B".to_string(), s.clone()),
-            ("C".to_string(), s.clone())
+            ("A".to_owned(), s.clone()),
+            ("B".to_owned(), s.clone()),
+            ("C".to_owned(), s.clone())
         ];
         let z = map![
-            ("D".to_string(), s.clone()),
-            ("E".to_string(), s.clone()),
-            ("F".to_string(), s.clone())
+            ("D".to_owned(), s.clone()),
+            ("E".to_owned(), s.clone()),
+            ("F".to_owned(), s.clone())
         ];
         let p = array![
             //                                                   (D, E, F)
@@ -266,11 +266,11 @@ mod tests {
         let pred_cpd = cpd.marginalize(&set![], &set![0, 2]);
 
         let true_x = map![
-            ("A".to_string(), s.clone()),
-            ("B".to_string(), s.clone()),
-            ("C".to_string(), s.clone())
+            ("A".to_owned(), s.clone()),
+            ("B".to_owned(), s.clone()),
+            ("C".to_owned(), s.clone())
         ];
-        let true_z = map![("E".to_string(), s.clone())];
+        let true_z = map![("E".to_owned(), s.clone())];
         let true_p = array![
             //                                                  (E)
             [
@@ -302,16 +302,16 @@ mod tests {
 
     #[test]
     fn test_marginalize_single_x_z() {
-        let s = set!["no".to_string(), "yes".to_string()];
+        let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
-            ("A".to_string(), s.clone()),
-            ("B".to_string(), s.clone()),
-            ("C".to_string(), s.clone())
+            ("A".to_owned(), s.clone()),
+            ("B".to_owned(), s.clone()),
+            ("C".to_owned(), s.clone())
         ];
         let z = map![
-            ("D".to_string(), s.clone()),
-            ("E".to_string(), s.clone()),
-            ("F".to_string(), s.clone())
+            ("D".to_owned(), s.clone()),
+            ("E".to_owned(), s.clone()),
+            ("F".to_owned(), s.clone())
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -330,8 +330,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![1], &set![2]);
 
-        let true_x = map![("A".to_string(), s.clone()), ("C".to_string(), s.clone())];
-        let true_z = map![("D".to_string(), s.clone()), ("E".to_string(), s.clone())];
+        let true_x = map![("A".to_owned(), s.clone()), ("C".to_owned(), s.clone())];
+        let true_z = map![("D".to_owned(), s.clone()), ("E".to_owned(), s.clone())];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[1, 0]] + p[[1, 2]],
@@ -366,16 +366,16 @@ mod tests {
 
     #[test]
     fn test_marginalize_multiple_x_z() {
-        let s = set!["no".to_string(), "yes".to_string()];
+        let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
-            ("A".to_string(), s.clone()),
-            ("B".to_string(), s.clone()),
-            ("C".to_string(), s.clone())
+            ("A".to_owned(), s.clone()),
+            ("B".to_owned(), s.clone()),
+            ("C".to_owned(), s.clone())
         ];
         let z = map![
-            ("D".to_string(), s.clone()),
-            ("E".to_string(), s.clone()),
-            ("F".to_string(), s.clone())
+            ("D".to_owned(), s.clone()),
+            ("E".to_owned(), s.clone()),
+            ("F".to_owned(), s.clone())
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -393,8 +393,8 @@ mod tests {
         let cpd = CatCPD::new(x, z, p.clone());
 
         let pred_cpd = cpd.marginalize(&set![0, 1], &set![0, 2]);
-        let true_x = map![("C".to_string(), s.clone())];
-        let true_z = map![("E".to_string(), s.clone())];
+        let true_x = map![("C".to_owned(), s.clone())];
+        let true_z = map![("E".to_owned(), s.clone())];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[0, 4]] + p[[0, 6]] + // (C0, E0)

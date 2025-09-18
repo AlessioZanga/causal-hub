@@ -1,7 +1,8 @@
 use std::ops::{Div, DivAssign, Mul, MulAssign};
 
+use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
-use ndarray::{Zip, prelude::*};
+use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatEv, CatEvT},
@@ -10,19 +11,12 @@ use crate::{
 };
 
 /// A categorical potential.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct CatPhi {
     labels: Labels,
     states: States,
     shape: Array1<usize>,
     parameters: ArrayD<f64>,
-}
-
-impl Labelled for CatPhi {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
 }
 
 impl CatPhi {
@@ -128,11 +122,6 @@ impl CatPhi {
         // Collect evidence into a map.
         let e: Map<_, _> = e.collect();
 
-        // Filter the states.
-        let states = states.into_iter().enumerate();
-        let states = states.filter_map(|(i, s)| (!e.contains_key(&i)).then_some(s));
-        let states: States = states.collect();
-
         // Condition in reverse order to avoid axis shifting.
         e.iter().rev().for_each(|(&event, &state)| {
             // Assert that the event is in bounds.
@@ -156,6 +145,11 @@ impl CatPhi {
             // Index axis.
             parameters.index_axis_inplace(Axis(event), state);
         });
+
+        // Filter the states.
+        let states = states.into_iter().enumerate();
+        let states = states.filter_map(|(i, s)| (!e.contains_key(&i)).then_some(s));
+        let states: States = states.collect();
 
         // Return self.
         Self::new(states, parameters)
@@ -310,8 +304,52 @@ impl CatPhi {
     }
 }
 
-impl MulAssign for CatPhi {
-    fn mul_assign(&mut self, rhs: Self) {
+impl PartialEq for CatPhi {
+    fn eq(&self, other: &Self) -> bool {
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.parameters.eq(&other.parameters)
+    }
+}
+
+impl AbsDiffEq for CatPhi {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
+    }
+}
+
+impl RelativeEq for CatPhi {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self
+                .parameters
+                .relative_eq(&other.parameters, epsilon, max_relative)
+    }
+}
+
+impl MulAssign<&CatPhi> for CatPhi {
+    fn mul_assign(&mut self, rhs: &CatPhi) {
         // Get the union of the states.
         let mut states = self.states.clone();
         states.extend(rhs.states.clone());
@@ -334,7 +372,7 @@ impl MulAssign for CatPhi {
         // Order RHS axes w.r.t. new states.
         let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
         rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
-        let mut rhs_parameters = rhs.parameters.permuted_axes(rhs_axes);
+        let mut rhs_parameters = rhs.parameters.clone().permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
         let rhs_axes = states.keys().enumerate();
         let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.states.contains_key(k)).then_some(i));
@@ -360,89 +398,56 @@ impl MulAssign for CatPhi {
     }
 }
 
-impl Mul for CatPhi {
-    type Output = Self;
-
-    #[inline]
-    fn mul(mut self, rhs: Self) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl Mul for &CatPhi {
+impl Mul<&CatPhi> for &CatPhi {
     type Output = CatPhi;
 
     #[inline]
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: &CatPhi) -> Self::Output {
         let mut lhs = self.clone();
-        lhs *= rhs.clone();
+        lhs *= rhs;
         lhs
     }
 }
 
-impl Mul for &mut CatPhi {
-    type Output = CatPhi;
+impl DivAssign<&CatPhi> for CatPhi {
+    fn div_assign(&mut self, rhs: &CatPhi) {
+        // FIXME: Assert that RHS states are a subset of LHS states.
 
-    #[inline]
-    fn mul(self, rhs: Self) -> Self::Output {
-        let mut lhs = self.clone();
-        lhs *= rhs.clone();
-        lhs
-    }
-}
+        // Add a small constant to ensure 0 / 0 = 0.
+        let rhs_parameters = &rhs.parameters + f64::MIN_POSITIVE;
 
-impl DivAssign for CatPhi {
-    fn div_assign(&mut self, rhs: Self) {
-        // Assert that the two potentials have the same states.
-        assert_eq!(
-            self.states, rhs.states,
-            "Cannot divide potentials with different states: \n\
-            \t expected states: {:?} , \n\
-            \t found states:    {:?} .",
-            self.states, rhs.states,
-        );
+        // Order RHS axes w.r.t. new states.
+        let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
+        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        let mut rhs_parameters = rhs_parameters.permuted_axes(rhs_axes);
+        // Get the axes to insert for RHS broadcasting.
+        let rhs_axes = self.states.keys().enumerate();
+        let rhs_axes = rhs_axes.filter_map(|(i, k)| (!rhs.states.contains_key(k)).then_some(i));
+        let rhs_axes: Vec<_> = rhs_axes.sorted().collect();
+        // Insert axes in sorted order for RHS broadcasting.
+        rhs_axes.into_iter().for_each(|i| {
+            rhs_parameters.insert_axis_inplace(Axis(i));
+        });
 
         // Perform element-wise division with 0 / 0 = 0.
-        Zip::from(&mut self.parameters)
-            .and(&rhs.parameters)
-            .for_each(|lhs, &rhs| {
-                // If lhs != 0 && rhs != 0 ...
-                let flag = (lhs != &0.) && (rhs != 0.);
-                // ... then perform the division, else set to 0.
-                *lhs = if flag { *lhs / rhs } else { 0. };
-            });
+        self.parameters /= &rhs_parameters;
     }
 }
 
-impl Div for CatPhi {
-    type Output = Self;
-
-    #[inline]
-    fn div(mut self, rhs: Self) -> Self::Output {
-        self /= rhs;
-        self
-    }
-}
-
-impl Div for &CatPhi {
+impl Div<&CatPhi> for &CatPhi {
     type Output = CatPhi;
 
     #[inline]
-    fn div(self, rhs: Self) -> Self::Output {
+    fn div(self, rhs: &CatPhi) -> Self::Output {
         let mut lhs = self.clone();
-        lhs /= rhs.clone();
+        lhs /= rhs;
         lhs
     }
 }
 
-impl Div for &mut CatPhi {
-    type Output = CatPhi;
-
+impl Labelled for CatPhi {
     #[inline]
-    fn div(self, rhs: Self) -> Self::Output {
-        let mut lhs = self.clone();
-        lhs /= rhs.clone();
-        lhs
+    fn labels(&self) -> &Labels {
+        &self.labels
     }
 }

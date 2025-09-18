@@ -44,7 +44,7 @@ mod tests {
             let initial_graph = DiGraph::complete(model.labels());
 
             // Set the states of the variables.
-            let states = set!["no".to_string(), "yes".to_string()];
+            let states = set!["no".to_owned(), "yes".to_owned()];
 
             // Set uniform CIMs.
             const E: f64 = 10.;
@@ -52,10 +52,10 @@ mod tests {
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    map![("Hungry".to_string(), states.clone())],
+                    map![("Hungry".to_owned(), states.clone())],
                     map![
-                        ("Eating".to_string(), states.clone()),
-                        ("FullStomach".to_string(), states.clone())
+                        ("Eating".to_owned(), states.clone()),
+                        ("FullStomach".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -66,10 +66,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    map![("Eating".to_string(), states.clone())],
+                    map![("Eating".to_owned(), states.clone())],
                     map![
-                        ("FullStomach".to_string(), states.clone()),
-                        ("Hungry".to_string(), states.clone())
+                        ("FullStomach".to_owned(), states.clone()),
+                        ("Hungry".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -80,10 +80,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    map![("FullStomach".to_string(), states.clone())],
+                    map![("FullStomach".to_owned(), states.clone())],
                     map![
-                        ("Eating".to_string(), states.clone()),
-                        ("Hungry".to_string(), states.clone())
+                        ("Eating".to_owned(), states.clone()),
+                        ("Hungry".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
