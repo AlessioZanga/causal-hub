@@ -31,7 +31,10 @@ mod tests {
         let phi = CatPhi::new(s.clone(), p.clone());
 
         // Assert the labels.
-        assert_eq!(phi.labels(), &set!["A".to_owned(), "B".to_owned(), "C".to_owned()]);
+        assert_eq!(
+            phi.labels(),
+            &set!["A".to_owned(), "B".to_owned(), "C".to_owned()]
+        );
         // Assert the states.
         assert_eq!(phi.states(), &s);
         // Assert the shape.

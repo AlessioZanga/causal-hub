@@ -6,8 +6,25 @@ use crate::{
 };
 
 /// A causal inference engine.
+#[derive(Clone, Debug)]
 pub struct CausalInference<'a, E> {
     engine: &'a E,
+}
+
+impl<'a, E> CausalInference<'a, E> {
+    /// Create a new causal inference engine.
+    ///
+    /// # Arguments
+    ///
+    /// * `engine` - The underlying inference engine.
+    ///
+    /// # Returns
+    ///
+    /// The causal inference engine.
+    ///
+    pub fn new(engine: &'a E) -> Self {
+        Self { engine }
+    }
 }
 
 /// A trait for causal inference with Bayesian Networks.
