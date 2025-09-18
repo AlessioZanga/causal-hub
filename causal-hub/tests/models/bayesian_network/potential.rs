@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatEv, CatEvT},
         map,
-        models::CatPhi,
+        models::{CatCPD, CatPhi},
         set,
     };
     use ndarray::prelude::*;
@@ -243,14 +243,90 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn from_cpd() {
-        todo!() // TODO:
+        // Set the states.
+        let x = map![(
+            "A".to_owned(),
+            set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+        ),];
+        let z = map![
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        // Set the parameters.
+        let p = array![
+            [0.25, 0.35, 0.40],
+            [0.05, 0.15, 0.80],
+            [0.30, 0.70, 0.00],
+            [0.10, 0.90, 0.00]
+        ];
+        // Initialize the CPD.
+        let cpd = CatCPD::new(x, z, p);
+
+        // Convert the CPD into a potential.
+        let pred_phi = CatPhi::from_cpd(cpd);
+
+        // Set the true potential.
+        let true_s = map![
+            (
+                "A".to_owned(),
+                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+            ),
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        let true_p = array![
+            0.25, 0.05, 0.30, 0.10, 0.35, 0.15, 0.70, 0.90, 0.40, 0.80, 0.00, 0.00
+        ]
+        .into_shape_with_order((3, 2, 2))
+        .unwrap()
+        .into_dyn();
+        let true_phi = CatPhi::new(true_s, true_p);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
     }
 
     #[test]
-    #[ignore]
     fn into_cpd() {
-        todo!() // TODO:
+        // Set the true potential.
+        let s = map![
+            (
+                "A".to_owned(),
+                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+            ),
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        let p = array![
+            0.25, 0.05, 0.30, 0.10, 0.35, 0.15, 0.70, 0.90, 0.40, 0.80, 0.00, 0.00
+        ]
+        .into_shape_with_order((3, 2, 2))
+        .unwrap()
+        .into_dyn();
+        let phi = CatPhi::new(s, p);
+
+        // Convert the potential into a CPD.
+        let pred_cpd = phi.into_cpd(&set![0], &set![1, 2]);
+
+        // Set the true CPD.
+        let true_x = map![(
+            "A".to_owned(),
+            set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+        ),];
+        let true_z = map![
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        let true_p = array![
+            [0.25, 0.35, 0.40],
+            [0.05, 0.15, 0.80],
+            [0.30, 0.70, 0.00],
+            [0.10, 0.90, 0.00]
+        ];
+        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+
+        // Compare the CPDs.
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 }
