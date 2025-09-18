@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, ops::Deref};
 
 use approx::relative_eq;
-use causal_hub_rust::{
+use backend::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
     estimation::{
         BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, EMOutput, FTest, PK, ParCTBNEstimator, RAWE,
@@ -176,7 +176,7 @@ pub fn sem<'a>(
                             // Initialize a new random number generator.
                             let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                             // Initialize a new sampler.
-                            let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                            let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                             // Perform multiple imputation.
                             let trjs = importance.par_sample_n_by_length(max_length, 10);
                             // Get the one with the highest weight.

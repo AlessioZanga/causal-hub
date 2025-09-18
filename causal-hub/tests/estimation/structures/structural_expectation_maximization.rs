@@ -9,7 +9,7 @@ mod tests {
             datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
             estimation::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             map,
-            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph},
+            models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             set,
@@ -22,14 +22,14 @@ mod tests {
 
         #[test]
         #[ignore = "this test is slow and should be run manually in release mode."]
-        fn test_sem_with_evidence() {
+        fn sem_with_evidence() {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
             // Load eating.
             let model = load_eating();
             // Initialize a new sampler with no evidence.
-            let mut forward = ForwardSampler::new(&mut rng, &model);
+            let forward = ForwardSampler::new(&mut rng, &model);
             // Sample the fully-observed trajectories from the model.
             let trajectories = forward.par_sample_n_by_length(100, 10_000);
 
@@ -44,7 +44,7 @@ mod tests {
             let initial_graph = DiGraph::complete(model.labels());
 
             // Set the states of the variables.
-            let states = set!["no".to_string(), "yes".to_string()];
+            let states = set!["no".to_owned(), "yes".to_owned()];
 
             // Set uniform CIMs.
             const E: f64 = 10.;
@@ -52,10 +52,10 @@ mod tests {
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    map![("Hungry".to_string(), states.clone())],
+                    map![("Hungry".to_owned(), states.clone())],
                     map![
-                        ("Eating".to_string(), states.clone()),
-                        ("FullStomach".to_string(), states.clone())
+                        ("Eating".to_owned(), states.clone()),
+                        ("FullStomach".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -66,10 +66,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    map![("Eating".to_string(), states.clone())],
+                    map![("Eating".to_owned(), states.clone())],
                     map![
-                        ("FullStomach".to_string(), states.clone()),
-                        ("Hungry".to_string(), states.clone())
+                        ("FullStomach".to_owned(), states.clone()),
+                        ("Hungry".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -80,10 +80,10 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    map![("FullStomach".to_string(), states.clone())],
+                    map![("FullStomach".to_owned(), states.clone())],
                     map![
-                        ("Eating".to_string(), states.clone()),
-                        ("Hungry".to_string(), states.clone())
+                        ("Eating".to_owned(), states.clone()),
+                        ("Hungry".to_owned(), states.clone())
                     ],
                     array![
                         [[-E, E], [E, -E]],
@@ -122,7 +122,7 @@ mod tests {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
-                        let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Perform multiple imputation.
                         let trjs = importance.sample_n_by_length(2 * max_len, 10);
                         // Get the one with the highest weight.

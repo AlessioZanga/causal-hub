@@ -7,17 +7,17 @@ mod tests {
                 datasets::CatTable,
                 estimation::{BE, CPDEstimator},
                 map,
-                models::CPD,
+                models::{CPD, Labelled},
                 set,
             };
             use ndarray::prelude::*;
 
             #[test]
-            fn test_fit() {
+            fn fit() {
                 let states = map![
-                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                 ];
                 let values = array![
                     // A, B, C
@@ -127,11 +127,11 @@ mod tests {
 
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
-            fn test_unique_variables() {
+            fn unique_variables() {
                 let states = map![
-                    ("A".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("B".to_string(), set!["no".to_string(), "yes".to_string()]),
-                    ("C".to_string(), set!["no".to_string(), "yes".to_string()]),
+                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                 ];
                 let values = array![
                     // A, B, C

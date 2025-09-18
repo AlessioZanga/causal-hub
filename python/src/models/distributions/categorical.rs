@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use causal_hub_rust::{
+use backend::{
     io::JsonIO,
-    models::{CPD, CatCPD},
+    models::{CPD, CatCPD, Labelled},
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{

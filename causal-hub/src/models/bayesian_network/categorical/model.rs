@@ -1,4 +1,5 @@
 use approx::{AbsDiffEq, RelativeEq};
+use ndarray::prelude::*;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -8,8 +9,9 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTable},
     impl_json_io,
+    inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph, TopologicalOrder},
+    models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Map, States},
 };
@@ -21,8 +23,12 @@ pub struct CatBN {
     name: Option<String>,
     /// The description of the model.
     description: Option<String>,
+    /// The labels of the variables.
+    labels: Labels,
     /// The states of the variables.
     states: States,
+    /// The shape of the variables.
+    shape: Array1<usize>,
     /// The graph of the model.
     graph: DiGraph,
     /// The parameters of the model.
@@ -63,6 +69,17 @@ impl CatBN {
     #[inline]
     pub const fn states(&self) -> &States {
         &self.states
+    }
+
+    /// Returns the shape of the variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the shape of the variables.
+    ///
+    #[inline]
+    pub fn shape(&self) -> &Array1<usize> {
+        &self.shape
     }
 
     /// Creates a new categorical Bayesian network with optional fields.
@@ -143,6 +160,13 @@ impl RelativeEq for CatBN {
     }
 }
 
+impl Labelled for CatBN {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl BN for CatBN {
     type CPD = CatCPD;
     type Sample = CatSample;
@@ -195,6 +219,11 @@ impl BN for CatBN {
         // Sort the states of the variables.
         states.sort_keys();
 
+        // Get the labels of the variables.
+        let labels: Labels = states.keys().cloned().collect();
+        // Get the shape of the variables.
+        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+
         // Assert the labels of the parameters are the same as the graph parents.
         assert!(
             // Check if all vertices have the same labels as their parents.
@@ -217,16 +246,13 @@ impl BN for CatBN {
         Self {
             name: None,
             description: None,
+            labels,
             states,
+            shape,
             graph,
             cpds,
             topological_order,
         }
-    }
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.graph.labels()
     }
 
     #[inline]

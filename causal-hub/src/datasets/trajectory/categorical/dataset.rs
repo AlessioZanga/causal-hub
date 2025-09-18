@@ -3,7 +3,8 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, Dataset},
+    datasets::{CatTable, CatType, Dataset},
+    models::Labelled,
     types::{Labels, States},
 };
 
@@ -27,7 +28,7 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new(states: States, mut events: Array2<u8>, mut times: Array1<f64>) -> Self {
+    pub fn new(states: States, mut events: Array2<CatType>, mut times: Array1<f64>) -> Self {
         // Assert the number of rows in values and times are equal.
         assert_eq!(
             events.nrows(),
@@ -155,13 +156,15 @@ impl CatTrj {
     }
 }
 
-impl Dataset for CatTrj {
-    type Values = Array2<u8>;
-
+impl Labelled for CatTrj {
     #[inline]
     fn labels(&self) -> &Labels {
         self.events.labels()
     }
+}
+
+impl Dataset for CatTrj {
+    type Values = Array2<CatType>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
@@ -303,13 +306,15 @@ impl<'a> IntoParallelRefIterator<'a> for CatTrjs {
     }
 }
 
-impl Dataset for CatTrjs {
-    type Values = Vec<CatTrj>;
-
+impl Labelled for CatTrjs {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
+}
+
+impl Dataset for CatTrjs {
+    type Values = Vec<CatTrj>;
 
     #[inline]
     fn values(&self) -> &Self::Values {

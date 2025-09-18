@@ -9,7 +9,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::Graph,
+    models::{Graph, Labelled},
     set,
     types::{Labels, Set},
 };
@@ -34,7 +34,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the parents of the vertices.
+    /// The parents of the vertices.
     ///
     pub fn parents(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
@@ -73,7 +73,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the ancestors of the vertices.
+    /// The ancestors of the vertices.
     ///
     pub fn ancestors(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
@@ -121,7 +121,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the children of the vertices.
+    /// The children of the vertices.
     ///
     pub fn children(&self, x: &Set<usize>) -> Set<usize> {
         // Check if the vertices are within bounds.
@@ -160,7 +160,7 @@ impl DiGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the descendants of the vertices.
+    /// The descendants of the vertices.
     ///
     pub fn descendants(&self, x: &Set<usize>) -> Set<usize> {
         // Assert the vertices are within bounds.
@@ -194,6 +194,12 @@ impl DiGraph {
 
         // Return the visited set.
         visited
+    }
+}
+
+impl Labelled for DiGraph {
+    fn labels(&self) -> &Labels {
+        &self.labels
     }
 }
 
@@ -262,29 +268,6 @@ impl Graph for DiGraph {
             labels,
             adjacency_matrix,
         }
-    }
-
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    fn label_to_index<V>(&self, x: &V) -> usize
-    where
-        V: AsRef<str>,
-    {
-        // Get the label as a string reference.
-        let x = x.as_ref();
-        // Get the index of the label, if it exists.
-        self.labels
-            .get_index_of(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` label does not exist"))
-    }
-
-    fn index_to_label(&self, x: usize) -> &str {
-        // Get the label at the index, if it exists.
-        self.labels
-            .get_index(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -386,8 +369,8 @@ impl Serialize for DiGraph {
             .into_iter()
             .map(|(x, y)| {
                 (
-                    self.index_to_label(x).to_string(),
-                    self.index_to_label(y).to_string(),
+                    self.index_to_label(x).to_owned(),
+                    self.index_to_label(y).to_owned(),
                 )
             })
             .collect();

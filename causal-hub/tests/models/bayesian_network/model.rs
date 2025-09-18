@@ -2,13 +2,13 @@
 mod tests {
     use causal_hub::{
         map,
-        models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph},
+        models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
         set,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         // Initialize the graph.
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1); // A -> B
@@ -16,20 +16,20 @@ mod tests {
         graph.add_edge(1, 2); // B -> C
 
         // Set the states of the variables.
-        let states = set!["no".to_string(), "yes".to_string()];
+        let states = set!["no".to_owned(), "yes".to_owned()];
 
         // Initialize the distributions.
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                map![("A".to_string(), states.clone())], //
-                map![],                                  //
-                array![[0.1, 0.9]],                      //
+                map![("A".to_owned(), states.clone())], //
+                map![],                                 //
+                array![[0.1, 0.9]],                     //
             ),
             CatCPD::new(
                 // P(B | A)
-                map![("B".to_string(), states.clone())], //
-                map![("A".to_string(), states.clone())], //
+                map![("B".to_owned(), states.clone())], //
+                map![("A".to_owned(), states.clone())], //
                 array![
                     [0.2, 0.8], //
                     [0.4, 0.6], //
@@ -37,10 +37,10 @@ mod tests {
             ),
             CatCPD::new(
                 // P(C | A, B)
-                map![("C".to_string(), states.clone())],
+                map![("C".to_owned(), states.clone())],
                 map![
-                    ("A".to_string(), states.clone()),
-                    ("B".to_string(), states.clone()),
+                    ("A".to_owned(), states.clone()),
+                    ("B".to_owned(), states.clone()),
                 ],
                 array![
                     [0.1, 0.9], //
@@ -104,23 +104,23 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn test_unique_labels() {
+    fn unique_labels() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
-        let states = set!["no".to_string(), "yes".to_string()];
+        let states = set!["no".to_owned(), "yes".to_owned()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                map![("A".to_string(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                map![("B".to_string(), states.clone())],
-                map![("A".to_string(), states.clone())],
+                map![("B".to_owned(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -129,29 +129,29 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn test_missing_distribution() {
+    fn missing_distribution() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         graph.add_edge(1, 2);
-        let states = set!["no".to_string(), "yes".to_string()];
+        let states = set!["no".to_owned(), "yes".to_owned()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                map![("A".to_string(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(A)
-                map![("A".to_string(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                map![("B".to_string(), states.clone())],
-                map![("A".to_string(), states.clone())],
+                map![("B".to_owned(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
         ];
@@ -160,30 +160,30 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph parents labels and conditioning labels must be the same.")]
-    fn test_same_parents() {
+    fn same_parents() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
-        let states = set!["no".to_string(), "yes".to_string()];
+        let states = set!["no".to_owned(), "yes".to_owned()];
         let cpds = vec![
             CatCPD::new(
                 // P(A)
-                map![("A".to_string(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 map![],
                 array![[0.1, 0.9]],
             ),
             CatCPD::new(
                 // P(B | A)
-                map![("B".to_string(), states.clone())],
-                map![("A".to_string(), states.clone())],
+                map![("B".to_owned(), states.clone())],
+                map![("A".to_owned(), states.clone())],
                 array![[0.2, 0.8], [0.4, 0.6]],
             ),
             CatCPD::new(
                 // P(C | A, B)
-                map![("C".to_string(), states.clone())],
+                map![("C".to_owned(), states.clone())],
                 map![
-                    ("A".to_string(), states.clone()),
-                    ("B".to_string(), states.clone())
+                    ("A".to_owned(), states.clone()),
+                    ("B".to_owned(), states.clone())
                 ],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
             ),

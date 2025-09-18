@@ -1,5 +1,5 @@
 use crate::{
-    models::{DiGraph, Graph, GraphicalSeparation},
+    models::{DiGraph, Graph},
     set,
     types::Set,
 };
@@ -86,7 +86,7 @@ pub trait BackdoorCriterion {
 
 mod digraph {
     use super::*;
-    use crate::models::digraph::_assert;
+    use crate::inference::{GraphicalSeparation, digraph::_assert};
 
     // Returns the set of vertices:
     //
@@ -271,7 +271,7 @@ mod digraph {
         use super::*;
 
         #[test]
-        fn test_proper_causal_path() {
+        fn proper_causal_path() {
             let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);

@@ -2,7 +2,8 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, Dataset},
+    datasets::{CatTrj, CatType, Dataset},
+    models::Labelled,
     types::{Labels, States},
 };
 
@@ -107,13 +108,15 @@ impl CatWtdTrj {
     }
 }
 
-impl Dataset for CatWtdTrj {
-    type Values = Array2<u8>;
-
+impl Labelled for CatWtdTrj {
     #[inline]
     fn labels(&self) -> &Labels {
         self.trajectory.labels()
     }
+}
+
+impl Dataset for CatWtdTrj {
+    type Values = Array2<CatType>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
@@ -255,13 +258,15 @@ impl<'a> IntoParallelRefIterator<'a> for CatWtdTrjs {
     }
 }
 
-impl Dataset for CatWtdTrjs {
-    type Values = Vec<CatWtdTrj>;
-
+impl Labelled for CatWtdTrjs {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
+}
+
+impl Dataset for CatWtdTrjs {
+    type Values = Vec<CatWtdTrj>;
 
     #[inline]
     fn values(&self) -> &Self::Values {

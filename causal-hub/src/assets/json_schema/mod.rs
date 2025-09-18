@@ -40,7 +40,7 @@ pub(crate) static JSON_SCHEMA_RETRIEVER: LazyLock<InMemoryRetriever> = LazyLock:
         // Get the URI of the schema.
         let id = concat!("json-schema:///", stringify!($schema), ".schema.json");
         // Insert the schema into the map with its $id as the key.
-        schemas.insert(id.to_string(), schema);
+        schemas.insert(id.to_owned(), schema);
     });
     // Create the retriever.
     InMemoryRetriever { schemas }

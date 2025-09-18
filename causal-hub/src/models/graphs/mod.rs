@@ -1,14 +1,5 @@
-mod backdoor_criterion;
-pub use backdoor_criterion::*;
-
 mod directed;
 pub use directed::*;
-
-mod graphical_separation;
-pub use graphical_separation::*;
-
-mod topological_order;
-pub use topological_order::*;
 
 mod undirected;
 use ndarray::prelude::*;
@@ -64,48 +55,6 @@ pub trait Graph {
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>;
-
-    /// Returns the labels of the vertices in the graph.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the vector of labels.
-    ///
-    fn labels(&self) -> &Labels;
-
-    /// Return the vertex index for a given label.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The label of the vertex.
-    ///
-    /// # Panics
-    ///
-    /// * If the label is not in the graph.
-    ///
-    /// # Returns
-    ///
-    /// The index of the vertex.
-    ///
-    fn label_to_index<V>(&self, x: &V) -> usize
-    where
-        V: AsRef<str>;
-
-    /// Return the label for a given vertex index.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The index of the vertex.
-    ///
-    /// # Panics
-    ///
-    /// * If the index is out of bounds.
-    ///
-    /// # Returns
-    ///
-    /// The label of the vertex.
-    ///
-    fn index_to_label(&self, x: usize) -> &str;
 
     /// Returns the iterator of vertices in the graph.
     ///

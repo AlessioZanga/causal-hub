@@ -1,4 +1,4 @@
-use ndarray::Array1;
+use ndarray::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// A structure to compute the ravel index of a multi-dimensional array.

@@ -16,7 +16,7 @@ macro_for!(
         #[gen_stub_pyfunction]
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyCatBN {
-            causal_hub_rust::assets::[<load_ $bn>]().into()
+            backend::assets::[<load_ $bn>]().into()
         }
     }
 });
@@ -25,5 +25,5 @@ macro_for!(
 #[gen_stub_pyfunction]
 #[pyfunction]
 pub fn load_eating() -> PyCatCTBN {
-    causal_hub_rust::assets::load_eating().into()
+    backend::assets::load_eating().into()
 }

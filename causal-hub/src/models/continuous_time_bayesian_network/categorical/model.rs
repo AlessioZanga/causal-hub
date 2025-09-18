@@ -9,7 +9,7 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
-    models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph},
+    models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Map, States},
 };
@@ -21,6 +21,12 @@ pub struct CatCTBN {
     name: Option<String>,
     /// The description of the model.
     description: Option<String>,
+    /// The labels of the variables.
+    labels: Labels,
+    /// The states of the variables.
+    states: States,
+    /// The shape of the variables.
+    shape: Array1<usize>,
     /// The initial distribution.
     initial_distribution: CatBN,
     /// The underlying graph.
@@ -156,6 +162,13 @@ impl RelativeEq for CatCTBN {
     }
 }
 
+impl Labelled for CatCTBN {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl CTBN for CatCTBN {
     type CIM = CatCIM;
     type InitialDistribution = CatBN;
@@ -180,7 +193,36 @@ impl CTBN for CatCTBN {
         // Sort the CPDs by their labels.
         cims.sort_keys();
 
-        // Assert same number of graph labels and CPDs.
+        // Allocate the states of the variables.
+        let mut states: States = Default::default();
+        // Insert the states of the variables into the map to check if they are the same.
+        for cim in cims.values() {
+            cim.states()
+                .iter()
+                .chain(cim.conditioning_states())
+                .for_each(|(l, s)| {
+                    // Check if the states are already in the map.
+                    if let Some(existing_states) = states.get(l) {
+                        // Check if the states are the same.
+                        assert_eq!(
+                            existing_states, s,
+                            "States of `{l}` must be the same across CIMs.",
+                        );
+                    } else {
+                        // Insert the states into the map.
+                        states.insert(l.to_owned(), s.clone());
+                    }
+                });
+        }
+        // Sort the states of the variables.
+        states.sort_keys();
+
+        // Get the labels of the variables.
+        let labels: Labels = states.keys().cloned().collect();
+        // Get the shape of the variables.
+        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+
+        // Assert same number of graph labels and CIMs.
         assert!(
             graph.labels().iter().eq(cims.keys()),
             "Graph labels and distributions labels must be the same."
@@ -223,14 +265,13 @@ impl CTBN for CatCTBN {
         Self {
             name: None,
             description: None,
+            labels,
+            states,
+            shape,
             initial_distribution,
             graph,
             cims,
         }
-    }
-
-    fn labels(&self) -> &Labels {
-        self.graph.labels()
     }
 
     fn initial_distribution(&self) -> &Self::InitialDistribution {

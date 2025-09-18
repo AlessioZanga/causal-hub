@@ -3,6 +3,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
+    models::Labelled,
     types::{Labels, Set, States},
     utils::sort_states,
 };
@@ -92,13 +93,19 @@ pub struct CatEv {
     evidences: Vec<Option<CatEvT>>,
 }
 
+impl Labelled for CatEv {
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl CatEv {
     /// Creates a new categorical evidence structure.
     ///
     /// # Arguments
     ///
     /// * `states` - A collection of states, where each state is a tuple of a string and an iterator of strings.
-    /// * `values` - A collection of values, where each value is a tuple of a string and a categorical evidence type.
+    /// * `values` - A collection of values, where each value is a categorical evidence type.
     ///
     /// # Returns
     ///
@@ -238,17 +245,6 @@ impl CatEv {
             shape,
             evidences,
         }
-    }
-
-    /// The labels of the evidence.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the evidence.
-    ///
-    #[inline]
-    pub const fn labels(&self) -> &Labels {
-        &self.labels
     }
 
     /// The states of the evidence.

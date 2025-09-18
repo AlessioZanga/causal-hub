@@ -2,9 +2,9 @@ use dry::macro_for;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCPD},
+    models::{CatCIM, CatCPD, Labelled},
     types::{Labels, Set, States},
 };
 

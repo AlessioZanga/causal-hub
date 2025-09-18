@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CSSEstimator, ParCSSEstimator},
-    models::{CPD, CatCIM, CatCPD},
+    models::{CPD, CatCIM, CatCPD, Labelled},
     types::{Labels, Set},
     utils::MI,
 };

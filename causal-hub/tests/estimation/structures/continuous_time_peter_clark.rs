@@ -2,9 +2,8 @@
 mod tests {
     use causal_hub::{
         assets::load_eating,
-        datasets::Dataset,
         estimation::{CTPC, ChiSquaredTest, FTest, MLE},
-        models::{CTBN, DiGraph, Graph},
+        models::{CTBN, DiGraph, Graph, Labelled},
         samplers::{ForwardSampler, ParCTBNSampler},
         types::Cache,
     };
@@ -12,14 +11,14 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn test_ctpc_fit() {
+    fn ctpc_fit() {
         // Initialize a random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
         // Load Eating.
         let model = load_eating();
         // Initialize a sampler.
-        let mut forward = ForwardSampler::new(&mut rng, &model);
+        let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
         let dataset = forward.par_sample_n_by_length(100, 100);
 
@@ -44,14 +43,14 @@ mod tests {
     }
 
     #[test]
-    fn test_ctpc_par_fit() {
+    fn ctpc_par_fit() {
         // Initialize a random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
         // Load Eating.
         let model = load_eating();
         // Initialize a sampler.
-        let mut forward = ForwardSampler::new(&mut rng, &model);
+        let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
         let dataset = forward.par_sample_n_by_length(100, 1_000);
 

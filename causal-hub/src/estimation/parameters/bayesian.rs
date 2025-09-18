@@ -3,9 +3,9 @@ use ndarray::prelude::*;
 use statrs::function::gamma::ln_gamma;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCPD},
+    models::{CatCIM, CatCPD, Labelled},
     types::{Labels, Set, States},
 };
 

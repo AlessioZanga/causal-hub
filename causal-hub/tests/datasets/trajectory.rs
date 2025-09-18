@@ -7,15 +7,15 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new_evidence() {
+    fn new_evidence() {
         // Initialize the model.
         let states = map![
-            ("B".to_string(), set!["0".to_string(), "1".to_string()]),
+            ("B".to_owned(), set!["0".to_owned(), "1".to_owned()]),
             (
-                "A".to_string(),
-                set!["0".to_string(), "1".to_string(), "2".to_string()]
+                "A".to_owned(),
+                set!["0".to_owned(), "1".to_owned(), "2".to_owned()]
             ),
-            ("C".to_string(), set!["0".to_string(), "1".to_string()]),
+            ("C".to_owned(), set!["0".to_owned(), "1".to_owned()]),
         ];
 
         // Initialize evidence.

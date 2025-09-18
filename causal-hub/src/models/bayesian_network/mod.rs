@@ -1,10 +1,7 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{
-    models::graphs::DiGraph,
-    types::{Labels, Map},
-};
+use crate::{models::graphs::DiGraph, types::Map};
 
 /// A trait for Bayesian networks.
 pub trait BN {
@@ -29,14 +26,6 @@ pub trait BN {
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where
         I: IntoIterator<Item = Self::CPD>;
-
-    /// Returns the labels of the variables.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
 
     /// Returns the underlying graph.
     ///

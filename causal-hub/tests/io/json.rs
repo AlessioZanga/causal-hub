@@ -23,7 +23,7 @@ mod tests {
                 ] {
                 paste! {
                     #[test]
-                    fn [<test_from_json_ $bn>]() {
+                    fn [<from_json_ $bn>]() {
                         // Load model.
                         let true_model = [<load_ $bn>]();
                         // Serialize model to JSON.
@@ -37,7 +37,7 @@ mod tests {
             });
 
             #[test]
-            fn test_to_json_asia() {
+            fn to_json_asia() {
                 // Load model.
                 let true_model = load_asia();
                 // Serialize model to JSON.
@@ -50,7 +50,7 @@ mod tests {
             }
 
             #[test]
-            fn test_from_json_with_optionals_asia() {
+            fn from_json_with_optionals_asia() {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256StarStar::seed_from_u64(42);
                 // Load model.
@@ -68,7 +68,7 @@ mod tests {
             }
 
             #[test]
-            fn test_to_json_with_optionals_asia() {
+            fn to_json_with_optionals_asia() {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256StarStar::seed_from_u64(42);
                 // Load model.
@@ -100,7 +100,7 @@ mod tests {
             use rand_xoshiro::Xoshiro256StarStar;
 
             #[test]
-            fn test_from_json_eating() {
+            fn from_json_eating() {
                 // Load model.
                 let true_model = load_eating();
                 // Serialize model to JSON.
@@ -112,7 +112,7 @@ mod tests {
             }
 
             #[test]
-            fn test_to_json_eating() {
+            fn to_json_eating() {
                 // Load model.
                 let true_model = load_eating();
                 // Serialize model to JSON.
@@ -125,7 +125,7 @@ mod tests {
             }
 
             #[test]
-            fn test_from_json_with_optionals_eating() {
+            fn from_json_with_optionals_eating() {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256StarStar::seed_from_u64(42);
                 // Load model.
@@ -143,7 +143,7 @@ mod tests {
             }
 
             #[test]
-            fn test_to_json_with_optionals_eating() {
+            fn to_json_with_optionals_eating() {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256StarStar::seed_from_u64(42);
                 // Load model.

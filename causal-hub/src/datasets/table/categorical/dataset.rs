@@ -8,12 +8,15 @@ use ndarray::prelude::*;
 use crate::{
     datasets::Dataset,
     io::CsvIO,
+    models::Labelled,
     types::{Labels, States},
     utils::sort_states,
 };
 
+/// A type alias for a categorical variable.
+pub type CatType = u8;
 /// A type alias for a categorical sample.
-pub type CatSample = Array1<u8>;
+pub type CatSample = Array1<CatType>;
 
 /// A struct representing a categorical dataset.
 #[derive(Clone, Debug)]
@@ -21,7 +24,14 @@ pub struct CatTable {
     labels: Labels,
     states: States,
     shape: Array1<usize>,
-    values: Array2<u8>,
+    values: Array2<CatType>,
+}
+
+impl Labelled for CatTable {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
 }
 
 impl CatTable {
@@ -40,7 +50,7 @@ impl CatTable {
     ///
     /// * If the variable labels are not unique.
     /// * If the variable states are not unique.
-    /// * If the number of variable states is higher than `u8::MAX`.
+    /// * If the number of variable states is higher than `CatType::MAX`.
     /// * If the number of variables is different from the number of values columns.
     /// * If the variables values are not smaller than the number of states.
     ///
@@ -48,7 +58,7 @@ impl CatTable {
     ///
     /// A new categorical dataset instance.
     ///
-    pub fn new(mut states: States, mut values: Array2<u8>) -> Self {
+    pub fn new(mut states: States, mut values: Array2<CatType>) -> Self {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.
@@ -61,10 +71,10 @@ impl CatTable {
             values.nrows()
         );
 
-        // Check if the number of states is less than `u8::MAX`.
+        // Check if the number of states is less than `CatType::MAX`.
         states.iter().for_each(|(label, state)| {
             assert!(
-                state.len() < u8::MAX as usize,
+                state.len() < CatType::MAX as usize,
                 "Variable '{label}' should have less than 256 states: \n\
                 \t expected:    |states| <  256 , \n\
                 \t found:       |states| == {} .",
@@ -88,7 +98,7 @@ impl CatTable {
             .enumerate()
             .for_each(|(i, x)| {
                 assert!(
-                    x < states[i].len() as u8,
+                    x < states[i].len() as CatType,
                     "Values of variable '{label}' must be less than the number of states: \n\
                     \t expected: values[.., '{label}'] < |states['{label}']| , \n\
                     \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
@@ -118,7 +128,7 @@ impl CatTable {
                     // Get the corresponding states labels.
                     let values_col = values.column(*label_idx);
                     // Sort the values by the indices of the states labels.
-                    let values_col = values_col.mapv(|x| states_idx[x as usize] as u8);
+                    let values_col = values_col.mapv(|x| states_idx[x as usize] as CatType);
                     // Assign the sorted values to the new values array.
                     new_values_col.assign(&values_col);
                 });
@@ -238,12 +248,7 @@ impl Display for CatTable {
 }
 
 impl Dataset for CatTable {
-    type Values = Array2<u8>;
-
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
+    type Values = Array2<CatType>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
@@ -302,7 +307,7 @@ impl CsvIO for CatTable {
                         // Insert the value into the states, if not present.
                         let (x, _) = states[i].insert_full(x.to_owned());
                         // Cast the value.
-                        x as u8
+                        x as CatType
                     })
                     .collect();
                 // Collect the values.

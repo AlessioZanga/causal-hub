@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use ndarray::Axis;
+use ndarray::prelude::*;
 
 use crate::{
     models::{DiGraph, Graph},

@@ -25,5 +25,23 @@ serde.workspace = true
 serde_json = "^1.0"
 statrs = { version = "^0.18", default-features = false }
 
+# Optional BLAS support for ndarray.
+blas-src = { version = "^0.12", optional = true }
+openblas-src = { version = "^0.10", optional = true }
+
 [dev-dependencies]
 rand_xoshiro = "^0.7"
+
+[features]
+default = []
+openblas-static = [
+    "ndarray/blas",
+    "blas-src/openblas",
+    "openblas-src/cache",
+    "openblas-src/static",
+]
+openblas-system = [
+    "ndarray/blas",
+    "blas-src/openblas",
+    "openblas-src/system",
+]

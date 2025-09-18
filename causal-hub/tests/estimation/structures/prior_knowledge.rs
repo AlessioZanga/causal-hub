@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::estimation::PK;
 
     #[test]
-    fn test_new() {
+    fn new() {
         // Initialize a list of labels.
         let labels = vec!["A", "B", "C"];
         // Set the forbidden edges.

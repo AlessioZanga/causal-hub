@@ -6,7 +6,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjEv, CatTrjEvT as E, Dataset},
-            models::CTBN,
+            models::Labelled,
             samplers::{ImportanceSampler, ParCTBNSampler},
         };
         use ndarray::prelude::*;
@@ -14,7 +14,7 @@ mod tests {
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_importance_sampling_by_length() {
+        fn importance_sampling_by_length() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
@@ -52,7 +52,7 @@ mod tests {
             );
 
             // Initialize sampler.
-            let mut importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
+            let importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
             // Sample from CTBN.
             let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
 

@@ -3,7 +3,7 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     estimation::{CPDEstimator, PK},
-    models::{CPD, CatCIM, DiGraph, Graph},
+    models::{CPD, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},
 };

@@ -1,6 +1,7 @@
-use causal_hub_rust::{
+use backend::{
+    inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
-    models::{BackdoorCriterion, DiGraph, Graph, GraphicalSeparation},
+    models::{DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},
 };

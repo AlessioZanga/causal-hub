@@ -6,20 +6,20 @@ mod tests {
             assets::{load_cancer, load_child},
             datasets::Dataset,
             estimation::{BNEstimator, MLE},
-            models::{BN, CatBN},
+            models::{BN, CatBN, Labelled},
             samplers::{BNSampler, ForwardSampler},
         };
         use rand::SeedableRng;
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_forward_sampling() {
+        fn forward_sampling() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Load BN.
             let bn = load_child();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &bn);
+            let forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
             let dataset = forward.sample_n(10);
 
@@ -51,13 +51,13 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_refit() {
+        fn forward_sampling_refit() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Load BN.
             let bn = load_cancer();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &bn);
+            let forward = ForwardSampler::new(&mut rng, &bn);
             // Sample from BN.
             let dataset = forward.sample_n(150_000);
 
@@ -77,20 +77,20 @@ mod tests {
             assets::load_eating,
             datasets::Dataset,
             estimation::{MLE, ParCTBNEstimator},
-            models::{CTBN, CatCTBN},
+            models::{CTBN, CatCTBN, Labelled},
             samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
         };
         use rand::SeedableRng;
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_forward_sampling_by_length() {
+        fn forward_sampling_by_length() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.sample_by_length(10);
 
@@ -101,13 +101,13 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_by_time() {
+        fn forward_sampling_by_time() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.sample_by_time(100.);
 
@@ -118,13 +118,13 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_refit() {
+        fn forward_sampling_refit() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
             let ctbn = load_eating();
             // Initialize sampler.
-            let mut forward = ForwardSampler::new(&mut rng, &ctbn);
+            let forward = ForwardSampler::new(&mut rng, &ctbn);
             // Sample from CTBN.
             let trajectory = forward.par_sample_n_by_length(1_000, 1_000);
 

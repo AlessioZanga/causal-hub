@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::{
-    models::{DiGraph, Graph, TopologicalOrder},
+    models::{DiGraph, Graph},
     set,
     types::Set,
 };
@@ -88,6 +88,7 @@ pub trait GraphicalSeparation {
 // Implementation of the `GraphicalSeparation` trait for directed graphs.
 pub(crate) mod digraph {
     use super::*;
+    use crate::inference::TopologicalOrder;
 
     /// Asserts the validity of the sets and returns them as `Set<usize>`.
     pub(crate) fn _assert(

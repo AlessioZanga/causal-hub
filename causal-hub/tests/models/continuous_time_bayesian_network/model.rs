@@ -2,12 +2,12 @@
 mod tests {
     use causal_hub::{
         assets::load_eating,
-        models::{BN, CPD, CTBN, Graph},
+        models::{BN, CPD, CTBN, Graph, Labelled},
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         // Initialize the model.
         let ctbn = load_eating();
 

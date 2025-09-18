@@ -18,7 +18,7 @@ mod tests {
         use rayon::prelude::*;
 
         #[test]
-        fn test_em_builder() {
+        fn em_builder() {
             // Load eating.
             let model = load_eating();
             // Set the evidence.
@@ -49,7 +49,7 @@ mod tests {
         }
 
         #[test]
-        fn test_em_with_no_evidence() {
+        fn em_with_no_evidence() {
             // Load eating.
             let model = load_eating();
             // Set the evidence.
@@ -77,7 +77,7 @@ mod tests {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
-                        let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Sample the trajectories.
                         importance.sample_by_length(100)
                     })
@@ -112,14 +112,14 @@ mod tests {
 
         #[test]
         #[ignore = "this test is slow and should be run manually in release mode."]
-        fn test_em_with_evidence() {
+        fn em_with_evidence() {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
             // Load eating.
             let model = load_eating();
             // Initialize a new sampler with no evidence.
-            let mut forward = ForwardSampler::new(&mut rng, &model);
+            let forward = ForwardSampler::new(&mut rng, &model);
             // Sample the fully-observed trajectories from the model.
             let trajectories = forward.par_sample_n_by_length(100, 10_000);
 
@@ -172,7 +172,7 @@ mod tests {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
-                        let mut importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Perform multiple imputation.
                         let trjs = importance.sample_n_by_length(max_length, 10);
                         // Get the one with the highest weight.

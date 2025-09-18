@@ -7,7 +7,7 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::Graph,
+    models::{Graph, Labelled},
     types::{Labels, Set},
 };
 
@@ -31,7 +31,7 @@ impl UnGraph {
     ///
     /// # Returns
     ///
-    /// A set of indices representing the neighbors of the vertex.
+    /// The neighbors of the vertex.
     ///
     pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
         // Check if the vertices are within bounds.
@@ -56,6 +56,12 @@ impl UnGraph {
 
         // Return the neighbors.
         neighbors
+    }
+}
+
+impl Labelled for UnGraph {
+    fn labels(&self) -> &Labels {
+        &self.labels
     }
 }
 
@@ -124,29 +130,6 @@ impl Graph for UnGraph {
             labels,
             adjacency_matrix,
         }
-    }
-
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
-    fn label_to_index<V>(&self, x: &V) -> usize
-    where
-        V: AsRef<str>,
-    {
-        // Get the label as a string reference.
-        let x = x.as_ref();
-        // Get the index of the label, if it exists.
-        self.labels
-            .get_index_of(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` label does not exist"))
-    }
-
-    fn index_to_label(&self, x: usize) -> &str {
-        // Get the label at the index, if it exists.
-        self.labels
-            .get_index(x)
-            .unwrap_or_else(|| panic!("Vertex `{x}` is out of bounds"))
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -263,8 +246,8 @@ impl Serialize for UnGraph {
             .into_iter()
             .map(|(x, y)| {
                 (
-                    self.index_to_label(x).to_string(),
-                    self.index_to_label(y).to_string(),
+                    self.index_to_label(x).to_owned(),
+                    self.index_to_label(y).to_owned(),
                 )
             })
             .collect();
