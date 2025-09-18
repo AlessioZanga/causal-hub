@@ -4,15 +4,40 @@ mod tests {
     use causal_hub::{
         datasets::{CatEv, CatEvT},
         map,
-        models::{CatCPD, CatPhi},
+        models::{CatCPD, CatPhi, Labelled},
         set,
     };
     use ndarray::prelude::*;
 
     #[test]
-    #[ignore]
     fn new() {
-        todo!() // TODO:
+        // Set the states.
+        let s = map![
+            (
+                "A".to_owned(),
+                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+            ),
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        // Set the parameters.
+        let p = array![
+            0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18
+        ]
+        .into_shape_with_order((3, 2, 2))
+        .unwrap()
+        .into_dyn();
+        // Initialize the potential.
+        let phi = CatPhi::new(s.clone(), p.clone());
+
+        // Assert the labels.
+        assert_eq!(phi.labels(), &set!["A".to_owned(), "B".to_owned(), "C".to_owned()]);
+        // Assert the states.
+        assert_eq!(phi.states(), &s);
+        // Assert the shape.
+        assert_eq!(phi.shape(), &array![3, 2, 2]);
+        // Assert the parameters.
+        assert_relative_eq!(phi.parameters(), &p);
     }
 
     #[test]

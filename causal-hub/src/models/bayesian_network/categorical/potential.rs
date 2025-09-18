@@ -31,13 +31,11 @@ impl CatPhi {
     ///
     /// A new categorical potential instance.
     ///
-    pub fn new(states: States, parameters: ArrayD<f64>) -> Self {
-        // FIXME: Sort states if not sorted and permute parameters accordingly.
-
+    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Self {
         // Get labels.
-        let labels: Labels = states.keys().cloned().collect();
+        let mut labels: Labels = states.keys().cloned().collect();
         // Get shape.
-        let shape: Array1<_> = states.values().map(|s| s.len()).collect();
+        let mut shape: Array1<_> = states.values().map(|s| s.len()).collect();
         // Assert parameters shape matches states shape.
         assert_eq!(
             parameters.shape(),
@@ -48,6 +46,21 @@ impl CatPhi {
             shape,
             parameters.shape(),
         );
+
+        // Sort states if not sorted and permute parameters accordingly.
+        if !states.keys().is_sorted() {
+            // Get the new axes order w.r.t. sorted labels.
+            let mut axes: Vec<_> = (0..states.len()).collect();
+            axes.sort_by_key(|&i| states.get_index(i).unwrap().0);
+            // Sort the states by labels.
+            states.sort_keys();
+            // Permute the parameters to match the new order.
+            parameters = parameters.permuted_axes(axes);
+            // Update the labels.
+            labels = states.keys().cloned().collect();
+            // Update the shape.
+            shape = states.values().map(|s| s.len()).collect();
+        }
 
         Self {
             labels,
