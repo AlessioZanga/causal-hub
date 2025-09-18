@@ -101,9 +101,36 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn normalize() {
-        todo!() // TODO:
+        // Set the states.
+        let s = map![
+            (
+                "A".to_owned(),
+                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
+            ),
+            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
+            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        ];
+        // Set the parameters.
+        let p = array![
+            0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18
+        ]
+        .into_shape_with_order((3, 2, 2))
+        .unwrap()
+        .into_dyn();
+        // Initialize the potential.
+        let mut phi = CatPhi::new(s.clone(), p.clone());
+
+        // Marginalize the potential.
+        let pred_phi = phi.normalize();
+
+        // Set the true potential.
+        let true_s = s;
+        let true_p = &p / p.sum();
+        let true_phi = CatPhi::new(true_s, true_p);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
     }
 
     #[test]

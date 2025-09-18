@@ -18,7 +18,7 @@ mod tests {
         use rayon::prelude::*;
 
         #[test]
-        fn test_em_builder() {
+        fn em_builder() {
             // Load eating.
             let model = load_eating();
             // Set the evidence.
@@ -49,7 +49,7 @@ mod tests {
         }
 
         #[test]
-        fn test_em_with_no_evidence() {
+        fn em_with_no_evidence() {
             // Load eating.
             let model = load_eating();
             // Set the evidence.
@@ -112,7 +112,7 @@ mod tests {
 
         #[test]
         #[ignore = "this test is slow and should be run manually in release mode."]
-        fn test_em_with_evidence() {
+        fn em_with_evidence() {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 

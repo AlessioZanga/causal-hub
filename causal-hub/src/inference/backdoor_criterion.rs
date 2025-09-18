@@ -271,7 +271,7 @@ mod digraph {
         use super::*;
 
         #[test]
-        fn test_proper_causal_path() {
+        fn proper_causal_path() {
             let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);

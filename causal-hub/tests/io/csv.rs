@@ -8,7 +8,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_from_csv_reader() {
+    fn from_csv_reader() {
         let csv = concat!(
             "A,B,C\n",
             "no,no,no\n",
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Malformed record on line 2.")]
-    fn test_from_csv_reader_malformed_record() {
+    fn from_csv_reader_malformed_record() {
         let csv = concat!(
             "A,B,C\n",
             "no,no,no\n",
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Missing value on line 2.")]
-    fn test_from_csv_reader_missing_value() {
+    fn from_csv_reader_missing_value() {
         let csv = concat!(
             "A,B,C\n",
             "no,no,no\n",

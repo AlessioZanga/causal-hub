@@ -7,7 +7,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new_evidence() {
+    fn new_evidence() {
         // Initialize the model.
         let states = map![
             ("B".to_owned(), set!["0".to_owned(), "1".to_owned()]),

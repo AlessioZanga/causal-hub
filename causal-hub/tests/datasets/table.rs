@@ -10,7 +10,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
@@ -44,7 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_different_states() {
+    fn new_different_states() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             (
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 4 ."]
-    fn test_new_non_unique_labels() {
+    fn new_non_unique_labels() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     #[should_panic = "Variable 'A' should have less than 256 states: \n\t expected:    |states| <  256 , \n\t found:       |states| == 256 ."]
-    fn test_new_too_many_states() {
+    fn new_too_many_states() {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
         let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
         let states = map![
@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 2 ."]
-    fn test_new_wrong_variables_and_columns() {
+    fn new_wrong_variables_and_columns() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     #[should_panic = "Values of variable 'A' must be less than the number of states: \n\t expected: values[.., 'A'] < |states['A']| , \n\t found:    values[.., 'A'] == 2 and |states['A']| == 2 ."]
-    fn test_new_wrong_values() {
+    fn new_wrong_values() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display() {
+    fn display() {
         let states = map![
             ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
             ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),

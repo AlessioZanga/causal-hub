@@ -411,7 +411,16 @@ impl Mul<&CatPhi> for &CatPhi {
 
 impl DivAssign<&CatPhi> for CatPhi {
     fn div_assign(&mut self, rhs: &CatPhi) {
-        // FIXME: Assert that RHS states are a subset of LHS states.
+        // Assert that RHS states are a subset of LHS states.
+        assert!(
+            rhs.states.keys().all(|k| self.states.contains_key(k)),
+            "Failed to divide potentials: \n\
+            \t expected:    RHS states to be a subset of LHS states , \n\
+            \t found:       LHS states = {:?} , \n\
+            \t              RHS states = {:?} .",
+            self.states,
+            rhs.states,
+        );
 
         // Add a small constant to ensure 0 / 0 = 0.
         let rhs_parameters = &rhs.parameters + f64::MIN_POSITIVE;

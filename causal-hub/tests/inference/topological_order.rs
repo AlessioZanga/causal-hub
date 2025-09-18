@@ -6,7 +6,7 @@ mod tests {
     };
 
     #[test]
-    fn test_topological_order_simple() {
+    fn topological_order_simple() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(1, 2);
@@ -16,7 +16,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_multiple_paths() {
+    fn topological_order_multiple_paths() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C", "D"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
@@ -28,7 +28,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_disconnected_graph() {
+    fn topological_order_disconnected_graph() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C", "D"]);
         graph.add_edge(0, 1);
         graph.add_edge(2, 3);
@@ -38,7 +38,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_single_vertex() {
+    fn topological_order_single_vertex() {
         let graph = DiGraph::empty(vec!["A"]);
 
         let sorted = graph.topological_order().unwrap();
@@ -46,7 +46,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_empty_graph() {
+    fn topological_order_empty_graph() {
         let labels: Vec<String> = vec![];
         let graph = DiGraph::empty(labels);
 
@@ -55,7 +55,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_cyclic_graph() {
+    fn topological_order_cyclic_graph() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(1, 2);
@@ -65,7 +65,7 @@ mod tests {
     }
 
     #[test]
-    fn test_topological_order_self_loop() {
+    fn topological_order_self_loop() {
         let mut graph = DiGraph::empty(vec!["A"]);
         graph.add_edge(0, 0);
 

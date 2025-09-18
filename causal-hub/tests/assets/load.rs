@@ -16,14 +16,14 @@ mod tests {
         ] {
         paste! {
             #[test]
-            fn [<test_load_ $bn>]() {
+            fn [<_load_ $bn>]() {
                 let _ = [<load_ $bn>]();
             }
         }
     });
 
     #[test]
-    fn test_load_asia_full() {
+    fn load_asia_full() {
         // Load BN.
         let bn = load_asia();
 
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_load_child_full() {
+    fn load_child_full() {
         // Load BN.
         let bn = load_child();
 
@@ -192,7 +192,7 @@ mod tests {
     }
 
     #[test]
-    fn test_load_sachs_full() {
+    fn load_sachs_full() {
         // Load BN.
         let bn = load_sachs();
 

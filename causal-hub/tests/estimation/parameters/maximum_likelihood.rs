@@ -13,7 +13,7 @@ mod tests {
             use ndarray::prelude::*;
 
             #[test]
-            fn test_fit() {
+            fn fit() {
                 let states = map![
                     ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                     ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
@@ -127,7 +127,7 @@ mod tests {
 
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
-            fn test_unique_variables() {
+            fn unique_variables() {
                 let states = map![
                     ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                     ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
@@ -151,7 +151,7 @@ mod tests {
 
             #[test]
             #[should_panic(expected = "Failed to get non-zero counts.")]
-            fn test_non_zero_counts() {
+            fn non_zero_counts() {
                 let states = map![
                     ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
                     ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
@@ -184,7 +184,7 @@ mod tests {
             use ndarray::prelude::*;
 
             #[test]
-            fn test_fit() {
+            fn fit() {
                 let csv = concat!(
                     "A,B,C\n",
                     "no,no,no\n",

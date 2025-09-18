@@ -22,7 +22,7 @@ mod tests {
 
         #[test]
         #[ignore = "this test is slow and should be run manually in release mode."]
-        fn test_sem_with_evidence() {
+        fn sem_with_evidence() {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 

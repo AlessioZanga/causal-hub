@@ -11,62 +11,62 @@ mod tests {
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
-        fn test_is_backdoor_set_out_of_bounds_x() {
+        fn is_backdoor_set_out_of_bounds_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![5], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
-        fn test_is_backdoor_set_out_of_bounds_y() {
+        fn is_backdoor_set_out_of_bounds_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![5], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
-        fn test_is_backdoor_set_out_of_bounds_z() {
+        fn is_backdoor_set_out_of_bounds_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![1], &set![5]);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
-        fn test_is_backdoor_set_empty_x() {
+        fn is_backdoor_set_empty_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
-        fn test_is_backdoor_set_empty_y() {
+        fn is_backdoor_set_empty_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
-        fn test_is_backdoor_set_non_disjoint_x_y() {
+        fn is_backdoor_set_non_disjoint_x_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![0], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
-        fn test_is_backdoor_set_non_disjoint_x_z() {
+        fn is_backdoor_set_non_disjoint_x_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![1], &set![0]);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
-        fn test_is_backdoor_set_non_disjoint_y_z() {
+        fn is_backdoor_set_non_disjoint_y_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_backdoor_set(&set![0], &set![1], &set![1]);
         }
 
         #[test]
-        fn test_is_backdoor_set_edge() {
+        fn is_backdoor_set_edge() {
             // Initialize an empty g.
             let mut g = DiGraph::empty(vec!["A", "B"]);
             // Add edges to the g.
@@ -85,7 +85,7 @@ mod tests {
         }
 
         #[test]
-        fn test_is_backdoor_set_chain() {
+        fn is_backdoor_set_chain() {
             // Initialize an empty g.
             let mut g = DiGraph::empty(vec!["A", "B", "C"]);
             // Add edges to the g.
@@ -98,7 +98,7 @@ mod tests {
         }
 
         #[test]
-        fn test_is_backdoor_set_fork() {
+        fn is_backdoor_set_fork() {
             // Initialize an empty g.
             let mut g = DiGraph::empty(vec!["A", "B", "C"]);
             // Add edges to the g.
@@ -113,7 +113,7 @@ mod tests {
         }
 
         #[test]
-        fn test_is_backdoor_set_collider() {
+        fn is_backdoor_set_collider() {
             // Initialize an empty g.
             let mut g = DiGraph::empty(vec!["A", "B", "C"]);
             // Add edges to the g.
@@ -126,7 +126,7 @@ mod tests {
         }
 
         #[test]
-        fn test_is_backdoor_set_primer_figure_3_7() {
+        fn is_backdoor_set_primer_figure_3_7() {
             let mut g = DiGraph::empty(vec!["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),
@@ -151,62 +151,62 @@ mod tests {
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
-        fn test_is_minimal_backdoor_set_out_of_bounds_x() {
+        fn is_minimal_backdoor_set_out_of_bounds_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![5], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
-        fn test_is_minimal_backdoor_set_out_of_bounds_y() {
+        fn is_minimal_backdoor_set_out_of_bounds_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![5], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
-        fn test_is_minimal_backdoor_set_out_of_bounds_z() {
+        fn is_minimal_backdoor_set_out_of_bounds_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![1], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
-        fn test_is_minimal_backdoor_set_empty_x() {
+        fn is_minimal_backdoor_set_empty_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
-        fn test_is_minimal_backdoor_set_empty_y() {
+        fn is_minimal_backdoor_set_empty_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
-        fn test_is_minimal_backdoor_set_non_disjoint_x_y() {
+        fn is_minimal_backdoor_set_non_disjoint_x_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
-        fn test_is_minimal_backdoor_set_non_disjoint_x_z() {
+        fn is_minimal_backdoor_set_non_disjoint_x_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![1], &set![0], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
-        fn test_is_minimal_backdoor_set_non_disjoint_y_z() {
+        fn is_minimal_backdoor_set_non_disjoint_y_z() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.is_minimal_backdoor_set(&set![0], &set![1], &set![1], None, None);
         }
 
         #[test]
-        fn test_is_minimal_backdoor_set_primer_figure_3_7() {
+        fn is_minimal_backdoor_set_primer_figure_3_7() {
             let mut g = DiGraph::empty(vec!["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),
@@ -238,41 +238,41 @@ mod tests {
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
-        fn test_find_minimal_backdoor_set_out_of_bounds_x() {
+        fn find_minimal_backdoor_set_out_of_bounds_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.find_minimal_backdoor_set(&set![5], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
-        fn test_find_minimal_backdoor_set_out_of_bounds_y() {
+        fn find_minimal_backdoor_set_out_of_bounds_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.find_minimal_backdoor_set(&set![0], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
-        fn test_find_minimal_backdoor_set_empty_x() {
+        fn find_minimal_backdoor_set_empty_x() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.find_minimal_backdoor_set(&set![], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
-        fn test_find_minimal_backdoor_set_empty_y() {
+        fn find_minimal_backdoor_set_empty_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.find_minimal_backdoor_set(&set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
-        fn test_find_minimal_backdoor_set_non_disjoint_x_y() {
+        fn find_minimal_backdoor_set_non_disjoint_x_y() {
             let g = DiGraph::empty(vec!["A", "B", "C"]);
             g.find_minimal_backdoor_set(&set![0], &set![0], None, None);
         }
 
         #[test]
-        fn test_find_minimal_backdoor_set_primer_figure_3_7() {
+        fn find_minimal_backdoor_set_primer_figure_3_7() {
             let mut g = DiGraph::empty(vec!["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),

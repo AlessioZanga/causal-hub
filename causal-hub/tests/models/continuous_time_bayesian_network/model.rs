@@ -7,7 +7,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         // Initialize the model.
         let ctbn = load_eating();
 

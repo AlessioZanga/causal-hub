@@ -4,7 +4,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_multi_index_ravel() {
+    fn multi_index_ravel() {
         // Set dimensions.
         let dim = array![2, 3, 4];
         // Create a multi index.
@@ -35,7 +35,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_index_unravel() {
+    fn multi_index_unravel() {
         // Set dimensions.
         let dim = array![2, 3, 4];
         // Create a multi index.

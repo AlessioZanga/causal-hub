@@ -8,7 +8,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         // Initialize the graph.
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1); // A -> B
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn test_unique_labels() {
+    fn unique_labels() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn test_missing_distribution() {
+    fn missing_distribution() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Graph parents labels and conditioning labels must be the same.")]
-    fn test_same_parents() {
+    fn same_parents() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);

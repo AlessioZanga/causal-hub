@@ -9,7 +9,7 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
-    fn test_new() {
+    fn new() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![("A".to_owned(), s.clone())];
         let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s)];
@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
-    fn test_unique_labels() {
+    fn unique_labels() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![("A".to_owned(), s.clone())];
         let z = map![("A".to_owned(), s.clone())];
@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Failed to sum probability to one: [].")]
-    fn test_empty_labels() {
+    fn empty_labels() {
         let x = map![];
         let z = map![];
         let p = array![[]];
@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display() {
+    fn display() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![("A".to_owned(), s.clone())];
         let z = map![("B".to_owned(), s.clone())];
@@ -70,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_single_x() {
+    fn marginalize_single_x() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![("A".to_owned(), s.clone()), ("B".to_owned(), s.clone())];
         let z = map![("C".to_owned(), s.clone()), ("D".to_owned(), s.clone())];
@@ -102,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_multiple_x() {
+    fn marginalize_multiple_x() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
             ("A".to_owned(), s.clone()),
@@ -195,7 +195,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_single_z() {
+    fn marginalize_single_z() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![("A".to_owned(), s.clone())];
         let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s.clone())];
@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_multiple_z() {
+    fn marginalize_multiple_z() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
             ("A".to_owned(), s.clone()),
@@ -301,7 +301,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_single_x_z() {
+    fn marginalize_single_x_z() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
             ("A".to_owned(), s.clone()),
@@ -365,7 +365,7 @@ mod tests {
     }
 
     #[test]
-    fn test_marginalize_multiple_x_z() {
+    fn marginalize_multiple_x_z() {
         let s = set!["no".to_owned(), "yes".to_owned()];
         let x = map![
             ("A".to_owned(), s.clone()),

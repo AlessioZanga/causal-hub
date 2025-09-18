@@ -13,7 +13,7 @@ mod tests {
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_forward_sampling() {
+        fn forward_sampling() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Load BN.
@@ -51,7 +51,7 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_refit() {
+        fn forward_sampling_refit() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Load BN.
@@ -84,7 +84,7 @@ mod tests {
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn test_forward_sampling_by_length() {
+        fn forward_sampling_by_length() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
@@ -101,7 +101,7 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_by_time() {
+        fn forward_sampling_by_time() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
@@ -118,7 +118,7 @@ mod tests {
         }
 
         #[test]
-        fn test_forward_sampling_refit() {
+        fn forward_sampling_refit() {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.

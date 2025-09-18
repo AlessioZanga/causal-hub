@@ -10,7 +10,7 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn test_raw_fill_1() {
+    fn raw_fill_1() {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.
@@ -59,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn test_raw_fill_2() {
+    fn raw_fill_2() {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.

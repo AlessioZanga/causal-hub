@@ -11,7 +11,7 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn test_ctpc_fit() {
+    fn ctpc_fit() {
         // Initialize a random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ctpc_par_fit() {
+    fn ctpc_par_fit() {
         // Initialize a random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
