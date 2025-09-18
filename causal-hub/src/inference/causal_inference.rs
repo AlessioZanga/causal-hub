@@ -1,6 +1,6 @@
 use crate::{
     inference::{BNInference, BackdoorCriterion},
-    models::{BN, CatBN, CatCPD, Labelled},
+    models::{BN, CatBN, CatCPD, Labelled, Phi},
     set,
     types::Set,
 };

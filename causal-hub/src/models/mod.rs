@@ -1,10 +1,15 @@
 mod bayesian_network;
+use std::ops::{DivAssign, MulAssign};
+
+use approx::{AbsDiffEq, RelativeEq};
 pub use bayesian_network::*;
 
 mod continuous_time_bayesian_network;
 pub use continuous_time_bayesian_network::*;
 
 mod graphs;
+use std::fmt::Debug;
+
 pub use graphs::*;
 
 use crate::types::{Labels, Set};
@@ -159,7 +164,7 @@ pub trait Labelled {
 }
 
 /// A trait for conditional probability distributions.
-pub trait CPD {
+pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
@@ -188,4 +193,96 @@ pub trait CPD {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+}
+
+/// A trait for potential functions.
+pub trait Phi:
+    Clone
+    + Debug
+    + Labelled
+    + PartialEq
+    + AbsDiffEq
+    + RelativeEq
+    + for<'a> MulAssign<&'a Self>
+    + for<'a> DivAssign<&'a Self>
+{
+    /// The type of the CPD.
+    type CPD;
+    /// The type of the parameters.
+    type Parameters;
+    /// The type of the evidence.
+    type Evidence;
+
+    /// Returns the parameters.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the parameters.
+    ///
+    fn parameters(&self) -> &Self::Parameters;
+
+    /// Returns the parameters size.
+    ///
+    /// # Returns
+    ///
+    /// The parameters size.
+    ///
+    fn parameters_size(&self) -> usize;
+
+    /// Conditions the potential on a set of variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `e` - A map from variable indices to their observed states.
+    ///
+    /// # Returns
+    ///
+    /// A new potential instance.
+    ///
+    fn condition(&self, e: &Self::Evidence) -> Self;
+
+    /// Marginalizes the potential over a set of variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - A set of variable indices to marginalize over.
+    ///
+    /// # Returns
+    ///
+    /// A new potential instance.
+    ///
+    fn marginalize(&self, x: &Set<usize>) -> Self;
+
+    /// Normalizes the potential.
+    ///
+    /// # Returns
+    ///
+    /// The normalized potential.
+    ///
+    fn normalize(&self) -> Self;
+
+    /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `cpd` - The CPD to convert.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding potential.
+    ///
+    fn from_cpd(cpd: Self::CPD) -> Self;
+
+    /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding CPD.
+    ///
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD;
 }

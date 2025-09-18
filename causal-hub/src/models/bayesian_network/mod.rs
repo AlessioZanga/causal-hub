@@ -1,6 +1,9 @@
 mod categorical;
 pub use categorical::*;
 
+mod gaussian;
+pub use gaussian::*;
+
 use crate::{models::graphs::DiGraph, types::Map};
 
 /// A trait for Bayesian networks.
