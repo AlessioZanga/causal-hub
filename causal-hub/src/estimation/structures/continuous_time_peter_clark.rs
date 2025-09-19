@@ -95,8 +95,14 @@ where
         let q_xz = self.estimator.fit(x, z);
         let q_xs = self.estimator.fit(x, &s);
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz.sample_conditional_counts().unwrap();
-        let n_xs = q_xs.sample_conditional_counts().unwrap();
+        let n_xz = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
+        let n_xs = q_xs
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -201,8 +207,14 @@ where
         let q_xz = self.estimator.fit(x, z);
         let q_xs = self.estimator.fit(x, &s);
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz.sample_conditional_counts().unwrap();
-        let n_xs = q_xs.sample_conditional_counts().unwrap();
+        let n_xz = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
+        let n_xs = q_xs
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();

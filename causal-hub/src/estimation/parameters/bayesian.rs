@@ -5,7 +5,7 @@ use statrs::function::gamma::ln_gamma;
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCPD, Labelled},
+    models::{CatCIM, CatCIMS, CatCPD, Labelled},
     types::{Labels, Set, States},
 };
 
@@ -123,8 +123,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         states: &States,
         x: &Set<usize>,
         z: &Set<usize>,
-        n_xz: Array3<f64>,
-        t_xz: Array3<f64>,
+        sample_statistics: CatCIMS,
         prior: (usize, f64),
     ) -> CatCIM {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
@@ -134,8 +133,12 @@ impl BE<'_, CatTrj, (usize, f64)> {
         // Assert tau is positive.
         assert!(tau > 0.0, "Tau must be positive.");
 
-        // Compute the sample size.
-        let n = n_xz.sum();
+        // Get the conditional counts and times.
+        let n_xz = sample_statistics.sample_conditional_counts();
+        let t_xz = sample_statistics.sample_conditional_times();
+
+        // Insert axis to align the dimensions.
+        let t_xz = &t_xz.clone().insert_axis(Axis(2));
 
         // Get the shape of the conditioning variables.
         let s_z = n_xz.shape()[0] as f64;
@@ -179,13 +182,6 @@ impl BE<'_, CatTrj, (usize, f64)> {
             ll_q_xz + ll_p_xz
         });
 
-        // Set the sample conditional counts.
-        let sample_conditional_counts = Some(n_xz);
-        // Set the sample conditional times.
-        let sample_conditional_times = Some(t_xz);
-        // Set the sample size.
-        let sample_size = Some(n);
-
         // Subset the conditioning labels, states and shape.
         let conditioning_states = z
             .iter()
@@ -203,14 +199,15 @@ impl BE<'_, CatTrj, (usize, f64)> {
             })
             .collect();
 
+        // Wrap the sufficient statistics in an option.
+        let sample_statistics = Some(sample_statistics);
+
         // Construct the CIM.
         CatCIM::with_optionals(
             states,
             conditioning_states,
             parameters,
-            sample_conditional_counts,
-            sample_conditional_times,
-            sample_size,
+            sample_statistics,
             sample_log_likelihood,
         )
     }
@@ -229,9 +226,9 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics.
-            let (n_xz, t_xz) = SSE::new(self.dataset).fit(x, z);
+            let sample_statistics = SSE::new(self.dataset).fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(states, x, z, n_xz, t_xz, prior)
+            BE::<'_, CatTrj, _>::fit_cim(states, x, z, sample_statistics, prior)
         }
     }
 
@@ -245,9 +242,9 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());
             // Compute sufficient statistics in parallel.
-            let (n_xz, t_xz) = SSE::new(self.dataset).par_fit(x, z);
+            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(states, x, z, n_xz, t_xz, prior)
+            BE::<'_, CatTrj, _>::fit_cim(states, x, z, sample_statistics, prior)
         }
     }
 

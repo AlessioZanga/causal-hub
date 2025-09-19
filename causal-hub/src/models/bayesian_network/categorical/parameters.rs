@@ -38,7 +38,17 @@ impl CatCPDS {
     /// A new sample (sufficient) statistics instance.
     ///
     #[inline]
-    pub const fn new(n_xz: Array2<f64>, n: f64) -> Self {
+    pub fn new(n_xz: Array2<f64>, n: f64) -> Self {
+        // Assert the counts are finite and non-negative.
+        assert!(
+            n_xz.iter().all(|&x| x.is_finite() && x >= 0.),
+            "Counts must be finite and non-negative."
+        );
+        assert!(
+            n.is_finite() && n >= 0.,
+            "Sample size must be finite and non-negative."
+        );
+
         Self { n_xz, n }
     }
 
@@ -628,7 +638,7 @@ impl CatCPD {
         if let Some(sample_statistics) = &sample_statistics {
             // Get the sample conditional counts.
             let sample_conditional_counts = &sample_statistics.n_xz;
-            // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
+            // Assert the sample conditional counts have the same shape as parameters.
             assert!(
                 sample_conditional_counts.shape() == parameters.shape(),
                 "Sample conditional counts must have the same shape as parameters: \n\
@@ -636,23 +646,6 @@ impl CatCPD {
                 \t found:       sample_conditional_counts.shape() == {:?} .",
                 parameters.shape(),
                 sample_conditional_counts.shape(),
-            );
-            assert!(
-                sample_conditional_counts
-                    .iter()
-                    .all(|x| x.is_finite() && *x >= 0.),
-                "Sample conditional counts must be finite and non-negative: \n\
-                \t expected: sample_conditional_counts >= 0, \n\
-                \t found:    sample_conditional_counts == {sample_conditional_counts:?} ."
-            );
-            // Get the sample size.
-            let sample_size = &sample_statistics.n;
-            // Assert the sample size is finite and non-negative.
-            assert!(
-                sample_size.is_finite() && *sample_size >= 0.,
-                "Sample size must be finite and non-negative: \n\
-                \t expected: sample_size >= 0, \n\
-                \t found:    sample_size == {sample_size} ."
             );
         }
         // Assert the sample log-likelihood is finite and non-positive.

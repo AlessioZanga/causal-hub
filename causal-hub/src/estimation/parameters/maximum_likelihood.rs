@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCPD, Labelled},
+    models::{CatCIM, CatCIMS, CatCPD, Labelled},
     types::{Labels, Set, States},
 };
 
@@ -104,20 +104,23 @@ impl MLE<'_, CatTrj> {
         states: &States,
         x: &Set<usize>,
         z: &Set<usize>,
-        n_xz: Array3<f64>,
-        t_xz: Array3<f64>,
+        sample_statistics: CatCIMS,
     ) -> CatCIM {
+        // Get the conditional counts and times.
+        let n_xz = sample_statistics.sample_conditional_counts();
+        let t_xz = sample_statistics.sample_conditional_times();
+
         // Assert the conditional times counts are not zero.
         assert!(
             t_xz.iter().all(|&x| x > 0.),
             "Failed to get non-zero conditional times."
         );
 
-        // Compute the sample size.
-        let n = n_xz.sum();
+        // Insert axis to align the dimensions.
+        let t_xz = &t_xz.clone().insert_axis(Axis(2));
 
         // Estimate the parameters by normalizing the counts.
-        let mut parameters = &n_xz / &t_xz;
+        let mut parameters = n_xz / t_xz;
         // Fix the diagonal.
         parameters.outer_iter_mut().for_each(|mut q| {
             // Fill the diagonal with zeros.
@@ -161,18 +164,11 @@ impl MLE<'_, CatTrj> {
                 // Normalize the parameters, align the dimensions.
                 p_xz /= &p_xz.sum_axis(Axis(2)).insert_axis(Axis(2));
                 // Compute the sample log-likelihood.
-                (&n_xz * (p_xz + eps).ln()).sum()
+                (n_xz * (p_xz + eps).ln()).sum()
             };
             // Return the total log-likelihood.
             ll_q_xz + ll_p_xz
         });
-
-        // Set the sample conditional counts.
-        let sample_conditional_counts = Some(n_xz.clone());
-        // Set the sample conditional times.
-        let sample_conditional_times = Some(t_xz.clone());
-        // Set the sample size.
-        let sample_size = Some(n);
 
         // Subset the conditioning labels, states and shape.
         let conditioning_states = z
@@ -191,14 +187,15 @@ impl MLE<'_, CatTrj> {
             })
             .collect();
 
+        // Wrap the sufficient statistics in an option.
+        let sample_statistics = Some(sample_statistics);
+
         // Construct the CIM.
         CatCIM::with_optionals(
             states,
             conditioning_states,
             parameters,
-            sample_conditional_counts,
-            sample_conditional_times,
-            sample_size,
+            sample_statistics,
             sample_log_likelihood,
         )
     }
@@ -216,14 +213,10 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get states.
             let states = self.dataset.states();
-
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
             // Compute sufficient statistics.
-            let (n_xz, t_xz) = sse.fit(x, z);
-
+            let sample_statistics = SSE::new(self.dataset).fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_cim(states, x, z, n_xz, t_xz)
+            MLE::<'_, CatTrj>::fit_cim(states, x, z, sample_statistics)
         }
     }
 
@@ -236,14 +229,10 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get states.
             let states = self.dataset.states();
-
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
             // Compute sufficient statistics in parallel.
-            let (n_xz, t_xz) = sse.par_fit(x, z);
-
+            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit_cim(states, x, z, n_xz, t_xz)
+            MLE::<'_, CatTrj>::fit_cim(states, x, z, sample_statistics)
         }
     }
 

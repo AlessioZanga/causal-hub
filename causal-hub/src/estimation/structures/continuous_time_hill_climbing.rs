@@ -68,7 +68,10 @@ where
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
-        let n = q_xz.sample_size().expect("Failed to get the sample size.");
+        let n = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_size())
+            .expect("Failed to get the sample size.");
         // Get the log-likelihood.
         let ll = q_xz
             .sample_log_likelihood()

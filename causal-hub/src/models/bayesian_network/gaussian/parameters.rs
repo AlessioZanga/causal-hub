@@ -16,7 +16,7 @@ pub struct GaussCPDS {
     /// Response covariance matrix (|Z| + 1) x (|Z| + 1).
     s_zz: Array2<f64>,
     /// Sample size.
-    n: usize,
+    n: f64,
 }
 
 impl GaussCPDS {
@@ -34,7 +34,7 @@ impl GaussCPDS {
     /// A new `GaussCPDS` instance.
     ///
     #[inline]
-    pub fn new(s_xx: Array2<f64>, s_xz: Array2<f64>, s_zz: Array2<f64>, n: usize) -> Self {
+    pub fn new(s_xx: Array2<f64>, s_xz: Array2<f64>, s_zz: Array2<f64>, n: f64) -> Self {
         // Assert the dimensions are correct.
         assert_eq!(
             s_xx.nrows(),
@@ -107,7 +107,7 @@ impl GaussCPDS {
     /// The sample size.
     ///
     #[inline]
-    pub fn sample_size(&self) -> usize {
+    pub fn sample_size(&self) -> f64 {
         self.n
     }
 }
