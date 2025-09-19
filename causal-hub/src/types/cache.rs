@@ -41,7 +41,7 @@ impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
-    P::SS: Clone,
+    P::Statistics: Clone,
 {
     fn labels(&self) -> &Labels {
         self.call.labels()

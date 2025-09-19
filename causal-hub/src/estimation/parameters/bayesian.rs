@@ -60,15 +60,12 @@ macro_for!($type in [CatTable, CatWtdTable] {
             let states = self.dataset.states();
             let shape = self.dataset.shape();
 
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
             // Compute sufficient statistics.
-            let n_xz = sse.fit(x, z);
-
+            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            // Get the conditional counts.
+            let n_xz = sample_statistics.sample_conditional_counts();
             // Marginalize the counts.
             let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
-            // Compute the sample size.
-            let n = n_z.sum();
 
             // Get the prior, as the alpha of the Dirichlet distribution.
             let alpha = *self.prior();
@@ -87,11 +84,6 @@ macro_for!($type in [CatTable, CatWtdTable] {
             // Compute the sample log-likelihood.
             let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
 
-            // Set the sample conditional counts.
-            let sample_conditional_counts = Some(n_xz);
-            // Set the sample size.
-            let sample_size = Some(n);
-
             // Subset the conditioning labels, states and shape.
             let conditioning_states = z
                 .iter()
@@ -109,13 +101,15 @@ macro_for!($type in [CatTable, CatWtdTable] {
                 })
                 .collect();
 
+            // Wrap the sample statistics in an option.
+            let sample_statistics = Some(sample_statistics);
+
             // Construct the CPD.
             CatCPD::with_optionals(
                 states,
                 conditioning_states,
                 parameters,
-                sample_conditional_counts,
-                sample_size,
+                sample_statistics,
                 sample_log_likelihood,
             )
         }

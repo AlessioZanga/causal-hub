@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
     estimation::{CSSEstimator, ParCSSEstimator},
-    models::{CPD, CatCIM, CatCPD, Labelled},
+    models::{CPD, CatCIM, CatCPDS, Labelled},
     types::{Labels, Set},
     utils::MI,
 };
@@ -30,13 +30,13 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
+impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -66,17 +66,22 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
         });
 
         // Cast the counts to floating point.
-        n_xz.mapv(|x| x as f64)
+        let n_xz = n_xz.mapv(|x| x as f64);
+        // Compute the sample size.
+        let n = n_xz.sum();
+
+        // Return the sufficient statistics.
+        CatCPDS::new(n_xz, n)
     }
 }
 
-impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
+impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -113,17 +118,21 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
                 n_xz[[idx_z, idx_x]] += weight;
             });
 
-        n_xz
+        // Compute the sample size.
+        let n = n_xz.sum();
+
+        // Return the sufficient statistics.
+        CatCPDS::new(n_xz, n)
     }
 }
 
-impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
+impl CSSEstimator<<CatCIM as CPD>::Statistics> for SSE<'_, CatTrj> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::Statistics {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -174,13 +183,13 @@ impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
     }
 }
 
-impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatWtdTrj> {
+impl CSSEstimator<<CatCIM as CPD>::Statistics> for SSE<'_, CatWtdTrj> {
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::Statistics {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
@@ -193,13 +202,13 @@ impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatWtdTrj> {
 // Implement the CSSEstimator and ParCSSEstimator traits for both CatTrjs and CatWtdTrjs.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
+    impl CSSEstimator<<CatCIM as CPD>::Statistics> for SSE<'_, $type> {
         #[inline]
         fn labels(&self) -> &Labels {
             self.dataset.labels()
         }
 
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::Statistics {
             // Get the shape.
             let shape = self.dataset.shape();
 
@@ -225,8 +234,8 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         }
     }
 
-    impl ParCSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+    impl ParCSSEstimator<<CatCIM as CPD>::Statistics> for SSE<'_, $type> {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::Statistics {
             // Get the shape.
             let shape = self.dataset.shape();
 

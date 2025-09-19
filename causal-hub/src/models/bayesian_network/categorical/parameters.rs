@@ -16,6 +16,154 @@ use crate::{
     utils::MI,
 };
 
+/// Sample (sufficient) statistics for the categorical CPD.
+#[derive(Clone, Debug)]
+pub struct CatCPDS {
+    /// Conditional counts |Z| x |X|.
+    n_xz: Array2<f64>,
+    /// Sample size.
+    n: f64,
+}
+
+impl CatCPDS {
+    /// Creates a new sample (sufficient) statistics for the categorical CPD.
+    ///
+    /// # Arguments
+    ///
+    /// * `n_xz` - The conditional counts |Z| x |X|.
+    /// * `n` - The sample size.
+    ///
+    /// # Returns
+    ///
+    /// A new sample (sufficient) statistics instance.
+    ///
+    #[inline]
+    pub const fn new(n_xz: Array2<f64>, n: f64) -> Self {
+        Self { n_xz, n }
+    }
+
+    /// Returns the sample conditional counts |Z| x |X|.
+    ///
+    /// # Returns
+    ///
+    /// The sample conditional counts.
+    ///
+    #[inline]
+    pub const fn sample_conditional_counts(&self) -> &Array2<f64> {
+        &self.n_xz
+    }
+
+    /// Returns the sample size.
+    ///
+    /// # Returns
+    ///
+    /// The sample size.
+    ///
+    #[inline]
+    pub const fn sample_size(&self) -> f64 {
+        self.n
+    }
+}
+
+impl Serialize for CatCPDS {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(2))?;
+        // Convert the sample conditional counts to a flat format.
+        let sample_conditional_counts: Vec<Vec<f64>> = self
+            .n_xz
+            .rows()
+            .into_iter()
+            .map(|row| row.to_vec())
+            .collect();
+        // Serialize sample conditional counts.
+        map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
+        // Serialize sample size.
+        map.serialize_entry("sample_size", &self.n)?;
+        // End the map.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CatCPDS {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            SampleConditionalCounts,
+            SampleSize,
+        }
+
+        struct CatSVisitor;
+
+        impl<'de> Visitor<'de> for CatSVisitor {
+            type Value = CatCPDS;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct CatCPDS")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<CatCPDS, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate the fields.
+                let mut sample_conditional_counts = None;
+                let mut sample_size = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::SampleConditionalCounts => {
+                            if sample_conditional_counts.is_some() {
+                                return Err(E::duplicate_field("sample_conditional_counts"));
+                            }
+                            sample_conditional_counts = Some(map.next_value()?);
+                        }
+                        Field::SampleSize => {
+                            if sample_size.is_some() {
+                                return Err(E::duplicate_field("sample_size"));
+                            }
+                            sample_size = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Extract the fields.
+                let sample_conditional_counts = sample_conditional_counts
+                    .ok_or_else(|| E::missing_field("sample_conditional_counts"))?;
+                let sample_size = sample_size.ok_or_else(|| E::missing_field("sample_size"))?;
+
+                // Convert sample conditional counts to ndarray.
+                let sample_conditional_counts = {
+                    let counts: Vec<Vec<f64>> = sample_conditional_counts;
+                    let shape = (counts.len(), counts[0].len());
+                    Array::from_iter(counts.into_iter().flatten())
+                        .into_shape_with_order(shape)
+                        .map_err(|_| E::custom("Invalid sample conditional counts shape"))?
+                };
+
+                Ok(CatCPDS {
+                    n_xz: sample_conditional_counts,
+                    n: sample_size,
+                })
+            }
+        }
+
+        const FIELDS: &[&str] = &["sample_conditional_counts", "sample_size"];
+
+        deserializer.deserialize_struct("CatCPDS", FIELDS, CatSVisitor)
+    }
+}
+
 /// A categorical CPD.
 #[derive(Clone, Debug)]
 pub struct CatCPD {
@@ -32,9 +180,8 @@ pub struct CatCPD {
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
-    // Fitted statistics, if any.
-    sample_conditional_counts: Option<Array2<f64>>,
-    sample_size: Option<f64>,
+    // Sample (sufficient) statistics, if any.
+    sample_statistics: Option<CatCPDS>,
     sample_log_likelihood: Option<f64>,
 }
 
@@ -106,7 +253,7 @@ impl RelativeEq for CatCPD {
 
 impl CPD for CatCPD {
     type Parameters = Array2<f64>;
-    type SS = Array2<f64>;
+    type Statistics = CatCPDS;
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {
@@ -121,6 +268,16 @@ impl CPD for CatCPD {
     #[inline]
     fn parameters_size(&self) -> usize {
         self.parameters_size
+    }
+
+    #[inline]
+    fn sample_statistics(&self) -> Option<&Self::Statistics> {
+        self.sample_statistics.as_ref()
+    }
+
+    #[inline]
+    fn sample_log_likelihood(&self) -> Option<f64> {
+        self.sample_log_likelihood
     }
 }
 
@@ -338,8 +495,7 @@ impl CatCPD {
             conditioning_multi_index,
             parameters,
             parameters_size,
-            sample_conditional_counts: None,
-            sample_size: None,
+            sample_statistics: None,
             sample_log_likelihood: None,
         }
     }
@@ -410,43 +566,6 @@ impl CatCPD {
         &self.conditioning_multi_index
     }
 
-    /// Returns the sample conditional counts used to fit the distribution, if any.
-    ///
-    /// # Returns
-    ///
-    /// The sample conditional counts used to fit the distribution.
-    ///
-    #[inline]
-    pub const fn sample_conditional_counts(&self) -> Option<&Array2<f64>> {
-        self.sample_conditional_counts.as_ref()
-    }
-
-    /// Returns the sample size used to fit the distribution, if any.
-    ///
-    /// # Note
-    ///
-    /// The sample size could be non-integer if the distribution was fitted using a weighted dataset.
-    ///
-    /// # Returns
-    ///
-    /// The sample size used to fit the distribution.
-    ///
-    #[inline]
-    pub const fn sample_size(&self) -> Option<f64> {
-        self.sample_size
-    }
-
-    /// Returns the sample log-likelihood given the distribution, if any.
-    ///
-    /// # Returns
-    ///
-    /// The sample log-likelihood given the distribution.
-    ///
-    #[inline]
-    pub const fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
-    }
-
     /// Marginalizes the over the variables `X` and conditioning variables `Z`.
     ///
     /// # Arguments
@@ -489,9 +608,7 @@ impl CatCPD {
     ///
     /// * `states` - The variables states.
     /// * `parameters` - The probabilities of the states.
-    /// * `sample_conditional_counts` - The sample conditional counts used to fit the distribution, if any.
-    /// * `sample_size` - The sample size used to fit the distribution, if any.
-    /// * `sample_log_likelihood` - The sample log-likelihood given the distribution, if any.
+    /// * `statistics` - The sufficient statistics used to fit the distribution, if any.
     ///
     /// # Panics
     ///
@@ -505,12 +622,13 @@ impl CatCPD {
         state: States,
         conditioning_states: States,
         parameters: Array2<f64>,
-        sample_conditional_counts: Option<Array2<f64>>,
-        sample_size: Option<f64>,
+        sample_statistics: Option<CatCPDS>,
         sample_log_likelihood: Option<f64>,
     ) -> Self {
-        // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
-        if let Some(sample_conditional_counts) = &sample_conditional_counts {
+        if let Some(sample_statistics) = &sample_statistics {
+            // Get the sample conditional counts.
+            let sample_conditional_counts = &sample_statistics.n_xz;
+            // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
             assert!(
                 sample_conditional_counts.shape() == parameters.shape(),
                 "Sample conditional counts must have the same shape as parameters: \n\
@@ -526,16 +644,16 @@ impl CatCPD {
                 "Sample conditional counts must be finite and non-negative: \n\
                 \t expected: sample_conditional_counts >= 0, \n\
                 \t found:    sample_conditional_counts == {sample_conditional_counts:?} ."
-            )
-        }
-        // Assert the sample size is finite and non-negative.
-        if let Some(sample_size) = &sample_size {
+            );
+            // Get the sample size.
+            let sample_size = &sample_statistics.n;
+            // Assert the sample size is finite and non-negative.
             assert!(
                 sample_size.is_finite() && *sample_size >= 0.,
                 "Sample size must be finite and non-negative: \n\
                 \t expected: sample_size >= 0, \n\
                 \t found:    sample_size == {sample_size} ."
-            )
+            );
         }
         // Assert the sample log-likelihood is finite and non-positive.
         if let Some(sample_log_likelihood) = &sample_log_likelihood {
@@ -544,15 +662,14 @@ impl CatCPD {
                 "Sample log-likelihood must be finite and non-positive: \n\
                 \t expected: sample_ll <= 0 , \n\
                 \t found:    sample_ll == {sample_log_likelihood} ."
-            )
+            );
         }
 
         // Construct the categorical CPD.
         let mut cpd = Self::new(state, conditioning_states, parameters);
 
         // Set the optionals.
-        cpd.sample_conditional_counts = sample_conditional_counts;
-        cpd.sample_size = sample_size;
+        cpd.sample_statistics = sample_statistics;
         cpd.sample_log_likelihood = sample_log_likelihood;
 
         cpd
@@ -665,12 +782,16 @@ impl Serialize for CatCPD {
     {
         // Count the elements to serialize.
         let mut size = 3;
-        size += self.sample_conditional_counts.is_some() as usize;
-        size += self.sample_size.is_some() as usize;
+        // Add optional fields, if any.
+        size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
-
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
+
+        // Serialize states.
+        map.serialize_entry("states", &self.states)?;
+        // Serialize conditioning states.
+        map.serialize_entry("conditioning_states", &self.conditioning_states)?;
 
         // Convert parameters to a flat format.
         let parameters: Vec<Vec<f64>> = self
@@ -679,35 +800,16 @@ impl Serialize for CatCPD {
             .into_iter()
             .map(|row| row.to_vec())
             .collect();
-        // Convert the sample conditional counts to a flat format.
-        let sample_conditional_counts: Option<Vec<Vec<f64>>> = self
-            .sample_conditional_counts
-            .as_ref()
-            .map(|sample_conditional_counts| {
-                sample_conditional_counts
-                    .rows()
-                    .into_iter()
-                    .map(|row| row.to_vec())
-                    .collect()
-            });
-
-        // Serialize states.
-        map.serialize_entry("states", &self.states)?;
-        // Serialize conditioning states.
-        map.serialize_entry("conditioning_states", &self.conditioning_states)?;
         // Serialize parameters.
         map.serialize_entry("parameters", &parameters)?;
-        // Serialize sample conditional counts, if any.
-        if let Some(sample_conditional_counts) = &sample_conditional_counts {
-            map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
+
+        // Serialize the sufficient statistics, if any.
+        if let Some(sample_statistics) = &self.sample_statistics {
+            map.serialize_entry("sample_statistics", sample_statistics)?;
         }
-        // Serialize sample size, if any.
-        if let Some(sample_size) = self.sample_size {
-            map.serialize_entry("sample_size", &sample_size)?;
-        }
-        // Serialize sample log likelihood, if any.
-        if let Some(sample_log_likelihood) = self.sample_log_likelihood {
-            map.serialize_entry("sample_log_likelihood", &sample_log_likelihood)?;
+        // Serialize the sample log-likelihood, if any.
+        if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
+            map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
         }
 
         // Finalize the map serialization.
@@ -726,8 +828,7 @@ impl<'de> Deserialize<'de> for CatCPD {
             States,
             ConditioningStates,
             Parameters,
-            SampleConditionalCounts,
-            SampleSize,
+            SampleStatistics,
             SampleLogLikelihood,
         }
 
@@ -750,8 +851,7 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let mut states = None;
                 let mut conditioning_states = None;
                 let mut parameters = None;
-                let mut sample_conditional_counts = None;
-                let mut sample_size = None;
+                let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
 
                 // Parse the map.
@@ -775,17 +875,11 @@ impl<'de> Deserialize<'de> for CatCPD {
                             }
                             parameters = Some(map.next_value()?);
                         }
-                        Field::SampleConditionalCounts => {
-                            if sample_conditional_counts.is_some() {
-                                return Err(E::duplicate_field("sample_conditional_counts"));
+                        Field::SampleStatistics => {
+                            if sample_statistics.is_some() {
+                                return Err(E::duplicate_field("sample_statistics"));
                             }
-                            sample_conditional_counts = Some(map.next_value()?);
-                        }
-                        Field::SampleSize => {
-                            if sample_size.is_some() {
-                                return Err(E::duplicate_field("sample_size"));
-                            }
-                            sample_size = Some(map.next_value()?);
+                            sample_statistics = Some(map.next_value()?);
                         }
                         Field::SampleLogLikelihood => {
                             if sample_log_likelihood.is_some() {
@@ -809,23 +903,11 @@ impl<'de> Deserialize<'de> for CatCPD {
                     .into_shape_with_order(shape)
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
-                // Convert sample conditional counts to ndarray.
-                let sample_conditional_counts = sample_conditional_counts
-                    .map(|sample_conditional_counts| {
-                        let counts: Vec<Vec<f64>> = sample_conditional_counts;
-                        let shape = (counts.len(), counts[0].len());
-                        Array::from_iter(counts.into_iter().flatten())
-                            .into_shape_with_order(shape)
-                            .map_err(|_| E::custom("Invalid sample conditional counts shape"))
-                    })
-                    .transpose()?;
-
                 Ok(CatCPD::with_optionals(
                     states,
                     conditioning_states,
                     parameters,
-                    sample_conditional_counts,
-                    sample_size,
+                    sample_statistics,
                     sample_log_likelihood,
                 ))
             }
@@ -835,8 +917,7 @@ impl<'de> Deserialize<'de> for CatCPD {
             "states",
             "conditioning_states",
             "parameters",
-            "sample_conditional_counts",
-            "sample_size",
+            "sample_statistics",
             "sample_log_likelihood",
         ];
 

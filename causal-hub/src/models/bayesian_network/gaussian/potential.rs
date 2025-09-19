@@ -10,7 +10,7 @@ use crate::{
 
 /// Parameters of a Gaussian potential.
 #[derive(Clone, Debug)]
-pub struct GaussK {
+pub struct GaussPhiK {
     /// Precision matrix |X| x |X|.
     pub k: Array2<f64>,
     /// Information vector |X|.
@@ -19,13 +19,13 @@ pub struct GaussK {
     pub g: f64,
 }
 
-impl PartialEq for GaussK {
+impl PartialEq for GaussPhiK {
     fn eq(&self, other: &Self) -> bool {
         self.k.eq(&other.k) && self.h.eq(&other.h) && self.g.eq(&other.g)
     }
 }
 
-impl AbsDiffEq for GaussK {
+impl AbsDiffEq for GaussPhiK {
     type Epsilon = f64;
 
     fn default_epsilon() -> Self::Epsilon {
@@ -39,7 +39,7 @@ impl AbsDiffEq for GaussK {
     }
 }
 
-impl RelativeEq for GaussK {
+impl RelativeEq for GaussPhiK {
     fn default_max_relative() -> Self::Epsilon {
         Self::Epsilon::default_max_relative()
     }
@@ -62,7 +62,7 @@ pub struct GaussPhi {
     // Labels of the variables.
     labels: Labels,
     // Parameters.
-    parameters: GaussK,
+    parameters: GaussPhiK,
 }
 
 impl Labelled for GaussPhi {
@@ -144,7 +144,7 @@ impl Div<&GaussPhi> for &GaussPhi {
 
 impl Phi for GaussPhi {
     type CPD = GaussCPD;
-    type Parameters = GaussK;
+    type Parameters = GaussPhiK;
     type Evidence = (); // FIXME:
 
     #[inline]

@@ -168,7 +168,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
-    type SS;
+    type Statistics;
 
     /// Returns the labels of the conditioned variables.
     ///
@@ -193,6 +193,22 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+
+    /// Returns the sufficient statistics, if any.
+    ///
+    /// # Returns
+    ///
+    /// An option containing a reference to the sufficient statistics.
+    ///
+    fn sample_statistics(&self) -> Option<&Self::Statistics>;
+
+    /// Returns the log-likelihood of the fitted data, if any.
+    ///
+    /// # Returns
+    ///
+    /// An option containing the log-likelihood.
+    ///
+    fn sample_log_likelihood(&self) -> Option<f64>;
 }
 
 /// A trait for potential functions.

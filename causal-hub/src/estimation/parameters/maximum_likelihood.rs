@@ -44,13 +44,12 @@ macro_for!($type in [CatTable, CatWtdTable] {
             // Get states and shape.
             let states = self.dataset.states();
 
-            // Initialize the sufficient statistics estimator.
-            let sse = SSE::new(self.dataset);
             // Compute sufficient statistics.
-            let n_xz = sse.fit(x, z);
-
+            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            // Get the conditional counts.
+            let n_xz = sample_statistics.sample_conditional_counts();
             // Marginalize the counts.
-            let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
+            let n_z = &n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
 
             // Assert the marginal counts are not zero.
             assert!(
@@ -58,21 +57,13 @@ macro_for!($type in [CatTable, CatWtdTable] {
                 "Failed to get non-zero counts.",
             );
 
-            // Compute the sample size.
-            let n = n_z.sum();
-
             // Compute the parameters by normalizing the counts.
-            let parameters = &n_xz / &n_z;
+            let parameters = n_xz / n_z;
 
             // Set epsilon to avoid ln(0).
             let eps = f64::MIN_POSITIVE;
             // Compute the sample log-likelihood, avoiding ln(0).
-            let sample_log_likelihood = Some((&n_xz * (&parameters + eps).ln()).sum());
-
-            // Set the sample conditional counts.
-            let sample_conditional_counts = Some(n_xz.clone());
-            // Set the sample size.
-            let sample_size = Some(n);
+            let sample_log_likelihood = Some((n_xz * (&parameters + eps).ln()).sum());
 
             // Subset the conditioning labels, states and shape.
             let conditioning_states = z
@@ -91,13 +82,15 @@ macro_for!($type in [CatTable, CatWtdTable] {
                 })
                 .collect();
 
+            // Wrap the sample statistics in an option.
+            let sample_statistics = Some(sample_statistics);
+
             // Construct the CPD.
             CatCPD::with_optionals(
                 states,
                 conditioning_states,
                 parameters,
-                sample_conditional_counts,
-                sample_size,
+                sample_statistics,
                 sample_log_likelihood,
             )
         }

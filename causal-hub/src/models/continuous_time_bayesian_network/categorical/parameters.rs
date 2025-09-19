@@ -577,7 +577,7 @@ impl Labelled for CatCIM {
 
 impl CPD for CatCIM {
     type Parameters = Array3<f64>;
-    type SS = (Array3<f64>, Array3<f64>);
+    type Statistics = (Array3<f64>, Array3<f64>);
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {
@@ -592,6 +592,16 @@ impl CPD for CatCIM {
     #[inline]
     fn parameters_size(&self) -> usize {
         self.parameters_size
+    }
+
+    #[inline]
+    fn sample_statistics(&self) -> Option<&Self::Statistics> {
+        todo!() // FIXME:
+    }
+
+    #[inline]
+    fn sample_log_likelihood(&self) -> Option<f64> {
+        self.sample_log_likelihood
     }
 }
 
