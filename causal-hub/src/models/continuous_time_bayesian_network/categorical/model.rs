@@ -14,8 +14,8 @@ use crate::{
     types::{Labels, Map, States},
 };
 
-/// A categorical continuous time Bayesian network (CTBN).
-#[derive(Clone, Debug, PartialEq)]
+/// A categorical continuous time Bayesian network.
+#[derive(Clone, Debug)]
 pub struct CatCTBN {
     /// The name of the model.
     name: Option<String>,
@@ -70,6 +70,23 @@ impl CatCTBN {
     }
 
     /// Creates a new categorical continuous-time Bayesian network with optional fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the model.
+    /// * `description` - The description of the model.
+    /// * `graph` - The underlying graph.
+    /// * `cims` - The conditional intensity matrices.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `name` is an empty string.
+    /// * Panics if `description` is an empty string.
+    ///
+    /// # Returns
+    ///
+    /// A new categorical continuous-time Bayesian network instance.
+    ///
     pub fn with_optionals<I>(
         name: Option<String>,
         description: Option<String>,
@@ -119,6 +136,17 @@ impl CatCTBN {
     }
 }
 
+impl PartialEq for CatCTBN {
+    fn eq(&self, other: &Self) -> bool {
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.initial_distribution.eq(&other.initial_distribution)
+            && self.graph.eq(&other.graph)
+            && self.cims.eq(&other.cims)
+    }
+}
+
 impl AbsDiffEq for CatCTBN {
     type Epsilon = f64;
 
@@ -127,7 +155,10 @@ impl AbsDiffEq for CatCTBN {
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        self.initial_distribution.eq(&other.initial_distribution)
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
             && self
                 .cims
@@ -150,7 +181,10 @@ impl RelativeEq for CatCTBN {
         epsilon: Self::Epsilon,
         max_relative: Self::Epsilon,
     ) -> bool {
-        self.initial_distribution.eq(&other.initial_distribution)
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.initial_distribution.eq(&other.initial_distribution)
             && self.graph.eq(&other.graph)
             && self
                 .cims

@@ -16,8 +16,8 @@ use crate::{
     types::{Labels, Map, States},
 };
 
-/// A categorical Bayesian network (BN).
-#[derive(Clone, Debug, PartialEq)]
+/// A categorical Bayesian network.
+#[derive(Clone, Debug)]
 pub struct CatBN {
     /// The name of the model.
     name: Option<String>,
@@ -38,28 +38,6 @@ pub struct CatBN {
 }
 
 impl CatBN {
-    /// Returns the name of the model, if any.
-    ///
-    /// # Returns
-    ///
-    /// The name of the model, if it exists.
-    ///
-    #[inline]
-    pub fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
-
-    /// Returns the description of the model, if any.
-    ///
-    /// # Returns
-    ///
-    /// The description of the model, if it exists.
-    ///
-    #[inline]
-    pub fn description(&self) -> Option<&str> {
-        self.description.as_deref()
-    }
-
     /// Returns the states of the variables.
     ///
     /// # Returns
@@ -81,37 +59,16 @@ impl CatBN {
     pub fn shape(&self) -> &Array1<usize> {
         &self.shape
     }
+}
 
-    /// Creates a new categorical Bayesian network with optional fields.
-    pub fn with_optionals<I>(
-        name: Option<String>,
-        description: Option<String>,
-        graph: DiGraph,
-        cpds: I,
-    ) -> Self
-    where
-        I: IntoIterator<Item = CatCPD>,
-    {
-        // Assert name is not empty string.
-        if let Some(name) = &name {
-            assert!(!name.is_empty(), "Name cannot be an empty string.");
-        }
-        // Assert description is not empty string.
-        if let Some(description) = &description {
-            assert!(
-                !description.is_empty(),
-                "Description cannot be an empty string."
-            );
-        }
-
-        // Construct the categorical BN.
-        let mut bn = Self::new(graph, cpds);
-
-        // Set the optional fields.
-        bn.name = name;
-        bn.description = description;
-
-        bn
+impl PartialEq for CatBN {
+    fn eq(&self, other: &Self) -> bool {
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.graph.eq(&other.graph)
+            && self.topological_order.eq(&other.topological_order)
+            && self.cpds.eq(&other.cpds)
     }
 }
 
@@ -123,7 +80,9 @@ impl AbsDiffEq for CatBN {
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        self.states.eq(&other.states)
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
             && self
@@ -147,7 +106,9 @@ impl RelativeEq for CatBN {
         epsilon: Self::Epsilon,
         max_relative: Self::Epsilon,
     ) -> bool {
-        self.states.eq(&other.states)
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
             && self
@@ -256,6 +217,16 @@ impl BN for CatBN {
     }
 
     #[inline]
+    fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    #[inline]
+    fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
+    #[inline]
     fn graph(&self) -> &DiGraph {
         &self.graph
     }
@@ -266,12 +237,43 @@ impl BN for CatBN {
     }
 
     fn parameters_size(&self) -> usize {
-        self.cpds.iter().map(|(_, d)| d.parameters_size()).sum()
+        self.cpds.iter().map(|(_, x)| x.parameters_size()).sum()
     }
 
     #[inline]
     fn topological_order(&self) -> &[usize] {
         &self.topological_order
+    }
+
+    fn with_optionals<I>(
+        name: Option<String>,
+        description: Option<String>,
+        graph: DiGraph,
+        cpds: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = Self::CPD>,
+    {
+        // Assert name is not empty string.
+        if let Some(name) = &name {
+            assert!(!name.is_empty(), "Name cannot be an empty string.");
+        }
+        // Assert description is not empty string.
+        if let Some(description) = &description {
+            assert!(
+                !description.is_empty(),
+                "Description cannot be an empty string."
+            );
+        }
+
+        // Construct the BN.
+        let mut bn = Self::new(graph, cpds);
+
+        // Set the optional fields.
+        bn.name = name;
+        bn.description = description;
+
+        bn
     }
 }
 
