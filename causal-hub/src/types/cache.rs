@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     estimation::CPDEstimator,
-    models::CPD,
+    models::{Labelled, CPD},
     types::{Labels, Map, Set},
 };
 
@@ -37,16 +37,22 @@ where
     }
 }
 
+impl<C, K, V> Labelled for Cache<'_, C, K, V>
+where
+    C: Labelled,
+{
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.call.labels()
+    }
+}
+
 impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
 where
     E: CPDEstimator<P>,
     P: CPD + Clone,
     P::Statistics: Clone,
 {
-    fn labels(&self) -> &Labels {
-        self.call.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
         // Get the key.
         let key: (Vec<_>, Vec<_>) = (

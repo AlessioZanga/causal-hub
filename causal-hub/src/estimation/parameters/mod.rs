@@ -17,19 +17,11 @@ use rayon::prelude::*;
 use crate::{
     models::{BN, CPD, CTBN, DiGraph, Graph},
     set,
-    types::{Labels, Set},
+    types::Set,
 };
 
 /// A trait for sufficient statistics estimators.
 pub trait CSSEstimator<T> {
-    /// Returns a reference to the labels of the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
-
     /// Fits the estimator to the dataset and returns the conditional sufficient statistics.
     ///
     /// # Arguments
@@ -65,14 +57,6 @@ pub trait CPDEstimator<T>
 where
     T: CPD,
 {
-    /// Returns a reference to the labels of the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
-
     /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments

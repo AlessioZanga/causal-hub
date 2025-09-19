@@ -45,16 +45,21 @@ impl<'a, D, Pi> BE<'a, D, Pi> {
     }
 }
 
+impl<D, Pi> Labelled for BE<'_, D, Pi>
+where
+    D: Labelled,
+{
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.labels()
+    }
+}
+
 // Implement the CPD estimator for the BE struct.
 macro_for!($type in [CatTable, CatWtdTable] {
 
     // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
     impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
-        #[inline]
-        fn labels(&self) -> &Labels {
-            self.dataset.labels()
-        }
-
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
             // Get states and shape.
             let states = self.dataset.states();
@@ -217,11 +222,6 @@ impl BE<'_, CatTrj, (usize, f64)> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
-        #[inline]
-        fn labels(&self) -> &Labels {
-            self.dataset.labels()
-        }
-
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), *self.prior());

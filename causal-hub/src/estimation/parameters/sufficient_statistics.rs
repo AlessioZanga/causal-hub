@@ -30,12 +30,17 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
+impl<D> Labelled for SSE<'_, D>
+where
+    D: Labelled,
+{
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
+}
 
+impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
@@ -76,11 +81,6 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
 }
 
 impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
@@ -127,11 +127,6 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
 }
 
 impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
@@ -184,11 +179,6 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
 }
 
 impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
@@ -207,11 +197,6 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl CSSEstimator<CatCIMS> for SSE<'_, $type> {
-        #[inline]
-        fn labels(&self) -> &Labels {
-            self.dataset.labels()
-        }
-
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
             // Get the shape.
             let shape = self.dataset.shape();
@@ -220,30 +205,24 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_x = x.iter().map(|&i| shape[i]).product();
             let s_z = z.iter().map(|&i| shape[i]).product();
 
-            // Initialize the joint counts.
-            let n_xz: Array3<f64> = Array::zeros((s_z, s_x, s_x));
-            // Initialize the time spent in that state.
-            let t_xz: Array2<f64> = Array::zeros((s_z, s_x));
-            // Initialize the sample size.
-            let n = 0.;
+            // Initialize the sufficient statistics.
+            let s = CatCIMS::new(
+                // Initialize the joint counts.
+                Array3::zeros((s_z, s_x, s_x)),
+                // Initialize the time spent in that state.
+                Array2::zeros((s_z, s_x)),
+                // Initialize the sample size.
+                0.,
+            );
 
             // Iterate over the trajectories.
-            let (n_xz, t_xz, n) = self.dataset
+            let s = self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold((n_xz, t_xz, n), |(n_xz_a, t_xz_a, n_a), trj_b| {
-                    // Compute the sufficient statistics of the trajectory.
-                    let s = SSE::new(trj_b).fit(x, z);
-                    // Destructure the sufficient statistics.
-                    let n_xz_b = s.sample_conditional_counts();
-                    let t_xz_b = s.sample_conditional_times();
-                    let n_b = s.sample_size();
-                    // Sum the sufficient statistics.
-                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-                });
+                .fold(s, |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z));
 
             // Return the sufficient statistics.
-            CatCIMS::new(n_xz, t_xz, n)
+            s
         }
     }
 
@@ -256,41 +235,31 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_x = x.iter().map(|&i| shape[i]).product();
             let s_z = z.iter().map(|&i| shape[i]).product();
 
-            // Initialize the joint counts.
-            let n_xz: Array3<f64> = Array::zeros((s_z, s_x, s_x));
-            // Initialize the time spent in that state.
-            let t_xz: Array2<f64> = Array::zeros((s_z, s_x));
-            // Initialize the sample size.
-            let n = 0.;
+            // Initialize the sufficient statistics.
+            let s = CatCIMS::new(
+                // Initialize the joint counts.
+                Array3::zeros((s_z, s_x, s_x)),
+                // Initialize the time spent in that state.
+                Array2::zeros((s_z, s_x)),
+                // Initialize the sample size.
+                0.,
+            );
 
             // Iterate over the trajectories in parallel.
-            let (n_xz, t_xz, n) = self.dataset
+            let s = self.dataset
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
                 .fold(
-                    || (n_xz.clone(), t_xz.clone(), n),
-                    |(n_xz_a, t_xz_a, n_a), trj_b| {
-                        // Compute the sufficient statistics of the trajectory.
-                        let s = SSE::new(trj_b).fit(x, z);
-                        // Destructure the sufficient statistics.
-                        let n_xz_b = s.sample_conditional_counts();
-                        let t_xz_b = s.sample_conditional_times();
-                        let n_b = s.sample_size();
-                        // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-                    },
+                    || s.clone(),
+                    |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z),
                 )
                 .reduce(
-                    || (n_xz.clone(), t_xz.clone(), n),
-                    |(n_xz_a, t_xz_a, n_a), (n_xz_b, t_xz_b, n_b)| {
-                        // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b, n_a + n_b)
-                    },
+                    || s.clone(),
+                    |s_a, s_b| s_a + s_b
                 );
 
             // Return the sufficient statistics.
-            CatCIMS::new(n_xz, t_xz, n)
+            s
         }
     }
-
 });

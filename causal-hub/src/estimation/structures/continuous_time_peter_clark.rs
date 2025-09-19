@@ -13,14 +13,6 @@ use crate::{
 
 /// A trait for conditional independence testing.
 pub trait ConditionalIndependenceTest {
-    /// Returns a reference to the labels of the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
-
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -70,15 +62,20 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     }
 }
 
-impl<E> CIT for ChiSquaredTest<'_, E>
+impl<'a, E> Labelled for ChiSquaredTest<'a, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: Labelled,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
     }
+}
 
+impl<E> CIT for ChiSquaredTest<'_, E>
+where
+    E: CPDEstimator<CatCIM>,
+{
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
@@ -179,15 +176,20 @@ impl<'a, E> FTest<'a, E> {
     }
 }
 
-impl<E> CIT for FTest<'_, E>
+impl<E> Labelled for FTest<'_, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: Labelled,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
     }
+}
 
+impl<E> CIT for FTest<'_, E>
+where
+    E: CPDEstimator<CatCIM>,
+{
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
@@ -259,8 +261,8 @@ pub struct CTPC<'a, T, S> {
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CIT,
-    S: CIT,
+    T: CIT + Labelled,
+    S: CIT + Labelled,
 {
     /// Creates a new `CTPC` instance.
     ///

@@ -1,4 +1,7 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
@@ -95,6 +98,25 @@ impl Serialize for CatCPDS {
         map.serialize_entry("sample_size", &self.n)?;
         // End the map.
         map.end()
+    }
+}
+
+impl AddAssign for CatCPDS {
+    fn add_assign(&mut self, other: Self) {
+        // Add the counts.
+        self.n_xz += &other.n_xz;
+        // Add the sample sizes.
+        self.n += other.n;
+    }
+}
+
+impl Add for CatCPDS {
+    type Output = Self;
+
+    #[inline]
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+        self
     }
 }
 

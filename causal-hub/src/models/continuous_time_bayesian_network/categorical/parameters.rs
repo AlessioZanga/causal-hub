@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign};
+
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
 use ndarray::prelude::*;
@@ -105,6 +107,24 @@ impl CatCIMS {
     #[inline]
     pub const fn sample_size(&self) -> f64 {
         self.n
+    }
+}
+
+impl AddAssign for CatCIMS {
+    fn add_assign(&mut self, other: Self) {
+        // Add the counts and times.
+        self.n_xz += &other.n_xz;
+        self.t_xz += &other.t_xz;
+        self.n += other.n;
+    }
+}
+
+impl Add for CatCIMS {
+    type Output = Self;
+
+    fn add(mut self, other: Self) -> Self::Output {
+        self += other;
+        self
     }
 }
 
