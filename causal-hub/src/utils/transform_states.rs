@@ -1,4 +1,4 @@
-use crate::types::{States};
+use crate::types::States;
 
 /// Utility function to sort states and labels.
 pub fn sort_states(mut states: States) -> (States, Vec<(usize, Vec<usize>)>) {

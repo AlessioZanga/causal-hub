@@ -3,7 +3,7 @@ use std::fmt::Display;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use crate::{types::Labels, utils::collect_labels};
+use crate::types::Labels;
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -62,17 +62,15 @@ impl PK {
     ///
     /// A new instance of prior knowledge.
     ///
-    pub fn new<I, J, K, L, M, N>(labels: I, forbidden: J, required: K, temporal_order: L) -> Self
+    pub fn new<I, J, K, L>(labels: Labels, forbidden: I, required: J, temporal_order: K) -> Self
     where
-        I: IntoIterator<Item = N>,
+        I: IntoIterator<Item = (usize, usize)>,
         J: IntoIterator<Item = (usize, usize)>,
-        K: IntoIterator<Item = (usize, usize)>,
-        L: IntoIterator<Item = M>,
-        M: IntoIterator<Item = usize>,
-        N: AsRef<str>,
+        K: IntoIterator<Item = L>,
+        L: IntoIterator<Item = usize>,
     {
-        // Collect the labels.
-        let labels = collect_labels(labels);
+        // FIXME: Check labels sorted.
+
         // Get the number of labels.
         let n = labels.len();
         // Initialize an adjacency matrix with `Unknown` state.

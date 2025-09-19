@@ -14,6 +14,7 @@ jsonschema = { version = "^0.33", default-features = false }
 itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.16", features = ["approx", "rayon", "serde"] }
+ndarray-linalg = "^0.17"
 ndarray-stats = "^0.6"
 paste.workspace = true
 pest = "^2.8"
@@ -36,12 +37,14 @@ rand_xoshiro = "^0.7"
 default = []
 openblas-static = [
     "ndarray/blas",
+    "ndarray-linalg/openblas-static",
     "blas-src/openblas",
     "openblas-src/cache",
     "openblas-src/static",
 ]
 openblas-system = [
     "ndarray/blas",
+    "ndarray-linalg/openblas-system",
     "blas-src/openblas",
     "openblas-src/system",
 ]

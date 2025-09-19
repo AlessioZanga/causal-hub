@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     estimation::CPDEstimator,
-    models::{Labelled, CPD},
+    models::{CPD, Labelled},
     types::{Labels, Map, Set},
 };
 

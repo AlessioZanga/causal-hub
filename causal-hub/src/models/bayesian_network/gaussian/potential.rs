@@ -12,11 +12,72 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct GaussPhiK {
     /// Precision matrix |X| x |X|.
-    pub k: Array2<f64>,
+    k: Array2<f64>,
     /// Information vector |X|.
-    pub h: Array1<f64>,
+    h: Array1<f64>,
     /// Log-normalization constant.
-    pub g: f64,
+    g: f64,
+}
+
+impl GaussPhiK {
+    /// Creates a new Gaussian potential with the given parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `k` - Precision matrix |X| x |X|.
+    /// * `h` - Information vector |X|.
+    /// * `g` - Log-normalization constant.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `k` is not square or if the length of `h` does not match the size of `k`.
+    ///
+    /// # Results
+    ///
+    /// A new Gaussian potential instance.
+    ///
+    pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
+        assert!(k.is_square(), "Precision matrix must be square.");
+        assert_eq!(
+            k.nrows(),
+            h.len(),
+            "Information vector length must match precision matrix size."
+        );
+        Self { k, h, g }
+    }
+
+    /// Returns the precision matrix.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the precision matrix.
+    ///    
+    #[inline]
+    pub const fn precision_matrix(&self) -> &Array2<f64> {
+        &self.k
+    }
+
+    /// Returns the information vector.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the information vector.
+    ///
+    #[inline]
+    pub const fn information_vector(&self) -> &Array1<f64> {
+        &self.h
+    }
+
+    /// Returns the log-normalization constant.
+    ///
+    /// # Returns
+    ///
+    /// The log-normalization constant.
+    ///
+    #[inline]
+    pub const fn log_normalization_constant(&self) -> f64 {
+        self.g
+    }
 }
 
 impl PartialEq for GaussPhiK {

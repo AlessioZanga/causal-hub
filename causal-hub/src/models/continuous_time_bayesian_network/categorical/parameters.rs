@@ -365,7 +365,7 @@ impl CatCIM {
         // Check parameters validity.
         parameters.outer_iter().for_each(|q| {
             // Assert Q is square.
-            assert_eq!(q.nrows(), q.ncols(), "Q must be square.");
+            assert!(q.is_square(), "Q must be square.");
             // Assert Q has finite values.
             assert!(
                 q.iter().all(|&x| x.is_finite()),
@@ -668,6 +668,8 @@ impl CatCIM {
 
         // Construct the CIM.
         let mut cim = Self::new(states, conditioning_states, parameters);
+
+        // FIXME: Check labels alignment with optional fields.
 
         // Set the sample statistics and log-likelihood.
         cim.sample_statistics = sample_statistics;

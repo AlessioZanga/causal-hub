@@ -4,9 +4,11 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{
+        CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset, GaussTable,
+    },
     estimation::{CSSEstimator, ParCSSEstimator},
-    models::{CatCIMS, CatCPDS, Labelled},
+    models::{CatCIMS, CatCPDS, GaussCPDS, Labelled},
     types::{Labels, Set},
     utils::MI,
 };
@@ -123,6 +125,50 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
 
         // Return the sufficient statistics.
         CatCPDS::new(n_xz, n)
+    }
+}
+
+impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPDS {
+        // Assert variables and conditioning variables must be disjoint.
+        assert!(
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
+        );
+
+        // Get the values.
+        let d = self.dataset.values();
+
+        // Select the columns of the variables.
+        let mut c_x = Array::zeros((d.nrows(), x.len()));
+        for (i, &j) in x.iter().enumerate() {
+            c_x.column_mut(i).assign(&d.column(j));
+        }
+        // Compute the mean.
+        let mu_x = c_x.mean_axis(Axis(0)).unwrap();
+        // Center the values by subtracting the mean.
+        c_x -= &mu_x.clone().insert_axis(Axis(0));
+
+        // Select the columns of the conditioning variables.
+        let mut c_z = Array::zeros((d.nrows(), z.len()));
+        for (i, &j) in z.iter().enumerate() {
+            c_z.column_mut(i).assign(&d.column(j));
+        }
+        // Compute the mean.
+        let mu_z = c_z.mean_axis(Axis(0)).unwrap();
+        // Center the values by subtracting the mean.
+        c_z -= &mu_z.clone().insert_axis(Axis(0));
+
+        // Compute the sufficient statistics.
+        let s_xx = c_x.t().dot(&c_x);
+        let s_xz = c_x.t().dot(&c_z);
+        let s_zz = c_z.t().dot(&c_z);
+
+        // Get the sample size.
+        let n = d.nrows() as f64;
+
+        // Return the sufficient statistics.
+        GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)
     }
 }
 

@@ -1,11 +1,14 @@
+use std::f64::consts::PI;
+
 use dry::macro_for;
 use ndarray::prelude::*;
+use ndarray_linalg::{Cholesky, Determinant, Diag, SolveTriangularInplace, UPLO};
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
+    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCIMS, CatCPD, Labelled},
-    types::{Labels, Set, States},
+    models::{CatCIM, CatCIMS, CatCPD, GaussCPD, GaussCPDP, Labelled},
+    types::{EPSILON, Labels, Set, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -46,7 +49,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-            // Get states and shape.
+            // Get states.
             let states = self.dataset.states();
 
             // Compute sufficient statistics.
@@ -68,7 +71,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
             // Set epsilon to avoid ln(0).
             let eps = f64::MIN_POSITIVE;
             // Compute the sample log-likelihood, avoiding ln(0).
-            let sample_log_likelihood = Some((n_xz * (&parameters + eps).ln()).sum());
+            let sample_log_likelihood = (n_xz * (&parameters + eps).ln()).sum();
 
             // Subset the conditioning labels, states and shape.
             let conditioning_states = z
@@ -89,6 +92,8 @@ macro_for!($type in [CatTable, CatWtdTable] {
 
             // Wrap the sample statistics in an option.
             let sample_statistics = Some(sample_statistics);
+            // Wrap the sample log-likelihood in an option.
+            let sample_log_likelihood = Some(sample_log_likelihood);
 
             // Construct the CPD.
             CatCPD::with_optionals(
@@ -102,6 +107,79 @@ macro_for!($type in [CatTable, CatWtdTable] {
     }
 
 });
+
+impl CPDEstimator<GaussCPD> for MLE<'_, GaussTable> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+        // Get labels.
+        let labels = self.dataset.labels();
+
+        // Compute sufficient statistics.
+        let sample_statistics = SSE::new(self.dataset).fit(x, z);
+        // Get the sample covariance matrices and size.
+        let (mu_x, mu_z, s_xx, s_xz, s_zz, n) = (
+            sample_statistics.sample_design_mean(),
+            sample_statistics.sample_response_mean(),
+            sample_statistics.sample_design_covariance(),
+            sample_statistics.sample_cross_covariance(),
+            sample_statistics.sample_response_covariance(),
+            sample_statistics.sample_size(),
+        );
+
+        // Compute the coefficient matrix avoiding matrix inversion.
+
+        // Step 0: Regularize S_zz by adding a small value to the diagonal.
+        let mut s_zz_reg = s_zz.clone();
+        s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += EPSILON);
+        // Step 1: Perform Cholesky decomposition of S_zz.
+        let l = s_zz_reg
+            .cholesky(UPLO::Lower)
+            .expect("Failed to compute Cholesky decomposition of S_zz.");
+        // Step 2: Solve L Y = S_xz^T.
+        let mut y = s_xz.t().to_owned();
+        l.solve_triangular_inplace(UPLO::Lower, Diag::NonUnit, &mut y)
+            .expect("Failed to solve L Y = S_xz^T system.");
+        // Step 3: Solve L^T A^T = Y.
+        let l_t = l.t().to_owned();
+        l_t.solve_triangular_inplace(UPLO::Upper, Diag::NonUnit, &mut y)
+            .expect("Failed to solve L^T A^T = Y .");
+        // Step 4: Transpose to get A.
+        let a = y.t().to_owned();
+
+        // Compute the intercept vector.
+        let b = mu_x - &a.dot(mu_z);
+
+        // Compute the covariance matrix.
+        let s = (s_xx - &a.dot(&s_xz.t())) / n;
+
+        // Compute the sample log-likelihood.
+        let p = x.len() as f64;
+        let log_2_pi = f64::ln(2. * PI);
+        let ln_det_s = f64::ln(s.det().expect("Failed to compute determinant of S."));
+        let sample_log_likelihood = -0.5 * n * (p * log_2_pi + ln_det_s + p);
+
+        // Construct the CPD parameters.
+        let parameters = GaussCPDP::new(a, b, s);
+
+        // Subset the conditioning labels, states and shape.
+        let conditioning_labels = z.iter().map(|&i| labels[i].clone()).collect();
+        // Get the labels of the conditioned variables.
+        let labels = x.iter().map(|&i| labels[i].clone()).collect();
+
+        // Wrap the sample statistics in an option.
+        let sample_statistics = Some(sample_statistics);
+        // Wrap the sample log-likelihood in an option.
+        let sample_log_likelihood = Some(sample_log_likelihood);
+
+        // Construct the CPD.
+        GaussCPD::with_optionals(
+            labels,
+            conditioning_labels,
+            parameters,
+            sample_statistics,
+            sample_log_likelihood,
+        )
+    }
+}
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
@@ -139,7 +217,7 @@ impl MLE<'_, CatTrj> {
         // Set epsilon to avoid ln(0).
         let eps = f64::MIN_POSITIVE;
         // Compute the sample log-likelihood, avoiding ln(0).
-        let sample_log_likelihood = Some({
+        let sample_log_likelihood = {
             // Compute the sample log-likelihood.
             let ll_q_xz = {
                 // Sum counts, aligning the dimensions.
@@ -173,7 +251,7 @@ impl MLE<'_, CatTrj> {
             };
             // Return the total log-likelihood.
             ll_q_xz + ll_p_xz
-        });
+        };
 
         // Subset the conditioning labels, states and shape.
         let conditioning_states = z
@@ -194,6 +272,8 @@ impl MLE<'_, CatTrj> {
 
         // Wrap the sufficient statistics in an option.
         let sample_statistics = Some(sample_statistics);
+        // Wrap the sample log-likelihood in an option.
+        let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CIM.
         CatCIM::with_optionals(

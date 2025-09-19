@@ -683,6 +683,8 @@ impl CatCPD {
         // Construct the categorical CPD.
         let mut cpd = Self::new(state, conditioning_states, parameters);
 
+        // FIXME: Check labels alignment with optional fields.
+
         // Set the optionals.
         cpd.sample_statistics = sample_statistics;
         cpd.sample_log_likelihood = sample_log_likelihood;
