@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// A trait for conditional independence testing.
-pub trait ConditionalIndependenceTest {
+pub trait CITest {
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -27,9 +27,6 @@ pub trait ConditionalIndependenceTest {
     ///
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
 }
-
-/// A type alias for a conditional independence test.
-pub use ConditionalIndependenceTest as CIT;
 
 /// A struct representing the Chi-squared test.
 pub struct ChiSquaredTest<'a, E> {
@@ -72,7 +69,7 @@ where
     }
 }
 
-impl<E> CIT for ChiSquaredTest<'_, E>
+impl<E> CITest for ChiSquaredTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
@@ -186,7 +183,7 @@ where
     }
 }
 
-impl<E> CIT for FTest<'_, E>
+impl<E> CITest for FTest<'_, E>
 where
     E: CPDEstimator<CatCIM>,
 {
@@ -261,8 +258,8 @@ pub struct CTPC<'a, T, S> {
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CIT + Labelled,
-    S: CIT + Labelled,
+    T: CITest + Labelled,
+    S: CITest + Labelled,
 {
     /// Creates a new `CTPC` instance.
     ///
@@ -432,8 +429,8 @@ where
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CIT + Sync,
-    S: CIT + Sync,
+    T: CITest + Sync,
+    S: CITest + Sync,
 {
     /// Execute the CTPC algorithm and return the fitted graph in parallel.
     ///

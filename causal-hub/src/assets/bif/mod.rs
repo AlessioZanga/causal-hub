@@ -11,7 +11,7 @@ macro_for!(
         pigs, sachs, survey, water, win95pts
     ] {
     paste! {
-        #[doc = "Load the `" $bn:upper "` BN from the assets."]
+        #[doc = "Load the `" $bn:upper "` categorical BN from the assets."]
         pub fn [<load_ $bn>]() -> CatBN {
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));

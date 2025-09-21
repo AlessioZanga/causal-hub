@@ -198,11 +198,7 @@ impl Graph for UnGraph {
         true
     }
 
-    fn from_adjacency_matrix(labels: Labels, adjacency_matrix: Array2<bool>) -> Self {
-        // Assert labels are sorted.
-        // TODO: Refactor code and remove this assumption.
-        assert!(labels.iter().is_sorted(), "Labels must be sorted.");
-
+    fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {
         // Assert labels and adjacency matrix dimensions match.
         assert_eq!(
             labels.len(),
@@ -221,6 +217,36 @@ impl Graph for UnGraph {
             adjacency_matrix.t(),
             "Adjacency matrix must be symmetric."
         );
+
+        // Check if the labels are sorted.
+        if !labels.is_sorted() {
+            // Allocate the sorted indices.
+            let mut indices: Vec<usize> = (0..labels.len()).collect();
+            // Sort the indices based on the labels.
+            indices.sort_by_key(|&i| &labels[i]);
+            // Sort the labels.
+            labels.sort();
+            // Allocate a new adjacency matrix.
+            let mut new_adjacency_matrix = adjacency_matrix.clone();
+            // Fill the rows.
+            for (i, &j) in indices.iter().enumerate() {
+                new_adjacency_matrix
+                    .row_mut(i)
+                    .assign(&adjacency_matrix.row(j));
+            }
+            // Update the adjacency matrix.
+            adjacency_matrix = new_adjacency_matrix;
+            // Allocate a new adjacency matrix.
+            let mut new_adjacency_matrix = adjacency_matrix.clone();
+            // Fill the columns.
+            for (i, &j) in indices.iter().enumerate() {
+                new_adjacency_matrix
+                    .column_mut(i)
+                    .assign(&adjacency_matrix.column(j));
+            }
+            // Update the adjacency matrix.
+            adjacency_matrix = new_adjacency_matrix;
+        }
 
         // Create a new graph instance.
         Self {

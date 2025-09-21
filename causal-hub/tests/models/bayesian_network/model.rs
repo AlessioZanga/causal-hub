@@ -159,7 +159,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Graph parents labels and conditioning labels must be the same.")]
+    #[should_panic(
+        expected = "Graph parents labels and CPD conditioning labels must be the same:\n\t expected:    {\"A\"} ,\n\t found:       {\"A\", \"B\"} ."
+    )]
     fn same_parents() {
         let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
         graph.add_edge(0, 1);

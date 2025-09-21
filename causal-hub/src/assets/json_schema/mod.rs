@@ -32,7 +32,10 @@ pub(crate) static JSON_SCHEMA_RETRIEVER: LazyLock<InMemoryRetriever> = LazyLock:
     // Load all JSON Schemas.
     macro_for!(
         $schema in [
-            catbn, catcim, catcpd, catctbn, digraph, ungraph
+            catcpd, catbn,
+            gausscpd, gaussbn,
+            catcim, catctbn,
+            digraph, ungraph
         ] {
         // Load the JSON Schema file.
         let schema = include_str!(concat!(stringify!($schema), ".schema.json"));

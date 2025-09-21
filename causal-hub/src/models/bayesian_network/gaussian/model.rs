@@ -123,21 +123,22 @@ impl BN for GaussBN {
         // Get the labels of the variables.
         let labels: Labels = graph.labels().clone();
 
-        // Assert the labels of the parameters are the same as the graph parents.
-        assert!(
-            // Check if all vertices have the same labels as their parents.
-            graph.vertices().into_iter().all(|i| {
-                // Check if the labels of the parameters are in the parents.
-                graph
-                    .parents(&set![i])
-                    .into_iter()
-                    .eq(cpds[i].conditioning_labels().iter().map(|j| {
-                        // Get the index of the label in the graph.
-                        graph.labels().get_index_of(j).unwrap()
-                    }))
-            }),
-            "Graph parents labels and conditioning labels must be the same."
-        );
+        // Check if all vertices have the same labels as their parents.
+        graph.vertices().iter().for_each(|&i| {
+            // Get the parents of the vertex.
+            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
+            // Get the conditioning labels of the CPD.
+            let pa_j = cpds[&labels[i]].conditioning_labels();
+            // Assert they are the same.
+            assert_eq!(
+                pa_i, pa_j,
+                "Graph parents labels and CPD conditioning labels must be the same:\n\
+                \t expected:    {:?} ,\n\
+                \t found:       {:?} .",
+                pa_i, pa_j
+            );
+        });
 
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().expect("Graph must be acyclic.");
@@ -172,6 +173,7 @@ impl BN for GaussBN {
         &self.cpds
     }
 
+    #[inline]
     fn parameters_size(&self) -> usize {
         self.cpds.iter().map(|(_, x)| x.parameters_size()).sum()
     }
