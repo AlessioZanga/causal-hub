@@ -1,0 +1,678 @@
+{
+  "name": "ecoli70",
+  "digraph": {
+    "labels": ["aceB", "asnA", "atpD", "atpG", "b1191", "b1583", "b1963", "cchB", "cspA", "cspG", "dnaG", "dnaJ", "dnaK", "eutG", "fixC", "flgD", "folK", "ftsJ", "gltA", "hupB", "ibpB", "icdA", "lacA", "lacY", "lacZ", "lpdA", "mopB", "nmpC", "nuoM", "pspA", "pspB", "sucA", "sucD", "tnaA", "yaeM", "yceP", "ycgX", "yecO", "yedE", "yfaD", "yfiA", "ygbD", "ygcE", "yhdM", "yheI", "yjbO"],
+    "edges": [
+      ["icdA", "aceB"],
+      ["ygcE", "asnA"],
+      ["sucA", "atpD"],
+      ["ygcE", "atpD"],
+      ["sucA", "atpG"],
+      ["lacA", "b1583"],
+      ["lacZ", "b1583"],
+      ["yceP", "b1583"],
+      ["yheI", "b1963"],
+      ["fixC", "cchB"],
+      ["cspG", "cspA"],
+      ["ycgX", "dnaG"],
+      ["yheI", "dnaG"],
+      ["sucA", "dnaJ"],
+      ["yheI", "dnaK"],
+      ["b1191", "fixC"],
+      ["sucA", "flgD"],
+      ["yheI", "folK"],
+      ["mopB", "ftsJ"],
+      ["sucA", "gltA"],
+      ["cspA", "hupB"],
+      ["yfiA", "hupB"],
+      ["eutG", "ibpB"],
+      ["yceP", "ibpB"],
+      ["asnA", "icdA"],
+      ["ygcE", "icdA"],
+      ["asnA", "lacA"],
+      ["cspG", "lacA"],
+      ["asnA", "lacY"],
+      ["cspG", "lacY"],
+      ["eutG", "lacY"],
+      ["lacA", "lacY"],
+      ["asnA", "lacZ"],
+      ["lacA", "lacZ"],
+      ["lacY", "lacZ"],
+      ["yedE", "lpdA"],
+      ["dnaK", "mopB"],
+      ["lacZ", "mopB"],
+      ["pspA", "nmpC"],
+      ["lacY", "nuoM"],
+      ["cspG", "pspA"],
+      ["pspB", "pspA"],
+      ["yedE", "pspA"],
+      ["cspG", "pspB"],
+      ["yedE", "pspB"],
+      ["eutG", "sucA"],
+      ["sucA", "sucD"],
+      ["b1191", "tnaA"],
+      ["fixC", "tnaA"],
+      ["sucA", "tnaA"],
+      ["cspG", "yaeM"],
+      ["lacA", "yaeM"],
+      ["lacZ", "yaeM"],
+      ["eutG", "yceP"],
+      ["fixC", "yceP"],
+      ["fixC", "ycgX"],
+      ["yheI", "ycgX"],
+      ["cspG", "yecO"],
+      ["cspG", "yedE"],
+      ["eutG", "yfaD"],
+      ["sucA", "yfaD"],
+      ["yceP", "yfaD"],
+      ["cspA", "yfiA"],
+      ["fixC", "ygbD"],
+      ["b1191", "ygcE"],
+      ["sucA", "ygcE"],
+      ["sucA", "yhdM"],
+      ["atpD", "yheI"],
+      ["yedE", "yheI"],
+      ["fixC", "yjbO"]
+    ]
+  },
+  "cpds": [
+    {
+      "labels": ["aceB"],
+      "conditioning_labels": ["icdA"],
+      "parameters": {
+        "coefficients": [
+          [1.0464]
+        ],
+        "intercept": [0.1324],
+        "covariance": [
+          [0.0853]
+        ]
+      }
+    },
+    {
+      "labels": ["asnA"],
+      "conditioning_labels": ["ygcE"],
+      "parameters": {
+        "coefficients": [
+          [0.7975]
+        ],
+        "intercept": [0.3494],
+        "covariance": [
+          [0.0914]
+        ]
+      }
+    },
+    {
+      "labels": ["atpD"],
+      "conditioning_labels": ["sucA", "ygcE"],
+      "parameters": {
+        "coefficients": [
+          [0.2603, -0.7252]
+        ],
+        "intercept": [-0.0403],
+        "covariance": [
+          [0.4131]
+        ]
+      }
+    },
+    {
+      "labels": ["atpG"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [0.618]
+        ],
+        "intercept": [-0.8908],
+        "covariance": [
+          [0.3943]
+        ]
+      }
+    },
+    {
+      "labels": ["b1191"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.273],
+        "covariance": [
+          [0.6086]
+        ]
+      }
+    },
+    {
+      "labels": ["b1583"],
+      "conditioning_labels": ["lacA", "lacZ", "yceP"],
+      "parameters": {
+        "coefficients": [
+          [-0.2457, 0.3422, 0.2407]
+        ],
+        "intercept": [1.382],
+        "covariance": [
+          [1.1085]
+        ]
+      }
+    },
+    {
+      "labels": ["b1963"],
+      "conditioning_labels": ["yheI"],
+      "parameters": {
+        "coefficients": [
+          [1.0376]
+        ],
+        "intercept": [0.9649],
+        "covariance": [
+          [0.3768]
+        ]
+      }
+    },
+    {
+      "labels": ["cchB"],
+      "conditioning_labels": ["fixC"],
+      "parameters": {
+        "coefficients": [
+          [0.618]
+        ],
+        "intercept": [1.0695],
+        "covariance": [
+          [0.6406]
+        ]
+      }
+    },
+    {
+      "labels": ["cspA"],
+      "conditioning_labels": ["cspG"],
+      "parameters": {
+        "coefficients": [
+          [0.2887]
+        ],
+        "intercept": [-0.4265],
+        "covariance": [
+          [1.5367]
+        ]
+      }
+    },
+    {
+      "labels": ["cspG"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [2.0261],
+        "covariance": [
+          [1.0755]
+        ]
+      }
+    },
+    {
+      "labels": ["dnaG"],
+      "conditioning_labels": ["ycgX", "yheI"],
+      "parameters": {
+        "coefficients": [
+          [0.5992, 0.1955]
+        ],
+        "intercept": [0.117],
+        "covariance": [
+          [0.1302]
+        ]
+      }
+    },
+    {
+      "labels": ["dnaJ"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [-0.8085]
+        ],
+        "intercept": [0.121],
+        "covariance": [
+          [0.5754]
+        ]
+      }
+    },
+    {
+      "labels": ["dnaK"],
+      "conditioning_labels": ["yheI"],
+      "parameters": {
+        "coefficients": [
+          [1.0797]
+        ],
+        "intercept": [-0.2469],
+        "covariance": [
+          [0.2908]
+        ]
+      }
+    },
+    {
+      "labels": ["eutG"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.2654],
+        "covariance": [
+          [0.6911]
+        ]
+      }
+    },
+    {
+      "labels": ["fixC"],
+      "conditioning_labels": ["b1191"],
+      "parameters": {
+        "coefficients": [
+          [0.9406]
+        ],
+        "intercept": [0.3165],
+        "covariance": [
+          [1.1309]
+        ]
+      }
+    },
+    {
+      "labels": ["flgD"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [0.6362]
+        ],
+        "intercept": [-0.5167],
+        "covariance": [
+          [0.3929]
+        ]
+      }
+    },
+    {
+      "labels": ["folK"],
+      "conditioning_labels": ["yheI"],
+      "parameters": {
+        "coefficients": [
+          [0.8181]
+        ],
+        "intercept": [0.5641],
+        "covariance": [
+          [0.1344]
+        ]
+      }
+    },
+    {
+      "labels": ["ftsJ"],
+      "conditioning_labels": ["mopB"],
+      "parameters": {
+        "coefficients": [
+          [0.9241]
+        ],
+        "intercept": [0.6738],
+        "covariance": [
+          [0.1564]
+        ]
+      }
+    },
+    {
+      "labels": ["gltA"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [0.379]
+        ],
+        "intercept": [-0.9572],
+        "covariance": [
+          [0.6895]
+        ]
+      }
+    },
+    {
+      "labels": ["hupB"],
+      "conditioning_labels": ["cspA", "yfiA"],
+      "parameters": {
+        "coefficients": [
+          [-0.2984, 1.3867]
+        ],
+        "intercept": [-0.1821],
+        "covariance": [
+          [0.1159]
+        ]
+      }
+    },
+    {
+      "labels": ["ibpB"],
+      "conditioning_labels": ["eutG", "yceP"],
+      "parameters": {
+        "coefficients": [
+          [1.4471, 0.1249]
+        ],
+        "intercept": [-0.4227],
+        "covariance": [
+          [0.4609]
+        ]
+      }
+    },
+    {
+      "labels": ["icdA"],
+      "conditioning_labels": ["asnA", "ygcE"],
+      "parameters": {
+        "coefficients": [
+          [0.5228, -1.0585]
+        ],
+        "intercept": [-0.4155],
+        "covariance": [
+          [0.3179]
+        ]
+      }
+    },
+    {
+      "labels": ["lacA"],
+      "conditioning_labels": ["asnA", "cspG"],
+      "parameters": {
+        "coefficients": [
+          [0.2724, 0.2539]
+        ],
+        "intercept": [0.4469],
+        "covariance": [
+          [2.887]
+        ]
+      }
+    },
+    {
+      "labels": ["lacY"],
+      "conditioning_labels": ["asnA", "cspG", "eutG", "lacA"],
+      "parameters": {
+        "coefficients": [
+          [-0.204, -0.2241, 0.3537, 1.0462]
+        ],
+        "intercept": [-0.1149],
+        "covariance": [
+          [0.0602]
+        ]
+      }
+    },
+    {
+      "labels": ["lacZ"],
+      "conditioning_labels": ["asnA", "lacA", "lacY"],
+      "parameters": {
+        "coefficients": [
+          [-0.0161, 1.3684, -0.4376]
+        ],
+        "intercept": [0.2],
+        "covariance": [
+          [0.3408]
+        ]
+      }
+    },
+    {
+      "labels": ["lpdA"],
+      "conditioning_labels": ["yedE"],
+      "parameters": {
+        "coefficients": [
+          [0.9609]
+        ],
+        "intercept": [-0.1007],
+        "covariance": [
+          [0.1399]
+        ]
+      }
+    },
+    {
+      "labels": ["mopB"],
+      "conditioning_labels": ["dnaK", "lacZ"],
+      "parameters": {
+        "coefficients": [
+          [0.8958, -0.059]
+        ],
+        "intercept": [0.0357],
+        "covariance": [
+          [0.3139]
+        ]
+      }
+    },
+    {
+      "labels": ["nmpC"],
+      "conditioning_labels": ["pspA"],
+      "parameters": {
+        "coefficients": [
+          [-0.769]
+        ],
+        "intercept": [0.1688],
+        "covariance": [
+          [0.3232]
+        ]
+      }
+    },
+    {
+      "labels": ["nuoM"],
+      "conditioning_labels": ["lacY"],
+      "parameters": {
+        "coefficients": [
+          [0.4083]
+        ],
+        "intercept": [-2.0176],
+        "covariance": [
+          [0.8133]
+        ]
+      }
+    },
+    {
+      "labels": ["pspA"],
+      "conditioning_labels": ["cspG", "pspB", "yedE"],
+      "parameters": {
+        "coefficients": [
+          [0.1079, 0.1399, -0.7456]
+        ],
+        "intercept": [-0.1901],
+        "covariance": [
+          [0.1724]
+        ]
+      }
+    },
+    {
+      "labels": ["pspB"],
+      "conditioning_labels": ["cspG", "yedE"],
+      "parameters": {
+        "coefficients": [
+          [0.2759, -0.9886]
+        ],
+        "intercept": [-0.249],
+        "covariance": [
+          [0.2706]
+        ]
+      }
+    },
+    {
+      "labels": ["sucA"],
+      "conditioning_labels": ["eutG"],
+      "parameters": {
+        "coefficients": [
+          [-1.0894]
+        ],
+        "intercept": [0.0243],
+        "covariance": [
+          [0.6586]
+        ]
+      }
+    },
+    {
+      "labels": ["sucD"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [0.683]
+        ],
+        "intercept": [-0.5907],
+        "covariance": [
+          [0.4356]
+        ]
+      }
+    },
+    {
+      "labels": ["tnaA"],
+      "conditioning_labels": ["b1191", "fixC", "sucA"],
+      "parameters": {
+        "coefficients": [
+          [-0.5926, -0.2442, 0.1106]
+        ],
+        "intercept": [-0.3861],
+        "covariance": [
+          [0.0962]
+        ]
+      }
+    },
+    {
+      "labels": ["yaeM"],
+      "conditioning_labels": ["cspG", "lacA", "lacZ"],
+      "parameters": {
+        "coefficients": [
+          [1.4722, -0.7173, 0.7204]
+        ],
+        "intercept": [0.3665],
+        "covariance": [
+          [0.6561]
+        ]
+      }
+    },
+    {
+      "labels": ["yceP"],
+      "conditioning_labels": ["eutG", "fixC"],
+      "parameters": {
+        "coefficients": [
+          [1.1409, -0.3267]
+        ],
+        "intercept": [-0.128],
+        "covariance": [
+          [0.1674]
+        ]
+      }
+    },
+    {
+      "labels": ["ycgX"],
+      "conditioning_labels": ["fixC", "yheI"],
+      "parameters": {
+        "coefficients": [
+          [-0.2716, 1.2448]
+        ],
+        "intercept": [0.1584],
+        "covariance": [
+          [0.2555]
+        ]
+      }
+    },
+    {
+      "labels": ["yecO"],
+      "conditioning_labels": ["cspG"],
+      "parameters": {
+        "coefficients": [
+          [0.7949]
+        ],
+        "intercept": [0.2719],
+        "covariance": [
+          [0.2249]
+        ]
+      }
+    },
+    {
+      "labels": ["yedE"],
+      "conditioning_labels": ["cspG"],
+      "parameters": {
+        "coefficients": [
+          [-0.642]
+        ],
+        "intercept": [-0.1606],
+        "covariance": [
+          [0.2771]
+        ]
+      }
+    },
+    {
+      "labels": ["yfaD"],
+      "conditioning_labels": ["eutG", "sucA", "yceP"],
+      "parameters": {
+        "coefficients": [
+          [0.2876, -0.2437, 0.3178]
+        ],
+        "intercept": [0.1628],
+        "covariance": [
+          [0.187]
+        ]
+      }
+    },
+    {
+      "labels": ["yfiA"],
+      "conditioning_labels": ["cspA"],
+      "parameters": {
+        "coefficients": [
+          [0.8572]
+        ],
+        "intercept": [-1.1928],
+        "covariance": [
+          [0.3156]
+        ]
+      }
+    },
+    {
+      "labels": ["ygbD"],
+      "conditioning_labels": ["fixC"],
+      "parameters": {
+        "coefficients": [
+          [0.6607]
+        ],
+        "intercept": [1.3504],
+        "covariance": [
+          [0.74]
+        ]
+      }
+    },
+    {
+      "labels": ["ygcE"],
+      "conditioning_labels": ["b1191", "sucA"],
+      "parameters": {
+        "coefficients": [
+          [1.8815, 0.6327]
+        ],
+        "intercept": [0.524],
+        "covariance": [
+          [0.3429]
+        ]
+      }
+    },
+    {
+      "labels": ["yhdM"],
+      "conditioning_labels": ["sucA"],
+      "parameters": {
+        "coefficients": [
+          [-0.777]
+        ],
+        "intercept": [0.2085],
+        "covariance": [
+          [0.5882]
+        ]
+      }
+    },
+    {
+      "labels": ["yheI"],
+      "conditioning_labels": ["atpD", "yedE"],
+      "parameters": {
+        "coefficients": [
+          [-0.9633, 0.3382]
+        ],
+        "intercept": [-0.2137],
+        "covariance": [
+          [0.1406]
+        ]
+      }
+    },
+    {
+      "labels": ["yjbO"],
+      "conditioning_labels": ["fixC"],
+      "parameters": {
+        "coefficients": [
+          [-0.0706]
+        ],
+        "intercept": [1.591],
+        "covariance": [
+          [1.8512]
+        ]
+      }
+    }
+  ]
+}
