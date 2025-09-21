@@ -68,72 +68,6 @@ impl CatCTBN {
     pub const fn states(&self) -> &States {
         self.initial_distribution.states()
     }
-
-    /// Creates a new categorical continuous-time Bayesian network with optional fields.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - The name of the model.
-    /// * `description` - The description of the model.
-    /// * `graph` - The underlying graph.
-    /// * `cims` - The conditional intensity matrices.
-    ///
-    /// # Panics
-    ///
-    /// * Panics if `name` is an empty string.
-    /// * Panics if `description` is an empty string.
-    ///
-    /// # Returns
-    ///
-    /// A new categorical continuous-time Bayesian network instance.
-    ///
-    pub fn with_optionals<I>(
-        name: Option<String>,
-        description: Option<String>,
-        initial_distribution: CatBN,
-        graph: DiGraph,
-        cims: I,
-    ) -> Self
-    where
-        I: IntoIterator<Item = CatCIM>,
-    {
-        // Assert name is not empty string.
-        if let Some(name) = &name {
-            assert!(!name.is_empty(), "Name cannot be an empty string.");
-        }
-        // Assert description is not empty string.
-        if let Some(description) = &description {
-            assert!(
-                !description.is_empty(),
-                "Description cannot be an empty string."
-            );
-        }
-
-        // Construct the categorical CTBN.
-        let mut ctbn = Self::new(graph, cims);
-
-        // Assert the initial distribution has same labels.
-        assert!(
-            initial_distribution.labels().eq(ctbn.labels()),
-            "Initial distribution labels must be the same as the CIMs labels."
-        );
-        // Assert the initial distribution has same states.
-        assert!(
-            initial_distribution
-                .cpds()
-                .into_iter()
-                .zip(ctbn.cims())
-                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
-            "Initial distribution states must be the same as the CIMs states."
-        );
-
-        // Set the optional fields.
-        ctbn.name = name;
-        ctbn.description = description;
-        ctbn.initial_distribution = initial_distribution;
-
-        ctbn
-    }
 }
 
 impl PartialEq for CatCTBN {
@@ -329,6 +263,54 @@ impl CTBN for CatCTBN {
                 .values()
                 .map(|x| x.parameters_size())
                 .sum::<usize>()
+    }
+
+    fn with_optionals<I>(
+        name: Option<String>,
+        description: Option<String>,
+        initial_distribution: Self::InitialDistribution,
+        graph: DiGraph,
+        cims: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = Self::CIM>,
+    {
+        // Assert name is not empty string.
+        if let Some(name) = &name {
+            assert!(!name.is_empty(), "Name cannot be an empty string.");
+        }
+        // Assert description is not empty string.
+        if let Some(description) = &description {
+            assert!(
+                !description.is_empty(),
+                "Description cannot be an empty string."
+            );
+        }
+
+        // Construct the categorical CTBN.
+        let mut ctbn = Self::new(graph, cims);
+
+        // Assert the initial distribution has same labels.
+        assert!(
+            initial_distribution.labels().eq(ctbn.labels()),
+            "Initial distribution labels must be the same as the CIMs labels."
+        );
+        // Assert the initial distribution has same states.
+        assert!(
+            initial_distribution
+                .cpds()
+                .into_iter()
+                .zip(ctbn.cims())
+                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
+            "Initial distribution states must be the same as the CIMs states."
+        );
+
+        // Set the optional fields.
+        ctbn.name = name;
+        ctbn.description = description;
+        ctbn.initial_distribution = initial_distribution;
+
+        ctbn
     }
 }
 
