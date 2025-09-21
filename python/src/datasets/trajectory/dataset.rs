@@ -166,7 +166,7 @@ impl PyCatTrj {
                 // Invoke the to_numpy method on the column.
                 let column = column.getattr("to_numpy")?.call0()?;
                 // Extract the column as a PyArray1<PyObject>.
-                let column = column.downcast::<PyArray1<PyObject>>()?.to_owned_array();
+                let column = column.downcast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
                 let column = column.map(|x| {
                     // Get the value.

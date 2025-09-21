@@ -49,7 +49,7 @@ pub fn em<'a>(
     let graph: &DiGraph = graph.deref();
 
     // Release the GIL to allow parallel execution.
-    let output = py.allow_threads(|| {
+    let output = py.detach(|| {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
