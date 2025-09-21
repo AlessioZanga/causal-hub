@@ -35,17 +35,19 @@
                 "object",
                 "null"
             ],
-            "sample_conditional_counts": {
-                "type": "array",
-                "items": {
+            "properties": {
+                "sample_conditional_counts": {
                     "type": "array",
                     "items": {
-                        "type": "number"
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
                     }
+                },
+                "sample_size": {
+                    "type": "number"
                 }
-            },
-            "sample_size": {
-                "type": "number"
             }
         },
         "sample_log_likelihood": {

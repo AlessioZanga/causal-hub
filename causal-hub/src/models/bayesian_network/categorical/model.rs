@@ -290,9 +290,6 @@ impl Serialize for CatBN {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
-        // Convert the CPDs to a flat format.
-        let cpds: Vec<_> = self.cpds.values().cloned().collect();
-
         // Serialize name, if any.
         if let Some(name) = &self.name {
             map.serialize_entry("name", name)?;
@@ -303,10 +300,13 @@ impl Serialize for CatBN {
         }
         // Serialize graph.
         map.serialize_entry("graph", &self.graph)?;
+
+        // Convert the CPDs to a flat format.
+        let cpds: Vec<_> = self.cpds.values().cloned().collect();
         // Serialize CPDs.
         map.serialize_entry("cpds", &cpds)?;
 
-        // Finalize the map serialization.
+        // Finalize the map.
         map.end()
     }
 }

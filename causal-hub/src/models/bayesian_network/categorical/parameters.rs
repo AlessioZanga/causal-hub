@@ -78,29 +78,6 @@ impl CatCPDS {
     }
 }
 
-impl Serialize for CatCPDS {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        // Allocate the map.
-        let mut map = serializer.serialize_map(Some(2))?;
-        // Convert the sample conditional counts to a flat format.
-        let sample_conditional_counts: Vec<Vec<f64>> = self
-            .n_xz
-            .rows()
-            .into_iter()
-            .map(|row| row.to_vec())
-            .collect();
-        // Serialize sample conditional counts.
-        map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
-        // Serialize sample size.
-        map.serialize_entry("sample_size", &self.n)?;
-        // End the map.
-        map.end()
-    }
-}
-
 impl AddAssign for CatCPDS {
     fn add_assign(&mut self, other: Self) {
         // Add the counts.
@@ -120,6 +97,25 @@ impl Add for CatCPDS {
     }
 }
 
+impl Serialize for CatCPDS {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(2))?;
+        // Convert the sample conditional counts to a flat format.
+        let sample_conditional_counts: Vec<Vec<f64>> =
+            self.n_xz.rows().into_iter().map(|x| x.to_vec()).collect();
+        // Serialize sample conditional counts.
+        map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
+        // Serialize sample size.
+        map.serialize_entry("sample_size", &self.n)?;
+        // End the map.
+        map.end()
+    }
+}
+
 impl<'de> Deserialize<'de> for CatCPDS {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -132,9 +128,9 @@ impl<'de> Deserialize<'de> for CatCPDS {
             SampleSize,
         }
 
-        struct CatSVisitor;
+        struct CatCPDSVisitor;
 
-        impl<'de> Visitor<'de> for CatSVisitor {
+        impl<'de> Visitor<'de> for CatCPDSVisitor {
             type Value = CatCPDS;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -183,16 +179,13 @@ impl<'de> Deserialize<'de> for CatCPDS {
                         .map_err(|_| E::custom("Invalid sample conditional counts shape"))?
                 };
 
-                Ok(CatCPDS {
-                    n_xz: sample_conditional_counts,
-                    n: sample_size,
-                })
+                Ok(CatCPDS::new(sample_conditional_counts, sample_size))
             }
         }
 
         const FIELDS: &[&str] = &["sample_conditional_counts", "sample_size"];
 
-        deserializer.deserialize_struct("CatCPDS", FIELDS, CatSVisitor)
+        deserializer.deserialize_struct("CatCPDS", FIELDS, CatCPDSVisitor)
     }
 }
 
@@ -815,7 +808,7 @@ impl Serialize for CatCPD {
             .parameters
             .rows()
             .into_iter()
-            .map(|row| row.to_vec())
+            .map(|x| x.to_vec())
             .collect();
         // Serialize parameters.
         map.serialize_entry("parameters", &parameters)?;

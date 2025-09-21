@@ -117,11 +117,11 @@ impl CPDEstimator<GaussCPD> for MLE<'_, GaussTable> {
         let sample_statistics = SSE::new(self.dataset).fit(x, z);
         // Get the sample covariance matrices and size.
         let (mu_x, mu_z, s_xx, s_xz, s_zz, n) = (
-            sample_statistics.sample_design_mean(),
             sample_statistics.sample_response_mean(),
-            sample_statistics.sample_design_covariance(),
-            sample_statistics.sample_cross_covariance(),
+            sample_statistics.sample_design_mean(),
             sample_statistics.sample_response_covariance(),
+            sample_statistics.sample_cross_covariance(),
+            sample_statistics.sample_design_covariance(),
             sample_statistics.sample_size(),
         );
 

@@ -1,7 +1,13 @@
 use approx::{AbsDiffEq, RelativeEq};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+};
 
 use crate::{
     datasets::{GaussSample, GaussTable},
+    impl_json_io,
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
     set,
@@ -206,3 +212,123 @@ impl BN for GaussBN {
         bn
     }
 }
+
+impl Serialize for GaussBN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Count the number of fields.
+        let mut size = 2;
+        // Add optional fields, if any.
+        size += self.name.is_some() as usize;
+        size += self.description.is_some() as usize;
+        // Allocate the map.
+        let mut map = serializer.serialize_map(Some(size))?;
+
+        // Serialize the name, if any.
+        if let Some(name) = &self.name {
+            map.serialize_entry("name", name)?;
+        }
+        // Serialize the description, if any.
+        if let Some(description) = &self.description {
+            map.serialize_entry("description", description)?;
+        }
+
+        // Serialize the graph.
+        map.serialize_entry("graph", &self.graph)?;
+
+        // Convert the CPDs to a flat format.
+        let cpds: Vec<_> = self.cpds.values().cloned().collect();
+        // Serialize CPDs.
+        map.serialize_entry("cpds", &cpds)?;
+
+        // Finalize the map.
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for GaussBN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Name,
+            Description,
+            Graph,
+            Cpds,
+        }
+
+        struct GaussBNVisitor;
+
+        impl<'de> Visitor<'de> for GaussBNVisitor {
+            type Value = GaussBN;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("struct GaussBN")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<GaussBN, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error as E;
+
+                // Allocate fields
+                let mut name = None;
+                let mut description = None;
+                let mut graph = None;
+                let mut cpds = None;
+
+                // Parse the map.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Name => {
+                            if name.is_some() {
+                                return Err(E::duplicate_field("name"));
+                            }
+                            name = Some(map.next_value()?);
+                        }
+                        Field::Description => {
+                            if description.is_some() {
+                                return Err(E::duplicate_field("description"));
+                            }
+                            description = Some(map.next_value()?);
+                        }
+                        Field::Graph => {
+                            if graph.is_some() {
+                                return Err(E::duplicate_field("graph"));
+                            }
+                            graph = Some(map.next_value()?);
+                        }
+                        Field::Cpds => {
+                            if cpds.is_some() {
+                                return Err(E::duplicate_field("cpds"));
+                            }
+                            cpds = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                // Check required fields.
+                let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
+                let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
+
+                // Set helper types.
+                let cpds: Vec<_> = cpds;
+
+                Ok(GaussBN::with_optionals(name, description, graph, cpds))
+            }
+        }
+
+        const FIELDS: &[&str] = &["name", "description", "graph", "cpds"];
+
+        deserializer.deserialize_struct("GaussBN", FIELDS, GaussBNVisitor)
+    }
+}
+
+// Implement `JsonIO` for `GaussBN`.
+impl_json_io!(GaussBN);

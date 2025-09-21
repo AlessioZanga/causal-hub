@@ -144,7 +144,7 @@ impl Serialize for CatCIMS {
                 sample_conditional_counts
                     .rows()
                     .into_iter()
-                    .map(|row| row.to_vec())
+                    .map(|x| x.to_vec())
                     .collect()
             })
             .collect();
@@ -153,12 +153,8 @@ impl Serialize for CatCIMS {
         map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
 
         // Convert the sample conditional times to a flat format.
-        let sample_conditional_times: Vec<Vec<f64>> = self
-            .t_xz
-            .rows()
-            .into_iter()
-            .map(|row| row.to_vec())
-            .collect();
+        let sample_conditional_times: Vec<Vec<f64>> =
+            self.t_xz.rows().into_iter().map(|x| x.to_vec()).collect();
 
         // Serialize sample conditional times.
         map.serialize_entry("sample_conditional_times", &sample_conditional_times)?;
@@ -797,13 +793,7 @@ impl Serialize for CatCIM {
         let parameters: Vec<Vec<Vec<f64>>> = self
             .parameters
             .outer_iter()
-            .map(|parameters| {
-                parameters
-                    .rows()
-                    .into_iter()
-                    .map(|row| row.to_vec())
-                    .collect()
-            })
+            .map(|parameters| parameters.rows().into_iter().map(|x| x.to_vec()).collect())
             .collect();
 
         // Serialize parameters.

@@ -1,0 +1,103 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "gausscpd.schema.json",
+    "type": "object",
+    "properties": {
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "conditioning_labels": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "coefficients": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "intercept": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "covariance": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                }
+            }
+        },
+        "sample_statistics": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "sample_response_mean": {
+                    "type": "number"
+                },
+                "sample_design_mean": {
+                    "type": "number"
+                },
+                "sample_response_covariance": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "sample_cross_covariance": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "sample_design_covariance": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "sample_size": {
+                    "type": "number"
+                }
+            }
+        },
+        "sample_log_likelihood": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "labels",
+        "conditioning_labels",
+        "parameters"
+    ]
+}

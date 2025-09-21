@@ -262,13 +262,10 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             );
 
             // Iterate over the trajectories.
-            let s = self.dataset
+            self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold(s, |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z));
-
-            // Return the sufficient statistics.
-            s
+                .fold(s, |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z))
         }
     }
 
@@ -292,7 +289,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             );
 
             // Iterate over the trajectories in parallel.
-            let s = self.dataset
+            self.dataset
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
                 .fold(
@@ -302,10 +299,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 .reduce(
                     || s.clone(),
                     |s_a, s_b| s_a + s_b
-                );
-
-            // Return the sufficient statistics.
-            s
+                )
         }
     }
 });
