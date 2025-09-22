@@ -37,7 +37,7 @@ impl GaussTable {
     ///
     /// A new gaussian dataset instance.
     ///
-    pub fn new(labels: Labels, values: Array2<GaussType>) -> Self {
+    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Self {
         // Assert that the number of labels matches the number of columns in values.
         assert_eq!(
             labels.len(),
@@ -47,7 +47,20 @@ impl GaussTable {
 
         // Sort labels and values accordingly.
         if !labels.is_sorted() {
-            todo!() // FIXME:
+            // Allocate indices to sort labels.
+            let mut indices: Vec<usize> = (0..labels.len()).collect();
+            // Sort the indices by labels.
+            indices.sort_by_key(|&i| &labels[i]);
+            // Sort the labels.
+            labels.sort();
+            // Allocate new values.
+            let mut new_values = values.clone();
+            // Sort the new values according to the sorted indices.
+            indices.into_iter().enumerate().for_each(|(i, j)| {
+                new_values.column_mut(i).assign(&values.column(j));
+            });
+            // Update values.
+            values = new_values;
         }
         // Assert values are finite.
         assert!(
