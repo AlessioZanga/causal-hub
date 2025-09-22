@@ -1,5 +1,4 @@
 use approx::{AbsDiffEq, RelativeEq};
-use ndarray::prelude::*;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -7,72 +6,41 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatSample, CatTable},
+    datasets::{GaussSample, GaussTable},
     impl_json_io,
     inference::TopologicalOrder,
-    io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
+    models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
     set,
-    types::{Labels, Map, States},
+    types::{Labels, Map},
 };
 
-/// A categorical Bayesian network.
+/// A Gaussian Bayesian network.
 #[derive(Clone, Debug)]
-pub struct CatBN {
+pub struct GaussBN {
     /// The name of the model.
     name: Option<String>,
     /// The description of the model.
     description: Option<String>,
     /// The labels of the variables.
     labels: Labels,
-    /// The states of the variables.
-    states: States,
-    /// The shape of the variables.
-    shape: Array1<usize>,
     /// The graph of the model.
     graph: DiGraph,
     /// The parameters of the model.
-    cpds: Map<String, CatCPD>,
+    cpds: Map<String, GaussCPD>,
     /// The topological order of the graph.
     topological_order: Vec<usize>,
 }
 
-impl CatBN {
-    /// Returns the states of the variables.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the states of the variables.
-    ///
-    #[inline]
-    pub const fn states(&self) -> &States {
-        &self.states
-    }
-
-    /// Returns the shape of the variables.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the shape of the variables.
-    ///
-    #[inline]
-    pub fn shape(&self) -> &Array1<usize> {
-        &self.shape
-    }
-}
-
-impl PartialEq for CatBN {
+impl PartialEq for GaussBN {
     fn eq(&self, other: &Self) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
             && self.cpds.eq(&other.cpds)
     }
 }
 
-impl AbsDiffEq for CatBN {
+impl AbsDiffEq for GaussBN {
     type Epsilon = f64;
 
     fn default_epsilon() -> Self::Epsilon {
@@ -81,8 +49,6 @@ impl AbsDiffEq for CatBN {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
             && self
@@ -95,7 +61,7 @@ impl AbsDiffEq for CatBN {
     }
 }
 
-impl RelativeEq for CatBN {
+impl RelativeEq for GaussBN {
     fn default_max_relative() -> Self::Epsilon {
         Self::Epsilon::default_max_relative()
     }
@@ -107,8 +73,6 @@ impl RelativeEq for CatBN {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
             && self.graph.eq(&other.graph)
             && self.topological_order.eq(&other.topological_order)
             && self
@@ -121,17 +85,17 @@ impl RelativeEq for CatBN {
     }
 }
 
-impl Labelled for CatBN {
+impl Labelled for GaussBN {
     #[inline]
     fn labels(&self) -> &Labels {
         &self.labels
     }
 }
 
-impl BN for CatBN {
-    type CPD = CatCPD;
-    type Sample = CatSample;
-    type Samples = CatTable;
+impl BN for GaussBN {
+    type CPD = GaussCPD;
+    type Sample = GaussSample;
+    type Samples = GaussTable;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Self
     where
@@ -156,34 +120,8 @@ impl BN for CatBN {
             "Graph labels and distributions labels must be the same."
         );
 
-        // Allocate the states of the variables.
-        let mut states: States = Default::default();
-        // Insert the states of the variables into the map to check if they are the same.
-        for cpd in cpds.values() {
-            cpd.states()
-                .iter()
-                .chain(cpd.conditioning_states())
-                .for_each(|(l, s)| {
-                    // Check if the states are already in the map.
-                    if let Some(existing_states) = states.get(l) {
-                        // Check if the states are the same.
-                        assert_eq!(
-                            existing_states, s,
-                            "States of `{l}` must be the same across CPDs.",
-                        );
-                    } else {
-                        // Insert the states into the map.
-                        states.insert(l.to_owned(), s.clone());
-                    }
-                });
-        }
-        // Sort the states of the variables.
-        states.sort_keys();
-
         // Get the labels of the variables.
-        let labels: Labels = states.keys().cloned().collect();
-        // Get the shape of the variables.
-        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+        let labels: Labels = graph.labels().clone();
 
         // Check if all vertices have the same labels as their parents.
         graph.vertices().iter().for_each(|&i| {
@@ -209,8 +147,6 @@ impl BN for CatBN {
             name: None,
             description: None,
             labels,
-            states,
-            shape,
             graph,
             cpds,
             topological_order,
@@ -279,28 +215,29 @@ impl BN for CatBN {
     }
 }
 
-impl Serialize for CatBN {
+impl Serialize for GaussBN {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Count the elements to serialize.
+        // Count the number of fields.
         let mut size = 2;
+        // Add optional fields, if any.
         size += self.name.is_some() as usize;
         size += self.description.is_some() as usize;
-
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
-        // Serialize name, if any.
+        // Serialize the name, if any.
         if let Some(name) = &self.name {
             map.serialize_entry("name", name)?;
         }
-        // Serialize description, if any.
+        // Serialize the description, if any.
         if let Some(description) = &self.description {
             map.serialize_entry("description", description)?;
         }
-        // Serialize graph.
+
+        // Serialize the graph.
         map.serialize_entry("graph", &self.graph)?;
 
         // Convert the CPDs to a flat format.
@@ -313,7 +250,7 @@ impl Serialize for CatBN {
     }
 }
 
-impl<'de> Deserialize<'de> for CatBN {
+impl<'de> Deserialize<'de> for GaussBN {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -327,16 +264,16 @@ impl<'de> Deserialize<'de> for CatBN {
             Cpds,
         }
 
-        struct CatBNVisitor;
+        struct GaussBNVisitor;
 
-        impl<'de> Visitor<'de> for CatBNVisitor {
-            type Value = CatBN;
+        impl<'de> Visitor<'de> for GaussBNVisitor {
+            type Value = GaussBN;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("struct CatBN")
+                formatter.write_str("struct GaussBN")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatBN, V::Error>
+            fn visit_map<V>(self, mut map: V) -> Result<GaussBN, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -385,33 +322,15 @@ impl<'de> Deserialize<'de> for CatBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(CatBN::with_optionals(name, description, graph, cpds))
+                Ok(GaussBN::with_optionals(name, description, graph, cpds))
             }
         }
 
         const FIELDS: &[&str] = &["name", "description", "graph", "cpds"];
 
-        deserializer.deserialize_struct("CatBN", FIELDS, CatBNVisitor)
+        deserializer.deserialize_struct("GaussBN", FIELDS, GaussBNVisitor)
     }
 }
 
-// Implement `JsonIO` for `CatBN`.
-impl_json_io!(CatBN);
-
-impl BifIO for CatBN {
-    fn from_bif(bif: &str) -> Self {
-        BifParser::parse_str(bif)
-    }
-
-    fn to_bif(&self) -> String {
-        todo!() // FIXME:
-    }
-
-    fn read_bif(path: &str) -> Self {
-        Self::from_bif(&std::fs::read_to_string(path).expect("Failed to read BIF file."))
-    }
-
-    fn write_bif(&self, path: &str) {
-        std::fs::write(path, self.to_bif()).expect("Failed to write BIF file.");
-    }
-}
+// Implement `JsonIO` for `GaussBN`.
+impl_json_io!(GaussBN);

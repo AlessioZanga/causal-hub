@@ -7,7 +7,7 @@ use backend::{
 use numpy::{PyArray3, prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyTuple, PyType},
+    types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -141,46 +141,37 @@ impl PyCatCIM {
         Ok(self.inner.parameters_size())
     }
 
-    /// Returns the sample conditional counts used to fit the distribution, if any.
+    /// Returns the sample statistics used to fit the distribution, if any.
     ///
     /// # Returns
     ///
-    /// The sample conditional counts used to fit the distribution, if any.
+    /// A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
-    pub fn sample_conditional_counts<'a>(
-        &'a self,
-        py: Python<'a>,
-    ) -> PyResult<Option<Bound<'a, PyArray3<f64>>>> {
-        Ok(self
-            .inner
-            .sample_conditional_counts()
-            .map(|counts| counts.to_pyarray(py)))
-    }
-
-    /// Returns the sample conditional times used to fit the distribution, if any.
-    ///
-    /// # Returns
-    ///
-    /// The sample conditional times used to fit the distribution, if any.
-    ///
-    pub fn sample_conditional_times<'a>(
-        &'a self,
-        py: Python<'a>,
-    ) -> PyResult<Option<Bound<'a, PyArray3<f64>>>> {
-        Ok(self
-            .inner
-            .sample_conditional_times()
-            .map(|times| times.to_pyarray(py)))
-    }
-
-    /// Returns the sample size used to fit the distribution, if any.
-    ///
-    /// # Returns
-    ///
-    /// The sample size used to fit the distribution.
-    ///
-    pub fn sample_size(&self) -> PyResult<Option<f64>> {
-        Ok(self.inner.sample_size())
+    pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
+        Ok(self.inner.sample_statistics().map(|sample_statistics| {
+            // Allocate the dictionary.
+            let stats = PyDict::new(py);
+            // Add the conditional counts.
+            stats
+                .set_item(
+                    "sample_conditional_counts",
+                    sample_statistics.sample_conditional_counts().to_pyarray(py),
+                )
+                .expect("Failed to set sample conditional counts.");
+            // Add the conditional times.
+            stats
+                .set_item(
+                    "sample_conditional_times",
+                    sample_statistics.sample_conditional_times().to_pyarray(py),
+                )
+                .expect("Failed to set sample conditional times.");
+            // Add the sample size.
+            stats
+                .set_item("sample_size", sample_statistics.sample_size())
+                .expect("Failed to set sample size.");
+            // Return the dictionary.
+            stats
+        }))
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.

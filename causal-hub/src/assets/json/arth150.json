@@ -1,0 +1,1551 @@
+{
+  "name": "arth150",
+  "graph": {
+    "labels": ["4", "8", "13", "20", "26", "38", "47", "61", "63", "78", "81", "86", "93", "96", "100", "101", "108", "111", "126", "135", "144", "155", "161", "181", "187", "197", "198", "209", "211", "219", "226", "234", "245", "248", "256", "269", "272", "281", "289", "296", "299", "328", "331", "342", "360", "363", "368", "377", "378", "412", "414", "422", "443", "444", "452", "454", "460", "464", "479", "480", "496", "519", "537", "539", "540", "547", "554", "558", "560", "565", "570", "573", "576", "585", "596", "598", "600", "603", "622", "623", "627", "629", "636", "640", "651", "661", "665", "666", "677", "679", "686", "699", "712", "714", "726", "736", "738", "739", "758", "767", "778", "779", "781", "783", "786", "793", "798"],
+    "edges": [
+      ["539", "4"],
+      ["209", "8"],
+      ["331", "13"],
+      ["422", "13"],
+      ["781", "20"],
+      ["781", "26"],
+      ["570", "38"],
+      ["414", "47"],
+      ["422", "47"],
+      ["452", "47"],
+      ["629", "47"],
+      ["793", "47"],
+      ["81", "61"],
+      ["570", "61"],
+      ["198", "63"],
+      ["738", "63"],
+      ["726", "78"],
+      ["738", "86"],
+      ["539", "93"],
+      ["558", "96"],
+      ["443", "101"],
+      ["81", "108"],
+      ["603", "108"],
+      ["61", "111"],
+      ["81", "111"],
+      ["570", "111"],
+      ["558", "126"],
+      ["783", "126"],
+      ["570", "135"],
+      ["81", "144"],
+      ["679", "155"],
+      ["558", "161"],
+      ["86", "181"],
+      ["783", "181"],
+      ["783", "187"],
+      ["539", "197"],
+      ["81", "198"],
+      ["738", "209"],
+      ["81", "211"],
+      ["570", "219"],
+      ["573", "226"],
+      ["570", "234"],
+      ["100", "245"],
+      ["81", "248"],
+      ["558", "256"],
+      ["570", "256"],
+      ["558", "269"],
+      ["783", "269"],
+      ["108", "272"],
+      ["414", "272"],
+      ["452", "272"],
+      ["603", "272"],
+      ["726", "272"],
+      ["627", "281"],
+      ["272", "289"],
+      ["414", "289"],
+      ["452", "289"],
+      ["726", "289"],
+      ["100", "296"],
+      ["444", "299"],
+      ["519", "328"],
+      ["47", "331"],
+      ["414", "331"],
+      ["422", "331"],
+      ["452", "331"],
+      ["479", "331"],
+      ["558", "342"],
+      ["539", "360"],
+      ["558", "363"],
+      ["81", "368"],
+      ["81", "377"],
+      ["570", "378"],
+      ["100", "412"],
+      ["600", "443"],
+      ["63", "444"],
+      ["738", "444"],
+      ["414", "452"],
+      ["603", "452"],
+      ["726", "452"],
+      ["783", "454"],
+      ["570", "460"],
+      ["570", "464"],
+      ["47", "479"],
+      ["422", "479"],
+      ["629", "479"],
+      ["793", "479"],
+      ["61", "480"],
+      ["738", "480"],
+      ["111", "496"],
+      ["111", "537"],
+      ["585", "539"],
+      ["738", "540"],
+      ["783", "547"],
+      ["570", "554"],
+      ["783", "558"],
+      ["272", "560"],
+      ["627", "560"],
+      ["726", "560"],
+      ["443", "565"],
+      ["81", "570"],
+      ["422", "570"],
+      ["20", "573"],
+      ["443", "573"],
+      ["570", "576"],
+      ["570", "585"],
+      ["539", "596"],
+      ["570", "598"],
+      ["699", "600"],
+      ["781", "603"],
+      ["81", "622"],
+      ["570", "623"],
+      ["422", "627"],
+      ["738", "627"],
+      ["422", "629"],
+      ["81", "636"],
+      ["738", "636"],
+      ["783", "640"],
+      ["570", "651"],
+      ["627", "661"],
+      ["81", "665"],
+      ["81", "666"],
+      ["479", "677"],
+      ["714", "677"],
+      ["783", "679"],
+      ["198", "686"],
+      ["570", "699"],
+      ["81", "712"],
+      ["47", "714"],
+      ["331", "714"],
+      ["422", "714"],
+      ["452", "714"],
+      ["479", "714"],
+      ["629", "714"],
+      ["414", "726"],
+      ["47", "736"],
+      ["422", "736"],
+      ["558", "739"],
+      ["539", "758"],
+      ["81", "767"],
+      ["570", "767"],
+      ["539", "778"],
+      ["198", "779"],
+      ["783", "781"],
+      ["289", "786"],
+      ["414", "786"],
+      ["726", "786"],
+      ["81", "793"],
+      ["560", "793"],
+      ["629", "793"],
+      ["779", "798"]
+    ]
+  },
+  "cpds": [
+    {
+      "labels": ["4"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [0.2072]
+        ],
+        "intercept": [5.1322],
+        "covariance": [
+          [0.071]
+        ]
+      }
+    },
+    {
+      "labels": ["8"],
+      "conditioning_labels": ["209"],
+      "parameters": {
+        "coefficients": [
+          [-0.2486]
+        ],
+        "intercept": [9.3099],
+        "covariance": [
+          [0.0219]
+        ]
+      }
+    },
+    {
+      "labels": ["13"],
+      "conditioning_labels": ["331", "422"],
+      "parameters": {
+        "coefficients": [
+          [0.2848, 0.3555]
+        ],
+        "intercept": [0.986],
+        "covariance": [
+          [0.0704]
+        ]
+      }
+    },
+    {
+      "labels": ["20"],
+      "conditioning_labels": ["781"],
+      "parameters": {
+        "coefficients": [
+          [0.6878]
+        ],
+        "intercept": [1.2519],
+        "covariance": [
+          [0.1165]
+        ]
+      }
+    },
+    {
+      "labels": ["26"],
+      "conditioning_labels": ["781"],
+      "parameters": {
+        "coefficients": [
+          [-0.8744]
+        ],
+        "intercept": [13.4678],
+        "covariance": [
+          [0.0352]
+        ]
+      }
+    },
+    {
+      "labels": ["38"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [-0.3867]
+        ],
+        "intercept": [9.2115],
+        "covariance": [
+          [0.1632]
+        ]
+      }
+    },
+    {
+      "labels": ["47"],
+      "conditioning_labels": ["414", "422", "452", "629", "793"],
+      "parameters": {
+        "coefficients": [
+          [0.2332, 0.0752, 0.1749, 0.4852, 0.2753]
+        ],
+        "intercept": [-4.3126],
+        "covariance": [
+          [0.0473]
+        ]
+      }
+    },
+    {
+      "labels": ["61"],
+      "conditioning_labels": ["81", "570"],
+      "parameters": {
+        "coefficients": [
+          [0.0866, 0.2124]
+        ],
+        "intercept": [4.154],
+        "covariance": [
+          [0.0636]
+        ]
+      }
+    },
+    {
+      "labels": ["63"],
+      "conditioning_labels": ["198", "738"],
+      "parameters": {
+        "coefficients": [
+          [0.3563, -1.7981]
+        ],
+        "intercept": [10.0413],
+        "covariance": [
+          [0.4056]
+        ]
+      }
+    },
+    {
+      "labels": ["78"],
+      "conditioning_labels": ["726"],
+      "parameters": {
+        "coefficients": [
+          [-0.5848]
+        ],
+        "intercept": [11.4859],
+        "covariance": [
+          [0.0556]
+        ]
+      }
+    },
+    {
+      "labels": ["81"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [4.9422],
+        "covariance": [
+          [0.0534]
+        ]
+      }
+    },
+    {
+      "labels": ["86"],
+      "conditioning_labels": ["738"],
+      "parameters": {
+        "coefficients": [
+          [-0.3005]
+        ],
+        "intercept": [6.4859],
+        "covariance": [
+          [0.2873]
+        ]
+      }
+    },
+    {
+      "labels": ["93"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [-0.1896]
+        ],
+        "intercept": [8.4084],
+        "covariance": [
+          [0.0747]
+        ]
+      }
+    },
+    {
+      "labels": ["96"],
+      "conditioning_labels": ["558"],
+      "parameters": {
+        "coefficients": [
+          [0.3081]
+        ],
+        "intercept": [2.9708],
+        "covariance": [
+          [0.3835]
+        ]
+      }
+    },
+    {
+      "labels": ["100"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [8.1728],
+        "covariance": [
+          [0.1987]
+        ]
+      }
+    },
+    {
+      "labels": ["101"],
+      "conditioning_labels": ["443"],
+      "parameters": {
+        "coefficients": [
+          [-0.1749]
+        ],
+        "intercept": [8.4813],
+        "covariance": [
+          [0.121]
+        ]
+      }
+    },
+    {
+      "labels": ["108"],
+      "conditioning_labels": ["81", "603"],
+      "parameters": {
+        "coefficients": [
+          [0.1449, 1.0438]
+        ],
+        "intercept": [-0.8057],
+        "covariance": [
+          [0.0348]
+        ]
+      }
+    },
+    {
+      "labels": ["111"],
+      "conditioning_labels": ["61", "81", "570"],
+      "parameters": {
+        "coefficients": [
+          [-0.0762, -0.1003, 0.1759]
+        ],
+        "intercept": [6.2091],
+        "covariance": [
+          [0.0311]
+        ]
+      }
+    },
+    {
+      "labels": ["126"],
+      "conditioning_labels": ["558", "783"],
+      "parameters": {
+        "coefficients": [
+          [-0.3721, 0.0759]
+        ],
+        "intercept": [11.0126],
+        "covariance": [
+          [0.0313]
+        ]
+      }
+    },
+    {
+      "labels": ["135"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.2871]
+        ],
+        "intercept": [3.3612],
+        "covariance": [
+          [0.1159]
+        ]
+      }
+    },
+    {
+      "labels": ["144"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.5413]
+        ],
+        "intercept": [9.9868],
+        "covariance": [
+          [0.2232]
+        ]
+      }
+    },
+    {
+      "labels": ["155"],
+      "conditioning_labels": ["679"],
+      "parameters": {
+        "coefficients": [
+          [0.7744]
+        ],
+        "intercept": [1.6324],
+        "covariance": [
+          [0.0414]
+        ]
+      }
+    },
+    {
+      "labels": ["161"],
+      "conditioning_labels": ["558"],
+      "parameters": {
+        "coefficients": [
+          [-0.8166]
+        ],
+        "intercept": [11.0594],
+        "covariance": [
+          [0.3251]
+        ]
+      }
+    },
+    {
+      "labels": ["181"],
+      "conditioning_labels": ["86", "783"],
+      "parameters": {
+        "coefficients": [
+          [0.0964, 0.2441]
+        ],
+        "intercept": [4.0091],
+        "covariance": [
+          [0.03]
+        ]
+      }
+    },
+    {
+      "labels": ["187"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [-0.4633]
+        ],
+        "intercept": [6.8132],
+        "covariance": [
+          [0.4684]
+        ]
+      }
+    },
+    {
+      "labels": ["197"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [0.6603]
+        ],
+        "intercept": [2.308],
+        "covariance": [
+          [0.8492]
+        ]
+      }
+    },
+    {
+      "labels": ["198"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [0.1712]
+        ],
+        "intercept": [5.4685],
+        "covariance": [
+          [0.0765]
+        ]
+      }
+    },
+    {
+      "labels": ["209"],
+      "conditioning_labels": ["738"],
+      "parameters": {
+        "coefficients": [
+          [-0.9945]
+        ],
+        "intercept": [11.5206],
+        "covariance": [
+          [0.068]
+        ]
+      }
+    },
+    {
+      "labels": ["211"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.0692]
+        ],
+        "intercept": [5.9638],
+        "covariance": [
+          [0.1398]
+        ]
+      }
+    },
+    {
+      "labels": ["219"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.3281]
+        ],
+        "intercept": [5.156],
+        "covariance": [
+          [0.0869]
+        ]
+      }
+    },
+    {
+      "labels": ["226"],
+      "conditioning_labels": ["573"],
+      "parameters": {
+        "coefficients": [
+          [-0.6387]
+        ],
+        "intercept": [7.5884],
+        "covariance": [
+          [0.3752]
+        ]
+      }
+    },
+    {
+      "labels": ["234"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.077]
+        ],
+        "intercept": [5.0455],
+        "covariance": [
+          [0.1111]
+        ]
+      }
+    },
+    {
+      "labels": ["245"],
+      "conditioning_labels": ["100"],
+      "parameters": {
+        "coefficients": [
+          [1.5347]
+        ],
+        "intercept": [-5.8545],
+        "covariance": [
+          [0.0581]
+        ]
+      }
+    },
+    {
+      "labels": ["248"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.1282]
+        ],
+        "intercept": [6.7767],
+        "covariance": [
+          [0.2824]
+        ]
+      }
+    },
+    {
+      "labels": ["256"],
+      "conditioning_labels": ["558", "570"],
+      "parameters": {
+        "coefficients": [
+          [-0.4655, -0.1975]
+        ],
+        "intercept": [9.9538],
+        "covariance": [
+          [0.0769]
+        ]
+      }
+    },
+    {
+      "labels": ["269"],
+      "conditioning_labels": ["558", "783"],
+      "parameters": {
+        "coefficients": [
+          [0.07, 0.2269]
+        ],
+        "intercept": [4.6472],
+        "covariance": [
+          [0.0389]
+        ]
+      }
+    },
+    {
+      "labels": ["272"],
+      "conditioning_labels": ["108", "414", "452", "603", "726"],
+      "parameters": {
+        "coefficients": [
+          [-0.5591, -0.1326, 0.4957, 0.4787, -0.8401]
+        ],
+        "intercept": [9.8012],
+        "covariance": [
+          [0.0529]
+        ]
+      }
+    },
+    {
+      "labels": ["281"],
+      "conditioning_labels": ["627"],
+      "parameters": {
+        "coefficients": [
+          [0.2771]
+        ],
+        "intercept": [5.0507],
+        "covariance": [
+          [0.2237]
+        ]
+      }
+    },
+    {
+      "labels": ["289"],
+      "conditioning_labels": ["272", "414", "452", "726"],
+      "parameters": {
+        "coefficients": [
+          [-0.4195, 0.4619, 0.5134, -1.2224]
+        ],
+        "intercept": [11.7218],
+        "covariance": [
+          [0.2129]
+        ]
+      }
+    },
+    {
+      "labels": ["296"],
+      "conditioning_labels": ["100"],
+      "parameters": {
+        "coefficients": [
+          [1.2376]
+        ],
+        "intercept": [-2.0932],
+        "covariance": [
+          [0.086]
+        ]
+      }
+    },
+    {
+      "labels": ["299"],
+      "conditioning_labels": ["444"],
+      "parameters": {
+        "coefficients": [
+          [-0.4689]
+        ],
+        "intercept": [8.6286],
+        "covariance": [
+          [0.1224]
+        ]
+      }
+    },
+    {
+      "labels": ["328"],
+      "conditioning_labels": ["519"],
+      "parameters": {
+        "coefficients": [
+          [3.9253]
+        ],
+        "intercept": [-23.722],
+        "covariance": [
+          [0.5157]
+        ]
+      }
+    },
+    {
+      "labels": ["331"],
+      "conditioning_labels": ["47", "414", "422", "452", "479"],
+      "parameters": {
+        "coefficients": [
+          [-0.2451, 0.2656, 0.8156, 0.3736, 0.601]
+        ],
+        "intercept": [-5.1809],
+        "covariance": [
+          [0.1097]
+        ]
+      }
+    },
+    {
+      "labels": ["342"],
+      "conditioning_labels": ["558"],
+      "parameters": {
+        "coefficients": [
+          [-0.4221]
+        ],
+        "intercept": [8.2875],
+        "covariance": [
+          [0.163]
+        ]
+      }
+    },
+    {
+      "labels": ["360"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [0.2174]
+        ],
+        "intercept": [7.9326],
+        "covariance": [
+          [0.1723]
+        ]
+      }
+    },
+    {
+      "labels": ["363"],
+      "conditioning_labels": ["558"],
+      "parameters": {
+        "coefficients": [
+          [0.2372]
+        ],
+        "intercept": [5.3482],
+        "covariance": [
+          [0.1498]
+        ]
+      }
+    },
+    {
+      "labels": ["368"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [0.4663]
+        ],
+        "intercept": [3.7483],
+        "covariance": [
+          [0.2098]
+        ]
+      }
+    },
+    {
+      "labels": ["377"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [0.3844]
+        ],
+        "intercept": [4.059],
+        "covariance": [
+          [0.2014]
+        ]
+      }
+    },
+    {
+      "labels": ["378"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [-0.1535]
+        ],
+        "intercept": [6.331],
+        "covariance": [
+          [0.1201]
+        ]
+      }
+    },
+    {
+      "labels": ["412"],
+      "conditioning_labels": ["100"],
+      "parameters": {
+        "coefficients": [
+          [0.9005]
+        ],
+        "intercept": [1.3358],
+        "covariance": [
+          [0.0467]
+        ]
+      }
+    },
+    {
+      "labels": ["414"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [5.4072],
+        "covariance": [
+          [0.8198]
+        ]
+      }
+    },
+    {
+      "labels": ["422"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [6.5155],
+        "covariance": [
+          [0.1559]
+        ]
+      }
+    },
+    {
+      "labels": ["443"],
+      "conditioning_labels": ["600"],
+      "parameters": {
+        "coefficients": [
+          [-0.2245]
+        ],
+        "intercept": [7.7066],
+        "covariance": [
+          [0.0244]
+        ]
+      }
+    },
+    {
+      "labels": ["444"],
+      "conditioning_labels": ["63", "738"],
+      "parameters": {
+        "coefficients": [
+          [-0.1837, 0.4696]
+        ],
+        "intercept": [4.1477],
+        "covariance": [
+          [0.0174]
+        ]
+      }
+    },
+    {
+      "labels": ["452"],
+      "conditioning_labels": ["414", "603", "726"],
+      "parameters": {
+        "coefficients": [
+          [0.3269, -0.9352, 0.1174]
+        ],
+        "intercept": [10.7528],
+        "covariance": [
+          [0.073]
+        ]
+      }
+    },
+    {
+      "labels": ["454"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [-0.2643]
+        ],
+        "intercept": [7.0918],
+        "covariance": [
+          [0.0631]
+        ]
+      }
+    },
+    {
+      "labels": ["460"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [-0.2733]
+        ],
+        "intercept": [8.5323],
+        "covariance": [
+          [0.1566]
+        ]
+      }
+    },
+    {
+      "labels": ["464"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [1.261]
+        ],
+        "intercept": [-1.6954],
+        "covariance": [
+          [0.9702]
+        ]
+      }
+    },
+    {
+      "labels": ["479"],
+      "conditioning_labels": ["47", "422", "629", "793"],
+      "parameters": {
+        "coefficients": [
+          [0.6766, -0.0745, 0.1347, 0.3957]
+        ],
+        "intercept": [0.4428],
+        "covariance": [
+          [0.0775]
+        ]
+      }
+    },
+    {
+      "labels": ["480"],
+      "conditioning_labels": ["61", "738"],
+      "parameters": {
+        "coefficients": [
+          [0.7079, 0.0245]
+        ],
+        "intercept": [2.5568],
+        "covariance": [
+          [0.0524]
+        ]
+      }
+    },
+    {
+      "labels": ["496"],
+      "conditioning_labels": ["111"],
+      "parameters": {
+        "coefficients": [
+          [3.0491]
+        ],
+        "intercept": [-12.4819],
+        "covariance": [
+          [0.0932]
+        ]
+      }
+    },
+    {
+      "labels": ["519"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [6.9941],
+        "covariance": [
+          [0.0533]
+        ]
+      }
+    },
+    {
+      "labels": ["537"],
+      "conditioning_labels": ["111"],
+      "parameters": {
+        "coefficients": [
+          [1.7804]
+        ],
+        "intercept": [-4.4584],
+        "covariance": [
+          [0.2944]
+        ]
+      }
+    },
+    {
+      "labels": ["539"],
+      "conditioning_labels": ["585"],
+      "parameters": {
+        "coefficients": [
+          [-0.242]
+        ],
+        "intercept": [7.7949],
+        "covariance": [
+          [0.1782]
+        ]
+      }
+    },
+    {
+      "labels": ["540"],
+      "conditioning_labels": ["738"],
+      "parameters": {
+        "coefficients": [
+          [0.8752]
+        ],
+        "intercept": [0.8277],
+        "covariance": [
+          [0.0545]
+        ]
+      }
+    },
+    {
+      "labels": ["547"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [0.3147]
+        ],
+        "intercept": [3.6154],
+        "covariance": [
+          [0.0903]
+        ]
+      }
+    },
+    {
+      "labels": ["554"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [-0.4245]
+        ],
+        "intercept": [9.6621],
+        "covariance": [
+          [0.1609]
+        ]
+      }
+    },
+    {
+      "labels": ["558"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [0.0181]
+        ],
+        "intercept": [6.2466],
+        "covariance": [
+          [0.0944]
+        ]
+      }
+    },
+    {
+      "labels": ["560"],
+      "conditioning_labels": ["272", "627", "726"],
+      "parameters": {
+        "coefficients": [
+          [-0.0977, 0.0849, -0.4719]
+        ],
+        "intercept": [8.7056],
+        "covariance": [
+          [0.0183]
+        ]
+      }
+    },
+    {
+      "labels": ["565"],
+      "conditioning_labels": ["443"],
+      "parameters": {
+        "coefficients": [
+          [0.6]
+        ],
+        "intercept": [4.8025],
+        "covariance": [
+          [0.0724]
+        ]
+      }
+    },
+    {
+      "labels": ["570"],
+      "conditioning_labels": ["81", "422"],
+      "parameters": {
+        "coefficients": [
+          [0.203, -0.2107]
+        ],
+        "intercept": [5.7029],
+        "covariance": [
+          [0.1275]
+        ]
+      }
+    },
+    {
+      "labels": ["573"],
+      "conditioning_labels": ["20", "443"],
+      "parameters": {
+        "coefficients": [
+          [-0.8136, -0.48]
+        ],
+        "intercept": [11.6569],
+        "covariance": [
+          [0.1195]
+        ]
+      }
+    },
+    {
+      "labels": ["576"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.0631]
+        ],
+        "intercept": [5.0598],
+        "covariance": [
+          [0.201]
+        ]
+      }
+    },
+    {
+      "labels": ["585"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.0943]
+        ],
+        "intercept": [5.0583],
+        "covariance": [
+          [0.2356]
+        ]
+      }
+    },
+    {
+      "labels": ["596"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [0.2123]
+        ],
+        "intercept": [6.4345],
+        "covariance": [
+          [0.1183]
+        ]
+      }
+    },
+    {
+      "labels": ["598"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.8931]
+        ],
+        "intercept": [1.2418],
+        "covariance": [
+          [0.4479]
+        ]
+      }
+    },
+    {
+      "labels": ["600"],
+      "conditioning_labels": ["699"],
+      "parameters": {
+        "coefficients": [
+          [0.7912]
+        ],
+        "intercept": [2.6107],
+        "covariance": [
+          [0.0792]
+        ]
+      }
+    },
+    {
+      "labels": ["603"],
+      "conditioning_labels": ["781"],
+      "parameters": {
+        "coefficients": [
+          [0.2479]
+        ],
+        "intercept": [4.28],
+        "covariance": [
+          [0.0476]
+        ]
+      }
+    },
+    {
+      "labels": ["622"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.589]
+        ],
+        "intercept": [8.8347],
+        "covariance": [
+          [0.1259]
+        ]
+      }
+    },
+    {
+      "labels": ["623"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.443]
+        ],
+        "intercept": [6.9743],
+        "covariance": [
+          [0.2297]
+        ]
+      }
+    },
+    {
+      "labels": ["627"],
+      "conditioning_labels": ["422", "738"],
+      "parameters": {
+        "coefficients": [
+          [-0.8809, -0.3348]
+        ],
+        "intercept": [13.4429],
+        "covariance": [
+          [0.356]
+        ]
+      }
+    },
+    {
+      "labels": ["629"],
+      "conditioning_labels": ["422"],
+      "parameters": {
+        "coefficients": [
+          [0.9676]
+        ],
+        "intercept": [2.4471],
+        "covariance": [
+          [0.0723]
+        ]
+      }
+    },
+    {
+      "labels": ["636"],
+      "conditioning_labels": ["81", "738"],
+      "parameters": {
+        "coefficients": [
+          [0.4277, 0.5174]
+        ],
+        "intercept": [0.4616],
+        "covariance": [
+          [0.0819]
+        ]
+      }
+    },
+    {
+      "labels": ["640"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [0.0513]
+        ],
+        "intercept": [5.937],
+        "covariance": [
+          [0.0494]
+        ]
+      }
+    },
+    {
+      "labels": ["651"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.2513]
+        ],
+        "intercept": [5.0697],
+        "covariance": [
+          [0.1477]
+        ]
+      }
+    },
+    {
+      "labels": ["661"],
+      "conditioning_labels": ["627"],
+      "parameters": {
+        "coefficients": [
+          [0.2784]
+        ],
+        "intercept": [4.2778],
+        "covariance": [
+          [0.1756]
+        ]
+      }
+    },
+    {
+      "labels": ["665"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.2002]
+        ],
+        "intercept": [7.8195],
+        "covariance": [
+          [0.1044]
+        ]
+      }
+    },
+    {
+      "labels": ["666"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [-0.6618]
+        ],
+        "intercept": [8.6544],
+        "covariance": [
+          [0.2409]
+        ]
+      }
+    },
+    {
+      "labels": ["677"],
+      "conditioning_labels": ["479", "714"],
+      "parameters": {
+        "coefficients": [
+          [0.0891, 2.0765]
+        ],
+        "intercept": [-10.1786],
+        "covariance": [
+          [0.2877]
+        ]
+      }
+    },
+    {
+      "labels": ["679"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [0.1765]
+        ],
+        "intercept": [4.848],
+        "covariance": [
+          [0.0413]
+        ]
+      }
+    },
+    {
+      "labels": ["686"],
+      "conditioning_labels": ["198"],
+      "parameters": {
+        "coefficients": [
+          [-0.0066]
+        ],
+        "intercept": [4.727],
+        "covariance": [
+          [0.3846]
+        ]
+      }
+    },
+    {
+      "labels": ["699"],
+      "conditioning_labels": ["570"],
+      "parameters": {
+        "coefficients": [
+          [0.3212]
+        ],
+        "intercept": [2.8579],
+        "covariance": [
+          [0.1704]
+        ]
+      }
+    },
+    {
+      "labels": ["712"],
+      "conditioning_labels": ["81"],
+      "parameters": {
+        "coefficients": [
+          [0.2687]
+        ],
+        "intercept": [5.9831],
+        "covariance": [
+          [0.2423]
+        ]
+      }
+    },
+    {
+      "labels": ["714"],
+      "conditioning_labels": ["47", "331", "422", "452", "479", "629"],
+      "parameters": {
+        "coefficients": [
+          [0.1471, -0.2181, 0.6164, 0.5488, 0.0671, 0.0842]
+        ],
+        "intercept": [-1.5194],
+        "covariance": [
+          [0.0331]
+        ]
+      }
+    },
+    {
+      "labels": ["726"],
+      "conditioning_labels": ["414"],
+      "parameters": {
+        "coefficients": [
+          [-0.3037]
+        ],
+        "intercept": [7.0906],
+        "covariance": [
+          [0.062]
+        ]
+      }
+    },
+    {
+      "labels": ["736"],
+      "conditioning_labels": ["47", "422"],
+      "parameters": {
+        "coefficients": [
+          [0.4158, 0.6011]
+        ],
+        "intercept": [2.1302],
+        "covariance": [
+          [0.0453]
+        ]
+      }
+    },
+    {
+      "labels": ["738"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [4.568],
+        "covariance": [
+          [0.0813]
+        ]
+      }
+    },
+    {
+      "labels": ["739"],
+      "conditioning_labels": ["558"],
+      "parameters": {
+        "coefficients": [
+          [-0.2448]
+        ],
+        "intercept": [9.606],
+        "covariance": [
+          [0.0922]
+        ]
+      }
+    },
+    {
+      "labels": ["758"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [-0.6837]
+        ],
+        "intercept": [9.8434],
+        "covariance": [
+          [1.121]
+        ]
+      }
+    },
+    {
+      "labels": ["767"],
+      "conditioning_labels": ["81", "570"],
+      "parameters": {
+        "coefficients": [
+          [-1.4591, 0.0829]
+        ],
+        "intercept": [12.0314],
+        "covariance": [
+          [0.1607]
+        ]
+      }
+    },
+    {
+      "labels": ["778"],
+      "conditioning_labels": ["539"],
+      "parameters": {
+        "coefficients": [
+          [1.3877]
+        ],
+        "intercept": [-4.6844],
+        "covariance": [
+          [5.4561]
+        ]
+      }
+    },
+    {
+      "labels": ["779"],
+      "conditioning_labels": ["198"],
+      "parameters": {
+        "coefficients": [
+          [-1.0178]
+        ],
+        "intercept": [11.4051],
+        "covariance": [
+          [0.0706]
+        ]
+      }
+    },
+    {
+      "labels": ["781"],
+      "conditioning_labels": ["783"],
+      "parameters": {
+        "coefficients": [
+          [0.1719]
+        ],
+        "intercept": [4.3859],
+        "covariance": [
+          [0.0605]
+        ]
+      }
+    },
+    {
+      "labels": ["783"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [3.619],
+        "covariance": [
+          [1.0616]
+        ]
+      }
+    },
+    {
+      "labels": ["786"],
+      "conditioning_labels": ["289", "414", "726"],
+      "parameters": {
+        "coefficients": [
+          [0.046, -0.1479, 0.1946]
+        ],
+        "intercept": [8.7394],
+        "covariance": [
+          [0.0182]
+        ]
+      }
+    },
+    {
+      "labels": ["793"],
+      "conditioning_labels": ["81", "560", "629"],
+      "parameters": {
+        "coefficients": [
+          [0.4869, -0.5856, 0.2827]
+        ],
+        "intercept": [6.4972],
+        "covariance": [
+          [0.034]
+        ]
+      }
+    },
+    {
+      "labels": ["798"],
+      "conditioning_labels": ["779"],
+      "parameters": {
+        "coefficients": [
+          [0.0565]
+        ],
+        "intercept": [7.2223],
+        "covariance": [
+          [0.1233]
+        ]
+      }
+    }
+  ]
+}

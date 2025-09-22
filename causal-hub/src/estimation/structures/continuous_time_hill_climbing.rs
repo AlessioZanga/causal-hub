@@ -10,14 +10,6 @@ use crate::{
 
 /// A trait for scoring criteria used in score-based structure learning.
 pub trait ScoringCriterion {
-    /// Returns a reference to the labels of the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
-
     /// Computes the score for a given variable and its conditioning set.
     ///
     /// # Arguments
@@ -54,21 +46,29 @@ impl<'a, E> BIC<'a, E> {
     }
 }
 
-impl<E> ScoringCriterion for BIC<'_, E>
+impl<'a, E> Labelled for BIC<'a, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: Labelled,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
     }
+}
 
+impl<E> ScoringCriterion for BIC<'_, E>
+where
+    E: CPDEstimator<CatCIM>,
+{
     #[inline]
     fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64 {
         // Compute the intensity matrices for the sets.
         let q_xz = self.estimator.fit(x, z);
         // Get the sample size.
-        let n = q_xz.sample_size().expect("Failed to get the sample size.");
+        let n = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_size())
+            .expect("Failed to get the sample size.");
         // Get the log-likelihood.
         let ll = q_xz
             .sample_log_likelihood()
@@ -92,7 +92,7 @@ pub struct CTHC<'a, S> {
 
 impl<'a, S> CTHC<'a, S>
 where
-    S: ScoringCriterion,
+    S: ScoringCriterion + Labelled,
 {
     /// Creates a new continuous time hill climbing instance.
     ///

@@ -1,0 +1,648 @@
+{
+  "name": "magic_niab",
+  "graph": {
+    "labels": ["YR.GLASS", "HT", "YR.FIELD", "MIL", "FT", "G418", "G311", "G1217", "G800", "G866", "G795", "G2570", "G260", "G2920", "G832", "G1896", "G2953", "G266", "G847", "G942", "G200", "G257", "G2208", "G1373", "G599", "G261", "G383", "G1853", "G1033", "G1945", "G1338", "G1276", "G1263", "G1789", "G2318", "G1294", "G1800", "YLD", "FUS", "G1750", "G524", "G775", "G2835", "G43"],
+    "edges": [
+      ["MIL", "YR.GLASS"],
+      ["G418", "YR.GLASS"],
+      ["G311", "YR.GLASS"],
+      ["G1217", "YR.GLASS"],
+      ["G800", "YR.GLASS"],
+      ["G866", "YR.GLASS"],
+      ["G795", "YR.GLASS"],
+      ["G1750", "YR.GLASS"],
+      ["G832", "HT"],
+      ["G1896", "HT"],
+      ["G2953", "HT"],
+      ["G266", "HT"],
+      ["G847", "HT"],
+      ["G942", "HT"],
+      ["G2835", "HT"],
+      ["YR.GLASS", "YR.FIELD"],
+      ["FT", "YR.FIELD"],
+      ["G418", "YR.FIELD"],
+      ["G200", "YR.FIELD"],
+      ["G257", "YR.FIELD"],
+      ["G2208", "YR.FIELD"],
+      ["G1373", "YR.FIELD"],
+      ["G599", "YR.FIELD"],
+      ["G261", "YR.FIELD"],
+      ["G1217", "MIL"],
+      ["G2208", "MIL"],
+      ["G1945", "MIL"],
+      ["G1338", "MIL"],
+      ["G524", "MIL"],
+      ["G266", "FT"],
+      ["G1276", "FT"],
+      ["G1263", "FT"],
+      ["G2318", "FT"],
+      ["G1294", "FT"],
+      ["G1800", "FT"],
+      ["G775", "FT"],
+      ["G1853", "G311"],
+      ["G2953", "G1896"],
+      ["G1338", "G266"],
+      ["G1276", "G266"],
+      ["G1217", "G257"],
+      ["G257", "G2208"],
+      ["G1750", "G1373"],
+      ["G800", "G383"],
+      ["G599", "G1276"],
+      ["G266", "G1789"],
+      ["G418", "G1294"],
+      ["G1217", "G1800"],
+      ["G2953", "G1800"],
+      ["G257", "G1800"],
+      ["G2835", "G1800"],
+      ["YR.GLASS", "YLD"],
+      ["HT", "YLD"],
+      ["FT", "YLD"],
+      ["G2570", "YLD"],
+      ["G260", "YLD"],
+      ["G2920", "YLD"],
+      ["G832", "YLD"],
+      ["HT", "FUS"],
+      ["G832", "FUS"],
+      ["G1896", "FUS"],
+      ["G383", "FUS"],
+      ["G1853", "FUS"],
+      ["G1033", "FUS"],
+      ["G418", "G2835"],
+      ["G311", "G43"]
+    ]
+  },
+  "cpds": [
+    {
+      "labels": ["YR.GLASS"],
+      "conditioning_labels": ["MIL", "G418", "G311", "G1217", "G800", "G866", "G795", "G1750"],
+      "parameters": {
+        "coefficients": [
+          [0.0718, 0.27, 0.1042, 0.0792, 0.0575, 0.0461, 0.0474, -0.0748]
+        ],
+        "intercept": [1.5484],
+        "covariance": [
+          [0.1108]
+        ]
+      }
+    },
+    {
+      "labels": ["HT"],
+      "conditioning_labels": ["G832", "G1896", "G2953", "G266", "G847", "G942", "G2835"],
+      "parameters": {
+        "coefficients": [
+          [-0.5071, 1.7493, -1.3488, -0.7827, 0.5767, -0.6651, -1.397]
+        ],
+        "intercept": [76.6512],
+        "covariance": [
+          [10.9772]
+        ]
+      }
+    },
+    {
+      "labels": ["YR.FIELD"],
+      "conditioning_labels": ["YR.GLASS", "FT", "G418", "G200", "G257", "G2208", "G1373", "G599", "G261"],
+      "parameters": {
+        "coefficients": [
+          [0.2713, -0.0243, 0.089, -0.1655, -0.0699, 0.21, -0.0629, 0.0836, 0.0804]
+        ],
+        "intercept": [2.323],
+        "covariance": [
+          [0.1618]
+        ]
+      }
+    },
+    {
+      "labels": ["MIL"],
+      "conditioning_labels": ["G1217", "G2208", "G1945", "G1338", "G524"],
+      "parameters": {
+        "coefficients": [
+          [0.135, 0.4238, -0.1105, 0.1078, 0.1127]
+        ],
+        "intercept": [2.0463],
+        "covariance": [
+          [0.4731]
+        ]
+      }
+    },
+    {
+      "labels": ["FT"],
+      "conditioning_labels": ["G266", "G1276", "G1263", "G2318", "G1294", "G1800", "G775"],
+      "parameters": {
+        "coefficients": [
+          [-1.1313, -0.4554, 0.8155, -0.4323, -0.4365, 1.6106, -0.8137]
+        ],
+        "intercept": [32.0405],
+        "covariance": [
+          [7.9686]
+        ]
+      }
+    },
+    {
+      "labels": ["G418"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.4633],
+        "covariance": [
+          [0.7499]
+        ]
+      }
+    },
+    {
+      "labels": ["G311"],
+      "conditioning_labels": ["G1853"],
+      "parameters": {
+        "coefficients": [
+          [0.1543]
+        ],
+        "intercept": [1.2533],
+        "covariance": [
+          [0.6913]
+        ]
+      }
+    },
+    {
+      "labels": ["G1217"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.43],
+        "covariance": [
+          [0.7931]
+        ]
+      }
+    },
+    {
+      "labels": ["G800"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.745],
+        "covariance": [
+          [0.8981]
+        ]
+      }
+    },
+    {
+      "labels": ["G866"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.245],
+        "covariance": [
+          [0.9065]
+        ]
+      }
+    },
+    {
+      "labels": ["G795"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.7467],
+        "covariance": [
+          [0.884]
+        ]
+      }
+    },
+    {
+      "labels": ["G2570"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.7967],
+        "covariance": [
+          [0.3526]
+        ]
+      }
+    },
+    {
+      "labels": ["G260"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.24],
+        "covariance": [
+          [0.4231]
+        ]
+      }
+    },
+    {
+      "labels": ["G2920"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.5333],
+        "covariance": [
+          [0.7001]
+        ]
+      }
+    },
+    {
+      "labels": ["G832"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.4383],
+        "covariance": [
+          [0.7775]
+        ]
+      }
+    },
+    {
+      "labels": ["G1896"],
+      "conditioning_labels": ["G2953"],
+      "parameters": {
+        "coefficients": [
+          [0.1844]
+        ],
+        "intercept": [0.6614],
+        "covariance": [
+          [0.8708]
+        ]
+      }
+    },
+    {
+      "labels": ["G2953"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.345],
+        "covariance": [
+          [0.5335]
+        ]
+      }
+    },
+    {
+      "labels": ["G266"],
+      "conditioning_labels": ["G1338", "G1276"],
+      "parameters": {
+        "coefficients": [
+          [0.0821, 0.1527]
+        ],
+        "intercept": [0.0209],
+        "covariance": [
+          [0.4397]
+        ]
+      }
+    },
+    {
+      "labels": ["G847"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.345],
+        "covariance": [
+          [0.8607]
+        ]
+      }
+    },
+    {
+      "labels": ["G942"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.2767],
+        "covariance": [
+          [0.4609]
+        ]
+      }
+    },
+    {
+      "labels": ["G200"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.2217],
+        "covariance": [
+          [0.3765]
+        ]
+      }
+    },
+    {
+      "labels": ["G257"],
+      "conditioning_labels": ["G1217"],
+      "parameters": {
+        "coefficients": [
+          [-0.4594]
+        ],
+        "intercept": [1.7469],
+        "covariance": [
+          [0.7808]
+        ]
+      }
+    },
+    {
+      "labels": ["G2208"],
+      "conditioning_labels": ["G257"],
+      "parameters": {
+        "coefficients": [
+          [-0.0407]
+        ],
+        "intercept": [0.0827],
+        "covariance": [
+          [0.0655]
+        ]
+      }
+    },
+    {
+      "labels": ["G1373"],
+      "conditioning_labels": ["G1750"],
+      "parameters": {
+        "coefficients": [
+          [0.197]
+        ],
+        "intercept": [1.3144],
+        "covariance": [
+          [0.7135]
+        ]
+      }
+    },
+    {
+      "labels": ["G599"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.7283],
+        "covariance": [
+          [0.4453]
+        ]
+      }
+    },
+    {
+      "labels": ["G261"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.56],
+        "covariance": [
+          [0.6642]
+        ]
+      }
+    },
+    {
+      "labels": ["G383"],
+      "conditioning_labels": ["G800"],
+      "parameters": {
+        "coefficients": [
+          [-0.1629]
+        ],
+        "intercept": [1.908],
+        "covariance": [
+          [0.3452]
+        ]
+      }
+    },
+    {
+      "labels": ["G1853"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.75],
+        "covariance": [
+          [0.4382]
+        ]
+      }
+    },
+    {
+      "labels": ["G1033"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.3017],
+        "covariance": [
+          [0.4982]
+        ]
+      }
+    },
+    {
+      "labels": ["G1945"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.9467],
+        "covariance": [
+          [0.9754]
+        ]
+      }
+    },
+    {
+      "labels": ["G1338"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.8033],
+        "covariance": [
+          [0.9496]
+        ]
+      }
+    },
+    {
+      "labels": ["G1276"],
+      "conditioning_labels": ["G599"],
+      "parameters": {
+        "coefficients": [
+          [0.3644]
+        ],
+        "intercept": [0.6352],
+        "covariance": [
+          [0.8419]
+        ]
+      }
+    },
+    {
+      "labels": ["G1263"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.655],
+        "covariance": [
+          [0.5569]
+        ]
+      }
+    },
+    {
+      "labels": ["G1789"],
+      "conditioning_labels": ["G266"],
+      "parameters": {
+        "coefficients": [
+          [0.2524]
+        ],
+        "intercept": [0.2127],
+        "covariance": [
+          [0.4516]
+        ]
+      }
+    },
+    {
+      "labels": ["G2318"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [1.3083],
+        "covariance": [
+          [0.8881]
+        ]
+      }
+    },
+    {
+      "labels": ["G1294"],
+      "conditioning_labels": ["G418"],
+      "parameters": {
+        "coefficients": [
+          [0.3322]
+        ],
+        "intercept": [0.3189],
+        "covariance": [
+          [0.8405]
+        ]
+      }
+    },
+    {
+      "labels": ["G1800"],
+      "conditioning_labels": ["G1217", "G2953", "G257", "G2835"],
+      "parameters": {
+        "coefficients": [
+          [0.076, 0.0437, 0.074, 0.1243]
+        ],
+        "intercept": [-0.1557],
+        "covariance": [
+          [0.0509]
+        ]
+      }
+    },
+    {
+      "labels": ["YLD"],
+      "conditioning_labels": ["YR.GLASS", "HT", "FT", "G2570", "G260", "G2920", "G832"],
+      "parameters": {
+        "coefficients": [
+          [0.1408, 0.0212, -0.0488, 0.1198, 0.1086, 0.0671, 0.0828]
+        ],
+        "intercept": [6.5342],
+        "covariance": [
+          [0.193]
+        ]
+      }
+    },
+    {
+      "labels": ["FUS"],
+      "conditioning_labels": ["HT", "G832", "G1896", "G383", "G1853", "G1033"],
+      "parameters": {
+        "coefficients": [
+          [-0.0537, -0.1272, -0.148, 0.2566, -0.1626, 0.1666]
+        ],
+        "intercept": [8.2062],
+        "covariance": [
+          [0.6016]
+        ]
+      }
+    },
+    {
+      "labels": ["G1750"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.24],
+        "covariance": [
+          [0.4231]
+        ]
+      }
+    },
+    {
+      "labels": ["G524"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.4667],
+        "covariance": [
+          [0.69]
+        ]
+      }
+    },
+    {
+      "labels": ["G775"],
+      "conditioning_labels": [],
+      "parameters": {
+        "coefficients": [
+          []
+        ],
+        "intercept": [0.22],
+        "covariance": [
+          [0.3722]
+        ]
+      }
+    },
+    {
+      "labels": ["G2835"],
+      "conditioning_labels": ["G418"],
+      "parameters": {
+        "coefficients": [
+          [0.0438]
+        ],
+        "intercept": [0.0125],
+        "covariance": [
+          [0.0729]
+        ]
+      }
+    },
+    {
+      "labels": ["G43"],
+      "conditioning_labels": ["G311"],
+      "parameters": {
+        "coefficients": [
+          [-0.2551]
+        ],
+        "intercept": [0.5352],
+        "covariance": [
+          [0.2103]
+        ]
+      }
+    }
+  ]
+}

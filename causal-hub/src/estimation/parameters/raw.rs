@@ -9,7 +9,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
     estimation::{BE, CPDEstimator, ParCPDEstimator},
-    models::CatCIM,
+    models::{CatCIM, Labelled},
     types::{Labels, Set},
 };
 
@@ -32,6 +32,16 @@ impl<R, E, D> Deref for RAWE<'_, R, E, D> {
 
     fn deref(&self) -> &Self::Target {
         self.dataset.as_ref().unwrap()
+    }
+}
+
+impl<R, E, D> Labelled for RAWE<'_, R, E, D>
+where
+    D: Labelled,
+{
+    #[inline]
+    fn labels(&self) -> &Labels {
+        self.dataset.as_ref().unwrap().labels()
     }
 }
 
@@ -375,10 +385,6 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
-    fn labels(&self) -> &Labels {
-        self.evidence.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)
@@ -386,10 +392,6 @@ impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn labels(&self) -> &Labels {
-        self.evidence.labels()
-    }
-
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
         BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)

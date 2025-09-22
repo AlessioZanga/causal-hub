@@ -12,15 +12,7 @@ use crate::{
 };
 
 /// A trait for conditional independence testing.
-pub trait ConditionalIndependenceTest {
-    /// Returns a reference to the labels of the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
-    ///
-    fn labels(&self) -> &Labels;
-
+pub trait CITest {
     /// Test for conditional independence as X _||_ Y | Z.
     ///
     /// # Arguments
@@ -35,9 +27,6 @@ pub trait ConditionalIndependenceTest {
     ///
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
 }
-
-/// A type alias for a conditional independence test.
-pub use ConditionalIndependenceTest as CIT;
 
 /// A struct representing the Chi-squared test.
 pub struct ChiSquaredTest<'a, E> {
@@ -70,15 +59,20 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     }
 }
 
-impl<E> CIT for ChiSquaredTest<'_, E>
+impl<'a, E> Labelled for ChiSquaredTest<'a, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: Labelled,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
     }
+}
 
+impl<E> CITest for ChiSquaredTest<'_, E>
+where
+    E: CPDEstimator<CatCIM>,
+{
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
@@ -95,8 +89,14 @@ where
         let q_xz = self.estimator.fit(x, z);
         let q_xs = self.estimator.fit(x, &s);
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz.sample_conditional_counts().unwrap();
-        let n_xs = q_xs.sample_conditional_counts().unwrap();
+        let n_xz = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
+        let n_xs = q_xs
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -173,15 +173,20 @@ impl<'a, E> FTest<'a, E> {
     }
 }
 
-impl<E> CIT for FTest<'_, E>
+impl<E> Labelled for FTest<'_, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: Labelled,
 {
     #[inline]
     fn labels(&self) -> &Labels {
         self.estimator.labels()
     }
+}
 
+impl<E> CITest for FTest<'_, E>
+where
+    E: CPDEstimator<CatCIM>,
+{
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
@@ -201,8 +206,14 @@ where
         let q_xz = self.estimator.fit(x, z);
         let q_xs = self.estimator.fit(x, &s);
         // Get the sufficient statistics for the sets.
-        let n_xz = q_xz.sample_conditional_counts().unwrap();
-        let n_xs = q_xs.sample_conditional_counts().unwrap();
+        let n_xz = q_xz
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
+        let n_xs = q_xs
+            .sample_statistics()
+            .map(|s| s.sample_conditional_counts())
+            .unwrap();
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -247,8 +258,8 @@ pub struct CTPC<'a, T, S> {
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CIT,
-    S: CIT,
+    T: CITest + Labelled,
+    S: CITest + Labelled,
 {
     /// Creates a new `CTPC` instance.
     ///
@@ -418,8 +429,8 @@ where
 
 impl<'a, T, S> CTPC<'a, T, S>
 where
-    T: CIT + Sync,
-    S: CIT + Sync,
+    T: CITest + Sync,
+    S: CITest + Sync,
 {
     /// Execute the CTPC algorithm and return the fitted graph in parallel.
     ///

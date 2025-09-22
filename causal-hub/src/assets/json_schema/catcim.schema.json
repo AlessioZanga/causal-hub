@@ -33,12 +33,24 @@
                 }
             }
         },
-        "sample_conditional_counts": {
+        "sample_statistics": {
             "type": [
-                "array",
+                "object",
                 "null"
             ],
-            "items": {
+            "sample_conditional_counts": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    }
+                }
+            },
+            "sample_conditional_times": {
                 "type": "array",
                 "items": {
                     "type": "array",
@@ -46,28 +58,10 @@
                         "type": "number"
                     }
                 }
+            },
+            "sample_size": {
+                "type": "number"
             }
-        },
-        "sample_conditional_times": {
-            "type": [
-                "array",
-                "null"
-            ],
-            "items": {
-                "type": "array",
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "number"
-                    }
-                }
-            }
-        },
-        "sample_size": {
-            "type": [
-                "number",
-                "null"
-            ]
         },
         "sample_log_likelihood": {
             "type": [

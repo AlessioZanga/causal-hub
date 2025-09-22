@@ -1,32 +1,4 @@
-use crate::types::{Labels, States};
-
-/// Utility function to collect labels from an iterator.
-pub fn collect_labels<I, J>(labels: I) -> Labels
-where
-    I: IntoIterator<Item = J>,
-    J: AsRef<str>,
-{
-    // Initialize labels counter.
-    let mut n = 0;
-    // Convert the variable labels to a set of strings.
-    let labels: Labels = labels
-        .into_iter()
-        .inspect(|_| n += 1)
-        .map(|x| x.as_ref().to_owned())
-        .collect();
-    // Assert unique labels.
-    assert_eq!(
-        labels.len(),
-        n,
-        "Variable labels must be unique: \n\
-        \t expected:    |labels.unique()| == {} , \n\
-        \t found:       |labels.unique()| == {} .",
-        n,
-        labels.len(),
-    );
-
-    labels
-}
+use crate::types::States;
 
 /// Utility function to sort states and labels.
 pub fn sort_states(mut states: States) -> (States, Vec<(usize, Vec<usize>)>) {

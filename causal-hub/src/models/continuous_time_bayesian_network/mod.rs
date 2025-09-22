@@ -67,4 +67,32 @@ pub trait CTBN {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+
+    /// Creates a new categorical continuous-time Bayesian network with optional fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the model.
+    /// * `description` - The description of the model.
+    /// * `graph` - The underlying graph.
+    /// * `cims` - The conditional intensity matrices.
+    ///
+    /// # Panics
+    ///
+    /// * Panics if `name` is an empty string.
+    /// * Panics if `description` is an empty string.
+    ///
+    /// # Returns
+    ///
+    /// A new categorical continuous-time Bayesian network instance.
+    ///
+    fn with_optionals<I>(
+        name: Option<String>,
+        description: Option<String>,
+        initial_distribution: Self::InitialDistribution,
+        graph: DiGraph,
+        cims: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = Self::CIM>;
 }

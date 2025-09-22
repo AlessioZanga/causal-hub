@@ -4,9 +4,11 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset},
+    datasets::{
+        CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, Dataset, GaussTable,
+    },
     estimation::{CSSEstimator, ParCSSEstimator},
-    models::{CPD, CatCIM, CatCPD, Labelled},
+    models::{CatCIMS, CatCPDS, GaussCPDS, Labelled},
     types::{Labels, Set},
     utils::MI,
 };
@@ -30,13 +32,18 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
+impl<D> Labelled for SSE<'_, D>
+where
+    D: Labelled,
+{
     #[inline]
     fn labels(&self) -> &Labels {
         self.dataset.labels()
     }
+}
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
+impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -66,17 +73,17 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatTable> {
         });
 
         // Cast the counts to floating point.
-        n_xz.mapv(|x| x as f64)
+        let n_xz = n_xz.mapv(|x| x as f64);
+        // Compute the sample size.
+        let n = n_xz.sum();
+
+        // Return the sufficient statistics.
+        CatCPDS::new(n_xz, n)
     }
 }
 
-impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
-
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCPD as CPD>::SS {
+impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -113,17 +120,60 @@ impl CSSEstimator<<CatCPD as CPD>::SS> for SSE<'_, CatWtdTable> {
                 n_xz[[idx_z, idx_x]] += weight;
             });
 
-        n_xz
+        // Compute the sample size.
+        let n = n_xz.sum();
+
+        // Return the sufficient statistics.
+        CatCPDS::new(n_xz, n)
     }
 }
 
-impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
+impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPDS {
+        // Assert variables and conditioning variables must be disjoint.
+        assert!(
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
+        );
 
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+        // Get the values.
+        let d = self.dataset.values();
+
+        // Select the columns of the variables.
+        let mut c_x = Array::zeros((d.nrows(), x.len()));
+        for (i, &j) in x.iter().enumerate() {
+            c_x.column_mut(i).assign(&d.column(j));
+        }
+        // Compute the mean.
+        let mu_x = c_x.mean_axis(Axis(0)).unwrap();
+        // Center the values by subtracting the mean.
+        c_x -= &mu_x.clone().insert_axis(Axis(0));
+
+        // Select the columns of the conditioning variables.
+        let mut c_z = Array::zeros((d.nrows(), z.len()));
+        for (i, &j) in z.iter().enumerate() {
+            c_z.column_mut(i).assign(&d.column(j));
+        }
+        // Compute the mean.
+        let mu_z = c_z.mean_axis(Axis(0)).unwrap();
+        // Center the values by subtracting the mean.
+        c_z -= &mu_z.clone().insert_axis(Axis(0));
+
+        // Compute the sufficient statistics.
+        let s_xx = c_x.t().dot(&c_x);
+        let s_xz = c_x.t().dot(&c_z);
+        let s_zz = c_z.t().dot(&c_z);
+
+        // Get the sample size.
+        let n = d.nrows() as f64;
+
+        // Return the sufficient statistics.
+        GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)
+    }
+}
+
+impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
         // Assert variables and conditioning variables must be disjoint..
         assert!(
             x.is_disjoint(z),
@@ -167,39 +217,33 @@ impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatTrj> {
 
         // Cast the counts to floating point.
         let n_xz = n_xz.mapv(|x| x as f64);
-        // Align the dimensions of the counts and times.
-        let t_xz = t_xz.insert_axis(Axis(2));
+        // Compute the sample size.
+        let n = n_xz.sum();
 
-        (n_xz, t_xz)
+        CatCIMS::new(n_xz, t_xz, n)
     }
 }
 
-impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, CatWtdTrj> {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.dataset.labels()
-    }
-
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
-        let (n_xz, t_xz) = SSE::new(self.dataset.trajectory()).fit(x, z);
+        let s = SSE::new(self.dataset.trajectory()).fit(x, z);
+        // Destructure the sufficient statistics.
+        let n_xz = s.sample_conditional_counts();
+        let t_xz = s.sample_conditional_times();
+        let n = s.sample_size();
         // Apply the weight to the sufficient statistics.
-        (n_xz * w, t_xz * w)
+        CatCIMS::new(n_xz * w, t_xz * w, n * w)
     }
 }
 
 // Implement the CSSEstimator and ParCSSEstimator traits for both CatTrjs and CatWtdTrjs.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl CSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
-        #[inline]
-        fn labels(&self) -> &Labels {
-            self.dataset.labels()
-        }
-
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+    impl CSSEstimator<CatCIMS> for SSE<'_, $type> {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
             // Get the shape.
             let shape = self.dataset.shape();
 
@@ -207,26 +251,26 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_x = x.iter().map(|&i| shape[i]).product();
             let s_z = z.iter().map(|&i| shape[i]).product();
 
-            // Initialize the joint counts.
-            let n_xz: Array3<f64> = Array::zeros((s_z, s_x, s_x));
-            // Initialize the time spent in that state.
-            let t_xz: Array3<f64> = Array::zeros((s_z, s_x, 1));
+            // Initialize the sufficient statistics.
+            let s = CatCIMS::new(
+                // Initialize the joint counts.
+                Array3::zeros((s_z, s_x, s_x)),
+                // Initialize the time spent in that state.
+                Array2::zeros((s_z, s_x)),
+                // Initialize the sample size.
+                0.,
+            );
 
             // Iterate over the trajectories.
             self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold((n_xz, t_xz), |(n_xz_a, t_xz_a), trj_b| {
-                    // Compute the sufficient statistics of the trajectory.
-                    let (n_xz_b, t_xz_b) = SSE::new(trj_b).fit(x, z);
-                    // Sum the sufficient statistics.
-                    (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
-                })
+                .fold(s, |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z))
         }
     }
 
-    impl ParCSSEstimator<<CatCIM as CPD>::SS> for SSE<'_, $type> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> <CatCIM as CPD>::SS {
+    impl ParCSSEstimator<CatCIMS> for SSE<'_, $type> {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
             // Get the shape.
             let shape = self.dataset.shape();
 
@@ -234,32 +278,28 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let s_x = x.iter().map(|&i| shape[i]).product();
             let s_z = z.iter().map(|&i| shape[i]).product();
 
-            // Initialize the joint counts.
-            let n_xz: Array3<f64> = Array::zeros((s_z, s_x, s_x));
-            // Initialize the time spent in that state.
-            let t_xz: Array3<f64> = Array::zeros((s_z, s_x, 1));
+            // Initialize the sufficient statistics.
+            let s = CatCIMS::new(
+                // Initialize the joint counts.
+                Array3::zeros((s_z, s_x, s_x)),
+                // Initialize the time spent in that state.
+                Array2::zeros((s_z, s_x)),
+                // Initialize the sample size.
+                0.,
+            );
 
             // Iterate over the trajectories in parallel.
             self.dataset
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
                 .fold(
-                    || (n_xz.clone(), t_xz.clone()),
-                    |(n_xz_a, t_xz_a), trj_b| {
-                        // Compute the sufficient statistics of the trajectory.
-                        let (n_xz_b, t_xz_b) = SSE::new(trj_b).fit(x, z);
-                        // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
-                    },
+                    || s.clone(),
+                    |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z),
                 )
                 .reduce(
-                    || (n_xz.clone(), t_xz.clone()),
-                    |(n_xz_a, t_xz_a), (n_xz_b, t_xz_b)| {
-                        // Sum the sufficient statistics.
-                        (n_xz_a + n_xz_b, t_xz_a + t_xz_b)
-                    },
+                    || s.clone(),
+                    |s_a, s_b| s_a + s_b
                 )
         }
     }
-
 });

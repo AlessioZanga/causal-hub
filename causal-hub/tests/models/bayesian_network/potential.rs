@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatEv, CatEvT},
         map,
-        models::{CatCPD, CatPhi, Labelled},
+        models::{CatCPD, CatPhi, Labelled, Phi},
         set,
     };
     use ndarray::prelude::*;
@@ -147,7 +147,7 @@ mod tests {
         .unwrap()
         .into_dyn();
         // Initialize the potential.
-        let mut phi = CatPhi::new(s.clone(), p.clone());
+        let phi = CatPhi::new(s.clone(), p.clone());
 
         // Marginalize the potential.
         let pred_phi = phi.normalize();

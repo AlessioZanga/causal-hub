@@ -58,7 +58,7 @@ pub fn sem<'a>(
     let prior_knowledge: &PK = prior_knowledge.deref();
 
     // Get the keyword arguments.
-    let kwargs: HashMap<String, PyObject> =
+    let kwargs: HashMap<String, Py<PyAny>> =
         kwargs.map(|x| x.extract()).transpose()?.unwrap_or_default();
     // Get the maximum number of parents from the keyword arguments or set the maximum.
     let max_parents: usize = kwargs
@@ -76,7 +76,7 @@ pub fn sem<'a>(
         .unwrap_or(0.01);
 
     // Release the GIL to allow parallel execution.
-    let output = py.allow_threads(|| {
+    let output = py.detach(|| {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
