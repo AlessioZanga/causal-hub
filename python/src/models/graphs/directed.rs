@@ -103,7 +103,7 @@ impl PyDiGraph {
     ///
     pub fn has_vertex(&self, x: &str) -> PyResult<bool> {
         // Get the labels of the vertices.
-        let x = self.inner.label_to_index(&x);
+        let x = self.inner.label_to_index(x);
         // Check if the vertex exists in the graph.
         Ok(self.inner.has_vertex(x))
     }
@@ -143,8 +143,8 @@ impl PyDiGraph {
     ///
     pub fn has_edge(&self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(&x);
-        let y = self.inner.label_to_index(&y);
+        let x = self.inner.label_to_index(x);
+        let y = self.inner.label_to_index(y);
         // Check if the edge exists in the graph.
         Ok(self.inner.has_edge(x, y))
     }
@@ -162,8 +162,8 @@ impl PyDiGraph {
     ///
     pub fn add_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(&x);
-        let y = self.inner.label_to_index(&y);
+        let x = self.inner.label_to_index(x);
+        let y = self.inner.label_to_index(y);
         // Add the edge to the graph.
         Ok(self.inner.add_edge(x, y))
     }
@@ -181,8 +181,8 @@ impl PyDiGraph {
     ///
     pub fn del_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(&x);
-        let y = self.inner.label_to_index(&y);
+        let x = self.inner.label_to_index(x);
+        let y = self.inner.label_to_index(y);
         // Delete the edge from the graph.
         Ok(self.inner.del_edge(x, y))
     }

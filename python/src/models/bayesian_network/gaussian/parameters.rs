@@ -2,10 +2,10 @@ use backend::{
     io::JsonIO,
     models::{CPD, GaussCPD, Labelled},
 };
-use numpy::{PyArray2, prelude::*};
+use numpy::prelude::*;
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple, PyType},
+    types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -56,8 +56,22 @@ impl PyGaussCPD {
     ///
     /// A reference to the parameters.
     ///
-    pub fn parameters<'a>(&'a self, py: Python<'a>) -> PyResult<()> {
-        todo!() // FIXME:
+    pub fn parameters<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
+        // Allocate the dictionary.
+        let dict = PyDict::new(py);
+        // Get the parameters.
+        let parameters = self.inner.parameters();
+        // Add the coefficients matrix.
+        dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))
+            .expect("Failed to set coefficients.");
+        // Add the intercept vector.
+        dict.set_item("intercept", parameters.intercept().to_pyarray(py))
+            .expect("Failed to set intercept.");
+        // Add the covariance matrix.
+        dict.set_item("covariance", parameters.covariance().to_pyarray(py))
+            .expect("Failed to set covariance.");
+        // Return the dictionary.
+        Ok(Some(dict))
     }
 
     /// Returns the parameters size.
@@ -67,7 +81,7 @@ impl PyGaussCPD {
     /// The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
-        todo!() // FIXME:
+        Ok(self.inner.parameters_size())
     }
 
     /// Returns the sample statistics used to fit the distribution, if any.
@@ -77,14 +91,41 @@ impl PyGaussCPD {
     /// A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.inner.sample_statistics().map(|sample_statistics| {
+        Ok(self.inner.sample_statistics().map(|s| {
             // Allocate the dictionary.
-            let stats = PyDict::new(py);
-            
-            todo!(); // FIXME:
-
+            let dict = PyDict::new(py);
+            // Add the response mean vector.
+            dict.set_item(
+                "sample_response_mean",
+                s.sample_response_mean().to_pyarray(py),
+            )
+            .expect("Failed to set sample response mean.");
+            // Add the design mean vector.
+            dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))
+                .expect("Failed to set sample design mean.");
+            // Add the response covariance matrix.
+            dict.set_item(
+                "sample_response_covariance",
+                s.sample_response_covariance().to_pyarray(py),
+            )
+            .expect("Failed to set sample response covariance.");
+            // Add the cross covariance matrix.
+            dict.set_item(
+                "sample_cross_covariance",
+                s.sample_cross_covariance().to_pyarray(py),
+            )
+            .expect("Failed to set sample cross covariance.");
+            // Add the design covariance matrix.
+            dict.set_item(
+                "sample_design_covariance",
+                s.sample_design_covariance().to_pyarray(py),
+            )
+            .expect("Failed to set sample design covariance.");
+            // Add the sample size.
+            dict.set_item("sample_size", s.sample_size())
+                .expect("Failed to set sample size.");
             // Return the dictionary.
-            stats
+            dict
         }))
     }
 

@@ -7,7 +7,9 @@ use serde::{
 };
 
 use crate::{
-    impl_json_io, models::{GaussCPDS, Labelled, CPD}, types::Labels
+    impl_json_io,
+    models::{CPD, GaussCPDS, Labelled},
+    types::Labels,
 };
 
 /// Parameters of a Gaussian CPD.

@@ -148,29 +148,26 @@ impl PyCatCIM {
     /// A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.inner.sample_statistics().map(|sample_statistics| {
+        Ok(self.inner.sample_statistics().map(|s| {
             // Allocate the dictionary.
-            let stats = PyDict::new(py);
+            let dict = PyDict::new(py);
             // Add the conditional counts.
-            stats
-                .set_item(
-                    "sample_conditional_counts",
-                    sample_statistics.sample_conditional_counts().to_pyarray(py),
-                )
-                .expect("Failed to set sample conditional counts.");
+            dict.set_item(
+                "sample_conditional_counts",
+                s.sample_conditional_counts().to_pyarray(py),
+            )
+            .expect("Failed to set sample conditional counts.");
             // Add the conditional times.
-            stats
-                .set_item(
-                    "sample_conditional_times",
-                    sample_statistics.sample_conditional_times().to_pyarray(py),
-                )
-                .expect("Failed to set sample conditional times.");
+            dict.set_item(
+                "sample_conditional_times",
+                s.sample_conditional_times().to_pyarray(py),
+            )
+            .expect("Failed to set sample conditional times.");
             // Add the sample size.
-            stats
-                .set_item("sample_size", sample_statistics.sample_size())
+            dict.set_item("sample_size", s.sample_size())
                 .expect("Failed to set sample size.");
             // Return the dictionary.
-            stats
+            dict
         }))
     }
 

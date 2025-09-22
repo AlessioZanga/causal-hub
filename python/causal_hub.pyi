@@ -1107,7 +1107,7 @@ class GaussCPD:
         
         A reference to the conditioning labels.
         """
-    def parameters(self) -> None:
+    def parameters(self) -> typing.Optional[dict]:
         r"""
         Returns the parameters.
         
