@@ -414,18 +414,34 @@ class CatCTBN:
         Write class to a JSON file.
         """
 
+class CatTable:
+    r"""
+    A categorical tabular dataset.
+    """
+    def __new__(cls, df:typing.Any) -> CatTable:
+        r"""
+        Constructs a new categorical tabular dataset from a Pandas DataFrame.
+        
+        # Arguments
+        
+        * `df` - A Pandas DataFrame.
+        
+        # Returns
+        
+        A new categorical tabular dataset instance.
+        """
+
 class CatTrj:
     r"""
     A categorical trajectory.
     """
-    def __new__(cls, df:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrj:
+    def __new__(cls, df:typing.Any) -> CatTrj:
         r"""
         Constructs a new categorical trajectory from a Pandas DataFrame.
         
         # Arguments
         
-        * `df` - A Pandas DataFrame containing the trajectory data.
-        * `with_states` - An optional dictionary of states.
+        * `df` - A Pandas DataFrame.
         
         # Notes
         
@@ -451,6 +467,14 @@ class CatTrj:
         # Returns
         
         A reference to the states of the categorical trajectory.
+        """
+    def set_states(self, states:dict) -> None:
+        r"""
+        Sets the states of the categorical trajectory.
+        
+        # Arguments
+        
+        * `states` - A dictionary mapping variable names to their new states.
         """
     def times(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
@@ -507,14 +531,13 @@ class CatTrjs:
     r"""
     A collection of categorical trajectories.
     """
-    def __new__(cls, dfs:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjs:
+    def __new__(cls, dfs:typing.Any) -> CatTrjs:
         r"""
         Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
         
         # Arguments
         
         * `dfs` - An iterable of Pandas DataFrames containing the trajectory data.
-        * `with_states` - An optional dictionary of states.
         
         # Notes
         
@@ -540,6 +563,14 @@ class CatTrjs:
         # Returns
         
         A reference to the states of the categorical trajectory.
+        """
+    def set_states(self, states:dict) -> None:
+        r"""
+        Sets the states of the categorical trajectories.
+        
+        # Arguments
+        
+        * `states` - A dictionary mapping variable names to their new states.
         """
     def values(self) -> builtins.list[CatTrj]:
         r"""
@@ -1156,6 +1187,23 @@ class GaussCPD:
     def write_json(self, path:builtins.str) -> None:
         r"""
         Write class to a JSON file.
+        """
+
+class GaussTable:
+    r"""
+    A Gaussian tabular dataset.
+    """
+    def __new__(cls, df:typing.Any) -> GaussTable:
+        r"""
+        Constructs a new Gaussian tabular dataset from a Pandas DataFrame.
+        
+        # Arguments
+        
+        * `df` - A Pandas DataFrame.
+        
+        # Returns
+        
+        A new Gaussian tabular dataset instance.
         """
 
 class PK:
