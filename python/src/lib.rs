@@ -28,7 +28,7 @@ mod causal_hub {
         // Initialize the logger.
         pyo3_log::init();
 
-        // `assets` module
+        // `assets` module.
 
         // Categorical BNs.
         m.add_function(wrap_pyfunction!(crate::assets::load_alarm, m)?)?;
@@ -61,7 +61,9 @@ mod causal_hub {
         // Categorical CTBNs.
         m.add_function(wrap_pyfunction!(crate::assets::load_eating, m)?)?;
 
-        // `datasets` module
+        // `datasets` module.
+        m.add_class::<crate::datasets::PyCatTable>()?;
+        m.add_class::<crate::datasets::PyGaussTable>()?;
         m.add_class::<crate::datasets::PyCatTrj>()?;
         m.add_class::<crate::datasets::PyCatTrjs>()?;
         m.add_class::<crate::datasets::PyCatTrjEv>()?;
@@ -69,22 +71,22 @@ mod causal_hub {
         m.add_class::<crate::datasets::PyCatWtdTrj>()?;
         m.add_class::<crate::datasets::PyCatWtdTrjs>()?;
 
-        // `estimators` module
+        // `estimators` module.
         m.add_function(wrap_pyfunction!(crate::estimation::em, m)?)?;
         m.add_function(wrap_pyfunction!(crate::estimation::sem, m)?)?;
         m.add_class::<crate::estimation::PyPK>()?;
 
-        // `models` module
+        // `models` module.
         m.add_class::<crate::models::PyCatBN>()?;
         m.add_class::<crate::models::PyGaussBN>()?;
         m.add_class::<crate::models::PyCatCTBN>()?;
 
-        // `distributions` module
+        // `distributions` module.
         m.add_class::<crate::models::PyCatCPD>()?;
         m.add_class::<crate::models::PyGaussCPD>()?;
         m.add_class::<crate::models::PyCatCIM>()?;
 
-        // `graphs` module
+        // `graphs` module.
         m.add_class::<crate::models::PyDiGraph>()?;
 
         Ok(())

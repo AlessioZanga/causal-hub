@@ -32,8 +32,7 @@ impl PyCatTrj {
     ///
     /// # Arguments
     ///
-    /// * `df` - A Pandas DataFrame containing the trajectory data.
-    /// * `with_states` - An optional dictionary of states.
+    /// * `df` - A Pandas DataFrame.
     ///
     /// # Notes
     ///
@@ -45,12 +44,7 @@ impl PyCatTrj {
     /// A new categorical trajectory instance.
     ///
     #[new]
-    #[pyo3(signature = (df, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        df: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Import the pandas module.
         let pandas = py.import("pandas")?;
 
@@ -97,64 +91,35 @@ impl PyCatTrj {
         // Check that the data frame is not empty.
         assert!(!columns.is_empty(), "The data frame is empty.");
 
-        // Construct the states.
-        let states: States = with_states
-            // If `with_states` is provided, convert it to a Map.
-            .map(|states| {
-                // Iterate over the items.
-                states
-                    .items()
-                    .into_iter()
-                    .map(|key_value| {
-                        // Cast the key_value to a tuple.
-                        let (key, value) = key_value
-                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
-                            .unwrap();
-                        // Convert the key to a String.
-                        let key = key.extract::<String>().unwrap();
-                        // Convert the value to a Vec<String>.
-                        let value: Set<_> = value
-                            .try_iter()?
-                            .map(|x| x?.extract::<String>())
-                            .collect::<PyResult<_>>()?;
-                        // Return the key and value.
-                        Ok((key, value))
-                    })
-                    .collect::<PyResult<_>>()
+        // Convert the columns categories to states.
+        let states: States = columns
+            .into_iter()
+            // Return the column name and the set of unique values.
+            .map(|name| {
+                // Extract the column from the data frame.
+                let column = df.get_item(&name)?;
+
+                // Check that the dtype of the column is a string.
+                let dtype = column
+                    .getattr("dtype")?
+                    .getattr("name")?
+                    .extract::<String>()?;
+                assert_eq!(
+                    dtype, "category",
+                    "Expected a category column, but '{dtype}' found.",
+                );
+
+                // Invoke the 'cat' accessory method.
+                let states = column.getattr("cat")?.getattr("categories")?;
+                // Iterate over the states and convert them to a Vec<String>.
+                let states: Set<String> = states
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+
+                Ok((name, states))
             })
-            // Otherwise, infer the states from the columns.
-            .unwrap_or_else(|| {
-                // Convert the columns categories to states.
-                columns
-                    .into_iter()
-                    // Return the column name and the set of unique values.
-                    .map(|name| {
-                        // Extract the column from the data frame.
-                        let column = df.get_item(&name)?;
-
-                        // Check that the dtype of the column is a string.
-                        let dtype = column
-                            .getattr("dtype")?
-                            .getattr("name")?
-                            .extract::<String>()?;
-                        assert_eq!(
-                            dtype, "category",
-                            "Expected a category column, but '{dtype}' found.",
-                        );
-
-                        // Invoke the 'cat' accessory method.
-                        let states = column.getattr("cat")?.getattr("categories")?;
-                        // Iterate over the states and convert them to a Vec<String>.
-                        let states: Set<String> = states
-                            .try_iter()?
-                            .map(|x| x?.extract::<String>())
-                            .collect::<PyResult<_>>()?;
-
-                        Ok((name, states))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .unwrap();
+            .collect::<PyResult<_>>()?;
 
         // Initialize the categorical variables values.
         let mut values = Array2::from_elem(shape, CatType::default());
@@ -220,6 +185,37 @@ impl PyCatTrj {
             .collect())
     }
 
+    /// Sets the states of the categorical trajectory.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - A dictionary mapping variable names to their new states.
+    ///
+    pub fn set_states(&mut self, states: &Bound<'_, PyDict>) -> PyResult<()> {
+        // Iterate over the items.
+        let states: States = states
+            .items()
+            .into_iter()
+            .map(|key_value| {
+                // Cast the key_value to a tuple.
+                let (key, value) = key_value
+                    .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
+                    .unwrap();
+                // Convert the key to a String.
+                let key = key.extract::<String>().unwrap();
+                // Convert the value to a Vec<String>.
+                let value: Set<_> = value
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+                // Return the key and value.
+                Ok((key, value))
+            })
+            .collect::<PyResult<_>>()?;
+
+        todo!() // FIXME:
+    }
+
     /// Returns the times of the trajectory.
     ///
     /// # Returns
@@ -250,7 +246,6 @@ impl PyCatTrjs {
     /// # Arguments
     ///
     /// * `dfs` - An iterable of Pandas DataFrames containing the trajectory data.
-    /// * `with_states` - An optional dictionary of states.
     ///
     /// # Notes
     ///
@@ -262,16 +257,11 @@ impl PyCatTrjs {
     /// A new categorical trajectories instance.
     ///
     #[new]
-    #[pyo3(signature = (dfs, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        dfs: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, dfs: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrj> = dfs
             .try_iter()?
-            .map(|df| PyCatTrj::new(py, &df.unwrap(), with_states))
+            .map(|df| PyCatTrj::new(py, &df.unwrap()))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
@@ -313,6 +303,16 @@ impl PyCatTrjs {
                 (label, states)
             })
             .collect())
+    }
+
+    /// Sets the states of the categorical trajectories.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - A dictionary mapping variable names to their new states.
+    ///
+    pub fn set_states(&mut self, states: &Bound<'_, PyDict>) -> PyResult<()> {
+        todo!() // FIXME:
     }
 
     /// Return the trajectories.
