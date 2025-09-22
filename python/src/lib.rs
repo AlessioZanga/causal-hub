@@ -30,7 +30,7 @@ mod causal_hub {
 
         // `assets` module
 
-        // BNs
+        // Categorical BNs.
         m.add_function(wrap_pyfunction!(crate::assets::load_alarm, m)?)?;
         m.add_function(wrap_pyfunction!(crate::assets::load_andes, m)?)?;
         m.add_function(wrap_pyfunction!(crate::assets::load_asia, m)?)?;
@@ -52,7 +52,13 @@ mod causal_hub {
         m.add_function(wrap_pyfunction!(crate::assets::load_water, m)?)?;
         m.add_function(wrap_pyfunction!(crate::assets::load_win95pts, m)?)?;
 
-        // CTBNs
+        // Gaussian BNs.
+        m.add_function(wrap_pyfunction!(crate::assets::load_arth150, m)?)?;
+        m.add_function(wrap_pyfunction!(crate::assets::load_ecoli70, m)?)?;
+        m.add_function(wrap_pyfunction!(crate::assets::load_magic_irri, m)?)?;
+        m.add_function(wrap_pyfunction!(crate::assets::load_magic_niab, m)?)?;
+
+        // Categorical CTBNs.
         m.add_function(wrap_pyfunction!(crate::assets::load_eating, m)?)?;
 
         // `datasets` module
@@ -70,10 +76,12 @@ mod causal_hub {
 
         // `models` module
         m.add_class::<crate::models::PyCatBN>()?;
+        m.add_class::<crate::models::PyGaussBN>()?;
         m.add_class::<crate::models::PyCatCTBN>()?;
 
         // `distributions` module
         m.add_class::<crate::models::PyCatCPD>()?;
+        m.add_class::<crate::models::PyGaussCPD>()?;
         m.add_class::<crate::models::PyCatCIM>()?;
 
         // `graphs` module

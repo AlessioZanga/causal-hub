@@ -215,7 +215,7 @@ class CatCIM:
 
 class CatCPD:
     r"""
-    A struct representing a categorical conditional probability distribution (CPD).
+    A struct representing a categorical conditional probability distribution.
     """
     def __eq__(self, other:builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
@@ -1001,6 +1001,163 @@ class DiGraph:
         Write class to a JSON file.
         """
 
+class GaussBN:
+    r"""
+    A Gaussian Bayesian network.
+    """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+    def __new__(cls, graph:DiGraph, cpds:typing.Any) -> GaussBN:
+        r"""
+        Constructs a new Bayesian network.
+        
+        # Arguments
+        
+        * `graph` - The underlying graph.
+        * `cpds` - The conditional probability distributions.
+        
+        # Returns
+        
+        A new Bayesian network instance.
+        """
+    def name(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the name of the model, if any.
+        
+        # Returns
+        
+        The name of the model, if it exists.
+        """
+    def description(self) -> typing.Optional[builtins.str]:
+        r"""
+        Returns the description of the model, if any.
+        
+        # Returns
+        
+        The description of the model, if it exists.
+        """
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the variables.
+        
+        # Returns
+        
+        A reference to the labels.
+        """
+    def graph(self) -> DiGraph:
+        r"""
+        Returns the underlying graph.
+        
+        # Returns
+        
+        A reference to the graph.
+        """
+    def cpds(self) -> builtins.dict[builtins.str, GaussCPD]:
+        r"""
+        Returns the a map labels-distributions.
+        
+        # Returns
+        
+        A reference to the CPDs.
+        """
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        
+        # Returns
+        
+        The parameters size.
+        """
+    @classmethod
+    def from_json(cls, json:builtins.str) -> GaussBN:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, path:builtins.str) -> GaussBN:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
+        """
+
+class GaussCPD:
+    r"""
+    A struct representing a Gaussian conditional probability distribution.
+    """
+    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the label of the conditioned variable.
+        
+        # Returns
+        
+        A reference to the label.
+        """
+    def conditioning_labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the conditioned variables.
+        
+        # Returns
+        
+        A reference to the conditioning labels.
+        """
+    def parameters(self) -> None:
+        r"""
+        Returns the parameters.
+        
+        # Returns
+        
+        A reference to the parameters.
+        """
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        
+        # Returns
+        
+        The parameters size.
+        """
+    def sample_statistics(self) -> typing.Optional[dict]:
+        r"""
+        Returns the sample statistics used to fit the distribution, if any.
+        
+        # Returns
+        
+        A dictionary containing the sample statistics used to fit the distribution, if any.
+        """
+    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+        r"""
+        Returns the sample log-likelihood given the distribution, if any.
+        
+        # Returns
+        
+        The sample log-likelihood given the distribution.
+        """
+    @classmethod
+    def from_json(cls, json:builtins.str) -> GaussCPD:
+        r"""
+        Read class from a JSON string.
+        """
+    def to_json(self) -> builtins.str:
+        r"""
+        Write class to a JSON string.
+        """
+    @classmethod
+    def read_json(cls, path:builtins.str) -> GaussCPD:
+        r"""
+        Read class from a JSON file.
+        """
+    def write_json(self, path:builtins.str) -> None:
+        r"""
+        Write class to a JSON file.
+        """
+
 class PK:
     r"""
     A struct representing prior knowledge.
@@ -1015,107 +1172,127 @@ def em(evidence:CatTrjsEv, graph:DiGraph, max_iter:builtins.int=10, seed:builtin
 
 def load_alarm() -> CatBN:
     r"""
-    Load the `ALARM` BN from the assets.
+    Load the `ALARM` categorical BN from the assets.
     """
 
 def load_andes() -> CatBN:
     r"""
-    Load the `ANDES` BN from the assets.
+    Load the `ANDES` categorical BN from the assets.
+    """
+
+def load_arth150() -> GaussBN:
+    r"""
+    Load the `ARTH150` Gaussian BN from the assets.
     """
 
 def load_asia() -> CatBN:
     r"""
-    Load the `ASIA` BN from the assets.
+    Load the `ASIA` categorical BN from the assets.
     """
 
 def load_barley() -> CatBN:
     r"""
-    Load the `BARLEY` BN from the assets.
+    Load the `BARLEY` categorical BN from the assets.
     """
 
 def load_cancer() -> CatBN:
     r"""
-    Load the `CANCER` BN from the assets.
+    Load the `CANCER` categorical BN from the assets.
     """
 
 def load_child() -> CatBN:
     r"""
-    Load the `CHILD` BN from the assets.
+    Load the `CHILD` categorical BN from the assets.
     """
 
 def load_diabetes() -> CatBN:
     r"""
-    Load the `DIABETES` BN from the assets.
+    Load the `DIABETES` categorical BN from the assets.
     """
 
 def load_earthquake() -> CatBN:
     r"""
-    Load the `EARTHQUAKE` BN from the assets.
+    Load the `EARTHQUAKE` categorical BN from the assets.
     """
 
 def load_eating() -> CatCTBN:
     r"""
-    Load the `EATING` CTBN from the assets.
+    Load the `EATING` categorical CTBN from the assets.
+    """
+
+def load_ecoli70() -> GaussBN:
+    r"""
+    Load the `ECOLI70` Gaussian BN from the assets.
     """
 
 def load_hailfinder() -> CatBN:
     r"""
-    Load the `HAILFINDER` BN from the assets.
+    Load the `HAILFINDER` categorical BN from the assets.
     """
 
 def load_hepar2() -> CatBN:
     r"""
-    Load the `HEPAR2` BN from the assets.
+    Load the `HEPAR2` categorical BN from the assets.
     """
 
 def load_insurance() -> CatBN:
     r"""
-    Load the `INSURANCE` BN from the assets.
+    Load the `INSURANCE` categorical BN from the assets.
     """
 
 def load_link() -> CatBN:
     r"""
-    Load the `LINK` BN from the assets.
+    Load the `LINK` categorical BN from the assets.
+    """
+
+def load_magic_irri() -> GaussBN:
+    r"""
+    Load the `MAGIC_IRRI` Gaussian BN from the assets.
+    """
+
+def load_magic_niab() -> GaussBN:
+    r"""
+    Load the `MAGIC_NIAB` Gaussian BN from the assets.
     """
 
 def load_mildew() -> CatBN:
     r"""
-    Load the `MILDEW` BN from the assets.
+    Load the `MILDEW` categorical BN from the assets.
     """
 
 def load_munin1() -> CatBN:
     r"""
-    Load the `MUNIN1` BN from the assets.
+    Load the `MUNIN1` categorical BN from the assets.
     """
 
 def load_pathfinder() -> CatBN:
     r"""
-    Load the `PATHFINDER` BN from the assets.
+    Load the `PATHFINDER` categorical BN from the assets.
     """
 
 def load_pigs() -> CatBN:
     r"""
-    Load the `PIGS` BN from the assets.
+    Load the `PIGS` categorical BN from the assets.
     """
 
 def load_sachs() -> CatBN:
     r"""
-    Load the `SACHS` BN from the assets.
+    Load the `SACHS` categorical BN from the assets.
     """
 
 def load_survey() -> CatBN:
     r"""
-    Load the `SURVEY` BN from the assets.
+    Load the `SURVEY` categorical BN from the assets.
     """
 
 def load_water() -> CatBN:
     r"""
-    Load the `WATER` BN from the assets.
+    Load the `WATER` categorical BN from the assets.
     """
 
 def load_win95pts() -> CatBN:
     r"""
-    Load the `WIN95PTS` BN from the assets.
+    Load the `WIN95PTS` categorical BN from the assets.
     """
 
 def sem(evidence:CatTrjsEv, prior_knowledge:PK, algorithm:builtins.str, max_iter:builtins.int=10, seed:builtins.int=42, **kwargs) -> dict:

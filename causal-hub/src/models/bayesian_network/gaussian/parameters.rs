@@ -7,8 +7,7 @@ use serde::{
 };
 
 use crate::{
-    models::{CPD, GaussCPDS, Labelled},
-    types::Labels,
+    impl_json_io, models::{GaussCPDS, Labelled, CPD}, types::Labels
 };
 
 /// Parameters of a Gaussian CPD.
@@ -646,3 +645,6 @@ impl<'de> Deserialize<'de> for GaussCPD {
         deserializer.deserialize_struct("GaussCPD", FIELDS, GaussCPDVisitor)
     }
 }
+
+// Implement `JsonIO` for `GaussCPD`.
+impl_json_io!(GaussCPD);
