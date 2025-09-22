@@ -18,11 +18,11 @@ mod tests {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let ctbn = load_eating();
+            let model = load_eating();
 
             // Initialize evidence.
             let evidence = CatTrjEv::new(
-                ctbn.states().clone(),
+                model.states().clone(),
                 [
                     E::CertainPositiveInterval {
                         event: 2, // "Hungry"
@@ -52,7 +52,7 @@ mod tests {
             );
 
             // Initialize sampler.
-            let importance = ImportanceSampler::new(&mut rng, &ctbn, &evidence);
+            let importance = ImportanceSampler::new(&mut rng, &model, &evidence);
             // Sample from CTBN.
             let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
 
@@ -60,7 +60,7 @@ mod tests {
             let trajectory = weighted_trajectory.into_iter().next().unwrap().trajectory();
 
             // Check labels.
-            assert!(trajectory.labels().eq(ctbn.labels()));
+            assert!(trajectory.labels().eq(model.labels()));
             // Check sample size.
             assert_eq!(trajectory.sample_size(), 10.);
         }

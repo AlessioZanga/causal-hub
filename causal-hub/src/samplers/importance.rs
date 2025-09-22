@@ -133,7 +133,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         );
 
         // Allocate the sample.
-        let mut sample = Array::zeros(self.model.labels().len());
+        let mut sample = Array::zeros(self.model.cpds().len());
         // Initialize the weight.
         let mut weight = 1.;
 
@@ -210,7 +210,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
 
     fn sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples = Array2::zeros((n, self.model.labels().len()));
+        let mut samples = Array2::zeros((n, self.model.cpds().len()));
         // Allocate the weights.
         let mut weights = Array1::zeros(n);
 
@@ -241,7 +241,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 
     fn par_sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples: Array2<CatType> = Array::zeros((n, self.model.labels().len()));
+        let mut samples: Array2<CatType> = Array::zeros((n, self.model.cpds().len()));
         // Allocate the weights.
         let mut weights: Array1<f64> = Array::zeros(n);
 

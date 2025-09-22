@@ -7,12 +7,12 @@ use rand::{
     Rng, SeedableRng,
     distr::{Distribution, weighted::WeightedIndex},
 };
-use rand_distr::Exp;
+use rand_distr::{Exp, Normal};
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatSample, CatTable, CatTrj, CatType},
-    models::{BN, CPD, CTBN, CatBN, CatCTBN, Labelled},
+    datasets::{CatSample, CatTable, CatTrj, CatType, GaussTable},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::EPSILON,
@@ -52,7 +52,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
 
     fn sample(&self) -> Self::Sample {
         // Allocate the sample.
-        let mut sample = Array::zeros(self.model.labels().len());
+        let mut sample = Array::zeros(self.model.cpds().len());
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
@@ -76,7 +76,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
 
     fn sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the dataset.
-        let mut dataset = Array::zeros((n, self.model.labels().len()));
+        let mut dataset = Array::zeros((n, self.model.cpds().len()));
 
         // For each sample ...
         dataset.rows_mut().into_iter().for_each(|mut row| {
@@ -97,7 +97,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
         let seeds: Vec<_> = self.rng.borrow_mut().random_iter().take(n).collect();
 
         // Allocate the samples.
-        let mut samples = Array::zeros((n, self.model.labels().len()));
+        let mut samples = Array::zeros((n, self.model.cpds().len()));
 
         // Sample the samples in parallel.
         seeds
@@ -114,6 +114,78 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
 
         // Construct the dataset.
         CatTable::new(self.model.states().clone(), samples)
+    }
+}
+
+impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
+    type Sample = <GaussBN as BN>::Sample;
+    type Samples = <GaussBN as BN>::Samples;
+
+    fn sample(&self) -> Self::Sample {
+        // Allocate the sample.
+        let mut sample = Array::zeros(self.model.cpds().len());
+
+        // For each vertex in the topological order ...
+        self.model.topological_order().iter().for_each(|&i| {
+            // Get the CPD.
+            let cpd_i = &self.model.cpds()[i].parameters();
+            // Get the parameters.
+            let a = cpd_i.coefficients().row(0);
+            let b = cpd_i.intercept()[0];
+            let s = cpd_i.covariance()[[0, 0]].sqrt();
+            // Get the parents.
+            let pa_i = self.model.graph().parents(&set![i]);
+            let z = Array::from_iter(pa_i.iter().map(|&z| sample[z]));
+            // Sample from the normal distribution.
+            let normal = Normal::new(0., s).unwrap();
+            let e = normal.sample(&mut self.rng.borrow_mut());
+            // Compute the value of the variable.
+            sample[i] = a.dot(&z) + b + e;
+        });
+
+        sample
+    }
+
+    fn sample_n(&self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples = Array::zeros((n, self.model.cpds().len()));
+
+        // For each sample ...
+        samples.rows_mut().into_iter().for_each(|mut row| {
+            // Sample from the distribution.
+            row.assign(&self.sample());
+        });
+
+        // Construct the dataset.
+        GaussTable::new(self.model.labels().clone(), samples)
+    }
+}
+
+impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
+    type Samples = <GaussBN as BN>::Samples;
+
+    fn par_sample_n(&self, n: usize) -> Self::Samples {
+        // Generate a random seed for each sample.
+        let seeds: Vec<_> = self.rng.borrow_mut().random_iter().take(n).collect();
+
+        // Allocate the samples.
+        let mut samples = Array::zeros((n, self.model.cpds().len()));
+
+        // Sample the samples in parallel.
+        seeds
+            .into_par_iter()
+            .zip(samples.axis_iter_mut(Axis(0)))
+            .for_each(|(seed, mut row)| {
+                // Create a new random number generator with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the random number generator and model.
+                let sampler = ForwardSampler::new(&mut rng, self.model);
+                // Sample from the distribution.
+                row.assign(&sampler.sample());
+            });
+
+        // Construct the dataset.
+        GaussTable::new(self.model.labels().clone(), samples)
     }
 }
 

@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use dry::macro_for;
 use ndarray::prelude::*;
-use ndarray_linalg::{Cholesky, Determinant, Diag, SolveTriangularInplace, UPLO};
+use ndarray_linalg::{CholeskyInto, Determinant, Diag, SolveTriangularInplace, UPLO};
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
@@ -125,31 +125,40 @@ impl CPDEstimator<GaussCPD> for MLE<'_, GaussTable> {
             sample_statistics.sample_size(),
         );
 
-        // Compute the coefficient matrix avoiding matrix inversion.
-
-        // Step 0: Regularize S_zz by adding a small value to the diagonal.
-        let mut s_zz_reg = s_zz.clone();
-        s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += EPSILON);
-        // Step 1: Perform Cholesky decomposition of S_zz.
-        let l = s_zz_reg
-            .cholesky(UPLO::Lower)
-            .expect("Failed to compute Cholesky decomposition of S_zz.");
-        // Step 2: Solve L Y = S_xz^T.
-        let mut y = s_xz.t().to_owned();
-        l.solve_triangular_inplace(UPLO::Lower, Diag::NonUnit, &mut y)
-            .expect("Failed to solve L Y = S_xz^T system.");
-        // Step 3: Solve L^T A^T = Y.
-        let l_t = l.t().to_owned();
-        l_t.solve_triangular_inplace(UPLO::Upper, Diag::NonUnit, &mut y)
-            .expect("Failed to solve L^T A^T = Y .");
-        // Step 4: Transpose to get A.
-        let a = y.t().to_owned();
-
-        // Compute the intercept vector.
-        let b = mu_x - &a.dot(mu_z);
-
-        // Compute the covariance matrix.
-        let s = (s_xx - &a.dot(&s_xz.t())) / n;
+        // Compute the parameters in closed form.
+        let (a, b, s) = if z.is_empty() {
+            // Compute the parameters as the empirical mean and covariance.
+            let a = Array2::zeros((x.len(), 0));
+            let b = mu_x.clone();
+            let s = s_xx / n;
+            // Return the parameters.
+            (a, b, s)
+        } else {
+            // Compute the coefficient matrix avoiding matrix inversion.
+            // Step 0: Regularize S_zz by adding a small value to the diagonal.
+            let mut s_zz_reg = s_zz.clone();
+            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += EPSILON);
+            // Step 1: Perform Cholesky decomposition of S_zz.
+            let l = s_zz_reg
+                .cholesky_into(UPLO::Lower)
+                .expect("Failed to compute Cholesky decomposition of S_zz.");
+            // Step 2: Solve L Y = S_xz^T.
+            let mut y = s_xz.t().to_owned();
+            l.solve_triangular_inplace(UPLO::Lower, Diag::NonUnit, &mut y)
+                .expect("Failed to solve L Y = S_xz^T system.");
+            // Step 3: Solve L^T A^T = Y.
+            let l_t = l.t().to_owned();
+            l_t.solve_triangular_inplace(UPLO::Upper, Diag::NonUnit, &mut y)
+                .expect("Failed to solve L^T A^T = Y .");
+            // Step 4: Transpose to get A.
+            let a = y.t().to_owned();
+            // Compute the intercept vector.
+            let b = mu_x - &a.dot(mu_z);
+            // Compute the covariance matrix.
+            let s = (s_xx - &a.dot(&s_xz.t())) / n;
+            // Return the parameters.
+            (a, b, s)
+        };
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
