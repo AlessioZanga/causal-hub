@@ -33,7 +33,6 @@ impl PyCatTrjEv {
     /// # Arguments
     ///
     /// * `df` - A Pandas DataFrame containing the trajectory evidence data.
-    /// * `with_states` - An optional dictionary of states.
     ///
     /// # Notes
     ///
@@ -48,12 +47,7 @@ impl PyCatTrjEv {
     /// A new categorical trajectory evidence instance.
     ///
     #[new]
-    #[pyo3(signature = (df, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        df: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Short the evidence.
         use CatTrjEvT as E;
 
@@ -131,36 +125,8 @@ impl PyCatTrjEv {
                 .to_owned_array(),
         );
 
-        // Construct the states.
-        let states: States = with_states
-            // If `with_states` is provided, convert it to a Map.
-            .map(|states| {
-                // Iterate over the items.
-                states
-                    .items()
-                    .into_iter()
-                    .map(|key_value| {
-                        // Cast the key_value to a tuple.
-                        let (key, value) = key_value
-                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
-                            .unwrap();
-                        // Convert the key to a String.
-                        let key = key.extract::<String>().unwrap();
-                        // Convert the value to a Vec<String>.
-                        let value: Set<_> = value
-                            .try_iter()?
-                            .map(|x| x?.extract::<String>())
-                            .collect::<PyResult<_>>()?;
-                        // Return the key and value.
-                        Ok((key, value))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            // Otherwise, infer the states from the columns.
-            .unwrap_or_else(|| {
-                todo!() // FIXME:
-            })
-            .unwrap();
+        // Infer the states from the columns.
+        let states: States = todo!(); // FIXME:
 
         // Zip the iterators together.
         let evidence = event
@@ -226,6 +192,37 @@ impl PyCatTrjEv {
             })
             .collect())
     }
+
+    /// Sets the states of the categorical trajectory.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - A dictionary mapping variable names to their new states.
+    ///
+    pub fn set_states(&mut self, states: &Bound<'_, PyDict>) -> PyResult<()> {
+        // Iterate over the items.
+        let states: States = states
+            .items()
+            .into_iter()
+            .map(|key_value| {
+                // Cast the key_value to a tuple.
+                let (key, value) = key_value
+                    .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
+                    .unwrap();
+                // Convert the key to a String.
+                let key = key.extract::<String>().unwrap();
+                // Convert the value to a Vec<String>.
+                let value: Set<_> = value
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+                // Return the key and value.
+                Ok((key, value))
+            })
+            .collect::<PyResult<_>>()?;
+
+        todo!() // FIXME:
+    }
 }
 
 /// A collection of categorical trajectory evidences.
@@ -247,7 +244,6 @@ impl PyCatTrjsEv {
     /// # Arguments
     ///
     /// * `dfs` - An iterable of Pandas DataFrames containing the trajectory evidence data.
-    /// * `with_states` - An optional dictionary of states.
     ///
     /// # Notes
     ///
@@ -262,16 +258,11 @@ impl PyCatTrjsEv {
     /// A new categorical trajectory evidence instance.
     ///
     #[new]
-    #[pyo3(signature = (dfs, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        dfs: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, dfs: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrjEv> = dfs
             .try_iter()?
-            .map(|df| PyCatTrjEv::new(py, &df.unwrap(), with_states))
+            .map(|df| PyCatTrjEv::new(py, &df.unwrap()))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
@@ -313,5 +304,15 @@ impl PyCatTrjsEv {
                 (label, states)
             })
             .collect())
+    }
+
+    /// Sets the states of the categorical trajectory.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - A dictionary mapping variable names to their new states.
+    ///
+    pub fn set_states(&mut self, states: &Bound<'_, PyDict>) -> PyResult<()> {
+        todo!() // FIXME:
     }
 }

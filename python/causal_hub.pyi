@@ -489,14 +489,13 @@ class CatTrjEv:
     r"""
     A categorical trajectory evidence.
     """
-    def __new__(cls, df:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjEv:
+    def __new__(cls, df:typing.Any) -> CatTrjEv:
         r"""
         Constructs a new categorical trajectory evidence from a Pandas DataFrame.
         
         # Arguments
         
         * `df` - A Pandas DataFrame containing the trajectory evidence data.
-        * `with_states` - An optional dictionary of states.
         
         # Notes
         
@@ -525,6 +524,14 @@ class CatTrjEv:
         # Returns
         
         A reference to the states of the categorical trajectory.
+        """
+    def set_states(self, states:dict) -> None:
+        r"""
+        Sets the states of the categorical trajectory.
+        
+        # Arguments
+        
+        * `states` - A dictionary mapping variable names to their new states.
         """
 
 class CatTrjs:
@@ -585,14 +592,13 @@ class CatTrjsEv:
     r"""
     A collection of categorical trajectory evidences.
     """
-    def __new__(cls, dfs:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjsEv:
+    def __new__(cls, dfs:typing.Any) -> CatTrjsEv:
         r"""
         Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
         
         # Arguments
         
         * `dfs` - An iterable of Pandas DataFrames containing the trajectory evidence data.
-        * `with_states` - An optional dictionary of states.
         
         # Notes
         
@@ -621,6 +627,14 @@ class CatTrjsEv:
         # Returns
         
         A reference to the states of the categorical trajectory.
+        """
+    def set_states(self, states:dict) -> None:
+        r"""
+        Sets the states of the categorical trajectory.
+        
+        # Arguments
+        
+        * `states` - A dictionary mapping variable names to their new states.
         """
 
 class CatWtdTrj:

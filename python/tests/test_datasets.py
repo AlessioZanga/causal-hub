@@ -48,7 +48,9 @@ def test_categorical_trajectory_with_states() -> None:
     columns = list(set(df.columns) - {"time"})
     df[columns] = df[columns].astype("category")
     # Create a CatTrj object.
-    trj = CatTrj(df, with_states=states)
+    trj = CatTrj(df)
+    # Set the states.
+    trj.set_states(states)
 
     # Check the variables.
     assert trj.labels() == ["column_1", "column_2"], "Wrong labels."
@@ -123,7 +125,9 @@ def test_categorical_trajectories_with_states() -> None:
         df[columns] = df[columns].astype("category")
 
     # Create a CatTrjs object.
-    trjs = CatTrjs(dfs, with_states=states)
+    trjs = CatTrjs(dfs)
+    # Set the states.
+    trjs.set_states(states)
 
     # Check the variables.
     assert trjs.labels() == ["column_1", "column_2"], "Wrong labels."
@@ -154,7 +158,9 @@ def test_categorical_trajectory_evidence() -> None:
     df[time_columns] = df[time_columns].astype("float64")
 
     # Create a CatTrjEv object.
-    trj_ev = CatTrjEv(df, with_states=states)
+    trj_ev = CatTrjEv(df)
+    # Set the states.
+    trj_ev.set_states(states)
 
     # Check the variables.
     assert trj_ev.labels() == ["A", "B", "C"], "Wrong labels."
