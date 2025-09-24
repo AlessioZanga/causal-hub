@@ -12,14 +12,14 @@ pub type CatWtdSample = (CatSample, f64);
 /// A multivariate categorical weighted dataset.
 #[derive(Clone, Debug)]
 pub struct CatWtdTable {
-    data: CatTable,
+    dataset: CatTable,
     weights: Array1<f64>,
 }
 
 impl Labelled for CatWtdTable {
     #[inline]
     fn labels(&self) -> &Labels {
-        self.data.labels()
+        self.dataset.labels()
     }
 }
 
@@ -28,7 +28,7 @@ impl CatWtdTable {
     ///
     /// # Arguments
     ///
-    /// * `data` - The categorical dataset.
+    /// * `dataset` - The categorical dataset.
     /// * `weights` - The weights of the samples.
     ///
     /// # Panics
@@ -40,9 +40,9 @@ impl CatWtdTable {
     ///
     /// A new categorical weighted dataset instance.
     ///
-    pub fn new(data: CatTable, weights: Array1<f64>) -> Self {
+    pub fn new(dataset: CatTable, weights: Array1<f64>) -> Self {
         assert_eq!(
-            data.values().nrows(),
+            dataset.values().nrows(),
             weights.len(),
             "The number of weights must be equal to the number of samples."
         );
@@ -51,7 +51,7 @@ impl CatWtdTable {
             "All weights must be in the range [0, 1]."
         );
 
-        Self { data, weights }
+        Self { dataset, weights }
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -62,7 +62,7 @@ impl CatWtdTable {
     ///
     #[inline]
     pub const fn states(&self) -> &States {
-        self.data.states()
+        self.dataset.states()
     }
 
     /// Returns the shape of the set of states in the categorical distribution.
@@ -73,7 +73,7 @@ impl CatWtdTable {
     ///
     #[inline]
     pub const fn shape(&self) -> &Array1<usize> {
-        self.data.shape()
+        self.dataset.shape()
     }
 
     /// Returns the weights of the samples in the categorical distribution.
@@ -93,7 +93,7 @@ impl Dataset for CatWtdTable {
 
     #[inline]
     fn values(&self) -> &Self::Values {
-        &self.data
+        &self.dataset
     }
 
     #[inline]

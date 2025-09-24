@@ -140,7 +140,7 @@ mod tests {
             // Define the maximization step.
             let m_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                 // Initialize the parameter estimator.
-                let estimator = BE::new(expectation, (1, 1.));
+                let estimator = BE::new(expectation).with_prior((1, 1.));
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Initialize the F test.

@@ -202,7 +202,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     fn sample_statistics(&self) -> Option<&Self::Statistics>;
 
-    /// Returns the log-likelihood of the fitted data, if any.
+    /// Returns the log-likelihood of the fitted dataset, if any.
     ///
     /// # Returns
     ///

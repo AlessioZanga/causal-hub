@@ -123,7 +123,7 @@ where
     ///
     fn model(&self) -> &T;
 
-    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence.
+    /// Estimate the values of `x` conditioned on `z` using `n` samples.
     ///
     /// # Arguments
     ///
@@ -138,9 +138,9 @@ where
     ///
     /// # Returns
     ///
-    /// The predicted values of `x` conditioned on `z`.
+    /// The estimated values of `x` conditioned on `z`.
     ///
-    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
 impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
@@ -150,7 +150,7 @@ impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
         self.model
     }
 
-    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -186,7 +186,7 @@ impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
         self.model
     }
 
-    fn predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -220,7 +220,7 @@ impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
             // Delegate to empty evidence case.
             None => ApproximateInference::new(&mut rng, self.model)
                 .with_sample_size(n)
-                .predict(x, z),
+                .estimate(x, z),
         }
     }
 }
@@ -233,7 +233,7 @@ where
     /// The output type.
     type Output;
 
-    /// Predict the values of `x` conditioned on `z` using `n` samples, without evidence, in parallel.
+    /// Estimate the values of `x` conditioned on `z` using `n` samples, in parallel.
     ///
     /// # Arguments
     ///
@@ -248,15 +248,15 @@ where
     ///
     /// # Returns
     ///
-    /// The predicted values of `x` conditioned on `z`.
+    /// The estimated values of `x` conditioned on `z`.
     ///
-    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
     type Output = CatCPD;
 
-    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -288,7 +288,7 @@ impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R,
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
     type Output = CatCPD;
 
-    fn par_predict(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -322,7 +322,7 @@ impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R,
             // Delegate to empty evidence case.
             None => ApproximateInference::new(&mut rng, self.model)
                 .with_sample_size(n)
-                .predict(x, z),
+                .estimate(x, z),
         }
     }
 }

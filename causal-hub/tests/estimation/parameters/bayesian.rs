@@ -29,7 +29,7 @@ mod tests {
                 ];
                 let dataset = CatTable::new(states, values);
 
-                let estimator = BE::new(&dataset, 1);
+                let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
                 let distribution = estimator.fit(&set![0], &set![]);
@@ -149,7 +149,7 @@ mod tests {
                 ];
                 let dataset = CatTable::new(states, values);
 
-                let estimator = BE::new(&dataset, 1);
+                let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A | A, C)
                 let _ = estimator.fit(&set![0], &set![0, 2]);
