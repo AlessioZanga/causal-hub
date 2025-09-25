@@ -6,7 +6,7 @@ set -o pipefail
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate causal-hub
 # Clean up previous coverage data files.
-rm -rf coverage_html *.profraw *.profdata
+rm -rf coverage_html *.profraw *.profdata ../*.profraw ../*.profdata
 # Enable coverage instrumentation for Rust code when building the Python extension.
 RUSTFLAGS="-Cinstrument-coverage" \
 LLVM_PROFILE_FILE="coverage-%p-%m.profraw" \
