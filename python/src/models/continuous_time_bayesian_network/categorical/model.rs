@@ -8,6 +8,7 @@ use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 
 use crate::{
+    datasets::PyCatTrj,
     impl_deref_from_into,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
@@ -132,6 +133,34 @@ impl PyCatCTBN {
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
+    }
+
+    /// Fit the model to a dataset and a given graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - The dataset to fit the model to.
+    /// * `graph` - The graph to fit the model to.
+    /// * `method` - The method to use for fitting (default is `mle`).
+    /// * `seed` - The seed of the random number generator (default is `31`).
+    /// * `parallel` - The flag to enable parallel fitting (default is `true`).
+    ///
+    /// # Returns
+    ///
+    /// A new fitted model.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dataset, graph, method="mle", seed=31, parallel=true))]
+    pub fn fit(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dataset: &Bound<'_, PyCatTrj>,
+        graph: &Bound<'_, PyDiGraph>,
+        method: &str,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<Self> {
+        todo!() // FIXME:
     }
 
     /// Read class from a JSON string.

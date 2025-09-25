@@ -3,11 +3,15 @@ use std::collections::BTreeMap;
 use backend::{
     io::JsonIO,
     models::{BN, DiGraph, GaussBN, Labelled},
+    samplers::{BNSampler, ForwardSampler, ParBNSampler},
 };
 use pyo3::{prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
+    datasets::PyGaussTable,
     impl_deref_from_into,
     models::{PyDiGraph, PyGaussCPD},
 };
@@ -122,6 +126,124 @@ impl PyGaussBN {
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
+    }
+
+    /// Fit the model to a dataset and a given graph.
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - The dataset to fit the model to.
+    /// * `graph` - The graph to fit the model to.
+    /// * `method` - The method to use for fitting (default is `mle`).
+    /// * `seed` - The seed of the random number generator (default is `31`).
+    /// * `parallel` - The flag to enable parallel fitting (default is `true`).
+    ///
+    /// # Returns
+    ///
+    /// A new fitted model.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dataset, graph, method="mle", seed=31, parallel=true))]
+    pub fn fit(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dataset: &Bound<'_, PyGaussTable>,
+        graph: &Bound<'_, PyDiGraph>,
+        method: &str,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<Self> {
+        todo!() // FIXME:
+    }
+
+    /// Generate samples from the model.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The number of samples to generate.
+    /// * `seed` - The seed of the random number generator (default is `31`).
+    /// * `parallel` - The flag to enable parallel sampling (default is `true`).
+    ///
+    /// # Returns
+    ///
+    /// A new dataset containing the samples.
+    ///
+    #[pyo3(signature = (n, seed=31, parallel=true))]
+    pub fn sample(
+        &self,
+        py: Python<'_>,
+        n: usize,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<PyGaussTable> {
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Initialize the sampler.
+        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        // Sample from the model.
+        let dataset = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || sampler.par_sample_n(n))
+        } else {
+            // Sample sequentially.
+            sampler.sample_n(n)
+        };
+        // Return the dataset.
+        Ok(dataset.into())
+    }
+
+    /// Estimate a conditional probability distribution.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - A variable or an iterable of variables.
+    /// * `z` - A conditioning variable or an iterable of conditioning variables.
+    /// * `method` - The method to use for estimation (default is `approximate`).
+    /// * `seed` - The seed of the random number generator (default is `31`).
+    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
+    ///
+    /// # Returns
+    ///
+    /// A new conditional probability distribution.
+    ///
+    #[pyo3(signature = (x, z, method="approximate", seed=31, parallel=true))]
+    pub fn estimate(
+        &self,
+        x: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+        method: &str,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<PyGaussCPD> {
+        todo!() // FIXME:
+    }
+
+    /// Estimate a conditional causal effect (CACE).
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - An intervention variable or an iterable of intervention variables.
+    /// * `y` - An outcome variable or an iterable of outcome variables.
+    /// * `z` - A conditioning variable or an iterable of conditioning variables.
+    /// * `method` - The method to use for estimation (default is `approximate`).
+    /// * `seed` - The seed of the random number generator (default is `31`).
+    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
+    ///
+    /// # Returns
+    ///
+    /// A new conditional causal effect (CACE) distribution.
+    ///
+    #[pyo3(signature = (x, y, z, method="approximate", seed=31, parallel=true))]
+    pub fn do_estimate(
+        &self,
+        x: &Bound<'_, PyAny>,
+        y: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+        method: &str,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<PyGaussCPD> {
+        todo!() // FIXME:
     }
 
     /// Read class from a JSON string.

@@ -73,6 +73,69 @@ class CatBN:
         The parameters size.
         """
     @classmethod
+    def fit(cls, dataset:CatTable, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatBN:
+        r"""
+        Fit the model to a dataset and a given graph.
+        
+        # Arguments
+        
+        * `dataset` - The dataset to fit the model to.
+        * `graph` - The graph to fit the model to.
+        * `method` - The method to use for fitting (default is `mle`).
+        * `parallel` - The flag to enable parallel fitting (default is `true`).
+        * `kwargs` - Optional keyword arguments:
+            - `alpha` - The prior of the Bayesian estimator.
+        
+        # Returns
+        
+        A new fitted model.
+        """
+    def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTable:
+        r"""
+        Generate samples from the model.
+        
+        # Arguments
+        
+        * `n` - The number of samples to generate.
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel sampling (default is `true`).
+        
+        # Returns
+        
+        A new dataset containing the samples.
+        """
+    def estimate(self, x:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> CatCPD:
+        r"""
+        Estimate a conditional probability distribution (CPD).
+        
+        # Arguments
+        
+        * `x` - A variable or an iterable of variables.
+        * `z` - A conditioning variable or an iterable of conditioning variables.
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel estimation (default is `true`).
+        
+        # Returns
+        
+        A new conditional probability distribution.
+        """
+    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> typing.Optional[CatCPD]:
+        r"""
+        Estimate a conditional causal effect (CACE).
+        
+        # Arguments
+        
+        * `x` - An intervention variable or an iterable of intervention variables.
+        * `y` - An outcome variable or an iterable of outcome variables.
+        * `z` - A conditioning variable or an iterable of conditioning variables.
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel estimation (default is `true`).
+        
+        # Returns
+        
+        A new conditional causal effect (CACE) distribution.
+        """
+    @classmethod
     def from_bif(cls, bif:builtins.str) -> CatBN:
         r"""
         Read class from a BIF string.
@@ -396,6 +459,23 @@ class CatCTBN:
         The parameters size.
         """
     @classmethod
+    def fit(cls, dataset:CatTrj, graph:DiGraph, method:builtins.str='mle', seed:builtins.int=31, parallel:builtins.bool=True) -> CatCTBN:
+        r"""
+        Fit the model to a dataset and a given graph.
+        
+        # Arguments
+        
+        * `dataset` - The dataset to fit the model to.
+        * `graph` - The graph to fit the model to.
+        * `method` - The method to use for fitting (default is `mle`).
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel fitting (default is `true`).
+        
+        # Returns
+        
+        A new fitted model.
+        """
+    @classmethod
     def from_json(cls, json:builtins.str) -> CatCTBN:
         r"""
         Read class from a JSON string.
@@ -429,6 +509,34 @@ class CatTable:
         # Returns
         
         A new categorical tabular dataset instance.
+        """
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+        
+        # Returns
+        
+        A list of strings containing the labels of the dataset.
+        """
+    def values(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The values of the dataset.
+        
+        # Returns
+        
+        A 2D NumPy array containing the values of the dataset.
+        """
+    def sample_size(self) -> builtins.float:
+        r"""
+        The sample size.
+        
+        # Notes
+        
+        If the dataset is weighted, this returns the sum of the weights.
+        
+        # Returns
+        
+        The number of samples in the dataset.
         """
 
 class CatTrj:
@@ -1113,6 +1221,70 @@ class GaussBN:
         The parameters size.
         """
     @classmethod
+    def fit(cls, dataset:GaussTable, graph:DiGraph, method:builtins.str='mle', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussBN:
+        r"""
+        Fit the model to a dataset and a given graph.
+        
+        # Arguments
+        
+        * `dataset` - The dataset to fit the model to.
+        * `graph` - The graph to fit the model to.
+        * `method` - The method to use for fitting (default is `mle`).
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel fitting (default is `true`).
+        
+        # Returns
+        
+        A new fitted model.
+        """
+    def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> GaussTable:
+        r"""
+        Generate samples from the model.
+        
+        # Arguments
+        
+        * `n` - The number of samples to generate.
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel sampling (default is `true`).
+        
+        # Returns
+        
+        A new dataset containing the samples.
+        """
+    def estimate(self, x:typing.Any, z:typing.Any, method:builtins.str='approximate', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
+        r"""
+        Estimate a conditional probability distribution.
+        
+        # Arguments
+        
+        * `x` - A variable or an iterable of variables.
+        * `z` - A conditioning variable or an iterable of conditioning variables.
+        * `method` - The method to use for estimation (default is `approximate`).
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel estimation (default is `true`).
+        
+        # Returns
+        
+        A new conditional probability distribution.
+        """
+    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, method:builtins.str='approximate', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
+        r"""
+        Estimate a conditional causal effect (CACE).
+        
+        # Arguments
+        
+        * `x` - An intervention variable or an iterable of intervention variables.
+        * `y` - An outcome variable or an iterable of outcome variables.
+        * `z` - A conditioning variable or an iterable of conditioning variables.
+        * `method` - The method to use for estimation (default is `approximate`).
+        * `seed` - The seed of the random number generator (default is `31`).
+        * `parallel` - The flag to enable parallel estimation (default is `true`).
+        
+        # Returns
+        
+        A new conditional causal effect (CACE) distribution.
+        """
+    @classmethod
     def from_json(cls, json:builtins.str) -> GaussBN:
         r"""
         Read class from a JSON string.
@@ -1218,6 +1390,34 @@ class GaussTable:
         # Returns
         
         A new Gaussian tabular dataset instance.
+        """
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+        
+        # Returns
+        
+        A list of strings containing the labels of the dataset.
+        """
+    def values(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The values of the dataset.
+        
+        # Returns
+        
+        A 2D NumPy array containing the values of the dataset.
+        """
+    def sample_size(self) -> builtins.float:
+        r"""
+        The sample size.
+        
+        # Notes
+        
+        If the dataset is weighted, this returns the sum of the weights.
+        
+        # Returns
+        
+        The number of samples in the dataset.
         """
 
 class PK:

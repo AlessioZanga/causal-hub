@@ -3,17 +3,16 @@ use backend::{
     io::JsonIO,
     models::{DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Set},
+    types::Labels,
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
-    exceptions::PyTypeError,
     prelude::*,
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::{impl_deref_from_into, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
@@ -103,7 +102,7 @@ impl PyDiGraph {
     ///
     pub fn has_vertex(&self, x: &str) -> PyResult<bool> {
         // Get the labels of the vertices.
-        let x = self.inner.label_to_index(x);
+        let x = self.label_to_index(x);
         // Check if the vertex exists in the graph.
         Ok(self.inner.has_vertex(x))
     }
@@ -143,8 +142,8 @@ impl PyDiGraph {
     ///
     pub fn has_edge(&self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(x);
-        let y = self.inner.label_to_index(y);
+        let x = self.label_to_index(x);
+        let y = self.label_to_index(y);
         // Check if the edge exists in the graph.
         Ok(self.inner.has_edge(x, y))
     }
@@ -162,8 +161,8 @@ impl PyDiGraph {
     ///
     pub fn add_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(x);
-        let y = self.inner.label_to_index(y);
+        let x = self.label_to_index(x);
+        let y = self.label_to_index(y);
         // Add the edge to the graph.
         Ok(self.inner.add_edge(x, y))
     }
@@ -181,8 +180,8 @@ impl PyDiGraph {
     ///
     pub fn del_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
         // Get the indices of the vertices.
-        let x = self.inner.label_to_index(x);
-        let y = self.inner.label_to_index(y);
+        let x = self.label_to_index(x);
+        let y = self.label_to_index(y);
         // Delete the edge from the graph.
         Ok(self.inner.del_edge(x, y))
     }
@@ -199,19 +198,7 @@ impl PyDiGraph {
     ///
     pub fn parents(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = if let Ok(x) = x.extract::<String>() {
-            Ok(set![self.inner.label_to_index(&x)])
-        } else if let Ok(x) = x.try_iter() {
-            x.map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()
-        } else {
-            Err(PyErr::new::<PyTypeError, _>(
-                "Expected a string or an iterable of strings.",
-            ))
-        }?;
+        let x = indices_from!(x, self)?;
         // Get the parents of the vertex.
         Ok(self
             .inner
@@ -233,19 +220,7 @@ impl PyDiGraph {
     ///
     pub fn ancestors(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = if let Ok(x) = x.extract::<String>() {
-            Ok(set![self.inner.label_to_index(&x)])
-        } else if let Ok(x) = x.try_iter() {
-            x.map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()
-        } else {
-            Err(PyErr::new::<PyTypeError, _>(
-                "Expected a string or an iterable of strings.",
-            ))
-        }?;
+        let x = indices_from!(x, self)?;
         // Get the ancestors of the vertex.
         Ok(self
             .inner
@@ -267,19 +242,7 @@ impl PyDiGraph {
     ///
     pub fn children(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = if let Ok(x) = x.extract::<String>() {
-            Ok(set![self.inner.label_to_index(&x)])
-        } else if let Ok(x) = x.try_iter() {
-            x.map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()
-        } else {
-            Err(PyErr::new::<PyTypeError, _>(
-                "Expected a string or an iterable of strings.",
-            ))
-        }?;
+        let x = indices_from!(x, self)?;
         // Get the children of the vertex.
         Ok(self
             .inner
@@ -301,19 +264,7 @@ impl PyDiGraph {
     ///
     pub fn descendants(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
         // Get the index of the vertex.
-        let x = if let Ok(x) = x.extract::<String>() {
-            Ok(set![self.inner.label_to_index(&x)])
-        } else if let Ok(x) = x.try_iter() {
-            x.map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()
-        } else {
-            Err(PyErr::new::<PyTypeError, _>(
-                "Expected a string or an iterable of strings.",
-            ))
-        }?;
+        let x = indices_from!(x, self)?;
         // Get the descendants of the vertex.
         Ok(self
             .inner
@@ -348,28 +299,9 @@ impl PyDiGraph {
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let z: Set<usize> = z
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let z = indices_from!(z, self)?;
         // Delegate to the inner method.
         Ok(self.inner.is_separator_set(&x, &y, &z))
     }
@@ -405,48 +337,11 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let z: Set<usize> = z
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let w: Option<Set<usize>> = w
-            .map(|w| {
-                w.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
-        let v: Option<Set<usize>> = v
-            .map(|v| {
-                v.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
-
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let z = indices_from!(z, self)?;
+        let w = w.map(|w| indices_from!(w, self)).transpose()?;
+        let v = v.map(|v| indices_from!(v, self)).transpose()?;
         // Delegate to the inner method.
         Ok(self
             .inner
@@ -482,40 +377,10 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<Vec<&str>>> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let w: Option<Set<usize>> = w
-            .map(|w| {
-                w.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
-        let v: Option<Set<usize>> = v
-            .map(|v| {
-                v.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let w = w.map(|w| indices_from!(w, self)).transpose()?;
+        let v = v.map(|v| indices_from!(v, self)).transpose()?;
 
         // Find the minimal separator.
         let z = self
@@ -558,28 +423,9 @@ impl PyDiGraph {
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let z: Set<usize> = z
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let z = indices_from!(z, self)?;
         // Delegate to the inner method.
         Ok(self.inner.is_backdoor_set(&x, &y, &z))
     }
@@ -615,47 +461,11 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let z: Set<usize> = z
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let w: Option<Set<usize>> = w
-            .map(|w| {
-                w.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
-        let v: Option<Set<usize>> = v
-            .map(|v| {
-                v.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let z = indices_from!(z, self)?;
+        let w = w.map(|w| indices_from!(w, self)).transpose()?;
+        let v = v.map(|v| indices_from!(v, self)).transpose()?;
 
         // Delegate to the inner method.
         Ok(self
@@ -692,40 +502,10 @@ impl PyDiGraph {
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Option<Vec<&str>>> {
         // Convert Python iterators into Rust iterators on indices.
-        let x: Set<usize> = x
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let y: Set<usize> = y
-            .try_iter()?
-            .map(|x| {
-                x?.extract::<String>()
-                    .map(|x| self.inner.label_to_index(&x))
-            })
-            .collect::<PyResult<_>>()?;
-        let w: Option<Set<usize>> = w
-            .map(|w| {
-                w.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
-        let v: Option<Set<usize>> = v
-            .map(|v| {
-                v.try_iter()?
-                    .map(|x| {
-                        x?.extract::<String>()
-                            .map(|x| self.inner.label_to_index(&x))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .transpose()?;
+        let x = indices_from!(x, self)?;
+        let y = indices_from!(y, self)?;
+        let w = w.map(|w| indices_from!(w, self)).transpose()?;
+        let v = v.map(|v| indices_from!(v, self)).transpose()?;
 
         // Find the minimal backdoor.
         let z = self

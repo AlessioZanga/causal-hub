@@ -1,4 +1,8 @@
-use backend::datasets::GaussTable;
+use backend::{
+    datasets::{Dataset, GaussTable, GaussType},
+    models::Labelled,
+};
+use numpy::{PyArray2, ToPyArray};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
@@ -52,5 +56,39 @@ impl PyGaussTable {
             .collect::<PyResult<_>>()?;
 
         todo!() // FIXME:
+    }
+
+    /// The labels of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A list of strings containing the labels of the dataset.
+    ///
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
+        Ok(self.inner.labels().iter().map(String::as_str).collect())
+    }
+
+    /// The values of the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A 2D NumPy array containing the values of the dataset.
+    ///
+    pub fn values<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<GaussType>>> {
+        Ok(self.inner.values().to_pyarray(py))
+    }
+
+    /// The sample size.
+    ///
+    /// # Notes
+    ///
+    /// If the dataset is weighted, this returns the sum of the weights.
+    ///
+    /// # Returns
+    ///
+    /// The number of samples in the dataset.
+    ///
+    pub fn sample_size(&self) -> PyResult<f64> {
+        Ok(self.inner.sample_size())
     }
 }

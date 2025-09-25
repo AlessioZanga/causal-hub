@@ -32,9 +32,6 @@ pub trait BNCausalInference<T>
 where
     T: BN,
 {
-    /// The output type.
-    type Output;
-
     /// Estimate the average causal effect of `X` on `Y` as E(Y | do(X)).
     ///
     /// # Arguments
@@ -52,7 +49,7 @@ where
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn average_causal_effect(&self, x: &Set<usize>, y: &Set<usize>) -> Option<Self::Output> {
+    fn average_causal_effect(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
         self.conditional_average_causal_effect(x, y, &set![])
     }
 
@@ -81,21 +78,19 @@ where
         x: &Set<usize>,
         y: &Set<usize>,
         z: &Set<usize>,
-    ) -> Option<Self::Output>;
+    ) -> Option<T::CPD>;
 }
 
 impl<E> BNCausalInference<CatBN> for CausalInference<'_, E>
 where
-    E: BNInference<CatBN, Output = CatCPD>,
+    E: BNInference<CatBN>,
 {
-    type Output = CatCPD;
-
     fn conditional_average_causal_effect(
         &self,
         x: &Set<usize>,
         y: &Set<usize>,
         z: &Set<usize>,
-    ) -> Option<Self::Output> {
+    ) -> Option<CatCPD> {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert Y is not empty.

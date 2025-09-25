@@ -112,9 +112,6 @@ pub trait BNInference<T>
 where
     T: BN,
 {
-    /// The output type.
-    type Output;
-
     /// Get the model.
     ///
     /// # Returns
@@ -140,17 +137,15 @@ where
     ///
     /// The estimated values of `x` conditioned on `z`.
     ///
-    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> T::CPD;
 }
 
 impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
-    type Output = CatCPD;
-
     fn model(&self) -> &CatBN {
         self.model
     }
 
-    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -180,13 +175,11 @@ impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
 }
 
 impl<R: Rng> BNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
-    type Output = CatCPD;
-
     fn model(&self) -> &CatBN {
         self.model
     }
 
-    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -230,9 +223,6 @@ pub trait ParBNInference<T>
 where
     T: BN,
 {
-    /// The output type.
-    type Output;
-
     /// Estimate the values of `x` conditioned on `z` using `n` samples, in parallel.
     ///
     /// # Arguments
@@ -250,13 +240,11 @@ where
     ///
     /// The estimated values of `x` conditioned on `z`.
     ///
-    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output;
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD;
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
-    type Output = CatCPD;
-
-    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.
@@ -286,9 +274,7 @@ impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R,
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
-    type Output = CatCPD;
-
-    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Self::Output {
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert X and Z are disjoint.

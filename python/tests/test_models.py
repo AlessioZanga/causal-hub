@@ -2,7 +2,7 @@ import tempfile
 from causal_hub import load_asia, load_eating, load_ecoli70, CatCTBN, CatBN, GaussBN
 
 
-def test_load_asia() -> None:
+def test_asia() -> None:
     # Load the Asia BN.
     asia = load_asia()
     # Get the graph of the BN.
@@ -15,7 +15,24 @@ def test_load_asia() -> None:
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
-def test_load_asia_read_write_json() -> None:
+def test_asia_sample() -> None:
+    # Load the Asia BN.
+    asia = load_asia()
+    # Sample 1000 data points from the BN.
+    sample = asia.sample(1000, seed=42)
+
+    # Check the labels of the sample.
+    labels = [
+        "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
+    ]
+    assert sample.labels() == labels, "Wrong sample labels."
+    # Check the shape of the sample.
+    assert sample.values().shape == (1000, 8), "Wrong sample shape."
+    # Check the sample size.
+    assert sample.sample_size() == 1000, "Wrong sample size."
+
+
+def test_asia_read_write_json() -> None:
     # Load the Asia BN.
     asia = load_asia()
 
@@ -34,7 +51,7 @@ def test_load_asia_read_write_json() -> None:
     assert asia.cpds() == asia_from_json.cpds(), "Wrong CPDs after read/write."
 
 
-def test_load_ecoli70() -> None:
+def test_ecoli70() -> None:
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Get the graph of the BN.
@@ -52,7 +69,7 @@ def test_load_ecoli70() -> None:
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
-def test_load_ecoli70_read_write_json() -> None:
+def test_ecoli70_read_write_json() -> None:
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
 
@@ -71,7 +88,7 @@ def test_load_ecoli70_read_write_json() -> None:
     assert ecoli70.cpds() == ecoli70_from_json.cpds(), "Wrong CPDs after read/write."
 
 
-def test_load_eating() -> None:
+def test_eating() -> None:
     # Load the Eating BN.
     eating = load_eating()
     # Get the graph of the BN.
@@ -82,7 +99,7 @@ def test_load_eating() -> None:
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
-def test_load_eating_read_write_json() -> None:
+def test_eating_read_write_json() -> None:
     # Load the Eating BN.
     eating = load_eating()
 

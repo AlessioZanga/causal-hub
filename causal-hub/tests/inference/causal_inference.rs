@@ -34,10 +34,7 @@ mod tests {
         // Set the true ACE.
         let true_x = map![("bronc".to_owned(), set!["no".to_owned(), "yes".to_owned()]),];
         let true_y = map![("dysp".to_owned(), set!["no".to_owned(), "yes".to_owned()]),];
-        let true_p = array![
-            [0.8675616185266193, 0.13243838147338066],
-            [0.1824193800265479, 0.81758061997345200]
-        ];
+        let true_p = array![[0.8675616185, 0.1324383815], [0.1824193800, 0.8175806200]];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 
         // Check that the ACE is correct.
