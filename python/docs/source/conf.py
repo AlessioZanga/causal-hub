@@ -29,6 +29,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.autodoc.typehints",
+    "sphinx.ext.intersphinx",
 ]
 
 # Autodoc settings
@@ -37,11 +38,17 @@ autodoc_default_options = {
     "undoc-members": False,
     "inherited-members": True,
     "show-inheritance": True,
-    "special-members": "__init__,__call__",
+    "special-members": "__call__,__init__,__new__",
     "private-members": False,
     "member-order": "bysource",
     "typehints": "description",
     "autosummary": True,
+}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "networkx": ("https://networkx.org/documentation/stable/", None),
 }
 nitpicky = True
 templates_path = ["_templates"]
@@ -76,8 +83,13 @@ all_modules = recursive_submodules(package_path)
 # Write a master autosummary.rst
 autosummary_index = Path(__file__).parent / "autosummary.rst"
 with open(autosummary_index, "w", encoding="utf-8") as f:
-    f.write("Module Reference\n================\n\n")
-    f.write(".. toctree::\n   :maxdepth: 2\n   :caption: Contents:\n\n")
-    f.write(".. autosummary::\n   :toctree: _autosummary\n   :recursive:\n\n")
+    f.write("Module Reference\n")
+    f.write("================\n\n")
+    f.write(".. toctree::\n")
+    f.write("   :maxdepth: 2\n")
+    f.write("   :caption: Contents:\n\n")
+    f.write(".. autosummary::\n")
+    f.write("   :toctree: _autosummary\n")
+    f.write("   :recursive:\n\n")
     for mod in all_modules:
         f.write(f"   {mod}\n")

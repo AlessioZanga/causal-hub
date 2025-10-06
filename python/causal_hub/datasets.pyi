@@ -10,45 +10,67 @@ class CatTable:
     r"""
     A categorical tabular dataset.
     """
-    def __new__(cls, df:typing.Any) -> CatTable:
-        r"""
-        Constructs a new categorical tabular dataset from a Pandas DataFrame.
-        
-        # Arguments
-        
-        * `df` - A Pandas DataFrame.
-        
-        # Returns
-        
-        A new categorical tabular dataset instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         The labels of the dataset.
         
-        # Returns
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+    def states(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        Returns the states of the dataset.
         
-        A list of strings containing the labels of the dataset.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A dictionary mapping each label to a tuple of its possible states.
         """
     def values(self) -> numpy.typing.NDArray[numpy.uint8]:
         r"""
         The values of the dataset.
         
-        # Returns
-        
-        A 2D NumPy array containing the values of the dataset.
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the values of the dataset.
         """
     def sample_size(self) -> builtins.float:
         r"""
         The sample size.
         
-        # Notes
+        Returns
+        -------
+        float
+            The number of samples in the dataset.
+            If the dataset is weighted, this returns the sum of the weights.
+        """
+    @staticmethod
+    def from_pandas(df:typing.Any) -> CatTable:
+        r"""
+        Constructs a new categorical tabular dataset from a Pandas DataFrame.
         
-        If the dataset is weighted, this returns the sum of the weights.
+        Parameters
+        ----------
         
-        # Returns
+        df: pandas.DataFrame
+            A Pandas DataFrame containing only categorical columns.
         
-        The number of samples in the dataset.
+        Returns
+        -------
+        CatTable
+            A new categorical tabular dataset instance.
+        """
+    def to_pandas(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Pandas DataFrame.
+        
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame.
         """
 
 class CatTrj:
@@ -335,44 +357,56 @@ class GaussTable:
     r"""
     A Gaussian tabular dataset.
     """
-    def __new__(cls, df:typing.Any) -> GaussTable:
-        r"""
-        Constructs a new Gaussian tabular dataset from a Pandas DataFrame.
-        
-        # Arguments
-        
-        * `df` - A Pandas DataFrame.
-        
-        # Returns
-        
-        A new Gaussian tabular dataset instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         The labels of the dataset.
         
-        # Returns
-        
-        A list of strings containing the labels of the dataset.
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
         """
     def values(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         The values of the dataset.
         
-        # Returns
-        
-        A 2D NumPy array containing the values of the dataset.
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the values of the dataset.
         """
     def sample_size(self) -> builtins.float:
         r"""
         The sample size.
         
-        # Notes
+        Returns
+        -------
+        float
+            The number of samples in the dataset.
+            If the dataset is weighted, this returns the sum of the weights.
+        """
+    @staticmethod
+    def from_pandas(df:typing.Any) -> GaussTable:
+        r"""
+        Constructs a new Gaussian tabular dataset from a Pandas DataFrame.
         
-        If the dataset is weighted, this returns the sum of the weights.
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            A Pandas DataFrame containing only float64 columns.
         
-        # Returns
+        Returns
+        -------
+        GaussTable
+            A new Gaussian tabular dataset instance.
+        """
+    def to_pandas(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Pandas DataFrame.
         
-        The number of samples in the dataset.
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame.
         """
 

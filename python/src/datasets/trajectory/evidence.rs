@@ -52,11 +52,11 @@ impl PyCatTrjEv {
         use CatTrjEvT as E;
 
         // Import the pandas module.
-        let pandas = py.import("pandas")?;
+        let pd = py.import("pandas")?;
 
         // Assert that the object is a DataFrame.
         assert!(
-            df.is_instance(&pandas.getattr("DataFrame")?)?,
+            df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",
             df.get_type().name()?
         );

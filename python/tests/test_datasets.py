@@ -1,7 +1,76 @@
+import numpy as np
 import pandas as pd
 import pytest
 
-from causal_hub.datasets import CatTrj, CatTrjEv, CatTrjs
+from causal_hub.datasets import CatTable, CatTrj, CatTrjEv, CatTrjs, GaussTable
+
+
+def test_categorical_table() -> None:
+    # Create a sample DataFrame with categorical columns.
+    df = pd.DataFrame(
+        {
+            "column_1": ["A", "B", "A", "C", "B"],
+            "column_2": ["X", "Y", "X", "Z", "Y"],
+        }
+    )
+
+    # Set data types for categorical columns.
+    df = df.astype("category")
+    # Create a CatTable object.
+    table = CatTable.from_pandas(df)
+
+    # Check the variables.
+    assert table.labels() == ["column_1", "column_2"], "Wrong labels."
+    # Check the states of the variables.
+    assert table.states()["column_1"] == ("A", "B", "C"), "Wrong states."
+    assert table.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    # Check the values of the variables.
+    assert (
+        table.values()
+        == np.array(
+            [
+                [0, 0],
+                [1, 1],
+                [0, 0],
+                [2, 2],
+                [1, 1],
+            ]
+        )
+    ).all(), "Wrong values."
+    # Convert back to pandas DataFrame and check equality.
+    pd.testing.assert_frame_equal(df, table.to_pandas())
+
+
+def test_gaussian_table() -> None:
+    # Create a sample DataFrame with float64 columns.
+    df = pd.DataFrame(
+        {
+            "column_1": [1.0, 2.0, 3.0, 4.0, 5.0],
+            "column_2": [5.0, 4.0, 3.0, 2.0, 1.0],
+        }
+    )
+    # Set data types for float64 columns.
+    df = df.astype("float64")
+    # Create a GaussTable object.
+    table = GaussTable.from_pandas(df)
+
+    # Check the variables.
+    assert table.labels() == ["column_1", "column_2"], "Wrong labels."
+    # Check the values of the variables.
+    assert (
+        table.values()
+        == np.array(
+            [
+                [1.0, 5.0],
+                [2.0, 4.0],
+                [3.0, 3.0],
+                [4.0, 2.0],
+                [5.0, 1.0],
+            ]
+        )
+    ).all(), "Wrong values."
+    # Convert back to pandas DataFrame and check equality.
+    pd.testing.assert_frame_equal(df, table.to_pandas())
 
 
 def test_categorical_trajectory() -> None:

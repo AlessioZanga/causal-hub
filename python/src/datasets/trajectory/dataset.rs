@@ -46,11 +46,11 @@ impl PyCatTrj {
     #[new]
     pub fn new(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
         // Import the pandas module.
-        let pandas = py.import("pandas")?;
+        let pd = py.import("pandas")?;
 
         // Assert that the object is a DataFrame.
         assert!(
-            df.is_instance(&pandas.getattr("DataFrame")?)?,
+            df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",
             df.get_type().name()?
         );
@@ -91,6 +91,22 @@ impl PyCatTrj {
         // Check that the data frame is not empty.
         assert!(!columns.is_empty(), "The data frame is empty.");
 
+        // Check that the dtype of the column is a string.
+        for name in &columns {
+            // Extract the column from the data frame.
+            let column = df.get_item(name)?;
+            // Get the dtype of the column.
+            let dtype = column
+                .getattr("dtype")?
+                .getattr("name")?
+                .extract::<String>()?;
+            // Check that the dtype is a category.
+            assert_eq!(
+                dtype, "category",
+                "Expected a category column, but '{dtype}' found."
+            );
+        }
+
         // Convert the columns categories to states.
         let states: States = columns
             .into_iter()
@@ -98,17 +114,6 @@ impl PyCatTrj {
             .map(|name| {
                 // Extract the column from the data frame.
                 let column = df.get_item(&name)?;
-
-                // Check that the dtype of the column is a string.
-                let dtype = column
-                    .getattr("dtype")?
-                    .getattr("name")?
-                    .extract::<String>()?;
-                assert_eq!(
-                    dtype, "category",
-                    "Expected a category column, but '{dtype}' found.",
-                );
-
                 // Invoke the 'cat' accessory method.
                 let states = column.getattr("cat")?.getattr("categories")?;
                 // Iterate over the states and convert them to a Vec<String>.
