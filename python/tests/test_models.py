@@ -1,5 +1,7 @@
 import tempfile
-from causal_hub import load_asia, load_eating, load_ecoli70, CatCTBN, CatBN, GaussBN
+
+from causal_hub.assets import load_asia, load_eating, load_ecoli70
+from causal_hub.models import CatBN, CatCTBN, GaussBN
 
 
 def test_asia() -> None:
@@ -9,9 +11,7 @@ def test_asia() -> None:
     graph = asia.graph()
 
     # Check the vertices labels.
-    vertices = [
-        "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
-    ]
+    vertices = ["asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"]
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
@@ -22,9 +22,7 @@ def test_asia_sample() -> None:
     sample = asia.sample(1000, seed=42)
 
     # Check the labels of the sample.
-    labels = [
-        "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
-    ]
+    labels = ["asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"]
     assert sample.labels() == labels, "Wrong sample labels."
     # Check the shape of the sample.
     assert sample.values().shape == (1000, 8), "Wrong sample shape."
@@ -59,12 +57,52 @@ def test_ecoli70() -> None:
 
     # Check the vertices labels.
     vertices = [
-        "aceB", "asnA", "atpD", "atpG", "b1191", "b1583", "b1963", "cchB",
-        "cspA", "cspG", "dnaG", "dnaJ", "dnaK", "eutG", "fixC", "flgD",
-        "folK", "ftsJ", "gltA", "hupB", "ibpB", "icdA", "lacA", "lacY",
-        "lacZ", "lpdA", "mopB", "nmpC", "nuoM", "pspA", "pspB", "sucA",
-        "sucD", "tnaA", "yaeM", "yceP", "ycgX", "yecO", "yedE", "yfaD",
-        "yfiA", "ygbD", "ygcE", "yhdM", "yheI", "yjbO"
+        "aceB",
+        "asnA",
+        "atpD",
+        "atpG",
+        "b1191",
+        "b1583",
+        "b1963",
+        "cchB",
+        "cspA",
+        "cspG",
+        "dnaG",
+        "dnaJ",
+        "dnaK",
+        "eutG",
+        "fixC",
+        "flgD",
+        "folK",
+        "ftsJ",
+        "gltA",
+        "hupB",
+        "ibpB",
+        "icdA",
+        "lacA",
+        "lacY",
+        "lacZ",
+        "lpdA",
+        "mopB",
+        "nmpC",
+        "nuoM",
+        "pspA",
+        "pspB",
+        "sucA",
+        "sucD",
+        "tnaA",
+        "yaeM",
+        "yceP",
+        "ycgX",
+        "yecO",
+        "yedE",
+        "yfaD",
+        "yfiA",
+        "ygbD",
+        "ygcE",
+        "yhdM",
+        "yheI",
+        "yjbO",
     ]
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
@@ -81,7 +119,9 @@ def test_ecoli70_read_write_json() -> None:
     ecoli70_from_json = GaussBN.read_json(path)
 
     # Check the labels after read/write.
-    assert ecoli70.labels() == ecoli70_from_json.labels(), "Wrong labels after read/write."
+    assert (
+        ecoli70.labels() == ecoli70_from_json.labels()
+    ), "Wrong labels after read/write."
     # Check the graph after read/write.
     assert ecoli70.graph() == ecoli70_from_json.graph(), "Wrong graph after read/write."
     # Check the CPDs after read/write.
@@ -95,7 +135,11 @@ def test_eating() -> None:
     graph = eating.graph()
 
     # Check the vertices labels.
-    vertices = ["Eating", "FullStomach", "Hungry",]
+    vertices = [
+        "Eating",
+        "FullStomach",
+        "Hungry",
+    ]
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
@@ -111,7 +155,9 @@ def test_eating_read_write_json() -> None:
     eating_from_json = CatCTBN.read_json(path)
 
     # Check the labels after read/write.
-    assert eating.labels() == eating_from_json.labels(), "Wrong labels after read/write."
+    assert (
+        eating.labels() == eating_from_json.labels()
+    ), "Wrong labels after read/write."
     # Check the graph after read/write.
     assert eating.graph() == eating_from_json.graph(), "Wrong graph after read/write."
     # Check the CIMs after read/write.

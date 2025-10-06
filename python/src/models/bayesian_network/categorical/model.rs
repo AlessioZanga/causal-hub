@@ -29,7 +29,7 @@ use crate::{
 
 /// A categorical Bayesian network (BN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatBN", eq)]
+#[pyclass(name = "CatBN", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatBN {
     inner: CatBN,

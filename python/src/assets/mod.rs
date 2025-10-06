@@ -13,7 +13,7 @@ macro_for!(
     ] {
     paste! {
         #[doc = "Load the `" $bn:upper "` categorical BN from the assets."]
-        #[gen_stub_pyfunction]
+        #[gen_stub_pyfunction(module = "causal_hub.assets")]
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyCatBN {
             backend::assets::[<load_ $bn>]().into()
@@ -27,7 +27,7 @@ macro_for!(
     ] {
     paste! {
         #[doc = "Load the `" $bn:upper "` Gaussian BN from the assets."]
-        #[gen_stub_pyfunction]
+        #[gen_stub_pyfunction(module = "causal_hub.assets")]
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyGaussBN {
             backend::assets::[<load_ $bn>]().into()
@@ -36,7 +36,7 @@ macro_for!(
 });
 
 /// Load the `EATING` categorical CTBN from the assets.
-#[gen_stub_pyfunction]
+#[gen_stub_pyfunction(module = "causal_hub.assets")]
 #[pyfunction]
 pub fn load_eating() -> PyCatCTBN {
     backend::assets::load_eating().into()

@@ -13,7 +13,7 @@ use crate::impl_deref_from_into;
 
 /// A struct representing a Gaussian conditional probability distribution.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussCPD", eq)]
+#[pyclass(name = "GaussCPD", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyGaussCPD {
     inner: GaussCPD,

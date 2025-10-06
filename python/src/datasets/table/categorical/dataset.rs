@@ -10,7 +10,7 @@ use crate::impl_deref_from_into;
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTable")]
+#[pyclass(name = "CatTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTable {
     inner: CatTable,

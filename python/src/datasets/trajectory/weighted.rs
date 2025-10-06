@@ -12,7 +12,7 @@ use crate::{datasets::PyCatTrj, impl_deref_from_into};
 
 /// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrj")]
+#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
     inner: CatWtdTrj,
@@ -90,7 +90,7 @@ impl PyCatWtdTrj {
 
 /// A collection of categorical trajectories with weights.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrjs")]
+#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
     inner: CatWtdTrjs,

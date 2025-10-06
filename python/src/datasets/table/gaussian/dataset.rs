@@ -10,7 +10,7 @@ use crate::impl_deref_from_into;
 
 /// A Gaussian tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussTable")]
+#[pyclass(name = "GaussTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyGaussTable {
     inner: GaussTable,

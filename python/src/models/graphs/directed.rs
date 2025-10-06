@@ -16,7 +16,7 @@ use crate::{impl_deref_from_into, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
-#[pyclass(name = "DiGraph", eq)]
+#[pyclass(name = "DiGraph", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PyDiGraph {
     inner: DiGraph,

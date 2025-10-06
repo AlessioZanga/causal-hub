@@ -1,6 +1,8 @@
-import numpy as np
 import networkx as nx
-from causal_hub import DiGraph, load_asia
+import numpy as np
+
+from causal_hub.assets import load_asia
+from causal_hub.models import DiGraph
 
 
 def test_digraph_from_networkx() -> None:
@@ -59,5 +61,6 @@ def test_digraph_graphical_separation() -> None:
         # Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
         non_de_x = v - de_x - pa_x - {x}
         # Assert every vertex is d-separated from its non-descendants given its parents.
-        assert not non_de_x or g.is_separator_set([x], non_de_x, pa_x), \
-            f"Vertex {x} is not d-separated from its non-descendants given its parents."
+        assert not non_de_x or g.is_separator_set(
+            [x], non_de_x, pa_x
+        ), f"Vertex {x} is not d-separated from its non-descendants given its parents."

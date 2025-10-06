@@ -15,7 +15,7 @@ use crate::impl_deref_from_into;
 
 /// A struct representing a categorical conditional probability distribution.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCPD", eq)]
+#[pyclass(name = "CatCPD", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatCPD {
     inner: CatCPD,

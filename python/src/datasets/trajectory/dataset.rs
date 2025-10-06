@@ -16,7 +16,7 @@ use crate::impl_deref_from_into;
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrj")]
+#[pyclass(name = "CatTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
     inner: CatTrj,
@@ -229,7 +229,7 @@ impl PyCatTrj {
 
 /// A collection of categorical trajectories.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjs")]
+#[pyclass(name = "CatTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
     inner: CatTrjs,
