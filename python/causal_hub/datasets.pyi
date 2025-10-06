@@ -95,15 +95,6 @@ class CatTrj:
         dict[str, tuple[str, ...]]
             A reference to the states of the categorical trajectory.
         """
-    def set_states(self, states:dict) -> None:
-        r"""
-        Sets the states of the categorical trajectory.
-        
-        Parameters
-        ----------
-        states: dict[str, tuple[str, ...]]
-            A dictionary mapping variable names to their new states.
-        """
     def values(self) -> numpy.typing.NDArray[numpy.uint8]:
         r"""
         Returns the values of the trajectory.
@@ -189,14 +180,6 @@ class CatTrjEv:
         
         A reference to the states of the categorical trajectory.
         """
-    def set_states(self, states:dict) -> None:
-        r"""
-        Sets the states of the categorical trajectory.
-        
-        # Arguments
-        
-        * `states` - A dictionary mapping variable names to their new states.
-        """
 
 class CatTrjs:
     r"""
@@ -219,15 +202,6 @@ class CatTrjs:
         -------
         dict[str, tuple[str, ...]]
             A reference to the states of the categorical trajectory.
-        """
-    def set_states(self, states:dict) -> None:
-        r"""
-        Sets the states of the categorical trajectories.
-        
-        Parameters
-        ----------
-        states: dict[str, tuple[str, ...]]
-            A dictionary mapping variable names to their new states.
         """
     def values(self) -> builtins.list[CatTrj]:
         r"""
@@ -304,14 +278,6 @@ class CatTrjsEv:
         # Returns
         
         A reference to the states of the categorical trajectory.
-        """
-    def set_states(self, states:dict) -> None:
-        r"""
-        Sets the states of the categorical trajectory.
-        
-        # Arguments
-        
-        * `states` - A dictionary mapping variable names to their new states.
         """
 
 class CatWtdTrj:

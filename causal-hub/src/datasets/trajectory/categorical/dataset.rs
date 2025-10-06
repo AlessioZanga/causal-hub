@@ -133,20 +133,6 @@ impl CatTrj {
         self.events.states()
     }
 
-    /// Sets the states of the trajectory.
-    ///
-    /// # Arguments
-    ///
-    /// * `states` - The new states of the trajectory.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the new states are not a superset of the current states.
-    ///
-    pub fn set_states(&mut self, states: &States) {
-        todo!() // FIXME:
-    }
-
     /// Returns the shape of the trajectory.
     ///
     /// # Returns
@@ -214,7 +200,6 @@ impl CatTrjs {
     /// * The trajectories have different labels.
     /// * The trajectories have different states.
     /// * The trajectories have different shape.
-    /// * The trajectories are empty.
     ///
     /// # Returns
     ///
@@ -250,10 +235,10 @@ impl CatTrjs {
         );
 
         // Get the labels, states and shape from the first trajectory.
-        let trj = values.first().expect("No trajectory in the dataset.");
-        let labels = trj.labels().clone();
-        let states = trj.states().clone();
-        let shape = trj.shape().clone();
+        let (labels, states, shape) = match values.first() {
+            None => (Labels::default(), States::default(), Array1::default((0,))),
+            Some(x) => (x.labels().clone(), x.states().clone(), x.shape().clone()),
+        };
 
         Self {
             labels,
@@ -272,20 +257,6 @@ impl CatTrjs {
     #[inline]
     pub fn states(&self) -> &States {
         &self.states
-    }
-
-    /// Sets the states of the trajectory.
-    ///
-    /// # Arguments
-    ///
-    /// * `states` - The new states of the trajectory.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the new states are not a superset of the current states.
-    ///
-    pub fn set_states(&mut self, states: &States) {
-        todo!() // FIXME:
     }
 
     /// Returns the shape of the trajectories.

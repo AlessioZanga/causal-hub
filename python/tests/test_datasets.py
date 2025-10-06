@@ -100,7 +100,9 @@ def test_categorical_trajectory() -> None:
     assert trj.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
     # Check the time values.
     np.testing.assert_array_equal(
-        trj.times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+        trj.times(),
+        np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "Wrong time.",
     )
     # Check the values of the variables.
     np.testing.assert_array_equal(
@@ -120,7 +122,6 @@ def test_categorical_trajectory() -> None:
     pd.testing.assert_frame_equal(df, trj.to_pandas())
 
 
-@pytest.mark.skip(reason="To be fixed")  # FIXME:
 def test_categorical_trajectory_with_states() -> None:
     # Create a sample DataFrame with a time column and categorical columns.
     df = pd.DataFrame(
@@ -130,19 +131,28 @@ def test_categorical_trajectory_with_states() -> None:
             "column_2": ["X", "Y", "Y", "Y", "Z"],
         }
     )
+
     # Define some unobserved states.
-    states = {"column_1": ("A", "B", "C", "D"),
-              "column_2": ("X", "Y", "Z", "W")}
+    states = {
+        "column_1": ("A", "B", "C", "D"),
+        "column_2": ("X", "Y", "Z", "W"),
+    }
 
     # Set data type for time column.
     df["time"] = df["time"].astype("float64")
     # Set data types for categorical columns.
     columns = list(set(df.columns) - {"time"})
     df[columns] = df[columns].astype("category")
+    # Add the unobserved states to the dataframe categories.
+    df["column_1"] = df["column_1"].cat.add_categories(
+        set(states["column_1"]) - set(df["column_1"].cat.categories)
+    )
+    df["column_2"] = df["column_2"].cat.add_categories(
+        set(states["column_2"]) - set(df["column_2"].cat.categories)
+    )
+
     # Create a CatTrj object.
     trj = CatTrj.from_pandas(df)
-    # Set the states.
-    trj.set_states(states)
 
     # Check the variables.
     assert trj.labels() == ["column_1", "column_2"], "Wrong labels."
@@ -190,8 +200,9 @@ def test_categorical_trajectories() -> None:
     assert len(trjs.values()) == 2, "Wrong number of trajectories."
     # Check the time values of the first trajectory.
     np.testing.assert_array_equal(
-        trjs.values()[0].times(), np.array(
-            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+        trjs.values()[0].times(),
+        np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "Wrong time.",
     )
     # Check the values of the first trajectory.
     np.testing.assert_array_equal(
@@ -209,8 +220,9 @@ def test_categorical_trajectories() -> None:
     )
     # Check the time values of the second trajectory.
     np.testing.assert_array_equal(
-        trjs.values()[1].times(), np.array(
-            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+        trjs.values()[1].times(),
+        np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "Wrong time.",
     )
     # Check the values of the second trajectory.
     np.testing.assert_array_equal(
@@ -231,7 +243,6 @@ def test_categorical_trajectories() -> None:
         pd.testing.assert_frame_equal(df, trj)
 
 
-@pytest.mark.skip(reason="To be fixed")  # FIXME:
 def test_categorical_trajectories_with_states() -> None:
     # Create two sample DataFrames with a time column and categorical columns.
     dfs = [
@@ -250,9 +261,12 @@ def test_categorical_trajectories_with_states() -> None:
             }
         ),
     ]
+
     # Define some unobserved states.
-    states = {"column_1": ("A", "B", "C", "D"),
-              "column_2": ("X", "Y", "Z", "W")}
+    states = {
+        "column_1": ("A", "B", "C", "D"),
+        "column_2": ("X", "Y", "Z", "W"),
+    }
 
     # For each dataframe ...
     for df in dfs:
@@ -261,17 +275,65 @@ def test_categorical_trajectories_with_states() -> None:
         # Set data types for categorical columns.
         columns = list(set(df.columns) - {"time"})
         df[columns] = df[columns].astype("category")
+        # Add the unobserved states to the dataframe categories.
+        df["column_1"] = df["column_1"].cat.add_categories(
+            set(states["column_1"]) - set(df["column_1"].cat.categories)
+        )
+        df["column_2"] = df["column_2"].cat.add_categories(
+            set(states["column_2"]) - set(df["column_2"].cat.categories)
+        )
 
     # Create a CatTrjs object.
     trjs = CatTrjs.from_pandas(dfs)
-    # Set the states.
-    trjs.set_states(states)
 
     # Check the variables.
     assert trjs.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the states of the variables.
     assert trjs.states()["column_1"] == ("A", "B", "C", "D"), "Wrong states."
     assert trjs.states()["column_2"] == ("W", "X", "Y", "Z"), "Wrong states."
+    # Check the number of trajectories.
+    assert len(trjs.values()) == 2, "Wrong number of trajectories."
+    # Check the time values of the first trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[0].times(),
+        np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "Wrong time.",
+    )
+    # Check the values of the first trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[0].values(),
+        np.array(
+            [
+                [0, 1],
+                [0, 2],
+                [1, 2],
+                [2, 2],
+                [2, 3],
+            ]
+        ),
+        "Wrong values",
+    )
+    # Check the time values of the second trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[1].times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+    )
+    # Check the values of the second trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[1].values(),
+        np.array(
+            [
+                [0, 1],
+                [0, 2],
+                [1, 2],
+                [2, 2],
+                [2, 3],
+            ]
+        ),
+        "Wrong values.",
+    )
+    # Convert back to list of pandas DataFrames and check equality.
+    for df, trj in zip(dfs, trjs.to_pandas()):
+        pd.testing.assert_frame_equal(df, trj)
 
 
 @pytest.mark.skip(reason="To be fixed")  # FIXME:
@@ -285,6 +347,7 @@ def test_categorical_trajectory_evidence() -> None:
             "end_time": [1, 2, 3, 4, 5],
         }
     )
+
     # Define some unobserved states.
     states = {
         "B": ("X", "Y", "Z"),
@@ -298,8 +361,6 @@ def test_categorical_trajectory_evidence() -> None:
 
     # Create a CatTrjEv object.
     trj_ev = CatTrjEv(df)
-    # Set the states.
-    trj_ev.set_states(states)
 
     # Check the variables.
     assert trj_ev.labels() == ["A", "B", "C"], "Wrong labels."
