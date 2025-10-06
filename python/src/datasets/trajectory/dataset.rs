@@ -5,10 +5,10 @@ use backend::{
     models::Labelled,
     types::{Set, States},
 };
-use numpy::{PyArray1, ndarray::prelude::*, prelude::*};
+use numpy::{PyArray1, PyArray2, ndarray::prelude::*, prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple},
+    types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -98,6 +98,17 @@ impl PyCatTrj {
         Ok(())
     }
 
+    /// Returns the values of the trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A reference to the values of the trajectory.
+    ///
+    pub fn values<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<CatType>>> {
+        Ok(self.inner.values().to_pyarray(py))
+    }
+
     /// Returns the times of the trajectory.
     ///
     /// Returns
@@ -123,8 +134,12 @@ impl PyCatTrj {
     /// CatTrj
     ///     A new categorical trajectory instance.
     ///
-    #[staticmethod]
-    pub fn from_pandas(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
         // Import the pandas module.
         let pd = py.import("pandas")?;
 
@@ -397,12 +412,16 @@ impl PyCatTrjs {
     /// CatTrjs
     ///     A new categorical trajectories instance.
     ///
-    #[staticmethod]
-    pub fn from_pandas(py: Python<'_>, dfs: &Bound<'_, PyAny>) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dfs: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrj> = dfs
             .try_iter()?
-            .map(|df| PyCatTrj::from_pandas(py, &df.unwrap()))
+            .map(|df| PyCatTrj::from_pandas(_cls, py, &df.unwrap()))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();

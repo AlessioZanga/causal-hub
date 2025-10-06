@@ -8,7 +8,7 @@ use backend::{
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple},
+    types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -99,8 +99,12 @@ impl PyCatTable {
     /// CatTable
     ///     A new categorical tabular dataset instance.
     ///
-    #[staticmethod]
-    pub fn from_pandas(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
         // Import the pandas module.
         let pd = py.import("pandas")?;
 

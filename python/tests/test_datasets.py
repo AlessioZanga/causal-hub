@@ -25,9 +25,9 @@ def test_categorical_table() -> None:
     assert table.states()["column_1"] == ("A", "B", "C"), "Wrong states."
     assert table.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
     # Check the values of the variables.
-    assert (
-        table.values()
-        == np.array(
+    np.testing.assert_array_equal(
+        table.values(),
+        np.array(
             [
                 [0, 0],
                 [1, 1],
@@ -35,8 +35,9 @@ def test_categorical_table() -> None:
                 [2, 2],
                 [1, 1],
             ]
-        )
-    ).all(), "Wrong values."
+        ),
+        "Wrong values.",
+    )
     # Convert back to pandas DataFrame and check equality.
     pd.testing.assert_frame_equal(df, table.to_pandas())
 
@@ -57,9 +58,9 @@ def test_gaussian_table() -> None:
     # Check the variables.
     assert table.labels() == ["column_1", "column_2"], "Wrong labels."
     # Check the values of the variables.
-    assert (
-        table.values()
-        == np.array(
+    np.testing.assert_array_equal(
+        table.values(),
+        np.array(
             [
                 [1.0, 5.0],
                 [2.0, 4.0],
@@ -67,8 +68,9 @@ def test_gaussian_table() -> None:
                 [4.0, 2.0],
                 [5.0, 1.0],
             ]
-        )
-    ).all(), "Wrong values."
+        ),
+        "Wrong values.",
+    )
     # Convert back to pandas DataFrame and check equality.
     pd.testing.assert_frame_equal(df, table.to_pandas())
 
@@ -96,6 +98,26 @@ def test_categorical_trajectory() -> None:
     # Check the states of the variables.
     assert trj.states()["column_1"] == ("A", "B", "C"), "Wrong states."
     assert trj.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    # Check the time values.
+    np.testing.assert_array_equal(
+        trj.times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+    )
+    # Check the values of the variables.
+    np.testing.assert_array_equal(
+        trj.values(),
+        np.array(
+            [
+                [0, 0],
+                [0, 1],
+                [1, 1],
+                [2, 1],
+                [2, 2],
+            ]
+        ),
+        "Wrong values.",
+    )
+    # Convert back to pandas DataFrame and check equality.
+    pd.testing.assert_frame_equal(df, trj.to_pandas())
 
 
 @pytest.mark.skip(reason="To be fixed")  # FIXME:
@@ -109,7 +131,8 @@ def test_categorical_trajectory_with_states() -> None:
         }
     )
     # Define some unobserved states.
-    states = {"column_1": ("A", "B", "C", "D"), "column_2": ("X", "Y", "Z", "W")}
+    states = {"column_1": ("A", "B", "C", "D"),
+              "column_2": ("X", "Y", "Z", "W")}
 
     # Set data type for time column.
     df["time"] = df["time"].astype("float64")
@@ -163,6 +186,49 @@ def test_categorical_trajectories() -> None:
     # Check the states of the variables.
     assert trjs.states()["column_1"] == ("A", "B", "C"), "Wrong states."
     assert trjs.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+    # Check the number of trajectories.
+    assert len(trjs.values()) == 2, "Wrong number of trajectories."
+    # Check the time values of the first trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[0].times(), np.array(
+            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+    )
+    # Check the values of the first trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[0].values(),
+        np.array(
+            [
+                [0, 0],
+                [0, 1],
+                [1, 1],
+                [2, 1],
+                [2, 2],
+            ]
+        ),
+        "Wrong values.",
+    )
+    # Check the time values of the second trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[1].times(), np.array(
+            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+    )
+    # Check the values of the second trajectory.
+    np.testing.assert_array_equal(
+        trjs.values()[1].values(),
+        np.array(
+            [
+                [0, 0],
+                [0, 1],
+                [1, 1],
+                [2, 1],
+                [2, 2],
+            ]
+        ),
+        "Wrong values.",
+    )
+    # Convert back to list of pandas DataFrames and check equality.
+    for df, trj in zip(dfs, trjs.to_pandas()):
+        pd.testing.assert_frame_equal(df, trj)
 
 
 @pytest.mark.skip(reason="To be fixed")  # FIXME:
@@ -185,7 +251,8 @@ def test_categorical_trajectories_with_states() -> None:
         ),
     ]
     # Define some unobserved states.
-    states = {"column_1": ("A", "B", "C", "D"), "column_2": ("X", "Y", "Z", "W")}
+    states = {"column_1": ("A", "B", "C", "D"),
+              "column_2": ("X", "Y", "Z", "W")}
 
     # For each dataframe ...
     for df in dfs:

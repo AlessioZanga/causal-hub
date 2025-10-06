@@ -47,8 +47,8 @@ class CatTable:
             The number of samples in the dataset.
             If the dataset is weighted, this returns the sum of the weights.
         """
-    @staticmethod
-    def from_pandas(df:typing.Any) -> CatTable:
+    @classmethod
+    def from_pandas(cls, df:typing.Any) -> CatTable:
         r"""
         Constructs a new categorical tabular dataset from a Pandas DataFrame.
         
@@ -104,6 +104,15 @@ class CatTrj:
         states: dict[str, tuple[str, ...]]
             A dictionary mapping variable names to their new states.
         """
+    def values(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        Returns the values of the trajectory.
+        
+        Returns
+        -------
+        numpy.ndarray
+            A reference to the values of the trajectory.
+        """
     def times(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the times of the trajectory.
@@ -113,8 +122,8 @@ class CatTrj:
         numpy.ndarray
             A reference to the times of the trajectory.
         """
-    @staticmethod
-    def from_pandas(df:typing.Any) -> CatTrj:
+    @classmethod
+    def from_pandas(cls, df:typing.Any) -> CatTrj:
         r"""
         Constructs a new categorical trajectory from a Pandas DataFrame.
         
@@ -229,8 +238,8 @@ class CatTrjs:
         list[CatTrj]
             A list of categorical trajectories.
         """
-    @staticmethod
-    def from_pandas(dfs:typing.Any) -> CatTrjs:
+    @classmethod
+    def from_pandas(cls, dfs:typing.Any) -> CatTrjs:
         r"""
         Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
         
@@ -411,8 +420,8 @@ class GaussTable:
             The number of samples in the dataset.
             If the dataset is weighted, this returns the sum of the weights.
         """
-    @staticmethod
-    def from_pandas(df:typing.Any) -> GaussTable:
+    @classmethod
+    def from_pandas(cls, df:typing.Any) -> GaussTable:
         r"""
         Constructs a new Gaussian tabular dataset from a Pandas DataFrame.
         

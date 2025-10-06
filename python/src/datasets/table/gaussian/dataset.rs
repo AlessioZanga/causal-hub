@@ -4,7 +4,10 @@ use backend::{
     types::Labels,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
-use pyo3::{prelude::*, types::PyDict};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use pyo3_stub_gen::derive::*;
 
 use crate::impl_deref_from_into;
@@ -69,8 +72,12 @@ impl PyGaussTable {
     /// GaussTable
     ///     A new Gaussian tabular dataset instance.
     ///
-    #[staticmethod]
-    pub fn from_pandas(py: Python<'_>, df: &Bound<'_, PyAny>) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
         // Import the pandas module.
         let pd = py.import("pandas")?;
 
