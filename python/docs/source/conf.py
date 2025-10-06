@@ -22,7 +22,6 @@ except PackageNotFoundError:
 # Use short X.Y version for display if needed
 version = ".".join(release.split(".")[:2])
 
-
 # -- General configuration ----------------------------------------------------
 extensions = [
     "sphinx.ext.autodoc",
@@ -58,3 +57,27 @@ html_theme_options = {
 }
 
 html_static_path = ["_static"]
+
+# -- Automatically generate recursive autosummary for all submodules ----------
+
+
+def recursive_submodules(package_dir: Path):
+    """Return all submodules by scanning .pyi files recursively."""
+    modules = []
+    for pyi in package_dir.rglob("*.pyi"):
+        relative = pyi.relative_to(package_dir.parent).with_suffix("")
+        modules.append(".".join(relative.parts))
+    return sorted(modules)
+
+
+package_path = Path(__file__).parents[2] / "causal_hub"
+all_modules = recursive_submodules(package_path)
+
+# Write a master autosummary.rst
+autosummary_index = Path(__file__).parent / "autosummary.rst"
+with open(autosummary_index, "w", encoding="utf-8") as f:
+    f.write("Module Reference\n================\n\n")
+    f.write(".. toctree::\n   :maxdepth: 2\n   :caption: Contents:\n\n")
+    f.write(".. autosummary::\n   :toctree: _autosummary\n   :recursive:\n\n")
+    for mod in all_modules:
+        f.write(f"   {mod}\n")
