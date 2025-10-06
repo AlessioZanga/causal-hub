@@ -77,54 +77,67 @@ class CatTrj:
     r"""
     A categorical trajectory.
     """
-    def __new__(cls, df:typing.Any) -> CatTrj:
-        r"""
-        Constructs a new categorical trajectory from a Pandas DataFrame.
-        
-        # Arguments
-        
-        * `df` - A Pandas DataFrame.
-        
-        # Notes
-        
-        * The data frame must contain a column named "time" that represents the time of each event.
-        * Every other column in the data frame must represent a categorical variable.
-        
-        # Returns
-        
-        A new categorical trajectory instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the states of the categorical trajectory.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
         """
     def set_states(self, states:dict) -> None:
         r"""
         Sets the states of the categorical trajectory.
         
-        # Arguments
-        
-        * `states` - A dictionary mapping variable names to their new states.
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            A dictionary mapping variable names to their new states.
         """
     def times(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the times of the trajectory.
         
-        # Returns
+        Returns
+        -------
+        numpy.ndarray
+            A reference to the times of the trajectory.
+        """
+    @staticmethod
+    def from_pandas(df:typing.Any) -> CatTrj:
+        r"""
+        Constructs a new categorical trajectory from a Pandas DataFrame.
         
-        A reference to the times of the trajectory.
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            A Pandas DataFrame containing the trajectory data.
+            The data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+        
+        Returns
+        -------
+        CatTrj
+            A new categorical trajectory instance.
+        """
+    def to_pandas(self) -> typing.Any:
+        r"""
+        Converts the categorical trajectory to a Pandas DataFrame.
+        
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame representation of the categorical trajectory.
         """
 
 class CatTrjEv:
@@ -180,54 +193,67 @@ class CatTrjs:
     r"""
     A collection of categorical trajectories.
     """
-    def __new__(cls, dfs:typing.Any) -> CatTrjs:
-        r"""
-        Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
-        
-        # Arguments
-        
-        * `dfs` - An iterable of Pandas DataFrames containing the trajectory data.
-        
-        # Notes
-        
-        * Each data frame must contain a column named "time" that represents the time of each event.
-        * Every other column in the data frame must represent a categorical variable.
-        
-        # Returns
-        
-        A new categorical trajectories instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the states of the categorical trajectory.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
         """
     def set_states(self, states:dict) -> None:
         r"""
         Sets the states of the categorical trajectories.
         
-        # Arguments
-        
-        * `states` - A dictionary mapping variable names to their new states.
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            A dictionary mapping variable names to their new states.
         """
     def values(self) -> builtins.list[CatTrj]:
         r"""
         Return the trajectories.
         
-        # Returns
+        Returns
+        -------
+        list[CatTrj]
+            A list of categorical trajectories.
+        """
+    @staticmethod
+    def from_pandas(dfs:typing.Any) -> CatTrjs:
+        r"""
+        Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
         
-        A vector of categorical trajectories.
+        Parameters
+        ----------
+        dfs: Iterable[pandas.DataFrame]
+            An iterable of Pandas DataFrames containing the trajectory data.
+            Each data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+        
+        Returns
+        -------
+        CatTrjs
+            A new categorical trajectories instance.
+        """
+    def to_pandas(self) -> builtins.list[typing.Any]:
+        r"""
+        Converts the categorical trajectories to a list of Pandas DataFrames.
+        
+        Returns
+        -------
+        list[pandas.DataFrame]
+            A list of Pandas DataFrame representations of the categorical trajectories.
         """
 
 class CatTrjsEv:

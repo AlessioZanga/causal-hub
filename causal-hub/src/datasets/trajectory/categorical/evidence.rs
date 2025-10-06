@@ -505,6 +505,20 @@ impl CatTrjEv {
         &self.states
     }
 
+    /// Sets the states of the trajectory.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The new states of the trajectory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new states are not a superset of the current states.
+    ///
+    pub fn set_states(&mut self, states: &States) {
+        todo!() // FIXME:
+    }
+
     /// Returns the shape of the trajectory evidence.
     ///
     /// # Returns
@@ -644,6 +658,20 @@ impl CatTrjsEv {
     #[inline]
     pub fn states(&self) -> &States {
         &self.states
+    }
+
+    /// Sets the states of the trajectory.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The new states of the trajectory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new states are not a superset of the current states.
+    ///
+    pub fn set_states(&mut self, states: &States) {
+        todo!() // FIXME:
     }
 
     /// Returns the shape of the trajectories evidence.

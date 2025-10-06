@@ -89,7 +89,7 @@ def test_categorical_trajectory() -> None:
     columns = list(set(df.columns) - {"time"})
     df[columns] = df[columns].astype("category")
     # Create a CatTrj object.
-    trj = CatTrj(df)
+    trj = CatTrj.from_pandas(df)
 
     # Check the variables.
     assert trj.labels() == ["column_1", "column_2"], "Wrong labels."
@@ -117,7 +117,7 @@ def test_categorical_trajectory_with_states() -> None:
     columns = list(set(df.columns) - {"time"})
     df[columns] = df[columns].astype("category")
     # Create a CatTrj object.
-    trj = CatTrj(df)
+    trj = CatTrj.from_pandas(df)
     # Set the states.
     trj.set_states(states)
 
@@ -156,7 +156,7 @@ def test_categorical_trajectories() -> None:
         df[columns] = df[columns].astype("category")
 
     # Create a CatTrjs object.
-    trjs = CatTrjs(dfs)
+    trjs = CatTrjs.from_pandas(dfs)
 
     # Check the variables.
     assert trjs.labels() == ["column_1", "column_2"], "Wrong labels."
@@ -196,7 +196,7 @@ def test_categorical_trajectories_with_states() -> None:
         df[columns] = df[columns].astype("category")
 
     # Create a CatTrjs object.
-    trjs = CatTrjs(dfs)
+    trjs = CatTrjs.from_pandas(dfs)
     # Set the states.
     trjs.set_states(states)
 
