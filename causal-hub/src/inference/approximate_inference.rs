@@ -223,6 +223,14 @@ pub trait ParBNInference<T>
 where
     T: BN,
 {
+    /// Get the model.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the model.
+    ///
+    fn model(&self) -> &T;
+
     /// Estimate the values of `x` conditioned on `z` using `n` samples, in parallel.
     ///
     /// # Arguments
@@ -244,6 +252,10 @@ where
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, ()> {
+    fn model(&self) -> &CatBN {
+        self.model
+    }
+
     fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
@@ -274,6 +286,10 @@ impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R,
 }
 
 impl<R: Rng + SeedableRng> ParBNInference<CatBN> for ApproximateInference<'_, R, CatBN, CatEv> {
+    fn model(&self) -> &CatBN {
+        self.model
+    }
+
     fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");

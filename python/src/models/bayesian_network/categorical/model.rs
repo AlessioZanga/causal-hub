@@ -4,7 +4,8 @@ use backend::{
     datasets::CatTable,
     estimation::{BE, BNEstimator, MLE, ParBNEstimator},
     inference::{
-        ApproximateInference, BNCausalInference, BNInference, CausalInference, ParBNInference,
+        ApproximateInference, BNCausalInference, BNInference, CausalInference,
+        ParBNCausalInference, ParBNInference,
     },
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
@@ -321,15 +322,13 @@ impl PyCatBN {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
         let estimator = ApproximateInference::new(&mut rng, &self.inner);
-        // Initialize the causal inference engine.
-        let estimator = CausalInference::new(&estimator);
         // Estimate from the model.
         let estimate = if parallel {
             // Release the GIL to allow parallel execution.
-            py.detach(move || todo!() /* FIXME: */)
+            py.detach(move || CausalInference::new(&estimator).par_cace_estimate(&x, &y, &z))
         } else {
             // Execute sequentially.
-            estimator.cace_estimate(&x, &y, &z)
+            CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
         };
         // Return the dataset.
         Ok(estimate.map(|e| e.into()))
