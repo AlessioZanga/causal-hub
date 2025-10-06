@@ -329,7 +329,7 @@ impl PyCatBN {
             py.detach(move || todo!() /* FIXME: */)
         } else {
             // Execute sequentially.
-            estimator.conditional_average_causal_effect(&x, &y, &z)
+            estimator.cace_estimate(&x, &y, &z)
         };
         // Return the dataset.
         Ok(estimate.map(|e| e.into()))

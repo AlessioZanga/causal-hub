@@ -13,7 +13,7 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn average_causal_effect() {
+    fn ace_estimate() {
         // Load the model.
         let model = load_asia();
 
@@ -29,7 +29,7 @@ mod tests {
         let y = set![model.label_to_index("dysp")];
 
         // Compute the ACE of "bronc" on "dysp".
-        let pred_ace = engine.average_causal_effect(&x, &y);
+        let pred_ace = engine.ace_estimate(&x, &y);
 
         // Set the true ACE.
         let true_x = map![("bronc".to_owned(), set!["no".to_owned(), "yes".to_owned()]),];
@@ -41,7 +41,7 @@ mod tests {
         assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
 
         // Compute the ACE of "dysp" on "bronc".
-        let pred_ace = engine.average_causal_effect(&y, &x);
+        let pred_ace = engine.ace_estimate(&y, &x);
 
         // Check that the ACE does not exist.
         assert!(pred_ace.is_none());

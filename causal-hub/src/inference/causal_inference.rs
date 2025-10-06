@@ -49,8 +49,8 @@ where
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn average_causal_effect(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
-        self.conditional_average_causal_effect(x, y, &set![])
+    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
+        self.cace_estimate(x, y, &set![])
     }
 
     /// Estimate the conditional average causal effect of `X` on `Y` given `Z` as E(Y | do(X), Z).
@@ -73,24 +73,14 @@ where
     ///
     /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
     ///
-    fn conditional_average_causal_effect(
-        &self,
-        x: &Set<usize>,
-        y: &Set<usize>,
-        z: &Set<usize>,
-    ) -> Option<T::CPD>;
+    fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<T::CPD>;
 }
 
 impl<E> BNCausalInference<CatBN> for CausalInference<'_, E>
 where
     E: BNInference<CatBN>,
 {
-    fn conditional_average_causal_effect(
-        &self,
-        x: &Set<usize>,
-        y: &Set<usize>,
-        z: &Set<usize>,
-    ) -> Option<CatCPD> {
+    fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<CatCPD> {
         // Assert X is not empty.
         assert!(!x.is_empty(), "Variables X must not be empty.");
         // Assert Y is not empty.
