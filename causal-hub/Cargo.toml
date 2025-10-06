@@ -27,7 +27,7 @@ serde_json = "^1.0"
 statrs = { version = "^0.18", default-features = false }
 
 # Optional BLAS support for ndarray.
-blas-src = { version = "^0.12", optional = true }
+blas-src = { version = "^0.14", optional = true }
 openblas-src = { version = "^0.10", optional = true }
 
 [dev-dependencies]
