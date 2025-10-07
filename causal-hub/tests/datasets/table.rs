@@ -2,19 +2,19 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
-        map,
+        labels,
         models::Labelled,
-        set,
+        states,
         types::Set,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no"]),
+            ("A", ["no", "yes"]),
         ];
         let values = array![
             [0, 1, 0], //
@@ -24,7 +24,7 @@ mod tests {
         ];
         let dataset = CatTable::new(states, values.clone());
 
-        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
         assert!(dataset.labels().iter().is_sorted());
         assert!(
             dataset
@@ -45,13 +45,10 @@ mod tests {
 
     #[test]
     fn new_different_states() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            (
-                "C".to_owned(),
-                set!["yes".to_owned(), "no".to_owned(), "maybe".to_owned()]
-            ),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no", "maybe"]),
+            ("A", ["no", "yes"]),
         ];
         let values = array![
             [0, 1, 0], //
@@ -61,7 +58,7 @@ mod tests {
         ];
         let dataset = CatTable::new(states, values.clone());
 
-        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
         assert!(dataset.labels().iter().is_sorted());
         assert_eq!(
             dataset.values(),
@@ -77,11 +74,11 @@ mod tests {
     #[test]
     #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 4 ."]
     fn new_non_unique_labels() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("A".to_owned(), set!["maybe".to_owned()]), // 'A' is repeated
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no"]),
+            ("A", ["no", "yes"]),
+            ("A", ["maybe"]), // 'A' is repeated
         ];
         let values = array![
             [0, 1, 0, 0], //
@@ -97,11 +94,9 @@ mod tests {
     fn new_too_many_states() {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
         let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), too_many_states),
-        ];
+        let mut states = states![("B", ["no", "yes"]), ("C", ["yes", "no"]),];
+        states.insert("A".to_owned(), too_many_states);
+
         let values = array![
             [0, 1, 0], //
             [0, 0, 0], //
@@ -114,10 +109,10 @@ mod tests {
     #[test]
     #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 2 ."]
     fn new_wrong_variables_and_columns() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no"]),
+            ("A", ["no", "yes"]),
         ];
         let values = array![
             [0, 1], //
@@ -131,10 +126,10 @@ mod tests {
     #[test]
     #[should_panic = "Values of variable 'A' must be less than the number of states: \n\t expected: values[.., 'A'] < |states['A']| , \n\t found:    values[.., 'A'] == 2 and |states['A']| == 2 ."]
     fn new_wrong_values() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no"]),
+            ("A", ["no", "yes"]),
         ];
         let values = array![
             [0, 1, 2], // 'A' has a value of 2 which is not valid
@@ -147,10 +142,10 @@ mod tests {
 
     #[test]
     fn display() {
-        let states = map![
-            ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-            ("C".to_owned(), set!["yes".to_owned(), "no".to_owned()]),
-            ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+        let states = states![
+            ("B", ["no", "yes"]),
+            ("C", ["yes", "no"]),
+            ("A", ["no", "yes"]),
         ];
         let values = array![
             [0, 1, 0], //

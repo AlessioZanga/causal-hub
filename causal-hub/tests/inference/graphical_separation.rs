@@ -15,63 +15,63 @@ mod tests {
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn is_separator_set_out_of_bounds_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![5], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn is_separator_set_out_of_bounds_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![5], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn is_separator_set_out_of_bounds_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![1], &set![5]);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn is_separator_set_empty_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![], &set![1], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn is_separator_set_empty_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn is_separator_set_non_disjoint_x_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![0], &set![]);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn is_separator_set_non_disjoint_x_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![1], &set![0]);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn is_separator_set_non_disjoint_y_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_separator_set(&set![0], &set![1], &set![1]);
         }
 
         #[test]
         fn is_separator_set_edge() {
             // Initialize an empty g.
-            let mut g = DiGraph::empty(vec!["A", "B"]);
+            let mut g = DiGraph::empty(["A", "B"]);
             // Add edges to the g.
             g.add_edge(0, 1);
 
@@ -88,7 +88,7 @@ mod tests {
         #[test]
         fn is_separator_set_chain() {
             // Initialize an empty g.
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(0, 1);
             g.add_edge(1, 2);
@@ -102,7 +102,7 @@ mod tests {
         #[test]
         fn is_separator_set_fork() {
             // Initialize an empty g.
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(0, 1);
             g.add_edge(0, 2);
@@ -116,7 +116,7 @@ mod tests {
         #[test]
         fn is_separator_set_collider() {
             // Initialize an empty g.
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(1, 0);
             g.add_edge(2, 0);
@@ -129,7 +129,7 @@ mod tests {
 
         #[test]
         fn is_separator_set_primer_figure_2_7() {
-            let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
@@ -143,7 +143,7 @@ mod tests {
 
         #[test]
         fn is_separator_set_primer_figure_2_8() {
-            let mut g = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),
@@ -216,62 +216,62 @@ mod tests {
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn is_minimal_separator_set_out_of_bounds_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![5], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn is_minimal_separator_set_out_of_bounds_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![5], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Z is out of bounds.")]
         fn is_minimal_separator_set_out_of_bounds_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![1], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn is_minimal_separator_set_empty_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![], &set![1], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn is_minimal_separator_set_empty_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn is_minimal_separator_set_non_disjoint_x_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Z must be disjoint.")]
         fn is_minimal_separator_set_non_disjoint_x_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![1], &set![0], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets Y and Z must be disjoint.")]
         fn is_minimal_separator_set_non_disjoint_y_z() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.is_minimal_separator_set(&set![0], &set![1], &set![1], None, None);
         }
 
         #[test]
         fn is_minimal_separator_set_edge() {
-            let mut g = DiGraph::empty(vec!["A", "B"]);
+            let mut g = DiGraph::empty(["A", "B"]);
             g.add_edge(0, 1);
 
             assert!(!g.is_minimal_separator_set(&set![0], &set![1], &set![], None, None));
@@ -285,7 +285,7 @@ mod tests {
 
         #[test]
         fn is_minimal_separator_set_chain() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(1, 2);
 
@@ -297,7 +297,7 @@ mod tests {
 
         #[test]
         fn is_minimal_separator_set_fork() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(0, 2);
 
@@ -309,7 +309,7 @@ mod tests {
 
         #[test]
         fn is_minimal_separator_set_collider() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(1, 0);
             g.add_edge(2, 0);
 
@@ -321,7 +321,7 @@ mod tests {
 
         #[test]
         fn is_minimal_separator_set_primer_figure_2_7() {
-            let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
@@ -335,7 +335,7 @@ mod tests {
 
         #[test]
         fn is_minimal_separator_set_primer_figure_2_8() {
-            let mut g = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),
@@ -359,41 +359,41 @@ mod tests {
         #[test]
         #[should_panic(expected = "Vertex `5` in set X is out of bounds.")]
         fn find_minimal_separator_set_out_of_bounds_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.find_minimal_separator_set(&set![5], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Vertex `5` in set Y is out of bounds.")]
         fn find_minimal_separator_set_out_of_bounds_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.find_minimal_separator_set(&set![0], &set![5], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set X must not be empty.")]
         fn find_minimal_separator_set_empty_x() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.find_minimal_separator_set(&set![], &set![1], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Set Y must not be empty.")]
         fn find_minimal_separator_set_empty_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.find_minimal_separator_set(&set![0], &set![], None, None);
         }
 
         #[test]
         #[should_panic(expected = "Sets X and Y must be disjoint.")]
         fn find_minimal_separator_set_non_disjoint_x_y() {
-            let g = DiGraph::empty(vec!["A", "B", "C"]);
+            let g = DiGraph::empty(["A", "B", "C"]);
             g.find_minimal_separator_set(&set![0], &set![0], None, None);
         }
 
         #[test]
         fn find_minimal_separator_set_edge() {
-            let mut g = DiGraph::empty(vec!["A", "B"]);
+            let mut g = DiGraph::empty(["A", "B"]);
             g.add_edge(0, 1);
 
             assert_eq!(
@@ -419,7 +419,7 @@ mod tests {
 
         #[test]
         fn find_minimal_separator_set_chain() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(1, 2);
 
@@ -435,7 +435,7 @@ mod tests {
 
         #[test]
         fn find_minimal_separator_set_fork() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(0, 2);
 
@@ -451,7 +451,7 @@ mod tests {
 
         #[test]
         fn find_minimal_separator_set_collider() {
-            let mut g = DiGraph::empty(vec!["A", "B", "C"]);
+            let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(1, 0);
             g.add_edge(2, 0);
 
@@ -467,7 +467,7 @@ mod tests {
 
         #[test]
         fn find_minimal_separator_set_primer_figure_2_7() {
-            let mut g = DiGraph::empty(vec!["U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
                 g.add_edge(g.label_to_index(i), g.label_to_index(j));
             }
@@ -480,7 +480,7 @@ mod tests {
 
         #[test]
         fn find_minimal_separator_set_primer_figure_2_8() {
-            let mut g = DiGraph::empty(vec!["T", "U", "W", "X", "Y", "Z"]);
+            let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
                 ("T", "Y"),

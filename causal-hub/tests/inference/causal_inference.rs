@@ -4,9 +4,8 @@ mod tests {
     use causal_hub::{
         assets::load_asia,
         inference::{ApproximateInference, BNCausalInference, CausalInference},
-        map,
         models::{CatCPD, Labelled},
-        set,
+        set, states,
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;
@@ -32,8 +31,8 @@ mod tests {
         let pred_ace = engine.ace_estimate(&x, &y);
 
         // Set the true ACE.
-        let true_x = map![("bronc".to_owned(), set!["no".to_owned(), "yes".to_owned()]),];
-        let true_y = map![("dysp".to_owned(), set!["no".to_owned(), "yes".to_owned()]),];
+        let true_x = states![("bronc", ["no", "yes"]),];
+        let true_y = states![("dysp", ["no", "yes"]),];
         let true_p = array![[0.8675616185, 0.1324383815], [0.1824193800, 0.8175806200]];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 

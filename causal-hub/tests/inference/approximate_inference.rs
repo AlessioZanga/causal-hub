@@ -7,9 +7,8 @@ mod tests {
                 assets::load_asia,
                 datasets::{CatEv, CatEvT},
                 inference::{ApproximateInference, BNInference, ParBNInference},
-                map,
                 models::{CatCPD, Labelled},
-                set,
+                set, states,
             };
             use ndarray::prelude::*;
             use rand::prelude::*;
@@ -81,9 +80,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );
@@ -106,9 +105,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );
@@ -145,9 +144,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );
@@ -212,9 +211,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );
@@ -237,9 +236,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );
@@ -259,12 +258,12 @@ mod tests {
                     model.states().clone(),
                     [
                         CatEvT::CertainPositive {
-                            event: model.labels().get_index_of("lung").unwrap(), // lung
-                            state: 1,                                            // yes
+                            event: model.label_to_index("lung"), // lung
+                            state: 1,                            // yes
                         },
                         CatEvT::CertainPositive {
-                            event: model.labels().get_index_of("tub").unwrap(), // tub
-                            state: 0,                                           // no
+                            event: model.label_to_index("tub"), // tub
+                            state: 0,                           // no
                         },
                     ],
                 );
@@ -276,9 +275,9 @@ mod tests {
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
-                    map![("asia".to_owned(), set!["no".to_owned(), "yes".to_owned()])],
+                    states![("asia", ["no", "yes"])],
                     // Z
-                    map![],
+                    states![],
                     // Theta
                     array![[0.99, 0.01]],
                 );

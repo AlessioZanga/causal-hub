@@ -3,22 +3,19 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         datasets::{CatEv, CatEvT},
-        map,
+        labels,
         models::{CatCPD, CatPhi, Labelled, Phi},
-        set,
+        set, states,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() {
         // Set the states.
-        let s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         // Set the parameters.
         let p = array![
@@ -31,10 +28,7 @@ mod tests {
         let phi = CatPhi::new(s.clone(), p.clone());
 
         // Assert the labels.
-        assert_eq!(
-            phi.labels(),
-            &set!["A".to_owned(), "B".to_owned(), "C".to_owned()]
-        );
+        assert_eq!(&labels!["A", "B", "C"], phi.labels(),);
         // Assert the states.
         assert_eq!(phi.states(), &s);
         // Assert the shape.
@@ -46,13 +40,10 @@ mod tests {
     #[test]
     fn condition() {
         // Set the states.
-        let s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         // Set the parameters.
         let p = array![
@@ -69,13 +60,7 @@ mod tests {
         let pred_phi = phi.condition(&e);
 
         // Set the true potential.
-        let true_s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-        ];
+        let true_s = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
         let true_p = array![0.25, 0.08, 0.05, 0., 0.15, 0.09]
             .into_shape_with_order((3, 2))
             .unwrap()
@@ -89,13 +74,10 @@ mod tests {
     #[test]
     fn marginalize() {
         // Set the states.
-        let s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         // Set the parameters.
         let p = array![
@@ -111,13 +93,7 @@ mod tests {
         let pred_phi = phi.marginalize(&set![1]);
 
         // Set the true potential.
-        let true_s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
-        ];
+        let true_s = states![("A", ["a1", "a2", "a3"]), ("C", ["c1", "c2"]),];
         let true_p = array![0.33, 0.51, 0.05, 0.07, 0.24, 0.39]
             .into_shape_with_order((3, 2))
             .unwrap()
@@ -131,13 +107,10 @@ mod tests {
     #[test]
     fn normalize() {
         // Set the states.
-        let s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         // Set the parameters.
         let p = array![
@@ -164,17 +137,8 @@ mod tests {
     #[test]
     fn multiply() {
         // Set the states.
-        let s_1 = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-        ];
-        let s_2 = map![
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
-        ];
+        let s_1 = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let s_2 = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
         // Set the parameters.
         let p_1 = array![0.5, 0.8, 0.1, 0., 0.3, 0.9]
             .into_shape_with_order((3, 2))
@@ -192,13 +156,10 @@ mod tests {
         let pred_phi = &phi_1 * &phi_2;
 
         // Set the true potential.
-        let true_s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let true_s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         let true_p = array![
             0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18
@@ -220,17 +181,8 @@ mod tests {
     #[test]
     fn divide() {
         // Set the states.
-        let s_1 = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-        ];
-        let s_2 = map![(
-            "A".to_owned(),
-            set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-        )];
+        let s_1 = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
+        let s_2 = states![("A", ["a1", "a2", "a3"]),];
         // Set the parameters.
         let p_1 = array![0.5, 0.2, 0., 0., 0.3, 0.45]
             .into_shape_with_order((3, 2))
@@ -248,13 +200,7 @@ mod tests {
         let pred_phi = &phi_1 / &phi_2;
 
         // Set the true potential.
-        let true_s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-        ];
+        let true_s = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
         let true_p = array![0.625, 0.25, 0., 0., 0.5, 0.75]
             .into_shape_with_order((3, 2))
             .unwrap()
@@ -273,14 +219,8 @@ mod tests {
     #[test]
     fn from_cpd() {
         // Set the states.
-        let x = map![(
-            "A".to_owned(),
-            set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-        ),];
-        let z = map![
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
-        ];
+        let x = states![("A", ["a1", "a2", "a3"]),];
+        let z = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"]),];
         // Set the parameters.
         let p = array![
             [0.25, 0.35, 0.40],
@@ -295,13 +235,10 @@ mod tests {
         let pred_phi = CatPhi::from_cpd(cpd);
 
         // Set the true potential.
-        let true_s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let true_s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         let true_p = array![
             0.25, 0.05, 0.30, 0.10, 0.35, 0.15, 0.70, 0.90, 0.40, 0.80, 0.00, 0.00
@@ -318,13 +255,10 @@ mod tests {
     #[test]
     fn into_cpd() {
         // Set the true potential.
-        let s = map![
-            (
-                "A".to_owned(),
-                set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-            ),
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
+        let s = states![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
         ];
         let p = array![
             0.25, 0.05, 0.30, 0.10, 0.35, 0.15, 0.70, 0.90, 0.40, 0.80, 0.00, 0.00
@@ -338,14 +272,8 @@ mod tests {
         let pred_cpd = phi.into_cpd(&set![0], &set![1, 2]);
 
         // Set the true CPD.
-        let true_x = map![(
-            "A".to_owned(),
-            set!["a1".to_owned(), "a2".to_owned(), "a3".to_owned()]
-        ),];
-        let true_z = map![
-            ("B".to_owned(), set!["b1".to_owned(), "b2".to_owned()]),
-            ("C".to_owned(), set!["c1".to_owned(), "c2".to_owned()]),
-        ];
+        let true_x = states![("A", ["a1", "a2", "a3"])];
+        let true_z = states![("B", ["b1", "b2"]), ("C", ["c1", "c2"])];
         let true_p = array![
             [0.25, 0.35, 0.40],
             [0.05, 0.15, 0.80],

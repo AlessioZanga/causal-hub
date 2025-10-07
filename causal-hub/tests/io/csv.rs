@@ -3,6 +3,7 @@ mod tests {
     use causal_hub::{
         datasets::{CatTable, Dataset},
         io::CsvIO,
+        labels,
         models::Labelled,
     };
     use ndarray::prelude::*;
@@ -20,7 +21,7 @@ mod tests {
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
-        assert!(dataset.labels().iter().eq(["A", "B", "C"]));
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
         assert!(
             dataset
                 .states()
