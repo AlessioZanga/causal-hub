@@ -28,7 +28,6 @@ mod tests {
             let dataset = CatTable::new(states, values.clone());
 
             assert_eq!(&labels!["A", "B", "C"], dataset.labels());
-            assert!(dataset.labels().iter().is_sorted());
             assert!(
                 dataset
                     .states()
@@ -47,7 +46,7 @@ mod tests {
         }
 
         #[test]
-        fn new_different_states() {
+        fn new_unordered_states() {
             let states = states![
                 ("B", ["no", "yes"]),
                 ("C", ["yes", "no", "maybe"]),
@@ -59,10 +58,9 @@ mod tests {
                 [1, 0, 0], //
                 [1, 0, 1]
             ];
-            let dataset = CatTable::new(states, values.clone());
+            let dataset = CatTable::new(states, values);
 
             assert_eq!(&labels!["A", "B", "C"], dataset.labels());
-            assert!(dataset.labels().iter().is_sorted());
             assert_eq!(
                 dataset.values(),
                 &array![
@@ -71,6 +69,46 @@ mod tests {
                     [0, 1, 2], //
                     [1, 1, 2]
                 ]
+            );
+        }
+
+        #[test]
+        fn new_unordered_states_2() {
+            // Initialize the dataset.
+            let dataset = CatTable::new(
+                states![
+                    ("A", ["0", "1", "2", "3"]), //
+                    ("B", ["1", "2", "3", "0"]), //
+                ],
+                array![
+                    [0, 0], //
+                    [0, 1], //
+                    [1, 1], //
+                    [2, 1], //
+                    [2, 2]  //
+                ],
+            );
+
+            // Check the labels.
+            assert_eq!(&labels!["A", "B"], dataset.labels());
+            // Check the states.
+            assert_eq!(
+                &states![
+                    ("A", ["0", "1", "2", "3"]), //
+                    ("B", ["0", "1", "2", "3"]), //
+                ],
+                dataset.states()
+            );
+            // Check the events of the first trajectory.
+            assert_eq!(
+                &array![
+                    [0, 1], //
+                    [0, 2], //
+                    [1, 2], //
+                    [2, 2], //
+                    [2, 3]  //
+                ],
+                dataset.values()
             );
         }
 
