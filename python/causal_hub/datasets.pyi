@@ -144,41 +144,48 @@ class CatTrjEv:
     r"""
     A categorical trajectory evidence.
     """
-    def __new__(cls, df:typing.Any) -> CatTrjEv:
-        r"""
-        Constructs a new categorical trajectory evidence from a Pandas DataFrame.
-        
-        # Arguments
-        
-        * `df` - A Pandas DataFrame containing the trajectory evidence data.
-        
-        # Notes
-        
-        * The data frame must contain the following columns:
-        - `event`: The event type (string).
-        - `state`: The state of the event (string).
-        - `start_time`: The start time of the event (float64).
-        - `end_time`: The end time of the event (float64).
-        
-        # Returns
-        
-        A new categorical trajectory evidence instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
+        """
+    @classmethod
+    def from_pandas(cls, df:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjEv:
+        r"""
+        Constructs a new categorical trajectory evidence from a Pandas DataFrame.
         
-        A reference to the states of the categorical trajectory.
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            A Pandas DataFrame containing the trajectory evidence data.
+            The data frame must contain the following columns:
+        
+                - `event`: The event type (str),
+                - `state`: The state of the event (str),
+                - `start_time`: The start time of the event (float64),
+                - `end_time`: The end time of the event (float64).
+        
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+        
+        Returns
+        -------
+        CatTrjEv
+            A new categorical trajectory evidence instance.
         """
 
 class CatTrjs:
@@ -243,41 +250,48 @@ class CatTrjsEv:
     r"""
     A collection of categorical trajectory evidences.
     """
-    def __new__(cls, dfs:typing.Any) -> CatTrjsEv:
-        r"""
-        Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
-        
-        # Arguments
-        
-        * `dfs` - An iterable of Pandas DataFrames containing the trajectory evidence data.
-        
-        # Notes
-        
-        * The data frames must contain the following columns:
-        - `event`: The event type (string).
-        - `state`: The state of the event (string).
-        - `start_time`: The start time of the event (float64).
-        - `end_time`: The end time of the event (float64).
-        
-        # Returns
-        
-        A new categorical trajectory evidence instance.
-        """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
+        """
+    @classmethod
+    def from_pandas(cls, dfs:typing.Any, with_states:typing.Optional[dict]=None) -> CatTrjsEv:
+        r"""
+        Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
         
-        A reference to the states of the categorical trajectory.
+        Parameters
+        ----------
+        dfs: Iterable[pandas.DataFrame]
+            An iterable of Pandas DataFrames containing the trajectory evidence data.
+            The data frames must contain the following columns:
+        
+                - `event`: The event type (str),
+                - `state`: The state of the event (str),
+                - `start_time`: The start time of the event (float64),
+                - `end_time`: The end time of the event (float64).
+        
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+        
+        Returns
+        -------
+        CatTrjsEv
+            A new categorical trajectory evidence instance.
         """
 
 class CatWtdTrj:
@@ -288,41 +302,46 @@ class CatWtdTrj:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def trajectory(self) -> CatTrj:
         r"""
         Returns the trajectory.
         
-        # Returns
-        
-        A reference to the trajectory.
+        Returns
+        -------
+        CatTrj
+            A reference to the trajectory.
         """
     def weight(self) -> builtins.float:
         r"""
         Returns the weight of the trajectory.
         
-        # Returns
-        
-        The weight of the trajectory.
+        Returns
+        -------
+        float
+            The weight of the trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the states of the categorical trajectory.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
         """
     def times(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the times of the trajectory.
         
-        # Returns
-        
-        A reference to the times of the trajectory.
+        Returns
+        -------
+        numpy.ndarray
+            A reference to the times of the trajectory.
         """
 
 class CatWtdTrjs:
@@ -333,25 +352,28 @@ class CatWtdTrjs:
         r"""
         Returns the labels of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the labels of the categorical trajectory.
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical trajectory.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the categorical trajectory.
         
-        # Returns
-        
-        A reference to the states of the categorical trajectory.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical trajectory.
         """
     def values(self) -> builtins.list[CatWtdTrj]:
         r"""
         Return the trajectories.
         
-        # Returns
-        
-        A vector of categorical trajectories.
+        Returns
+        -------
+        list[CatWtdTrj]
+            A vector of categorical trajectories.
         """
 
 class GaussTable:

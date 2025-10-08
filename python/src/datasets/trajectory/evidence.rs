@@ -71,10 +71,15 @@ impl PyCatTrjEv {
     /// df: pandas.DataFrame
     ///     A Pandas DataFrame containing the trajectory evidence data.
     ///     The data frame must contain the following columns:
-    ///         - `event`: The event type (str).
-    ///         - `state`: The state of the event (str).
-    ///         - `start_time`: The start time of the event (float64).
+    ///
+    ///         - `event`: The event type (str),
+    ///         - `state`: The state of the event (str),
+    ///         - `start_time`: The start time of the event (float64),
     ///         - `end_time`: The end time of the event (float64).
+    ///
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
     ///
     /// Returns
     /// -------
@@ -166,12 +171,33 @@ impl PyCatTrjEv {
                 .to_owned_array(),
         );
 
-        // Infer the states from the columns.
+        // Construct the states.
         let mut states = with_states
-            .map(|states| {
-                todo!() /* FIXME: */
+            .and_then(|states| {
+                // Convert the PyDict to a States.
+                states
+                    .items()
+                    .into_iter()
+                    .map(|key_value| {
+                        // Cast the key_value to a tuple.
+                        let (key, value) = key_value
+                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
+                            .unwrap();
+                        // Convert the key to a String.
+                        let key = key.extract::<String>().unwrap();
+                        // Convert the value to a Vec<String>.
+                        let value: Set<_> = value
+                            .try_iter()?
+                            .map(|x| x?.extract::<String>())
+                            .collect::<PyResult<_>>()?;
+                        // Return the key and value.
+                        Ok((key, value))
+                    })
+                    .collect::<PyResult<_>>()
+                    .ok()
             })
             .unwrap_or_else(|| {
+                // Infer the states from the columns.
                 event
                     .iter()
                     .zip(&state)
@@ -275,14 +301,18 @@ impl PyCatTrjsEv {
     ///
     /// Parameters
     /// ----------
-    ///
     /// dfs: Iterable[pandas.DataFrame]
     ///     An iterable of Pandas DataFrames containing the trajectory evidence data.
     ///     The data frames must contain the following columns:
-    ///         - `event`: The event type (str).
-    ///         - `state`: The state of the event (str).
-    ///         - `start_time`: The start time of the event (float64).
+    ///
+    ///         - `event`: The event type (str),
+    ///         - `state`: The state of the event (str),
+    ///         - `start_time`: The start time of the event (float64),
     ///         - `end_time`: The end time of the event (float64).
+    ///
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
     ///
     /// Returns
     /// -------

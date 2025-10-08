@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pytest
 
 from causal_hub.datasets import CatTable, CatTrj, CatTrjEv, CatTrjs, GaussTable
 
@@ -307,8 +306,7 @@ def test_categorical_trajectories_with_states() -> None:
     )
     # Check the time values of the second trajectory.
     np.testing.assert_array_equal(
-        trjs.values()[1].times(), np.array(
-            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+        trjs.values()[1].times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
     )
     # Check the values of the second trajectory.
     np.testing.assert_array_equal(
@@ -327,16 +325,11 @@ def test_categorical_trajectories_with_states() -> None:
     # Convert back to list of pandas DataFrames and check equality.
     for df, trj in zip(dfs, trjs.to_pandas()):
         # Sort categories to ensure consistent ordering for comparison.
-        df["column_1"] = df["column_1"].cat.set_categories(
-            sorted(states["column_1"])
-        )
-        df["column_2"] = df["column_2"].cat.set_categories(
-            sorted(states["column_2"])
-        )
+        df["column_1"] = df["column_1"].cat.set_categories(sorted(states["column_1"]))
+        df["column_2"] = df["column_2"].cat.set_categories(sorted(states["column_2"]))
         pd.testing.assert_frame_equal(df, trj)
 
 
-@pytest.mark.skip(reason="To be fixed")  # FIXME:
 def test_categorical_trajectory_evidence() -> None:
     # Create a sample DataFrame with `event`, `state`, `start_time`, and `end_time` columns.
     df = pd.DataFrame(
