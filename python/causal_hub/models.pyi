@@ -16,161 +16,252 @@ class CatBN:
         r"""
         Constructs a new Bayesian network.
         
-        # Arguments
+        Parameters
+        ----------
+        graph: DiGraph
+            The underlying graph.
+        cpds: Iterable[CatCPD]
+            The conditional probability distributions.
         
-        * `graph` - The underlying graph.
-        * `cpds` - The conditional probability distributions.
-        
-        # Returns
-        
-        A new Bayesian network instance.
+        Returns
+        -------
+        CatBN
+            A new Bayesian network instance.
         """
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
         
-        # Returns
-        
-        The name of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The name of the model, if it exists.
         """
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
         
-        # Returns
-        
-        The description of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The description of the model, if it exists.
         """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
         
-        # Returns
-        
-        A reference to the labels.
+        Returns
+        -------
+        list[str]
+            A reference to the labels.
         """
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
         
-        # Returns
-        
-        A reference to the graph.
+        Returns
+        -------
+        DiGraph
+            A reference to the graph.
         """
     def cpds(self) -> builtins.dict[builtins.str, CatCPD]:
         r"""
         Returns the a map labels-distributions.
         
-        # Returns
-        
-        A reference to the CPDs.
+        Returns
+        -------
+        dict[str, CatCPD]
+            A reference to the CPDs.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     @classmethod
     def fit(cls, dataset:CatTable, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatBN:
         r"""
         Fit the model to a dataset and a given graph.
         
-        # Arguments
+        Parameters
+        ----------
+        dataset: CatTable
+            The dataset to fit the model to.
+        graph: DiGraph
+            The graph to fit the model to.
+        method: str
+            The method to use for fitting (default is `mle`).
+        parallel: bool
+            The flag to enable parallel fitting (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
         
-        * `dataset` - The dataset to fit the model to.
-        * `graph` - The graph to fit the model to.
-        * `method` - The method to use for fitting (default is `mle`).
-        * `parallel` - The flag to enable parallel fitting (default is `true`).
-        * `kwargs` - Optional keyword arguments:
-            - `alpha` - The prior of the Bayesian estimator.
+                - `alpha`: The prior of the Bayesian estimator (float64).
         
-        # Returns
-        
-        A new fitted model.
+        Returns
+        -------
+        CatBN
+            A new fitted model.
         """
     def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTable:
         r"""
         Generate samples from the model.
         
-        # Arguments
+        Parameters
+        ----------
+        n: int
+            The number of samples to generate.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel sampling (default is `true`).
         
-        * `n` - The number of samples to generate.
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel sampling (default is `true`).
-        
-        # Returns
-        
-        A new dataset containing the samples.
+        Returns
+        -------
+        CatTable
+            A new dataset containing the samples.
         """
     def estimate(self, x:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> CatCPD:
         r"""
         Estimate a conditional probability distribution (CPD).
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables.
+        z: str | Iterable[str]
+            A conditioning variable or an iterable of conditioning variables.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel estimation (default is `true`).
         
-        * `x` - A variable or an iterable of variables.
-        * `z` - A conditioning variable or an iterable of conditioning variables.
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel estimation (default is `true`).
-        
-        # Returns
-        
-        A new conditional probability distribution.
+        Returns
+        -------
+        CatCPD
+            A new conditional probability distribution.
         """
     def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> typing.Optional[CatCPD]:
         r"""
         Estimate a conditional causal effect (CACE).
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            An intervention variable or an iterable of intervention variables.
+        y: str | Iterable[str]
+            An outcome variable or an iterable of outcome variables.
+        z: str | Iterable[str]
+            A conditioning variable or an iterable of conditioning variables.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel estimation (default is `true`).
         
-        * `x` - An intervention variable or an iterable of intervention variables.
-        * `y` - An outcome variable or an iterable of outcome variables.
-        * `z` - A conditioning variable or an iterable of conditioning variables.
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel estimation (default is `true`).
-        
-        # Returns
-        
-        A new conditional causal effect (CACE) distribution.
+        Returns
+        -------
+        CatCPD | None
+            A new conditional causal effect (CACE) distribution, if identifiable.
         """
     @classmethod
     def from_bif(cls, bif:builtins.str) -> CatBN:
         r"""
         Read class from a BIF string.
+        
+        Parameters
+        ----------
+        bif: str
+            The BIF string to read from.
+        
+        Returns
+        -------
+        CatBN
+            A new Bayesian network instance.
         """
     def to_bif(self) -> builtins.str:
         r"""
         Write class to a BIF string.
+        
+        Returns
+        -------
+        str
+            A BIF string representation of the model.
         """
     @classmethod
     def read_bif(cls, path:builtins.str) -> CatBN:
         r"""
         Read class from a BIF file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the BIF file to read from.
+        
+        Returns
+        -------
+        CatBN
+            A new Bayesian network instance.
         """
     def write_bif(self, path:builtins.str) -> None:
         r"""
         Write class to a BIF file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the BIF file to write to.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> CatBN:
         r"""
         Read class from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        CatBN
+            A new Bayesian network instance.
         """
     def to_json(self) -> builtins.str:
         r"""
         Write class to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the model.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatBN:
         r"""
         Read class from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        CatBN
+            A new Bayesian network instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
         Write class to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class CatCIM:
@@ -286,81 +377,91 @@ class CatCPD:
         r"""
         Returns the label of the conditioned variable.
         
-        # Returns
-        
-        A reference to the label.
+        Returns
+        -------
+        list[str]
+            A reference to the label.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
-        # Returns
-        
-        The states of the conditioned variable.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            The states of the conditioned variable.
         """
     def shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioned variable.
         
-        # Returns
-        
-        The shape of the conditioned variable.
+        Returns
+        -------
+        list[int]
+            The shape of the conditioned variable.
         """
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
         
-        # Returns
-        
-        A reference to the conditioning labels.
+        Returns
+        -------
+        list[str]
+            A reference to the conditioning labels.
         """
     def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioning variables.
         
-        # Returns
-        
-        The states of the conditioning variables.
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            The states of the conditioning variables.
         """
     def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioning variables.
         
-        # Returns
-        
-        The shape of the conditioning variables.
+        Returns
+        -------
+        list[int]
+            The shape of the conditioning variables.
         """
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the parameters.
         
-        # Returns
-        
-        A reference to the parameters.
+        Returns
+        -------
+        numpy.ndarray
+            A reference to the parameters.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
         
-        # Returns
-        
-        A dictionary containing the sample statistics used to fit the distribution, if any.
+        Returns
+        -------
+        dict[str, ...] | None
+            A dictionary containing the sample statistics used to fit the distribution, if any.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
         
-        # Returns
-        
-        The sample log-likelihood given the distribution.
+        Returns
+        -------
+        float | None
+            The sample log-likelihood given the distribution, if any.
         """
     def __repr__(self) -> builtins.str:
         r"""
@@ -370,19 +471,49 @@ class CatCPD:
     def from_json(cls, json:builtins.str) -> CatCPD:
         r"""
         Read class from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            A JSON string representation of a CatCPD.
+        
+        Returns
+        -------
+        CatCPD
+            A CatCPD instance.
         """
     def to_json(self) -> builtins.str:
         r"""
         Write class to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the CatCPD.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatCPD:
         r"""
         Read class from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        CatCPD
+            A CatCPD instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
         Write class to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class CatCTBN:

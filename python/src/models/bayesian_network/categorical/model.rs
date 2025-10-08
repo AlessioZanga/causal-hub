@@ -43,14 +43,17 @@ impl_deref_from_into!(PyCatBN, CatBN);
 impl PyCatBN {
     /// Constructs a new Bayesian network.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// graph: DiGraph
+    ///     The underlying graph.
+    /// cpds: Iterable[CatCPD]
+    ///     The conditional probability distributions.
     ///
-    /// * `graph` - The underlying graph.
-    /// * `cpds` - The conditional probability distributions.
-    ///
-    /// # Returns
-    ///
-    /// A new Bayesian network instance.
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new Bayesian network instance.
     ///
     #[new]
     pub fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
@@ -69,9 +72,10 @@ impl PyCatBN {
 
     /// Returns the name of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The name of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The name of the model, if it exists.
     ///
     pub fn name(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.name())
@@ -79,9 +83,10 @@ impl PyCatBN {
 
     /// Returns the description of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The description of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The description of the model, if it exists.
     ///
     pub fn description(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.description())
@@ -89,9 +94,10 @@ impl PyCatBN {
 
     /// Returns the labels of the variables.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -99,9 +105,10 @@ impl PyCatBN {
 
     /// Returns the underlying graph.
     ///
-    /// # Returns
-    ///
-    /// A reference to the graph.
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A reference to the graph.
     ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.inner.graph().clone().into())
@@ -109,9 +116,10 @@ impl PyCatBN {
 
     /// Returns the a map labels-distributions.
     ///
-    /// # Returns
-    ///
-    /// A reference to the CPDs.
+    /// Returns
+    /// -------
+    /// dict[str, CatCPD]
+    ///     A reference to the CPDs.
     ///
     pub fn cpds(&self) -> PyResult<BTreeMap<&str, PyCatCPD>> {
         Ok(self
@@ -131,9 +139,10 @@ impl PyCatBN {
 
     /// Returns the parameters size.
     ///
-    /// # Returns
-    ///
-    /// The parameters size.
+    /// Returns
+    /// -------
+    /// int
+    ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
@@ -141,18 +150,25 @@ impl PyCatBN {
 
     /// Fit the model to a dataset and a given graph.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// dataset: CatTable
+    ///     The dataset to fit the model to.
+    /// graph: DiGraph
+    ///     The graph to fit the model to.
+    /// method: str
+    ///     The method to use for fitting (default is `mle`).
+    /// parallel: bool
+    ///     The flag to enable parallel fitting (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
     ///
-    /// * `dataset` - The dataset to fit the model to.
-    /// * `graph` - The graph to fit the model to.
-    /// * `method` - The method to use for fitting (default is `mle`).
-    /// * `parallel` - The flag to enable parallel fitting (default is `true`).
-    /// * `kwargs` - Optional keyword arguments:
-    ///     - `alpha` - The prior of the Bayesian estimator.
+    ///         - `alpha`: The prior of the Bayesian estimator (float64).
     ///
-    /// # Returns
-    ///
-    /// A new fitted model.
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new fitted model.
     ///
     #[classmethod]
     #[pyo3(signature = (
@@ -215,15 +231,19 @@ impl PyCatBN {
 
     /// Generate samples from the model.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// n: int
+    ///     The number of samples to generate.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel sampling (default is `true`).
     ///
-    /// * `n` - The number of samples to generate.
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel sampling (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new dataset containing the samples.
+    /// Returns
+    /// -------
+    /// CatTable
+    ///     A new dataset containing the samples.
     ///
     #[pyo3(signature = (n, seed=31, parallel=true))]
     pub fn sample(
@@ -251,16 +271,21 @@ impl PyCatBN {
 
     /// Estimate a conditional probability distribution (CPD).
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     A variable or an iterable of variables.
+    /// z: str | Iterable[str]
+    ///     A conditioning variable or an iterable of conditioning variables.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel estimation (default is `true`).
     ///
-    /// * `x` - A variable or an iterable of variables.
-    /// * `z` - A conditioning variable or an iterable of conditioning variables.
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new conditional probability distribution.
+    /// Returns
+    /// -------
+    /// CatCPD
+    ///     A new conditional probability distribution.
     ///
     #[pyo3(signature = (x, z, seed=31, parallel=true))]
     pub fn estimate(
@@ -292,17 +317,23 @@ impl PyCatBN {
 
     /// Estimate a conditional causal effect (CACE).
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     An intervention variable or an iterable of intervention variables.
+    /// y: str | Iterable[str]
+    ///     An outcome variable or an iterable of outcome variables.
+    /// z: str | Iterable[str]
+    ///     A conditioning variable or an iterable of conditioning variables.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel estimation (default is `true`).
     ///
-    /// * `x` - An intervention variable or an iterable of intervention variables.
-    /// * `y` - An outcome variable or an iterable of outcome variables.
-    /// * `z` - A conditioning variable or an iterable of conditioning variables.
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new conditional causal effect (CACE) distribution.
+    /// Returns
+    /// -------
+    /// CatCPD | None
+    ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
     #[pyo3(signature = (x, y, z, seed=31, parallel=true))]
     pub fn do_estimate(
@@ -335,6 +366,17 @@ impl PyCatBN {
     }
 
     /// Read class from a BIF string.
+    ///
+    /// Parameters
+    /// ----------
+    /// bif: str
+    ///     The BIF string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new Bayesian network instance.
+    ///
     #[classmethod]
     pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
@@ -343,11 +385,28 @@ impl PyCatBN {
     }
 
     /// Write class to a BIF string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A BIF string representation of the model.
+    ///
     pub fn to_bif(&self) -> PyResult<String> {
         Ok(self.inner.to_bif())
     }
 
     /// Read class from a BIF file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the BIF file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new Bayesian network instance.
+    ///
     #[classmethod]
     pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -356,12 +415,29 @@ impl PyCatBN {
     }
 
     /// Write class to a BIF file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the BIF file to write to.
+    ///
     pub fn write_bif(&self, path: &str) -> PyResult<()> {
         self.inner.write_bif(path);
         Ok(())
     }
 
     /// Read class from a JSON string.
+    ///
+    /// Parameters
+    /// ----------
+    /// json: str
+    ///     The JSON string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new Bayesian network instance.
+    ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
@@ -370,11 +446,28 @@ impl PyCatBN {
     }
 
     /// Write class to a JSON string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A JSON string representation of the model.
+    ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
     /// Read class from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A new Bayesian network instance.
+    ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -383,6 +476,12 @@ impl PyCatBN {
     }
 
     /// Write class to a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to write to.
+    ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         self.inner.write_json(path);
         Ok(())
