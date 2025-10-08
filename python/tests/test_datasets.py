@@ -144,12 +144,8 @@ def test_categorical_trajectory_with_states() -> None:
     columns = list(set(df.columns) - {"time"})
     df[columns] = df[columns].astype("category")
     # Add the unobserved states to the dataframe categories.
-    df["column_1"] = df["column_1"].cat.add_categories(
-        set(states["column_1"]) - set(df["column_1"].cat.categories)
-    )
-    df["column_2"] = df["column_2"].cat.add_categories(
-        set(states["column_2"]) - set(df["column_2"].cat.categories)
-    )
+    df["column_1"] = df["column_1"].cat.set_categories(states["column_1"])
+    df["column_2"] = df["column_2"].cat.set_categories(states["column_2"])
 
     # Create a CatTrj object.
     trj = CatTrj.from_pandas(df)
@@ -276,12 +272,8 @@ def test_categorical_trajectories_with_states() -> None:
         columns = list(set(df.columns) - {"time"})
         df[columns] = df[columns].astype("category")
         # Add the unobserved states to the dataframe categories.
-        df["column_1"] = df["column_1"].cat.add_categories(
-            set(states["column_1"]) - set(df["column_1"].cat.categories)
-        )
-        df["column_2"] = df["column_2"].cat.add_categories(
-            set(states["column_2"]) - set(df["column_2"].cat.categories)
-        )
+        df["column_1"] = df["column_1"].cat.set_categories(states["column_1"])
+        df["column_2"] = df["column_2"].cat.set_categories(states["column_2"])
 
     # Create a CatTrjs object.
     trjs = CatTrjs.from_pandas(dfs)
@@ -315,7 +307,8 @@ def test_categorical_trajectories_with_states() -> None:
     )
     # Check the time values of the second trajectory.
     np.testing.assert_array_equal(
-        trjs.values()[1].times(), np.array([0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
+        trjs.values()[1].times(), np.array(
+            [0.0, 1.0, 2.0, 3.0, 4.0]), "Wrong time."
     )
     # Check the values of the second trajectory.
     np.testing.assert_array_equal(
@@ -333,6 +326,13 @@ def test_categorical_trajectories_with_states() -> None:
     )
     # Convert back to list of pandas DataFrames and check equality.
     for df, trj in zip(dfs, trjs.to_pandas()):
+        # Sort categories to ensure consistent ordering for comparison.
+        df["column_1"] = df["column_1"].cat.set_categories(
+            sorted(states["column_1"])
+        )
+        df["column_2"] = df["column_2"].cat.set_categories(
+            sorted(states["column_2"])
+        )
         pd.testing.assert_frame_equal(df, trj)
 
 
@@ -360,7 +360,7 @@ def test_categorical_trajectory_evidence() -> None:
     df[time_columns] = df[time_columns].astype("float64")
 
     # Create a CatTrjEv object.
-    trj_ev = CatTrjEv(df)
+    trj_ev = CatTrjEv.from_pandas(df, with_states=states)
 
     # Check the variables.
     assert trj_ev.labels() == ["A", "B", "C"], "Wrong labels."

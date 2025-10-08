@@ -404,7 +404,7 @@ impl CatCPD {
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
             states.sort_keys();
-            states.values_mut().for_each(|x| x.sort());
+            states.values_mut().for_each(Set::sort);
             labels = states.keys().cloned().collect();
             shape = states.values().map(|x| x.len()).collect();
             // Allocate new parameters.
@@ -458,7 +458,7 @@ impl CatCPD {
             sorted_row_idx.sort_by_key(|&i| &sorted_states_idx[i]);
             // Sort the labels.
             conditioning_states.sort_keys();
-            conditioning_states.values_mut().for_each(|x| x.sort());
+            conditioning_states.values_mut().for_each(Set::sort);
             conditioning_labels = conditioning_states.keys().cloned().collect();
             conditioning_shape = conditioning_states.values().map(|x| x.len()).collect();
             // Allocate new parameters.

@@ -9,7 +9,7 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     models::Labelled,
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A type alias for a categorical variable.
@@ -112,7 +112,7 @@ impl CatTable {
             let mut new_states = states.clone();
             // Sort the states.
             new_states.sort_keys();
-            new_states.values_mut().for_each(|x| x.sort());
+            new_states.values_mut().for_each(Set::sort);
             // Clone the values.
             let mut new_values = values.clone();
             // Update the values according to the sorted states.
