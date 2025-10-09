@@ -7,47 +7,47 @@ mod tests {
 
     #[test]
     fn topological_order_simple() {
-        let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
+        let mut graph = DiGraph::empty(["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(1, 2);
 
         let sorted = graph.topological_order().unwrap();
-        assert_eq!(sorted, vec![0, 1, 2]);
+        assert_eq!(sorted, [0, 1, 2]);
     }
 
     #[test]
     fn topological_order_multiple_paths() {
-        let mut graph = DiGraph::empty(vec!["A", "B", "C", "D"]);
+        let mut graph = DiGraph::empty(["A", "B", "C", "D"]);
         graph.add_edge(0, 1);
         graph.add_edge(0, 2);
         graph.add_edge(1, 3);
         graph.add_edge(2, 3);
 
         let sorted = graph.topological_order().unwrap();
-        assert_eq!(sorted, vec![0, 1, 2, 3]);
+        assert_eq!(sorted, [0, 1, 2, 3]);
     }
 
     #[test]
     fn topological_order_disconnected_graph() {
-        let mut graph = DiGraph::empty(vec!["A", "B", "C", "D"]);
+        let mut graph = DiGraph::empty(["A", "B", "C", "D"]);
         graph.add_edge(0, 1);
         graph.add_edge(2, 3);
 
         let sorted = graph.topological_order().unwrap();
-        assert_eq!(sorted, vec![0, 2, 1, 3]);
+        assert_eq!(sorted, [0, 2, 1, 3]);
     }
 
     #[test]
     fn topological_order_single_vertex() {
-        let graph = DiGraph::empty(vec!["A"]);
+        let graph = DiGraph::empty(["A"]);
 
         let sorted = graph.topological_order().unwrap();
-        assert_eq!(sorted, vec![0]);
+        assert_eq!(sorted, [0]);
     }
 
     #[test]
     fn topological_order_empty_graph() {
-        let labels: Vec<String> = vec![];
+        let labels: [String; 0] = [];
         let graph = DiGraph::empty(labels);
 
         let sorted = graph.topological_order().unwrap();
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn topological_order_cyclic_graph() {
-        let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
+        let mut graph = DiGraph::empty(["A", "B", "C"]);
         graph.add_edge(0, 1);
         graph.add_edge(1, 2);
         graph.add_edge(2, 0);
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn topological_order_self_loop() {
-        let mut graph = DiGraph::empty(vec!["A"]);
+        let mut graph = DiGraph::empty(["A"]);
         graph.add_edge(0, 0);
 
         assert!(graph.topological_order().is_none());

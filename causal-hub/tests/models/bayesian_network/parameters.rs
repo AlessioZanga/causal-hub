@@ -2,23 +2,22 @@
 mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
-        map,
+        labels,
         models::{CPD, CatCPD, Labelled},
-        set,
+        set, states,
     };
     use ndarray::prelude::*;
 
     #[test]
     fn new() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![("A".to_owned(), s.clone())];
-        let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s)];
+        let x = states![("A", ["no", "yes"])];
+        let z = states![("B", ["no", "yes"]), ("C", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
         let cpd = CatCPD::new(x, z, p.clone());
 
-        assert_eq!(cpd.labels()[0], "A");
-        assert!(cpd.states()[0].iter().eq(["no", "yes"]));
-        assert!(cpd.conditioning_labels().iter().eq(["B", "C"]));
+        assert_eq!(&labels!["A"], cpd.labels());
+        assert_eq!(&states![("A", ["no", "yes"])], cpd.states());
+        assert_eq!(&labels!["B", "C"], cpd.conditioning_labels());
         assert!(
             cpd.conditioning_states()
                 .values()
@@ -30,9 +29,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
     fn unique_labels() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![("A".to_owned(), s.clone())];
-        let z = map![("A".to_owned(), s.clone())];
+        let x = states![("A", ["no", "yes"])];
+        let z = states![("A", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         CatCPD::new(x, z, p);
     }
@@ -40,17 +38,16 @@ mod tests {
     #[test]
     #[should_panic(expected = "Failed to sum probability to one: [].")]
     fn empty_labels() {
-        let x = map![];
-        let z = map![];
+        let x = states![];
+        let z = states![];
         let p = array![[]];
         CatCPD::new(x, z, p);
     }
 
     #[test]
     fn display() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![("A".to_owned(), s.clone())];
-        let z = map![("B".to_owned(), s.clone())];
+        let x = states![("A", ["no", "yes"])];
+        let z = states![("B", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         let cpd = CatCPD::new(x, z, p);
 
@@ -71,9 +68,8 @@ mod tests {
 
     #[test]
     fn marginalize_single_x() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![("A".to_owned(), s.clone()), ("B".to_owned(), s.clone())];
-        let z = map![("C".to_owned(), s.clone()), ("D".to_owned(), s.clone())];
+        let x = states![("A", ["no", "yes"]), ("B", ["no", "yes"])];
+        let z = states![("C", ["no", "yes"]), ("D", ["no", "yes"])];
         let p = array![
             // A0,    0,    1,    1
             // B0     1     0     1
@@ -86,8 +82,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0], &set![]);
 
-        let true_x = map![("B".to_owned(), s.clone())];
-        let true_z = map![("C".to_owned(), s.clone()), ("D".to_owned(), s.clone())];
+        let true_x = states![("B", ["no", "yes"])];
+        let true_z = states![("C", ["no", "yes"]), ("D", ["no", "yes"])];
         let true_p = array![
             // B                 0,                      1,     (C, D)
             [p[[0, 0]] + p[[0, 2]], p[[0, 1]] + p[[0, 3]]], //  (0, 0)
@@ -103,16 +99,15 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_x() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![
-            ("A".to_owned(), s.clone()),
-            ("B".to_owned(), s.clone()),
-            ("C".to_owned(), s.clone())
+        let x = states![
+            ("A", ["no", "yes"]),
+            ("B", ["no", "yes"]),
+            ("C", ["no", "yes"])
         ];
-        let z = map![
-            ("D".to_owned(), s.clone()),
-            ("E".to_owned(), s.clone()),
-            ("F".to_owned(), s.clone())
+        let z = states![
+            ("D", ["no", "yes"]),
+            ("E", ["no", "yes"]),
+            ("F", ["no", "yes"])
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -131,11 +126,11 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![0, 2], &set![]);
 
-        let true_x = map![("B".to_owned(), s.clone())];
-        let true_z = map![
-            ("D".to_owned(), s.clone()),
-            ("E".to_owned(), s.clone()),
-            ("F".to_owned(), s.clone())
+        let true_x = states![("B", ["no", "yes"])];
+        let true_z = states![
+            ("D", ["no", "yes"]),
+            ("E", ["no", "yes"]),
+            ("F", ["no", "yes"])
         ];
         let true_p = array![
             // B                                                    (D, E, F)
@@ -196,9 +191,8 @@ mod tests {
 
     #[test]
     fn marginalize_single_z() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![("A".to_owned(), s.clone())];
-        let z = map![("B".to_owned(), s.clone()), ("C".to_owned(), s.clone())];
+        let x = states![("A", ["no", "yes"])];
+        let z = states![("B", ["no", "yes"]), ("C", ["no", "yes"])];
         let p = array![
             //                  (B, C)
             [0.10, 0.90], //    (0, 0)
@@ -210,8 +204,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![0]);
 
-        let true_x = map![("A".to_owned(), s.clone())];
-        let true_z = map![("C".to_owned(), s.clone())];
+        let true_x = states![("A", ["no", "yes"])];
+        let true_z = states![("C", ["no", "yes"])];
         let true_p = array![
             //                                                      (C)
             [(p[[0, 0]] + p[[2, 0]]), (p[[0, 1]] + p[[2, 1]])], //  (0)
@@ -224,8 +218,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![1]);
 
-        let true_x = map![("A".to_owned(), s.clone())];
-        let true_z = map![("B".to_owned(), s.clone())];
+        let true_x = states![("A", ["no", "yes"])];
+        let true_z = states![("B", ["no", "yes"])];
         let true_p = array![
             //                                                      (B)
             [(p[[0, 0]] + p[[1, 0]]), (p[[0, 1]] + p[[1, 1]])], //  (0)
@@ -239,16 +233,15 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_z() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![
-            ("A".to_owned(), s.clone()),
-            ("B".to_owned(), s.clone()),
-            ("C".to_owned(), s.clone())
+        let x = states![
+            ("A", ["no", "yes"]),
+            ("B", ["no", "yes"]),
+            ("C", ["no", "yes"])
         ];
-        let z = map![
-            ("D".to_owned(), s.clone()),
-            ("E".to_owned(), s.clone()),
-            ("F".to_owned(), s.clone())
+        let z = states![
+            ("D", ["no", "yes"]),
+            ("E", ["no", "yes"]),
+            ("F", ["no", "yes"])
         ];
         let p = array![
             //                                                   (D, E, F)
@@ -265,12 +258,12 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![], &set![0, 2]);
 
-        let true_x = map![
-            ("A".to_owned(), s.clone()),
-            ("B".to_owned(), s.clone()),
-            ("C".to_owned(), s.clone())
+        let true_x = states![
+            ("A", ["no", "yes"]),
+            ("B", ["no", "yes"]),
+            ("C", ["no", "yes"])
         ];
-        let true_z = map![("E".to_owned(), s.clone())];
+        let true_z = states![("E", ["no", "yes"])];
         let true_p = array![
             //                                                  (E)
             [
@@ -302,16 +295,15 @@ mod tests {
 
     #[test]
     fn marginalize_single_x_z() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![
-            ("A".to_owned(), s.clone()),
-            ("B".to_owned(), s.clone()),
-            ("C".to_owned(), s.clone())
+        let x = states![
+            ("A", ["no", "yes"]),
+            ("B", ["no", "yes"]),
+            ("C", ["no", "yes"])
         ];
-        let z = map![
-            ("D".to_owned(), s.clone()),
-            ("E".to_owned(), s.clone()),
-            ("F".to_owned(), s.clone())
+        let z = states![
+            ("D", ["no", "yes"]),
+            ("E", ["no", "yes"]),
+            ("F", ["no", "yes"])
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -330,8 +322,8 @@ mod tests {
 
         let pred_cpd = cpd.marginalize(&set![1], &set![2]);
 
-        let true_x = map![("A".to_owned(), s.clone()), ("C".to_owned(), s.clone())];
-        let true_z = map![("D".to_owned(), s.clone()), ("E".to_owned(), s.clone())];
+        let true_x = states![("A", ["no", "yes"]), ("C", ["no", "yes"])];
+        let true_z = states![("D", ["no", "yes"]), ("E", ["no", "yes"])];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[1, 0]] + p[[1, 2]],
@@ -366,16 +358,15 @@ mod tests {
 
     #[test]
     fn marginalize_multiple_x_z() {
-        let s = set!["no".to_owned(), "yes".to_owned()];
-        let x = map![
-            ("A".to_owned(), s.clone()),
-            ("B".to_owned(), s.clone()),
-            ("C".to_owned(), s.clone())
+        let x = states![
+            ("A", ["no", "yes"]),
+            ("B", ["no", "yes"]),
+            ("C", ["no", "yes"])
         ];
-        let z = map![
-            ("D".to_owned(), s.clone()),
-            ("E".to_owned(), s.clone()),
-            ("F".to_owned(), s.clone())
+        let z = states![
+            ("D", ["no", "yes"]),
+            ("E", ["no", "yes"]),
+            ("F", ["no", "yes"])
         ];
         let p = array![
             // A0,    0,    0,    0,    1,    1,    1,    1
@@ -393,8 +384,8 @@ mod tests {
         let cpd = CatCPD::new(x, z, p.clone());
 
         let pred_cpd = cpd.marginalize(&set![0, 1], &set![0, 2]);
-        let true_x = map![("C".to_owned(), s.clone())];
-        let true_z = map![("E".to_owned(), s.clone())];
+        let true_x = states![("C", ["no", "yes"])];
+        let true_z = states![("E", ["no", "yes"])];
         let true_p = array![
             [
                 p[[0, 0]] + p[[0, 2]] + p[[0, 4]] + p[[0, 6]] + // (C0, E0)

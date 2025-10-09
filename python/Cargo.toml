@@ -18,8 +18,8 @@ numpy = "^0.26"
 paste.workspace = true
 pyo3 = "^0.26"
 pyo3-log = "^0.13"
-pyo3-stub-gen = { version = "^0.13", features = ["numpy"] }
-pyo3-stub-gen-derive = "^0.13"
+pyo3-stub-gen = { version = "^0.14", features = ["numpy"] }
+pyo3-stub-gen-derive = "^0.14"
 rand.workspace = true
 rand_xoshiro = "^0.7"
 rayon.workspace = true

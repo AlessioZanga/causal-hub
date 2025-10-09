@@ -3,7 +3,7 @@ use paste::paste;
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
-use crate::models::{PyCatBN, PyCatCTBN};
+use crate::models::{PyCatBN, PyCatCTBN, PyGaussBN};
 
 macro_for!(
     $bn in [
@@ -12,8 +12,8 @@ macro_for!(
         pigs, sachs, survey, water, win95pts
     ] {
     paste! {
-        #[doc = "Load the `" $bn:upper "` BN from the assets."]
-        #[gen_stub_pyfunction]
+        #[doc = "Load the `" $bn:upper "` categorical BN from the assets."]
+        #[gen_stub_pyfunction(module = "causal_hub.assets")]
         #[pyfunction]
         pub fn [<load_ $bn>]() -> PyCatBN {
             backend::assets::[<load_ $bn>]().into()
@@ -21,8 +21,22 @@ macro_for!(
     }
 });
 
-/// Load the `EATING` CTBN from the assets.
-#[gen_stub_pyfunction]
+macro_for!(
+    $bn in [
+        arth150, ecoli70, magic_irri, magic_niab
+    ] {
+    paste! {
+        #[doc = "Load the `" $bn:upper "` Gaussian BN from the assets."]
+        #[gen_stub_pyfunction(module = "causal_hub.assets")]
+        #[pyfunction]
+        pub fn [<load_ $bn>]() -> PyGaussBN {
+            backend::assets::[<load_ $bn>]().into()
+        }
+    }
+});
+
+/// Load the `EATING` categorical CTBN from the assets.
+#[gen_stub_pyfunction(module = "causal_hub.assets")]
 #[pyfunction]
 pub fn load_eating() -> PyCatCTBN {
     backend::assets::load_eating().into()

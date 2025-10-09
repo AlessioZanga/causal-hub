@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, ops::Deref};
+use std::{cell::RefCell, ops::Deref};
 
 use approx::relative_eq;
 use backend::{
@@ -24,11 +24,12 @@ use rayon::prelude::*;
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
     estimation::PyPK,
+    kwarg,
     models::PyCatCTBN,
 };
 
 /// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
-#[gen_stub_pyfunction]
+#[gen_stub_pyfunction(module = "causal_hub.estimation")]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
@@ -57,23 +58,11 @@ pub fn sem<'a>(
     // Convert the prior knowledge into a PK.
     let prior_knowledge: &PK = prior_knowledge.deref();
 
-    // Get the keyword arguments.
-    let kwargs: HashMap<String, Py<PyAny>> =
-        kwargs.map(|x| x.extract()).transpose()?.unwrap_or_default();
     // Get the maximum number of parents from the keyword arguments or set the maximum.
-    let max_parents: usize = kwargs
-        .get("max_parents")
-        .and_then(|x| x.extract(py).ok())
-        .unwrap_or(evidence.labels().len());
+    let max_parents = kwarg!(kwargs, "max_parents", usize).unwrap_or(evidence.labels().len());
     // Get f_test and c_test from the keyword arguments or set defaults.
-    let f_test: f64 = kwargs
-        .get("f_test")
-        .and_then(|x| x.extract(py).ok())
-        .unwrap_or(0.01);
-    let c_test: f64 = kwargs
-        .get("c_test")
-        .and_then(|x| x.extract(py).ok())
-        .unwrap_or(0.01);
+    let f_test = kwarg!(kwargs, "f_test", f64).unwrap_or(0.01);
+    let c_test = kwarg!(kwargs, "c_test", f64).unwrap_or(0.01);
 
     // Release the GIL to allow parallel execution.
     let output = py.detach(|| {
@@ -192,7 +181,7 @@ pub fn sem<'a>(
                 // Define the maximization step.
                 let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                     // Initialize the parameter estimator.
-                    let estimator = BE::new(expectation, (1, 1.));
+                    let estimator = BE::new(expectation).with_prior((1, 1.));
                     // Fit the model using the parameter estimator.
                     estimator.par_fit(prev_model.graph().clone())
                 };
@@ -217,7 +206,7 @@ pub fn sem<'a>(
         // Define the structure learning step.
         let sl_step = |_prev_model: &CatCTBN, em: &EMOutput<CatCTBN, CatWtdTrjs>| -> CatCTBN {
             // Initialize the parameter estimator.
-            let estimator = BE::new(em.expectations.last().unwrap(), (1, 1.));
+            let estimator = BE::new(em.expectations.last().unwrap()).with_prior((1, 1.));
             // Cache the parameter estimator.
             let cache = Cache::new(&estimator);
             // Learn the graph.

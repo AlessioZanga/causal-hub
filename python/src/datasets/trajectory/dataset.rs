@@ -5,10 +5,10 @@ use backend::{
     models::Labelled,
     types::{Set, States},
 };
-use numpy::{PyArray1, ndarray::prelude::*, prelude::*};
+use numpy::{PyArray1, PyArray2, ndarray::prelude::*, prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple},
+    types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -16,7 +16,7 @@ use crate::impl_deref_from_into;
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrj")]
+#[pyclass(name = "CatTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
     inner: CatTrj,
@@ -28,35 +28,89 @@ impl_deref_from_into!(PyCatTrj, CatTrj);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrj {
+    /// Returns the labels of the categorical trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
+    ///
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
+        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    }
+
+    /// Returns the states of the categorical trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
+    ///
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+        Ok(self
+            .inner
+            .states()
+            .iter()
+            .map(|(label, states)| {
+                // Get reference to the label and states.
+                let label = label.as_ref();
+                let states = states.iter().map(String::as_str);
+                // Convert the states to a PyTuple.
+                let states = PyTuple::new(py, states).unwrap();
+                // Return a tuple of the label and states.
+                (label, states)
+            })
+            .collect())
+    }
+
+    /// Returns the values of the trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A reference to the values of the trajectory.
+    ///
+    pub fn values<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<CatType>>> {
+        Ok(self.inner.values().to_pyarray(py))
+    }
+
+    /// Returns the times of the trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A reference to the times of the trajectory.
+    ///
+    pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
+        Ok(self.inner.times().to_pyarray(py))
+    }
+
     /// Constructs a new categorical trajectory from a Pandas DataFrame.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// df: pandas.DataFrame
+    ///     A Pandas DataFrame containing the trajectory data.
+    ///     The data frame must contain a column named "time" that represents the time of each event.
+    ///     Every other column in the data frame must represent a categorical variable.
     ///
-    /// * `df` - A Pandas DataFrame containing the trajectory data.
-    /// * `with_states` - An optional dictionary of states.
+    /// Returns
+    /// -------
+    /// CatTrj
+    ///     A new categorical trajectory instance.
     ///
-    /// # Notes
-    ///
-    /// * The data frame must contain a column named "time" that represents the time of each event.
-    /// * Every other column in the data frame must represent a categorical variable.
-    ///
-    /// # Returns
-    ///
-    /// A new categorical trajectory instance.
-    ///
-    #[new]
-    #[pyo3(signature = (df, with_states = None))]
-    pub fn new(
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         df: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Import the pandas module.
-        let pandas = py.import("pandas")?;
+        let pd = py.import("pandas")?;
 
         // Assert that the object is a DataFrame.
         assert!(
-            df.is_instance(&pandas.getattr("DataFrame")?)?,
+            df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",
             df.get_type().name()?
         );
@@ -72,14 +126,18 @@ impl PyCatTrj {
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;
 
+        // Check that the data frame is not empty.
+        assert!(!columns.is_empty(), "The data frame is empty.");
+
         // Extract the time column from the data frame.
         let time = df.get_item("time")?;
 
-        // Check that the dtype of the time column is a float.
+        // Get the dtype of the time column.
         let dtype = time
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
+        // Check that the dtype is a float64.
         assert_eq!(
             dtype, "float64",
             "Expected a float64 column, but '{dtype}' found.",
@@ -94,67 +152,40 @@ impl PyCatTrj {
         // Decrement the shape of the data frame.
         shape.1 -= 1;
 
-        // Check that the data frame is not empty.
-        assert!(!columns.is_empty(), "The data frame is empty.");
+        // Check that the dtype of the column is a string.
+        for name in &columns {
+            // Extract the column from the data frame.
+            let column = df.get_item(name)?;
+            // Get the dtype of the column.
+            let dtype = column
+                .getattr("dtype")?
+                .getattr("name")?
+                .extract::<String>()?;
+            // Check that the dtype is a category.
+            assert_eq!(
+                dtype, "category",
+                "Expected a category column, but '{dtype}' found."
+            );
+        }
 
-        // Construct the states.
-        let states: States = with_states
-            // If `with_states` is provided, convert it to a Map.
-            .map(|states| {
-                // Iterate over the items.
-                states
-                    .items()
-                    .into_iter()
-                    .map(|key_value| {
-                        // Cast the key_value to a tuple.
-                        let (key, value) = key_value
-                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
-                            .unwrap();
-                        // Convert the key to a String.
-                        let key = key.extract::<String>().unwrap();
-                        // Convert the value to a Vec<String>.
-                        let value: Set<_> = value
-                            .try_iter()?
-                            .map(|x| x?.extract::<String>())
-                            .collect::<PyResult<_>>()?;
-                        // Return the key and value.
-                        Ok((key, value))
-                    })
-                    .collect::<PyResult<_>>()
+        // Convert the columns categories to states.
+        let states: States = columns
+            .into_iter()
+            // Return the column name and the set of unique values.
+            .map(|name| {
+                // Extract the column from the data frame.
+                let column = df.get_item(&name)?;
+                // Invoke the 'cat' accessory method.
+                let states = column.getattr("cat")?.getattr("categories")?;
+                // Iterate over the states and convert them to a Vec<String>.
+                let states: Set<String> = states
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+
+                Ok((name, states))
             })
-            // Otherwise, infer the states from the columns.
-            .unwrap_or_else(|| {
-                // Convert the columns categories to states.
-                columns
-                    .into_iter()
-                    // Return the column name and the set of unique values.
-                    .map(|name| {
-                        // Extract the column from the data frame.
-                        let column = df.get_item(&name)?;
-
-                        // Check that the dtype of the column is a string.
-                        let dtype = column
-                            .getattr("dtype")?
-                            .getattr("name")?
-                            .extract::<String>()?;
-                        assert_eq!(
-                            dtype, "category",
-                            "Expected a category column, but '{dtype}' found.",
-                        );
-
-                        // Invoke the 'cat' accessory method.
-                        let states = column.getattr("cat")?.getattr("categories")?;
-                        // Iterate over the states and convert them to a Vec<String>.
-                        let states: Set<String> = states
-                            .try_iter()?
-                            .map(|x| x?.extract::<String>())
-                            .collect::<PyResult<_>>()?;
-
-                        Ok((name, states))
-                    })
-                    .collect::<PyResult<_>>()
-            })
-            .unwrap();
+            .collect::<PyResult<_>>()?;
 
         // Initialize the categorical variables values.
         let mut values = Array2::from_elem(shape, CatType::default());
@@ -187,53 +218,52 @@ impl PyCatTrj {
         Ok(Self { inner })
     }
 
-    /// Returns the labels of the categorical trajectory.
+    /// Converts the categorical trajectory to a Pandas DataFrame.
     ///
-    /// # Returns
+    /// Returns
+    /// -------
+    /// pandas.DataFrame
+    ///     A Pandas DataFrame representation of the categorical trajectory.
     ///
-    /// A reference to the labels of the categorical trajectory.
-    ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
-    }
+    pub fn to_pandas<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
+        // Import the pandas module.
+        let pd = py.import("pandas")?;
 
-    /// Returns the states of the categorical trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
-    ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
-        Ok(self
-            .inner
-            .states()
-            .iter()
-            .map(|(label, states)| {
-                // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
-                // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
-                // Return a tuple of the label and states.
-                (label, states)
-            })
-            .collect())
-    }
+        // Create a dictionary to hold the data.
+        let df = PyDict::new(py);
 
-    /// Returns the times of the trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the times of the trajectory.
-    ///
-    pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
-        Ok(self.inner.times().to_pyarray(py))
+        // Add the time column.
+        let time = self.inner.times().to_pyarray(py);
+        df.set_item("time", time)?;
+
+        // Get states and values.
+        let states = self.inner.states().iter();
+        let values = self.inner.values().columns();
+
+        // For each column, create a Pandas Series and insert it into the dictionary.
+        for ((label, states), values) in states.zip(values) {
+            // Map the values to the corresponding states.
+            let values: Vec<_> = values.iter().map(|&x| &states[x as usize]).collect();
+            // Set the categorical states.
+            let kwargs = PyDict::new(py);
+            let categories: Vec<_> = states.iter().collect();
+            kwargs.set_item("categories", categories)?;
+            // Construct a Categorical.
+            let categorical = pd.getattr("Categorical")?.call((values,), Some(&kwargs))?;
+            // Construct a Series from a raw Categorical.
+            let series = pd.getattr("Series")?.call1((categorical,))?;
+            // Insert the column into the dictionary.
+            df.set_item(label, series)?;
+        }
+
+        // Construct the DataFrame.
+        pd.getattr("DataFrame")?.call1((df,))
     }
 }
 
 /// A collection of categorical trajectories.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjs")]
+#[pyclass(name = "CatTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
     inner: CatTrjs,
@@ -245,47 +275,12 @@ impl_deref_from_into!(PyCatTrjs, CatTrjs);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrjs {
-    /// Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
-    ///
-    /// # Arguments
-    ///
-    /// * `dfs` - An iterable of Pandas DataFrames containing the trajectory data.
-    /// * `with_states` - An optional dictionary of states.
-    ///
-    /// # Notes
-    ///
-    /// * Each data frame must contain a column named "time" that represents the time of each event.
-    /// * Every other column in the data frame must represent a categorical variable.
-    ///
-    /// # Returns
-    ///
-    /// A new categorical trajectories instance.
-    ///
-    #[new]
-    #[pyo3(signature = (dfs, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        dfs: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
-        // Convert the iterable to a Vec<PyAny>.
-        let dfs: Vec<PyCatTrj> = dfs
-            .try_iter()?
-            .map(|df| PyCatTrj::new(py, &df.unwrap(), with_states))
-            .collect::<PyResult<_>>()?;
-        // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
-        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
-        // Create a new CatTrjs with the given parameters.
-        let inner = CatTrjs::new(dfs);
-
-        Ok(Self { inner })
-    }
-
     /// Returns the labels of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
     ///
     #[inline]
     pub fn labels(&self) -> PyResult<Vec<&str>> {
@@ -294,9 +289,10 @@ impl PyCatTrjs {
 
     /// Returns the states of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
         Ok(self
@@ -317,9 +313,10 @@ impl PyCatTrjs {
 
     /// Return the trajectories.
     ///
-    /// # Returns
-    ///
-    /// A vector of categorical trajectories.
+    /// Returns
+    /// -------
+    /// list[CatTrj]
+    ///     A list of categorical trajectories.
     ///
     pub fn values(&self) -> PyResult<Vec<PyCatTrj>> {
         Ok(self
@@ -329,5 +326,56 @@ impl PyCatTrjs {
             .cloned()
             .map(|trj| trj.into())
             .collect())
+    }
+
+    /// Constructs a new categorical trajectories from an iterable of Pandas DataFrames.
+    ///
+    /// Parameters
+    /// ----------
+    /// dfs: Iterable[pandas.DataFrame]
+    ///     An iterable of Pandas DataFrames containing the trajectory data.
+    ///     Each data frame must contain a column named "time" that represents the time of each event.
+    ///     Every other column in the data frame must represent a categorical variable.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjs
+    ///     A new categorical trajectories instance.
+    ///
+    #[classmethod]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dfs: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Convert the iterable to a Vec<PyAny>.
+        let dfs: Vec<PyCatTrj> = dfs
+            .try_iter()?
+            .map(|df| PyCatTrj::from_pandas(_cls, py, &df.unwrap()))
+            .collect::<PyResult<_>>()?;
+        // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
+        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+        // Create a new CatTrjs with the given parameters.
+        let inner = CatTrjs::new(dfs);
+
+        Ok(Self { inner })
+    }
+
+    /// Converts the categorical trajectories to a list of Pandas DataFrames.
+    ///
+    /// Returns
+    /// -------
+    /// list[pandas.DataFrame]
+    ///     A list of Pandas DataFrame representations of the categorical trajectories.
+    ///
+    pub fn to_pandas<'a>(&self, py: Python<'a>) -> PyResult<Vec<Bound<'a, PyAny>>> {
+        // Convert each trajectory to a Pandas DataFrame.
+        self.inner
+            .values()
+            .iter()
+            .cloned()
+            .map(PyCatTrj::from)
+            .map(|trj| trj.to_pandas(py))
+            .collect::<PyResult<_>>()
     }
 }

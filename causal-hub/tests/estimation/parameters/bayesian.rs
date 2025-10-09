@@ -6,18 +6,18 @@ mod tests {
             use causal_hub::{
                 datasets::CatTable,
                 estimation::{BE, CPDEstimator},
-                map,
+                labels,
                 models::{CPD, Labelled},
-                set,
+                set, states,
             };
             use ndarray::prelude::*;
 
             #[test]
             fn fit() {
-                let states = map![
-                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
                 ];
                 let values = array![
                     // A, B, C
@@ -29,19 +29,14 @@ mod tests {
                 ];
                 let dataset = CatTable::new(states, values);
 
-                let estimator = BE::new(&dataset, 1);
+                let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
                 let distribution = estimator.fit(&set![0], &set![]);
 
-                assert_eq!(distribution.labels()[0], "A");
-                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
-                assert!(
-                    distribution
-                        .conditioning_labels()
-                        .iter()
-                        .eq(Vec::<&str>::new())
-                );
+                assert_eq!(&labels!["A"], distribution.labels());
+                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                assert_eq!(&labels![], distribution.conditioning_labels());
                 assert!(
                     distribution
                         .conditioning_states()
@@ -83,9 +78,9 @@ mod tests {
                 // P(A | B, C)
                 let distribution = estimator.fit(&set![0], &set![1, 2]);
 
-                assert_eq!(distribution.labels()[0], "A");
-                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
-                assert!(distribution.conditioning_labels().iter().eq(vec!["B", "C"]));
+                assert_eq!(&labels!["A"], distribution.labels());
+                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                assert_eq!(&labels!["B", "C"], distribution.conditioning_labels());
                 assert!(
                     distribution
                         .conditioning_states()
@@ -134,10 +129,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn unique_variables() {
-                let states = map![
-                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
                 ];
                 let values = array![
                     // A, B, C
@@ -149,7 +144,7 @@ mod tests {
                 ];
                 let dataset = CatTable::new(states, values);
 
-                let estimator = BE::new(&dataset, 1);
+                let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A | A, C)
                 let _ = estimator.fit(&set![0], &set![0, 2]);

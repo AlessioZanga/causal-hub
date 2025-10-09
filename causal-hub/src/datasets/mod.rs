@@ -9,7 +9,7 @@ pub trait Dataset {
     /// The type of the values.
     type Values;
 
-    /// The values of the variables.
+    /// The values of the dataset.
     ///
     /// # Returns
     ///
@@ -19,7 +19,7 @@ pub trait Dataset {
 
     /// The sample size.
     ///
-    /// # Note
+    /// # Notes
     ///
     /// If the dataset is weighted, this should return the sum of the weights.
     ///

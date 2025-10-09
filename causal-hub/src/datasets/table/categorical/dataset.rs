@@ -9,8 +9,7 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     models::Labelled,
-    types::{Labels, States},
-    utils::sort_states,
+    types::{Labels, Set, States},
 };
 
 /// A type alias for a categorical variable.
@@ -109,31 +108,44 @@ impl CatTable {
 
         // Check if the values are already sorted.
         if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
-            // Sort the states and labels.
-            let (new_states, sorted_idx) = sort_states(states);
-            // Update the states with the sorted states.
+            // Clone the states.
+            let mut new_states = states.clone();
+            // Sort the states.
+            new_states.sort_keys();
+            new_states.values_mut().for_each(Set::sort);
+            // Clone the values.
+            let mut new_values = values.clone();
+            // Update the values according to the sorted states.
+            new_states
+                .iter()
+                .enumerate()
+                .for_each(|(i, (new_label, new_states))| {
+                    // Get the index of the new label in the old states.
+                    let (j, _, states_j) = states
+                        .get_full(new_label)
+                        .expect("Failed to get full old states.");
+                    // Update the values.
+                    new_values
+                        .column_mut(i)
+                        .iter_mut()
+                        .zip(values.column(j))
+                        .for_each(|(new_val, old_val)| {
+                            // Get the old state label.
+                            let old_val = &states_j[*old_val as usize];
+                            // Get the new state index.
+                            *new_val = new_states
+                                .get_index_of(old_val)
+                                .expect("Failed to get new state index.")
+                                as CatType;
+                        });
+                });
+            // Update the values.
+            values = new_values;
+            // Update the states.
             states = new_states;
+            // Update the labels and the shape.
             labels = states.keys().cloned().collect();
             shape = Array::from_iter(states.values().map(|x| x.len()));
-            // Allocate the new values array.
-            let mut new_values = values.clone();
-            // Sort the values by the indices of the states labels.
-            new_values
-                .columns_mut()
-                .into_iter()
-                .enumerate()
-                .for_each(|(i, mut new_values_col)| {
-                    // Get the indices of the states labels.
-                    let (label_idx, states_idx) = &sorted_idx[i];
-                    // Get the corresponding states labels.
-                    let values_col = values.column(*label_idx);
-                    // Sort the values by the indices of the states labels.
-                    let values_col = values_col.mapv(|x| states_idx[x as usize] as CatType);
-                    // Assign the sorted values to the new values array.
-                    new_values_col.assign(&values_col);
-                });
-            // Update the values with the new sorted values.
-            values = new_values;
         }
 
         // Debug assert labels are unique.

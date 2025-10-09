@@ -23,7 +23,7 @@ use crate::{
 };
 
 /// A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
-#[gen_stub_pyfunction]
+#[gen_stub_pyfunction(module = "causal_hub.estimation")]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
@@ -105,7 +105,7 @@ pub fn em<'a>(
         // Define the maximization step.
         let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
             // Initialize the parameter estimator.
-            let estimator = BE::new(expectation, (1, 1.));
+            let estimator = BE::new(expectation).with_prior((1, 1.));
             // Fit the model using the parameter estimator.
             estimator.par_fit(prev_model.graph().clone())
         };

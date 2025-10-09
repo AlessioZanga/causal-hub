@@ -17,17 +17,34 @@ macro_rules! set {
     [$($value:expr,)+] => { $crate::set!($($value),+) };
     [$($value:expr),*] => {
         {
-            // Note: `stringify!($value)` is just here to consume the repetition,
-            // but we throw away that string literal during constant evaluation.
             const CAPACITY: usize = <[()]>::len(&[$({ stringify!($value); }),*]);
             let mut set = $crate::types::Set::with_capacity_and_hasher(
                 CAPACITY,
-                fxhash::FxBuildHasher::default())
-            ;
+                fxhash::FxBuildHasher::default(),
+            );
             $(
                 set.insert($value);
             )*
             set
+        }
+    };
+}
+
+/// Create a `Labels` set from a list of string-like values.
+#[macro_export]
+macro_rules! labels {
+    [] => { $crate::types::Labels::default() };
+    [$($label:expr),+ $(,)?] => {
+        {
+            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($label); }),*]);
+            let mut labels = $crate::types::Labels::with_capacity_and_hasher(
+                CAPACITY,
+                fxhash::FxBuildHasher::default(),
+            );
+            $(
+                labels.insert(::std::string::ToString::to_string(&$label));
+            )*
+            labels
         }
     };
 }
@@ -42,12 +59,39 @@ macro_rules! map {
             const CAPACITY: usize = <[()]>::len(&[$({ stringify!($key); stringify!($value); }),*]);
             let mut map = $crate::types::Map::with_capacity_and_hasher(
                 CAPACITY,
-                fxhash::FxBuildHasher::default())
-            ;
+                fxhash::FxBuildHasher::default(),
+            );
             $(
                 map.insert($key, $value);
             )*
             map
+        }
+    };
+}
+
+/// Create a `States` map from a list of variable-state pairs.
+#[macro_export]
+macro_rules! states {
+    [] => { $crate::types::States::default() };
+    [$(($label:expr, [$($state:expr),* $(,)?]),)+] => { $crate::states!($(($label, [$($state),*])),+) };
+    [$(($label:expr, [$($state:expr),* $(,)?])),*] => {
+        {
+            const CAPACITY: usize = <[()]>::len(&[$({ stringify!($label); $( stringify!($state); )* }),*]);
+            let mut states = $crate::types::States::with_capacity_and_hasher(
+                CAPACITY,
+                fxhash::FxBuildHasher::default(),
+            );
+            $(
+                // Convert the label to a string.
+                let label = ::std::string::ToString::to_string(&$label);
+                // Create a set of states for the current label.
+                let state = $crate::set![$(
+                    ::std::string::ToString::to_string(&$state)
+                ),*];
+                // Insert the label and the corresponding set of states into the map.
+                states.insert(label, state);
+            )*
+            states
         }
     };
 }

@@ -189,7 +189,7 @@ mod tests {
             let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                 // Fit the new model using the expectation.
                 ParCTBNEstimator::par_fit(
-                    &BE::new(expectation, (1, 1.)),
+                    &BE::new(expectation).with_prior((1, 1.)),
                     prev_model.graph().clone(),
                 )
             };

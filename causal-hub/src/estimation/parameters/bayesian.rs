@@ -5,47 +5,55 @@ use statrs::function::gamma::ln_gamma;
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCIMS, CatCPD, Labelled},
+    models::{CatCIM, CatCIMS, CatCPD, CatCPDS, Labelled},
     types::{Labels, Set, States},
 };
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Copy, Debug)]
-pub struct BE<'a, D, Pi> {
+pub struct BE<'a, D, T> {
     dataset: &'a D,
-    prior: Pi,
+    prior: T,
 }
 
-impl<'a, D, Pi> BE<'a, D, Pi> {
+impl<'a, D> BE<'a, D, ()> {
     /// Creates a new Bayesian estimator.
     ///
     /// # Arguments
     ///
     /// * `dataset` - A reference to the dataset to fit the estimator to.
-    /// * `prior` - The prior distribution.
     ///
     /// # Returns
     ///
-    /// A new `BE` instance.
+    /// A new Bayesian estimator.
     ///
     #[inline]
-    pub const fn new(dataset: &'a D, prior: Pi) -> Self {
-        Self { dataset, prior }
-    }
-
-    /// Returns the prior distribution.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the prior.
-    ///
-    #[inline]
-    pub const fn prior(&self) -> &Pi {
-        &self.prior
+    pub const fn new(dataset: &'a D) -> Self {
+        Self { dataset, prior: () }
     }
 }
 
-impl<D, Pi> Labelled for BE<'_, D, Pi>
+impl<'a, D, T> BE<'a, D, T> {
+    /// Sets the prior distribution.
+    ///
+    /// # Arguments
+    ///
+    /// * `prior` - The prior distribution to set.
+    ///
+    /// # Returns
+    ///
+    /// A new Bayesian estimator with the specified prior.
+    ///
+    #[inline]
+    pub fn with_prior<U>(self, prior: U) -> BE<'a, D, U> {
+        BE {
+            dataset: self.dataset,
+            prior,
+        }
+    }
+}
+
+impl<D, T> Labelled for BE<'_, D, T>
 where
     D: Labelled,
 {
@@ -55,68 +63,109 @@ where
     }
 }
 
+impl BE<'_, CatTable, usize> {
+    // Fit a CPD given sufficient statistics.
+    fn fit(
+        states: &States,
+        shape: &Array1<usize>,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        sample_statistics: CatCPDS,
+        prior: usize,
+    ) -> CatCPD {
+        // Get the conditional counts.
+        let n_xz = sample_statistics.sample_conditional_counts();
+        // Marginalize the counts.
+        let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
+
+        // Get the prior, as the alpha of the Dirichlet distribution.
+        let alpha = prior;
+        // Assert alpha is positive.
+        assert!(alpha > 0, "Alpha must be positive.");
+
+        // Cast alpha to floating point.
+        let alpha = alpha as f64;
+
+        // Add the prior to the counts.
+        let n_xz = n_xz + alpha;
+        let n_z = n_z + alpha * x.iter().map(|&i| shape[i]).product::<usize>() as f64;
+        // Compute the parameters by normalizing the counts with the prior.
+        let parameters = &n_xz / &n_z;
+
+        // Compute the sample log-likelihood.
+        let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
+
+        // Subset the conditioning labels, states and shape.
+        let conditioning_states = z
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
+        // Get the labels of the conditioned variables.
+        let states = x
+            .iter()
+            .map(|&i| {
+                let (k, v) = states.get_index(i).unwrap();
+                (k.clone(), v.clone())
+            })
+            .collect();
+
+        // Wrap the sample statistics in an option.
+        let sample_statistics = Some(sample_statistics);
+
+        // Construct the CPD.
+        CatCPD::with_optionals(
+            states,
+            conditioning_states,
+            parameters,
+            sample_statistics,
+            sample_log_likelihood,
+        )
+    }
+}
+
 // Implement the CPD estimator for the BE struct.
 macro_for!($type in [CatTable, CatWtdTable] {
 
-    // NOTE: The prior is expressed as a scalar, which is the alpha for the Dirichlet distribution.
-    impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
+    impl CPDEstimator<CatCPD> for BE<'_, $type, ()> {
+        #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
-            // Get states and shape.
-            let states = self.dataset.states();
-            let shape = self.dataset.shape();
+            // Default to uniform prior.
+            self.clone().with_prior(1).fit(x, z)
+        }
+    }
 
+    impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
+        #[inline]
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+            // Get (states, shape, prior).
+            let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
             // Compute sufficient statistics.
             let sample_statistics = SSE::new(self.dataset).fit(x, z);
-            // Get the conditional counts.
-            let n_xz = sample_statistics.sample_conditional_counts();
-            // Marginalize the counts.
-            let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
+            // Fit the CPD given the sufficient statistics.
+            BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
+        }
+    }
 
-            // Get the prior, as the alpha of the Dirichlet distribution.
-            let alpha = *self.prior();
-            // Assert alpha is positive.
-            assert!(alpha > 0, "Alpha must be positive.");
+    impl ParCPDEstimator<CatCPD> for BE<'_, $type, ()> {
+        #[inline]
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+            // Default to uniform prior.
+            self.clone().with_prior(1).fit(x, z)
+        }
+    }
 
-            // Cast alpha to floating point.
-            let alpha = alpha as f64;
-
-            // Add the prior to the counts.
-            let n_xz = n_xz + alpha;
-            let n_z = n_z + alpha * x.iter().map(|&i| shape[i]).product::<usize>() as f64;
-            // Compute the parameters by normalizing the counts with the prior.
-            let parameters = &n_xz / &n_z;
-
-            // Compute the sample log-likelihood.
-            let sample_log_likelihood = Some((&n_xz * parameters.ln()).sum());
-
-            // Subset the conditioning labels, states and shape.
-            let conditioning_states = z
-                .iter()
-                .map(|&i| {
-                    let (k, v) = states.get_index(i).unwrap();
-                    (k.clone(), v.clone())
-                })
-                .collect();
-            // Get the labels of the conditioned variables.
-            let states = x
-                .iter()
-                .map(|&i| {
-                    let (k, v) = states.get_index(i).unwrap();
-                    (k.clone(), v.clone())
-                })
-                .collect();
-
-            // Wrap the sample statistics in an option.
-            let sample_statistics = Some(sample_statistics);
-
-            // Construct the CPD.
-            CatCPD::with_optionals(
-                states,
-                conditioning_states,
-                parameters,
-                sample_statistics,
-                sample_log_likelihood,
-            )
+    impl ParCPDEstimator<CatCPD> for BE<'_, $type, usize> {
+        #[inline]
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+            // Get (states, shape, prior).
+            let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
+            // Compute sufficient statistics in parallel.
+            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
+            // Fit the CPD given the sufficient statistics.
+            BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
         }
     }
 
@@ -124,7 +173,7 @@ macro_for!($type in [CatTable, CatWtdTable] {
 
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
-    fn fit_cim(
+    fn fit(
         states: &States,
         x: &Set<usize>,
         z: &Set<usize>,
@@ -221,14 +270,23 @@ impl BE<'_, CatTrj, (usize, f64)> {
 // Implement the CIM estimator for the BE struct.
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
+    impl CPDEstimator<CatCIM> for BE<'_, $type, ()> {
+        #[inline]
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+            // Default to uniform prior.
+            self.clone().with_prior((1, 1.)).fit(x, z)
+        }
+    }
+
     impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
-            let (states, prior) = (self.dataset.states(), *self.prior());
+            let (states, prior) = (self.dataset.states(), self.prior);
             // Compute sufficient statistics.
             let sample_statistics = SSE::new(self.dataset).fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(states, x, z, sample_statistics, prior)
+            BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }
     }
 
@@ -237,14 +295,23 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 // Implement the parallel CIM estimator for the BE struct.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
+    impl ParCPDEstimator<CatCIM> for BE<'_, $type, ()> {
+        #[inline]
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+            // Default to uniform prior.
+            self.clone().with_prior((1, 1.)).fit(x, z)
+        }
+    }
+
     impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+        #[inline]
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
-            let (states, prior) = (self.dataset.states(), *self.prior());
+            let (states, prior) = (self.dataset.states(), self.prior);
             // Compute sufficient statistics in parallel.
             let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
-            BE::<'_, CatTrj, _>::fit_cim(states, x, z, sample_statistics, prior)
+            BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }
     }
 

@@ -12,7 +12,7 @@ use crate::{datasets::PyCatTrj, impl_deref_from_into};
 
 /// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrj")]
+#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
     inner: CatWtdTrj,
@@ -26,9 +26,10 @@ impl_deref_from_into!(PyCatWtdTrj, CatWtdTrj);
 impl PyCatWtdTrj {
     /// Returns the labels of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -36,9 +37,10 @@ impl PyCatWtdTrj {
 
     /// Returns the trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the trajectory.
+    /// Returns
+    /// -------
+    /// CatTrj
+    ///     A reference to the trajectory.
     ///
     pub fn trajectory(&self) -> PyResult<PyCatTrj> {
         Ok(self.inner.trajectory().clone().into())
@@ -46,9 +48,10 @@ impl PyCatWtdTrj {
 
     /// Returns the weight of the trajectory.
     ///
-    /// # Returns
-    ///
-    /// The weight of the trajectory.
+    /// Returns
+    /// -------
+    /// float
+    ///     The weight of the trajectory.
     ///
     pub fn weight(&self) -> f64 {
         self.inner.weight()
@@ -56,9 +59,10 @@ impl PyCatWtdTrj {
 
     /// Returns the states of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
         Ok(self
@@ -79,9 +83,10 @@ impl PyCatWtdTrj {
 
     /// Returns the times of the trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the times of the trajectory.
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A reference to the times of the trajectory.
     ///
     pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
         Ok(self.inner.times().to_pyarray(py))
@@ -90,7 +95,7 @@ impl PyCatWtdTrj {
 
 /// A collection of categorical trajectories with weights.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrjs")]
+#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
     inner: CatWtdTrjs,
@@ -104,9 +109,10 @@ impl_deref_from_into!(PyCatWtdTrjs, CatWtdTrjs);
 impl PyCatWtdTrjs {
     /// Returns the labels of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -114,9 +120,10 @@ impl PyCatWtdTrjs {
 
     /// Returns the states of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
         Ok(self
@@ -137,9 +144,10 @@ impl PyCatWtdTrjs {
 
     /// Return the trajectories.
     ///
-    /// # Returns
-    ///
-    /// A vector of categorical trajectories.
+    /// Returns
+    /// -------
+    /// list[CatWtdTrj]
+    ///     A vector of categorical trajectories.
     ///
     pub fn values(&self) -> PyResult<Vec<PyCatWtdTrj>> {
         Ok(self

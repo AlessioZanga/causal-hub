@@ -1,4 +1,3 @@
-use core::panic;
 use std::collections::BTreeMap;
 
 use backend::{
@@ -8,7 +7,7 @@ use backend::{
 use numpy::{PyArray1, prelude::*};
 use pyo3::{
     prelude::*,
-    types::{PyDict, PyTuple},
+    types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
 
@@ -16,7 +15,7 @@ use crate::impl_deref_from_into;
 
 /// A categorical trajectory evidence.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjEv")]
+#[pyclass(name = "CatTrjEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjEv {
     inner: CatTrjEv,
@@ -28,28 +27,68 @@ impl_deref_from_into!(PyCatTrjEv, CatTrjEv);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrjEv {
+    /// Returns the labels of the categorical trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
+    ///
+    #[inline]
+    pub fn labels(&self) -> PyResult<Vec<&str>> {
+        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    }
+
+    /// Returns the states of the categorical trajectory.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
+    ///
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+        Ok(self
+            .inner
+            .states()
+            .iter()
+            .map(|(label, states)| {
+                // Get reference to the label and states.
+                let label = label.as_ref();
+                let states = states.iter().map(String::as_str);
+                // Convert the states to a PyTuple.
+                let states = PyTuple::new(py, states).unwrap();
+                // Return a tuple of the label and states.
+                (label, states)
+            })
+            .collect())
+    }
+
     /// Constructs a new categorical trajectory evidence from a Pandas DataFrame.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// df: pandas.DataFrame
+    ///     A Pandas DataFrame containing the trajectory evidence data.
+    ///     The data frame must contain the following columns:
     ///
-    /// * `df` - A Pandas DataFrame containing the trajectory evidence data.
-    /// * `with_states` - An optional dictionary of states.
+    ///         - `event`: The event type (str),
+    ///         - `state`: The state of the event (str),
+    ///         - `start_time`: The start time of the event (float64),
+    ///         - `end_time`: The end time of the event (float64).
     ///
-    /// # Notes
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
     ///
-    /// * The data frame must contain the following columns:
-    /// - `event`: The event type (string).
-    /// - `state`: The state of the event (string).
-    /// - `start_time`: The start time of the event (float64).
-    /// - `end_time`: The end time of the event (float64).
+    /// Returns
+    /// -------
+    /// CatTrjEv
+    ///     A new categorical trajectory evidence instance.
     ///
-    /// # Returns
-    ///
-    /// A new categorical trajectory evidence instance.
-    ///
-    #[new]
+    #[classmethod]
     #[pyo3(signature = (df, with_states = None))]
-    pub fn new(
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         df: &Bound<'_, PyAny>,
         with_states: Option<&Bound<'_, PyDict>>,
@@ -58,11 +97,11 @@ impl PyCatTrjEv {
         use CatTrjEvT as E;
 
         // Import the pandas module.
-        let pandas = py.import("pandas")?;
+        let pd = py.import("pandas")?;
 
         // Assert that the object is a DataFrame.
         assert!(
-            df.is_instance(&pandas.getattr("DataFrame")?)?,
+            df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",
             df.get_type().name()?
         );
@@ -80,32 +119,32 @@ impl PyCatTrjEv {
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert!(
-            event_dtype == "object",
+        assert_eq!(
+            event_dtype, "object",
             "Expected a string column, but '{event_dtype}' found."
         );
         let state_dtype = state
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert!(
-            state_dtype == "object",
+        assert_eq!(
+            state_dtype, "object",
             "Expected a string column, but '{state_dtype}' found."
         );
         let start_time_dtype = start_time
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert!(
-            start_time_dtype == "float64",
+        assert_eq!(
+            start_time_dtype, "float64",
             "Expected a float64 column, but '{start_time_dtype}' found."
         );
         let end_time_dtype = end_time
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert!(
-            end_time_dtype == "float64",
+        assert_eq!(
+            end_time_dtype, "float64",
             "Expected a float64 column, but '{end_time_dtype}' found."
         );
 
@@ -132,10 +171,9 @@ impl PyCatTrjEv {
         );
 
         // Construct the states.
-        let states: States = with_states
-            // If `with_states` is provided, convert it to a Map.
-            .map(|states| {
-                // Iterate over the items.
+        let mut states = with_states
+            .and_then(|states| {
+                // Convert the PyDict to a States.
                 states
                     .items()
                     .into_iter()
@@ -155,15 +193,29 @@ impl PyCatTrjEv {
                         Ok((key, value))
                     })
                     .collect::<PyResult<_>>()
+                    .ok()
             })
-            // Otherwise, infer the states from the columns.
             .unwrap_or_else(|| {
-                todo!() // FIXME:
-            })
-            .unwrap();
+                // Infer the states from the columns.
+                event
+                    .iter()
+                    .zip(&state)
+                    .fold(States::default(), |mut acc, (event, state)| {
+                        // Get the entry in the states map.
+                        let entry = acc.entry(event.clone()).or_default();
+                        // Insert the state in the states map.
+                        entry.insert(state.clone());
+                        // Return the states map.
+                        acc
+                    })
+            });
+
+        // Sort the states.
+        states.sort_keys();
+        states.values_mut().for_each(Set::sort);
 
         // Zip the iterators together.
-        let evidence = event
+        let evidence: Vec<_> = event
             .into_iter()
             .zip(state)
             .zip(start_time)
@@ -185,52 +237,18 @@ impl PyCatTrjEv {
                     end_time,
                 })
             })
-            .collect::<PyResult<Vec<_>>>()?;
+            .collect::<PyResult<_>>()?;
 
         // Construct the evidence.
         let inner = CatTrjEv::new(states, evidence);
         // Return the evidence.
         Ok(Self { inner })
     }
-
-    /// Returns the labels of the categorical trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the categorical trajectory.
-    ///
-    #[inline]
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
-    }
-
-    /// Returns the states of the categorical trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
-    ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
-        Ok(self
-            .inner
-            .states()
-            .iter()
-            .map(|(label, states)| {
-                // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
-                // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
-                // Return a tuple of the label and states.
-                (label, states)
-            })
-            .collect())
-    }
 }
 
 /// A collection of categorical trajectory evidences.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjsEv")]
+#[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjsEv {
     inner: CatTrjsEv,
@@ -242,50 +260,12 @@ impl_deref_from_into!(PyCatTrjsEv, CatTrjsEv);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyCatTrjsEv {
-    /// Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
-    ///
-    /// # Arguments
-    ///
-    /// * `dfs` - An iterable of Pandas DataFrames containing the trajectory evidence data.
-    /// * `with_states` - An optional dictionary of states.
-    ///
-    /// # Notes
-    ///
-    /// * The data frames must contain the following columns:
-    /// - `event`: The event type (string).
-    /// - `state`: The state of the event (string).
-    /// - `start_time`: The start time of the event (float64).
-    /// - `end_time`: The end time of the event (float64).
-    ///
-    /// # Returns
-    ///
-    /// A new categorical trajectory evidence instance.
-    ///
-    #[new]
-    #[pyo3(signature = (dfs, with_states = None))]
-    pub fn new(
-        py: Python<'_>,
-        dfs: &Bound<'_, PyAny>,
-        with_states: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
-        // Convert the iterable to a Vec<PyAny>.
-        let dfs: Vec<PyCatTrjEv> = dfs
-            .try_iter()?
-            .map(|df| PyCatTrjEv::new(py, &df.unwrap(), with_states))
-            .collect::<PyResult<_>>()?;
-        // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
-        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
-        // Create a new CatTrjsEv with the given parameters.
-        let inner = CatTrjsEv::new(dfs);
-
-        Ok(Self { inner })
-    }
-
     /// Returns the labels of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels of the categorical trajectory.
     ///
     #[inline]
     pub fn labels(&self) -> PyResult<Vec<&str>> {
@@ -294,9 +274,10 @@ impl PyCatTrjsEv {
 
     /// Returns the states of the categorical trajectory.
     ///
-    /// # Returns
-    ///
-    /// A reference to the states of the categorical trajectory.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str, ...]]
+    ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
         Ok(self
@@ -313,5 +294,48 @@ impl PyCatTrjsEv {
                 (label, states)
             })
             .collect())
+    }
+
+    /// Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
+    ///
+    /// Parameters
+    /// ----------
+    /// dfs: Iterable[pandas.DataFrame]
+    ///     An iterable of Pandas DataFrames containing the trajectory evidence data.
+    ///     The data frames must contain the following columns:
+    ///
+    ///         - `event`: The event type (str),
+    ///         - `state`: The state of the event (str),
+    ///         - `start_time`: The start time of the event (float64),
+    ///         - `end_time`: The end time of the event (float64).
+    ///
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjsEv
+    ///     A new categorical trajectory evidence instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dfs, with_states = None))]
+    pub fn from_pandas(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dfs: &Bound<'_, PyAny>,
+        with_states: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Convert the iterable to a Vec<PyAny>.
+        let dfs: Vec<PyCatTrjEv> = dfs
+            .try_iter()?
+            .map(|df| PyCatTrjEv::from_pandas(_cls, py, &df.unwrap(), with_states))
+            .collect::<PyResult<_>>()?;
+        // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
+        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+        // Create a new CatTrjsEv with the given parameters.
+        let inner = CatTrjsEv::new(dfs);
+
+        Ok(Self { inner })
     }
 }

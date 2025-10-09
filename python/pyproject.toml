@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "causal_hub"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -14,5 +14,9 @@ dynamic = ["version"]
 dependencies = ["numpy", "scipy", "pandas", "networkx"]
 
 [tool.maturin]
-features = ["pyo3/extension-module", "openblas-static"]
+features = [
+    "pyo3/abi3-py310",
+    "pyo3/extension-module",
+    "openblas-static"
+]
 strip = true

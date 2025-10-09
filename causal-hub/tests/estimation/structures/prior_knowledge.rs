@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{estimation::PK, set};
+    use causal_hub::{estimation::PK, labels};
 
     #[test]
     fn new() {
         // Initialize a list of labels.
-        let labels = set!["A".to_owned(), "B".to_owned(), "C".to_owned()];
+        let labels = labels!["A", "B", "C"];
         // Set the forbidden edges.
         let forbidden = vec![(0, 1), (1, 2)];
         // Set the required edges.

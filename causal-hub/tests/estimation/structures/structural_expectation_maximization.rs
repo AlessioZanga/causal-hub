@@ -8,11 +8,10 @@ mod tests {
             assets::load_eating,
             datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
             estimation::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
-            map,
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
-            set,
+            states,
             types::Cache,
         };
         use ndarray::prelude::*;
@@ -43,20 +42,14 @@ mod tests {
             // Set the initial graph.
             let initial_graph = DiGraph::complete(model.labels());
 
-            // Set the states of the variables.
-            let states = set!["no".to_owned(), "yes".to_owned()];
-
             // Set uniform CIMs.
             const E: f64 = 10.;
             // Set the initial CIMs.
             let initial_cims = vec![
                 CatCIM::new(
                     // P(Hungry | Eating, FullStomach)
-                    map![("Hungry".to_owned(), states.clone())],
-                    map![
-                        ("Eating".to_owned(), states.clone()),
-                        ("FullStomach".to_owned(), states.clone())
-                    ],
+                    states![("Hungry", ["no", "yes"])],
+                    states![("Eating", ["no", "yes"]), ("FullStomach", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -66,11 +59,8 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
-                    map![("Eating".to_owned(), states.clone())],
-                    map![
-                        ("FullStomach".to_owned(), states.clone()),
-                        ("Hungry".to_owned(), states.clone())
-                    ],
+                    states![("Eating", ["no", "yes"])],
+                    states![("FullStomach", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -80,11 +70,8 @@ mod tests {
                 ),
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
-                    map![("FullStomach".to_owned(), states.clone())],
-                    map![
-                        ("Eating".to_owned(), states.clone()),
-                        ("Hungry".to_owned(), states.clone())
-                    ],
+                    states![("FullStomach", ["no", "yes"])],
+                    states![("Eating", ["no", "yes"]), ("Hungry", ["no", "yes"])],
                     array![
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]],
@@ -140,7 +127,7 @@ mod tests {
             // Define the maximization step.
             let m_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                 // Initialize the parameter estimator.
-                let estimator = BE::new(expectation, (1, 1.));
+                let estimator = BE::new(expectation).with_prior((1, 1.));
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Initialize the F test.

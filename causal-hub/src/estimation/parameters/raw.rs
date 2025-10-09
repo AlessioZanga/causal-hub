@@ -387,20 +387,26 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)
+        BE::new(self.dataset.as_ref().unwrap())
+            .with_prior((1, 1.))
+            .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).fit(x, z)
+        BE::new(self.dataset.as_ref().unwrap())
+            .with_prior((1, 1.))
+            .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap(), (1, 1.)).par_fit(x, z)
+        BE::new(self.dataset.as_ref().unwrap())
+            .with_prior((1, 1.))
+            .par_fit(x, z)
     }
 }

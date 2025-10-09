@@ -6,18 +6,18 @@ mod tests {
             use causal_hub::{
                 datasets::CatTable,
                 estimation::{CPDEstimator, MLE},
-                map,
+                labels,
                 models::{CPD, Labelled},
-                set,
+                set, states,
             };
             use ndarray::prelude::*;
 
             #[test]
             fn fit() {
-                let states = map![
-                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
                 ];
                 let values = array![
                     // A, B, C
@@ -34,14 +34,9 @@ mod tests {
                 // P(A)
                 let distribution = estimator.fit(&set![0], &set![]);
 
-                assert_eq!(distribution.labels()[0], "A");
-                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
-                assert!(
-                    distribution
-                        .conditioning_labels()
-                        .iter()
-                        .eq(Vec::<&str>::new())
-                );
+                assert_eq!(&labels!["A"], distribution.labels());
+                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                assert_eq!(&labels![], distribution.conditioning_labels());
                 assert!(
                     distribution
                         .conditioning_states()
@@ -83,9 +78,9 @@ mod tests {
                 // P(A | B, C)
                 let distribution = estimator.fit(&set![0], &set![1, 2]);
 
-                assert_eq!(distribution.labels()[0], "A");
-                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
-                assert!(distribution.conditioning_labels().iter().eq(vec!["B", "C"]));
+                assert_eq!(&labels!["A"], distribution.labels());
+                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                assert_eq!(&labels!["B", "C"], distribution.conditioning_labels());
                 assert!(
                     distribution
                         .conditioning_states()
@@ -134,10 +129,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
             fn unique_variables() {
-                let states = map![
-                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
                 ];
                 let values = array![
                     // A, B, C
@@ -158,10 +153,10 @@ mod tests {
             #[test]
             #[should_panic(expected = "Failed to get non-zero counts.")]
             fn non_zero_counts() {
-                let states = map![
-                    ("A".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("B".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
-                    ("C".to_owned(), set!["no".to_owned(), "yes".to_owned()]),
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
                 ];
                 let values = array![
                     // A, B, C
@@ -185,7 +180,9 @@ mod tests {
                 datasets::CatTable,
                 estimation::{BNEstimator, MLE},
                 io::CsvIO,
+                labels,
                 models::{BN, CPD, CatBN, DiGraph, Graph, Labelled},
+                states,
             };
             use ndarray::prelude::*;
 
@@ -204,7 +201,7 @@ mod tests {
                 );
                 let dataset = CatTable::from_csv(csv);
 
-                let mut graph = DiGraph::empty(vec!["A", "B", "C"]);
+                let mut graph = DiGraph::empty(["A", "B", "C"]);
                 graph.add_edge(0, 1);
                 graph.add_edge(0, 2);
                 graph.add_edge(1, 2);
@@ -216,14 +213,9 @@ mod tests {
                 // P(A)
                 let distribution = &bn.cpds()["A"];
 
-                assert_eq!(distribution.labels()[0], "A");
-                assert!(distribution.states()[0].iter().eq(["no", "yes"]));
-                assert!(
-                    distribution
-                        .conditioning_labels()
-                        .iter()
-                        .eq(Vec::<&str>::new())
-                );
+                assert_eq!(&labels!["A"], distribution.labels());
+                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                assert_eq!(&labels![], distribution.conditioning_labels());
                 assert!(
                     distribution
                         .conditioning_states()

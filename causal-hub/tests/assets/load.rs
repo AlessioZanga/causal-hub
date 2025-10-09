@@ -2,7 +2,9 @@
 mod tests {
     use causal_hub::{
         assets::*,
+        labels,
         models::{BN, CPD, Graph, Labelled},
+        states,
     };
     use dry::macro_for;
     use ndarray::prelude::*;
@@ -28,9 +30,12 @@ mod tests {
         let bn = load_asia();
 
         // Check labels.
-        assert!(bn.labels().into_iter().eq([
-            "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
-        ]));
+        assert_eq!(
+            &labels![
+                "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
+            ],
+            bn.labels()
+        );
 
         // Check graph structure.
         assert_eq!(bn.graph().vertices().len(), 8);
@@ -53,44 +58,27 @@ mod tests {
         assert_eq!(bn.cpds()[6].labels()[0], "tub");
         assert_eq!(bn.cpds()[7].labels()[0], "xray");
 
-        assert!(
-            bn.cpds()[0]
-                .conditioning_labels()
-                .iter()
-                .eq(Vec::<&str>::new())
+        assert_eq!(&labels![], bn.cpds()[0].conditioning_labels());
+        assert_eq!(&labels!["smoke"], bn.cpds()[1].conditioning_labels());
+        assert_eq!(
+            &labels!["bronc", "either"],
+            bn.cpds()[2].conditioning_labels()
         );
-        assert!(bn.cpds()[1].conditioning_labels().iter().eq(["smoke"]));
-        assert!(
-            bn.cpds()[2]
-                .conditioning_labels()
-                .iter()
-                .eq(["bronc", "either"])
-        );
-        assert!(
-            bn.cpds()[3]
-                .conditioning_labels()
-                .iter()
-                .eq(["lung", "tub"])
-        );
-        assert!(bn.cpds()[4].conditioning_labels().iter().eq(["smoke"]));
-        assert!(
-            bn.cpds()[5]
-                .conditioning_labels()
-                .iter()
-                .eq(Vec::<&str>::new())
-        );
-        assert!(bn.cpds()[6].conditioning_labels().iter().eq(["asia"]));
-        assert!(bn.cpds()[7].conditioning_labels().iter().eq(["either"]));
+        assert_eq!(&labels!["lung", "tub"], bn.cpds()[3].conditioning_labels());
+        assert_eq!(&labels!["smoke"], bn.cpds()[4].conditioning_labels());
+        assert_eq!(&labels![], bn.cpds()[5].conditioning_labels());
+        assert_eq!(&labels!["asia"], bn.cpds()[6].conditioning_labels());
+        assert_eq!(&labels!["either"], bn.cpds()[7].conditioning_labels());
 
         // Check CPDs states.
-        assert!(bn.cpds()[0].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[1].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[2].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[3].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[4].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[5].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[6].states()[0].iter().eq(["no", "yes"]));
-        assert!(bn.cpds()[7].states()[0].iter().eq(["no", "yes"]));
+        assert_eq!(&states![("asia", ["no", "yes"])], bn.cpds()[0].states());
+        assert_eq!(&states![("bronc", ["no", "yes"])], bn.cpds()[1].states());
+        assert_eq!(&states![("dysp", ["no", "yes"])], bn.cpds()[2].states());
+        assert_eq!(&states![("either", ["no", "yes"])], bn.cpds()[3].states());
+        assert_eq!(&states![("lung", ["no", "yes"])], bn.cpds()[4].states());
+        assert_eq!(&states![("smoke", ["no", "yes"])], bn.cpds()[5].states());
+        assert_eq!(&states![("tub", ["no", "yes"])], bn.cpds()[6].states());
+        assert_eq!(&states![("xray", ["no", "yes"])], bn.cpds()[7].states());
 
         // Check CPDs parameters.
         assert_eq!(
