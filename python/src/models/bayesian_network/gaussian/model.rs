@@ -1,17 +1,20 @@
 use std::collections::BTreeMap;
 
 use backend::{
+    datasets::GaussTable,
+    estimation::MLE,
     io::JsonIO,
     models::{BN, DiGraph, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
 };
-use pyo3::{prelude::*, types::PyType};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
 use pyo3_stub_gen::derive::*;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyGaussTable,
+    estimation::PyBNEstimator,
     impl_deref_from_into,
     models::{PyDiGraph, PyGaussCPD},
 };
@@ -32,14 +35,17 @@ impl_deref_from_into!(PyGaussBN, GaussBN);
 impl PyGaussBN {
     /// Constructs a new Bayesian network.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// graph: DiGraph
+    ///     The underlying graph.
+    /// cpds: Iterable[GaussCPD]
+    ///     The conditional probability distributions.
     ///
-    /// * `graph` - The underlying graph.
-    /// * `cpds` - The conditional probability distributions.
-    ///
-    /// # Returns
-    ///
-    /// A new Bayesian network instance.
+    /// Returns
+    /// -------
+    /// GaussBN
+    ///     A new Bayesian network instance.
     ///
     #[new]
     pub fn new(graph: &Bound<'_, PyDiGraph>, cpds: &Bound<'_, PyAny>) -> PyResult<Self> {
@@ -58,9 +64,10 @@ impl PyGaussBN {
 
     /// Returns the name of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The name of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The name of the model, if it exists.
     ///
     pub fn name(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.name())
@@ -68,9 +75,10 @@ impl PyGaussBN {
 
     /// Returns the description of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The description of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The description of the model, if it exists.
     ///
     pub fn description(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.description())
@@ -78,9 +86,10 @@ impl PyGaussBN {
 
     /// Returns the labels of the variables.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -88,9 +97,10 @@ impl PyGaussBN {
 
     /// Returns the underlying graph.
     ///
-    /// # Returns
-    ///
-    /// A reference to the graph.
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A reference to the graph.
     ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.inner.graph().clone().into())
@@ -98,9 +108,10 @@ impl PyGaussBN {
 
     /// Returns the a map labels-distributions.
     ///
-    /// # Returns
-    ///
-    /// A reference to the CPDs.
+    /// Returns
+    /// -------
+    /// dict[str, GaussCPD]
+    ///     A reference to the CPDs.
     ///
     pub fn cpds(&self) -> PyResult<BTreeMap<&str, PyGaussCPD>> {
         Ok(self
@@ -120,9 +131,10 @@ impl PyGaussBN {
 
     /// Returns the parameters size.
     ///
-    /// # Returns
-    ///
-    /// The parameters size.
+    /// Returns
+    /// -------
+    /// int
+    ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
@@ -130,43 +142,80 @@ impl PyGaussBN {
 
     /// Fit the model to a dataset and a given graph.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// dataset: GaussTable
+    ///     The dataset to fit the model to.
+    /// graph: DiGraph
+    ///     The graph to fit the model to.
+    /// method: str
+    ///     The method to use for fitting (default is `mle`).
+    /// parallel: bool
+    ///     The flag to enable parallel fitting (default is `true`).
     ///
-    /// * `dataset` - The dataset to fit the model to.
-    /// * `graph` - The graph to fit the model to.
-    /// * `method` - The method to use for fitting (default is `mle`).
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel fitting (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new fitted model.
+    /// Returns
+    /// -------
+    /// GaussBN
+    ///     A new fitted model.
     ///
     #[classmethod]
-    #[pyo3(signature = (dataset, graph, method="mle", seed=31, parallel=true))]
+    #[pyo3(signature = (
+        dataset,
+        graph,
+        method="mle",
+        parallel=true,
+    ))]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: &Bound<'_, PyGaussTable>,
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
-        seed: u64,
         parallel: bool,
     ) -> PyResult<Self> {
-        todo!() // FIXME:
+        // Get the dataset and the graph.
+        let dataset: GaussTable = dataset.extract::<PyGaussTable>()?.into();
+        let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+        // Initialize the estimator.
+        let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
+            // Initialize the maximum likelihood estimator.
+            "mle" => Box::new(MLE::new(&dataset)),
+            // Raise an error if the method is unknown.
+            method => {
+                return Err(PyErr::new::<PyValueError, _>(format!(
+                    "Unknown method: '{}', choose one of the following: \n\
+                    \t- 'mle' - Maximum likelihood estimator.",
+                    method
+                )));
+            }
+        };
+        // Fit the model.
+        let model = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || estimator.par_fit(graph))
+        } else {
+            // Execute sequentially.
+            estimator.fit(graph)
+        };
+        // Return the fitted model.
+        Ok(model.into())
     }
 
     /// Generate samples from the model.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// n: int
+    ///     The number of samples to generate.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel sampling (default is `true`).
     ///
-    /// * `n` - The number of samples to generate.
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel sampling (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new dataset containing the samples.
+    /// Returns
+    /// -------
+    /// GaussTable
+    ///     A new dataset containing the samples.
     ///
     #[pyo3(signature = (n, seed=31, parallel=true))]
     pub fn sample(
@@ -190,60 +239,6 @@ impl PyGaussBN {
         };
         // Return the dataset.
         Ok(dataset.into())
-    }
-
-    /// Estimate a conditional probability distribution.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - A variable or an iterable of variables.
-    /// * `z` - A conditioning variable or an iterable of conditioning variables.
-    /// * `method` - The method to use for estimation (default is `approximate`).
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new conditional probability distribution.
-    ///
-    #[pyo3(signature = (x, z, method="approximate", seed=31, parallel=true))]
-    pub fn estimate(
-        &self,
-        x: &Bound<'_, PyAny>,
-        z: &Bound<'_, PyAny>,
-        method: &str,
-        seed: u64,
-        parallel: bool,
-    ) -> PyResult<PyGaussCPD> {
-        todo!() // FIXME:
-    }
-
-    /// Estimate a conditional causal effect (CACE).
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - An intervention variable or an iterable of intervention variables.
-    /// * `y` - An outcome variable or an iterable of outcome variables.
-    /// * `z` - A conditioning variable or an iterable of conditioning variables.
-    /// * `method` - The method to use for estimation (default is `approximate`).
-    /// * `seed` - The seed of the random number generator (default is `31`).
-    /// * `parallel` - The flag to enable parallel estimation (default is `true`).
-    ///
-    /// # Returns
-    ///
-    /// A new conditional causal effect (CACE) distribution.
-    ///
-    #[pyo3(signature = (x, y, z, method="approximate", seed=31, parallel=true))]
-    pub fn do_estimate(
-        &self,
-        x: &Bound<'_, PyAny>,
-        y: &Bound<'_, PyAny>,
-        z: &Bound<'_, PyAny>,
-        method: &str,
-        seed: u64,
-        parallel: bool,
-    ) -> PyResult<PyGaussCPD> {
-        todo!() // FIXME:
     }
 
     /// Read class from a JSON string.

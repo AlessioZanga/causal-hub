@@ -94,6 +94,20 @@ def test_asia_sample() -> None:
     assert sample.sample_size() == 1000, "Wrong sample size."
 
 
+def test_asia_fit() -> None:
+    # Load the Asia BN.
+    asia = load_asia()
+    # Sample 1000 data points from the BN.
+    sample = asia.sample(1000, seed=42)
+    # Fit a new BN to the sample.
+    asia_fitted = CatBN.fit(sample, asia.graph(), method="be")
+
+    # Check the labels of the fitted BN.
+    assert asia_fitted.labels() == asia.labels(), "Wrong fitted BN labels."
+    # Check the graph of the fitted BN.
+    assert asia_fitted.graph() == asia.graph(), "Wrong fitted BN graph."
+
+
 def test_asia_read_write_json() -> None:
     # Load the Asia BN.
     asia = load_asia()
@@ -171,6 +185,82 @@ def test_ecoli70() -> None:
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
+def test_ecoli70_sample() -> None:
+    # Load the Ecoli70 BN.
+    ecoli70 = load_ecoli70()
+    # Sample 1000 data points from the BN.
+    sample = ecoli70.sample(1000, seed=42)
+
+    # Check the labels of the sample.
+    labels = [
+        "aceB",
+        "asnA",
+        "atpD",
+        "atpG",
+        "b1191",
+        "b1583",
+        "b1963",
+        "cchB",
+        "cspA",
+        "cspG",
+        "dnaG",
+        "dnaJ",
+        "dnaK",
+        "eutG",
+        "fixC",
+        "flgD",
+        "folK",
+        "ftsJ",
+        "gltA",
+        "hupB",
+        "ibpB",
+        "icdA",
+        "lacA",
+        "lacY",
+        "lacZ",
+        "lpdA",
+        "mopB",
+        "nmpC",
+        "nuoM",
+        "pspA",
+        "pspB",
+        "sucA",
+        "sucD",
+        "tnaA",
+        "yaeM",
+        "yceP",
+        "ycgX",
+        "yecO",
+        "yedE",
+        "yfaD",
+        "yfiA",
+        "ygbD",
+        "ygcE",
+        "yhdM",
+        "yheI",
+        "yjbO",
+    ]
+    assert sample.labels() == labels, "Wrong sample labels."
+    # Check the shape of the sample.
+    assert sample.values().shape == (1000, 46), "Wrong sample shape."
+    # Check the sample size.
+    assert sample.sample_size() == 1000, "Wrong sample size."
+
+
+def test_ecoli70_fit() -> None:
+    # Load the Ecoli70 BN.
+    ecoli70 = load_ecoli70()
+    # Sample 1000 data points from the BN.
+    sample = ecoli70.sample(1000, seed=42)
+    # Fit a new BN to the sample.
+    ecoli70_fitted = GaussBN.fit(sample, ecoli70.graph())
+
+    # Check the labels of the fitted BN.
+    assert ecoli70_fitted.labels() == ecoli70.labels(), "Wrong fitted BN labels."
+    # Check the graph of the fitted BN.
+    assert ecoli70_fitted.graph() == ecoli70.graph(), "Wrong fitted BN graph."
+
+
 def test_ecoli70_read_write_json() -> None:
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
@@ -193,9 +283,9 @@ def test_ecoli70_read_write_json() -> None:
 
 
 def test_eating() -> None:
-    # Load the Eating BN.
+    # Load the Eating CTBN.
     eating = load_eating()
-    # Get the graph of the BN.
+    # Get the graph of the CTBN.
     graph = eating.graph()
 
     # Check the vertices labels.
@@ -207,8 +297,37 @@ def test_eating() -> None:
     assert graph.vertices() == vertices, "Wrong vertices labels."
 
 
+def test_eating_sample() -> None:
+    # Load the Eating CTBN.
+    eating = load_eating()
+    # Sample 1000 trajectories from the CTBN.
+    sample = eating.sample(1000, max_time=10.0, seed=42)
+
+    # Check the labels of the sample.
+    labels = [
+        "Eating",
+        "FullStomach",
+        "Hungry",
+    ]
+    assert sample.labels() == labels, "Wrong sample labels."
+
+
+def test_eating_fit() -> None:
+    # Load the Eating CTBN.
+    eating = load_eating()
+    # Sample 1000 trajectories from the CTBN.
+    sample = eating.sample(1000, max_time=10.0, seed=42)
+    # Fit a new CTBN to the sample.
+    eating_fitted = CatCTBN.fit(sample, eating.graph(), method="be")
+
+    # Check the labels of the fitted CTBN.
+    assert eating_fitted.labels() == eating.labels(), "Wrong fitted CTBN labels."
+    # Check the graph of the fitted CTBN.
+    assert eating_fitted.graph() == eating.graph(), "Wrong fitted CTBN graph."
+
+
 def test_eating_read_write_json() -> None:
-    # Load the Eating BN.
+    # Load the Eating CTBN.
     eating = load_eating()
 
     # Get a named temp file for the JSON.

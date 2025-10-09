@@ -5,7 +5,7 @@ import builtins
 import numpy
 import numpy.typing
 import typing
-from causal_hub.datasets import CatTable, CatTrj, GaussTable
+from causal_hub.datasets import CatTable, CatTrjs, GaussTable
 
 class CatBN:
     r"""
@@ -591,7 +591,7 @@ class CatCTBN:
         The parameters size.
         """
     @classmethod
-    def fit(cls, dataset:CatTrj, graph:DiGraph, method:builtins.str='mle', seed:builtins.int=31, parallel:builtins.bool=True) -> CatCTBN:
+    def fit(cls, dataset:CatTrjs, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatCTBN:
         r"""
         Fit the model to a dataset and a given graph.
         
@@ -600,12 +600,35 @@ class CatCTBN:
         * `dataset` - The dataset to fit the model to.
         * `graph` - The graph to fit the model to.
         * `method` - The method to use for fitting (default is `mle`).
-        * `seed` - The seed of the random number generator (default is `31`).
         * `parallel` - The flag to enable parallel fitting (default is `true`).
         
         # Returns
         
         A new fitted model.
+        """
+    def sample(self, n:builtins.int, max_len:typing.Optional[builtins.int]=None, max_time:typing.Optional[builtins.float]=None, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTrjs:
+        r"""
+        Sample from the model.
+        
+        Parameters
+        ----------
+        n: int
+            The number of trajectories to sample.
+        max_len: int | None
+            The maximum length of each trajectory (default is `None`).
+            Must be set if `max_time` is `None`.
+        max_time: float | None
+            The maximum time of each trajectory (default is `None`).
+            Must be set if `max_len` is `None`.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel sampling (default is `true`).
+        
+        Returns
+        -------
+        CatTrjs
+            A new dataset containing the sampled trajectories.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCTBN:
@@ -970,126 +993,110 @@ class GaussBN:
         r"""
         Constructs a new Bayesian network.
         
-        # Arguments
+        Parameters
+        ----------
+        graph: DiGraph
+            The underlying graph.
+        cpds: Iterable[GaussCPD]
+            The conditional probability distributions.
         
-        * `graph` - The underlying graph.
-        * `cpds` - The conditional probability distributions.
-        
-        # Returns
-        
-        A new Bayesian network instance.
+        Returns
+        -------
+        GaussBN
+            A new Bayesian network instance.
         """
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
         
-        # Returns
-        
-        The name of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The name of the model, if it exists.
         """
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
         
-        # Returns
-        
-        The description of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The description of the model, if it exists.
         """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
         
-        # Returns
-        
-        A reference to the labels.
+        Returns
+        -------
+        list[str]
+            A reference to the labels.
         """
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
         
-        # Returns
-        
-        A reference to the graph.
+        Returns
+        -------
+        DiGraph
+            A reference to the graph.
         """
     def cpds(self) -> builtins.dict[builtins.str, GaussCPD]:
         r"""
         Returns the a map labels-distributions.
         
-        # Returns
-        
-        A reference to the CPDs.
+        Returns
+        -------
+        dict[str, GaussCPD]
+            A reference to the CPDs.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     @classmethod
-    def fit(cls, dataset:GaussTable, graph:DiGraph, method:builtins.str='mle', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussBN:
+    def fit(cls, dataset:GaussTable, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True) -> GaussBN:
         r"""
         Fit the model to a dataset and a given graph.
         
-        # Arguments
+        Parameters
+        ----------
+        dataset: GaussTable
+            The dataset to fit the model to.
+        graph: DiGraph
+            The graph to fit the model to.
+        method: str
+            The method to use for fitting (default is `mle`).
+        parallel: bool
+            The flag to enable parallel fitting (default is `true`).
         
-        * `dataset` - The dataset to fit the model to.
-        * `graph` - The graph to fit the model to.
-        * `method` - The method to use for fitting (default is `mle`).
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel fitting (default is `true`).
-        
-        # Returns
-        
-        A new fitted model.
+        Returns
+        -------
+        GaussBN
+            A new fitted model.
         """
     def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> GaussTable:
         r"""
         Generate samples from the model.
         
-        # Arguments
+        Parameters
+        ----------
+        n: int
+            The number of samples to generate.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel sampling (default is `true`).
         
-        * `n` - The number of samples to generate.
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel sampling (default is `true`).
-        
-        # Returns
-        
-        A new dataset containing the samples.
-        """
-    def estimate(self, x:typing.Any, z:typing.Any, method:builtins.str='approximate', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
-        r"""
-        Estimate a conditional probability distribution.
-        
-        # Arguments
-        
-        * `x` - A variable or an iterable of variables.
-        * `z` - A conditioning variable or an iterable of conditioning variables.
-        * `method` - The method to use for estimation (default is `approximate`).
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel estimation (default is `true`).
-        
-        # Returns
-        
-        A new conditional probability distribution.
-        """
-    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, method:builtins.str='approximate', seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
-        r"""
-        Estimate a conditional causal effect (CACE).
-        
-        # Arguments
-        
-        * `x` - An intervention variable or an iterable of intervention variables.
-        * `y` - An outcome variable or an iterable of outcome variables.
-        * `z` - A conditioning variable or an iterable of conditioning variables.
-        * `method` - The method to use for estimation (default is `approximate`).
-        * `seed` - The seed of the random number generator (default is `31`).
-        * `parallel` - The flag to enable parallel estimation (default is `true`).
-        
-        # Returns
-        
-        A new conditional causal effect (CACE) distribution.
+        Returns
+        -------
+        GaussTable
+            A new dataset containing the samples.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> GaussBN:

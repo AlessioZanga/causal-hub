@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use backend::{
     datasets::CatTable,
-    estimation::{BE, BNEstimator, MLE, ParBNEstimator},
+    estimation::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -23,6 +23,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTable,
+    estimation::PyBNEstimator,
     impl_deref_from_into, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };
@@ -190,9 +191,6 @@ impl PyCatBN {
         // Get the dataset and the graph.
         let dataset: CatTable = dataset.extract::<PyCatTable>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Define a trait for the estimator.
-        trait PyBNEstimator<T>: BNEstimator<T> + ParBNEstimator<T> + Send {}
-        impl<E, T> PyBNEstimator<T> for E where E: BNEstimator<T> + ParBNEstimator<T> + Send {}
         // Initialize the estimator.
         let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
             // Initialize the maximum likelihood estimator.

@@ -137,10 +137,10 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
             let pa_i = self.model.graph().parents(&set![i]);
             let z = Array::from_iter(pa_i.iter().map(|&z| sample[z]));
             // Sample from the normal distribution.
-            let normal = Normal::new(0., s).unwrap();
+            let normal = Normal::new(b, s).unwrap();
             let e = normal.sample(&mut self.rng.borrow_mut());
             // Compute the value of the variable.
-            sample[i] = a.dot(&z) + b + e;
+            sample[i] = a.dot(&z) + e;
         });
 
         sample

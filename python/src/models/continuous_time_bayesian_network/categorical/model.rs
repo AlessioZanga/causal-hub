@@ -1,15 +1,25 @@
 use std::collections::BTreeMap;
 
 use backend::{
+    datasets::CatTrjs,
+    estimation::{BE, MLE},
     io::JsonIO,
     models::{CTBN, CatCTBN, DiGraph, Labelled},
+    samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
 };
-use pyo3::{prelude::*, types::PyType};
+use pyo3::{
+    exceptions::PyValueError,
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyCatTrj,
-    impl_deref_from_into,
+    datasets::PyCatTrjs,
+    estimation::PyCTBNEstimator,
+    impl_deref_from_into, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
 
@@ -142,7 +152,6 @@ impl PyCatCTBN {
     /// * `dataset` - The dataset to fit the model to.
     /// * `graph` - The graph to fit the model to.
     /// * `method` - The method to use for fitting (default is `mle`).
-    /// * `seed` - The seed of the random number generator (default is `31`).
     /// * `parallel` - The flag to enable parallel fitting (default is `true`).
     ///
     /// # Returns
@@ -150,17 +159,122 @@ impl PyCatCTBN {
     /// A new fitted model.
     ///
     #[classmethod]
-    #[pyo3(signature = (dataset, graph, method="mle", seed=31, parallel=true))]
+    #[pyo3(signature = (
+        dataset,
+        graph,
+        method="mle",
+        parallel=true,
+        **kwargs
+    ))]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
-        dataset: &Bound<'_, PyCatTrj>,
+        dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
+        parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Get the dataset and the graph.
+        let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
+        let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+        // Initialize the estimator.
+        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match method {
+            // Initialize the maximum likelihood estimator.
+            "mle" => Box::new(MLE::new(&dataset)),
+            // Initialize the Bayesian estimator.
+            "be" => {
+                // Initialize the Bayesian estimator.
+                let estimator = BE::new(&dataset);
+                // Set the prior `alpha`, if any.
+                match kwarg!(kwargs, "alpha", (usize, f64)) {
+                    None => Box::new(estimator),
+                    Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                }
+            }
+            // Raise an error if the method is unknown.
+            method => {
+                return Err(PyErr::new::<PyValueError, _>(format!(
+                    "Unknown method: '{}', choose one of the following: \n\
+                    \t- 'mle' - Maximum likelihood estimator, \n\
+                    \t- 'be' - Bayesian estimator.",
+                    method
+                )));
+            }
+        };
+        // Fit the model.
+        let model = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || estimator.par_fit(graph))
+        } else {
+            // Execute sequentially.
+            estimator.fit(graph)
+        };
+        // Return the fitted model.
+        Ok(model.into())
+    }
+
+    /// Sample from the model.
+    ///
+    /// Parameters
+    /// ----------
+    /// n: int
+    ///     The number of trajectories to sample.
+    /// max_len: int | None
+    ///     The maximum length of each trajectory (default is `None`).
+    ///     Must be set if `max_time` is `None`.
+    /// max_time: float | None
+    ///     The maximum time of each trajectory (default is `None`).
+    ///     Must be set if `max_len` is `None`.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel sampling (default is `true`).
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjs
+    ///     A new dataset containing the sampled trajectories.
+    ///
+    #[pyo3(signature = (
+        n,
+        max_len=None,
+        max_time=None,
+        seed=31,
+        parallel=true,
+    ))]
+    pub fn sample(
+        &self,
+        py: Python<'_>,
+        n: usize,
+        max_len: Option<usize>,
+        max_time: Option<f64>,
         seed: u64,
         parallel: bool,
-    ) -> PyResult<Self> {
-        todo!() // FIXME:
+    ) -> PyResult<PyCatTrjs> {
+        // Assert at least one of max_len or max_time is set.
+        if max_len.is_none() && max_time.is_none() {
+            return Err(PyErr::new::<PyValueError, _>(
+                "At least one of 'max_len' or 'max_time' must be set.",
+            ));
+        }
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Initialize the sampler.
+        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        // Get the maximum length and time.
+        let max_len = max_len.unwrap_or(usize::MAX);
+        let max_time = max_time.unwrap_or(f64::INFINITY);
+        // Sample from the model.
+        let dataset = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || sampler.par_sample_n_by_length_or_time(max_len, max_time, n))
+        } else {
+            // Sample sequentially.
+            sampler.sample_n_by_length_or_time(max_len, max_time, n)
+        };
+        // Return the dataset.
+        Ok(dataset.into())
     }
 
     /// Read class from a JSON string.
