@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "causal-hub"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "approx",
  "blas-src",
@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "causal-hub-python"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "approx",
  "causal-hub",
