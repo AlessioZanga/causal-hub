@@ -39,14 +39,17 @@ impl_deref_from_into!(PyCatCTBN, CatCTBN);
 impl PyCatCTBN {
     /// Constructs a new continuous-time Bayesian network.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// graph: DiGraph
+    ///     The underlying graph.
+    /// cims: Iterable[CatCIM]
+    ///     The conditional intensity matrices.
     ///
-    /// * `graph` - The underlying graph.
-    /// * `cims` - The conditional intensity matrices.
-    ///
-    /// # Returns
-    ///
-    /// A new continuous-time Bayesian network instance.
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new continuous-time Bayesian network instance.
     ///
     #[new]
     pub fn new(graph: &Bound<'_, PyDiGraph>, cims: &Bound<'_, PyAny>) -> PyResult<Self> {
@@ -65,9 +68,10 @@ impl PyCatCTBN {
 
     /// Returns the name of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The name of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The name of the model, if it exists.
     ///
     pub fn name(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.name())
@@ -75,9 +79,10 @@ impl PyCatCTBN {
 
     /// Returns the description of the model, if any.
     ///
-    /// # Returns
-    ///
-    /// The description of the model, if it exists.
+    /// Returns
+    /// -------
+    /// str | None
+    ///     The description of the model, if it exists.
     ///
     pub fn description(&self) -> PyResult<Option<&str>> {
         Ok(self.inner.description())
@@ -85,9 +90,10 @@ impl PyCatCTBN {
 
     /// Returns the labels of the variables.
     ///
-    /// # Returns
-    ///
-    /// A reference to the labels.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the labels.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -95,9 +101,10 @@ impl PyCatCTBN {
 
     /// Returns the initial distribution.
     ///
-    /// # Returns
-    ///
-    /// A reference to the initial distribution.
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A reference to the initial distribution.
     ///
     pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
         Ok(self.inner.initial_distribution().clone().into())
@@ -105,9 +112,10 @@ impl PyCatCTBN {
 
     /// Returns the underlying graph.
     ///
-    /// # Returns
-    ///
-    /// A reference to the graph.
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A reference to the graph.
     ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
         Ok(self.inner.graph().clone().into())
@@ -115,9 +123,10 @@ impl PyCatCTBN {
 
     /// Returns the a map labels-distributions.
     ///
-    /// # Returns
-    ///
-    /// A reference to the CIMs.
+    /// Returns
+    /// -------
+    /// dict[str, CatCIM]
+    ///     A reference to the CIMs.
     ///
     pub fn cims(&self) -> PyResult<BTreeMap<&str, PyCatCIM>> {
         Ok(self
@@ -137,9 +146,10 @@ impl PyCatCTBN {
 
     /// Returns the parameters size.
     ///
-    /// # Returns
-    ///
-    /// The parameters size.
+    /// Returns
+    /// -------
+    /// int
+    ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
@@ -147,16 +157,25 @@ impl PyCatCTBN {
 
     /// Fit the model to a dataset and a given graph.
     ///
-    /// # Arguments
+    /// Parameters
+    /// ----------
+    /// dataset: CatTrjs
+    ///     The dataset to fit the model to.
+    /// graph: DiGraph
+    ///     The graph to fit the model to.
+    /// method: str
+    ///     The method to use for fitting (default is `mle`).
+    /// parallel: bool
+    ///     The flag to enable parallel fitting (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
     ///
-    /// * `dataset` - The dataset to fit the model to.
-    /// * `graph` - The graph to fit the model to.
-    /// * `method` - The method to use for fitting (default is `mle`).
-    /// * `parallel` - The flag to enable parallel fitting (default is `true`).
+    ///         - `alpha`: The prior of the Bayesian estimator (int, float64).
     ///
-    /// # Returns
-    ///
-    /// A new fitted model.
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new fitted model.
     ///
     #[classmethod]
     #[pyo3(signature = (
@@ -277,7 +296,18 @@ impl PyCatCTBN {
         Ok(dataset.into())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
+    ///
+    /// Parameters
+    /// ----------
+    /// json: str
+    ///     The JSON string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
@@ -285,12 +315,29 @@ impl PyCatCTBN {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A JSON string representation of the instance.
+    ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatCTBN
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -298,7 +345,13 @@ impl PyCatCTBN {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to write to.
+    ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         self.inner.write_json(path);
         Ok(())

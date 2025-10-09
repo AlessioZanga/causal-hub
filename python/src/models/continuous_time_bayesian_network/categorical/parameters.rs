@@ -29,9 +29,10 @@ impl_deref_from_into!(PyCatCIM, CatCIM);
 impl PyCatCIM {
     /// Returns the label of the conditioned variable.
     ///
-    /// # Returns
-    ///
-    /// A reference to the label.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the label.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -39,9 +40,10 @@ impl PyCatCIM {
 
     /// Returns the states of the conditioned variable.
     ///
-    /// # Returns
-    ///
-    /// The states of the conditioned variable.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str]]
+    ///     A reference to the states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
         Ok(self
@@ -62,9 +64,10 @@ impl PyCatCIM {
 
     /// Returns the shape of the conditioned variable.
     ///
-    /// # Returns
-    ///
-    /// The shape of the conditioned variable.
+    /// Returns
+    /// -------
+    /// list[int]
+    ///     The shape of the conditioned variable.
     ///
     pub fn shape(&self) -> PyResult<Vec<usize>> {
         Ok(self.inner.shape().to_vec())
@@ -72,9 +75,10 @@ impl PyCatCIM {
 
     /// Returns the labels of the conditioned variables.
     ///
-    /// # Returns
-    ///
-    /// A reference to the conditioning labels.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the conditioning labels.
     ///
     pub fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
         Ok(self
@@ -87,9 +91,10 @@ impl PyCatCIM {
 
     /// Returns the states of the conditioning variables.
     ///
-    /// # Returns
-    ///
-    /// The states of the conditioning variables.
+    /// Returns
+    /// -------
+    /// dict[str, tuple[str]]
+    ///     The states of the conditioning variables.
     ///
     pub fn conditioning_states<'a>(
         &'a self,
@@ -113,9 +118,10 @@ impl PyCatCIM {
 
     /// Returns the shape of the conditioning variables.
     ///
-    /// # Returns
-    ///
-    /// The shape of the conditioning variables.
+    /// Returns
+    /// -------
+    /// list[int]
+    ///     The shape of the conditioning variables.
     ///
     pub fn conditioning_shape(&self) -> PyResult<Vec<usize>> {
         Ok(self.inner.conditioning_shape().to_vec())
@@ -123,9 +129,10 @@ impl PyCatCIM {
 
     /// Returns the parameters.
     ///
-    /// # Returns
-    ///
-    /// A reference to the parameters.
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     A reference to the parameters.
     ///
     pub fn parameters<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray3<f64>>> {
         Ok(self.inner.parameters().to_pyarray(py))
@@ -133,9 +140,10 @@ impl PyCatCIM {
 
     /// Returns the parameters size.
     ///
-    /// # Returns
-    ///
-    /// The parameters size.
+    /// Returns
+    /// -------
+    /// int
+    ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
@@ -143,9 +151,10 @@ impl PyCatCIM {
 
     /// Returns the sample statistics used to fit the distribution, if any.
     ///
-    /// # Returns
-    ///
-    /// A dictionary containing the sample statistics used to fit the distribution, if any.
+    /// Returns
+    /// -------
+    /// dict[str, ...] | None
+    ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
         Ok(self.inner.sample_statistics().map(|s| {
@@ -173,15 +182,27 @@ impl PyCatCIM {
 
     /// Returns the sample log-likelihood given the distribution, if any.
     ///
-    /// # Returns
-    ///
-    /// The sample log-likelihood given the distribution.
+    /// Returns
+    /// -------
+    /// float | None
+    ///     The sample log-likelihood given the distribution, if any.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_log_likelihood())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
+    ///
+    /// Parameters
+    /// ----------
+    /// json: str
+    ///     The JSON string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatCIM
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
@@ -189,12 +210,29 @@ impl PyCatCIM {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A JSON string representation of the instance.
+    ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// CatCIM
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -202,7 +240,13 @@ impl PyCatCIM {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to write to.
+    ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         self.inner.write_json(path);
         Ok(())

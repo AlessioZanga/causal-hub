@@ -27,9 +27,10 @@ impl_deref_from_into!(PyGaussCPD, GaussCPD);
 impl PyGaussCPD {
     /// Returns the label of the conditioned variable.
     ///
-    /// # Returns
-    ///
-    /// A reference to the label.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the label.
     ///
     pub fn labels(&self) -> PyResult<Vec<&str>> {
         Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
@@ -37,9 +38,10 @@ impl PyGaussCPD {
 
     /// Returns the labels of the conditioned variables.
     ///
-    /// # Returns
-    ///
-    /// A reference to the conditioning labels.
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     A reference to the conditioning labels.
     ///
     pub fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
         Ok(self
@@ -52,11 +54,12 @@ impl PyGaussCPD {
 
     /// Returns the parameters.
     ///
-    /// # Returns
+    /// Returns
+    /// -------
+    /// dict[str, ...]
+    ///     A reference to the parameters.
     ///
-    /// A reference to the parameters.
-    ///
-    pub fn parameters<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
+    pub fn parameters<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyDict>> {
         // Allocate the dictionary.
         let dict = PyDict::new(py);
         // Get the parameters.
@@ -71,14 +74,15 @@ impl PyGaussCPD {
         dict.set_item("covariance", parameters.covariance().to_pyarray(py))
             .expect("Failed to set covariance.");
         // Return the dictionary.
-        Ok(Some(dict))
+        Ok(dict)
     }
 
     /// Returns the parameters size.
     ///
-    /// # Returns
-    ///
-    /// The parameters size.
+    /// Returns
+    /// -------
+    /// int
+    ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
         Ok(self.inner.parameters_size())
@@ -86,9 +90,10 @@ impl PyGaussCPD {
 
     /// Returns the sample statistics used to fit the distribution, if any.
     ///
-    /// # Returns
-    ///
-    /// A dictionary containing the sample statistics used to fit the distribution, if any.
+    /// Returns
+    /// -------
+    /// dict[str, ...] | None
+    ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
         Ok(self.inner.sample_statistics().map(|s| {
@@ -131,15 +136,27 @@ impl PyGaussCPD {
 
     /// Returns the sample log-likelihood given the distribution, if any.
     ///
-    /// # Returns
-    ///
-    /// The sample log-likelihood given the distribution.
+    /// Returns
+    /// -------
+    /// float | None
+    ///     The sample log-likelihood given the distribution, if any.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.inner.sample_log_likelihood())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
+    ///
+    /// Parameters
+    /// ----------
+    /// json: str
+    ///     The JSON string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
@@ -147,12 +164,29 @@ impl PyGaussCPD {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A JSON string representation of the instance.
+    ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -160,7 +194,13 @@ impl PyGaussCPD {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to write to.
+    ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         self.inner.write_json(path);
         Ok(())

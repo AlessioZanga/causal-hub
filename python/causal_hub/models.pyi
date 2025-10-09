@@ -218,7 +218,7 @@ class CatBN:
     @classmethod
     def from_json(cls, json:builtins.str) -> CatBN:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
         
         Parameters
         ----------
@@ -228,21 +228,21 @@ class CatBN:
         Returns
         -------
         CatBN
-            A new Bayesian network instance.
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
         
         Returns
         -------
         str
-            A JSON string representation of the model.
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatBN:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
         
         Parameters
         ----------
@@ -252,11 +252,11 @@ class CatBN:
         Returns
         -------
         CatBN
-            A new Bayesian network instance.
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
         
         Parameters
         ----------
@@ -273,99 +273,139 @@ class CatCIM:
         r"""
         Returns the label of the conditioned variable.
         
-        # Returns
-        
-        A reference to the label.
+        Returns
+        -------
+        list[str]
+            A reference to the label.
         """
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
         
-        # Returns
-        
-        The states of the conditioned variable.
+        Returns
+        -------
+        dict[str, tuple[str]]
+            A reference to the states.
         """
     def shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioned variable.
         
-        # Returns
-        
-        The shape of the conditioned variable.
+        Returns
+        -------
+        list[int]
+            The shape of the conditioned variable.
         """
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
         
-        # Returns
-        
-        A reference to the conditioning labels.
+        Returns
+        -------
+        list[str]
+            A reference to the conditioning labels.
         """
     def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioning variables.
         
-        # Returns
-        
-        The states of the conditioning variables.
+        Returns
+        -------
+        dict[str, tuple[str]]
+            The states of the conditioning variables.
         """
     def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioning variables.
         
-        # Returns
-        
-        The shape of the conditioning variables.
+        Returns
+        -------
+        list[int]
+            The shape of the conditioning variables.
         """
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the parameters.
         
-        # Returns
-        
-        A reference to the parameters.
+        Returns
+        -------
+        numpy.ndarray
+            A reference to the parameters.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
         
-        # Returns
-        
-        A dictionary containing the sample statistics used to fit the distribution, if any.
+        Returns
+        -------
+        dict[str, ...] | None
+            A dictionary containing the sample statistics used to fit the distribution, if any.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
         
-        # Returns
-        
-        The sample log-likelihood given the distribution.
+        Returns
+        -------
+        float | None
+            The sample log-likelihood given the distribution, if any.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCIM:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        CatCIM
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatCIM:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        CatCIM
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class CatCPD:
@@ -470,31 +510,31 @@ class CatCPD:
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCPD:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
         
         Parameters
         ----------
         json: str
-            A JSON string representation of a CatCPD.
+            The JSON string to read from.
         
         Returns
         -------
         CatCPD
-            A CatCPD instance.
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
         
         Returns
         -------
         str
-            A JSON string representation of the CatCPD.
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatCPD:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
         
         Parameters
         ----------
@@ -504,11 +544,11 @@ class CatCPD:
         Returns
         -------
         CatCPD
-            A CatCPD instance.
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
         
         Parameters
         ----------
@@ -525,86 +565,105 @@ class CatCTBN:
         r"""
         Constructs a new continuous-time Bayesian network.
         
-        # Arguments
+        Parameters
+        ----------
+        graph: DiGraph
+            The underlying graph.
+        cims: Iterable[CatCIM]
+            The conditional intensity matrices.
         
-        * `graph` - The underlying graph.
-        * `cims` - The conditional intensity matrices.
-        
-        # Returns
-        
-        A new continuous-time Bayesian network instance.
+        Returns
+        -------
+        CatCTBN
+            A new continuous-time Bayesian network instance.
         """
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
         
-        # Returns
-        
-        The name of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The name of the model, if it exists.
         """
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
         
-        # Returns
-        
-        The description of the model, if it exists.
+        Returns
+        -------
+        str | None
+            The description of the model, if it exists.
         """
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
         
-        # Returns
-        
-        A reference to the labels.
+        Returns
+        -------
+        list[str]
+            A reference to the labels.
         """
     def initial_distribution(self) -> CatBN:
         r"""
         Returns the initial distribution.
         
-        # Returns
-        
-        A reference to the initial distribution.
+        Returns
+        -------
+        CatBN
+            A reference to the initial distribution.
         """
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
         
-        # Returns
-        
-        A reference to the graph.
+        Returns
+        -------
+        DiGraph
+            A reference to the graph.
         """
     def cims(self) -> builtins.dict[builtins.str, CatCIM]:
         r"""
         Returns the a map labels-distributions.
         
-        # Returns
-        
-        A reference to the CIMs.
+        Returns
+        -------
+        dict[str, CatCIM]
+            A reference to the CIMs.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     @classmethod
     def fit(cls, dataset:CatTrjs, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatCTBN:
         r"""
         Fit the model to a dataset and a given graph.
         
-        # Arguments
+        Parameters
+        ----------
+        dataset: CatTrjs
+            The dataset to fit the model to.
+        graph: DiGraph
+            The graph to fit the model to.
+        method: str
+            The method to use for fitting (default is `mle`).
+        parallel: bool
+            The flag to enable parallel fitting (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
         
-        * `dataset` - The dataset to fit the model to.
-        * `graph` - The graph to fit the model to.
-        * `method` - The method to use for fitting (default is `mle`).
-        * `parallel` - The flag to enable parallel fitting (default is `true`).
+                - `alpha`: The prior of the Bayesian estimator (int, float64).
         
-        # Returns
-        
-        A new fitted model.
+        Returns
+        -------
+        CatCTBN
+            A new fitted model.
         """
     def sample(self, n:builtins.int, max_len:typing.Optional[builtins.int]=None, max_time:typing.Optional[builtins.float]=None, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTrjs:
         r"""
@@ -633,20 +692,50 @@ class CatCTBN:
     @classmethod
     def from_json(cls, json:builtins.str) -> CatCTBN:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        CatCTBN
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> CatCTBN:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        CatCTBN
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class DiGraph:
@@ -655,39 +744,37 @@ class DiGraph:
     """
     def __eq__(self, other:builtins.object) -> builtins.bool: ...
     @classmethod
-    def empty(cls, labels:typing.Any) -> DiGraph:
+    def empty(cls, vertices:typing.Any) -> DiGraph:
         r"""
-        Creates an empty directed graph with the given labels.
+        Creates an empty directed graph with the given vertices.
         
-        # Arguments
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+            Vertices will be sorted in alphabetical order.
         
-        * `labels` - The labels of the vertices in the graph.
-        
-        # Notes
-        
-        * Labels will be sorted in alphabetical order.
-        
-        # Returns
-        
-        A new graph instance.
+        Returns
+        -------
+        DiGraph
+            A new graph instance.
         """
     @classmethod
-    def complete(cls, labels:typing.Any) -> DiGraph:
+    def complete(cls, vertices:typing.Any) -> DiGraph:
         r"""
-        Creates a complete directed graph with the given labels.
+        Creates a complete directed graph with the given vertices.
         
-        # Arguments
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The the vertices of the graph.
+            Vertices will be sorted in alphabetical order.
+            No self-loops are created.
         
-        * `labels` - The labels of the vertices in the graph.
-        
-        # Notes
-        
-        * Labels will be sorted in alphabetical order.
-        * No self-loops are created.
-        
-        # Returns
-        
-        A new graph instance.
+        Returns
+        -------
+        DiGraph
+            A new graph instance.
         """
     def vertices(self) -> builtins.list[builtins.str]:
         r"""
@@ -701,287 +788,372 @@ class DiGraph:
         r"""
         Checks if a vertex exists in the graph.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str
+            The vertex.
         
-        * `x` - The vertex.
-        
-        # Returns
-        
-        `true` if the vertex exists, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if the vertex exists, `false` otherwise.
         """
     def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:
         r"""
         Returns the edges of the graph.
         
-        # Returns
-        
-        A list of edges.
+        Returns
+        -------
+        list[tuple[str, str]]
+            A list of edges.
         """
     def has_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
         r"""
         Checks if there is an edge between vertices `x` and `y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
         
-        * `x` - The first vertex.
-        * `y` - The second vertex.
-        
-        # Returns
-        
-        `true` if there is an edge between `x` and `y`, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if there is an edge between `x` and `y`, `false` otherwise.
         """
     def add_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
         r"""
         Adds an edge between vertices `x` and `y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
         
-        * `x` - The first vertex.
-        * `y` - The second vertex.
-        
-        # Returns
-        
-        `true` if the edge was added, `false` if it already existed.
+        Returns
+        -------
+        bool
+            `true` if the edge was added, `false` if it already existed.
         """
     def del_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
         r"""
         Deletes the edge between vertices `x` and `y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str
+            The first vertex.
+        y: str
+            The second vertex.
         
-        * `x` - The first vertex.
-        * `y` - The second vertex.
-        
-        # Returns
-        
-        `true` if the edge was deleted, `false` if it did not exist.
+        Returns
+        -------
+        bool
+            `true` if the edge was deleted, `false` if it did not exist.
         """
     def parents(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the parents of a vertex `x`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A vertex or an iterable of vertices.
         
-        * `x` - A vertex or an iterable of vertices.
-        
-        # Returns
-        
-        A list of parent vertices.
+        Returns
+        -------
+        list[str]
+            A list of parent vertices.
         """
     def ancestors(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the ancestors of a vertex `x`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A vertex or an iterable of vertices.
         
-        * `x` - A vertex or an iterable of vertices.
-        
-        # Returns
-        
-        A list of ancestor vertices.
+        Returns
+        -------
+        list[str]
+            A list of ancestor vertices.
         """
     def children(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the children of a vertex `x`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A vertex or an iterable of vertices.
         
-        * `x` - A vertex or an iterable of vertices.
-        
-        # Returns
-        
-        A list of child vertices.
+        Returns
+        -------
+        list[str]
+            A list of child vertices.
         """
     def descendants(self, x:typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the descendants of a vertex `x`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A vertex or an iterable of vertices.
         
-        * `x` - A vertex or an iterable of vertices.
-        
-        # Returns
-        
-        A list of descendant vertices.
+        Returns
+        -------
+        list[str]
+            A list of descendant vertices.
         """
     def is_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a separator set for `X` and `Y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        z: Iterable[str]
+            An iterable of vertices representing set `Z`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `z` - An iterable of vertices representing set `Z`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+            * `X`, `Y` or `Z` are not disjoint sets.
+            * `X` and `Y` are empty sets.
         
-        * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-        * If `X`, `Y` or `Z` are not disjoint sets.
-        * If `X` and `Y` are empty sets.
-        
-        # Returns
-        
-        `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
         """
     def is_minimal_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        z: Iterable[str]
+            An iterable of vertices representing set `Z`.
+        w: Iterable[str] | None
+            An optional iterable of vertices representing set `W`.
+        v: Iterable[str] | None
+            An optional iterable of vertices representing set `V`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `z` - An iterable of vertices representing set `Z`.
-        * `w` - An optional iterable of vertices representing set `W`.
-        * `v` - An optional iterable of vertices representing set `V`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+            * `X`, `Y` or `Z` are not disjoint sets.
+            * `X` and `Y` are empty sets.
+            * Not `W` <= `Z` <= `V`.
         
-        * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-        * If `X`, `Y` or `Z` are not disjoint sets.
-        * If `X` and `Y` are empty sets.
-        * If not `W` <= `Z` <= `V`.
-        
-        # Returns
-        
-        `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
         """
     def find_minimal_separator_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
         r"""
         Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        w: Iterable[str] | None
+            An optional iterable of vertices representing set `W`.
+        v: Iterable[str] | None
+            An optional iterable of vertices representing set `V`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `w` - An optional iterable of vertices representing set `W`.
-        * `v` - An optional iterable of vertices representing set `V`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+            * `X` and `Y` are not disjoint sets.
+            * `X` or `Y` are empty sets.
+            * Not `W` <= `V`.
         
-        * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-        * If `X` and `Y` are not disjoint sets.
-        * If `X` or `Y` are empty sets.
-        * If not `W` <= `V`.
-        
-        # Returns
-        
-        `Some(Set)` containing the minimal separator set, or `None` if no separator set exists.
+        Returns
+        -------
+        list[str] | None
+            A minimal separator set, or `None` if no separator set exists.
         """
     def is_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a backdoor set for `X` and `Y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        z: Iterable[str]
+            An iterable of vertices representing set `Z`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `z` - An iterable of vertices representing set `Z`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+            * `X`, `Y` or `Z` are not disjoint sets.
+            * `X` and `Y` are empty sets.
         
-        * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-        * If `X`, `Y` or `Z` are not disjoint sets.
-        * If `X` and `Y` are empty sets.
-        
-        # Returns
-        
-        `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if `Z` is a backdoor set for `X` and `Y`, `false` otherwise.
         """
     def is_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        z: Iterable[str]
+            An iterable of vertices representing set `Z`.
+        w: Iterable[str] | None
+            An optional iterable of vertices representing set `W`.
+        v: Iterable[str] | None
+            An optional iterable of vertices representing set `V`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `z` - An iterable of vertices representing set `Z`.
-        * `w` - An optional iterable of vertices representing set `W`.
-        * `v` - An optional iterable of vertices representing set `V`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+            * `X`, `Y` or `Z` are not disjoint sets.
+            * `X` and `Y` are empty sets.
+            * Not `W` <= `Z` <= `V`.
         
-        * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-        * If `X`, `Y` or `Z` are not disjoint sets.
-        * If `X` and `Y` are empty sets.
-        * If not `W` <= `Z` <= `V`.
-        
-        # Returns
-        
-        `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
+        Returns
+        -------
+        bool
+            `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
         """
     def find_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
         r"""
         Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
         
-        # Arguments
+        Parameters
+        ----------
+        x: Iterable[str]
+            An iterable of vertices representing set `X`.
+        y: Iterable[str]
+            An iterable of vertices representing set `Y`.
+        w: Iterable[str] | None
+            An optional iterable of vertices representing set `W`.
+        v: Iterable[str] | None
+            An optional iterable of vertices representing set `V`.
         
-        * `x` - An iterable of vertices representing set `X`.
-        * `y` - An iterable of vertices representing set `Y`.
-        * `w` - An optional iterable of vertices representing set `W`.
-        * `v` - An optional iterable of vertices representing set `V`.
+        Notes
+        ----------
+        Raises an exception if:
         
-        # Panics
+            * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+            * `X` and `Y` are not disjoint sets.
+            * `X` or `Y` are empty sets.
+            * Not `W` <= `V`.
         
-        * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-        * If `X` and `Y` are not disjoint sets.
-        * If `X` or `Y` are empty sets.
-        * If not `W` <= `V`.
-        
-        # Returns
-        
-        `Some(Set)` containing the minimal backdoor set, or `None` if no backdoor set exists.
-        """
-    @classmethod
-    def from_adjacency_matrix(cls, labels:typing.Any, adjacency_matrix:numpy.typing.NDArray[numpy.int64]) -> DiGraph:
-        r"""
-        Creates a graph from an adjacency matrix and labels.
-        
-        # Arguments
-        
-        * `labels` - An iterator over the labels of the vertices.
-        * `adjacency_matrix` - A reference to a 2D array representing the adjacency matrix.
-        
-        # Returns
-        
-        A new graph instance.
-        """
-    def to_adjacency_matrix(self) -> numpy.typing.NDArray[numpy.int64]:
-        r"""
-        Returns the adjacency matrix of the graph.
-        
-        # Returns
-        
-        A 2D array representing the adjacency matrix.
+        Returns
+        -------
+        list[str] | None
+            A minimal backdoor set, or `None` if no backdoor set exists.
         """
     @classmethod
     def from_networkx(cls, g:typing.Any) -> DiGraph:
         r"""
         Converts from a NetworkX DiGraph.
+        
+        Parameters
+        ----------
+        g: networkx.DiGraph
+            A NetworkX DiGraph to convert from.
+        
+        Returns
+        -------
+        DiGraph
+            A new instance.
         """
     def to_networkx(self) -> typing.Any:
         r"""
         Converts to a NetworkX DiGraph.
+        
+        Returns
+        -------
+        networkx.DiGraph
+            A NetworkX DiGraph representation of the graph.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> DiGraph:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        DiGraph
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> DiGraph:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        DiGraph
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class GaussBN:
@@ -1101,20 +1273,50 @@ class GaussBN:
     @classmethod
     def from_json(cls, json:builtins.str) -> GaussBN:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        GaussBN
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> GaussBN:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        GaussBN
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 
 class GaussCPD:
@@ -1126,66 +1328,102 @@ class GaussCPD:
         r"""
         Returns the label of the conditioned variable.
         
-        # Returns
-        
-        A reference to the label.
+        Returns
+        -------
+        list[str]
+            A reference to the label.
         """
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
         
-        # Returns
-        
-        A reference to the conditioning labels.
+        Returns
+        -------
+        list[str]
+            A reference to the conditioning labels.
         """
-    def parameters(self) -> typing.Optional[dict]:
+    def parameters(self) -> dict:
         r"""
         Returns the parameters.
         
-        # Returns
-        
-        A reference to the parameters.
+        Returns
+        -------
+        dict[str, ...]
+            A reference to the parameters.
         """
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
         
-        # Returns
-        
-        The parameters size.
+        Returns
+        -------
+        int
+            The parameters size.
         """
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
         
-        # Returns
-        
-        A dictionary containing the sample statistics used to fit the distribution, if any.
+        Returns
+        -------
+        dict[str, ...] | None
+            A dictionary containing the sample statistics used to fit the distribution, if any.
         """
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
         
-        # Returns
-        
-        The sample log-likelihood given the distribution.
+        Returns
+        -------
+        float | None
+            The sample log-likelihood given the distribution, if any.
         """
     @classmethod
     def from_json(cls, json:builtins.str) -> GaussCPD:
         r"""
-        Read class from a JSON string.
+        Read instance from a JSON string.
+        
+        Parameters
+        ----------
+        json: str
+            The JSON string to read from.
+        
+        Returns
+        -------
+        GaussCPD
+            A new instance.
         """
     def to_json(self) -> builtins.str:
         r"""
-        Write class to a JSON string.
+        Write instance to a JSON string.
+        
+        Returns
+        -------
+        str
+            A JSON string representation of the instance.
         """
     @classmethod
     def read_json(cls, path:builtins.str) -> GaussCPD:
         r"""
-        Read class from a JSON file.
+        Read instance from a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to read from.
+        
+        Returns
+        -------
+        GaussCPD
+            A new instance.
         """
     def write_json(self, path:builtins.str) -> None:
         r"""
-        Write class to a JSON file.
+        Write instance to a JSON file.
+        
+        Parameters
+        ----------
+        path: str
+            The path to the JSON file to write to.
         """
 

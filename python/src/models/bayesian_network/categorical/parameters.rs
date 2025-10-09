@@ -191,17 +191,17 @@ impl PyCatCPD {
         Ok(self.inner.to_string())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
     ///
     /// Parameters
     /// ----------
     /// json: str
-    ///     A JSON string representation of a CatCPD.
+    ///     The JSON string to read from.
     ///
     /// Returns
     /// -------
     /// CatCPD
-    ///     A CatCPD instance.
+    ///     A new instance.
     ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
@@ -210,18 +210,18 @@ impl PyCatCPD {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
     ///
     /// Returns
     /// -------
     /// str
-    ///     A JSON string representation of the CatCPD.
+    ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
     ///
     /// Parameters
     /// ----------
@@ -231,7 +231,7 @@ impl PyCatCPD {
     /// Returns
     /// -------
     /// CatCPD
-    ///     A CatCPD instance.
+    ///     A new instance.
     ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
@@ -240,7 +240,7 @@ impl PyCatCPD {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
     ///
     /// Parameters
     /// ----------

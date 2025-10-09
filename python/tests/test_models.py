@@ -28,16 +28,12 @@ def test_digraph_to_networkx() -> None:
     # Define vertices and edges for a simple directed graph.
     vertices = ["A", "B", "C", "D"]
     edges = [("A", "B"), ("B", "C"), ("C", "D")]
-    # Create an adjacency matrix for the directed graph.
-    adjacency_matrix = np.zeros((len(vertices), len(vertices)), dtype=int)
-    # Fill the adjacency matrix based on the edges.
-    for edge in edges:
-        i = vertices.index(edge[0])
-        j = vertices.index(edge[1])
-        adjacency_matrix[i, j] = 1
 
+    # Create a simple directed graph using NetworkX.
+    G = nx.DiGraph()
+    G.add_edges_from(edges)
     # Create a DiGraph.
-    graph = DiGraph.from_adjacency_matrix(vertices, adjacency_matrix)
+    graph = DiGraph.from_networkx(G)
 
     # Convert the DiGraph to a NetworkX graph.
     G = graph.to_networkx()
@@ -74,6 +70,10 @@ def test_asia() -> None:
     # Get the graph of the BN.
     graph = asia.graph()
 
+    # Check the name.
+    assert asia.name() == "asia", "Wrong name."
+    # Check the description.
+    assert asia.description() == None, "Wrong description."
     # Check the vertices labels.
     vertices = ["asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"]
     assert graph.vertices() == vertices, "Wrong vertices labels."
@@ -133,6 +133,10 @@ def test_ecoli70() -> None:
     # Get the graph of the BN.
     graph = ecoli70.graph()
 
+    # Check the name.
+    assert ecoli70.name() == "ecoli70", "Wrong name."
+    # Check the description.
+    assert ecoli70.description() == None, "Wrong description."
     # Check the vertices labels.
     vertices = [
         "aceB",
@@ -288,6 +292,13 @@ def test_eating() -> None:
     # Get the graph of the CTBN.
     graph = eating.graph()
 
+    # Check the name.
+    assert eating.name() == "eating", "Wrong name."
+    # Check the description.
+    assert (
+        eating.description()
+        == 'See: U. Nodelman, C.R. Shelton, and D. Koller (2003). "Learning Continuous Time Bayesian Networks." Proc. Nineteenth Conference on Uncertainty in Artificial Intelligence (UAI) (pp. 451-458).'
+    ), "Wrong description."
     # Check the vertices labels.
     vertices = [
         "Eating",

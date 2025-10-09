@@ -241,7 +241,18 @@ impl PyGaussBN {
         Ok(dataset.into())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
+    ///
+    /// Parameters
+    /// ----------
+    /// json: str
+    ///     The JSON string to read from.
+    ///
+    /// Returns
+    /// -------
+    /// GaussBN
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
@@ -249,12 +260,29 @@ impl PyGaussBN {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A JSON string representation of the instance.
+    ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to read from.
+    ///
+    /// Returns
+    /// -------
+    /// GaussBN
+    ///     A new instance.
+    ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
@@ -262,7 +290,13 @@ impl PyGaussBN {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     The path to the JSON file to write to.
+    ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
         self.inner.write_json(path);
         Ok(())

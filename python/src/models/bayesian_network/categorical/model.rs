@@ -424,7 +424,7 @@ impl PyCatBN {
         Ok(())
     }
 
-    /// Read class from a JSON string.
+    /// Read instance from a JSON string.
     ///
     /// Parameters
     /// ----------
@@ -434,7 +434,7 @@ impl PyCatBN {
     /// Returns
     /// -------
     /// CatBN
-    ///     A new Bayesian network instance.
+    ///     A new instance.
     ///
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
@@ -443,18 +443,18 @@ impl PyCatBN {
         })
     }
 
-    /// Write class to a JSON string.
+    /// Write instance to a JSON string.
     ///
     /// Returns
     /// -------
     /// str
-    ///     A JSON string representation of the model.
+    ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.inner.to_json())
     }
 
-    /// Read class from a JSON file.
+    /// Read instance from a JSON file.
     ///
     /// Parameters
     /// ----------
@@ -464,7 +464,7 @@ impl PyCatBN {
     /// Returns
     /// -------
     /// CatBN
-    ///     A new Bayesian network instance.
+    ///     A new instance.
     ///
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
@@ -473,7 +473,7 @@ impl PyCatBN {
         })
     }
 
-    /// Write class to a JSON file.
+    /// Write instance to a JSON file.
     ///
     /// Parameters
     /// ----------
