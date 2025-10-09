@@ -4,9 +4,18 @@ default-members = ["causal-hub"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 edition = "2024"
+rust-version = "1.85.1"
+description = "A library for causal models, inference and discovery."
+documentation = "https://crates.io/crates/causal-hub"
+readme = "README.md"
+homepage = "https://github.com/AlessioZanga/causal-hub"
+repository = "https://github.com/AlessioZanga/causal-hub"
+license = "AGPL-3.0-only"
+keywords = ["causality"]
+categories = ["science", "mathematics", "algorithms", "data-structures"]
 
 [workspace.dependencies]
 approx = "^0.5"
