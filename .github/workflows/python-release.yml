@@ -24,6 +24,10 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -47,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -82,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -116,7 +120,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   release:
     name: Release
