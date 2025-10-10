@@ -15,9 +15,9 @@ build:
   jobs:
     pre_build:
       - echo "Building `causal-hub` with `maturin`"
-      - cd python
-      - cargo run --bin stub_gen --release
-      - maturin develop --release
+      - cd python && \
+        cargo run --bin stub_gen --release && \
+        maturin develop --release
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
