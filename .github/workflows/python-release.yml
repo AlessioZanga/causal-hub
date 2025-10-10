@@ -76,23 +76,11 @@ jobs:
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
-      - name: Set env variables (x64)
-        if: ${{ matrix.platform.target == 'x64' }}
+      - name: Set env variables
         run: |
-          "VCPKG_DEFAULT_TRIPLET=x64-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "VCPKGRS_TRIPLET=x64-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: Install OpenBLAS (x64)
-        if: ${{ matrix.platform.target == 'x64' }}
-        run: |
-          vcpkg integrate install
-          vcpkg install openblas --overlay-ports=.vcpkg/ports
-      - name: Set env variables (x86)
-        if: ${{ matrix.platform.target == 'x86' }}
-        run: |
-          "VCPKG_DEFAULT_TRIPLET=x86-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "VCPKGRS_TRIPLET=x86-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: Install OpenBLAS (x86)
-        if: ${{ matrix.platform.target == 'x86' }}
+          "VCPKG_DEFAULT_TRIPLET=${{ matrix.platform.target }}-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VCPKGRS_TRIPLET=${{ matrix.platform.target }}-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Install OpenBLAS
         run: |
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
