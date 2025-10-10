@@ -36,8 +36,7 @@ jobs:
           manylinux: auto
           working-directory: python
           before-script-linux: |
-            apt-get update
-            apt-get install -y pkg-config libssl-dev
+            yum install -y pkgconfig openssl-devel
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -47,8 +46,7 @@ jobs:
           manylinux: auto
           working-directory: python
           before-script-linux: |
-            apt-get update
-            apt-get install -y pkg-config libssl-dev
+            yum install -y pkgconfig openssl-devel
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
