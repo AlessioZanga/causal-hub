@@ -16,6 +16,10 @@
     {
       "name": "vcpkg-cmake-config",
       "host": true
+    },
+    {
+      "name": "vcpkg-gfortran",
+      "host": true
     }
   ],
   "features": {
