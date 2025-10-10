@@ -36,6 +36,10 @@ jobs:
           manylinux: auto
           working-directory: python
           before-script-linux: |
+            # Enable dynamic arch for OpenBLAS
+            export OPENBLAS_TARGET=GENERIC
+            export DYNAMIC_ARCH=1
+            # Install dependencies for building wheels
             yum install -y pkgconfig openssl-devel
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
@@ -46,6 +50,10 @@ jobs:
           manylinux: auto
           working-directory: python
           before-script-linux: |
+            # Enable dynamic arch for OpenBLAS
+            export OPENBLAS_TARGET=GENERIC
+            export DYNAMIC_ARCH=1
+            # Install dependencies for building wheels
             yum install -y pkgconfig openssl-devel
       - name: Upload wheels
         uses: actions/upload-artifact@v4
