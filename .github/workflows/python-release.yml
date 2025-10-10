@@ -85,7 +85,7 @@ jobs:
         if: ${{ matrix.platform.target == 'x64' }}
         run: |
           vcpkg integrate install
-          vcpkg install openblas
+          vcpkg install openblas --overlay-ports=.vcpkg/ports
       - name: Set env variables (x86)
         if: ${{ matrix.platform.target == 'x86' }}
         run: |
@@ -95,7 +95,7 @@ jobs:
         if: ${{ matrix.platform.target == 'x86' }}
         run: |
           vcpkg integrate install
-          vcpkg install openblas
+          vcpkg install openblas --overlay-ports=.vcpkg/ports
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
