@@ -1,4 +1,4 @@
-name: python
+name: python-release
 
 on:
   push:
@@ -15,9 +15,6 @@ permissions:
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
-    defaults:
-      run:
-        working-directory: ./python
     strategy:
       matrix:
         platform:
@@ -36,6 +33,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
           manylinux: auto
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
@@ -43,6 +41,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
           manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -52,9 +51,6 @@ jobs:
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
-    defaults:
-      run:
-        working-directory: ./python
     strategy:
       matrix:
         platform:
@@ -74,12 +70,14 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -88,9 +86,6 @@ jobs:
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
-    defaults:
-      run:
-        working-directory: ./python
     strategy:
       matrix:
         platform:
@@ -109,12 +104,14 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
