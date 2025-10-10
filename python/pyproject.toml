@@ -26,3 +26,11 @@ documentation = "https://crates.io/crates/causal-hub"
 [tool.maturin]
 features = ["pyo3/abi3-py310", "pyo3/extension-module", "openblas-static"]
 strip = true
+
+[tool.maturin.x86_64-pc-windows-msvc]
+features = ["pyo3/abi3-py310", "pyo3/extension-module", "openblas-system"]
+strip = true
+
+[tool.maturin.i686-pc-windows-msvc]
+features = ["pyo3/abi3-py310", "pyo3/extension-module", "openblas-system"]
+strip = true
