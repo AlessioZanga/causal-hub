@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: python
+        working-directory: ./python
     strategy:
       matrix:
         platform:
@@ -54,7 +54,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: python
+        working-directory: ./python
     strategy:
       matrix:
         platform:
@@ -90,7 +90,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: python
+        working-directory: ./python
     strategy:
       matrix:
         platform:
