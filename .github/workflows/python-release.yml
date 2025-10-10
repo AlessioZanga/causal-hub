@@ -79,27 +79,27 @@ jobs:
       - name: Install OpenBLAS (x64)
         if: ${{ matrix.platform.target == 'x64' }}
         run: |
-          $env:VCPKG_BUILD_TYPE = "release"
+          $env:VCPKGRS_TRIPLET = "x64-windows-static-md"
           vcpkg integrate install
-          vcpkg install openblas --triplet x64-windows-static-md
+          vcpkg install openblas
       - name: Install OpenBLAS (x86)
         if: ${{ matrix.platform.target == 'x86' }}
         run: |
-          $env:VCPKG_BUILD_TYPE = "release"
+          $env:VCPKGRS_TRIPLET = "x86-windows-static-md"
           vcpkg integrate install
-          vcpkg install openblas --triplet x86-windows-static-md
+          vcpkg install openblas
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --features=pyo3/extension-module,backend/openblas-static
+          args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           working-directory: python
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-static
+          args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           working-directory: python
       - name: Upload wheels
