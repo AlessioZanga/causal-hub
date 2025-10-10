@@ -81,13 +81,13 @@ jobs:
         run: |
           $env:VCPKG_BUILD_TYPE = "release"
           vcpkg integrate install
-          vcpkg install openblas --triplet x64-windows-static-md --only-release
+          vcpkg install openblas --triplet x64-windows-static-md
       - name: Install OpenBLAS (x86)
         if: ${{ matrix.platform.target == 'x86' }}
         run: |
           $env:VCPKG_BUILD_TYPE = "release"
           vcpkg integrate install
-          vcpkg install openblas --triplet x86-windows-static-md --only-release
+          vcpkg install openblas --triplet x86-windows-static-md
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
