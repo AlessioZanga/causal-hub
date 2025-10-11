@@ -45,6 +45,7 @@ if(VCPKG_TARGET_IS_EMSCRIPTEN)
 endif()
 
 # Set build type, if any.
+set(VCPKG_BUILD_TYPE "$ENV{VCPKG_BUILD_TYPE}")
 string(TOLOWER "${VCPKG_BUILD_TYPE}" build_type)
 if(build_type STREQUAL "debug")
     list(APPEND OPTIONS -DCMAKE_BUILD_TYPE=Debug)
