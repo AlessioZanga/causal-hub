@@ -82,7 +82,7 @@ jobs:
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Set env variables
         run: |
-          "VCPKG_CMAKE_CONFIGURE_OPTIONS=-DCMAKE_BUILD_TYPE=Release" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VCPKG_BUILD_TYPE=release" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VCPKG_DEFAULT_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VCPKGRS_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "RUSTFLAGS='-C target-feature=+crt-static'" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

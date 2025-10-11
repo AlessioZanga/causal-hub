@@ -44,6 +44,14 @@ if(VCPKG_TARGET_IS_EMSCRIPTEN)
     )
 endif()
 
+# Set build type, if any.
+string(TOLOWER "${VCPKG_BUILD_TYPE}" build_type)
+if(build_type STREQUAL "debug")
+    list(APPEND OPTIONS -DCMAKE_BUILD_TYPE=Debug)
+elseif(build_type STREQUAL "release")
+    list(APPEND OPTIONS -DCMAKE_BUILD_TYPE=Release)
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
