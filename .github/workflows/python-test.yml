@@ -105,7 +105,7 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release
+          maturin develop --release --features=pyo3/extension-module,backend/openblas-system
       - name: Test
         run: |
           conda install pytest
