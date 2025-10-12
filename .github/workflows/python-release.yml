@@ -12,10 +12,6 @@ on:
 permissions:
   contents: read
 
-env:
-  SCCACHE_GHA_ENABLED: true
-  RUST_WRAPPER: sccache
-
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
@@ -27,8 +23,17 @@ jobs:
             target: x86_64
     steps:
       - uses: actions/checkout@v4
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -37,14 +42,9 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
-          sccache: true
           manylinux: auto
           working-directory: python
           before-script-linux: |
-            # Enable sccache for OpenBLAS
-            export OPENBLAS_CC="sccache gcc"
-            export OPENBLAS_FC="sccache gfortran"
-            export OPENBLAS_HOST_CC="sccache gcc"
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
@@ -55,14 +55,9 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
-          sccache: true
           manylinux: auto
           working-directory: python
           before-script-linux: |
-            # Enable sccache for OpenBLAS
-            export OPENBLAS_CC="sccache gcc"
-            export OPENBLAS_FC="sccache gfortran"
-            export OPENBLAS_HOST_CC="sccache gcc"
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
@@ -89,16 +84,11 @@ jobs:
         with:
           path: |
             C:\vcpkg
-          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-vcpkg
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
       - name: Set env variables
         run: |
-          "CMAKE_C_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "CMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "CMAKE_Fortran_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "RUSTFLAGS=-C target-feature=+crt-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VCPKG_DEFAULT_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -116,7 +106,6 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
-          sccache: true
           working-directory: python
       - uses: actions/setup-python@v5
         with:
@@ -127,7 +116,6 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
-          sccache: true
           working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -145,8 +133,17 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -155,14 +152,12 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
-          sccache: true
           working-directory: python
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
-          sccache: true
           working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4

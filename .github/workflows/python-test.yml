@@ -12,10 +12,6 @@ on:
 permissions:
   contents: read
 
-env:
-  SCCACHE_GHA_ENABLED: true
-  RUST_WRAPPER: sccache
-
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
@@ -32,8 +28,17 @@ jobs:
         working-directory: python
     steps:
       - uses: actions/checkout@v4
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
       - name: Set up system dependencies
         run: |
           sudo apt-get update
@@ -49,9 +54,6 @@ jobs:
           conda install maturin
           maturin develop --release
         env:
-          OPENBLAS_CC: sccache gcc
-          OPENBLAS_FC: sccache gfortran
-          OPENBLAS_HOST_CC: sccache gcc
           OPENBLAS_TARGET: GENERIC
           DYNAMIC_ARCH: 1
       - name: Test
@@ -79,16 +81,14 @@ jobs:
         with:
           path: |
             C:\vcpkg
-          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-vcpkg
+            ~\.cargo\registry
+            ~\.cargo\git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
       - name: Set env variables
         run: |
-          "CMAKE_C_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "CMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "CMAKE_Fortran_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "RUSTFLAGS=-C target-feature=+crt-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VCPKG_DEFAULT_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -129,8 +129,17 @@ jobs:
         working-directory: python
     steps:
       - uses: actions/checkout@v4
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
