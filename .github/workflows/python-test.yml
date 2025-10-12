@@ -25,6 +25,7 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
+        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - name: Set up system dependencies
@@ -39,7 +40,7 @@ jobs:
           activate-environment: causal-hub
           environment-file: python/environment.yml
           python-version: 3.13
-      - name: Test
+      - name: Build
         env:
           SCCACHE_GHA_ENABLED: true
           RUST_WRAPPER: sccache
@@ -47,7 +48,6 @@ jobs:
           OPENBLAS_FC: sccache gfortran
           OPENBLAS_TARGET: GENERIC
           DYNAMIC_ARCH: 1
-        working-directory: python
-        run: |
-          maturin develop --release
-          pytest
+        run: maturin develop --release
+      - name: Test
+        run: pytest
