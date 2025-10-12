@@ -41,10 +41,12 @@ jobs:
           python-version: 3.13
       - name: Test
         env:
-          OPENBLAS_TARGET: GENERIC
-          DYNAMIC_ARCH: 1
           SCCACHE_GHA_ENABLED: true
           RUST_WRAPPER: sccache
+          OPENBLAS_CC: sccache gcc
+          OPENBLAS_FC: sccache gfortran
+          OPENBLAS_TARGET: GENERIC
+          DYNAMIC_ARCH: 1
         working-directory: python
         run: |
           maturin develop --release
