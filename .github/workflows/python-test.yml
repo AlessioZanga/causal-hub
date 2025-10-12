@@ -95,6 +95,7 @@ jobs:
         run: |
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
+        working-directory: ${{ github.workspace }}
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
