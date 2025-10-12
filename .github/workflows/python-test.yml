@@ -1,0 +1,47 @@
+name: python-release
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: ubuntu-22.04
+            target: x86_64
+          - runner: ubuntu-22.04
+            target: x86
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: python/environment.yml
+          activate-environment: causal-hub
+      - name: Test
+        env:
+          OPENBLAS_TARGET: GENERIC
+          DYNAMIC_ARCH: 1
+          SCCACHE_GHA_ENABLED: true
+          RUST_WRAPPER: sccache
+        working-directory: python
+        run: |
+          maturin develop --release
+          pytest
