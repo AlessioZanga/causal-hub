@@ -22,6 +22,9 @@ jobs:
             target: x86_64
           - runner: ubuntu-22.04
             target: x86
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v4
       - name: Set up system dependencies
@@ -33,8 +36,9 @@ jobs:
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          environment-file: python/environment.yml
           activate-environment: causal-hub
+          environment-file: python/environment.yml
+          python-version: 3.13
       - name: Test
         env:
           OPENBLAS_TARGET: GENERIC
