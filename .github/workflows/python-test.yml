@@ -15,9 +15,6 @@ permissions:
 env:
   SCCACHE_GHA_ENABLED: true
   RUST_WRAPPER: sccache
-  OPENBLAS_CC: sccache gcc
-  OPENBLAS_FC: sccache gfortran
-  OPENBLAS_HOST_CC: sccache gcc
 
 jobs:
   linux:
@@ -53,8 +50,11 @@ jobs:
           conda install maturin
           maturin develop --release
         env:
-            OPENBLAS_TARGET: GENERIC
-            DYNAMIC_ARCH: 1
+          OPENBLAS_CC: sccache gcc
+          OPENBLAS_FC: sccache gfortran
+          OPENBLAS_HOST_CC: sccache gcc
+          OPENBLAS_TARGET: GENERIC
+          DYNAMIC_ARCH: 1
       - name: Test
         run: |
           conda install pytest

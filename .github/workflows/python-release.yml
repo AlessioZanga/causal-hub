@@ -15,9 +15,6 @@ permissions:
 env:
   SCCACHE_GHA_ENABLED: true
   RUST_WRAPPER: sccache
-  OPENBLAS_CC: sccache gcc
-  OPENBLAS_FC: sccache gfortran
-  OPENBLAS_HOST_CC: sccache gcc
 
 jobs:
   linux:
