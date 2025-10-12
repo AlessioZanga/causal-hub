@@ -1,3 +1,6 @@
+# Set env variables passthrough.
+set(VCPKG_ENV_PASSTHROUGH TARGET)
+
 # TARGET: The target architecture
 #
 # Originally, OpenBLAS tries to optimize for the host CPU unless
