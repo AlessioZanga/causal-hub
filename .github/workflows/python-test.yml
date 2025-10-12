@@ -99,6 +99,7 @@ jobs:
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
+          architecture: ${{ matrix.platform.target }}
           auto-activate-base: true
           activate-environment: true
           python-version: ${{ matrix.python }}
