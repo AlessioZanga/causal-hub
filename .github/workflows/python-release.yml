@@ -12,6 +12,15 @@ on:
 permissions:
   contents: read
 
+env:
+  SCCACHE_GHA_ENABLED: true
+  RUST_WRAPPER: sccache
+  OPENBLAS_CC: sccache gcc
+  OPENBLAS_FC: sccache gfortran
+  OPENBLAS_HOST_CC: sccache gcc
+  OPENBLAS_TARGET: GENERIC
+  DYNAMIC_ARCH: 1
+
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
@@ -24,6 +33,8 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
       - uses: actions/setup-python@v5
         with:
           python-version: 3.13
@@ -39,6 +50,7 @@ jobs:
             # Enable sccache for OpenBLAS
             export OPENBLAS_CC="sccache gcc"
             export OPENBLAS_FC="sccache gfortran"
+            export OPENBLAS_HOST_CC="sccache gcc"
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
@@ -56,6 +68,7 @@ jobs:
             # Enable sccache for OpenBLAS
             export OPENBLAS_CC="sccache gcc"
             export OPENBLAS_FC="sccache gfortran"
+            export OPENBLAS_HOST_CC="sccache gcc"
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
@@ -132,6 +145,8 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
       - uses: actions/setup-python@v5
         with:
           python-version: 3.13
