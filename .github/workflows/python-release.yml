@@ -20,7 +20,7 @@ jobs:
       matrix:
         platform:
           - runner: ubuntu-latest
-            target: x86_64
+            target: x64
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
@@ -134,7 +134,7 @@ jobs:
       matrix:
         platform:
           - runner: macos-latest
-            target: aarch64
+            target: arm64
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
