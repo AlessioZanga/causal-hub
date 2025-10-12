@@ -47,7 +47,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: true
-          activate-environment: ""
+          activate-environment: true
           python-version: 3.13
       - name: Build
         run: |
@@ -75,7 +75,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: true
-          activate-environment: ""
+          activate-environment: true
           python-version: 3.13
       - name: Build
         run: |
