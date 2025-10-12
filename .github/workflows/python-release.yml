@@ -33,7 +33,9 @@ jobs:
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -86,7 +88,9 @@ jobs:
             C:\vcpkg
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
       - name: Set env variables
         run: |
           "RUSTFLAGS=-C target-feature=+crt-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -143,7 +147,9 @@ jobs:
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
