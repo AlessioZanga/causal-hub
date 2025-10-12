@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-22.04
+          - runner: ubuntu-latest
             target: x86_64
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: macos-14
+          - runner: macos-latest
             target: aarch64
     steps:
       - uses: actions/checkout@v4
