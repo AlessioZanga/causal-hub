@@ -71,8 +71,9 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
+          # FIXME: Re-enable x86 when linking fault is fixed.
+          # - runner: windows-latest
+          #   target: x86
         python: ["3.10", "3.11", "3.12", "3.13"]
     defaults:
       run:
