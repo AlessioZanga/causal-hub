@@ -17,6 +17,7 @@ env:
   RUST_WRAPPER: sccache
   OPENBLAS_CC: sccache gcc
   OPENBLAS_FC: sccache gfortran
+  OPENBLAS_HOST_CC: sccache gcc
   OPENBLAS_TARGET: GENERIC
   DYNAMIC_ARCH: 1
 
