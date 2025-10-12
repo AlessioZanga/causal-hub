@@ -67,6 +67,10 @@ jobs:
             target: x86_64
           - runner: macos-14
             target: aarch64
+    defaults:
+      run:
+        shell: bash -el {0}
+        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - name: Set up sccache
