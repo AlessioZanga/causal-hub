@@ -12,6 +12,14 @@ on:
 permissions:
   contents: read
 
+env:
+  SCCACHE_GHA_ENABLED: true
+  RUST_WRAPPER: sccache
+  OPENBLAS_CC: sccache gcc
+  OPENBLAS_FC: sccache gfortran
+  OPENBLAS_TARGET: GENERIC
+  DYNAMIC_ARCH: 1
+
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
@@ -41,13 +49,30 @@ jobs:
           environment-file: python/environment.yml
           python-version: 3.13
       - name: Build
-        env:
-          SCCACHE_GHA_ENABLED: true
-          RUST_WRAPPER: sccache
-          OPENBLAS_CC: sccache gcc
-          OPENBLAS_FC: sccache gfortran
-          OPENBLAS_TARGET: GENERIC
-          DYNAMIC_ARCH: 1
+        run: maturin develop --release
+      - name: Test
+        run: pytest
+
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: macos-13
+            target: x86_64
+          - runner: macos-14
+            target: aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: causal-hub
+          environment-file: python/environment.yml
+          python-version: 3.13
+      - name: Build
         run: maturin develop --release
       - name: Test
         run: pytest
