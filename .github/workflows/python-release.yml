@@ -141,7 +141,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.local/share/openblas_build
+            ~/Library/Application Support/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
             target
