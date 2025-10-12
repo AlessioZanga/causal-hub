@@ -35,7 +35,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: "3.13"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -106,7 +106,7 @@ jobs:
           vcpkg install openblas --overlay-ports=.vcpkg/ports
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: "3.13"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -117,7 +117,7 @@ jobs:
           working-directory: python
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13t
+          python-version: "3.13t"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
@@ -147,7 +147,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: "3.13"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
