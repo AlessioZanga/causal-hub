@@ -37,22 +37,26 @@ jobs:
         working-directory: python
     steps:
       - uses: actions/checkout@v4
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
       - name: Set up system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: causal-hub
-          environment-file: python/environment.yml
+          auto-activate-base: true
+          activate-environment: ""
           python-version: 3.13
       - name: Build
-        run: maturin develop --release
+        run: |
+          conda install maturin
+          maturin develop --release
       - name: Test
-        run: pytest
+        run: |
+          conda install pytest
+          pytest
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -70,10 +74,14 @@ jobs:
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: causal-hub
-          environment-file: python/environment.yml
+          auto-activate-base: true
+          activate-environment: ""
           python-version: 3.13
       - name: Build
-        run: maturin develop --release
+        run: |
+          conda install maturin
+          maturin develop --release
       - name: Test
-        run: pytest
+        run: |
+          conda install pytest
+          pytest
