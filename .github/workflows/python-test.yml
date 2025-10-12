@@ -1,4 +1,4 @@
-name: python-release
+name: python-test
 
 on:
   push:
