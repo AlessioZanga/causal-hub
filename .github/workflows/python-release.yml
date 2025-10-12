@@ -134,8 +134,9 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-13
-            target: x86_64
+          # FIXME: Re-enable x86_64 when segmentation fault is fixed.
+          # - runner: macos-13
+          #   target: x86_64
           - runner: macos-14
             target: aarch64
     steps:
