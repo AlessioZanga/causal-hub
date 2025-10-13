@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::GaussTable,
@@ -24,7 +24,7 @@ use crate::{
 #[pyclass(name = "GaussBN", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyGaussBN {
-    inner: GaussBN,
+    inner: Arc<GaussBN>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -228,7 +228,7 @@ impl PyGaussBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        let sampler = ForwardSampler::new(&mut rng, &*self.inner);
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -256,7 +256,7 @@ impl PyGaussBN {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussBN::from_json(json),
+            inner: Arc::new(GaussBN::from_json(json)),
         })
     }
 
@@ -286,7 +286,7 @@ impl PyGaussBN {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussBN::read_json(path),
+            inner: Arc::new(GaussBN::read_json(path)),
         })
     }
 

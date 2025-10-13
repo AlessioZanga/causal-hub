@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::CatTrjs,
@@ -28,7 +28,7 @@ use crate::{
 #[pyclass(name = "CatCTBN", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatCTBN {
-    inner: CatCTBN,
+    inner: Arc<CatCTBN>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -280,7 +280,7 @@ impl PyCatCTBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        let sampler = ForwardSampler::new(&mut rng, &*self.inner);
         // Get the maximum length and time.
         let max_len = max_len.unwrap_or(usize::MAX);
         let max_time = max_time.unwrap_or(f64::INFINITY);
@@ -311,7 +311,7 @@ impl PyCatCTBN {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCTBN::from_json(json),
+            inner: Arc::new(CatCTBN::from_json(json)),
         })
     }
 
@@ -341,7 +341,7 @@ impl PyCatCTBN {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCTBN::read_json(path),
+            inner: Arc::new(CatCTBN::read_json(path)),
         })
     }
 

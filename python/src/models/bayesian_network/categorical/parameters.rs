@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     io::JsonIO,
@@ -18,7 +18,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "CatCPD", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatCPD {
-    inner: CatCPD,
+    inner: Arc<CatCPD>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -206,7 +206,7 @@ impl PyCatCPD {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCPD::from_json(json),
+            inner: Arc::new(CatCPD::from_json(json)),
         })
     }
 
@@ -236,7 +236,7 @@ impl PyCatCPD {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCPD::read_json(path),
+            inner: Arc::new(CatCPD::read_json(path)),
         })
     }
 

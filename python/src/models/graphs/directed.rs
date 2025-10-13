@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
@@ -19,7 +21,7 @@ use crate::{impl_deref_from_into, indices_from};
 #[pyclass(name = "DiGraph", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PyDiGraph {
-    inner: DiGraph,
+    inner: Arc<DiGraph>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -171,7 +173,7 @@ impl PyDiGraph {
         let x = self.label_to_index(x);
         let y = self.label_to_index(y);
         // Add the edge to the graph.
-        Ok(self.inner.add_edge(x, y))
+        Ok(Arc::get_mut(&mut self.inner).unwrap().add_edge(x, y))
     }
 
     /// Deletes the edge between vertices `x` and `y`.
@@ -193,7 +195,7 @@ impl PyDiGraph {
         let x = self.label_to_index(x);
         let y = self.label_to_index(y);
         // Delete the edge from the graph.
-        Ok(self.inner.del_edge(x, y))
+        Ok(Arc::get_mut(&mut self.inner).unwrap().del_edge(x, y))
     }
 
     /// Returns the parents of a vertex `x`.
@@ -680,7 +682,7 @@ impl PyDiGraph {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: DiGraph::from_json(json),
+            inner: Arc::new(DiGraph::from_json(json)),
         })
     }
 
@@ -710,7 +712,7 @@ impl PyDiGraph {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: DiGraph::read_json(path),
+            inner: Arc::new(DiGraph::read_json(path)),
         })
     }
 

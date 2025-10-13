@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     io::JsonIO,
@@ -18,7 +18,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "CatCIM", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatCIM {
-    inner: CatCIM,
+    inner: Arc<CatCIM>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -206,7 +206,7 @@ impl PyCatCIM {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCIM::from_json(json),
+            inner: Arc::new(CatCIM::from_json(json)),
         })
     }
 
@@ -236,7 +236,7 @@ impl PyCatCIM {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatCIM::read_json(path),
+            inner: Arc::new(CatCIM::read_json(path)),
         })
     }
 

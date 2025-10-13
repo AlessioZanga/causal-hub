@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::{CatTable, CatType, Dataset},
@@ -19,7 +19,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "CatTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTable {
-    inner: CatTable,
+    inner: Arc<CatTable>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -191,6 +191,8 @@ impl PyCatTable {
 
         // Construct the dataset.
         let inner = CatTable::new(states, values);
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
 
         Ok(Self { inner })
     }

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
@@ -18,7 +18,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "CatTrjEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjEv {
-    inner: CatTrjEv,
+    inner: Arc<CatTrjEv>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -241,7 +241,9 @@ impl PyCatTrjEv {
 
         // Construct the evidence.
         let inner = CatTrjEv::new(states, evidence);
-        // Return the evidence.
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
+
         Ok(Self { inner })
     }
 }
@@ -251,7 +253,7 @@ impl PyCatTrjEv {
 #[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjsEv {
-    inner: CatTrjsEv,
+    inner: Arc<CatTrjsEv>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -333,8 +335,11 @@ impl PyCatTrjsEv {
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+
         // Create a new CatTrjsEv with the given parameters.
         let inner = CatTrjsEv::new(dfs);
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
 
         Ok(Self { inner })
     }

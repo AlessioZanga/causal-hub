@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use backend::{
     datasets::{Dataset, GaussTable, GaussType},
     models::Labelled,
@@ -17,7 +19,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "GaussTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyGaussTable {
-    inner: GaussTable,
+    inner: Arc<GaussTable>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -140,6 +142,8 @@ impl PyGaussTable {
 
         // Create the Gaussian tabular dataset.
         let inner = GaussTable::new(columns, values);
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
 
         Ok(Self { inner })
     }

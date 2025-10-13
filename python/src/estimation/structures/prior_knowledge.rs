@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use backend::{estimation::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
@@ -9,7 +11,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "PK", module = "causal_hub.estimation", eq)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PyPK {
-    inner: PK,
+    inner: Arc<PK>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.

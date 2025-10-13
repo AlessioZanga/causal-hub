@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::CatTable,
@@ -33,7 +33,7 @@ use crate::{
 #[pyclass(name = "CatBN", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyCatBN {
-    inner: CatBN,
+    inner: Arc<CatBN>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -254,7 +254,7 @@ impl PyCatBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        let sampler = ForwardSampler::new(&mut rng, &*self.inner);
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -300,7 +300,7 @@ impl PyCatBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &self.inner);
+        let estimator = ApproximateInference::new(&mut rng, &*self.inner);
         // Estimate from the model.
         let estimate = if parallel {
             // Release the GIL to allow parallel execution.
@@ -350,7 +350,7 @@ impl PyCatBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &self.inner);
+        let estimator = ApproximateInference::new(&mut rng, &*self.inner);
         // Estimate from the model.
         let estimate = if parallel {
             // Release the GIL to allow parallel execution.
@@ -378,7 +378,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::from_bif(bif),
+            inner: Arc::new(CatBN::from_bif(bif)),
         })
     }
 
@@ -408,7 +408,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::read_bif(path),
+            inner: Arc::new(CatBN::read_bif(path)),
         })
     }
 
@@ -439,7 +439,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::from_json(json),
+            inner: Arc::new(CatBN::from_json(json)),
         })
     }
 
@@ -469,7 +469,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::read_json(path),
+            inner: Arc::new(CatBN::read_json(path)),
         })
     }
 

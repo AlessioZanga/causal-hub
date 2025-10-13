@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::{CatWtdTrj, CatWtdTrjs, Dataset},
@@ -15,7 +15,7 @@ use crate::{datasets::PyCatTrj, impl_deref_from_into};
 #[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
-    inner: CatWtdTrj,
+    inner: Arc<CatWtdTrj>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -98,7 +98,7 @@ impl PyCatWtdTrj {
 #[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
-    inner: CatWtdTrjs,
+    inner: Arc<CatWtdTrjs>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.

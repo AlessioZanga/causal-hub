@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use backend::{
     io::JsonIO,
     models::{CPD, GaussCPD, Labelled},
@@ -16,7 +18,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "GaussCPD", module = "causal_hub.models", eq)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PyGaussCPD {
-    inner: GaussCPD,
+    inner: Arc<GaussCPD>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -160,7 +162,7 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussCPD::from_json(json),
+            inner: Arc::new(GaussCPD::from_json(json)),
         })
     }
 
@@ -190,7 +192,7 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussCPD::read_json(path),
+            inner: Arc::new(GaussCPD::read_json(path)),
         })
     }
 

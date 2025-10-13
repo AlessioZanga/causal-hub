@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use backend::{
     datasets::{CatTrj, CatTrjs, CatType, Dataset},
@@ -19,7 +19,7 @@ use crate::impl_deref_from_into;
 #[pyclass(name = "CatTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
-    inner: CatTrj,
+    inner: Arc<CatTrj>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -214,6 +214,8 @@ impl PyCatTrj {
 
         // Construct the categorical trajectory.
         let inner = CatTrj::new(states, values, time);
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
 
         Ok(Self { inner })
     }
@@ -266,7 +268,7 @@ impl PyCatTrj {
 #[pyclass(name = "CatTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
-    inner: CatTrjs,
+    inner: Arc<CatTrjs>,
 }
 
 // Implement `Deref`, `From` and `Into` traits.
@@ -355,8 +357,11 @@ impl PyCatTrjs {
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+
         // Create a new CatTrjs with the given parameters.
         let inner = CatTrjs::new(dfs);
+        // Wrap the dataset in an Arc.
+        let inner = Arc::new(inner);
 
         Ok(Self { inner })
     }

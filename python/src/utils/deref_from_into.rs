@@ -12,13 +12,15 @@ macro_rules! impl_deref_from_into {
 
         impl From<$inner> for $outer {
             fn from(inner: $inner) -> Self {
-                Self { inner }
+                Self {
+                    inner: std::sync::Arc::new(inner),
+                }
             }
         }
 
         impl From<$outer> for $inner {
             fn from(outer: $outer) -> Self {
-                outer.inner
+                outer.inner.as_ref().clone()
             }
         }
     };
