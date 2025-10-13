@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Added `cargo` test and release workflows.
 * Added `maturin` build system for Python bindings.
 * Added `Arc<RwLock<...>>` wrapping to reduce memory allocation and allow concurrency.
 
