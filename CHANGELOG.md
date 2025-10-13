@@ -23,12 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Added `cargo` test and release workflows.
 * Added `maturin` build system for Python bindings.
 * Added `Arc<RwLock<...>>` wrapping to reduce memory allocation and allow concurrency.
 
-### Changed
+### Fixed
 
-* Changed regularization term for Cholesky decomposition.
+* Fix `GaussCPD` fit stability with SVD.
 
 ## v0.0.1 - 2025-10-09
 
