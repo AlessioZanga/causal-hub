@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use backend::{
     datasets::{Dataset, GaussTable, GaussType},
@@ -12,18 +12,18 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A Gaussian tabular dataset.
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyGaussTable {
-    inner: Arc<GaussTable>,
+    inner: Arc<RwLock<GaussTable>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyGaussTable, GaussTable);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyGaussTable, GaussTable);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -35,8 +35,8 @@ impl PyGaussTable {
     /// list[str]
     ///     A list of strings containing the labels of the dataset.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(String::as_str).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// The values of the dataset.
@@ -47,7 +47,7 @@ impl PyGaussTable {
     ///     A 2D NumPy array containing the values of the dataset.
     ///
     pub fn values<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<GaussType>>> {
-        Ok(self.inner.values().to_pyarray(py))
+        Ok(self.lock().values().to_pyarray(py))
     }
 
     /// The sample size.
@@ -59,7 +59,7 @@ impl PyGaussTable {
     ///     If the dataset is weighted, this returns the sum of the weights.
     ///
     pub fn sample_size(&self) -> PyResult<f64> {
-        Ok(self.inner.sample_size())
+        Ok(self.lock().sample_size())
     }
 
     /// Constructs a new Gaussian tabular dataset from a Pandas DataFrame.
@@ -142,8 +142,8 @@ impl PyGaussTable {
 
         // Create the Gaussian tabular dataset.
         let inner = GaussTable::new(columns, values);
-        // Wrap the dataset in an Arc.
-        let inner = Arc::new(inner);
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
 
         Ok(Self { inner })
     }
@@ -162,9 +162,11 @@ impl PyGaussTable {
         // Create a dictionary to hold the data.
         let df = PyDict::new(py);
 
+        // Get lock on the inner field.
+        let lock = self.lock();
         // Get labels and values.
-        let labels = self.inner.labels().iter();
-        let values = self.inner.values().columns();
+        let labels = lock.labels().iter();
+        let values = lock.values().columns();
 
         // For each column, create a Pandas Series and insert it into the dictionary.
         for (label, values) in labels.zip(values) {

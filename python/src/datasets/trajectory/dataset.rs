@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::{CatTrj, CatTrjs, CatType, Dataset},
@@ -12,18 +15,18 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
-    inner: Arc<CatTrj>,
+    inner: Arc<RwLock<CatTrj>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatTrj, CatTrj);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatTrj, CatTrj);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -35,8 +38,8 @@ impl PyCatTrj {
     /// list[str]
     ///     A reference to the labels of the categorical trajectory.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the categorical trajectory.
@@ -46,15 +49,15 @@ impl PyCatTrj {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -71,7 +74,7 @@ impl PyCatTrj {
     ///     A reference to the values of the trajectory.
     ///
     pub fn values<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<CatType>>> {
-        Ok(self.inner.values().to_pyarray(py))
+        Ok(self.lock().values().to_pyarray(py))
     }
 
     /// Returns the times of the trajectory.
@@ -82,7 +85,7 @@ impl PyCatTrj {
     ///     A reference to the times of the trajectory.
     ///
     pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
-        Ok(self.inner.times().to_pyarray(py))
+        Ok(self.lock().times().to_pyarray(py))
     }
 
     /// Constructs a new categorical trajectory from a Pandas DataFrame.
@@ -214,8 +217,8 @@ impl PyCatTrj {
 
         // Construct the categorical trajectory.
         let inner = CatTrj::new(states, values, time);
-        // Wrap the dataset in an Arc.
-        let inner = Arc::new(inner);
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
 
         Ok(Self { inner })
     }
@@ -234,13 +237,16 @@ impl PyCatTrj {
         // Create a dictionary to hold the data.
         let df = PyDict::new(py);
 
+        // Get lock on the inner field.
+        let lock = self.lock();
+
         // Add the time column.
-        let time = self.inner.times().to_pyarray(py);
+        let time = lock.times().to_pyarray(py);
         df.set_item("time", time)?;
 
         // Get states and values.
-        let states = self.inner.states().iter();
-        let values = self.inner.values().columns();
+        let states = lock.states().iter();
+        let values = lock.values().columns();
 
         // For each column, create a Pandas Series and insert it into the dictionary.
         for ((label, states), values) in states.zip(values) {
@@ -268,11 +274,11 @@ impl PyCatTrj {
 #[pyclass(name = "CatTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
-    inner: Arc<CatTrjs>,
+    inner: Arc<RwLock<CatTrjs>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatTrjs, CatTrjs);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatTrjs, CatTrjs);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -285,8 +291,8 @@ impl PyCatTrjs {
     ///     A reference to the labels of the categorical trajectory.
     ///
     #[inline]
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the categorical trajectory.
@@ -296,15 +302,15 @@ impl PyCatTrjs {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -322,7 +328,7 @@ impl PyCatTrjs {
     ///
     pub fn values(&self) -> PyResult<Vec<PyCatTrj>> {
         Ok(self
-            .inner
+            .lock()
             .values()
             .iter()
             .cloned()
@@ -360,8 +366,8 @@ impl PyCatTrjs {
 
         // Create a new CatTrjs with the given parameters.
         let inner = CatTrjs::new(dfs);
-        // Wrap the dataset in an Arc.
-        let inner = Arc::new(inner);
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
 
         Ok(Self { inner })
     }
@@ -375,7 +381,7 @@ impl PyCatTrjs {
     ///
     pub fn to_pandas<'a>(&self, py: Python<'a>) -> PyResult<Vec<Bound<'a, PyAny>>> {
         // Convert each trajectory to a Pandas DataFrame.
-        self.inner
+        self.lock()
             .values()
             .iter()
             .cloned()

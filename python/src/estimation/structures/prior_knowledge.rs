@@ -1,21 +1,29 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use backend::{estimation::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
 #[pyclass(name = "PK", module = "causal_hub.estimation", eq)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct PyPK {
-    inner: Arc<PK>,
+    inner: Arc<RwLock<PK>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyPK, PK);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyPK, PK);
+
+impl PartialEq for PyPK {
+    fn eq(&self, other: &Self) -> bool {
+        (&*self.lock()).eq(&*other.lock())
+    }
+}
+
+impl Eq for PyPK {}
 
 #[gen_stub_pymethods]
 #[pymethods]

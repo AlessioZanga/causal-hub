@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation},
@@ -14,18 +14,26 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{impl_deref_from_into, indices_from};
+use crate::{impl_from_into_lock, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
 #[pyclass(name = "DiGraph", module = "causal_hub.models", eq)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PyDiGraph {
-    inner: Arc<DiGraph>,
+    inner: Arc<RwLock<DiGraph>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyDiGraph, DiGraph);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyDiGraph, DiGraph);
+
+impl PartialEq for PyDiGraph {
+    fn eq(&self, other: &Self) -> bool {
+        (&*self.lock()).eq(&*other.lock())
+    }
+}
+
+impl Eq for PyDiGraph {}
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -85,9 +93,9 @@ impl PyDiGraph {
     ///
     /// A list of vertices.
     ///
-    pub fn vertices(&self) -> PyResult<Vec<&str>> {
+    pub fn vertices(&self) -> PyResult<Vec<String>> {
         // Get the labels of the vertices in the graph.
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Checks if a vertex exists in the graph.
@@ -103,10 +111,12 @@ impl PyDiGraph {
     ///     `true` if the vertex exists, `false` otherwise.
     ///
     pub fn has_vertex(&self, x: &str) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the labels of the vertices.
-        let x = self.label_to_index(x);
+        let x = lock.label_to_index(x);
         // Check if the vertex exists in the graph.
-        Ok(self.inner.has_vertex(x))
+        Ok(lock.has_vertex(x))
     }
 
     /// Returns the edges of the graph.
@@ -116,16 +126,17 @@ impl PyDiGraph {
     /// list[tuple[str, str]]
     ///     A list of edges.
     ///
-    pub fn edges(&self) -> PyResult<Vec<(&str, &str)>> {
+    pub fn edges(&self) -> PyResult<Vec<(String, String)>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the edges of the graph.
-        Ok(self
-            .inner
+        Ok(lock
             .edges()
             .into_iter()
             .map(|(x, y)| {
                 // Get the labels of the vertices.
-                let x = self.index_to_label(x);
-                let y = self.index_to_label(y);
+                let x = lock.index_to_label(x).into();
+                let y = lock.index_to_label(y).into();
                 // Return the labels as a tuple.
                 (x, y)
             })
@@ -147,11 +158,13 @@ impl PyDiGraph {
     ///     `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
     pub fn has_edge(&self, x: &str, y: &str) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the indices of the vertices.
-        let x = self.label_to_index(x);
-        let y = self.label_to_index(y);
+        let x = lock.label_to_index(x);
+        let y = lock.label_to_index(y);
         // Check if the edge exists in the graph.
-        Ok(self.inner.has_edge(x, y))
+        Ok(lock.has_edge(x, y))
     }
 
     /// Adds an edge between vertices `x` and `y`.
@@ -169,11 +182,13 @@ impl PyDiGraph {
     ///     `true` if the edge was added, `false` if it already existed.
     ///
     pub fn add_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
         // Get the indices of the vertices.
-        let x = self.label_to_index(x);
-        let y = self.label_to_index(y);
+        let x = lock.label_to_index(x);
+        let y = lock.label_to_index(y);
         // Add the edge to the graph.
-        Ok(Arc::get_mut(&mut self.inner).unwrap().add_edge(x, y))
+        Ok(lock.add_edge(x, y))
     }
 
     /// Deletes the edge between vertices `x` and `y`.
@@ -191,11 +206,13 @@ impl PyDiGraph {
     ///     `true` if the edge was deleted, `false` if it did not exist.
     ///
     pub fn del_edge(&mut self, x: &str, y: &str) -> PyResult<bool> {
+        // Get a mutable lock on the inner field.
+        let mut lock = self.lock_mut();
         // Get the indices of the vertices.
-        let x = self.label_to_index(x);
-        let y = self.label_to_index(y);
+        let x = lock.label_to_index(x);
+        let y = lock.label_to_index(y);
         // Delete the edge from the graph.
-        Ok(Arc::get_mut(&mut self.inner).unwrap().del_edge(x, y))
+        Ok(lock.del_edge(x, y))
     }
 
     /// Returns the parents of a vertex `x`.
@@ -210,15 +227,16 @@ impl PyDiGraph {
     /// list[str]
     ///     A list of parent vertices.
     ///
-    pub fn parents(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
+    pub fn parents(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the index of the vertex.
-        let x = indices_from!(x, self)?;
+        let x = indices_from!(x, lock)?;
         // Get the parents of the vertex.
-        Ok(self
-            .inner
+        Ok(lock
             .parents(&x)
             .iter()
-            .map(|&i| self.inner.index_to_label(i))
+            .map(|&i| lock.index_to_label(i).into())
             .collect())
     }
 
@@ -234,15 +252,16 @@ impl PyDiGraph {
     /// list[str]
     ///     A list of ancestor vertices.
     ///
-    pub fn ancestors(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
+    pub fn ancestors(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the index of the vertex.
-        let x = indices_from!(x, self)?;
+        let x = indices_from!(x, lock)?;
         // Get the ancestors of the vertex.
-        Ok(self
-            .inner
+        Ok(lock
             .ancestors(&x)
             .iter()
-            .map(|&i| self.inner.index_to_label(i))
+            .map(|&i| lock.index_to_label(i).into())
             .collect())
     }
 
@@ -258,15 +277,16 @@ impl PyDiGraph {
     /// list[str]
     ///     A list of child vertices.
     ///
-    pub fn children(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
+    pub fn children(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the index of the vertex.
-        let x = indices_from!(x, self)?;
+        let x = indices_from!(x, lock)?;
         // Get the children of the vertex.
-        Ok(self
-            .inner
+        Ok(lock
             .children(&x)
             .iter()
-            .map(|&i| self.inner.index_to_label(i))
+            .map(|&i| lock.index_to_label(i).into())
             .collect())
     }
 
@@ -282,15 +302,16 @@ impl PyDiGraph {
     /// list[str]
     ///     A list of descendant vertices.
     ///
-    pub fn descendants(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<&str>> {
+    pub fn descendants(&self, x: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the index of the vertex.
-        let x = indices_from!(x, self)?;
+        let x = indices_from!(x, lock)?;
         // Get the descendants of the vertex.
-        Ok(self
-            .inner
+        Ok(lock
             .descendants(&x)
             .iter()
-            .map(|&i| self.inner.index_to_label(i))
+            .map(|&i| lock.index_to_label(i).into())
             .collect())
     }
 
@@ -324,12 +345,14 @@ impl PyDiGraph {
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let z = indices_from!(z, self)?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(self.inner.is_separator_set(&x, &y, &z))
+        Ok(lock.is_separator_set(&x, &y, &z))
     }
 
     /// Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
@@ -370,16 +393,16 @@ impl PyDiGraph {
         w: Option<&Bound<'_, PyAny>>,
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let z = indices_from!(z, self)?;
-        let w = w.map(|w| indices_from!(w, self)).transpose()?;
-        let v = v.map(|v| indices_from!(v, self)).transpose()?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
+        let w = w.map(|w| indices_from!(w, lock)).transpose()?;
+        let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(self
-            .inner
-            .is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        Ok(lock.is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref()))
     }
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
@@ -416,22 +439,23 @@ impl PyDiGraph {
         y: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
         v: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<Option<Vec<&str>>> {
+    ) -> PyResult<Option<Vec<String>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let w = w.map(|w| indices_from!(w, self)).transpose()?;
-        let v = v.map(|v| indices_from!(v, self)).transpose()?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let w = w.map(|w| indices_from!(w, lock)).transpose()?;
+        let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal separator.
-        let z = self
-            .inner
-            .find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock.find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref());
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| self.inner.index_to_label(i))
+                .map(|i| lock.index_to_label(i).into())
                 .collect()
         });
 
@@ -469,12 +493,14 @@ impl PyDiGraph {
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let z = indices_from!(z, self)?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(self.inner.is_backdoor_set(&x, &y, &z))
+        Ok(lock.is_backdoor_set(&x, &y, &z))
     }
 
     /// Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
@@ -515,17 +541,16 @@ impl PyDiGraph {
         w: Option<&Bound<'_, PyAny>>,
         v: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<bool> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let z = indices_from!(z, self)?;
-        let w = w.map(|w| indices_from!(w, self)).transpose()?;
-        let v = v.map(|v| indices_from!(v, self)).transpose()?;
-
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
+        let w = w.map(|w| indices_from!(w, lock)).transpose()?;
+        let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(self
-            .inner
-            .is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        Ok(lock.is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref()))
     }
 
     /// Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
@@ -562,22 +587,23 @@ impl PyDiGraph {
         y: &Bound<'_, PyAny>,
         w: Option<&Bound<'_, PyAny>>,
         v: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<Option<Vec<&str>>> {
+    ) -> PyResult<Option<Vec<String>>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+
         // Convert Python iterators into Rust iterators on indices.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let w = w.map(|w| indices_from!(w, self)).transpose()?;
-        let v = v.map(|v| indices_from!(v, self)).transpose()?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let w = w.map(|w| indices_from!(w, lock)).transpose()?;
+        let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal backdoor.
-        let z = self
-            .inner
-            .find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock.find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref());
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| self.inner.index_to_label(i))
+                .map(|i| lock.index_to_label(i).into())
                 .collect()
         });
 
@@ -647,8 +673,10 @@ impl PyDiGraph {
     pub fn to_networkx<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
         // Load the NetworkX module.
         let nx = py.import("networkx")?;
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the adjacency matrix.
-        let adjacency_matrix = self.inner.to_adjacency_matrix().to_pyarray(py);
+        let adjacency_matrix = lock.to_adjacency_matrix().to_pyarray(py);
         // Create a new PyDict for keyword arguments.
         let kwargs = PyDict::new(py);
         // Set the `create_using` argument to `nx.DiGraph`.
@@ -658,7 +686,7 @@ impl PyDiGraph {
         // Create a new PyDict for index-label mapping.
         let labels = PyDict::new(py);
         // Set index-label pairs.
-        for (i, x) in self.inner.labels().iter().enumerate() {
+        for (i, x) in lock.labels().iter().enumerate() {
             labels.set_item(i, x)?;
         }
         // Relabel the nodes with the graph's labels.
@@ -682,7 +710,7 @@ impl PyDiGraph {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(DiGraph::from_json(json)),
+            inner: Arc::new(RwLock::new(DiGraph::from_json(json))),
         })
     }
 
@@ -694,7 +722,7 @@ impl PyDiGraph {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
+        Ok(self.lock().to_json())
     }
 
     /// Read instance from a JSON file.
@@ -712,7 +740,7 @@ impl PyDiGraph {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(DiGraph::read_json(path)),
+            inner: Arc::new(RwLock::new(DiGraph::read_json(path))),
         })
     }
 
@@ -724,7 +752,7 @@ impl PyDiGraph {
     ///     The path to the JSON file to write to.
     ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.inner.write_json(path);
+        self.lock().write_json(path);
         Ok(())
     }
 }

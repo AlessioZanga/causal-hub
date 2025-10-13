@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::{CatTable, CatType, Dataset},
@@ -12,18 +15,18 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTable", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTable {
-    inner: Arc<CatTable>,
+    inner: Arc<RwLock<CatTable>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatTable, CatTable);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatTable, CatTable);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -35,8 +38,8 @@ impl PyCatTable {
     /// list[str]
     ///     A list of strings containing the labels of the dataset.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(String::as_str).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the dataset.
@@ -46,15 +49,15 @@ impl PyCatTable {
     /// dict[str, tuple[str, ...]]
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -71,7 +74,7 @@ impl PyCatTable {
     ///     A 2D NumPy array containing the values of the dataset.
     ///
     pub fn values<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<CatType>>> {
-        Ok(self.inner.values().to_pyarray(py))
+        Ok(self.lock().values().to_pyarray(py))
     }
 
     /// The sample size.
@@ -83,7 +86,7 @@ impl PyCatTable {
     ///     If the dataset is weighted, this returns the sum of the weights.
     ///
     pub fn sample_size(&self) -> PyResult<f64> {
-        Ok(self.inner.sample_size())
+        Ok(self.lock().sample_size())
     }
 
     /// Constructs a new categorical tabular dataset from a Pandas DataFrame.
@@ -191,8 +194,8 @@ impl PyCatTable {
 
         // Construct the dataset.
         let inner = CatTable::new(states, values);
-        // Wrap the dataset in an Arc.
-        let inner = Arc::new(inner);
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
 
         Ok(Self { inner })
     }
@@ -211,9 +214,11 @@ impl PyCatTable {
         // Create a dictionary to hold the data.
         let df = PyDict::new(py);
 
+        // Get lock on the inner field.
+        let lock = self.lock();
         // Get states and values.
-        let states = self.inner.states().iter();
-        let values = self.inner.values().columns();
+        let states = lock.states().iter();
+        let values = lock.values().columns();
 
         // For each column, create a Pandas Series and insert it into the dictionary.
         for ((label, states), values) in states.zip(values) {

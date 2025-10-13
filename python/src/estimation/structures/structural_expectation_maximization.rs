@@ -1,4 +1,4 @@
-use std::{cell::RefCell, ops::Deref};
+use std::cell::RefCell;
 
 use approx::relative_eq;
 use backend::{
@@ -51,12 +51,12 @@ pub fn sem<'a>(
     // Get the evidence.
     let evidence: PyCatTrjsEv = evidence.extract()?;
     // Get the reference to the evidence.
-    let evidence: &CatTrjsEv = evidence.deref();
+    let evidence: &CatTrjsEv = &evidence.lock();
 
     // Get the prior knowledge.
     let prior_knowledge: PyPK = prior_knowledge.extract()?;
     // Convert the prior knowledge into a PK.
-    let prior_knowledge: &PK = prior_knowledge.deref();
+    let prior_knowledge: &PK = &prior_knowledge.lock();
 
     // Get the maximum number of parents from the keyword arguments or set the maximum.
     let max_parents = kwarg!(kwargs, "max_parents", usize).unwrap_or(evidence.labels().len());

@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::CatTrjs,
@@ -19,20 +22,26 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::PyCatTrjs,
     estimation::PyCTBNEstimator,
-    impl_deref_from_into, kwarg,
+    impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCTBN", module = "causal_hub.models", eq)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PyCatCTBN {
-    inner: Arc<CatCTBN>,
+    inner: Arc<RwLock<CatCTBN>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatCTBN, CatCTBN);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatCTBN, CatCTBN);
+
+impl PartialEq for PyCatCTBN {
+    fn eq(&self, other: &Self) -> bool {
+        (&*self.lock()).eq(&*other.lock())
+    }
+}
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -73,8 +82,8 @@ impl PyCatCTBN {
     /// str | None
     ///     The name of the model, if it exists.
     ///
-    pub fn name(&self) -> PyResult<Option<&str>> {
-        Ok(self.inner.name())
+    pub fn name(&self) -> PyResult<Option<String>> {
+        Ok(self.lock().name().map(Into::into))
     }
 
     /// Returns the description of the model, if any.
@@ -84,8 +93,8 @@ impl PyCatCTBN {
     /// str | None
     ///     The description of the model, if it exists.
     ///
-    pub fn description(&self) -> PyResult<Option<&str>> {
-        Ok(self.inner.description())
+    pub fn description(&self) -> PyResult<Option<String>> {
+        Ok(self.lock().description().map(Into::into))
     }
 
     /// Returns the labels of the variables.
@@ -95,8 +104,8 @@ impl PyCatCTBN {
     /// list[str]
     ///     A reference to the labels.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the initial distribution.
@@ -107,7 +116,7 @@ impl PyCatCTBN {
     ///     A reference to the initial distribution.
     ///
     pub fn initial_distribution(&self) -> PyResult<PyCatBN> {
-        Ok(self.inner.initial_distribution().clone().into())
+        Ok(self.lock().initial_distribution().clone().into())
     }
 
     /// Returns the underlying graph.
@@ -118,7 +127,7 @@ impl PyCatCTBN {
     ///     A reference to the graph.
     ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
-        Ok(self.inner.graph().clone().into())
+        Ok(self.lock().graph().clone().into())
     }
 
     /// Returns the a map labels-distributions.
@@ -128,14 +137,14 @@ impl PyCatCTBN {
     /// dict[str, CatCIM]
     ///     A reference to the CIMs.
     ///
-    pub fn cims(&self) -> PyResult<BTreeMap<&str, PyCatCIM>> {
+    pub fn cims(&self) -> PyResult<BTreeMap<String, PyCatCIM>> {
         Ok(self
-            .inner
+            .lock()
             .cims()
             .iter()
             .map(|(label, cim)| {
                 // Convert the label to a string slice.
-                let label = label.as_ref();
+                let label = label.clone();
                 // Convert the CIM to a PyCatCIM.
                 let cim = cim.clone().into();
                 // Return the label and CIM as a tuple.
@@ -152,7 +161,7 @@ impl PyCatCTBN {
     ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
-        Ok(self.inner.parameters_size())
+        Ok(self.lock().parameters_size())
     }
 
     /// Fit the model to a dataset and a given graph.
@@ -279,8 +288,10 @@ impl PyCatCTBN {
         }
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*self.inner);
+        let sampler = ForwardSampler::new(&mut rng, &*lock);
         // Get the maximum length and time.
         let max_len = max_len.unwrap_or(usize::MAX);
         let max_time = max_time.unwrap_or(f64::INFINITY);
@@ -311,7 +322,7 @@ impl PyCatCTBN {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(CatCTBN::from_json(json)),
+            inner: Arc::new(RwLock::new(CatCTBN::from_json(json))),
         })
     }
 
@@ -323,7 +334,7 @@ impl PyCatCTBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
+        Ok(self.lock().to_json())
     }
 
     /// Read instance from a JSON file.
@@ -341,7 +352,7 @@ impl PyCatCTBN {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(CatCTBN::read_json(path)),
+            inner: Arc::new(RwLock::new(CatCTBN::read_json(path))),
         })
     }
 
@@ -353,7 +364,7 @@ impl PyCatCTBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.inner.write_json(path);
+        self.lock().write_json(path);
         Ok(())
     }
 }

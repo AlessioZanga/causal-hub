@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     io::JsonIO,
@@ -11,18 +14,24 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A struct representing a categorical conditional probability distribution.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatCPD", module = "causal_hub.models", eq)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PyCatCPD {
-    inner: Arc<CatCPD>,
+    inner: Arc<RwLock<CatCPD>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatCPD, CatCPD);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatCPD, CatCPD);
+
+impl PartialEq for PyCatCPD {
+    fn eq(&self, other: &Self) -> bool {
+        (&*self.lock()).eq(&*other.lock())
+    }
+}
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -34,8 +43,8 @@ impl PyCatCPD {
     /// list[str]
     ///     A reference to the label.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the conditioned variable.
@@ -45,15 +54,15 @@ impl PyCatCPD {
     /// dict[str, tuple[str, ...]]
     ///     The states of the conditioned variable.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -70,7 +79,7 @@ impl PyCatCPD {
     ///     The shape of the conditioned variable.
     ///
     pub fn shape(&self) -> PyResult<Vec<usize>> {
-        Ok(self.inner.shape().to_vec())
+        Ok(self.lock().shape().to_vec())
     }
 
     /// Returns the labels of the conditioned variables.
@@ -80,13 +89,8 @@ impl PyCatCPD {
     /// list[str]
     ///     A reference to the conditioning labels.
     ///
-    pub fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self
-            .inner
-            .conditioning_labels()
-            .iter()
-            .map(AsRef::as_ref)
-            .collect())
+    pub fn conditioning_labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().conditioning_labels().iter().cloned().collect())
     }
 
     /// Returns the states of the conditioning variables.
@@ -99,15 +103,15 @@ impl PyCatCPD {
     pub fn conditioning_states<'a>(
         &'a self,
         py: Python<'a>,
-    ) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .conditioning_states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -124,7 +128,7 @@ impl PyCatCPD {
     ///     The shape of the conditioning variables.
     ///
     pub fn conditioning_shape(&self) -> PyResult<Vec<usize>> {
-        Ok(self.inner.conditioning_shape().to_vec())
+        Ok(self.lock().conditioning_shape().to_vec())
     }
 
     /// Returns the parameters.
@@ -135,7 +139,7 @@ impl PyCatCPD {
     ///     A reference to the parameters.
     ///
     pub fn parameters<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyArray2<f64>>> {
-        Ok(self.inner.parameters().to_pyarray(py))
+        Ok(self.lock().parameters().to_pyarray(py))
     }
 
     /// Returns the parameters size.
@@ -146,7 +150,7 @@ impl PyCatCPD {
     ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
-        Ok(self.inner.parameters_size())
+        Ok(self.lock().parameters_size())
     }
 
     /// Returns the sample statistics used to fit the distribution, if any.
@@ -157,7 +161,7 @@ impl PyCatCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.inner.sample_statistics().map(|s| {
+        Ok(self.lock().sample_statistics().map(|s| {
             // Allocate the dictionary.
             let dict = PyDict::new(py);
             // Add the conditional counts.
@@ -182,13 +186,13 @@ impl PyCatCPD {
     ///     The sample log-likelihood given the distribution, if any.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
-        Ok(self.inner.sample_log_likelihood())
+        Ok(self.lock().sample_log_likelihood())
     }
 
     /// Returns the string representation of the CatCPD.
     pub fn __repr__(&self) -> PyResult<String> {
         // Get the string representation of the CatCPD.
-        Ok(self.inner.to_string())
+        Ok(self.lock().to_string())
     }
 
     /// Read instance from a JSON string.
@@ -206,7 +210,7 @@ impl PyCatCPD {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(CatCPD::from_json(json)),
+            inner: Arc::new(RwLock::new(CatCPD::from_json(json))),
         })
     }
 
@@ -218,7 +222,7 @@ impl PyCatCPD {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
+        Ok(self.lock().to_json())
     }
 
     /// Read instance from a JSON file.
@@ -236,7 +240,7 @@ impl PyCatCPD {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(CatCPD::read_json(path)),
+            inner: Arc::new(RwLock::new(CatCPD::read_json(path))),
         })
     }
 
@@ -248,7 +252,7 @@ impl PyCatCPD {
     ///     The path to the JSON file to write to.
     ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.inner.write_json(path);
+        self.lock().write_json(path);
         Ok(())
     }
 }
