@@ -1,4 +1,7 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::{CatWtdTrj, CatWtdTrjs, Dataset},
@@ -8,18 +11,18 @@ use numpy::{PyArray1, prelude::*};
 use pyo3::{prelude::*, types::PyTuple};
 use pyo3_stub_gen::derive::*;
 
-use crate::{datasets::PyCatTrj, impl_deref_from_into};
+use crate::{datasets::PyCatTrj, impl_from_into_lock};
 
 /// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
-    inner: CatWtdTrj,
+    inner: Arc<RwLock<CatWtdTrj>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatWtdTrj, CatWtdTrj);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatWtdTrj, CatWtdTrj);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -31,8 +34,8 @@ impl PyCatWtdTrj {
     /// list[str]
     ///     A reference to the labels of the categorical trajectory.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the trajectory.
@@ -43,7 +46,7 @@ impl PyCatWtdTrj {
     ///     A reference to the trajectory.
     ///
     pub fn trajectory(&self) -> PyResult<PyCatTrj> {
-        Ok(self.inner.trajectory().clone().into())
+        Ok(self.lock().trajectory().clone().into())
     }
 
     /// Returns the weight of the trajectory.
@@ -54,7 +57,7 @@ impl PyCatWtdTrj {
     ///     The weight of the trajectory.
     ///
     pub fn weight(&self) -> f64 {
-        self.inner.weight()
+        self.lock().weight()
     }
 
     /// Returns the states of the categorical trajectory.
@@ -64,15 +67,15 @@ impl PyCatWtdTrj {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -89,7 +92,7 @@ impl PyCatWtdTrj {
     ///     A reference to the times of the trajectory.
     ///
     pub fn times<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyArray1<f64>>> {
-        Ok(self.inner.times().to_pyarray(py))
+        Ok(self.lock().times().to_pyarray(py))
     }
 }
 
@@ -98,11 +101,11 @@ impl PyCatWtdTrj {
 #[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
-    inner: CatWtdTrjs,
+    inner: Arc<RwLock<CatWtdTrjs>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatWtdTrjs, CatWtdTrjs);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatWtdTrjs, CatWtdTrjs);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -114,8 +117,8 @@ impl PyCatWtdTrjs {
     /// list[str]
     ///     A reference to the labels of the categorical trajectory.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the categorical trajectory.
@@ -125,15 +128,15 @@ impl PyCatWtdTrjs {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -151,7 +154,7 @@ impl PyCatWtdTrjs {
     ///
     pub fn values(&self) -> PyResult<Vec<PyCatWtdTrj>> {
         Ok(self
-            .inner
+            .lock()
             .values()
             .iter()
             .cloned()

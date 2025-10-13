@@ -1,4 +1,4 @@
-use std::{cell::RefCell, ops::Deref};
+use std::cell::RefCell;
 
 use approx::*;
 use backend::{
@@ -41,12 +41,12 @@ pub fn em<'a>(
     // Get the evidence.
     let evidence: PyCatTrjsEv = evidence.extract()?;
     // Get the reference to the evidence.
-    let evidence: &CatTrjsEv = evidence.deref();
+    let evidence: &CatTrjsEv = &evidence.lock();
 
     // Get the graph.
     let graph: PyDiGraph = graph.extract()?;
     // Get the reference to the graph.
-    let graph: &DiGraph = graph.deref();
+    let graph: &DiGraph = &graph.lock();
 
     // Release the GIL to allow parallel execution.
     let output = py.detach(|| {

@@ -1,4 +1,7 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
@@ -11,18 +14,18 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A categorical trajectory evidence.
 #[gen_stub_pyclass]
 #[pyclass(name = "CatTrjEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjEv {
-    inner: CatTrjEv,
+    inner: Arc<RwLock<CatTrjEv>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatTrjEv, CatTrjEv);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatTrjEv, CatTrjEv);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -35,8 +38,8 @@ impl PyCatTrjEv {
     ///     A reference to the labels of the categorical trajectory.
     ///
     #[inline]
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the categorical trajectory.
@@ -46,15 +49,15 @@ impl PyCatTrjEv {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -241,7 +244,9 @@ impl PyCatTrjEv {
 
         // Construct the evidence.
         let inner = CatTrjEv::new(states, evidence);
-        // Return the evidence.
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
+
         Ok(Self { inner })
     }
 }
@@ -251,11 +256,11 @@ impl PyCatTrjEv {
 #[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets")]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjsEv {
-    inner: CatTrjsEv,
+    inner: Arc<RwLock<CatTrjsEv>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatTrjsEv, CatTrjsEv);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatTrjsEv, CatTrjsEv);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -268,8 +273,8 @@ impl PyCatTrjsEv {
     ///     A reference to the labels of the categorical trajectory.
     ///
     #[inline]
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the states of the categorical trajectory.
@@ -279,15 +284,15 @@ impl PyCatTrjsEv {
     /// dict[str, tuple[str, ...]]
     ///     A reference to the states of the categorical trajectory.
     ///
-    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<&'a str, Bound<'a, PyTuple>>> {
+    pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
         Ok(self
-            .inner
+            .lock()
             .states()
             .iter()
             .map(|(label, states)| {
                 // Get reference to the label and states.
-                let label = label.as_ref();
-                let states = states.iter().map(String::as_str);
+                let label = label.clone();
+                let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
                 let states = PyTuple::new(py, states).unwrap();
                 // Return a tuple of the label and states.
@@ -333,8 +338,11 @@ impl PyCatTrjsEv {
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+
         // Create a new CatTrjsEv with the given parameters.
         let inner = CatTrjsEv::new(dfs);
+        // Wrap the dataset in an Arc<RwLock>.
+        let inner = Arc::new(RwLock::new(inner));
 
         Ok(Self { inner })
     }
