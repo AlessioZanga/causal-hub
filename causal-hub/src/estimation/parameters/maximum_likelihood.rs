@@ -8,7 +8,7 @@ use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{EPSILON, Labels, Set, States},
+    types::{Labels, Set, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -154,7 +154,7 @@ impl MLE<'_, GaussTable> {
             // Compute the coefficient matrix avoiding matrix inversion.
             // Step 0: Regularize S_zz by adding a small value to the diagonal.
             let mut s_zz_reg = s_zz.clone();
-            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += EPSILON);
+            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += 10e-6);
             // Step 1: Perform Cholesky decomposition of S_zz.
             let l = s_zz_reg
                 .cholesky_into(UPLO::Lower)

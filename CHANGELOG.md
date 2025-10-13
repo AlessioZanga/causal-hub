@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `maturin` build system for Python bindings.
 * Added `Arc<RwLock<...>>` wrapping to reduce memory allocation and allow concurrency.
 
+### Changed
+
+* Changed regularization term for Cholesky decomposition.
+
 ## v0.0.1 - 2025-10-09
 
 ### Added
