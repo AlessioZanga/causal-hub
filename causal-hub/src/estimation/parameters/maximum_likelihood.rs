@@ -2,13 +2,13 @@ use std::f64::consts::PI;
 
 use dry::macro_for;
 use ndarray::prelude::*;
-use ndarray_linalg::{CholeskyInto, Determinant, Diag, Norm, SolveTriangularInplace, UPLO};
+use ndarray_linalg::{Determinant, SVDInto};
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{Labels, Set, States},
+    types::{EPSILON, Labels, Set, States},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -152,24 +152,20 @@ impl MLE<'_, GaussTable> {
             (a, b, s)
         } else {
             // Compute the coefficient matrix avoiding matrix inversion.
-            // Step 0: Regularize S_zz by adding a small value to the diagonal.
-            let mut s_zz_reg = s_zz.clone();
-            let epsilon = 1e-6 * s_zz_reg.norm();
-            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += epsilon);
-            // Step 1: Perform Cholesky decomposition of S_zz.
-            let l = s_zz_reg
-                .cholesky_into(UPLO::Lower)
-                .expect("Failed to compute Cholesky decomposition of S_zz.");
-            // Step 2: Solve L Y = S_xz^T.
-            let mut y = s_xz.t().to_owned();
-            l.solve_triangular_inplace(UPLO::Lower, Diag::NonUnit, &mut y)
-                .expect("Failed to solve L Y = S_xz^T system.");
-            // Step 3: Solve L^T A^T = Y.
-            let l_t = l.t().to_owned();
-            l_t.solve_triangular_inplace(UPLO::Upper, Diag::NonUnit, &mut y)
-                .expect("Failed to solve L^T A^T = Y .");
-            // Step 4: Transpose to get A.
-            let a = y.t().to_owned();
+            // Step 1: Compute the Single Value Decomposition (SVD).
+            let (u, s, vt) = s_zz
+                .svd_into(true, true)
+                .expect("Failed to compute the SVD of S_zz.");
+            let u = u.expect("Failed to get U from the SVD of S_zz.");
+            let vt = vt.expect("Failed to get VT from the SVD of S_zz.");
+            // Step 2: Compute the pseudo-inverse of the singular values.
+            let epsilon = f64::max(EPSILON, s.len() as f64 * s[0] * EPSILON);
+            let s_zz_pinv = s.mapv(|x| if x > epsilon { x.recip() } else { 0. });
+            let s_zz_pinv = Array2::from_diag(&s_zz_pinv);
+            // Step 3: Compute the pseudo-inverse of S_zz.
+            let s_zz_pinv = vt.t().dot(&s_zz_pinv).dot(&u.t());
+            // Step 4: Compute the coefficient matrix.
+            let a = s_xz.dot(&s_zz_pinv);
             // Compute the intercept vector.
             let b = mu_x - &a.dot(mu_z);
             // Compute the covariance matrix.
