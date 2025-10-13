@@ -41,9 +41,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev
       - name: Build
-        run: cargo build --features=backend/openblas-static
+        run: cargo build --features=openblas-static
       - name: Test
-        run: cargo test --features=backend/openblas-static
+        run: cargo test --features=openblas-static
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -80,9 +80,9 @@ jobs:
           vcpkg install openblas --overlay-ports=.vcpkg/ports
         working-directory: ${{ github.workspace }}
       - name: Build
-        run: cargo build --features=backend/openblas-system
+        run: cargo build --features=openblas-system
       - name: Test
-        run: cargo test --features=backend/openblas-system
+        run: cargo test --features=openblas-system
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -108,6 +108,6 @@ jobs:
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
             ${{ matrix.platform.runner }}-
       - name: Build
-        run: cargo build --features=backend/openblas-static
+        run: cargo build --features=openblas-static
       - name: Test
-        run: cargo test --features=backend/openblas-static
+        run: cargo test --features=openblas-static
