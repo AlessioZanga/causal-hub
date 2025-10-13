@@ -34,6 +34,4 @@ rand_xoshiro = "^0.7"
 rayon.workspace = true
 
 [features]
-default = []
-openblas-static = ["backend/openblas-static"]
-openblas-system = ["backend/openblas-system"]
+default = ["pyo3/abi3-py310"]
