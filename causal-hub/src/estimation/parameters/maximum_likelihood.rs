@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use dry::macro_for;
 use ndarray::prelude::*;
-use ndarray_linalg::{CholeskyInto, Determinant, Diag, SolveTriangularInplace, UPLO};
+use ndarray_linalg::{CholeskyInto, Determinant, Diag, Norm, SolveTriangularInplace, UPLO};
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
@@ -154,7 +154,8 @@ impl MLE<'_, GaussTable> {
             // Compute the coefficient matrix avoiding matrix inversion.
             // Step 0: Regularize S_zz by adding a small value to the diagonal.
             let mut s_zz_reg = s_zz.clone();
-            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += 10e-6);
+            let epsilon = 1e-6 * s_zz_reg.norm();
+            s_zz_reg.diag_mut().iter_mut().for_each(|s| *s += epsilon);
             // Step 1: Perform Cholesky decomposition of S_zz.
             let l = s_zz_reg
                 .cholesky_into(UPLO::Lower)
