@@ -8,8 +8,8 @@ use serde::{
 
 use crate::{
     impl_json_io,
-    models::{CPD, GaussCPDS, Labelled},
-    types::Labels,
+    models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
+    types::{Labels, Set},
 };
 
 /// Parameters of a Gaussian CPD.
@@ -429,6 +429,37 @@ impl GaussCPD {
         cpd.sample_log_likelihood = sample_log_likelihood;
 
         cpd
+    }
+
+    /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding CPD.
+    ///
+    #[inline]
+    pub fn from_phi(phi: GaussPhi, x: &Set<usize>, z: &Set<usize>) -> Self {
+        phi.into_cpd(x, z)
+    }
+
+    /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `cpd` - The CPD to convert.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding potential.
+    ///
+    #[inline]
+    pub fn into_phi(self) -> GaussPhi {
+        GaussPhi::from_cpd(self)
     }
 }
 

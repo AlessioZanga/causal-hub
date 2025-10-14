@@ -210,102 +210,6 @@ pub struct CatCPD {
     sample_log_likelihood: Option<f64>,
 }
 
-impl Labelled for CatCPD {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-}
-
-impl PartialEq for CatCPD {
-    fn eq(&self, other: &Self) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self.parameters.eq(&other.parameters)
-    }
-}
-
-impl AbsDiffEq for CatCPD {
-    type Epsilon = f64;
-
-    fn default_epsilon() -> Self::Epsilon {
-        Self::Epsilon::default_epsilon()
-    }
-
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
-    }
-}
-
-impl RelativeEq for CatCPD {
-    fn default_max_relative() -> Self::Epsilon {
-        Self::Epsilon::default_max_relative()
-    }
-
-    fn relative_eq(
-        &self,
-        other: &Self,
-        epsilon: Self::Epsilon,
-        max_relative: Self::Epsilon,
-    ) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self
-                .parameters
-                .relative_eq(&other.parameters, epsilon, max_relative)
-    }
-}
-
-impl CPD for CatCPD {
-    type Parameters = Array2<f64>;
-    type Statistics = CatCPDS;
-
-    #[inline]
-    fn conditioning_labels(&self) -> &Labels {
-        &self.conditioning_labels
-    }
-
-    #[inline]
-    fn parameters(&self) -> &Self::Parameters {
-        &self.parameters
-    }
-
-    #[inline]
-    fn parameters_size(&self) -> usize {
-        self.parameters_size
-    }
-
-    #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
-    }
-
-    #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
-    }
-}
-
 impl CatCPD {
     /// Creates a new categorical conditional probability distribution.
     ///
@@ -714,6 +618,102 @@ impl CatCPD {
     #[inline]
     pub fn into_phi(self) -> CatPhi {
         CatPhi::from_cpd(self)
+    }
+}
+
+impl Labelled for CatCPD {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
+impl PartialEq for CatCPD {
+    fn eq(&self, other: &Self) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self.parameters.eq(&other.parameters)
+    }
+}
+
+impl AbsDiffEq for CatCPD {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
+    }
+}
+
+impl RelativeEq for CatCPD {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self
+                .parameters
+                .relative_eq(&other.parameters, epsilon, max_relative)
+    }
+}
+
+impl CPD for CatCPD {
+    type Parameters = Array2<f64>;
+    type Statistics = CatCPDS;
+
+    #[inline]
+    fn conditioning_labels(&self) -> &Labels {
+        &self.conditioning_labels
+    }
+
+    #[inline]
+    fn parameters(&self) -> &Self::Parameters {
+        &self.parameters
+    }
+
+    #[inline]
+    fn parameters_size(&self) -> usize {
+        self.parameters_size
+    }
+
+    #[inline]
+    fn sample_statistics(&self) -> Option<&Self::Statistics> {
+        self.sample_statistics.as_ref()
+    }
+
+    #[inline]
+    fn sample_log_likelihood(&self) -> Option<f64> {
+        self.sample_log_likelihood
     }
 }
 

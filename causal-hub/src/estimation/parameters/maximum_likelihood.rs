@@ -2,13 +2,14 @@ use std::f64::consts::PI;
 
 use dry::macro_for;
 use ndarray::prelude::*;
-use ndarray_linalg::{Determinant, SVDInto};
+use ndarray_linalg::Determinant;
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{EPSILON, Labels, Set, States},
+    types::{Labels, Set, States},
+    utils::PseudoInverse,
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -151,20 +152,9 @@ impl MLE<'_, GaussTable> {
             // Return the parameters.
             (a, b, s)
         } else {
-            // Compute the coefficient matrix avoiding matrix inversion.
-            // Step 1: Compute the Single Value Decomposition (SVD).
-            let (u, s, vt) = s_zz
-                .svd_into(true, true)
-                .expect("Failed to compute the SVD of S_zz.");
-            let u = u.expect("Failed to get U from the SVD of S_zz.");
-            let vt = vt.expect("Failed to get VT from the SVD of S_zz.");
-            // Step 2: Compute the pseudo-inverse of the singular values.
-            let epsilon = f64::max(EPSILON, s.len() as f64 * s[0] * EPSILON);
-            let s_zz_pinv = s.mapv(|x| if x > epsilon { x.recip() } else { 0. });
-            let s_zz_pinv = Array2::from_diag(&s_zz_pinv);
-            // Step 3: Compute the pseudo-inverse of S_zz.
-            let s_zz_pinv = vt.t().dot(&s_zz_pinv).dot(&u.t());
-            // Step 4: Compute the coefficient matrix.
+            // Compute the pseudo-inverse of S_zz.
+            let s_zz_pinv = s_zz.pinv();
+            // Compute the coefficient matrix.
             let a = s_xz.dot(&s_zz_pinv);
             // Compute the intercept vector.
             let b = mu_x - &a.dot(mu_z);
