@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
-
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
