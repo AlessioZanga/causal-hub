@@ -269,7 +269,7 @@ mod tests {
         let phi = CatPhi::new(s, p);
 
         // Convert the potential into a CPD.
-        let pred_cpd = phi.into_cpd(&set![0], &set![1, 2]);
+        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1]);
 
         // Set the true CPD.
         let true_x = states![("A", ["a1", "a2", "a3"])];

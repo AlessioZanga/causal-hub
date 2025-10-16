@@ -4,11 +4,12 @@ use std::{
 };
 
 use approx::{AbsDiffEq, RelativeEq};
+use itertools::Itertools;
 use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
 
 use crate::{
-    models::{CPD, GaussCPD, Labelled, Phi},
+    models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
     types::{Labels, Set},
     utils::PseudoInverse,
 };
@@ -312,8 +313,54 @@ impl Phi for GaussPhi {
         Self::new(labels, parameters)
     }
 
-    fn into_cpd(self, _x: &Set<usize>, _z: &Set<usize>) -> Self::CPD {
-        todo!() // FIXME:
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD {
+        // Assert that X and Z are disjoint.
+        assert!(
+            x.is_disjoint(z),
+            "Variables and conditioning variables must be disjoint."
+        );
+        // Assert that X and Z cover all variables.
+        assert!(
+            (x | z).iter().sorted().cloned().eq(0..self.labels.len()),
+            "Variables and conditioning variables must cover all potential variables."
+        );
+
+        // Split labels into labels and conditioning labels.
+        let labels_x: Labels = x.iter().map(|&i| self.labels[i].clone()).collect();
+        let labels_z: Labels = z.iter().map(|&i| self.labels[i].clone()).collect();
+
+        // Get the precision matrix.
+        let k = self.parameters.precision_matrix();
+        // Get the information vector.
+        let h = self.parameters.information_vector();
+
+        // Compute the covariance matrix.
+        let s = {
+            // Get K_xx from K and X.
+            let k_xx = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
+            // Compute the covariance as: S = (K_xx)^(-1)
+            k_xx.pinv()
+        };
+        // Compute the coefficient matrix.
+        let a = {
+            // Get K_xz from K, X, and Z.
+            let k_xz = Array::from_shape_fn((x.len(), z.len()), |(i, j)| k[[x[i], z[j]]]);
+            // Compute the coefficients as: A = - (K_xx)^(-1) * K_xz
+            -s.dot(&k_xz)
+        };
+        // Compute the intercept vector.
+        let b = {
+            // Get h_x from h and X.
+            let h_x = Array::from_shape_fn(x.len(), |i| h[x[i]]);
+            // Compute the intercept as: b = (K_xx)^(-1) * h_x
+            s.dot(&h_x)
+        };
+
+        // Assemble the parameters.
+        let parameters = GaussCPDP::new(a, b, s);
+
+        // Create the new CPD.
+        GaussCPD::new(labels_x, labels_z, parameters)
     }
 }
 

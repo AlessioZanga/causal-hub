@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
-        models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi},
+        models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi}, set,
     };
     use ndarray::prelude::*;
 
@@ -37,5 +37,28 @@ mod tests {
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
+    }
+
+    #[test]
+    fn into_cpd() {
+        // Set the labels.
+        let x = labels!("A");
+        let z = labels!("B", "C");
+        // Set the parameters.
+        let a = array![[3., -1.]];
+        let b = array![2.];
+        let s = array![[4.]];
+        let p = GaussCPDP::new(a, b, s);
+        // Initialize the CPD.
+        let true_cpd = GaussCPD::new(x, z, p);
+
+        // Convert to potential.
+        let phi = GaussPhi::from_cpd(true_cpd.clone());
+
+        // Convert back to CPD.
+        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1]);
+
+        // Compare the CPDs.
+        assert_relative_eq!(true_cpd, pred_cpd);
     }
 }

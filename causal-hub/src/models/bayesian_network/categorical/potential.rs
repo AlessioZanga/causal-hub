@@ -328,19 +328,28 @@ impl Phi for CatPhi {
             "Variables and conditioning variables must cover all potential variables."
         );
 
-        // Split states into states.
-        let states_x = self.states.clone().into_iter().enumerate();
-        let states_x = states_x.filter_map(|(i, s)| x.contains(&i).then_some(s));
-        let states_x: States = states_x.collect();
-        // Split states into conditioning states.
-        let states_z = self.states.clone().into_iter().enumerate();
-        let states_z = states_z.filter_map(|(i, s)| z.contains(&i).then_some(s));
-        let states_z: States = states_z.collect();
+        // Split states into states and conditioning states.
+        let states_x: States = x
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .unwrap()
+            })
+            .collect();
+        let states_z: States = z
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .unwrap()
+            })
+            .collect();
 
         // Get new axes order.
-        let axes = z.iter().sorted();
-        let axes = axes.chain(x.iter().sorted());
-        let axes: Vec<_> = axes.cloned().collect();
+        let axes: Vec<_> = z.iter().chain(x).cloned().collect();
         // Permute parameters to match the new order.
         let parameters = self.parameters.permuted_axes(axes);
         // Get the new 2D shape.
