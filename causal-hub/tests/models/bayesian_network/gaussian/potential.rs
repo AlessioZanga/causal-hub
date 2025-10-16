@@ -3,7 +3,8 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
-        models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi}, set,
+        models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi},
+        set,
     };
     use ndarray::prelude::*;
 
