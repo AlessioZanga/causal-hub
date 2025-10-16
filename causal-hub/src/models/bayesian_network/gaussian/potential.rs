@@ -1,7 +1,11 @@
-use std::ops::{Div, DivAssign, Mul, MulAssign};
+use std::{
+    f64::consts::PI,
+    ops::{Div, DivAssign, Mul, MulAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
+use ndarray_linalg::Determinant;
 
 use crate::{
     models::{CPD, GaussCPD, Labelled, Phi},
@@ -298,7 +302,8 @@ impl Phi for GaussPhi {
         };
 
         // Compute the log-normalization constant.
-        let g = 0.; // FIXME:
+        let g = (2. * PI * s).det().expect("Failed to compute determinant.");
+        let g = -0.5 * (b.dot(&h_x) + f64::ln(g));
 
         // Construct the parameters.
         let parameters = GaussPhiK::new(k, h, g);
