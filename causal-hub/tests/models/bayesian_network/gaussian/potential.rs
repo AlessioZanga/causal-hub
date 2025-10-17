@@ -9,6 +9,42 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
+    fn marginalize() {
+        // Set the labels.
+        let labels = labels!("A", "B", "C");
+        // Set the precision matrix.
+        let k = array![
+            [1.4020, -0.5747, -0.0288],
+            [-0.5747, 1.3702, -0.3612],
+            [-0.0288, -0.3612, 1.1274]
+        ];
+        // Set the information vector.
+        let h = array![0.2, -0.1, 0.3];
+        // Set the log-normalization constant.
+        let g = 0.0;
+        // Set the parameters.
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), g);
+        // Initialize the potential.
+        let phi = GaussPhi::new(labels.clone(), parameters);
+        // Marginalize out variable "B" (index 1).
+        let pred_phi = phi.marginalize(&set![1]);
+
+        // Set the true potential.
+        let true_labels = labels!("A", "C");
+        let true_k = array![
+            [1.1609548314114728, -0.18029732885710115],
+            [-0.18029732885710115, 1.0321836520216026]
+        ];
+        let true_h = array![0.15805721792439062, 0.27363888483433074];
+        let true_g = 0.7651092782321709;
+        let true_parameters = GaussPhiK::new(true_k, true_h, true_g);
+        let true_phi = GaussPhi::new(true_labels, true_parameters);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
+    }
+
+    #[test]
     fn multiply() {
         // Set the labels.
         let l_1 = labels!("A", "B");

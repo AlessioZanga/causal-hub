@@ -343,8 +343,79 @@ impl Phi for GaussPhi {
         todo!() // FIXME:
     }
 
-    fn marginalize(&self, _x: &Set<usize>) -> Self {
-        todo!() // FIXME:
+    fn marginalize(&self, x: &Set<usize>) -> Self {
+        // Base case: if no variables to marginalize, return self.
+        if x.is_empty() {
+            return self.clone();
+        }
+
+        // Assert X is a subset of the variables.
+        x.iter().for_each(|&x| {
+            assert!(
+                x < self.labels.len(),
+                "Variable index out of bounds: \n\
+                \t expected:    x <  {} , \n\
+                \t found:       x == {} .",
+                self.labels.len(),
+                x,
+            );
+        });
+
+        // Get Z as V \ X.
+        let v: Set<_> = Set::from_iter(0..self.labels.len());
+        let z: Set<_> = &v - x;
+
+        // Get the labels of the marginalized potential.
+        let labels_z: Labels = z.iter().map(|&i| self.labels[i].clone()).collect();
+
+        // Get the precision matrix.
+        let k = self.parameters.precision_matrix();
+        // Get the information vector.
+        let h = self.parameters.information_vector();
+
+        // Compute the covariance matrix as: S_xx = (K_xx)^(-1).
+        let s_xx = {
+            // Get K_xx from K and X.
+            let k_xx = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
+            // Compute the covariance as: S = (K_xx)^(-1)
+            k_xx.pinv()
+        };
+        // Get K_zx from K, Z and X.
+        let k_zx = Array::from_shape_fn((z.len(), x.len()), |(i, j)| k[[z[i], x[j]]]);
+        // Get h_x from h and X.
+        let h_x = Array::from_shape_fn(x.len(), |i| h[x[i]]);
+
+        // Compute K_zx * S_xx once.
+        let k_zx_dot_s_xx = k_zx.dot(&s_xx);
+
+        // Compute the marginalized precision matrix.
+        let k = {
+            // Get K_zz and K_xz from K, X and Z.
+            let k_zz = Array::from_shape_fn((z.len(), z.len()), |(i, j)| k[[z[i], z[j]]]);
+            let k_xz = Array::from_shape_fn((x.len(), z.len()), |(i, j)| k[[x[i], z[j]]]);
+            // Compute the precision matrix as: K' = K_zz - K_zx * (K_xx)^(-1) * K_xz
+            k_zz - k_zx_dot_s_xx.dot(&k_xz)
+        };
+        // Compute the marginalized information vector.
+        let h = {
+            // Get h_z from h, X and Z.
+            let h_z = Array::from_shape_fn(z.len(), |i| h[z[i]]);
+            // Compute the information vector as: h' = h_z - K_zx * (K_xx)^(-1) * h_x
+            h_z - k_zx_dot_s_xx.dot(&h_x)
+        };
+        // Compute the marginalized log-normalization constant.
+        let g = {
+            // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
+            let g = f64::powi(2. * PI, s_xx.nrows().try_into().unwrap());
+            let g = g * s_xx.det().expect("Failed to compute the determinant.");
+            self.parameters.g + 0.5 * (f64::ln(g) + h_x.dot(&s_xx).dot(&h_x))
+        };
+
+        // Assemble the parameters.
+        let parameters = GaussPhiK::new(k, h, g);
+
+        // Return the marginalized potential.
+        Self::new(labels_z, parameters)
     }
 
     fn normalize(&self) -> Self {
@@ -401,7 +472,8 @@ impl Phi for GaussPhi {
         };
 
         // Compute the log-normalization constant.
-        let g = (2. * PI * s).det().expect("Failed to compute determinant.");
+        let g = f64::powi(2. * PI, s.nrows() as i32);
+        let g = g * s.det().expect("Failed to compute the determinant.");
         let g = -0.5 * (b.dot(&h_x) + f64::ln(g));
 
         // Construct the parameters.

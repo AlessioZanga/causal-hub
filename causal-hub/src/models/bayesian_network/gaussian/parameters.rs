@@ -397,6 +397,42 @@ impl GaussCPD {
         }
     }
 
+    /// Marginalizes the over the variables `X` and conditioning variables `Z`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variables to marginalize over.
+    /// * `z` - The conditioning variables to marginalize over.
+    ///
+    /// # Returns
+    ///
+    /// A new instance with the marginalized variables.
+    ///
+    pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+        // Base case: if no variables to marginalize, return self clone.
+        if x.is_empty() && z.is_empty() {
+            return self.clone();
+        }
+        // Get labels.
+        let labels_x = self.labels();
+        let labels_z = self.conditioning_labels();
+        // Get indices to preserve.
+        let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
+        let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
+        // Convert to potential.
+        let phi = self.clone().into_phi();
+        // Map CPD indices to potential indices.
+        let x = phi.indices_from(x, labels_x);
+        let z = phi.indices_from(z, labels_z);
+        // Marginalize the potential.
+        let phi = phi.marginalize(&(&x | &z));
+        // Map CPD indices to potential indices.
+        let not_x = phi.indices_from(&not_x, labels_x);
+        let not_z = phi.indices_from(&not_z, labels_z);
+        // Convert back to CPD.
+        phi.into_cpd(&not_x, &not_z)
+    }
+
     /// Creates a new Gaussian CPD instance.
     ///
     /// # Arguments
