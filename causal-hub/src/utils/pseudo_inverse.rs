@@ -22,7 +22,15 @@ pub trait PseudoInverse {
 impl PseudoInverse for Array2<f64> {
     fn pinv(&self) -> Self {
         // Step 1: Compute the Single Value Decomposition (SVD).
-        let (u, s, vt) = self.svd(true, true).expect("Failed to compute the SVD.");
+        let (u, s, vt) = self.svd(true, true).unwrap_or_else(|e| {
+            panic!(
+                "Failed to compute the SVD \n\
+                \t for the matrix: \n\
+                \t {self:?} \n\
+                \t with error: \n\
+                \t {e:?}."
+            )
+        });
         let u = u.expect("Failed to get U from the SVD.");
         let vt = vt.expect("Failed to get VT from the SVD.");
         // Step 2: Compute the pseudo-inverse of the singular values.
