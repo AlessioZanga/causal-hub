@@ -193,8 +193,53 @@ impl RelativeEq for GaussPhi {
 }
 
 impl MulAssign<&GaussPhi> for GaussPhi {
-    fn mul_assign(&mut self, _rhs: &GaussPhi) {
-        todo!() // FIXME:
+    fn mul_assign(&mut self, rhs: &GaussPhi) {
+        // Get the union of the labels.
+        let mut labels = self.labels.clone();
+        labels.extend(rhs.labels.clone());
+        // Sort the labels.
+        labels.sort();
+
+        // Get the number of variables.
+        let n = labels.len();
+
+        // Order LHS indices w.r.t. new labels.
+        let lhs_m: Vec<_> = labels.iter().map(|l| self.labels.get_index_of(l)).collect();
+        // Allocate extended LHS parameters.
+        let lhs_k = Array::from_shape_fn((n, n), |(i, j)| match (lhs_m[i], lhs_m[j]) {
+            (Some(i), Some(j)) => self.parameters.k[[i, j]],
+            _ => 0.,
+        });
+        let lhs_h = Array::from_shape_fn(n, |i| match lhs_m[i] {
+            Some(i) => self.parameters.h[i],
+            _ => 0.,
+        });
+        let lhs_g = self.parameters.g;
+
+        // Order RHS indices w.r.t. new labels.
+        let rhs_m: Vec<_> = labels.iter().map(|l| rhs.labels.get_index_of(l)).collect();
+        // Allocate extended RHS parameters.
+        let rhs_k = Array::from_shape_fn((n, n), |(i, j)| match (rhs_m[i], rhs_m[j]) {
+            (Some(i), Some(j)) => rhs.parameters.k[[i, j]],
+            _ => 0.,
+        });
+        let rhs_h = Array::from_shape_fn(n, |i| match rhs_m[i] {
+            Some(i) => rhs.parameters.h[i],
+            _ => 0.,
+        });
+        let rhs_g = rhs.parameters.g;
+
+        // Sum parameters.
+        let k = lhs_k + rhs_k;
+        let h = lhs_h + rhs_h;
+        let g = lhs_g + rhs_g;
+        // Assemble parameters.
+        let parameters = GaussPhiK::new(k, h, g);
+
+        // Update the labels.
+        self.labels = labels;
+        // Update the parameters.
+        self.parameters = parameters;
     }
 }
 
@@ -210,8 +255,53 @@ impl Mul<&GaussPhi> for &GaussPhi {
 }
 
 impl DivAssign<&GaussPhi> for GaussPhi {
-    fn div_assign(&mut self, _rhs: &GaussPhi) {
-        todo!() // FIXME:
+    fn div_assign(&mut self, rhs: &GaussPhi) {
+        // Get the union of the labels.
+        let mut labels = self.labels.clone();
+        labels.extend(rhs.labels.clone());
+        // Sort the labels.
+        labels.sort();
+
+        // Get the number of variables.
+        let n = labels.len();
+
+        // Order LHS indices w.r.t. new labels.
+        let lhs_m: Vec<_> = labels.iter().map(|l| self.labels.get_index_of(l)).collect();
+        // Allocate extended LHS parameters.
+        let lhs_k = Array::from_shape_fn((n, n), |(i, j)| match (lhs_m[i], lhs_m[j]) {
+            (Some(i), Some(j)) => self.parameters.k[[i, j]],
+            _ => 0.,
+        });
+        let lhs_h = Array::from_shape_fn(n, |i| match lhs_m[i] {
+            Some(i) => self.parameters.h[i],
+            _ => 0.,
+        });
+        let lhs_g = self.parameters.g;
+
+        // Order RHS indices w.r.t. new labels.
+        let rhs_m: Vec<_> = labels.iter().map(|l| rhs.labels.get_index_of(l)).collect();
+        // Allocate extended RHS parameters.
+        let rhs_k = Array::from_shape_fn((n, n), |(i, j)| match (rhs_m[i], rhs_m[j]) {
+            (Some(i), Some(j)) => rhs.parameters.k[[i, j]],
+            _ => 0.,
+        });
+        let rhs_h = Array::from_shape_fn(n, |i| match rhs_m[i] {
+            Some(i) => rhs.parameters.h[i],
+            _ => 0.,
+        });
+        let rhs_g = rhs.parameters.g;
+
+        // Sum parameters.
+        let k = lhs_k - rhs_k;
+        let h = lhs_h - rhs_h;
+        let g = lhs_g - rhs_g;
+        // Assemble parameters.
+        let parameters = GaussPhiK::new(k, h, g);
+
+        // Update the labels.
+        self.labels = labels;
+        // Update the parameters.
+        self.parameters = parameters;
     }
 }
 

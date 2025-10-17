@@ -9,6 +9,108 @@ mod tests {
     use ndarray::prelude::*;
 
     #[test]
+    fn multiply() {
+        // Set the labels.
+        let l_1 = labels!("A", "B");
+        let l_2 = labels!("B", "C");
+        // Set the parameters.
+        let p_1 = GaussPhiK::new(
+            array![
+                [1., -1.], //
+                [-1., 1.]  //
+            ],
+            array![1., -1.], //
+            -3.,
+        );
+        let p_2 = GaussPhiK::new(
+            array![
+                [3., -2.], //
+                [-2., 4.]  //
+            ],
+            array![5., -1.], //
+            1.,
+        );
+        // Initialize the potential.
+        let phi_1 = GaussPhi::new(l_1, p_1);
+        let phi_2 = GaussPhi::new(l_2, p_2);
+
+        // Multiply the potentials.
+        let pred_phi = &phi_1 * &phi_2;
+
+        // Set the true potential.
+        let true_l = labels!("A", "B", "C");
+        let true_p = GaussPhiK::new(
+            array![
+                [1., -1., 0.],  //
+                [-1., 4., -2.], //
+                [0., -2., 4.]   //
+            ],
+            array![1., 4., -1.],
+            -2.,
+        );
+        let true_phi = GaussPhi::new(true_l, true_p);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
+
+        // Test other variant.
+        let mut pred_phi = phi_1.clone();
+        pred_phi *= &phi_2;
+        assert_relative_eq!(true_phi, pred_phi);
+    }
+
+    #[test]
+    fn divide() {
+        // Set the labels.
+        let l_1 = labels!("A", "B");
+        let l_2 = labels!("B", "C");
+        // Set the parameters.
+        let p_1 = GaussPhiK::new(
+            array![
+                [1., -1.], //
+                [-1., 1.]  //
+            ],
+            array![1., -1.], //
+            -3.,
+        );
+        let p_2 = GaussPhiK::new(
+            array![
+                [3., -2.], //
+                [-2., 4.]  //
+            ],
+            array![5., -1.], //
+            1.,
+        );
+        // Initialize the potential.
+        let phi_1 = GaussPhi::new(l_1, p_1);
+        let phi_2 = GaussPhi::new(l_2, p_2);
+
+        // Multiply the potentials.
+        let pred_phi = &phi_1 / &phi_2;
+
+        // Set the true potential.
+        let true_l = labels!("A", "B", "C");
+        let true_p = GaussPhiK::new(
+            array![
+                [1., -1., 0.],  //
+                [-1., -2., 2.], //
+                [0., 2., -4.]   //
+            ],
+            array![1., -6., 1.],
+            -4.,
+        );
+        let true_phi = GaussPhi::new(true_l, true_p);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
+
+        // Test other variant.
+        let mut pred_phi = phi_1.clone();
+        pred_phi /= &phi_2;
+        assert_relative_eq!(true_phi, pred_phi);
+    }
+
+    #[test]
     fn from_cpd() {
         // Set the labels.
         let x = labels!("A");
