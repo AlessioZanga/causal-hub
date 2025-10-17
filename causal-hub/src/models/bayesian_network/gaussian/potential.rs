@@ -36,7 +36,7 @@ impl GaussPhiK {
     ///
     /// # Panics
     ///
-    /// * Panics if `k` is not square
+    /// * Panics if `k` is not square and symmetric.
     /// * Panics if the length of `h` does not match the size of `k`.
     /// * Panics if `k`, `h`, or `g` contain non-finite values.
     ///
@@ -47,17 +47,19 @@ impl GaussPhiK {
     pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
         // Assert K is square.
         assert!(k.is_square(), "Precision matrix must be square.");
-        // Assert K is finite.
-        assert!(
-            k.iter().all(|x| x.is_finite()),
-            "Precision matrix must be finite."
-        );
         // Assert the length of h matches the size of K.
         assert_eq!(
             k.nrows(),
             h.len(),
             "Information vector length must match precision matrix size."
         );
+        // Assert K is finite.
+        assert!(
+            k.iter().all(|x| x.is_finite()),
+            "Precision matrix must be finite."
+        );
+        // Assert K is symmetric.
+        assert_eq!(k, k.t(), "Precision matrix must be symmetric.");
         // Assert h is finite.
         assert!(
             h.iter().all(|x| x.is_finite()),
@@ -328,7 +330,13 @@ impl Phi for GaussPhi {
 
     #[inline]
     fn parameters_size(&self) -> usize {
-        self.parameters.k.len() + self.parameters.h.len() + 1
+        let k = {
+            // Precision matrix is symmetric.
+            let k = self.parameters.k.nrows();
+            k * (k + 1) / 2
+        };
+
+        k + self.parameters.h.len() + 1
     }
 
     fn condition(&self, _e: &Self::Evidence) -> Self {

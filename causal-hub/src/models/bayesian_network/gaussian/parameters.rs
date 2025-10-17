@@ -36,7 +36,7 @@ impl GaussCPDP {
     ///
     /// * Panics if the number of rows of `a` does not match the size of `b`.
     /// * Panics if the number of rows of `a` does not match the size of `s`.
-    /// * Panics if `s` is not square.
+    /// * Panics if `s` is not square and symmetric.
     /// * Panics if any of the values in `a`, `b`, or `s` are not finite.
     ///
     /// # Returns
@@ -69,6 +69,7 @@ impl GaussCPDP {
             s.iter().all(|&x| x.is_finite()),
             "Covariance matrix must have finite values."
         );
+        assert_eq!(s, s.t(), "Covariance matrix must be symmetric.");
 
         Self { a, b, s }
     }
@@ -527,7 +528,13 @@ impl CPD for GaussCPD {
 
     #[inline]
     fn parameters_size(&self) -> usize {
-        self.parameters.a.len() + self.parameters.b.len() + self.parameters.s.len()
+        let s = {
+            // Covariance matrix is symmetric.
+            let s = self.parameters.s.nrows();
+            s * (s + 1) / 2
+        };
+
+        self.parameters.a.len() + self.parameters.b.len() + s
     }
 
     #[inline]
