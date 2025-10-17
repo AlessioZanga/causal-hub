@@ -45,6 +45,29 @@ mod tests {
     }
 
     #[test]
+    fn normalize() {
+        // Set the labels.
+        let x = labels!("A");
+        let z = labels!("B", "C");
+        // Set the parameters.
+        let a = array![[3., -1.]];
+        let b = array![2.];
+        let s = array![[4.]];
+        let p = GaussCPDP::new(a, b, s);
+        // Initialize the CPD.
+        let cpd = GaussCPD::new(x, z, p);
+
+        // Convert to potential.
+        let true_phi = GaussPhi::from_cpd(cpd);
+
+        // Normalize the potential.
+        let pred_phi = true_phi.normalize();
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
+    }
+
+    #[test]
     fn multiply() {
         // Set the labels.
         let l_1 = labels!("A", "B");

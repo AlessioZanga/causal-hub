@@ -408,7 +408,7 @@ impl Phi for GaussPhi {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
             let g = f64::powi(2. * PI, s_xx.nrows().try_into().unwrap());
             let g = g * s_xx.det().expect("Failed to compute the determinant.");
-            self.parameters.g + 0.5 * (f64::ln(g) + h_x.dot(&s_xx).dot(&h_x))
+            self.parameters.g + 0.5 * (h_x.dot(&s_xx).dot(&h_x) + f64::ln(g))
         };
 
         // Assemble the parameters.
@@ -418,8 +418,10 @@ impl Phi for GaussPhi {
         Self::new(labels_z, parameters)
     }
 
+    #[inline]
     fn normalize(&self) -> Self {
-        todo!() // FIXME:
+        // The potential is already normalized.
+        self.clone()
     }
 
     fn from_cpd(cpd: Self::CPD) -> Self {
