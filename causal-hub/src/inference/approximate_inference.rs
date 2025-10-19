@@ -128,13 +128,14 @@ impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
         // Get the sample size or compute it if not provided.
         self.sample_size.unwrap_or_else(|| {
-            // Get the shape of the variables X.
-            let x_shape: usize = x.iter().map(|&i| self.model.shape()[i]).product();
-            // Get the shape of the variables Z.
-            let z_shape: usize = z.iter().map(|&i| self.model.shape()[i]).product();
+            // Get the shape of the variables X and Z.
+            let (x_shape, z_shape): (usize, usize) = (
+                x.iter().map(|&i| self.model.shape()[i]).product(),
+                z.iter().map(|&i| self.model.shape()[i]).product(),
+            );
             // Return the sample size as PAC-like bounds:
-            //  (|Z| * (|X| - 1) * ln(1 / delta) / epsilon^2), or approximately
-            //  (|Z| * (|X| - 1) * 1200 for delta = 0.05 and epsilon = 0.05.
+            //  (|Z| * (|X| - 1)) * ln(1 / delta) / epsilon^2, or approximately
+            //  (|Z| * (|X| - 1)) * 1200 for delta = 0.05 and epsilon = 0.05.
             z_shape * (x_shape - 1) * 1200
         })
     }
@@ -142,8 +143,17 @@ impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
 
 impl<'a, R, E> ApproximateInference<'a, R, GaussBN, E> {
     #[inline]
-    fn sample_size(&self, _x: &Set<usize>, _z: &Set<usize>) -> usize {
-        todo!() // FIXME:
+    fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
+        // Get the sample size or compute it if not provided.
+        self.sample_size.unwrap_or_else(|| {
+            // Get the shape of the variables X and Z.
+            let (x_shape, z_shape) = (x.len(), z.len());
+            // Return the sample size as PAC-like bounds:
+            //  (|X| * |Z| + (|X| * (|X| + 1)) / 2) * ln(1 / delta) / epsilon^2, or approximately
+            //  (|X| * |Z| + (|X| * (|X| + 1)) / 2) * 1200, for delta = 0.05 and epsilon = 0.05.
+            //  |X| * (|Z| + (|X| + 1) / 2) * 1200, for delta = 0.05 and epsilon = 0.05.
+            x_shape * (z_shape + x_shape.div_ceil(2)) * 1200
+        })
     }
 }
 
