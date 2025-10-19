@@ -3,6 +3,7 @@ use std::ops::{Add, AddAssign};
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
 use ndarray::prelude::*;
+use rand::Rng;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -10,6 +11,7 @@ use serde::{
 };
 
 use crate::{
+    datasets::CatSample,
     impl_json_io,
     models::{CPD, Labelled},
     types::{EPSILON, Labels, Set, States},
@@ -742,6 +744,7 @@ impl Labelled for CatCIM {
 }
 
 impl CPD for CatCIM {
+    type Support = CatSample;
     type Parameters = Array3<f64>;
     type Statistics = CatCIMS;
 
@@ -768,6 +771,14 @@ impl CPD for CatCIM {
     #[inline]
     fn sample_log_likelihood(&self) -> Option<f64> {
         self.sample_log_likelihood
+    }
+
+    fn pf(&self, _x: &Self::Support, _z: &Self::Support) -> f64 {
+        todo!() // FIXME:
+    }
+
+    fn sample<R: Rng>(&self, _rng: &mut R, _z: &Self::Support) -> Self::Support {
+        todo!() // FIXME:
     }
 }
 

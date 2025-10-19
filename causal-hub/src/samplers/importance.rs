@@ -12,7 +12,8 @@ use rayon::prelude::*;
 use crate::{
     datasets::{
         CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatType, CatWtdSample,
-        CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussEv, GaussWtdSample, GaussWtdTable,
+        CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussEv, GaussEvT, GaussTable, GaussType,
+        GaussWtdSample, GaussWtdTable,
     },
     models::{BN, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
@@ -137,7 +138,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         );
 
         // Allocate the sample.
-        let mut sample = Array::zeros(self.model.cpds().len());
+        let mut sample = Array::zeros(self.model.labels().len());
         // Initialize the weight.
         let mut weight = 1.;
 
@@ -152,7 +153,6 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
-            // NOTE: Labels and states are sorted (i.e. aligned).
             let pa_i = self.model.graph().parents(&set![i]);
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
             let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
@@ -214,7 +214,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
 
     fn sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples = Array2::zeros((n, self.model.cpds().len()));
+        let mut samples = Array2::zeros((n, self.model.labels().len()));
         // Allocate the weights.
         let mut weights = Array1::zeros(n);
 
@@ -245,11 +245,80 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
     type Samples = GaussWtdTable;
 
     fn sample(&self) -> Self::Sample {
-        todo!() // FIXME:
-    }
+        // Get shortened variable type.
+        use GaussEvT as E;
 
-    fn sample_n(&self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+        // Allocate the sample.
+        let mut sample = Array::zeros(self.model.labels().len());
+        // Initialize the weight.
+        let mut weight = 1.;
+
+        // For each vertex in the topological order ...
+        self.model.topological_order().iter().for_each(|&i| {
+            // Get the evidence of the vertex.
+            let e_i = &self.evidence.evidences()[i];
+
+            // Get the CPD.
+            let cpd_i = &self.model.cpds()[i];
+            // Compute the index on the parents to condition on.
+            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
+
+            // Get the evidence of the vertex.
+            let (s_i, w_i) = match e_i {
+                // If there is evidence, sample from the constrained distribution.
+                Some(e_i) => match e_i {
+                    E::CertainPositive { value, .. } => {
+                        // Get the state.
+                        let s_i = *value;
+                        // Get the probability.
+                        let p_i = cpd_i.pf(&array![s_i], &pa_i);
+                        // Return the state and its weight.
+                        (s_i, p_i)
+                    }
+                },
+                // If there is no evidence, sample as usual.
+                None => {
+                    // Sample from the distribution.
+                    let s_i = cpd_i.sample(&mut self.rng.borrow_mut(), &pa_i)[0];
+                    // Return the sample and weight.
+                    (s_i, 1.)
+                }
+            };
+
+            // Sample from the distribution.
+            sample[i] = s_i;
+            // Update the weight.
+            weight *= w_i;
+        });
+
+        (sample, weight)
+    }
+    fn sample_n(&self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples = Array2::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights = Array1::zeros(n);
+
+        // Sample the weighted samples.
+        samples
+            .rows_mut()
+            .into_iter()
+            .zip(weights.iter_mut())
+            .for_each(|(mut sample, weight)| {
+                // Sample a weighted sample.
+                let (s_i, w_i) = self.sample();
+                // Assign the sample.
+                sample.assign(&s_i);
+                // Assign the weight.
+                *weight = w_i;
+            });
+
+        // Construct the samples.
+        let samples = GaussTable::new(self.model.labels().clone(), samples);
+
+        // Return the weighted samples.
+        GaussWtdTable::new(samples, weights)
     }
 }
 
@@ -258,7 +327,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 
     fn par_sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples: Array2<CatType> = Array::zeros((n, self.model.cpds().len()));
+        let mut samples: Array2<CatType> = Array::zeros((n, self.model.labels().len()));
         // Allocate the weights.
         let mut weights: Array1<f64> = Array::zeros(n);
 
@@ -293,8 +362,37 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
     type Samples = GaussWtdTable;
 
-    fn par_sample_n(&self, _n: usize) -> Self::Samples {
-        todo!() // FIXME:
+    fn par_sample_n(&self, n: usize) -> Self::Samples {
+        // Allocate the samples.
+        let mut samples: Array2<GaussType> = Array::zeros((n, self.model.labels().len()));
+        // Allocate the weights.
+        let mut weights: Array1<f64> = Array::zeros(n);
+
+        // Generate a random seed for each trajectory.
+        let seeds: Vec<_> = self.rng.borrow_mut().random_iter().take(n).collect();
+        // Sample the trajectories in parallel.
+        seeds
+            .into_par_iter()
+            .zip(samples.axis_iter_mut(Axis(0)))
+            .zip(weights.axis_iter_mut(Axis(0)))
+            .for_each(|((seed, mut sample), mut weight)| {
+                // Create a new RNG with the seed.
+                let mut rng = R::seed_from_u64(seed);
+                // Create a new sampler with the RNG.
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                // Sample a weighted sample.
+                let (s_i, w_i) = sampler.sample();
+                // Assign the sample.
+                sample.assign(&s_i);
+                // Assign the weight.
+                weight.fill(w_i);
+            });
+
+        // Construct the samples.
+        let samples = GaussTable::new(self.model.labels().clone(), samples);
+
+        // Return the weighted samples.
+        GaussWtdTable::new(samples, weights)
     }
 }
 

@@ -52,7 +52,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
 
     fn sample(&self) -> Self::Sample {
         // Allocate the sample.
-        let mut sample = Array::zeros(self.model.cpds().len());
+        let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
@@ -76,7 +76,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
 
     fn sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the dataset.
-        let mut dataset = Array::zeros((n, self.model.cpds().len()));
+        let mut dataset = Array::zeros((n, self.model.labels().len()));
 
         // For each sample ...
         dataset.rows_mut().into_iter().for_each(|mut row| {
@@ -97,7 +97,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
         let seeds: Vec<_> = self.rng.borrow_mut().random_iter().take(n).collect();
 
         // Allocate the samples.
-        let mut samples = Array::zeros((n, self.model.cpds().len()));
+        let mut samples = Array::zeros((n, self.model.labels().len()));
 
         // Sample the samples in parallel.
         seeds
@@ -123,7 +123,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
 
     fn sample(&self) -> Self::Sample {
         // Allocate the sample.
-        let mut sample = Array::zeros(self.model.cpds().len());
+        let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
@@ -148,7 +148,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
 
     fn sample_n(&self, n: usize) -> Self::Samples {
         // Allocate the samples.
-        let mut samples = Array::zeros((n, self.model.cpds().len()));
+        let mut samples = Array::zeros((n, self.model.labels().len()));
 
         // For each sample ...
         samples.rows_mut().into_iter().for_each(|mut row| {
@@ -169,7 +169,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
         let seeds: Vec<_> = self.rng.borrow_mut().random_iter().take(n).collect();
 
         // Allocate the samples.
-        let mut samples = Array::zeros((n, self.model.cpds().len()));
+        let mut samples = Array::zeros((n, self.model.labels().len()));
 
         // Sample the samples in parallel.
         seeds

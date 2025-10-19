@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// A type representing the evidence type for categorical trajectories.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum CatTrjEvT {
     /// Certain positive interval evidence.

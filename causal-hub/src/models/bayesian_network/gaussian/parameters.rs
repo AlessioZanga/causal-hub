@@ -1,5 +1,6 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
+use rand::Rng;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -7,6 +8,7 @@ use serde::{
 };
 
 use crate::{
+    datasets::GaussSample,
     impl_json_io,
     models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
     types::{Labels, Set},
@@ -549,6 +551,7 @@ impl RelativeEq for GaussCPD {
 }
 
 impl CPD for GaussCPD {
+    type Support = GaussSample;
     type Parameters = GaussCPDP;
     type Statistics = GaussCPDS;
 
@@ -581,6 +584,14 @@ impl CPD for GaussCPD {
     #[inline]
     fn sample_log_likelihood(&self) -> Option<f64> {
         self.sample_log_likelihood
+    }
+
+    fn pf(&self, _x: &Self::Support, _z: &Self::Support) -> f64 {
+        todo!() // FIXME:
+    }
+
+    fn sample<R: Rng>(&self, _rng: &mut R, _z: &Self::Support) -> Self::Support {
+        todo!() // FIXME:
     }
 }
 

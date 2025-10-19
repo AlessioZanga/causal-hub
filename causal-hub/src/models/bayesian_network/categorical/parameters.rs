@@ -6,6 +6,8 @@ use std::{
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
 use ndarray::prelude::*;
+use rand::Rng;
+use rand_distr::{Distribution, weighted::WeightedIndex};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -13,6 +15,7 @@ use serde::{
 };
 
 use crate::{
+    datasets::{CatSample, CatType},
     impl_json_io,
     models::{CPD, CatPhi, Labelled, Phi},
     types::{EPSILON, Labels, Set, States},
@@ -688,6 +691,7 @@ impl RelativeEq for CatCPD {
 }
 
 impl CPD for CatCPD {
+    type Support = CatSample;
     type Parameters = Array2<f64>;
     type Statistics = CatCPDS;
 
@@ -714,6 +718,36 @@ impl CPD for CatCPD {
     #[inline]
     fn sample_log_likelihood(&self) -> Option<f64> {
         self.sample_log_likelihood
+    }
+
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Convert states to indices.
+        let x = x.iter().map(|&x| x as usize);
+        // Ravel the variables.
+        let x = self.multi_index.ravel(x);
+        // Convert conditioning states to indices.
+        let z = z.iter().map(|&z| z as usize);
+        // Ravel the conditioning variables.
+        let z = self.conditioning_multi_index.ravel(z);
+        // Get the probability.
+        self.parameters[[z, x]]
+    }
+
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Convert conditioning states to indices.
+        let z = z.iter().map(|&z| z as usize);
+        // Ravel the conditioning variables.
+        let z = self.conditioning_multi_index.ravel(z);
+        // Get the distribution of the vertex.
+        let p = self.parameters.row(z);
+        // Construct the sampler.
+        let s = WeightedIndex::new(&p).unwrap();
+        // Sample from the distribution.
+        let x = s.sample(rng);
+        // Unravel the sample.
+        let x = self.multi_index.unravel(x);
+        // Convert to CatType.
+        x.iter().map(|&x| x as CatType).collect()
     }
 }
 

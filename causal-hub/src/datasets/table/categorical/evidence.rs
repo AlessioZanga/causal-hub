@@ -9,6 +9,7 @@ use crate::{
 };
 
 /// Categorical evidence type.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum CatEvT {
     /// Certain positive evidence.
