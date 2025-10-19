@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{Dataset, GaussTable},
+    datasets::{Dataset, GaussTable, GaussWtdTable},
     estimation::{CSSEstimator, ParCSSEstimator, SSE},
     models::GaussCPDS,
     types::{AXIS_CHUNK_LENGTH, Set},
@@ -103,5 +103,17 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
             // Aggregate the sufficient statistics.
             .fold(|| s_xz.clone(), |a, b| a + b)
             .reduce(|| s_xz.clone(), |a, b| a + b)
+    }
+}
+
+impl CSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
+    fn fit(&self, _x: &Set<usize>, _z: &Set<usize>) -> GaussCPDS {
+        todo!() // FIXME:
+    }
+}
+
+impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
+    fn par_fit(&self, _x: &Set<usize>, _z: &Set<usize>) -> GaussCPDS {
+        todo!() // FIXME:
     }
 }

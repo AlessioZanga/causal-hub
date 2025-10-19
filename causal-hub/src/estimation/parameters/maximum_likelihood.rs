@@ -5,7 +5,9 @@ use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
 
 use crate::{
-    datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable},
+    datasets::{
+        CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable, GaussWtdTable,
+    },
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
     types::{Labels, Set, States},
@@ -99,7 +101,7 @@ impl MLE<'_, CatTable> {
     }
 }
 
-// Implement the CPD estimator for the MLE struct.
+// Implement the CatCPD estimator for the MLE struct.
 macro_for!($type in [CatTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for MLE<'_, $type> {
@@ -194,27 +196,32 @@ impl MLE<'_, GaussTable> {
     }
 }
 
-impl CPDEstimator<GaussCPD> for MLE<'_, GaussTable> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
-        // Get labels.
-        let labels = self.dataset.labels();
-        // Compute sufficient statistics in parallel.
-        let sample_statistics = SSE::new(self.dataset).fit(x, z);
-        // Fit the CPD given the sufficient statistics.
-        MLE::<'_, GaussTable>::fit(labels, x, z, sample_statistics)
-    }
-}
+// Implement the GaussCPD estimator for the MLE struct.
+macro_for!($type in [GaussTable, GaussWtdTable] {
 
-impl ParCPDEstimator<GaussCPD> for MLE<'_, GaussTable> {
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
-        // Get labels.
-        let labels = self.dataset.labels();
-        // Compute sufficient statistics in parallel.
-        let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
-        // Fit the CPD given the sufficient statistics.
-        MLE::<'_, GaussTable>::fit(labels, x, z, sample_statistics)
+    impl CPDEstimator<GaussCPD> for MLE<'_, $type> {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+            // Get labels.
+            let labels = self.dataset.labels();
+            // Compute sufficient statistics.
+            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            // Fit the CPD given the sufficient statistics.
+            MLE::<'_, GaussTable>::fit(labels, x, z, sample_statistics)
+        }
     }
-}
+
+    impl ParCPDEstimator<GaussCPD> for MLE<'_, $type> {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+            // Get labels.
+            let labels = self.dataset.labels();
+            // Compute sufficient statistics in parallel.
+            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
+            // Fit the CPD given the sufficient statistics.
+            MLE::<'_, GaussTable>::fit(labels, x, z, sample_statistics)
+        }
+    }
+
+});
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
@@ -316,7 +323,7 @@ impl MLE<'_, CatTrj> {
     }
 }
 
-// Implement the CIM estimator for the MLE struct.
+// Implement the CatCIM estimator for the MLE struct.
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CPDEstimator<CatCIM> for MLE<'_, $type> {

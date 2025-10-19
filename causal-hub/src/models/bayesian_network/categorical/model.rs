@@ -7,7 +7,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatSample, CatTable},
+    datasets::{CatEv, CatSample, CatTable},
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
@@ -130,6 +130,7 @@ impl Labelled for CatBN {
 
 impl BN for CatBN {
     type CPD = CatCPD;
+    type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
 

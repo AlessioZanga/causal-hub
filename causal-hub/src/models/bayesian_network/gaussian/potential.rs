@@ -9,6 +9,7 @@ use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
 
 use crate::{
+    datasets::GaussEv,
     models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
     types::{Labels, Set},
     utils::PseudoInverse,
@@ -321,7 +322,7 @@ impl Div<&GaussPhi> for &GaussPhi {
 impl Phi for GaussPhi {
     type CPD = GaussCPD;
     type Parameters = GaussPhiK;
-    type Evidence = (); // FIXME:
+    type Evidence = GaussEv;
 
     #[inline]
     fn parameters(&self) -> &Self::Parameters {

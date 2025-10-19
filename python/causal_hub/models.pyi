@@ -1270,6 +1270,48 @@ class GaussBN:
         GaussTable
             A new dataset containing the samples.
         """
+    def estimate(self, x:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
+        r"""
+        Estimate a conditional probability distribution (CPD).
+        
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            A variable or an iterable of variables.
+        z: str | Iterable[str]
+            A conditioning variable or an iterable of conditioning variables.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel estimation (default is `true`).
+        
+        Returns
+        -------
+        GaussCPD
+            A new conditional probability distribution.
+        """
+    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> typing.Optional[GaussCPD]:
+        r"""
+        Estimate a conditional causal effect (CACE).
+        
+        Parameters
+        ----------
+        x: str | Iterable[str]
+            An intervention variable or an iterable of intervention variables.
+        y: str | Iterable[str]
+            An outcome variable or an iterable of outcome variables.
+        z: str | Iterable[str]
+            A conditioning variable or an iterable of conditioning variables.
+        seed: int
+            The seed of the random number generator (default is `31`).
+        parallel: bool
+            The flag to enable parallel estimation (default is `true`).
+        
+        Returns
+        -------
+        GaussCPD | None
+            A new conditional causal effect (CACE) distribution, if identifiable.
+        """
     @classmethod
     def from_json(cls, json:builtins.str) -> GaussBN:
         r"""

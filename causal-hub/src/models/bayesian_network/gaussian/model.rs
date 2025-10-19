@@ -6,7 +6,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{GaussSample, GaussTable},
+    datasets::{GaussEv, GaussSample, GaussTable},
     impl_json_io,
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
@@ -94,6 +94,7 @@ impl Labelled for GaussBN {
 
 impl BN for GaussBN {
     type CPD = GaussCPD;
+    type Evidence = GaussEv;
     type Sample = GaussSample;
     type Samples = GaussTable;
 

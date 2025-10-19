@@ -4,7 +4,6 @@ use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
     models::{DiGraph, Graph, Labelled},
-    set,
     types::Labels,
 };
 use numpy::prelude::*;

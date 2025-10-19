@@ -6,6 +6,10 @@ use std::{
 use backend::{
     datasets::GaussTable,
     estimation::MLE,
+    inference::{
+        ApproximateInference, BNCausalInference, BNInference, CausalInference,
+        ParBNCausalInference, ParBNInference,
+    },
     io::JsonIO,
     models::{BN, DiGraph, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
@@ -18,7 +22,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::PyGaussTable,
     estimation::PyBNEstimator,
-    impl_from_into_lock,
+    impl_from_into_lock, indices_from,
     models::{PyDiGraph, PyGaussCPD},
 };
 
@@ -250,6 +254,106 @@ impl PyGaussBN {
         };
         // Return the dataset.
         Ok(dataset.into())
+    }
+
+    /// Estimate a conditional probability distribution (CPD).
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     A variable or an iterable of variables.
+    /// z: str | Iterable[str]
+    ///     A conditioning variable or an iterable of conditioning variables.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel estimation (default is `true`).
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD
+    ///     A new conditional probability distribution.
+    ///
+    #[pyo3(signature = (x, z, seed=31, parallel=true))]
+    pub fn estimate(
+        &self,
+        py: Python<'_>,
+        x: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<PyGaussCPD> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Get the set of variables.
+        let x = indices_from!(x, lock)?;
+        let z = indices_from!(z, lock)?;
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Initialize the inference engine.
+        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        // Estimate from the model.
+        let estimate = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || estimator.par_estimate(&x, &z))
+        } else {
+            // Execute sequentially.
+            estimator.estimate(&x, &z)
+        };
+        // Return the dataset.
+        Ok(estimate.into())
+    }
+
+    /// Estimate a conditional causal effect (CACE).
+    ///
+    /// Parameters
+    /// ----------
+    /// x: str | Iterable[str]
+    ///     An intervention variable or an iterable of intervention variables.
+    /// y: str | Iterable[str]
+    ///     An outcome variable or an iterable of outcome variables.
+    /// z: str | Iterable[str]
+    ///     A conditioning variable or an iterable of conditioning variables.
+    /// seed: int
+    ///     The seed of the random number generator (default is `31`).
+    /// parallel: bool
+    ///     The flag to enable parallel estimation (default is `true`).
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD | None
+    ///     A new conditional causal effect (CACE) distribution, if identifiable.
+    ///
+    #[pyo3(signature = (x, y, z, seed=31, parallel=true))]
+    pub fn do_estimate(
+        &self,
+        py: Python<'_>,
+        x: &Bound<'_, PyAny>,
+        y: &Bound<'_, PyAny>,
+        z: &Bound<'_, PyAny>,
+        seed: u64,
+        parallel: bool,
+    ) -> PyResult<Option<PyGaussCPD>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
+        // Get the set of variables.
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Initialize the inference engine.
+        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        // Estimate from the model.
+        let estimate = if parallel {
+            // Release the GIL to allow parallel execution.
+            py.detach(move || CausalInference::new(&estimator).par_cace_estimate(&x, &y, &z))
+        } else {
+            // Execute sequentially.
+            CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
+        };
+        // Return the dataset.
+        Ok(estimate.map(|e| e.into()))
     }
 
     /// Read instance from a JSON string.

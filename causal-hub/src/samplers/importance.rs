@@ -12,9 +12,9 @@ use rayon::prelude::*;
 use crate::{
     datasets::{
         CatEv, CatEvT, CatSample, CatTable, CatTrj, CatTrjEv, CatTrjEvT, CatType, CatWtdSample,
-        CatWtdTable, CatWtdTrj, CatWtdTrjs,
+        CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussEv, GaussWtdSample, GaussWtdTable,
     },
-    models::{BN, CPD, CTBN, CatBN, CatCTBN, Labelled},
+    models::{BN, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
     types::{EPSILON, Set},
@@ -236,6 +236,19 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
     }
 }
 
+impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
+    type Sample = GaussWtdSample;
+    type Samples = GaussWtdTable;
+
+    fn sample(&self) -> Self::Sample {
+        todo!() // FIXME:
+    }
+
+    fn sample_n(&self, _n: usize) -> Self::Samples {
+        todo!() // FIXME:
+    }
+}
+
 impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
     type Samples = CatWtdTable;
 
@@ -270,6 +283,14 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
+    }
+}
+
+impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
+    type Samples = GaussWtdTable;
+
+    fn par_sample_n(&self, _n: usize) -> Self::Samples {
+        todo!() // FIXME:
     }
 }
 

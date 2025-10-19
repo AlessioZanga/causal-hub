@@ -13,7 +13,6 @@ use backend::{
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
-    set,
 };
 use pyo3::{
     exceptions::PyValueError,
