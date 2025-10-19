@@ -1,7 +1,4 @@
-use std::{
-    f64::consts::PI,
-    ops::{Div, DivAssign, Mul, MulAssign},
-};
+use std::ops::{Div, DivAssign, Mul, MulAssign};
 
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
@@ -11,7 +8,7 @@ use ndarray_linalg::Determinant;
 use crate::{
     datasets::GaussEv,
     models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
-    types::{Labels, Set},
+    types::{LN_2_PI, Labels, Set},
     utils::PseudoInverse,
 };
 
@@ -407,9 +404,9 @@ impl Phi for GaussPhi {
         // Compute the marginalized log-normalization constant.
         let g = {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
-            let g = f64::powi(2. * PI, s_xx.nrows().try_into().unwrap());
-            let g = g * s_xx.det().expect("Failed to compute the determinant.");
-            self.parameters.g + 0.5 * (h_x.dot(&s_xx).dot(&h_x) + f64::ln(g))
+            let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
+            let (_, ln_det) = s_xx.sln_det().expect("Failed to compute the determinant.");
+            self.parameters.g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
         };
 
         // Assemble the parameters.
@@ -475,9 +472,9 @@ impl Phi for GaussPhi {
         };
 
         // Compute the log-normalization constant.
-        let g = f64::powi(2. * PI, s.nrows() as i32);
-        let g = g * s.det().expect("Failed to compute the determinant.");
-        let g = -0.5 * (b.dot(&h_x) + f64::ln(g));
+        let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
+        let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
+        let g = -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x));
 
         // Construct the parameters.
         let parameters = GaussPhiK::new(k, h, g);

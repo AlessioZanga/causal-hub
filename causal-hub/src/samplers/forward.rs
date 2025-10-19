@@ -7,7 +7,7 @@ use rand::{
     Rng, SeedableRng,
     distr::{Distribution, weighted::WeightedIndex},
 };
-use rand_distr::{Exp, Normal};
+use rand_distr::Exp;
 use rayon::prelude::*;
 
 use crate::{
@@ -128,19 +128,12 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
         // For each vertex in the topological order ...
         self.model.topological_order().iter().for_each(|&i| {
             // Get the CPD.
-            let cpd_i = &self.model.cpds()[i].parameters();
-            // Get the parameters.
-            let a = cpd_i.coefficients().row(0);
-            let b = cpd_i.intercept()[0];
-            let s = cpd_i.covariance()[[0, 0]].sqrt();
+            let cpd_i = &self.model.cpds()[i];
             // Get the parents.
             let pa_i = self.model.graph().parents(&set![i]);
-            let z = Array::from_iter(pa_i.iter().map(|&z| sample[z]));
-            // Sample from the normal distribution.
-            let normal = Normal::new(b, s).unwrap();
-            let e = normal.sample(&mut self.rng.borrow_mut());
+            let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Compute the value of the variable.
-            sample[i] = a.dot(&z) + e;
+            sample[i] = cpd_i.sample(&mut self.rng.borrow_mut(), &pa_i)[0];
         });
 
         sample

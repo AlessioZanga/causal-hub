@@ -1,5 +1,3 @@
-use std::f64::consts::PI;
-
 use dry::macro_for;
 use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
@@ -10,7 +8,7 @@ use crate::{
     },
     estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{Labels, Set, States},
+    types::{LN_2_PI, Labels, Set, States},
     utils::PseudoInverse,
 };
 
@@ -168,9 +166,8 @@ impl MLE<'_, GaussTable> {
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
-        let log_2_pi = f64::ln(2. * PI);
-        let ln_det_s = f64::ln(s.det().expect("Failed to compute determinant of S."));
-        let sample_log_likelihood = -0.5 * n * (p * log_2_pi + ln_det_s + p);
+        let (_, ln_det) = s.sln_det().expect("Failed to compute determinant of S.");
+        let sample_log_likelihood = -0.5 * n * (p * LN_2_PI + ln_det + p);
 
         // Construct the CPD parameters.
         let parameters = GaussCPDP::new(a, b, s);

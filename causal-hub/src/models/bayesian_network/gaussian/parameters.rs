@@ -1,6 +1,8 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
+use ndarray_linalg::{CholeskyInto, Determinant, UPLO};
 use rand::Rng;
+use rand_distr::{Distribution, StandardNormal};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -11,7 +13,8 @@ use crate::{
     datasets::GaussSample,
     impl_json_io,
     models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
-    types::{Labels, Set},
+    types::{EPSILON, LN_2_PI, Labels, Set},
+    utils::PseudoInverse,
 };
 
 /// Parameters of a Gaussian CPD.
@@ -586,12 +589,45 @@ impl CPD for GaussCPD {
         self.sample_log_likelihood
     }
 
-    fn pf(&self, _x: &Self::Support, _z: &Self::Support) -> f64 {
-        todo!() // FIXME:
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Get parameters.
+        let (a, b, s) = (
+            self.parameters.coefficients(),
+            self.parameters.intercept(),
+            self.parameters.covariance(),
+        );
+        // Compute mean vector.
+        let mu = a.dot(z) + b;
+        // Compute deviation from mean.
+        let x_mu = x - mu;
+        // Compute precision matrix.
+        let k = s.pinv();
+        // Compute log probability density function.
+        let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
+        let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
+        let ln_pf = -0.5 * (n_ln_2_pi + ln_det + x_mu.dot(&k).dot(&x_mu));
+        // Return probability density function.
+        f64::exp(ln_pf)
     }
 
-    fn sample<R: Rng>(&self, _rng: &mut R, _z: &Self::Support) -> Self::Support {
-        todo!() // FIXME:
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Get parameters.
+        let (a, b, s) = (
+            self.parameters.coefficients(),
+            self.parameters.intercept(),
+            self.parameters.covariance(),
+        );
+        // Sample standard normal variables.
+        let e = StandardNormal
+            .sample_iter(rng)
+            .take(s.nrows())
+            .collect::<Array1<_>>();
+        // Compute the Cholesky decomposition of the covariance matrix.
+        let l = (s + EPSILON * Array::eye(s.nrows()))
+            .cholesky_into(UPLO::Lower)
+            .expect("Failed to compute Cholesky decomposition.");
+        // Compute the sample.
+        a.dot(z) + b + l.dot(&e)
     }
 }
 
