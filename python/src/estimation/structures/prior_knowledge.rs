@@ -19,7 +19,7 @@ impl_from_into_lock!(PyPK, PK);
 
 impl PartialEq for PyPK {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

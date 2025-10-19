@@ -6,7 +6,7 @@ use backend::{
     estimation::{
         BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, EMOutput, FTest, PK, ParCTBNEstimator, RAWE,
     },
-    models::{CTBN, CatCTBN, DiGraph, Graph},
+    models::{CTBN, CatCTBN, DiGraph, Graph, Labelled},
     samplers::{ImportanceSampler, ParCTBNSampler},
     set,
     types::Cache,

@@ -28,7 +28,11 @@ pub struct ImportanceSampler<'a, R, M, E> {
     evidence: &'a E,
 }
 
-impl<'a, R, M, E> ImportanceSampler<'a, R, M, E> {
+impl<'a, R, M, E> ImportanceSampler<'a, R, M, E>
+where
+    M: Labelled,
+    E: Labelled,
+{
     /// Construct a new importance sampler.
     ///
     /// # Arguments
@@ -42,9 +46,16 @@ impl<'a, R, M, E> ImportanceSampler<'a, R, M, E> {
     /// Return a new `ImportanceSampler` instance.
     ///
     #[inline]
-    pub const fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Self {
+    pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Self {
         // Wrap the RNG in a RefCell to allow interior mutability.
         let rng = RefCell::new(rng);
+
+        // Assert the model and the evidences have the same labels.
+        assert_eq!(
+            model.labels(),
+            evidence.labels(),
+            "The model and the evidences must have the same variables."
+        );
 
         Self {
             rng,
@@ -117,13 +128,6 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         // Get shortened variable type.
         use CatEvT as E;
 
-        // Assert the model and the evidences have the same labels.
-        // TODO: Move this assertion to the constructor.
-        assert_eq!(
-            self.model.labels(),
-            self.evidence.labels(),
-            "The model and the evidences must have the same variables."
-        );
         // Assert the model and the evidences have the same states.
         // TODO: Move this assertion to the constructor.
         assert_eq!(
@@ -542,13 +546,6 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Get shortened variable type.
         use CatTrjEvT as E;
 
-        // Assert the model and the evidences have the same labels.
-        // TODO: Move this assertion to the constructor.
-        assert_eq!(
-            self.model.labels(),
-            self.evidence.labels(),
-            "The model and the evidences must have the same variables."
-        );
         // Assert the model and the evidences have the same states.
         // TODO: Move this assertion to the constructor.
         assert_eq!(

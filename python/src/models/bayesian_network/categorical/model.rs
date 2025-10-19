@@ -43,7 +43,7 @@ impl_from_into_lock!(PyCatBN, CatBN);
 
 impl PartialEq for PyCatBN {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

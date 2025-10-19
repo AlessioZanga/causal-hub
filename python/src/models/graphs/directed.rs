@@ -28,7 +28,7 @@ impl_from_into_lock!(PyDiGraph, DiGraph);
 
 impl PartialEq for PyDiGraph {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

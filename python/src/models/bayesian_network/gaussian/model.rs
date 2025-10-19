@@ -39,7 +39,7 @@ impl_from_into_lock!(PyGaussBN, GaussBN);
 
 impl PartialEq for PyGaussBN {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

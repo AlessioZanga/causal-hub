@@ -4,6 +4,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::CatEv,
+    models::Labelled,
     types::{EPSILON, Labels, Set, States},
     utils::sort_states,
 };
@@ -125,6 +126,13 @@ pub struct CatTrjEv {
     states: States,
     shape: Array1<usize>,
     evidences: Vec<Vec<CatTrjEvT>>,
+}
+
+impl Labelled for CatTrjEv {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
 }
 
 impl CatTrjEv {
@@ -483,17 +491,6 @@ impl CatTrjEv {
         }
     }
 
-    /// Returns the labels of the trajectory evidence.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the trajectory evidence.
-    ///
-    #[inline]
-    pub fn labels(&self) -> &Labels {
-        &self.labels
-    }
-
     /// Returns the states of the trajectory evidence.
     ///
     /// # Returns
@@ -561,6 +558,13 @@ pub struct CatTrjsEv {
     evidences: Vec<CatTrjEv>,
 }
 
+impl Labelled for CatTrjsEv {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 impl CatTrjsEv {
     /// Constructs a new collection of trajectories evidence.
     ///
@@ -621,17 +625,6 @@ impl CatTrjsEv {
             shape,
             evidences,
         }
-    }
-
-    /// Returns the labels of the trajectories evidence.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the labels of the trajectories evidence.
-    ///
-    #[inline]
-    pub fn labels(&self) -> &Labels {
-        &self.labels
     }
 
     /// Returns the states of the trajectories evidence.
