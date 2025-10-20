@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Map, States},
+    types::{Labels, Map, Set, States},
 };
 
 /// A categorical continuous time Bayesian network.
@@ -188,7 +188,7 @@ impl CTBN for CatCTBN {
         // Get the labels of the variables.
         let labels: Labels = states.keys().cloned().collect();
         // Get the shape of the variables.
-        let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Assert same number of graph labels and CIMs.
         assert!(

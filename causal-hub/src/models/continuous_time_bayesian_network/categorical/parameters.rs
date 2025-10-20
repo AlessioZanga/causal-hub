@@ -325,7 +325,7 @@ impl CatCIM {
         );
 
         // Get the states shape.
-        let shape: Array1<_> = states.values().map(|x| x.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         assert!(
@@ -348,7 +348,7 @@ impl CatCIM {
         );
 
         // Get the shape of the set of states.
-        let conditioning_shape: Array1<_> = conditioning_states.values().map(|x| x.len()).collect();
+        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         assert!(
@@ -419,7 +419,7 @@ impl CatCIM {
             states.sort_keys();
             states.values_mut().for_each(Set::sort);
             labels = states.keys().cloned().collect();
-            shape = states.values().map(|x| x.len()).collect();
+            shape = states.values().map(Set::len).collect();
             // Allocate new parameters, for axis 1.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -482,7 +482,7 @@ impl CatCIM {
             conditioning_states.sort_keys();
             conditioning_states.values_mut().for_each(Set::sort);
             conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_shape = conditioning_states.values().map(|x| x.len()).collect();
+            conditioning_shape = conditioning_states.values().map(Set::len).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.

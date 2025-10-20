@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
 
 use crate::{
-    datasets::GaussEv,
+    datasets::{GaussEv, GaussEvT},
     models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
     types::{LN_2_PI, Labels, Set},
     utils::PseudoInverse,
@@ -337,8 +337,70 @@ impl Phi for GaussPhi {
         k + self.parameters.h.len() + 1
     }
 
-    fn condition(&self, _e: &Self::Evidence) -> Self {
-        todo!() // FIXME:
+    fn condition(&self, e: &Self::Evidence) -> Self {
+        // Assert that the evidence labels match the potential labels.
+        assert_eq!(
+            e.labels(),
+            self.labels(),
+            "Failed to condition on evidence: \n\
+            \t expected:    evidence labels to match potential labels , \n\
+            \t found:       potential labels = {:?} , \n\
+            \t              evidence  labels = {:?} .",
+            self.labels(),
+            e.labels(),
+        );
+
+        // Get the evidence and remove nones.
+        let e = e.evidences().iter().flatten();
+        // Assert that the evidence is certain and positive.
+        let e = e.cloned().map(|e| match e {
+            GaussEvT::CertainPositive { event, value } => (event, value),
+            /* _ => panic! NOTE: No other variant so far. */
+        });
+
+        // Get X and Y from the evidence.
+        let y: Set<_> = e.clone().map(|(event, _)| event).collect();
+        let x: Set<_> = &Set::from_iter(0..self.labels.len()) - &y;
+
+        // Select the labels of the conditioned potential.
+        let labels: Labels = x.iter().map(|&x| self.labels[x].clone()).collect();
+
+        // Get the values from the evidence.
+        let _y = Array::from_iter(e.map(|(_, value)| value));
+
+        // Get the precision matrix.
+        let k = self.parameters.precision_matrix();
+        // Get the information vector.
+        let h = self.parameters.information_vector();
+        // Get the log-normalization constant.
+        let g = self.parameters.log_normalization_constant();
+
+        // Compute the precision matrix as K_xx from K and X.
+        let k = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
+        // Compute the information vector.
+        let h = {
+            // Get K_xy from K, X and Y.
+            let k_xy = Array::from_shape_fn((x.len(), y.len()), |(i, j)| k[[x[i], y[j]]]);
+            // Get h_x from h and X.
+            let h_x = Array::from_shape_fn(x.len(), |i| h[x[i]]);
+            // Compute h as: h' = h_x - K_xy * y.
+            h_x - k_xy.dot(&_y)
+        };
+        // Compute the log-normalization constant.
+        let g = {
+            // Get K_yy from K and Y.
+            let k_yy = Array::from_shape_fn((y.len(), y.len()), |(i, j)| k[[y[i], y[j]]]);
+            // Get h_y from h and Y.
+            let h_y = Array::from_shape_fn(y.len(), |i| h[y[i]]);
+            // Compute g as: g' = g + h_y^T * y - 0.5 * y^T * K_yy * y.
+            g + h_y.dot(&_y) - 0.5 * _y.dot(&k_yy).dot(&_y)
+        };
+
+        // Assemble the parameters.
+        let parameters = GaussPhiK::new(k, h, g);
+
+        // Return the conditioned potential.
+        Self::new(labels, parameters)
     }
 
     fn marginalize(&self, x: &Set<usize>) -> Self {
@@ -370,6 +432,8 @@ impl Phi for GaussPhi {
         let k = self.parameters.precision_matrix();
         // Get the information vector.
         let h = self.parameters.information_vector();
+        // Get the log-normalization constant.
+        let g = self.parameters.log_normalization_constant();
 
         // Compute the covariance matrix as: S_xx = (K_xx)^(-1).
         let s_xx = {
@@ -406,7 +470,7 @@ impl Phi for GaussPhi {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
             let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
             let (_, ln_det) = s_xx.sln_det().expect("Failed to compute the determinant.");
-            self.parameters.g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
+            g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
         };
 
         // Assemble the parameters.

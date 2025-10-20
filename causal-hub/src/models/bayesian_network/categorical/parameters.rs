@@ -246,7 +246,7 @@ impl CatCPD {
         );
 
         // Get the states shape.
-        let shape: Array1<_> = states.values().map(|x| x.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         assert!(
@@ -259,7 +259,7 @@ impl CatCPD {
         );
 
         // Get the shape of the set of states.
-        let conditioning_shape: Array1<_> = conditioning_states.values().map(|x| x.len()).collect();
+        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         assert!(

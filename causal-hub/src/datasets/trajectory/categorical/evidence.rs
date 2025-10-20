@@ -6,7 +6,6 @@ use crate::{
     datasets::CatEv,
     models::Labelled,
     types::{EPSILON, Labels, Set, States},
-    utils::sort_states,
 };
 
 /// A type representing the evidence type for categorical trajectories.
@@ -149,111 +148,150 @@ impl CatTrjEv {
     ///
     /// A new `CategoricalTrajectoryEvidence` instance.
     ///
-    pub fn new<I>(states: States, values: I) -> Self
+    pub fn new<I>(mut states: States, values: I) -> Self
     where
         I: IntoIterator<Item = CatTrjEvT>,
     {
-        // Get the indices to sort the labels and states labels.
-        let (states, sorted_idx) = sort_states(states);
-
-        // Get the sorted labels.
-        let labels = states.keys().cloned().collect();
-        // Get the shape of the states.
-        let shape = Array::from_iter(states.values().map(|x| x.len()));
-
         // Get shortened variable type.
         use CatTrjEvT as E;
 
+        // Get the sorted labels.
+        let mut labels = states.keys().cloned().collect();
+        // Get the shape of the states.
+        let mut shape = Array::from_iter(states.values().map(Set::len));
         // Allocate evidences.
-        let mut evidences: Vec<Vec<_>> = vec![Vec::new(); states.len()];
+        let mut evidences = vec![vec![]; states.len()];
 
-        // Reverse the indices to get the argsort.
-        let mut argsorted_idx = sorted_idx.clone();
-        sorted_idx
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, (j, states))| {
-                argsorted_idx[j] = (i, states);
-            });
-
-        // Iterate over the values and insert them into the events map using sorted indices.
+        // Fill the evidences.
         values.into_iter().for_each(|e| {
-            // Get the event index, starting time, and ending time.
-            let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
-            // Sort event index.
-            let (event, states) = &argsorted_idx[event];
             // Get the event index.
-            let event = *event;
-
-            // Sort the event states.
-            let e = match e {
-                E::CertainPositiveInterval { state, .. } => {
-                    // Sort the event states.
-                    let state = states[state];
-                    // Construct the sorted evidence.
-                    E::CertainPositiveInterval {
-                        event,
-                        state,
-                        start_time,
-                        end_time,
-                    }
-                }
-                E::CertainNegativeInterval { not_states, .. } => {
-                    // Sort the event states.
-                    let not_states = not_states.iter().map(|state| states[*state]).collect();
-                    // Construct the sorted evidence.
-                    E::CertainNegativeInterval {
-                        event,
-                        not_states,
-                        start_time,
-                        end_time,
-                    }
-                }
-                E::UncertainPositiveInterval { p_states, .. } => {
-                    // Allocate new event states.
-                    let mut new_p_states = Array::zeros(p_states.len());
-                    // Sort the event states.
-                    p_states.indexed_iter().for_each(|(i, &p)| {
-                        new_p_states[states[i]] = p;
-                    });
-                    // Substitute the sorted states.
-                    let p_states = new_p_states;
-                    // Construct the sorted evidence.
-                    E::UncertainPositiveInterval {
-                        event,
-                        p_states,
-                        start_time,
-                        end_time,
-                    }
-                }
-                E::UncertainNegativeInterval { p_not_states, .. } => {
-                    // Allocate new event states.
-                    let mut new_p_not_states = Array::zeros(p_not_states.len());
-                    // Sort the event states.
-                    p_not_states.indexed_iter().for_each(|(i, &p)| {
-                        new_p_not_states[states[i]] = p;
-                    });
-                    // Substitute the sorted states.
-                    let p_not_states = new_p_not_states;
-                    // Construct the sorted evidence.
-                    E::UncertainNegativeInterval {
-                        event,
-                        p_not_states,
-                        start_time,
-                        end_time,
-                    }
-                }
-            };
-
+            let event = e.event();
             // Push the value into the events.
             evidences[event].push(e);
         });
 
+        // Sort states, if necessary.
+        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
+            // Clone the states.
+            let mut new_states = states.clone();
+            // Sort the states.
+            new_states.sort_keys();
+            new_states.values_mut().for_each(Set::sort);
+
+            // Allocate new evidences.
+            let mut new_evidences = vec![vec![]; states.len()];
+
+            // Iterate over the values and insert them into the events map using sorted indices.
+            evidences.into_iter().flatten().for_each(|e| {
+                // Get the event index, starting time, and ending time.
+                let (start_time, end_time) = (e.start_time(), e.end_time());
+                // Get the event and states of the evidence.
+                let (event, states) = states
+                    .get_index(e.event())
+                    .expect("Failed to get label of evidence.");
+                // Sort the event index.
+                let (event, _, new_states) = new_states
+                    .get_full(event)
+                    .expect("Failed to get full state.");
+
+                // Sort the event states.
+                let e = match e {
+                    E::CertainPositiveInterval { state, .. } => {
+                        // Sort the variable states.
+                        let state = new_states
+                            .get_index_of(&states[state])
+                            .expect("Failed to get index of state.");
+                        // Construct the sorted evidence.
+                        E::CertainPositiveInterval {
+                            event,
+                            state,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                    E::CertainNegativeInterval { not_states, .. } => {
+                        // Sort the event states.
+                        let not_states = not_states
+                            .iter()
+                            .map(|&state| {
+                                new_states
+                                    .get_index_of(&states[state])
+                                    .expect("Failed to get index of state.")
+                            })
+                            .collect();
+                        // Construct the sorted evidence.
+                        E::CertainNegativeInterval {
+                            event,
+                            not_states,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                    E::UncertainPositiveInterval { p_states, .. } => {
+                        // Allocate new event states.
+                        let mut new_p_states = Array::zeros(p_states.len());
+                        // Sort the event states.
+                        p_states.indexed_iter().for_each(|(i, &p)| {
+                            // Get sorted index.
+                            let state = new_states
+                                .get_index_of(&states[i])
+                                .expect("Failed to get index of state.");
+                            // Assign probability to sorted index.
+                            new_p_states[state] = p;
+                        });
+                        // Substitute the sorted states.
+                        let p_states = new_p_states;
+                        // Construct the sorted evidence.
+                        E::UncertainPositiveInterval {
+                            event,
+                            p_states,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                    E::UncertainNegativeInterval { p_not_states, .. } => {
+                        // Allocate new event states.
+                        let mut new_p_not_states = Array::zeros(p_not_states.len());
+                        // Sort the event states.
+                        p_not_states.indexed_iter().for_each(|(i, &p)| {
+                            // Get sorted index.
+                            let state = new_states
+                                .get_index_of(&states[i])
+                                .expect("Failed to get index of state.");
+                            // Assign probability to sorted index.
+                            new_p_not_states[state] = p;
+                        });
+                        // Substitute the sorted states.
+                        let p_not_states = new_p_not_states;
+                        // Construct the sorted evidence.
+                        E::UncertainNegativeInterval {
+                            event,
+                            p_not_states,
+                            start_time,
+                            end_time,
+                        }
+                    }
+                };
+
+                // Push the value into the events.
+                new_evidences[event].push(e);
+            });
+
+            // Update the states.
+            states = new_states;
+            // Update the evidences.
+            evidences = new_evidences;
+            // Update the labels.
+            labels = states.keys().cloned().collect();
+            // Update the shape.
+            shape = states.values().map(Set::len).collect();
+        }
+
         // Check and fix incoherent evidences.
         evidences.iter_mut().zip(&shape).for_each(
-            |(evidence, shape): (&mut Vec<E>, &usize)| {
+            |(e, shape): (&mut Vec<E>, &usize)| {
                 // Assert state, starting and ending times are coherent.
-                evidence.iter().for_each(|e| {
+                e.iter().for_each(|e| {
                     // Assert starting time must be positive and finite.
                     assert!(
                         e.start_time().is_finite() && e.start_time() >= 0.0,
@@ -314,7 +352,7 @@ impl CatTrjEv {
                 });
 
                 // Sort the events by starting time.
-                evidence.sort_by(|a, b| {
+                e.sort_by(|a, b| {
                     a.start_time()
                         .partial_cmp(&b.start_time())
                         // Due to previous assertions, this should never fail.
@@ -322,7 +360,7 @@ impl CatTrjEv {
                 });
 
                 // Handle overlapping intervals.
-                *evidence = evidence.iter().fold(Vec::new(), |mut e: Vec<E>, e_j: &E| {
+                *e = e.iter().fold(Vec::new(), |mut e: Vec<E>, e_j: &E| {
                     // Ii evence is empty ...
                     if e.is_empty() {
                         // ... push current evidence and exit.
@@ -475,7 +513,7 @@ impl CatTrjEv {
 
                 // Assert current ending time is less or equal than next starting time.
                 assert!(
-                    evidence
+                    e
                         .windows(2)
                         .all(|e| e[0].end_time() <= e[1].start_time()),
                     "Ending time must be less or equal than next starting time."

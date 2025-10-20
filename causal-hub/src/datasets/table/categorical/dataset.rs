@@ -61,7 +61,7 @@ impl CatTable {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.
-        let mut shape = Array::from_iter(states.values().map(|x| x.len()));
+        let mut shape = Array::from_iter(states.values().map(Set::len));
 
         // Log the creation of the categorical dataset.
         debug!(
@@ -143,9 +143,10 @@ impl CatTable {
             values = new_values;
             // Update the states.
             states = new_states;
-            // Update the labels and the shape.
+            // Update the labels.
             labels = states.keys().cloned().collect();
-            shape = Array::from_iter(states.values().map(|x| x.len()));
+            // Update the shape.
+            shape = Array::from_iter(states.values().map(Set::len));
         }
 
         // Debug assert labels are unique.
@@ -170,7 +171,7 @@ impl CatTable {
                 .values()
                 .map(|x| x.iter().unique().count())
                 .sum::<usize>(),
-            states.values().map(|x| x.len()).sum::<usize>(),
+            states.values().map(Set::len).sum::<usize>(),
             "States values must be unique."
         );
         // Debug assert states values are sorted.
