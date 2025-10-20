@@ -590,12 +590,67 @@ impl CPD for GaussCPD {
     }
 
     fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert X matches number of variables.
+        assert_eq!(
+            x.len(),
+            n,
+            "Vector X must match number of variables: \n\
+            \t expected:    |X| == {} , \n\
+            \t found:       |X| == {} .",
+            n,
+            x.len(),
+        );
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
         // Get parameters.
         let (a, b, s) = (
             self.parameters.coefficients(),
             self.parameters.intercept(),
             self.parameters.covariance(),
         );
+
+        // No variables.
+        if n == 0 {
+            return 1.;
+        }
+
+        // One variable ...
+        if n == 1 {
+            // Compute the mean.
+            let mu = match m {
+                // ... no conditioning variables.
+                0 => b[0], // Get the mean.
+                // ... one conditioning variable.
+                1 => f64::mul_add(a[[0, 0]], z[0], b[0]), // Compute the mean.
+                // ... multiple conditioning variables.
+                _ => (a.dot(z) + b)[0], // Compute mean vector.
+            };
+            // Compute deviation from mean.
+            let x_mu = x[0] - mu;
+            // Get the variance.
+            let k = s[[0, 0]];
+            // Compute log probability density function.
+            let ln_pf = -0.5 * (LN_2_PI + f64::ln(k) + f64::powi(x_mu, 2) / k);
+            // Return probability density function.
+            return f64::exp(ln_pf);
+        }
+
+        // Multiple variables, multiple conditioning variables.
+
         // Compute mean vector.
         let mu = a.dot(z) + b;
         // Compute deviation from mean.
@@ -611,23 +666,68 @@ impl CPD for GaussCPD {
     }
 
     fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
         // Get parameters.
         let (a, b, s) = (
             self.parameters.coefficients(),
             self.parameters.intercept(),
             self.parameters.covariance(),
         );
-        // Sample standard normal variables.
-        let e = StandardNormal
-            .sample_iter(rng)
-            .take(s.nrows())
-            .collect::<Array1<_>>();
+
+        // No variables.
+        if n == 0 {
+            return array![];
+        }
+
+        // One variable ...
+        if n == 1 {
+            // Compute the mean.
+            let mu = match m {
+                // ... no conditioning variables.
+                0 => b[0], // Get the mean.
+                // ... one conditioning variable.
+                1 => f64::mul_add(a[[0, 0]], z[0], b[0]), // Compute the mean.
+                // ... multiple conditioning variables.
+                _ => (a.dot(z) + b)[0], // Compute mean vector.
+            };
+            // Sample from standard normal.
+            let e: f64 = StandardNormal.sample(rng);
+            // Compute the sample.
+            let x = f64::mul_add(s[[0, 0]].sqrt(), e, mu);
+            // Return the sample.
+            return array![x];
+        }
+
+        // Multiple variables, multiple conditioning variables.
+
+        // Compute the mean.
+        let mu = a.dot(z) + b;
         // Compute the Cholesky decomposition of the covariance matrix.
         let l = (s + EPSILON * Array::eye(s.nrows()))
             .cholesky_into(UPLO::Lower)
             .expect("Failed to compute Cholesky decomposition.");
+        // Sample from standard normal.
+        let e = StandardNormal
+            .sample_iter(rng)
+            .take(s.nrows())
+            .collect::<Array1<_>>();
         // Compute the sample.
-        a.dot(z) + b + l.dot(&e)
+        l.dot(&e) + mu
     }
 }
 

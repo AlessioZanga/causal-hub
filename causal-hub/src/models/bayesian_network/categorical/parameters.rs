@@ -721,33 +721,127 @@ impl CPD for CatCPD {
     }
 
     fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert X matches number of variables.
+        assert_eq!(
+            x.len(),
+            n,
+            "Vector X must match number of variables: \n\
+            \t expected:    |X| == {} , \n\
+            \t found:       |X| == {} .",
+            n,
+            x.len(),
+        );
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return 1.;
+        }
+
         // Convert states to indices.
-        let x = x.iter().map(|&x| x as usize);
-        // Ravel the variables.
-        let x = self.multi_index.ravel(x);
+        let x = match n {
+            // ... one variable.
+            1 => x[0] as usize,
+            // ... multiple variables.
+            _ => {
+                // Convert states to indices.
+                let x = x.iter().map(|&x| x as usize);
+                // Ravel the variables.
+                self.multi_index.ravel(x)
+            }
+        };
+
         // Convert conditioning states to indices.
-        let z = z.iter().map(|&z| z as usize);
-        // Ravel the conditioning variables.
-        let z = self.conditioning_multi_index.ravel(z);
+        let z = match m {
+            // ... no conditioning variables.
+            0 => 0,
+            // ... one conditioning variable.
+            1 => z[0] as usize,
+            // ... multiple conditioning variables.
+            _ => {
+                // Convert conditioning states to indices.
+                let z = z.iter().map(|&z| z as usize);
+                // Ravel the conditioning variables.
+                self.conditioning_multi_index.ravel(z)
+            }
+        };
+
         // Get the probability.
         self.parameters[[z, x]]
     }
 
     fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return array![];
+        }
+
         // Convert conditioning states to indices.
-        let z = z.iter().map(|&z| z as usize);
-        // Ravel the conditioning variables.
-        let z = self.conditioning_multi_index.ravel(z);
+        let z = match m {
+            // ... no conditioning variables.
+            0 => 0,
+            // ... one conditioning variable.
+            1 => z[0] as usize,
+            // ... multiple conditioning variables.
+            _ => {
+                // Convert conditioning states to indices.
+                let z = z.iter().map(|&z| z as usize);
+                // Ravel the conditioning variables.
+                self.conditioning_multi_index.ravel(z)
+            }
+        };
+
         // Get the distribution of the vertex.
         let p = self.parameters.row(z);
         // Construct the sampler.
         let s = WeightedIndex::new(&p).unwrap();
         // Sample from the distribution.
         let x = s.sample(rng);
-        // Unravel the sample.
-        let x = self.multi_index.unravel(x);
-        // Convert to CatType.
-        x.iter().map(|&x| x as CatType).collect()
+
+        // Convert indices to states.
+        match n {
+            // ... one variable.
+            1 => array![x as CatType],
+            // ... multiple variables.
+            _ => {
+                // Unravel the sample.
+                let x = self.multi_index.unravel(x);
+                // Convert indices to states.
+                let x = x.iter().map(|&x| x as CatType);
+                // Return the sample.
+                x.collect()
+            }
+        }
     }
 }
 
