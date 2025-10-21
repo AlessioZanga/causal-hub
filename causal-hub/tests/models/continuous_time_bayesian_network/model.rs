@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::load_eating,
         labels,
-        models::{BN, CPD, CTBN, Graph, Labelled},
+        models::{BN, CIM, CPD, CTBN, Graph, Labelled},
         states,
     };
     use ndarray::prelude::*;

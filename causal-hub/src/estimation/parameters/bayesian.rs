@@ -4,7 +4,10 @@ use statrs::function::gamma::ln_gamma;
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
-    estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
+    estimation::{
+        CIMEstimator, CPDEstimator, CSSEstimator, ParCIMEstimator, ParCPDEstimator,
+        ParCSSEstimator, SSE,
+    },
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, Labelled},
     types::{Labels, Set, States},
 };
@@ -270,7 +273,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
 // Implement the CIM estimator for the BE struct.
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
-    impl CPDEstimator<CatCIM> for BE<'_, $type, ()> {
+    impl CIMEstimator<CatCIM> for BE<'_, $type, ()> {
         #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Default to uniform prior.
@@ -278,7 +281,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
         }
     }
 
-    impl CPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+    impl CIMEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
@@ -295,7 +298,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 // Implement the parallel CIM estimator for the BE struct.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl ParCPDEstimator<CatCIM> for BE<'_, $type, ()> {
+    impl ParCIMEstimator<CatCIM> for BE<'_, $type, ()> {
         #[inline]
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Default to uniform prior.
@@ -303,7 +306,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         }
     }
 
-    impl ParCPDEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
+    impl ParCIMEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).

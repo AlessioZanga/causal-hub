@@ -240,6 +240,56 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support;
 }
 
+/// A trait for conditional intensity matrices.
+pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
+    /// The type of the support.
+    type Support;
+    /// The type of the parameters.
+    type Parameters;
+    /// The type of the sufficient statistics.
+    type Statistics;
+
+    /// Returns the labels of the conditioned variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the conditioning labels.
+    ///
+    fn conditioning_labels(&self) -> &Labels;
+
+    /// Returns the parameters.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the parameters.
+    ///
+    fn parameters(&self) -> &Self::Parameters;
+
+    /// Returns the parameters size.
+    ///
+    /// # Returns
+    ///
+    /// The parameters size.
+    ///
+    fn parameters_size(&self) -> usize;
+
+    /// Returns the sufficient statistics, if any.
+    ///
+    /// # Returns
+    ///
+    /// An option containing a reference to the sufficient statistics.
+    ///
+    fn sample_statistics(&self) -> Option<&Self::Statistics>;
+
+    /// Returns the log-likelihood of the fitted dataset, if any.
+    ///
+    /// # Returns
+    ///
+    /// An option containing the log-likelihood.
+    ///
+    fn sample_log_likelihood(&self) -> Option<f64>;
+}
+
 /// A trait for potential functions.
 pub trait Phi:
     Clone

@@ -2,8 +2,8 @@ use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
-    estimation::{CPDEstimator, PK},
-    models::{CPD, CatCIM, DiGraph, Graph, Labelled},
+    estimation::{CIMEstimator, PK},
+    models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},
 };
@@ -58,7 +58,7 @@ where
 
 impl<E> ScoringCriterion for BIC<'_, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: CIMEstimator<CatCIM>,
 {
     #[inline]
     fn call(&self, x: &Set<usize>, z: &Set<usize>) -> f64 {

@@ -15,7 +15,7 @@ pub use raw::*;
 use rayon::prelude::*;
 
 use crate::{
-    models::{BN, CPD, CTBN, DiGraph, Graph},
+    models::{BN, CIM, CPD, CTBN, DiGraph, Graph},
     set,
     types::Set,
 };
@@ -66,7 +66,7 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated CDP.
+    /// The estimated CPD.
     ///
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
@@ -85,7 +85,7 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated CDP.
+    /// The estimated CPD.
     ///
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
 }
@@ -164,6 +164,44 @@ where
     }
 }
 
+/// A trait for conditional intensity matrix estimators.
+pub trait CIMEstimator<T>
+where
+    T: CIM,
+{
+    /// Fits the estimator to the dataset and returns a CIM.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variable to fit the estimator to.
+    /// * `z` - The variables to condition on.
+    ///
+    /// # Returns
+    ///
+    /// The estimated CIM.
+    ///
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+}
+
+/// A trait for conditional intensity matrix estimators in parallel.
+pub trait ParCIMEstimator<T>
+where
+    T: CIM,
+{
+    /// Fits the estimator to the dataset and returns a CIM in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variable to fit the estimator to.
+    /// * `z` - The variables to condition on.
+    ///
+    /// # Returns
+    ///
+    /// The estimated CIM.
+    ///
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+}
+
 /// A trait for CTBN estimators.
 pub trait CTBNEstimator<T> {
     /// Fits the estimator to the trajectory and returns a CTBN.
@@ -179,12 +217,12 @@ pub trait CTBNEstimator<T> {
     fn fit(&self, graph: DiGraph) -> T;
 }
 
-/// Blanket implement for all CTBN estimators with a corresponding CPD estimator.
+/// Blanket implement for all CTBN estimators with a corresponding CIM estimator.
 impl<T, E> CTBNEstimator<T> for E
 where
     T: CTBN,
-    T::CIM: CPD,
-    E: CPDEstimator<T::CIM>,
+    T::CIM: CIM,
+    E: CIMEstimator<T::CIM>,
 {
     fn fit(&self, graph: DiGraph) -> T {
         // Fit the parameters of the distribution using the estimator.
@@ -216,12 +254,12 @@ pub trait ParCTBNEstimator<T> {
     fn par_fit(&self, graph: DiGraph) -> T;
 }
 
-/// Blanket implement for all CTBN estimators with a corresponding CPD estimator.
+/// Blanket implement for all CTBN estimators with a corresponding CIM estimator.
 impl<T, E> ParCTBNEstimator<T> for E
 where
     T: CTBN,
-    T::CIM: CPD + Send,
-    E: ParCPDEstimator<T::CIM> + Sync,
+    T::CIM: CIM + Send,
+    E: ParCIMEstimator<T::CIM> + Sync,
 {
     fn par_fit(&self, graph: DiGraph) -> T {
         // Fit the parameters of the distribution using the estimator.

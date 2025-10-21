@@ -5,8 +5,8 @@ use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
-    estimation::{CPDEstimator, PK},
-    models::{CPD, CatCIM, DiGraph, Graph, Labelled},
+    estimation::{CIMEstimator, PK},
+    models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},
 };
@@ -71,7 +71,7 @@ where
 
 impl<E> CITest for ChiSquaredTest<'_, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: CIMEstimator<CatCIM>,
 {
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.
@@ -185,7 +185,7 @@ where
 
 impl<E> CITest for FTest<'_, E>
 where
-    E: CPDEstimator<CatCIM>,
+    E: CIMEstimator<CatCIM>,
 {
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
         // Assert Y contains exactly one label.

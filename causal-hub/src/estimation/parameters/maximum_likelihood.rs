@@ -6,7 +6,10 @@ use crate::{
     datasets::{
         CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable, GaussWtdTable,
     },
-    estimation::{CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
+    estimation::{
+        CIMEstimator, CPDEstimator, CSSEstimator, ParCIMEstimator, ParCPDEstimator,
+        ParCSSEstimator, SSE,
+    },
     models::{CatCIM, CatCIMS, CatCPD, CatCPDS, GaussCPD, GaussCPDP, GaussCPDS, Labelled},
     types::{LN_2_PI, Labels, Set, States},
     utils::PseudoInverse,
@@ -323,7 +326,7 @@ impl MLE<'_, CatTrj> {
 // Implement the CatCIM estimator for the MLE struct.
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
-    impl CPDEstimator<CatCIM> for MLE<'_, $type> {
+    impl CIMEstimator<CatCIM> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get states.
             let states = self.dataset.states();
@@ -339,7 +342,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 // Implement the parallel version of the CIM estimator for the MLE struct.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
+    impl ParCIMEstimator<CatCIM> for MLE<'_, $type> {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get states.
             let states = self.dataset.states();

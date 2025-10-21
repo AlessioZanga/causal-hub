@@ -9,7 +9,7 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
-    models::{BN, CPD, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
+    models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Map, Set, States},
 };

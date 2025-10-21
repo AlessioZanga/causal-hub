@@ -7,7 +7,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-            estimation::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
+            estimation::{BE, CIMEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
             models::{CTBN, CatCTBN, Graph},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
@@ -139,7 +139,7 @@ mod tests {
                 .into_iter()
                 .map(|i| {
                     let i = set![i];
-                    CPDEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                    CIMEstimator::fit(&raw, &i, &model.graph().parents(&i))
                 })
                 .collect();
             // Set the initial model.
