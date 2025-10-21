@@ -2,11 +2,53 @@
 mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
+        datasets::{GaussEv, GaussEvT},
         labels,
         models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi},
         set,
     };
     use ndarray::prelude::*;
+
+    #[test]
+    fn condition() {
+        // Set the labels.
+        let l = labels!("A", "B", "C");
+        // Set the precision matrix.
+        let k = array![
+            [1.4020, -0.5747, -0.0288],
+            [-0.5747, 1.3702, -0.3612],
+            [-0.0288, -0.3612, 1.1274]
+        ];
+        // Set the information vector.
+        let h = array![0.2, -0.1, 0.3];
+        // Set the log-normalization constant.
+        let g = 0.0;
+        // Set the parameters.
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), g);
+        // Initialize the potential.
+        let phi = GaussPhi::new(l.clone(), parameters);
+
+        // Condition the potential on variable "B" (index 1) being 0.5.
+        let e = GaussEv::new(
+            l,
+            [GaussEvT::CertainPositive {
+                event: 1,
+                value: 0.5,
+            }],
+        );
+        let pred_phi = phi.condition(&e);
+
+        // Set the true potential.
+        let true_l = labels!("A", "C");
+        let true_k = array![[1.4020, -0.0288], [-0.0288, 1.1274]];
+        let true_h = array![0.48735, 0.4806];
+        let true_g = -0.221275;
+        let true_parameters = GaussPhiK::new(true_k, true_h, true_g);
+        let true_phi = GaussPhi::new(true_l, true_parameters);
+
+        // Compare the potentials.
+        assert_relative_eq!(true_phi, pred_phi);
+    }
 
     #[test]
     fn marginalize() {

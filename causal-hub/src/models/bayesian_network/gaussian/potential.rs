@@ -292,11 +292,11 @@ impl DivAssign<&GaussPhi> for GaussPhi {
         let rhs_g = rhs.parameters.g;
 
         // Sum parameters.
-        let k = lhs_k - rhs_k;
-        let h = lhs_h - rhs_h;
-        let g = lhs_g - rhs_g;
+        let k_prime = lhs_k - rhs_k;
+        let h_prime = lhs_h - rhs_h;
+        let g_prime = lhs_g - rhs_g;
         // Assemble parameters.
-        let parameters = GaussPhiK::new(k, h, g);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
 
         // Update the labels.
         self.labels = labels;
@@ -376,9 +376,9 @@ impl Phi for GaussPhi {
         let g = self.parameters.log_normalization_constant();
 
         // Compute the precision matrix as K_xx from K and X.
-        let k = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
+        let k_prime = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
         // Compute the information vector.
-        let h = {
+        let h_prime = {
             // Get K_xy from K, X and Y.
             let k_xy = Array::from_shape_fn((x.len(), y.len()), |(i, j)| k[[x[i], y[j]]]);
             // Get h_x from h and X.
@@ -387,7 +387,7 @@ impl Phi for GaussPhi {
             h_x - k_xy.dot(&_y)
         };
         // Compute the log-normalization constant.
-        let g = {
+        let g_prime = {
             // Get K_yy from K and Y.
             let k_yy = Array::from_shape_fn((y.len(), y.len()), |(i, j)| k[[y[i], y[j]]]);
             // Get h_y from h and Y.
@@ -397,7 +397,7 @@ impl Phi for GaussPhi {
         };
 
         // Assemble the parameters.
-        let parameters = GaussPhiK::new(k, h, g);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
 
         // Return the conditioned potential.
         Self::new(labels, parameters)
@@ -451,7 +451,7 @@ impl Phi for GaussPhi {
         let k_zx_dot_s_xx = k_zx.dot(&s_xx);
 
         // Compute the marginalized precision matrix.
-        let k = {
+        let k_prime = {
             // Get K_zz and K_xz from K, X and Z.
             let k_zz = Array::from_shape_fn((z.len(), z.len()), |(i, j)| k[[z[i], z[j]]]);
             let k_xz = Array::from_shape_fn((x.len(), z.len()), |(i, j)| k[[x[i], z[j]]]);
@@ -459,14 +459,14 @@ impl Phi for GaussPhi {
             k_zz - k_zx_dot_s_xx.dot(&k_xz)
         };
         // Compute the marginalized information vector.
-        let h = {
+        let h_prime = {
             // Get h_z from h, X and Z.
             let h_z = Array::from_shape_fn(z.len(), |i| h[z[i]]);
             // Compute the information vector as: h' = h_z - K_zx * (K_xx)^(-1) * h_x
             h_z - k_zx_dot_s_xx.dot(&h_x)
         };
         // Compute the marginalized log-normalization constant.
-        let g = {
+        let g_prime = {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
             let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
             let (_, ln_det) = s_xx.sln_det().expect("Failed to compute the determinant.");
@@ -474,7 +474,7 @@ impl Phi for GaussPhi {
         };
 
         // Assemble the parameters.
-        let parameters = GaussPhiK::new(k, h, g);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
 
         // Return the marginalized potential.
         Self::new(labels_z, parameters)
@@ -510,7 +510,7 @@ impl Phi for GaussPhi {
         let k_zx = -a.t().dot(&k_xx); //        Cross-precision of Z and X.
         let k_zz = a.t().dot(&k_xx).dot(a); //  Induced precision of Z.
         // Assemble the precision matrix.
-        let k = {
+        let k_prime = {
             let (n, m) = (a.nrows(), a.ncols());
             let mut k = Array::zeros((n + m, n + m));
             k.slice_mut(s![0..n, 0..n]).assign(&k_xx);
@@ -528,7 +528,7 @@ impl Phi for GaussPhi {
         let h_x = k_xx.dot(b); // Information of X.
         let h_z = k_zx.dot(b); // Information of Z.
         // Assemble the information vector.
-        let h = {
+        let h_prime = {
             let mut h = Array::zeros(h_x.len() + h_z.len());
             h.slice_mut(s![0..h_x.len()]).assign(&h_x);
             h.slice_mut(s![h_x.len()..]).assign(&h_z);
@@ -536,12 +536,14 @@ impl Phi for GaussPhi {
         };
 
         // Compute the log-normalization constant.
-        let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
-        let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
-        let g = -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x));
+        let g_prime = {
+            let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
+            let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
+            -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x))
+        };
 
         // Construct the parameters.
-        let parameters = GaussPhiK::new(k, h, g);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
 
         // Return the potential.
         Self::new(labels, parameters)
