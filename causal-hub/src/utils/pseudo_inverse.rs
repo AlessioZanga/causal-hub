@@ -1,5 +1,5 @@
 use ndarray::prelude::*;
-use ndarray_linalg::SVDInto;
+use ndarray_linalg::SVD;
 use ndarray_stats::QuantileExt;
 
 use crate::types::EPSILON;
@@ -23,12 +23,13 @@ impl PseudoInverse for Array2<f64> {
     fn pinv(&self) -> Self {
         // Step 0: Scale the matrix to improve numerical stability.
         let a = *self.abs().max().unwrap_or(&1.);
+        let m = self / a;
         // Step 1: Compute the Single Value Decomposition (SVD).
-        let (u, s, vt) = (self / a).svd_into(true, true).unwrap_or_else(|e| {
+        let (u, s, vt) = m.svd(true, true).unwrap_or_else(|e| {
             panic!(
                 "Failed to compute the SVD \n\
                 \t for the matrix: \n\
-                \t {self:?} \n\
+                \t {m:?} \n\
                 \t with error: \n\
                 \t {e:?}."
             )
