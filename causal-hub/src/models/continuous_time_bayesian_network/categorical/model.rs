@@ -321,7 +321,7 @@ impl Serialize for CatCTBN {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         size += self.name.is_some() as usize;
         size += self.description.is_some() as usize;
 
@@ -345,6 +345,8 @@ impl Serialize for CatCTBN {
         map.serialize_entry("graph", &self.graph)?;
         // Serialize CIMs.
         map.serialize_entry("cims", &cims)?;
+        // Serialize type.
+        map.serialize_entry("type", "catctbn")?;
 
         // Finalize the map serialization.
         map.end()
@@ -364,6 +366,7 @@ impl<'de> Deserialize<'de> for CatCTBN {
             InitialDistribution,
             Graph,
             Cims,
+            Type,
         }
 
         struct CatCTBNVisitor;
@@ -387,6 +390,7 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 let mut initial_distribution = None;
                 let mut graph = None;
                 let mut cims = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -421,6 +425,12 @@ impl<'de> Deserialize<'de> for CatCTBN {
                             }
                             cims = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -429,6 +439,10 @@ impl<'de> Deserialize<'de> for CatCTBN {
                     initial_distribution.ok_or_else(|| E::missing_field("initial_distribution"))?;
                 let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
                 let cims = cims.ok_or_else(|| E::missing_field("cims"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "catctbn", "Invalid type for CatCTBN.");
 
                 // Set helper types.
                 let cims: Vec<_> = cims;
@@ -449,6 +463,7 @@ impl<'de> Deserialize<'de> for CatCTBN {
             "initial_distribution",
             "graph",
             "cims",
+            "type",
         ];
 
         deserializer.deserialize_struct("CatCTBN", FIELDS, CatCTBNVisitor)

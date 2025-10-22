@@ -23,10 +23,15 @@
             "items": {
                 "$ref": "catcpd.schema.json"
             }
+        },
+        "type": {
+            "type": "string",
+            "const": "catbn"
         }
     },
     "required": [
         "graph",
-        "cpds"
+        "cpds",
+        "type"
     ]
 }

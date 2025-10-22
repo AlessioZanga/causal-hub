@@ -23,10 +23,15 @@
             "items": {
                 "$ref": "gausscpd.schema.json"
             }
+        },
+        "type": {
+            "type": "string",
+            "const": "gaussbn"
         }
     },
     "required": [
         "graph",
-        "cpds"
+        "cpds",
+        "type"
     ]
 }

@@ -779,7 +779,7 @@ impl Serialize for CatCIM {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
 
@@ -810,6 +810,9 @@ impl Serialize for CatCIM {
             map.serialize_entry("sample_log_likelihood", &sample_log_likelihood)?;
         }
 
+        // Serialize type.
+        map.serialize_entry("type", "catcim")?;
+
         // Finalize the map serialization.
         map.end()
     }
@@ -828,6 +831,7 @@ impl<'de> Deserialize<'de> for CatCIM {
             Parameters,
             SampleStatistics,
             SampleLogLikelihood,
+            Type,
         }
 
         struct CatCIMVisitor;
@@ -851,6 +855,7 @@ impl<'de> Deserialize<'de> for CatCIM {
                 let mut parameters = None;
                 let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -885,6 +890,12 @@ impl<'de> Deserialize<'de> for CatCIM {
                             }
                             sample_log_likelihood = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -893,6 +904,10 @@ impl<'de> Deserialize<'de> for CatCIM {
                 let conditioning_states =
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "catcim", "Invalid type for CatCIM.");
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<Vec<f64>>> = parameters;
@@ -922,6 +937,7 @@ impl<'de> Deserialize<'de> for CatCIM {
             "parameters",
             "sample_statistics",
             "sample_log_likelihood",
+            "type",
         ];
 
         deserializer.deserialize_struct("CatCIM", FIELDS, CatCIMVisitor)

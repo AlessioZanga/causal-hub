@@ -55,11 +55,16 @@
                 "number",
                 "null"
             ]
+        },
+        "type": {
+            "type": "string",
+            "const": "catcpd"
         }
     },
     "required": [
         "states",
         "conditioning_states",
-        "parameters"
+        "parameters",
+        "type"
     ]
 }

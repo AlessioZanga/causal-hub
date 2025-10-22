@@ -737,7 +737,7 @@ impl Serialize for GaussCPD {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         // Add optional fields, if any.
         size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
@@ -746,10 +746,8 @@ impl Serialize for GaussCPD {
 
         // Serialize labels.
         map.serialize_entry("labels", &self.labels)?;
-
         // Serialize conditioning labels.
         map.serialize_entry("conditioning_labels", &self.conditioning_labels)?;
-
         // Serialize parameters.
         map.serialize_entry("parameters", &self.parameters)?;
 
@@ -762,6 +760,9 @@ impl Serialize for GaussCPD {
         if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
             map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
         }
+
+        // Serialize type.
+        map.serialize_entry("type", "gausscpd")?;
 
         // End the map.
         map.end()
@@ -781,6 +782,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
             Parameters,
             SampleStatistics,
             SampleLogLikelihood,
+            Type,
         }
 
         struct GaussCPDVisitor;
@@ -804,6 +806,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let mut parameters = None;
                 let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -838,6 +841,12 @@ impl<'de> Deserialize<'de> for GaussCPD {
                             }
                             sample_log_likelihood = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -846,6 +855,10 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let conditioning_labels =
                     conditioning_labels.ok_or_else(|| E::missing_field("conditioning_labels"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "gausscpd", "Invalid type for GaussCPD.");
 
                 Ok(GaussCPD::with_optionals(
                     labels,
@@ -863,6 +876,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
             "parameters",
             "sample_statistics",
             "sample_log_likelihood",
+            "type",
         ];
 
         deserializer.deserialize_struct("GaussCPD", FIELDS, GaussCPDVisitor)

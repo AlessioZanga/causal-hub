@@ -99,11 +99,16 @@
                 "number",
                 "null"
             ]
+        },
+        "type": {
+            "type": "string",
+            "const": "gausscpd"
         }
     },
     "required": [
         "labels",
         "conditioning_labels",
-        "parameters"
+        "parameters",
+        "type"
     ]
 }

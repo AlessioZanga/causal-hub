@@ -4,7 +4,8 @@
     "initial_distribution": {
         "graph": {
             "labels": ["Eating", "FullStomach", "Hungry"],
-            "edges": []
+            "edges": [],
+            "type": "digraph"
         },
         "cpds": [
             {
@@ -12,23 +13,27 @@
                 "conditioning_states": {},
                 "parameters": [
                     [0.5, 0.5]
-                ]
+                ],
+                "type": "catcpd"
             },
             {
                 "states": { "FullStomach": ["no", "yes"] },
                 "conditioning_states": {},
                 "parameters": [
                     [0.5, 0.5]
-                ]
+                ],
+                "type": "catcpd"
             },
             {
                 "states": { "Hungry": ["no", "yes"] },
                 "conditioning_states": {},
                 "parameters": [
                     [0.5, 0.5]
-                ]
+                ],
+                "type": "catcpd"
             }
-        ]
+        ],
+        "type": "catbn"
     },
     "graph": {
         "labels": ["Eating", "FullStomach", "Hungry"],
@@ -36,7 +41,8 @@
             ["Eating", "FullStomach"],
             ["FullStomach", "Hungry"],
             ["Hungry", "Eating"]
-        ]
+        ],
+        "type": "digraph"
     },
     "cims": [
         {
@@ -51,7 +57,8 @@
                     [-2.0, 2.0],
                     [0.1, -0.1]
                 ]
-            ]
+            ],
+            "type": "catcim"
         },
         {
             "states": { "FullStomach": ["no", "yes"] },
@@ -65,7 +72,8 @@
                     [-2.0, 2.0],
                     [0.1, -0.1]
                 ]
-            ]
+            ],
+            "type": "catcim"
         },
         {
             "states": { "Hungry": ["no", "yes"] },
@@ -79,7 +87,9 @@
                     [-2.0, 2.0],
                     [0.1, -0.1]
                 ]
-            ]
+            ],
+            "type": "catcim"
         }
-    ]
+    ],
+    "type": "catctbn"
 }
