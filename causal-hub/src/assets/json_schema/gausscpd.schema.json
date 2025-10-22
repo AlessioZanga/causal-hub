@@ -51,10 +51,16 @@
             ],
             "properties": {
                 "sample_response_mean": {
-                    "type": "number"
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
                 },
                 "sample_design_mean": {
-                    "type": "number"
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
                 },
                 "sample_response_covariance": {
                     "type": "array",

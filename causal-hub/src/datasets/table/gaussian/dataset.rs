@@ -1,6 +1,7 @@
+use csv::ReaderBuilder;
 use ndarray::prelude::*;
 
-use crate::{datasets::Dataset, models::Labelled, types::Labels};
+use crate::{datasets::Dataset, io::CsvIO, models::Labelled, types::Labels};
 
 /// A type alias for a gaussian variable.
 pub type GaussType = f64;
@@ -83,5 +84,63 @@ impl Dataset for GaussTable {
     #[inline]
     fn sample_size(&self) -> f64 {
         self.values.nrows() as f64
+    }
+}
+
+impl CsvIO for GaussTable {
+    fn from_csv(csv: &str) -> Self {
+        // Create a CSV reader from the string.
+        let mut reader = ReaderBuilder::new()
+            .has_headers(true)
+            .from_reader(csv.as_bytes());
+
+        // Assert that the reader has headers.
+        assert!(reader.has_headers(), "Reader must have headers.");
+
+        // Read the headers.
+        let labels: Labels = reader
+            .headers()
+            .expect("Failed to read the headers.")
+            .into_iter()
+            .map(|x| x.to_owned())
+            .collect();
+
+        // Read the records.
+        let values: Array1<_> = reader
+            .into_records()
+            .enumerate()
+            .flat_map(|(i, row)| {
+                // Get the record row.
+                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                // Get the record values and convert to indices.
+                let row: Vec<_> = row
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, x)| {
+                        // Assert no missing values.
+                        assert!(!x.is_empty(), "Missing value on line {}.", i + 1);
+                        // Cast the value.
+                        x.parse::<GaussType>().unwrap()
+                    })
+                    .collect();
+                // Collect the values.
+                row
+            })
+            .collect();
+
+        // Get the number of rows and columns.
+        let ncols = labels.len();
+        let nrows = values.len() / ncols;
+        // Reshape the values to the correct shape.
+        let values = values
+            .into_shape_with_order((nrows, ncols))
+            .expect("Failed to rearrange values to the correct shape.");
+
+        // Construct the dataset.
+        Self::new(labels, values)
+    }
+
+    fn to_csv(&self) -> String {
+        todo!() // FIXME:
     }
 }
