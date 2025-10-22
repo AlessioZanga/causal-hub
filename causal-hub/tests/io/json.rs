@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         assets::*,
-        estimation::{BE, BNEstimator, CTBNEstimator},
+        estimators::{BE, BNEstimator, CTBNEstimator},
         io::JsonIO,
         models::{BN, CTBN, CatBN, CatCTBN, GaussBN},
         samplers::{BNSampler, CTBNSampler, ForwardSampler},

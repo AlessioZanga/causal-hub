@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
-    estimation::{CIMEstimator, PK},
+    estimators::{CIMEstimator, PK},
     models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},

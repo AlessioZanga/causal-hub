@@ -3,7 +3,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTable, CatWtdTable, Dataset},
-    estimation::{CSSEstimator, ParCSSEstimator, SSE},
+    estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::CatCPDS,
     types::{AXIS_CHUNK_LENGTH, Set},
     utils::MI,

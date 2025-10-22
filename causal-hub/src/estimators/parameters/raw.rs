@@ -8,7 +8,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
-    estimation::{BE, CIMEstimator, ParCIMEstimator},
+    estimators::{BE, CIMEstimator, ParCIMEstimator},
     models::{CatCIM, Labelled},
     types::{Labels, Set},
 };

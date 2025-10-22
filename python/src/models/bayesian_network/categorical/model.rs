@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::CatTable,
-    estimation::{BE, MLE},
+    estimators::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -25,7 +25,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTable,
-    estimation::PyBNEstimator,
+    estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };

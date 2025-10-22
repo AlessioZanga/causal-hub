@@ -4,7 +4,7 @@ use dry::macro_for;
 use rand::{Rng, SeedableRng};
 
 use crate::{
-    estimation::{CPDEstimator, MLE},
+    estimators::{CPDEstimator, MLE},
     inference::Modelled,
     models::{BN, CatBN, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},

@@ -7,7 +7,7 @@ mod tests {
         use causal_hub::{
             assets::load_eating,
             datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
-            estimation::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
+            estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},

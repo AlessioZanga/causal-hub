@@ -3,7 +3,7 @@ mod tests {
     use causal_hub::{
         assets::load_eating,
         datasets::{CatTrj, CatTrjEv, CatTrjEvT, Dataset},
-        estimation::RAWE,
+        estimators::RAWE,
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;

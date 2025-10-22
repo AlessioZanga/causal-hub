@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{estimation::PK, labels};
+    use causal_hub::{estimators::PK, labels};
 
     #[test]
     fn new() {

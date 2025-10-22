@@ -3,7 +3,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{Dataset, GaussTable, GaussWtdTable},
-    estimation::{CSSEstimator, ParCSSEstimator, SSE},
+    estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::GaussCPDS,
     types::{AXIS_CHUNK_LENGTH, Set},
 };

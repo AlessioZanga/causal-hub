@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::GaussTable,
-    estimation::MLE,
+    estimators::MLE,
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -21,7 +21,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyGaussTable,
-    estimation::PyBNEstimator,
+    estimators::PyBNEstimator,
     impl_from_into_lock, indices_from,
     models::{PyDiGraph, PyGaussCPD},
 };

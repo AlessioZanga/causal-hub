@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::CatTrjs,
-    estimation::{BE, MLE},
+    estimators::{BE, MLE},
     io::JsonIO,
     models::{CTBN, CatCTBN, DiGraph, Labelled},
     samplers::{CTBNSampler, ForwardSampler, ParCTBNSampler},
@@ -21,7 +21,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTrjs,
-    estimation::PyCTBNEstimator,
+    estimators::PyCTBNEstimator,
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };

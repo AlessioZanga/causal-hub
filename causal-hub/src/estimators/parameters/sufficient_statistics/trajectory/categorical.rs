@@ -5,7 +5,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
-    estimation::{CSSEstimator, ParCSSEstimator, SSE},
+    estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::CatCIMS,
     types::Set,
     utils::MI,

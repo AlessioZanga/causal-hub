@@ -4,7 +4,7 @@ use statrs::function::gamma::ln_gamma;
 
 use crate::{
     datasets::{CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs},
-    estimation::{
+    estimators::{
         CIMEstimator, CPDEstimator, CSSEstimator, ParCIMEstimator, ParCPDEstimator,
         ParCSSEstimator, SSE,
     },

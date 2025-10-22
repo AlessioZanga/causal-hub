@@ -2,7 +2,7 @@ use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
-    estimation::{CIMEstimator, PK},
+    estimators::{CIMEstimator, PK},
     models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Labels, Set},

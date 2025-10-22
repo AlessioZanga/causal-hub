@@ -6,7 +6,7 @@ use crate::{
     datasets::{
         CatTable, CatTrj, CatTrjs, CatWtdTable, CatWtdTrj, CatWtdTrjs, GaussTable, GaussWtdTable,
     },
-    estimation::{
+    estimators::{
         CIMEstimator, CPDEstimator, CSSEstimator, ParCIMEstimator, ParCPDEstimator,
         ParCSSEstimator, SSE,
     },

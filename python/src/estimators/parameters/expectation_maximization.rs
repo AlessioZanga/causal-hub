@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use approx::*;
 use backend::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-    estimation::{BE, EMBuilder, ParCTBNEstimator, RAWE},
+    estimators::{BE, EMBuilder, ParCTBNEstimator, RAWE},
     models::{CTBN, CatCTBN, DiGraph},
     samplers::{ImportanceSampler, ParCTBNSampler},
 };

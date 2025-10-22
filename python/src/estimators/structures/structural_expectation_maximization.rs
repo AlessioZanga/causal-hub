@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use approx::relative_eq;
 use backend::{
     datasets::{CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-    estimation::{
+    estimators::{
         BE, BIC, CTHC, CTPC, ChiSquaredTest, EMBuilder, EMOutput, FTest, PK, ParCTBNEstimator, RAWE,
     },
     models::{CTBN, CatCTBN, DiGraph, Graph, Labelled},
@@ -23,7 +23,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
-    estimation::PyPK,
+    estimators::PyPK,
     kwarg,
     models::PyCatCTBN,
 };

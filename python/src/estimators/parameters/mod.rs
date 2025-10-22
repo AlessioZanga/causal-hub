@@ -1,5 +1,5 @@
 mod expectation_maximization;
-use backend::estimation::{BNEstimator, CTBNEstimator, ParBNEstimator, ParCTBNEstimator};
+use backend::estimators::{BNEstimator, CTBNEstimator, ParBNEstimator, ParCTBNEstimator};
 pub use expectation_maximization::*;
 
 // Define a trait for the estimator.

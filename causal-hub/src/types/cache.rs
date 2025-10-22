@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use dry::macro_for;
 
 use crate::{
-    estimation::{CIMEstimator, CPDEstimator},
+    estimators::{CIMEstimator, CPDEstimator},
     models::{CIM, CPD, Labelled},
     types::{Labels, Map, Set},
 };

@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use backend::{estimation::PK, types::Labels};
+use backend::{estimators::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
