@@ -1,16 +1,20 @@
 #[cfg(test)]
 mod tests {
-    mod categorical {
-        mod conditional_probability_distribution {
-            use approx::*;
-            use causal_hub::{
-                datasets::CatTable,
-                estimators::{BE, CPDEstimator},
-                labels,
-                models::{CPD, Labelled},
-                set, states,
-            };
-            use ndarray::prelude::*;
+    use approx::*;
+    use causal_hub::{
+        datasets::CatTable,
+        estimators::{BE, CPDEstimator},
+        labels,
+        models::{CPD, Labelled},
+        set, states,
+    };
+    use ndarray::prelude::*;
+
+    mod conditional_probability_distribution {
+        use super::*;
+
+        mod categorical {
+            use super::*;
 
             #[test]
             fn fit() {

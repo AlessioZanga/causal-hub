@@ -1,16 +1,21 @@
 #[cfg(test)]
 mod tests {
-    mod categorical {
-        mod conditional_probability_distribution {
-            use approx::*;
-            use causal_hub::{
-                datasets::CatTable,
-                estimators::{CPDEstimator, MLE},
-                labels,
-                models::{CPD, Labelled},
-                set, states,
-            };
-            use ndarray::prelude::*;
+    use approx::*;
+    use causal_hub::{
+        datasets::CatTable,
+        estimators::{BNEstimator, CPDEstimator, MLE},
+        io::CsvIO,
+        labels,
+        models::{BN, CPD, CatBN, DiGraph, Graph, Labelled},
+        set, states,
+    };
+    use ndarray::prelude::*;
+
+    mod conditional_probability_distribution {
+        use super::*;
+
+        mod categorical {
+            use super::*;
 
             #[test]
             fn fit() {
@@ -32,7 +37,7 @@ mod tests {
                 let estimator = MLE::new(&dataset);
 
                 // P(A)
-                let distribution = estimator.fit(&set![0], &set![]);
+                let distribution = CPDEstimator::fit(&estimator, &set![0], &set![]);
 
                 assert_eq!(&labels!["A"], distribution.labels());
                 assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
@@ -76,7 +81,7 @@ mod tests {
                 );
 
                 // P(A | B, C)
-                let distribution = estimator.fit(&set![0], &set![1, 2]);
+                let distribution = CPDEstimator::fit(&estimator, &set![0], &set![1, 2]);
 
                 assert_eq!(&labels!["A"], distribution.labels());
                 assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
@@ -147,7 +152,7 @@ mod tests {
                 let estimator = MLE::new(&dataset);
 
                 // P(A | A, C)
-                let _ = estimator.fit(&set![0], &set![0, 2]);
+                let _ = CPDEstimator::fit(&estimator, &set![0], &set![0, 2]);
             }
 
             #[test]
@@ -170,89 +175,84 @@ mod tests {
                 let estimator = MLE::new(&dataset);
 
                 // P(A | B, C)
-                let _ = estimator.fit(&set![0], &set![1, 2]);
+                let _ = CPDEstimator::fit(&estimator, &set![0], &set![1, 2]);
             }
         }
 
         mod bayesian_network {
-            use approx::*;
-            use causal_hub::{
-                datasets::CatTable,
-                estimators::{BNEstimator, MLE},
-                io::CsvIO,
-                labels,
-                models::{BN, CPD, CatBN, DiGraph, Graph, Labelled},
-                states,
-            };
-            use ndarray::prelude::*;
+            use super::*;
 
-            #[test]
-            fn fit() {
-                let csv = concat!(
-                    "A,B,C\n",
-                    "no,no,no\n",
-                    "no,no,yes\n",
-                    "no,yes,no\n",
-                    "no,yes,yes\n",
-                    "yes,no,no\n",
-                    "yes,no,yes\n",
-                    "yes,yes,no\n",
-                    "yes,yes,yes"
-                );
-                let dataset = CatTable::from_csv(csv);
+            mod categorical {
+                use super::*;
 
-                let mut graph = DiGraph::empty(["A", "B", "C"]);
-                graph.add_edge(0, 1);
-                graph.add_edge(0, 2);
-                graph.add_edge(1, 2);
+                #[test]
+                fn fit() {
+                    let csv = concat!(
+                        "A,B,C\n",
+                        "no,no,no\n",
+                        "no,no,yes\n",
+                        "no,yes,no\n",
+                        "no,yes,yes\n",
+                        "yes,no,no\n",
+                        "yes,no,yes\n",
+                        "yes,yes,no\n",
+                        "yes,yes,yes"
+                    );
+                    let dataset = CatTable::from_csv(csv);
 
-                let estimator = MLE::new(&dataset);
+                    let mut graph = DiGraph::empty(["A", "B", "C"]);
+                    graph.add_edge(0, 1);
+                    graph.add_edge(0, 2);
+                    graph.add_edge(1, 2);
 
-                let bn: CatBN = estimator.fit(graph);
+                    let estimator = MLE::new(&dataset);
 
-                // P(A)
-                let distribution = &bn.cpds()["A"];
+                    let bn: CatBN = BNEstimator::fit(&estimator, graph);
 
-                assert_eq!(&labels!["A"], distribution.labels());
-                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
-                assert_eq!(&labels![], distribution.conditioning_labels());
-                assert!(
-                    distribution
-                        .conditioning_states()
-                        .values()
-                        .all(|x| x.iter().eq(["no", "yes"]))
-                );
+                    // P(A)
+                    let distribution = &bn.cpds()["A"];
 
-                assert_eq!(
-                    distribution.parameters(),
-                    &array![
-                        // A: no, yes
-                        [0.5, 0.5]
-                    ]
-                );
+                    assert_eq!(&labels!["A"], distribution.labels());
+                    assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
+                    assert_eq!(&labels![], distribution.conditioning_labels());
+                    assert!(
+                        distribution
+                            .conditioning_states()
+                            .values()
+                            .all(|x| x.iter().eq(["no", "yes"]))
+                    );
 
-                assert_eq!(distribution.parameters_size(), 1);
-                assert_eq!(
-                    distribution.sample_statistics().map(|s| s.sample_size()),
-                    Some(8.)
-                );
-                assert_relative_eq!(
-                    distribution.sample_log_likelihood().unwrap(),
-                    -5.545177444479562
-                );
+                    assert_eq!(
+                        distribution.parameters(),
+                        &array![
+                            // A: no, yes
+                            [0.5, 0.5]
+                        ]
+                    );
 
-                assert_eq!(
-                    distribution.to_string(),
-                    concat!(
-                        "-----------------------\n",
-                        "| A        |          |\n",
-                        "| -------- | -------- |\n",
-                        "| no       | yes      |\n",
-                        "| -------- | -------- |\n",
-                        "| 0.500000 | 0.500000 |\n",
-                        "-----------------------\n",
-                    )
-                );
+                    assert_eq!(distribution.parameters_size(), 1);
+                    assert_eq!(
+                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        Some(8.)
+                    );
+                    assert_relative_eq!(
+                        distribution.sample_log_likelihood().unwrap(),
+                        -5.545177444479562
+                    );
+
+                    assert_eq!(
+                        distribution.to_string(),
+                        concat!(
+                            "-----------------------\n",
+                            "| A        |          |\n",
+                            "| -------- | -------- |\n",
+                            "| no       | yes      |\n",
+                            "| -------- | -------- |\n",
+                            "| 0.500000 | 0.500000 |\n",
+                            "-----------------------\n",
+                        )
+                    );
+                }
             }
         }
     }
