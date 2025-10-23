@@ -1,7 +1,7 @@
 use pyo3_stub_gen::Result;
 
 fn main() -> Result<()> {
-    // Generate `causal_hub.pyi` stub file.
+    // Generate stub files.
     let stub = causal_hub::stub_info()?;
     stub.generate()?;
 

@@ -15,8 +15,10 @@ pub mod models;
 /// Utility functions.
 pub mod utils;
 
+use std::path::PathBuf;
+
 use pyo3::prelude::*;
-use pyo3_stub_gen::define_stub_info_gatherer;
+use pyo3_stub_gen::StubInfo;
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -99,9 +101,9 @@ mod causal_hub {
         }
     }
 
-    /// Submodule `estimation`.
+    /// Submodule `estimators`.
     #[pymodule]
-    mod estimation {
+    mod estimators {
         use super::*;
 
         #[pymodule_init]
@@ -110,7 +112,7 @@ mod causal_hub {
             Python::attach(|py| {
                 py.import("sys")?
                     .getattr("modules")?
-                    .set_item("causal_hub.estimation", m)
+                    .set_item("causal_hub.estimators", m)
             })?;
 
             m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
@@ -156,5 +158,7 @@ mod causal_hub {
     }
 }
 
-// Define a function to gather stub information.
-define_stub_info_gatherer!(stub_info);
+/// Define a function to gather stub information.
+pub fn stub_info() -> pyo3_stub_gen::Result<StubInfo> {
+    StubInfo::from_pyproject_toml(PathBuf::from("pyproject.toml"))
+}

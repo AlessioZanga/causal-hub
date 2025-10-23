@@ -23,7 +23,7 @@ use crate::{
 };
 
 /// A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
-#[gen_stub_pyfunction(module = "causal_hub.estimation")]
+#[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
