@@ -25,7 +25,6 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
-        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
@@ -75,7 +74,6 @@ jobs:
     defaults:
       run:
         shell: pwsh -Command "& '{0}'"
-        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
@@ -101,7 +99,6 @@ jobs:
         run: |
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
-        working-directory: ${{ github.workspace }}
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -130,7 +127,6 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
-        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache

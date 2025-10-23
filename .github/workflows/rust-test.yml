@@ -78,7 +78,6 @@ jobs:
         run: |
           vcpkg integrate install
           vcpkg install openblas --overlay-ports=.vcpkg/ports
-        working-directory: ${{ github.workspace }}
       - name: Build
         run: cargo build --features=openblas-system
       - name: Test

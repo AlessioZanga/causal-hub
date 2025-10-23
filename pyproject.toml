@@ -24,5 +24,6 @@ repository = "https://github.com/AlessioZanga/causal-hub"
 documentation = "https://causal-hub.readthedocs.io/"
 
 [tool.maturin]
+manifest-path = "python/Cargo.toml"
 features = ["pyo3/extension-module", "backend/openblas-static"]
 strip = true

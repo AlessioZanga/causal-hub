@@ -45,7 +45,6 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           manylinux: auto
-          working-directory: python
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
@@ -58,7 +57,6 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
           manylinux: auto
-          working-directory: python
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
@@ -69,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -110,7 +108,6 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
-          working-directory: python
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13t"
@@ -120,12 +117,11 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
-          working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -158,18 +154,16 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
-          working-directory: python
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
-          working-directory: python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   sdist:
     runs-on: ubuntu-latest
@@ -180,12 +174,11 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: python
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
-          path: python/dist
+          path: dist
 
   release:
     name: Release
