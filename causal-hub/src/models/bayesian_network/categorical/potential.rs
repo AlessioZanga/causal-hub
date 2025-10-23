@@ -204,9 +204,9 @@ impl Phi for CatPhi {
         );
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten();
+        let e = e.evidences().iter().flatten().cloned();
         // Assert that the evidence is certain and positive.
-        let e = e.cloned().map(|e| match e {
+        let e = e.map(|e| match e {
             CatEvT::CertainPositive { event, state } => (event, state),
             _ => panic!(
                 "Failed to condition on evidence: \n

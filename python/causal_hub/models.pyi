@@ -2,91 +2,107 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import typing
+
 import numpy
 import numpy.typing
-import typing
 from causal_hub.datasets import CatTable, CatTrjs, GaussTable
 
 class CatBN:
     r"""
     A categorical Bayesian network (BN).
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
-    def __new__(cls, graph:DiGraph, cpds:typing.Any) -> CatBN:
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def __new__(cls, graph: DiGraph, cpds: typing.Any) -> CatBN:
         r"""
         Constructs a new Bayesian network.
-        
+
         Parameters
         ----------
         graph: DiGraph
             The underlying graph.
         cpds: Iterable[CatCPD]
             The conditional probability distributions.
-        
+
         Returns
         -------
         CatBN
             A new Bayesian network instance.
         """
+
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
-        
+
         Returns
         -------
         str | None
             The name of the model, if it exists.
         """
+
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
-        
+
         Returns
         -------
         str | None
             The description of the model, if it exists.
         """
+
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the labels.
         """
+
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
-        
+
         Returns
         -------
         DiGraph
             A reference to the graph.
         """
+
     def cpds(self) -> builtins.dict[builtins.str, CatCPD]:
         r"""
         Returns the a map labels-distributions.
-        
+
         Returns
         -------
         dict[str, CatCPD]
             A reference to the CPDs.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     @classmethod
-    def fit(cls, dataset:CatTable, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatBN:
+    def fit(
+        cls,
+        dataset: CatTable,
+        graph: DiGraph,
+        method: builtins.str = "mle",
+        parallel: builtins.bool = True,
+        **kwargs,
+    ) -> CatBN:
         r"""
         Fit the model to a dataset and a given graph.
-        
+
         Parameters
         ----------
         dataset: CatTable
@@ -99,18 +115,21 @@ class CatBN:
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
             Optional keyword arguments:
-        
+
                 - `alpha`: The prior of the Bayesian estimator (float64).
-        
+
         Returns
         -------
         CatBN
             A new fitted model.
         """
-    def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTable:
+
+    def sample(
+        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
+    ) -> CatTable:
         r"""
         Generate samples from the model.
-        
+
         Parameters
         ----------
         n: int
@@ -119,16 +138,23 @@ class CatBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel sampling (default is `true`).
-        
+
         Returns
         -------
         CatTable
             A new dataset containing the samples.
         """
-    def estimate(self, x:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> CatCPD:
+
+    def estimate(
+        self,
+        x: typing.Any,
+        z: typing.Any,
+        seed: builtins.int = 31,
+        parallel: builtins.bool = True,
+    ) -> CatCPD:
         r"""
         Estimate a conditional probability distribution (CPD).
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
@@ -139,16 +165,24 @@ class CatBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel estimation (default is `true`).
-        
+
         Returns
         -------
         CatCPD
             A new conditional probability distribution.
         """
-    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> typing.Optional[CatCPD]:
+
+    def do_estimate(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        z: typing.Any,
+        seed: builtins.int = 31,
+        parallel: builtins.bool = True,
+    ) -> typing.Optional[CatCPD]:
         r"""
         Estimate a conditional causal effect (CACE).
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
@@ -161,103 +195,111 @@ class CatBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel estimation (default is `true`).
-        
+
         Returns
         -------
         CatCPD | None
             A new conditional causal effect (CACE) distribution, if identifiable.
         """
+
     @classmethod
-    def from_bif(cls, bif:builtins.str) -> CatBN:
+    def from_bif(cls, bif: builtins.str) -> CatBN:
         r"""
         Read class from a BIF string.
-        
+
         Parameters
         ----------
         bif: str
             The BIF string to read from.
-        
+
         Returns
         -------
         CatBN
             A new Bayesian network instance.
         """
+
     def to_bif(self) -> builtins.str:
         r"""
         Write class to a BIF string.
-        
+
         Returns
         -------
         str
             A BIF string representation of the model.
         """
+
     @classmethod
-    def read_bif(cls, path:builtins.str) -> CatBN:
+    def read_bif(cls, path: builtins.str) -> CatBN:
         r"""
         Read class from a BIF file.
-        
+
         Parameters
         ----------
         path: str
             The path to the BIF file to read from.
-        
+
         Returns
         -------
         CatBN
             A new Bayesian network instance.
         """
-    def write_bif(self, path:builtins.str) -> None:
+
+    def write_bif(self, path: builtins.str) -> None:
         r"""
         Write class to a BIF file.
-        
+
         Parameters
         ----------
         path: str
             The path to the BIF file to write to.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> CatBN:
+    def from_json(cls, json: builtins.str) -> CatBN:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         CatBN
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> CatBN:
+    def read_json(cls, path: builtins.str) -> CatBN:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         CatBN
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -268,140 +310,154 @@ class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
-        
+
         Returns
         -------
         list[str]
             A reference to the label.
         """
+
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
-        
+
         Returns
         -------
         dict[str, tuple[str]]
             A reference to the states.
         """
+
     def shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioned variable.
-        
+
         Returns
         -------
         list[int]
             The shape of the conditioned variable.
         """
+
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the conditioning labels.
         """
+
     def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioning variables.
-        
+
         Returns
         -------
         dict[str, tuple[str]]
             The states of the conditioning variables.
         """
+
     def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioning variables.
-        
+
         Returns
         -------
         list[int]
             The shape of the conditioning variables.
         """
+
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the parameters.
-        
+
         Returns
         -------
         numpy.ndarray
             A reference to the parameters.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
-        
+
         Returns
         -------
         dict[str, ...] | None
             A dictionary containing the sample statistics used to fit the distribution, if any.
         """
+
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
-        
+
         Returns
         -------
         float | None
             The sample log-likelihood given the distribution, if any.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> CatCIM:
+    def from_json(cls, json: builtins.str) -> CatCIM:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         CatCIM
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> CatCIM:
+    def read_json(cls, path: builtins.str) -> CatCIM:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         CatCIM
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -412,144 +468,159 @@ class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution.
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
-        
+
         Returns
         -------
         list[str]
             A reference to the label.
         """
+
     def states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioned variable.
-        
+
         Returns
         -------
         dict[str, tuple[str, ...]]
             The states of the conditioned variable.
         """
+
     def shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioned variable.
-        
+
         Returns
         -------
         list[int]
             The shape of the conditioned variable.
         """
+
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the conditioning labels.
         """
+
     def conditioning_states(self) -> builtins.dict[builtins.str, tuple]:
         r"""
         Returns the states of the conditioning variables.
-        
+
         Returns
         -------
         dict[str, tuple[str, ...]]
             The states of the conditioning variables.
         """
+
     def conditioning_shape(self) -> builtins.list[builtins.int]:
         r"""
         Returns the shape of the conditioning variables.
-        
+
         Returns
         -------
         list[int]
             The shape of the conditioning variables.
         """
+
     def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
         r"""
         Returns the parameters.
-        
+
         Returns
         -------
         numpy.ndarray
             A reference to the parameters.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
-        
+
         Returns
         -------
         dict[str, ...] | None
             A dictionary containing the sample statistics used to fit the distribution, if any.
         """
+
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
-        
+
         Returns
         -------
         float | None
             The sample log-likelihood given the distribution, if any.
         """
+
     def __repr__(self) -> builtins.str:
         r"""
         Returns the string representation of the CatCPD.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> CatCPD:
+    def from_json(cls, json: builtins.str) -> CatCPD:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         CatCPD
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> CatCPD:
+    def read_json(cls, path: builtins.str) -> CatCPD:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         CatCPD
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -560,91 +631,107 @@ class CatCTBN:
     r"""
     A continuous-time Bayesian network (CTBN).
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
-    def __new__(cls, graph:DiGraph, cims:typing.Any) -> CatCTBN:
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def __new__(cls, graph: DiGraph, cims: typing.Any) -> CatCTBN:
         r"""
         Constructs a new continuous-time Bayesian network.
-        
+
         Parameters
         ----------
         graph: DiGraph
             The underlying graph.
         cims: Iterable[CatCIM]
             The conditional intensity matrices.
-        
+
         Returns
         -------
         CatCTBN
             A new continuous-time Bayesian network instance.
         """
+
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
-        
+
         Returns
         -------
         str | None
             The name of the model, if it exists.
         """
+
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
-        
+
         Returns
         -------
         str | None
             The description of the model, if it exists.
         """
+
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the labels.
         """
+
     def initial_distribution(self) -> CatBN:
         r"""
         Returns the initial distribution.
-        
+
         Returns
         -------
         CatBN
             A reference to the initial distribution.
         """
+
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
-        
+
         Returns
         -------
         DiGraph
             A reference to the graph.
         """
+
     def cims(self) -> builtins.dict[builtins.str, CatCIM]:
         r"""
         Returns the a map labels-distributions.
-        
+
         Returns
         -------
         dict[str, CatCIM]
             A reference to the CIMs.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     @classmethod
-    def fit(cls, dataset:CatTrjs, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True, **kwargs) -> CatCTBN:
+    def fit(
+        cls,
+        dataset: CatTrjs,
+        graph: DiGraph,
+        method: builtins.str = "mle",
+        parallel: builtins.bool = True,
+        **kwargs,
+    ) -> CatCTBN:
         r"""
         Fit the model to a dataset and a given graph.
-        
+
         Parameters
         ----------
         dataset: CatTrjs
@@ -657,18 +744,26 @@ class CatCTBN:
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
             Optional keyword arguments:
-        
+
                 - `alpha`: The prior of the Bayesian estimator (int, float64).
-        
+
         Returns
         -------
         CatCTBN
             A new fitted model.
         """
-    def sample(self, n:builtins.int, max_len:typing.Optional[builtins.int]=None, max_time:typing.Optional[builtins.float]=None, seed:builtins.int=31, parallel:builtins.bool=True) -> CatTrjs:
+
+    def sample(
+        self,
+        n: builtins.int,
+        max_len: typing.Optional[builtins.int] = None,
+        max_time: typing.Optional[builtins.float] = None,
+        seed: builtins.int = 31,
+        parallel: builtins.bool = True,
+    ) -> CatTrjs:
         r"""
         Sample from the model.
-        
+
         Parameters
         ----------
         n: int
@@ -683,55 +778,59 @@ class CatCTBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel sampling (default is `true`).
-        
+
         Returns
         -------
         CatTrjs
             A new dataset containing the sampled trajectories.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> CatCTBN:
+    def from_json(cls, json: builtins.str) -> CatCTBN:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         CatCTBN
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> CatCTBN:
+    def read_json(cls, path: builtins.str) -> CatCTBN:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         CatCTBN
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -742,179 +841,194 @@ class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
     @classmethod
-    def empty(cls, vertices:typing.Any) -> DiGraph:
+    def empty(cls, vertices: typing.Any) -> DiGraph:
         r"""
         Creates an empty directed graph with the given vertices.
-        
+
         Parameters
         ----------
         vertices: Iterable[str]
             The vertices of the graph.
             Vertices will be sorted in alphabetical order.
-        
+
         Returns
         -------
         DiGraph
             A new graph instance.
         """
+
     @classmethod
-    def complete(cls, vertices:typing.Any) -> DiGraph:
+    def complete(cls, vertices: typing.Any) -> DiGraph:
         r"""
         Creates a complete directed graph with the given vertices.
-        
+
         Parameters
         ----------
         vertices: Iterable[str]
             The the vertices of the graph.
             Vertices will be sorted in alphabetical order.
             No self-loops are created.
-        
+
         Returns
         -------
         DiGraph
             A new graph instance.
         """
+
     def vertices(self) -> builtins.list[builtins.str]:
         r"""
         Returns the vertices of the graph.
-        
+
         # Returns
-        
+
         A list of vertices.
         """
-    def has_vertex(self, x:builtins.str) -> builtins.bool:
+
+    def has_vertex(self, x: builtins.str) -> builtins.bool:
         r"""
         Checks if a vertex exists in the graph.
-        
+
         Parameters
         ----------
         x: str
             The vertex.
-        
+
         Returns
         -------
         bool
             `true` if the vertex exists, `false` otherwise.
         """
+
     def edges(self) -> builtins.list[tuple[builtins.str, builtins.str]]:
         r"""
         Returns the edges of the graph.
-        
+
         Returns
         -------
         list[tuple[str, str]]
             A list of edges.
         """
-    def has_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
+
+    def has_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
         r"""
         Checks if there is an edge between vertices `x` and `y`.
-        
+
         Parameters
         ----------
         x: str
             The first vertex.
         y: str
             The second vertex.
-        
+
         Returns
         -------
         bool
             `true` if there is an edge between `x` and `y`, `false` otherwise.
         """
-    def add_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
+
+    def add_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
         r"""
         Adds an edge between vertices `x` and `y`.
-        
+
         Parameters
         ----------
         x: str
             The first vertex.
         y: str
             The second vertex.
-        
+
         Returns
         -------
         bool
             `true` if the edge was added, `false` if it already existed.
         """
-    def del_edge(self, x:builtins.str, y:builtins.str) -> builtins.bool:
+
+    def del_edge(self, x: builtins.str, y: builtins.str) -> builtins.bool:
         r"""
         Deletes the edge between vertices `x` and `y`.
-        
+
         Parameters
         ----------
         x: str
             The first vertex.
         y: str
             The second vertex.
-        
+
         Returns
         -------
         bool
             `true` if the edge was deleted, `false` if it did not exist.
         """
-    def parents(self, x:typing.Any) -> builtins.list[builtins.str]:
+
+    def parents(self, x: typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the parents of a vertex `x`.
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
             A vertex or an iterable of vertices.
-        
+
         Returns
         -------
         list[str]
             A list of parent vertices.
         """
-    def ancestors(self, x:typing.Any) -> builtins.list[builtins.str]:
+
+    def ancestors(self, x: typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the ancestors of a vertex `x`.
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
             A vertex or an iterable of vertices.
-        
+
         Returns
         -------
         list[str]
             A list of ancestor vertices.
         """
-    def children(self, x:typing.Any) -> builtins.list[builtins.str]:
+
+    def children(self, x: typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the children of a vertex `x`.
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
             A vertex or an iterable of vertices.
-        
+
         Returns
         -------
         list[str]
             A list of child vertices.
         """
-    def descendants(self, x:typing.Any) -> builtins.list[builtins.str]:
+
+    def descendants(self, x: typing.Any) -> builtins.list[builtins.str]:
         r"""
         Returns the descendants of a vertex `x`.
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
             A vertex or an iterable of vertices.
-        
+
         Returns
         -------
         list[str]
             A list of descendant vertices.
         """
-    def is_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+
+    def is_separator_set(
+        self, x: typing.Any, y: typing.Any, z: typing.Any
+    ) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a separator set for `X` and `Y`.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -923,24 +1037,32 @@ class DiGraph:
             An iterable of vertices representing set `Y`.
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
             * `X`, `Y` or `Z` are not disjoint sets.
             * `X` and `Y` are empty sets.
-        
+
         Returns
         -------
         bool
             `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
         """
-    def is_minimal_separator_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
+
+    def is_minimal_separator_set(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
+        v: typing.Optional[typing.Any] = None,
+    ) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -953,25 +1075,32 @@ class DiGraph:
             An optional iterable of vertices representing set `W`.
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
             * `X`, `Y` or `Z` are not disjoint sets.
             * `X` and `Y` are empty sets.
             * Not `W` <= `Z` <= `V`.
-        
+
         Returns
         -------
         bool
             `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
         """
-    def find_minimal_separator_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
+
+    def find_minimal_separator_set(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        w: typing.Optional[typing.Any] = None,
+        v: typing.Optional[typing.Any] = None,
+    ) -> typing.Optional[builtins.list[builtins.str]]:
         r"""
         Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -982,25 +1111,28 @@ class DiGraph:
             An optional iterable of vertices representing set `W`.
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
             * `X` and `Y` are not disjoint sets.
             * `X` or `Y` are empty sets.
             * Not `W` <= `V`.
-        
+
         Returns
         -------
         list[str] | None
             A minimal separator set, or `None` if no separator set exists.
         """
-    def is_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any) -> builtins.bool:
+
+    def is_backdoor_set(
+        self, x: typing.Any, y: typing.Any, z: typing.Any
+    ) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a backdoor set for `X` and `Y`.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -1009,24 +1141,32 @@ class DiGraph:
             An iterable of vertices representing set `Y`.
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
             * `X`, `Y` or `Z` are not disjoint sets.
             * `X` and `Y` are empty sets.
-        
+
         Returns
         -------
         bool
             `true` if `Z` is a backdoor set for `X` and `Y`, `false` otherwise.
         """
-    def is_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, z:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> builtins.bool:
+
+    def is_minimal_backdoor_set(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
+        v: typing.Optional[typing.Any] = None,
+    ) -> builtins.bool:
         r"""
         Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -1039,25 +1179,32 @@ class DiGraph:
             An optional iterable of vertices representing set `W`.
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
             * `X`, `Y` or `Z` are not disjoint sets.
             * `X` and `Y` are empty sets.
             * Not `W` <= `Z` <= `V`.
-        
+
         Returns
         -------
         bool
             `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
         """
-    def find_minimal_backdoor_set(self, x:typing.Any, y:typing.Any, w:typing.Optional[typing.Any]=None, v:typing.Optional[typing.Any]=None) -> typing.Optional[builtins.list[builtins.str]]:
+
+    def find_minimal_backdoor_set(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        w: typing.Optional[typing.Any] = None,
+        v: typing.Optional[typing.Any] = None,
+    ) -> typing.Optional[builtins.list[builtins.str]]:
         r"""
         Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
-        
+
         Parameters
         ----------
         x: Iterable[str]
@@ -1068,88 +1215,94 @@ class DiGraph:
             An optional iterable of vertices representing set `W`.
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
-        
+
         Notes
         ----------
         Raises an exception if:
-        
+
             * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
             * `X` and `Y` are not disjoint sets.
             * `X` or `Y` are empty sets.
             * Not `W` <= `V`.
-        
+
         Returns
         -------
         list[str] | None
             A minimal backdoor set, or `None` if no backdoor set exists.
         """
+
     @classmethod
-    def from_networkx(cls, g:typing.Any) -> DiGraph:
+    def from_networkx(cls, g: typing.Any) -> DiGraph:
         r"""
         Converts from a NetworkX DiGraph.
-        
+
         Parameters
         ----------
         g: networkx.DiGraph
             A NetworkX DiGraph to convert from.
-        
+
         Returns
         -------
         DiGraph
             A new instance.
         """
+
     def to_networkx(self) -> typing.Any:
         r"""
         Converts to a NetworkX DiGraph.
-        
+
         Returns
         -------
         networkx.DiGraph
             A NetworkX DiGraph representation of the graph.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> DiGraph:
+    def from_json(cls, json: builtins.str) -> DiGraph:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         DiGraph
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> DiGraph:
+    def read_json(cls, path: builtins.str) -> DiGraph:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         DiGraph
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -1160,82 +1313,96 @@ class GaussBN:
     r"""
     A Gaussian Bayesian network.
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
-    def __new__(cls, graph:DiGraph, cpds:typing.Any) -> GaussBN:
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def __new__(cls, graph: DiGraph, cpds: typing.Any) -> GaussBN:
         r"""
         Constructs a new Bayesian network.
-        
+
         Parameters
         ----------
         graph: DiGraph
             The underlying graph.
         cpds: Iterable[GaussCPD]
             The conditional probability distributions.
-        
+
         Returns
         -------
         GaussBN
             A new Bayesian network instance.
         """
+
     def name(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the name of the model, if any.
-        
+
         Returns
         -------
         str | None
             The name of the model, if it exists.
         """
+
     def description(self) -> typing.Optional[builtins.str]:
         r"""
         Returns the description of the model, if any.
-        
+
         Returns
         -------
         str | None
             The description of the model, if it exists.
         """
+
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the labels.
         """
+
     def graph(self) -> DiGraph:
         r"""
         Returns the underlying graph.
-        
+
         Returns
         -------
         DiGraph
             A reference to the graph.
         """
+
     def cpds(self) -> builtins.dict[builtins.str, GaussCPD]:
         r"""
         Returns the a map labels-distributions.
-        
+
         Returns
         -------
         dict[str, GaussCPD]
             A reference to the CPDs.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     @classmethod
-    def fit(cls, dataset:GaussTable, graph:DiGraph, method:builtins.str='mle', parallel:builtins.bool=True) -> GaussBN:
+    def fit(
+        cls,
+        dataset: GaussTable,
+        graph: DiGraph,
+        method: builtins.str = "mle",
+        parallel: builtins.bool = True,
+    ) -> GaussBN:
         r"""
         Fit the model to a dataset and a given graph.
-        
+
         Parameters
         ----------
         dataset: GaussTable
@@ -1246,16 +1413,19 @@ class GaussBN:
             The method to use for fitting (default is `mle`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
-        
+
         Returns
         -------
         GaussBN
             A new fitted model.
         """
-    def sample(self, n:builtins.int, seed:builtins.int=31, parallel:builtins.bool=True) -> GaussTable:
+
+    def sample(
+        self, n: builtins.int, seed: builtins.int = 31, parallel: builtins.bool = True
+    ) -> GaussTable:
         r"""
         Generate samples from the model.
-        
+
         Parameters
         ----------
         n: int
@@ -1264,16 +1434,23 @@ class GaussBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel sampling (default is `true`).
-        
+
         Returns
         -------
         GaussTable
             A new dataset containing the samples.
         """
-    def estimate(self, x:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> GaussCPD:
+
+    def estimate(
+        self,
+        x: typing.Any,
+        z: typing.Any,
+        seed: builtins.int = 31,
+        parallel: builtins.bool = True,
+    ) -> GaussCPD:
         r"""
         Estimate a conditional probability distribution (CPD).
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
@@ -1284,16 +1461,24 @@ class GaussBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel estimation (default is `true`).
-        
+
         Returns
         -------
         GaussCPD
             A new conditional probability distribution.
         """
-    def do_estimate(self, x:typing.Any, y:typing.Any, z:typing.Any, seed:builtins.int=31, parallel:builtins.bool=True) -> typing.Optional[GaussCPD]:
+
+    def do_estimate(
+        self,
+        x: typing.Any,
+        y: typing.Any,
+        z: typing.Any,
+        seed: builtins.int = 31,
+        parallel: builtins.bool = True,
+    ) -> typing.Optional[GaussCPD]:
         r"""
         Estimate a conditional causal effect (CACE).
-        
+
         Parameters
         ----------
         x: str | Iterable[str]
@@ -1306,55 +1491,59 @@ class GaussBN:
             The seed of the random number generator (default is `31`).
         parallel: bool
             The flag to enable parallel estimation (default is `true`).
-        
+
         Returns
         -------
         GaussCPD | None
             A new conditional causal effect (CACE) distribution, if identifiable.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> GaussBN:
+    def from_json(cls, json: builtins.str) -> GaussBN:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         GaussBN
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> GaussBN:
+    def read_json(cls, path: builtins.str) -> GaussBN:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         GaussBN
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
@@ -1365,107 +1554,116 @@ class GaussCPD:
     r"""
     A struct representing a Gaussian conditional probability distribution.
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
     def labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the label of the conditioned variable.
-        
+
         Returns
         -------
         list[str]
             A reference to the label.
         """
+
     def conditioning_labels(self) -> builtins.list[builtins.str]:
         r"""
         Returns the labels of the conditioned variables.
-        
+
         Returns
         -------
         list[str]
             A reference to the conditioning labels.
         """
+
     def parameters(self) -> dict:
         r"""
         Returns the parameters.
-        
+
         Returns
         -------
         dict[str, ...]
             A reference to the parameters.
         """
+
     def parameters_size(self) -> builtins.int:
         r"""
         Returns the parameters size.
-        
+
         Returns
         -------
         int
             The parameters size.
         """
+
     def sample_statistics(self) -> typing.Optional[dict]:
         r"""
         Returns the sample statistics used to fit the distribution, if any.
-        
+
         Returns
         -------
         dict[str, ...] | None
             A dictionary containing the sample statistics used to fit the distribution, if any.
         """
+
     def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the sample log-likelihood given the distribution, if any.
-        
+
         Returns
         -------
         float | None
             The sample log-likelihood given the distribution, if any.
         """
+
     @classmethod
-    def from_json(cls, json:builtins.str) -> GaussCPD:
+    def from_json(cls, json: builtins.str) -> GaussCPD:
         r"""
         Read instance from a JSON string.
-        
+
         Parameters
         ----------
         json: str
             The JSON string to read from.
-        
+
         Returns
         -------
         GaussCPD
             A new instance.
         """
+
     def to_json(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
-        
+
         Returns
         -------
         str
             A JSON string representation of the instance.
         """
+
     @classmethod
-    def read_json(cls, path:builtins.str) -> GaussCPD:
+    def read_json(cls, path: builtins.str) -> GaussCPD:
         r"""
         Read instance from a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to read from.
-        
+
         Returns
         -------
         GaussCPD
             A new instance.
         """
-    def write_json(self, path:builtins.str) -> None:
+
+    def write_json(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
-        
+
         Parameters
         ----------
         path: str
             The path to the JSON file to write to.
         """
-

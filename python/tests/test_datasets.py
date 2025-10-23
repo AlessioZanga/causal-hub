@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 from causal_hub.datasets import CatTable, CatTrj, CatTrjEv, CatTrjs, GaussTable
 
 
