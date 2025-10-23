@@ -127,4 +127,3 @@ def load_win95pts() -> CatBN:
     r"""
     Load the `WIN95PTS` categorical BN from the assets.
     """
-

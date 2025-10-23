@@ -3,6 +3,7 @@
 
 import builtins
 import typing
+
 from causal_hub.datasets import CatTrjsEv
 from causal_hub.models import DiGraph
 
@@ -10,16 +11,34 @@ class PK:
     r"""
     A struct representing prior knowledge.
     """
-    def __eq__(self, other:builtins.object) -> builtins.bool: ...
-    def __new__(cls, labels:typing.Any, forbidden:typing.Any, required:typing.Any, temporal_order:typing.Any) -> PK: ...
 
-def em(evidence:CatTrjsEv, graph:DiGraph, max_iter:builtins.int=10, seed:builtins.int=42) -> dict:
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def __new__(
+        cls,
+        labels: typing.Any,
+        forbidden: typing.Any,
+        required: typing.Any,
+        temporal_order: typing.Any,
+    ) -> PK: ...
+
+def em(
+    evidence: CatTrjsEv,
+    graph: DiGraph,
+    max_iter: builtins.int = 10,
+    seed: builtins.int = 42,
+) -> dict:
     r"""
     A function to perform parameter learning using the Expectation Maximization (EM) algorithm.
     """
 
-def sem(evidence:CatTrjsEv, prior_knowledge:PK, algorithm:builtins.str, max_iter:builtins.int=10, seed:builtins.int=42, **kwargs) -> dict:
+def sem(
+    evidence: CatTrjsEv,
+    prior_knowledge: PK,
+    algorithm: builtins.str,
+    max_iter: builtins.int = 10,
+    seed: builtins.int = 42,
+    **kwargs,
+) -> dict:
     r"""
     A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
     """
-

@@ -351,9 +351,9 @@ impl Phi for GaussPhi {
         );
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten();
+        let e = e.evidences().iter().flatten().cloned();
         // Assert that the evidence is certain and positive.
-        let e = e.cloned().map(|e| match e {
+        let e = e.map(|e| match e {
             GaussEvT::CertainPositive { event, value } => (event, value),
             /* _ => panic! NOTE: No other variant so far. */
         });
