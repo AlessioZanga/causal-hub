@@ -11,5 +11,5 @@ Module Reference
 
    causal_hub.assets
    causal_hub.datasets
-   causal_hub.estimation
+   causal_hub.estimators
    causal_hub.models

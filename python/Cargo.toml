@@ -1,5 +1,5 @@
 [package]
-name = "causal-hub-python"
+name = "python"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

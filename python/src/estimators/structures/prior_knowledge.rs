@@ -8,7 +8,7 @@ use crate::impl_from_into_lock;
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
-#[pyclass(name = "PK", module = "causal_hub.estimation", eq)]
+#[pyclass(name = "PK", module = "causal_hub.estimators", eq)]
 #[derive(Clone, Debug)]
 pub struct PyPK {
     inner: Arc<RwLock<PK>>,

@@ -29,7 +29,7 @@ use crate::{
 };
 
 /// A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.
-#[gen_stub_pyfunction(module = "causal_hub.estimation")]
+#[gen_stub_pyfunction(module = "causal_hub.estimators")]
 #[pyfunction]
 #[pyo3(signature = (
     evidence,
