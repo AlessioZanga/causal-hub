@@ -73,7 +73,8 @@
       ["atpD", "yheI"],
       ["yedE", "yheI"],
       ["fixC", "yjbO"]
-    ]
+    ],
+    "type": "digraph"
   },
   "cpds": [
     {
@@ -87,7 +88,8 @@
         "covariance": [
           [0.0853]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["asnA"],
@@ -100,7 +102,8 @@
         "covariance": [
           [0.0914]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["atpD"],
@@ -113,7 +116,8 @@
         "covariance": [
           [0.4131]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["atpG"],
@@ -126,7 +130,8 @@
         "covariance": [
           [0.3943]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["b1191"],
@@ -139,7 +144,8 @@
         "covariance": [
           [0.6086]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["b1583"],
@@ -152,7 +158,8 @@
         "covariance": [
           [1.1085]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["b1963"],
@@ -165,7 +172,8 @@
         "covariance": [
           [0.3768]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["cchB"],
@@ -178,7 +186,8 @@
         "covariance": [
           [0.6406]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["cspA"],
@@ -191,7 +200,8 @@
         "covariance": [
           [1.5367]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["cspG"],
@@ -204,7 +214,8 @@
         "covariance": [
           [1.0755]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["dnaG"],
@@ -217,7 +228,8 @@
         "covariance": [
           [0.1302]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["dnaJ"],
@@ -230,7 +242,8 @@
         "covariance": [
           [0.5754]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["dnaK"],
@@ -243,7 +256,8 @@
         "covariance": [
           [0.2908]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["eutG"],
@@ -256,7 +270,8 @@
         "covariance": [
           [0.6911]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["fixC"],
@@ -269,7 +284,8 @@
         "covariance": [
           [1.1309]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["flgD"],
@@ -282,7 +298,8 @@
         "covariance": [
           [0.3929]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["folK"],
@@ -295,7 +312,8 @@
         "covariance": [
           [0.1344]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["ftsJ"],
@@ -308,7 +326,8 @@
         "covariance": [
           [0.1564]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["gltA"],
@@ -321,7 +340,8 @@
         "covariance": [
           [0.6895]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["hupB"],
@@ -334,7 +354,8 @@
         "covariance": [
           [0.1159]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["ibpB"],
@@ -347,7 +368,8 @@
         "covariance": [
           [0.4609]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["icdA"],
@@ -360,7 +382,8 @@
         "covariance": [
           [0.3179]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["lacA"],
@@ -373,7 +396,8 @@
         "covariance": [
           [2.887]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["lacY"],
@@ -386,7 +410,8 @@
         "covariance": [
           [0.0602]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["lacZ"],
@@ -399,7 +424,8 @@
         "covariance": [
           [0.3408]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["lpdA"],
@@ -412,7 +438,8 @@
         "covariance": [
           [0.1399]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["mopB"],
@@ -425,7 +452,8 @@
         "covariance": [
           [0.3139]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["nmpC"],
@@ -438,7 +466,8 @@
         "covariance": [
           [0.3232]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["nuoM"],
@@ -451,7 +480,8 @@
         "covariance": [
           [0.8133]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["pspA"],
@@ -464,7 +494,8 @@
         "covariance": [
           [0.1724]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["pspB"],
@@ -477,7 +508,8 @@
         "covariance": [
           [0.2706]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["sucA"],
@@ -490,7 +522,8 @@
         "covariance": [
           [0.6586]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["sucD"],
@@ -503,7 +536,8 @@
         "covariance": [
           [0.4356]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["tnaA"],
@@ -516,7 +550,8 @@
         "covariance": [
           [0.0962]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yaeM"],
@@ -529,7 +564,8 @@
         "covariance": [
           [0.6561]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yceP"],
@@ -542,7 +578,8 @@
         "covariance": [
           [0.1674]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["ycgX"],
@@ -555,7 +592,8 @@
         "covariance": [
           [0.2555]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yecO"],
@@ -568,7 +606,8 @@
         "covariance": [
           [0.2249]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yedE"],
@@ -581,7 +620,8 @@
         "covariance": [
           [0.2771]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yfaD"],
@@ -594,7 +634,8 @@
         "covariance": [
           [0.187]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yfiA"],
@@ -607,7 +648,8 @@
         "covariance": [
           [0.3156]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["ygbD"],
@@ -620,7 +662,8 @@
         "covariance": [
           [0.74]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["ygcE"],
@@ -633,7 +676,8 @@
         "covariance": [
           [0.3429]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yhdM"],
@@ -646,7 +690,8 @@
         "covariance": [
           [0.5882]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yheI"],
@@ -659,7 +704,8 @@
         "covariance": [
           [0.1406]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["yjbO"],
@@ -672,7 +718,9 @@
         "covariance": [
           [1.8512]
         ]
-      }
+      },
+      "type": "gausscpd"
     }
-  ]
+  ],
+  "type": "gaussbn"
 }

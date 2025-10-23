@@ -19,10 +19,15 @@
                 "minItems": 2,
                 "maxItems": 2
             }
+        },
+        "type": {
+            "type": "string",
+            "const": "ungraph"
         }
     },
     "required": [
         "labels",
-        "edges"
+        "edges",
+        "type"
     ]
 }

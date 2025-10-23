@@ -257,10 +257,10 @@ impl Serialize for GaussCPDS {
         map.serialize_entry("sample_response_covariance", &sample_response_covariance)?;
 
         // Convert the sample cross covariance to a flat format.
-        let sample_crosm_covariance: Vec<_> =
+        let sample_cross_covariance: Vec<_> =
             self.m_xz.rows().into_iter().map(|x| x.to_vec()).collect();
         // Serialize sample cross covariance.
-        map.serialize_entry("sample_crosm_covariance", &sample_crosm_covariance)?;
+        map.serialize_entry("sample_cross_covariance", &sample_cross_covariance)?;
 
         // Convert the sample design covariance to a flat format.
         let sample_design_covariance: Vec<_> =
@@ -377,7 +377,7 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                 // Convert sample response covariance to array.
                 let sample_response_covariance = {
                     let values: Vec<Vec<f64>> = sample_response_covariance;
-                    let shape = (values.len(), values[0].len());
+                    let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
                         .map_err(|_| E::custom("Invalid sample response covariance shape"))?
@@ -385,7 +385,7 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                 // Convert sample cross covariance to array.
                 let sample_cross_covariance = {
                     let values: Vec<Vec<f64>> = sample_cross_covariance;
-                    let shape = (values.len(), values[0].len());
+                    let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
                         .map_err(|_| E::custom("Invalid sample cross covariance shape"))?
@@ -393,7 +393,7 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                 // Convert sample design covariance to array.
                 let sample_design_covariance = {
                     let values: Vec<Vec<f64>> = sample_design_covariance;
-                    let shape = (values.len(), values[0].len());
+                    let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
                         .map_err(|_| E::custom("Invalid sample design covariance shape"))?

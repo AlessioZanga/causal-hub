@@ -1,5 +1,8 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
+use ndarray_linalg::{CholeskyInto, Determinant, UPLO};
+use rand::Rng;
+use rand_distr::{Distribution, StandardNormal};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -7,9 +10,11 @@ use serde::{
 };
 
 use crate::{
+    datasets::GaussSample,
     impl_json_io,
-    models::{CPD, GaussCPDS, Labelled},
-    types::Labels,
+    models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
+    types::{EPSILON, LN_2_PI, Labels, Set},
+    utils::PseudoInverse,
 };
 
 /// Parameters of a Gaussian CPD.
@@ -36,7 +41,7 @@ impl GaussCPDP {
     ///
     /// * Panics if the number of rows of `a` does not match the size of `b`.
     /// * Panics if the number of rows of `a` does not match the size of `s`.
-    /// * Panics if `s` is not square.
+    /// * Panics if `s` is not square and symmetric.
     /// * Panics if any of the values in `a`, `b`, or `s` are not finite.
     ///
     /// # Returns
@@ -69,6 +74,7 @@ impl GaussCPDP {
             s.iter().all(|&x| x.is_finite()),
             "Covariance matrix must have finite values."
         );
+        assert_eq!(s, s.t(), "Covariance matrix must be symmetric.");
 
         Self { a, b, s }
     }
@@ -396,6 +402,42 @@ impl GaussCPD {
         }
     }
 
+    /// Marginalizes the over the variables `X` and conditioning variables `Z`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The variables to marginalize over.
+    /// * `z` - The conditioning variables to marginalize over.
+    ///
+    /// # Returns
+    ///
+    /// A new instance with the marginalized variables.
+    ///
+    pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+        // Base case: if no variables to marginalize, return self clone.
+        if x.is_empty() && z.is_empty() {
+            return self.clone();
+        }
+        // Get labels.
+        let labels_x = self.labels();
+        let labels_z = self.conditioning_labels();
+        // Get indices to preserve.
+        let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
+        let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
+        // Convert to potential.
+        let phi = self.clone().into_phi();
+        // Map CPD indices to potential indices.
+        let x = phi.indices_from(x, labels_x);
+        let z = phi.indices_from(z, labels_z);
+        // Marginalize the potential.
+        let phi = phi.marginalize(&(&x | &z));
+        // Map CPD indices to potential indices.
+        let not_x = phi.indices_from(&not_x, labels_x);
+        let not_z = phi.indices_from(&not_z, labels_z);
+        // Convert back to CPD.
+        phi.into_cpd(&not_x, &not_z)
+    }
+
     /// Creates a new Gaussian CPD instance.
     ///
     /// # Arguments
@@ -429,6 +471,37 @@ impl GaussCPD {
         cpd.sample_log_likelihood = sample_log_likelihood;
 
         cpd
+    }
+
+    /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The set of variables.
+    /// * `z` - The set of conditioning variables.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding CPD.
+    ///
+    #[inline]
+    pub fn from_phi(phi: GaussPhi, x: &Set<usize>, z: &Set<usize>) -> Self {
+        phi.into_cpd(x, z)
+    }
+
+    /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
+    ///
+    /// # Arguments
+    ///
+    /// * `cpd` - The CPD to convert.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding potential.
+    ///
+    #[inline]
+    pub fn into_phi(self) -> GaussPhi {
+        GaussPhi::from_cpd(self)
     }
 }
 
@@ -481,6 +554,7 @@ impl RelativeEq for GaussCPD {
 }
 
 impl CPD for GaussCPD {
+    type Support = GaussSample;
     type Parameters = GaussCPDP;
     type Statistics = GaussCPDS;
 
@@ -496,7 +570,13 @@ impl CPD for GaussCPD {
 
     #[inline]
     fn parameters_size(&self) -> usize {
-        self.parameters.a.len() + self.parameters.b.len() + self.parameters.s.len()
+        let s = {
+            // Covariance matrix is symmetric.
+            let s = self.parameters.s.nrows();
+            s * (s + 1) / 2
+        };
+
+        self.parameters.a.len() + self.parameters.b.len() + s
     }
 
     #[inline]
@@ -508,6 +588,147 @@ impl CPD for GaussCPD {
     fn sample_log_likelihood(&self) -> Option<f64> {
         self.sample_log_likelihood
     }
+
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert X matches number of variables.
+        assert_eq!(
+            x.len(),
+            n,
+            "Vector X must match number of variables: \n\
+            \t expected:    |X| == {} , \n\
+            \t found:       |X| == {} .",
+            n,
+            x.len(),
+        );
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // Get parameters.
+        let (a, b, s) = (
+            self.parameters.coefficients(),
+            self.parameters.intercept(),
+            self.parameters.covariance(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return 1.;
+        }
+
+        // One variable ...
+        if n == 1 {
+            // Compute the mean.
+            let mu = match m {
+                // ... no conditioning variables.
+                0 => b[0], // Get the mean.
+                // ... one conditioning variable.
+                1 => f64::mul_add(a[[0, 0]], z[0], b[0]), // Compute the mean.
+                // ... multiple conditioning variables.
+                _ => (a.dot(z) + b)[0], // Compute mean vector.
+            };
+            // Compute deviation from mean.
+            let x_mu = x[0] - mu;
+            // Get the variance.
+            let k = s[[0, 0]];
+            // Compute log probability density function.
+            let ln_pf = -0.5 * (LN_2_PI + f64::ln(k) + f64::powi(x_mu, 2) / k);
+            // Return probability density function.
+            return f64::exp(ln_pf);
+        }
+
+        // Multiple variables, multiple conditioning variables.
+
+        // Compute mean vector.
+        let mu = a.dot(z) + b;
+        // Compute deviation from mean.
+        let x_mu = x - mu;
+        // Compute precision matrix.
+        let k = s.pinv();
+        // Compute log probability density function.
+        let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
+        let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
+        let ln_pf = -0.5 * (n_ln_2_pi + ln_det + x_mu.dot(&k).dot(&x_mu));
+        // Return probability density function.
+        f64::exp(ln_pf)
+    }
+
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // Get parameters.
+        let (a, b, s) = (
+            self.parameters.coefficients(),
+            self.parameters.intercept(),
+            self.parameters.covariance(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return array![];
+        }
+
+        // One variable ...
+        if n == 1 {
+            // Compute the mean.
+            let mu = match m {
+                // ... no conditioning variables.
+                0 => b[0], // Get the mean.
+                // ... one conditioning variable.
+                1 => f64::mul_add(a[[0, 0]], z[0], b[0]), // Compute the mean.
+                // ... multiple conditioning variables.
+                _ => (a.dot(z) + b)[0], // Compute mean vector.
+            };
+            // Sample from standard normal.
+            let e: f64 = StandardNormal.sample(rng);
+            // Compute the sample.
+            let x = f64::mul_add(s[[0, 0]].sqrt(), e, mu);
+            // Return the sample.
+            return array![x];
+        }
+
+        // Multiple variables, multiple conditioning variables.
+
+        // Compute the mean.
+        let mu = a.dot(z) + b;
+        // Compute the Cholesky decomposition of the covariance matrix.
+        let l = (s + EPSILON * Array::eye(s.nrows()))
+            .cholesky_into(UPLO::Lower)
+            .expect("Failed to compute Cholesky decomposition.");
+        // Sample from standard normal.
+        let e = StandardNormal
+            .sample_iter(rng)
+            .take(s.nrows())
+            .collect::<Array1<_>>();
+        // Compute the sample.
+        l.dot(&e) + mu
+    }
 }
 
 impl Serialize for GaussCPD {
@@ -516,7 +737,7 @@ impl Serialize for GaussCPD {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         // Add optional fields, if any.
         size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
@@ -525,10 +746,8 @@ impl Serialize for GaussCPD {
 
         // Serialize labels.
         map.serialize_entry("labels", &self.labels)?;
-
         // Serialize conditioning labels.
         map.serialize_entry("conditioning_labels", &self.conditioning_labels)?;
-
         // Serialize parameters.
         map.serialize_entry("parameters", &self.parameters)?;
 
@@ -541,6 +760,9 @@ impl Serialize for GaussCPD {
         if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
             map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
         }
+
+        // Serialize type.
+        map.serialize_entry("type", "gausscpd")?;
 
         // End the map.
         map.end()
@@ -560,6 +782,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
             Parameters,
             SampleStatistics,
             SampleLogLikelihood,
+            Type,
         }
 
         struct GaussCPDVisitor;
@@ -583,6 +806,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let mut parameters = None;
                 let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -617,6 +841,12 @@ impl<'de> Deserialize<'de> for GaussCPD {
                             }
                             sample_log_likelihood = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -625,6 +855,10 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let conditioning_labels =
                     conditioning_labels.ok_or_else(|| E::missing_field("conditioning_labels"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "gausscpd", "Invalid type for GaussCPD.");
 
                 Ok(GaussCPD::with_optionals(
                     labels,
@@ -642,6 +876,7 @@ impl<'de> Deserialize<'de> for GaussCPD {
             "parameters",
             "sample_statistics",
             "sample_log_likelihood",
+            "type",
         ];
 
         deserializer.deserialize_struct("GaussCPD", FIELDS, GaussCPDVisitor)

@@ -1,5 +1,5 @@
 /// A trait for reading and writing CSV files.
-pub trait CsvIO {
+pub trait CsvIO: Sized {
     /// Create an instance of the type from a CSV string.
     ///
     /// # Arguments
@@ -30,7 +30,10 @@ pub trait CsvIO {
     ///
     /// A new instance of the type.
     ///
-    fn read_csv(path: &str) -> Self;
+    fn read_csv(path: &str) -> Self {
+        // TODO: Reading the entire file to a string is not efficient.
+        Self::from_csv(&std::fs::read_to_string(path).expect("Failed to read CSV file."))
+    }
 
     /// Write the instance to a CSV file.
     ///
@@ -38,5 +41,7 @@ pub trait CsvIO {
     ///
     /// * `path` - The path to the CSV file to write.
     ///
-    fn write_csv(&self, path: &str);
+    fn write_csv(&self, path: &str) {
+        std::fs::write(path, self.to_csv()).expect("Failed to write CSV file.");
+    }
 }

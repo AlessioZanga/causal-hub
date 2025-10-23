@@ -1,6 +1,6 @@
 mod assets;
 mod datasets;
-mod estimation;
+mod estimators;
 mod inference;
 mod io;
 mod models;

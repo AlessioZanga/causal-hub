@@ -1,8 +1,11 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     datasets::CatTable,
-    estimation::{BE, MLE},
+    estimators::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -10,7 +13,6 @@ use backend::{
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
-    set,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -23,21 +25,27 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTable,
-    estimation::PyBNEstimator,
-    impl_deref_from_into, indices_from, kwarg,
+    estimators::PyBNEstimator,
+    impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };
 
 /// A categorical Bayesian network (BN).
 #[gen_stub_pyclass]
 #[pyclass(name = "CatBN", module = "causal_hub.models", eq)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PyCatBN {
-    inner: CatBN,
+    inner: Arc<RwLock<CatBN>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyCatBN, CatBN);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyCatBN, CatBN);
+
+impl PartialEq for PyCatBN {
+    fn eq(&self, other: &Self) -> bool {
+        (*self.lock()).eq(&*other.lock())
+    }
+}
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -78,8 +86,8 @@ impl PyCatBN {
     /// str | None
     ///     The name of the model, if it exists.
     ///
-    pub fn name(&self) -> PyResult<Option<&str>> {
-        Ok(self.inner.name())
+    pub fn name(&self) -> PyResult<Option<String>> {
+        Ok(self.lock().name().map(Into::into))
     }
 
     /// Returns the description of the model, if any.
@@ -89,8 +97,8 @@ impl PyCatBN {
     /// str | None
     ///     The description of the model, if it exists.
     ///
-    pub fn description(&self) -> PyResult<Option<&str>> {
-        Ok(self.inner.description())
+    pub fn description(&self) -> PyResult<Option<String>> {
+        Ok(self.lock().description().map(Into::into))
     }
 
     /// Returns the labels of the variables.
@@ -100,8 +108,8 @@ impl PyCatBN {
     /// list[str]
     ///     A reference to the labels.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the underlying graph.
@@ -112,7 +120,7 @@ impl PyCatBN {
     ///     A reference to the graph.
     ///
     pub fn graph(&self) -> PyResult<PyDiGraph> {
-        Ok(self.inner.graph().clone().into())
+        Ok(self.lock().graph().clone().into())
     }
 
     /// Returns the a map labels-distributions.
@@ -122,14 +130,14 @@ impl PyCatBN {
     /// dict[str, CatCPD]
     ///     A reference to the CPDs.
     ///
-    pub fn cpds(&self) -> PyResult<BTreeMap<&str, PyCatCPD>> {
+    pub fn cpds(&self) -> PyResult<BTreeMap<String, PyCatCPD>> {
         Ok(self
-            .inner
+            .lock()
             .cpds()
             .iter()
             .map(|(label, cpd)| {
                 // Convert the label to a string slice.
-                let label = label.as_ref();
+                let label = label.clone();
                 // Convert the CPD to a PyCatCPD.
                 let cpd = cpd.clone().into();
                 // Return the label and CPD as a tuple.
@@ -146,7 +154,7 @@ impl PyCatBN {
     ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
-        Ok(self.inner.parameters_size())
+        Ok(self.lock().parameters_size())
     }
 
     /// Fit the model to a dataset and a given graph.
@@ -253,8 +261,10 @@ impl PyCatBN {
     ) -> PyResult<PyCatTable> {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &self.inner);
+        let sampler = ForwardSampler::new(&mut rng, &*lock);
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -294,13 +304,15 @@ impl PyCatBN {
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyCatCPD> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the set of variables.
-        let x = indices_from!(x, self)?;
-        let z = indices_from!(z, self)?;
+        let x = indices_from!(x, lock)?;
+        let z = indices_from!(z, lock)?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &self.inner);
+        let estimator = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
         let estimate = if parallel {
             // Release the GIL to allow parallel execution.
@@ -343,14 +355,16 @@ impl PyCatBN {
         seed: u64,
         parallel: bool,
     ) -> PyResult<Option<PyCatCPD>> {
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the set of variables.
-        let x = indices_from!(x, self)?;
-        let y = indices_from!(y, self)?;
-        let z = indices_from!(z, self)?;
+        let x = indices_from!(x, lock)?;
+        let y = indices_from!(y, lock)?;
+        let z = indices_from!(z, lock)?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &self.inner);
+        let estimator = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
         let estimate = if parallel {
             // Release the GIL to allow parallel execution.
@@ -378,7 +392,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::from_bif(bif),
+            inner: Arc::new(RwLock::new(CatBN::from_bif(bif))),
         })
     }
 
@@ -390,7 +404,7 @@ impl PyCatBN {
     ///     A BIF string representation of the model.
     ///
     pub fn to_bif(&self) -> PyResult<String> {
-        Ok(self.inner.to_bif())
+        Ok(self.lock().to_bif())
     }
 
     /// Read class from a BIF file.
@@ -408,7 +422,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::read_bif(path),
+            inner: Arc::new(RwLock::new(CatBN::read_bif(path))),
         })
     }
 
@@ -420,7 +434,7 @@ impl PyCatBN {
     ///     The path to the BIF file to write to.
     ///
     pub fn write_bif(&self, path: &str) -> PyResult<()> {
-        self.inner.write_bif(path);
+        self.lock().write_bif(path);
         Ok(())
     }
 
@@ -439,7 +453,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::from_json(json),
+            inner: Arc::new(RwLock::new(CatBN::from_json(json))),
         })
     }
 
@@ -451,7 +465,7 @@ impl PyCatBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
+        Ok(self.lock().to_json())
     }
 
     /// Read instance from a JSON file.
@@ -469,7 +483,7 @@ impl PyCatBN {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: CatBN::read_json(path),
+            inner: Arc::new(RwLock::new(CatBN::read_json(path))),
         })
     }
 
@@ -481,7 +495,7 @@ impl PyCatBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.inner.write_json(path);
+        self.lock().write_json(path);
         Ok(())
     }
 }

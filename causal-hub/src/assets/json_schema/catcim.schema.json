@@ -68,11 +68,16 @@
                 "number",
                 "null"
             ]
+        },
+        "type": {
+            "type": "string",
+            "const": "catcim"
         }
     },
     "required": [
         "states",
         "conditioning_states",
-        "parameters"
+        "parameters",
+        "type"
     ]
 }

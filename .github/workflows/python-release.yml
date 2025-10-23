@@ -1,0 +1,205 @@
+name: python-release
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: ubuntu-latest
+            target: x64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist
+          manylinux: auto
+          before-script-linux: |
+            # Enable dynamic arch for OpenBLAS
+            export OPENBLAS_TARGET=GENERIC
+            export DYNAMIC_ARCH=1
+            # Install dependencies for building wheels
+            yum install -y pkgconfig openssl-devel
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i python3.13t
+          manylinux: auto
+          before-script-linux: |
+            # Enable dynamic arch for OpenBLAS
+            export OPENBLAS_TARGET=GENERIC
+            export DYNAMIC_ARCH=1
+            # Install dependencies for building wheels
+            yum install -y pkgconfig openssl-devel
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.platform.target }}
+          path: dist
+
+  windows:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: windows-latest
+            target: x64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\vcpkg
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
+      - name: Set env variables
+        run: |
+          "RUSTFLAGS=-C target-feature=+crt-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SCCACHE_GHA_ENABLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VCPKG_DEFAULT_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VCPKGRS_TRIPLET=${{ matrix.platform.target }}-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build OpenBLAS
+        run: |
+          vcpkg integrate install
+          vcpkg install openblas --overlay-ports=.vcpkg/ports
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13t"
+          architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.platform.target }}
+          path: dist
+
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: macos-latest
+            target: aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Application Support/openblas_build
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
+            ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
+            ${{ matrix.platform.runner }}-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i python3.13t
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.platform.target }}
+          path: dist
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: dist
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    needs: [linux, windows, macos, sdist]
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "wheels-*/*"
+      - name: Publish
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        with:
+          command: upload
+          args: --non-interactive --skip-existing wheels-*/*

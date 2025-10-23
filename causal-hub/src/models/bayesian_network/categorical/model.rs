@@ -7,7 +7,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatSample, CatTable},
+    datasets::{CatEv, CatSample, CatTable},
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
@@ -130,6 +130,7 @@ impl Labelled for CatBN {
 
 impl BN for CatBN {
     type CPD = CatCPD;
+    type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
 
@@ -285,7 +286,7 @@ impl Serialize for CatBN {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 2;
+        let mut size = 3;
         size += self.name.is_some() as usize;
         size += self.description.is_some() as usize;
 
@@ -308,6 +309,9 @@ impl Serialize for CatBN {
         // Serialize CPDs.
         map.serialize_entry("cpds", &cpds)?;
 
+        // Serialize type.
+        map.serialize_entry("type", "catbn")?;
+
         // Finalize the map.
         map.end()
     }
@@ -325,6 +329,7 @@ impl<'de> Deserialize<'de> for CatBN {
             Description,
             Graph,
             Cpds,
+            Type,
         }
 
         struct CatBNVisitor;
@@ -347,6 +352,7 @@ impl<'de> Deserialize<'de> for CatBN {
                 let mut description = None;
                 let mut graph = None;
                 let mut cpds = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -375,12 +381,22 @@ impl<'de> Deserialize<'de> for CatBN {
                             }
                             cpds = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
                 // Check required fields.
                 let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
                 let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "catbn", "Invalid type for CatBN.");
 
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
@@ -389,7 +405,7 @@ impl<'de> Deserialize<'de> for CatBN {
             }
         }
 
-        const FIELDS: &[&str] = &["name", "description", "graph", "cpds"];
+        const FIELDS: &[&str] = &["name", "description", "graph", "cpds", "type"];
 
         deserializer.deserialize_struct("CatBN", FIELDS, CatBNVisitor)
     }

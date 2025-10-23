@@ -6,6 +6,8 @@ use std::{
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
 use ndarray::prelude::*;
+use rand::Rng;
+use rand_distr::{Distribution, weighted::WeightedIndex};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{MapAccess, Visitor},
@@ -13,6 +15,7 @@ use serde::{
 };
 
 use crate::{
+    datasets::{CatSample, CatType},
     impl_json_io,
     models::{CPD, CatPhi, Labelled, Phi},
     types::{EPSILON, Labels, Set, States},
@@ -210,102 +213,6 @@ pub struct CatCPD {
     sample_log_likelihood: Option<f64>,
 }
 
-impl Labelled for CatCPD {
-    #[inline]
-    fn labels(&self) -> &Labels {
-        &self.labels
-    }
-}
-
-impl PartialEq for CatCPD {
-    fn eq(&self, other: &Self) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self.parameters.eq(&other.parameters)
-    }
-}
-
-impl AbsDiffEq for CatCPD {
-    type Epsilon = f64;
-
-    fn default_epsilon() -> Self::Epsilon {
-        Self::Epsilon::default_epsilon()
-    }
-
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
-    }
-}
-
-impl RelativeEq for CatCPD {
-    fn default_max_relative() -> Self::Epsilon {
-        Self::Epsilon::default_max_relative()
-    }
-
-    fn relative_eq(
-        &self,
-        other: &Self,
-        epsilon: Self::Epsilon,
-        max_relative: Self::Epsilon,
-    ) -> bool {
-        // Check for equality, excluding the sample values.
-        self.labels.eq(&other.labels)
-            && self.states.eq(&other.states)
-            && self.shape.eq(&other.shape)
-            && self.conditioning_labels.eq(&other.conditioning_labels)
-            && self.conditioning_states.eq(&other.conditioning_states)
-            && self.conditioning_shape.eq(&other.conditioning_shape)
-            && self.multi_index.eq(&other.multi_index)
-            && self
-                .parameters
-                .relative_eq(&other.parameters, epsilon, max_relative)
-    }
-}
-
-impl CPD for CatCPD {
-    type Parameters = Array2<f64>;
-    type Statistics = CatCPDS;
-
-    #[inline]
-    fn conditioning_labels(&self) -> &Labels {
-        &self.conditioning_labels
-    }
-
-    #[inline]
-    fn parameters(&self) -> &Self::Parameters {
-        &self.parameters
-    }
-
-    #[inline]
-    fn parameters_size(&self) -> usize {
-        self.parameters_size
-    }
-
-    #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
-    }
-
-    #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
-    }
-}
-
 impl CatCPD {
     /// Creates a new categorical conditional probability distribution.
     ///
@@ -339,7 +246,7 @@ impl CatCPD {
         );
 
         // Get the states shape.
-        let shape: Array1<_> = states.values().map(|x| x.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         assert!(
@@ -352,7 +259,7 @@ impl CatCPD {
         );
 
         // Get the shape of the set of states.
-        let conditioning_shape: Array1<_> = conditioning_states.values().map(|x| x.len()).collect();
+        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         assert!(
@@ -717,6 +624,227 @@ impl CatCPD {
     }
 }
 
+impl Labelled for CatCPD {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
+impl PartialEq for CatCPD {
+    fn eq(&self, other: &Self) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self.parameters.eq(&other.parameters)
+    }
+}
+
+impl AbsDiffEq for CatCPD {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
+    }
+}
+
+impl RelativeEq for CatCPD {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        // Check for equality, excluding the sample values.
+        self.labels.eq(&other.labels)
+            && self.states.eq(&other.states)
+            && self.shape.eq(&other.shape)
+            && self.conditioning_labels.eq(&other.conditioning_labels)
+            && self.conditioning_states.eq(&other.conditioning_states)
+            && self.conditioning_shape.eq(&other.conditioning_shape)
+            && self.multi_index.eq(&other.multi_index)
+            && self
+                .parameters
+                .relative_eq(&other.parameters, epsilon, max_relative)
+    }
+}
+
+impl CPD for CatCPD {
+    type Support = CatSample;
+    type Parameters = Array2<f64>;
+    type Statistics = CatCPDS;
+
+    #[inline]
+    fn conditioning_labels(&self) -> &Labels {
+        &self.conditioning_labels
+    }
+
+    #[inline]
+    fn parameters(&self) -> &Self::Parameters {
+        &self.parameters
+    }
+
+    #[inline]
+    fn parameters_size(&self) -> usize {
+        self.parameters_size
+    }
+
+    #[inline]
+    fn sample_statistics(&self) -> Option<&Self::Statistics> {
+        self.sample_statistics.as_ref()
+    }
+
+    #[inline]
+    fn sample_log_likelihood(&self) -> Option<f64> {
+        self.sample_log_likelihood
+    }
+
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert X matches number of variables.
+        assert_eq!(
+            x.len(),
+            n,
+            "Vector X must match number of variables: \n\
+            \t expected:    |X| == {} , \n\
+            \t found:       |X| == {} .",
+            n,
+            x.len(),
+        );
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return 1.;
+        }
+
+        // Convert states to indices.
+        let x = match n {
+            // ... one variable.
+            1 => x[0] as usize,
+            // ... multiple variables.
+            _ => {
+                // Convert states to indices.
+                let x = x.iter().map(|&x| x as usize);
+                // Ravel the variables.
+                self.multi_index.ravel(x)
+            }
+        };
+
+        // Convert conditioning states to indices.
+        let z = match m {
+            // ... no conditioning variables.
+            0 => 0,
+            // ... one conditioning variable.
+            1 => z[0] as usize,
+            // ... multiple conditioning variables.
+            _ => {
+                // Convert conditioning states to indices.
+                let z = z.iter().map(|&z| z as usize);
+                // Ravel the conditioning variables.
+                self.conditioning_multi_index.ravel(z)
+            }
+        };
+
+        // Get the probability.
+        self.parameters[[z, x]]
+    }
+
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+        // Get number of variables.
+        let n = self.labels.len();
+        // Get number of conditioning variables.
+        let m = self.conditioning_labels.len();
+
+        // Assert Z matches number of conditioning variables.
+        assert_eq!(
+            z.len(),
+            m,
+            "Vector Z must match number of conditioning variables: \n\
+            \t expected:    |Z| == {} , \n\
+            \t found:       |Z| == {} .",
+            m,
+            z.len(),
+        );
+
+        // No variables.
+        if n == 0 {
+            return array![];
+        }
+
+        // Convert conditioning states to indices.
+        let z = match m {
+            // ... no conditioning variables.
+            0 => 0,
+            // ... one conditioning variable.
+            1 => z[0] as usize,
+            // ... multiple conditioning variables.
+            _ => {
+                // Convert conditioning states to indices.
+                let z = z.iter().map(|&z| z as usize);
+                // Ravel the conditioning variables.
+                self.conditioning_multi_index.ravel(z)
+            }
+        };
+
+        // Get the distribution of the vertex.
+        let p = self.parameters.row(z);
+        // Construct the sampler.
+        let s = WeightedIndex::new(&p).unwrap();
+        // Sample from the distribution.
+        let x = s.sample(rng);
+
+        // Convert indices to states.
+        match n {
+            // ... one variable.
+            1 => array![x as CatType],
+            // ... multiple variables.
+            _ => {
+                // Unravel the sample.
+                let x = self.multi_index.unravel(x);
+                // Convert indices to states.
+                let x = x.iter().map(|&x| x as CatType);
+                // Return the sample.
+                x.collect()
+            }
+        }
+    }
+}
+
 impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // FIXME: This assumes `x` has a single element.
@@ -791,7 +919,7 @@ impl Serialize for CatCPD {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         // Add optional fields, if any.
         size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
@@ -822,6 +950,9 @@ impl Serialize for CatCPD {
             map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
         }
 
+        // Serialize type.
+        map.serialize_entry("type", "catcpd")?;
+
         // Finalize the map serialization.
         map.end()
     }
@@ -840,6 +971,7 @@ impl<'de> Deserialize<'de> for CatCPD {
             Parameters,
             SampleStatistics,
             SampleLogLikelihood,
+            Type,
         }
 
         struct CatCPDVisitor;
@@ -863,6 +995,7 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let mut parameters = None;
                 let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -897,6 +1030,12 @@ impl<'de> Deserialize<'de> for CatCPD {
                             }
                             sample_log_likelihood = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -905,6 +1044,10 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let conditioning_states =
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "catcpd", "Invalid type for CatCPD.");
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<f64>> = parameters;
@@ -929,6 +1072,7 @@ impl<'de> Deserialize<'de> for CatCPD {
             "parameters",
             "sample_statistics",
             "sample_log_likelihood",
+            "type",
         ];
 
         deserializer.deserialize_struct("CatCPD", FIELDS, CatCPDVisitor)

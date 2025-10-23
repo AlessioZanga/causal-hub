@@ -10,13 +10,14 @@ use serde::{
 };
 
 use crate::{
+    datasets::CatSample,
     impl_json_io,
-    models::{CPD, Labelled},
+    models::{CIM, Labelled},
     types::{EPSILON, Labels, Set, States},
     utils::MI,
 };
 
-/// Sample (sufficient) statistics for a categorical CPD.
+/// Sample (sufficient) statistics for a categorical CIM.
 #[derive(Clone, Debug)]
 pub struct CatCIMS {
     /// Conditional counts |Z| x |X| x |X|.
@@ -323,7 +324,7 @@ impl CatCIM {
         );
 
         // Get the states shape.
-        let shape: Array1<_> = states.values().map(|x| x.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
         assert!(
@@ -346,7 +347,7 @@ impl CatCIM {
         );
 
         // Get the shape of the set of states.
-        let conditioning_shape: Array1<_> = conditioning_states.values().map(|x| x.len()).collect();
+        let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
         assert!(
@@ -417,7 +418,7 @@ impl CatCIM {
             states.sort_keys();
             states.values_mut().for_each(Set::sort);
             labels = states.keys().cloned().collect();
-            shape = states.values().map(|x| x.len()).collect();
+            shape = states.values().map(Set::len).collect();
             // Allocate new parameters, for axis 1.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -480,7 +481,7 @@ impl CatCIM {
             conditioning_states.sort_keys();
             conditioning_states.values_mut().for_each(Set::sort);
             conditioning_labels = conditioning_states.keys().cloned().collect();
-            conditioning_shape = conditioning_states.values().map(|x| x.len()).collect();
+            conditioning_shape = conditioning_states.values().map(Set::len).collect();
             // Allocate new parameters.
             let mut new_parameters = parameters.clone();
             // Sort the values by multi indices.
@@ -741,7 +742,8 @@ impl Labelled for CatCIM {
     }
 }
 
-impl CPD for CatCIM {
+impl CIM for CatCIM {
+    type Support = CatSample;
     type Parameters = Array3<f64>;
     type Statistics = CatCIMS;
 
@@ -777,7 +779,7 @@ impl Serialize for CatCIM {
         S: Serializer,
     {
         // Count the elements to serialize.
-        let mut size = 3;
+        let mut size = 4;
         size += self.sample_statistics.is_some() as usize;
         size += self.sample_log_likelihood.is_some() as usize;
 
@@ -808,6 +810,9 @@ impl Serialize for CatCIM {
             map.serialize_entry("sample_log_likelihood", &sample_log_likelihood)?;
         }
 
+        // Serialize type.
+        map.serialize_entry("type", "catcim")?;
+
         // Finalize the map serialization.
         map.end()
     }
@@ -826,6 +831,7 @@ impl<'de> Deserialize<'de> for CatCIM {
             Parameters,
             SampleStatistics,
             SampleLogLikelihood,
+            Type,
         }
 
         struct CatCIMVisitor;
@@ -849,6 +855,7 @@ impl<'de> Deserialize<'de> for CatCIM {
                 let mut parameters = None;
                 let mut sample_statistics = None;
                 let mut sample_log_likelihood = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -883,6 +890,12 @@ impl<'de> Deserialize<'de> for CatCIM {
                             }
                             sample_log_likelihood = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -891,6 +904,10 @@ impl<'de> Deserialize<'de> for CatCIM {
                 let conditioning_states =
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "catcim", "Invalid type for CatCIM.");
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<Vec<f64>>> = parameters;
@@ -920,6 +937,7 @@ impl<'de> Deserialize<'de> for CatCIM {
             "parameters",
             "sample_statistics",
             "sample_log_likelihood",
+            "type",
         ];
 
         deserializer.deserialize_struct("CatCIM", FIELDS, CatCIMVisitor)

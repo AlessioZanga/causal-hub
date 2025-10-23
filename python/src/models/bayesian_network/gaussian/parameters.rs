@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use backend::{
     io::JsonIO,
     models::{CPD, GaussCPD, Labelled},
@@ -9,18 +11,24 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_deref_from_into;
+use crate::impl_from_into_lock;
 
 /// A struct representing a Gaussian conditional probability distribution.
 #[gen_stub_pyclass]
 #[pyclass(name = "GaussCPD", module = "causal_hub.models", eq)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PyGaussCPD {
-    inner: GaussCPD,
+    inner: Arc<RwLock<GaussCPD>>,
 }
 
-// Implement `Deref`, `From` and `Into` traits.
-impl_deref_from_into!(PyGaussCPD, GaussCPD);
+// Implement `Deref`, `From` and locks traits.
+impl_from_into_lock!(PyGaussCPD, GaussCPD);
+
+impl PartialEq for PyGaussCPD {
+    fn eq(&self, other: &Self) -> bool {
+        (*self.lock()).eq(&*other.lock())
+    }
+}
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -32,8 +40,8 @@ impl PyGaussCPD {
     /// list[str]
     ///     A reference to the label.
     ///
-    pub fn labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self.inner.labels().iter().map(AsRef::as_ref).collect())
+    pub fn labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().labels().iter().cloned().collect())
     }
 
     /// Returns the labels of the conditioned variables.
@@ -43,13 +51,8 @@ impl PyGaussCPD {
     /// list[str]
     ///     A reference to the conditioning labels.
     ///
-    pub fn conditioning_labels(&self) -> PyResult<Vec<&str>> {
-        Ok(self
-            .inner
-            .conditioning_labels()
-            .iter()
-            .map(AsRef::as_ref)
-            .collect())
+    pub fn conditioning_labels(&self) -> PyResult<Vec<String>> {
+        Ok(self.lock().conditioning_labels().iter().cloned().collect())
     }
 
     /// Returns the parameters.
@@ -62,8 +65,10 @@ impl PyGaussCPD {
     pub fn parameters<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyDict>> {
         // Allocate the dictionary.
         let dict = PyDict::new(py);
+        // Get a lock on the inner field.
+        let lock = self.lock();
         // Get the parameters.
-        let parameters = self.inner.parameters();
+        let parameters = lock.parameters();
         // Add the coefficients matrix.
         dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))
             .expect("Failed to set coefficients.");
@@ -85,7 +90,7 @@ impl PyGaussCPD {
     ///     The parameters size.
     ///
     pub fn parameters_size(&self) -> PyResult<usize> {
-        Ok(self.inner.parameters_size())
+        Ok(self.lock().parameters_size())
     }
 
     /// Returns the sample statistics used to fit the distribution, if any.
@@ -96,7 +101,7 @@ impl PyGaussCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.inner.sample_statistics().map(|s| {
+        Ok(self.lock().sample_statistics().map(|s| {
             // Allocate the dictionary.
             let dict = PyDict::new(py);
             // Add the response mean vector.
@@ -142,7 +147,7 @@ impl PyGaussCPD {
     ///     The sample log-likelihood given the distribution, if any.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
-        Ok(self.inner.sample_log_likelihood())
+        Ok(self.lock().sample_log_likelihood())
     }
 
     /// Read instance from a JSON string.
@@ -160,7 +165,7 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussCPD::from_json(json),
+            inner: Arc::new(RwLock::new(GaussCPD::from_json(json))),
         })
     }
 
@@ -172,7 +177,7 @@ impl PyGaussCPD {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.inner.to_json())
+        Ok(self.lock().to_json())
     }
 
     /// Read instance from a JSON file.
@@ -190,7 +195,7 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: GaussCPD::read_json(path),
+            inner: Arc::new(RwLock::new(GaussCPD::read_json(path))),
         })
     }
 
@@ -202,7 +207,7 @@ impl PyGaussCPD {
     ///     The path to the JSON file to write to.
     ///
     pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.inner.write_json(path);
+        self.lock().write_json(path);
         Ok(())
     }
 }

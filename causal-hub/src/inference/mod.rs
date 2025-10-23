@@ -12,3 +12,14 @@ pub use graphical_separation::*;
 
 mod topological_order;
 pub use topological_order::*;
+
+/// A trait to provide access to the underlying model.
+pub trait Modelled<T> {
+    /// Get the model.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the model.
+    ///
+    fn model(&self) -> &T;
+}

@@ -279,12 +279,14 @@ impl Serialize for UnGraph {
             .collect();
 
         // Allocate the map.
-        let mut map = serializer.serialize_map(Some(2))?;
+        let mut map = serializer.serialize_map(Some(3))?;
 
         // Serialize labels.
         map.serialize_entry("labels", &self.labels)?;
         // Serialize edges.
         map.serialize_entry("edges", &edges)?;
+        // Serialize type.
+        map.serialize_entry("type", "ungraph")?;
 
         // Finalize the map serialization.
         map.end()
@@ -301,6 +303,7 @@ impl<'de> Deserialize<'de> for UnGraph {
         enum Field {
             Labels,
             Edges,
+            Type,
         }
 
         struct UnGraphVisitor;
@@ -321,6 +324,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 // Allocate fields
                 let mut labels = None;
                 let mut edges = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -337,12 +341,22 @@ impl<'de> Deserialize<'de> for UnGraph {
                             }
                             edges = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
                 // Check required fields.
                 let labels = labels.ok_or_else(|| E::missing_field("labels"))?;
                 let edges = edges.ok_or_else(|| E::missing_field("edges"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "ungraph", "Invalid type for UnGraph.");
 
                 // Convert edges to an adjacency matrix.
                 let labels: Labels = labels;
@@ -363,7 +377,7 @@ impl<'de> Deserialize<'de> for UnGraph {
             }
         }
 
-        const FIELDS: &[&str] = &["labels", "edges"];
+        const FIELDS: &[&str] = &["labels", "edges", "type"];
 
         deserializer.deserialize_struct("UnGraph", FIELDS, UnGraphVisitor)
     }

@@ -7,7 +7,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatEvT},
     models::{CPD, CatCPD, Labelled, Phi},
-    types::{Labels, Map, Set, States},
+    types::{Labels, Set, States},
 };
 
 /// A categorical potential.
@@ -110,7 +110,7 @@ impl MulAssign<&CatPhi> for CatPhi {
         // Get new labels.
         let labels: Labels = states.keys().cloned().collect();
         // Get new shape.
-        let shape: Array1<_> = states.values().map(|s| s.len()).collect();
+        let shape = Array::from_iter(states.values().map(Set::len));
 
         // Update self.
         self.states = states;
@@ -191,14 +191,20 @@ impl Phi for CatPhi {
     }
 
     fn condition(&self, e: &Self::Evidence) -> Self {
-        // Get states and parameters.
-        let states = self.states.clone();
-        let mut parameters = self.parameters.clone();
+        // Assert that the evidence states match the potential states.
+        assert_eq!(
+            e.states(),
+            self.states(),
+            "Failed to condition on evidence: \n\
+            \t expected:    evidence states to match potential states , \n\
+            \t found:       potential states = {:?} , \n\
+            \t              evidence  states = {:?} .",
+            self.states(),
+            e.states(),
+        );
 
         // Get the evidence and remove nones.
         let e = e.evidences().iter().flatten();
-        // Sort by variable index.
-        let e = e.sorted_by_key(|e| e.event());
         // Assert that the evidence is certain and positive.
         let e = e.cloned().map(|e| match e {
             CatEvT::CertainPositive { event, state } => (event, state),
@@ -209,37 +215,16 @@ impl Phi for CatPhi {
                 e
             ),
         });
-        // Collect evidence into a map.
-        let e: Map<_, _> = e.collect();
+
+        // Get states and parameters.
+        let mut states = self.states.clone();
+        let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
-        e.iter().rev().for_each(|(&event, &state)| {
-            // Assert that the event is in bounds.
-            assert!(
-                event < states.len(),
-                "Variable index out of bounds: \n\
-                \t expected:    event <  {} , \n\
-                \t found:       event == {} .",
-                states.len(),
-                event,
-            );
-            // Assert that the state is in bounds.
-            assert!(
-                state < states[event].len(),
-                "State index out of bounds: \n\
-                \t expected:    state <  {} , \n\
-                \t found:       state == {} .",
-                states[event].len(),
-                state,
-            );
-            // Index axis.
+        e.rev().for_each(|(event, state)| {
             parameters.index_axis_inplace(Axis(event), state);
+            states.shift_remove_index(event);
         });
-
-        // Filter the states.
-        let states = states.into_iter().enumerate();
-        let states = states.filter_map(|(i, s)| (!e.contains_key(&i)).then_some(s));
-        let states: States = states.collect();
 
         // Return self.
         Self::new(states, parameters)
@@ -296,7 +281,7 @@ impl Phi for CatPhi {
         let mut states = cpd.conditioning_states().clone();
         states.extend(cpd.states().clone());
         // Get n-dimensional shape.
-        let shape: Vec<_> = states.values().map(|s| s.len()).collect();
+        let shape: Vec<_> = states.values().map(Set::len).collect();
         // Reshape the parameters to match the new shape.
         let parameters = cpd.parameters().clone();
         let parameters = parameters
@@ -328,25 +313,34 @@ impl Phi for CatPhi {
             "Variables and conditioning variables must cover all potential variables."
         );
 
-        // Split states into states.
-        let states_x = self.states.clone().into_iter().enumerate();
-        let states_x = states_x.filter_map(|(i, s)| x.contains(&i).then_some(s));
-        let states_x: States = states_x.collect();
-        // Split states into conditioning states.
-        let states_z = self.states.clone().into_iter().enumerate();
-        let states_z = states_z.filter_map(|(i, s)| z.contains(&i).then_some(s));
-        let states_z: States = states_z.collect();
+        // Split states into states and conditioning states.
+        let states_x: States = x
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .unwrap()
+            })
+            .collect();
+        let states_z: States = z
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .unwrap()
+            })
+            .collect();
 
         // Get new axes order.
-        let axes = z.iter().sorted();
-        let axes = axes.chain(x.iter().sorted());
-        let axes: Vec<_> = axes.cloned().collect();
+        let axes: Vec<_> = z.iter().chain(x).cloned().collect();
         // Permute parameters to match the new order.
         let parameters = self.parameters.permuted_axes(axes);
         // Get the new 2D shape.
         let shape: (usize, usize) = (
-            states_z.values().map(|s| s.len()).product(),
-            states_x.values().map(|s| s.len()).product(),
+            states_z.values().map(Set::len).product(),
+            states_x.values().map(Set::len).product(),
         );
         // Reshape the parameters to the new 2D shape.
         let mut parameters = parameters
@@ -377,7 +371,7 @@ impl CatPhi {
         // Get labels.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get shape.
-        let mut shape: Array1<_> = states.values().map(|s| s.len()).collect();
+        let mut shape = Array::from_iter(states.values().map(Set::len));
         // Assert parameters shape matches states shape.
         assert_eq!(
             parameters.shape(),
@@ -401,7 +395,7 @@ impl CatPhi {
             // Update the labels.
             labels = states.keys().cloned().collect();
             // Update the shape.
-            shape = states.values().map(|s| s.len()).collect();
+            shape = states.values().map(Set::len).collect();
         }
 
         Self {

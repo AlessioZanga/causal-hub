@@ -9,7 +9,7 @@ pub mod assets;
 /// Dataset structures.
 pub mod datasets;
 /// Estimators for parameters and structures.
-pub mod estimation;
+pub mod estimators;
 /// Models.
 pub mod models;
 /// Utility functions.
@@ -113,9 +113,9 @@ mod causal_hub {
                     .set_item("causal_hub.estimation", m)
             })?;
 
-            m.add_function(wrap_pyfunction!(crate::estimation::em, m)?)?;
-            m.add_function(wrap_pyfunction!(crate::estimation::sem, m)?)?;
-            m.add_class::<crate::estimation::PyPK>()?;
+            m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
+            m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
+            m.add_class::<crate::estimators::PyPK>()?;
 
             Ok(())
         }

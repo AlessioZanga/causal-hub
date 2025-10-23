@@ -10,8 +10,12 @@ build:
   apt_packages:
     - libopenblas-dev
   tools:
-    python: "miniconda-latest"
-    rust: "latest"
+    python: mambaforge-latest
+    rust: latest
+  jobs:
+    pre_build:
+      - echo "Building causal-hub with maturin"
+      - cd python; conda run -n ${CONDA_DEFAULT_ENV} maturin develop --release
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:

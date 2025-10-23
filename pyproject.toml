@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "causal-hub"
+version = "0.0.2"
+description = "A library for causal models, inference and discovery."
+license = "AGPL-3.0-only"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Alessio Zanga", email = "alessio.zanga@outlook.it" }]
+keywords = ["causality"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = ["numpy", "scipy", "pandas", "networkx"]
+
+[project.urls]
+homepage = "https://github.com/AlessioZanga/causal-hub"
+repository = "https://github.com/AlessioZanga/causal-hub"
+documentation = "https://causal-hub.readthedocs.io/"
+
+[tool.maturin]
+manifest-path = "python/Cargo.toml"
+features = ["pyo3/extension-module", "backend/openblas-static"]
+strip = true

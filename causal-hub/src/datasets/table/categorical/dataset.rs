@@ -61,7 +61,7 @@ impl CatTable {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.
-        let mut shape = Array::from_iter(states.values().map(|x| x.len()));
+        let mut shape = Array::from_iter(states.values().map(Set::len));
 
         // Log the creation of the categorical dataset.
         debug!(
@@ -143,9 +143,10 @@ impl CatTable {
             values = new_values;
             // Update the states.
             states = new_states;
-            // Update the labels and the shape.
+            // Update the labels.
             labels = states.keys().cloned().collect();
-            shape = Array::from_iter(states.values().map(|x| x.len()));
+            // Update the shape.
+            shape = Array::from_iter(states.values().map(Set::len));
         }
 
         // Debug assert labels are unique.
@@ -170,7 +171,7 @@ impl CatTable {
                 .values()
                 .map(|x| x.iter().unique().count())
                 .sum::<usize>(),
-            states.values().map(|x| x.len()).sum::<usize>(),
+            states.values().map(Set::len).sum::<usize>(),
             "States values must be unique."
         );
         // Debug assert states values are sorted.
@@ -283,23 +284,18 @@ impl CsvIO for CatTable {
         // Assert that the reader has headers.
         assert!(reader.has_headers(), "Reader must have headers.");
 
-        // Initialize the counter.
-        let mut n = 0;
         // Read the headers.
         let labels: Labels = reader
             .headers()
             .expect("Failed to read the headers.")
             .into_iter()
-            .inspect(|_| n += 1)
             .map(|x| x.to_owned())
             .collect();
-        // Assert unique labels.
-        assert_eq!(labels.len(), n, "Header labels must be unique.");
 
         // Get the states of the variables.
         let mut states: States = labels
-            .into_iter()
-            .map(|x| (x, Default::default()))
+            .iter()
+            .map(|x| (x.clone(), Default::default()))
             .collect();
 
         // Read the records.
@@ -328,27 +324,18 @@ impl CsvIO for CatTable {
             .collect();
 
         // Get the number of rows and columns.
-        let ncols = states.len();
+        let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
         let values = values
             .into_shape_with_order((nrows, ncols))
             .expect("Failed to rearrange values to the correct shape.");
 
-        // Construct the categorical dataset.
+        // Construct the dataset.
         Self::new(states, values)
     }
 
     fn to_csv(&self) -> String {
         todo!() // FIXME:
-    }
-
-    fn read_csv(path: &str) -> Self {
-        // TODO: Reading the entire file to a string is not efficient.
-        Self::from_csv(&std::fs::read_to_string(path).expect("Failed to read CSV file."))
-    }
-
-    fn write_csv(&self, path: &str) {
-        std::fs::write(path, self.to_csv()).expect("Failed to write CSV file.");
     }
 }
