@@ -29,7 +29,7 @@ impl_from_into_lock!(PyCatCPD, CatCPD);
 
 impl PartialEq for PyCatCPD {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

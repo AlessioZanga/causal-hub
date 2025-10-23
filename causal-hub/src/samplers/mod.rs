@@ -1,30 +1,3 @@
-//! Sampling module for BNs and CTBNs.
-//!
-//! This module contains the following traits:
-//!
-//! * BNSampler - Sampling from a BN.
-//! * CTBNSampler - Sampling from a CTBN.
-//!
-//! and their parallel versions:
-//!
-//! * ParBNSampler - Parallel sampling from a BN.
-//! * ParCTBNSampler - Parallel sampling from a CTBN.
-//!
-//! This module contains the following samplers:
-//!
-//! * ForwardSampler - Forward sampling from a BN or CTBN.
-//! * ImportanceSampler - Importance sampling from a BN or CTBN with evidence.
-//!
-//! This is the table of the implemented traits for each sampler:
-//!
-//! | Trait          | ForwardSampler | ImportanceSampler |
-//! |----------------|:--------------:|:-----------------:|
-//! | BNSampler      | ✅             | ✅                |
-//! | ParBNSampler   | ✅             | ✅                |
-//! | CTBNSampler    | ✅             | ✅                |
-//! | ParCTBNSampler | ✅             | ✅                |
-//!
-
 mod forward;
 pub use forward::*;
 

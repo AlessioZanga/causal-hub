@@ -4,7 +4,6 @@ use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
     models::{DiGraph, Graph, Labelled},
-    set,
     types::Labels,
 };
 use numpy::prelude::*;
@@ -29,7 +28,7 @@ impl_from_into_lock!(PyDiGraph, DiGraph);
 
 impl PartialEq for PyDiGraph {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

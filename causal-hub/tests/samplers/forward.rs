@@ -4,7 +4,7 @@ mod tests {
     use causal_hub::{
         assets::*,
         datasets::Dataset,
-        estimation::{BNEstimator, MLE, ParCTBNEstimator},
+        estimators::{BNEstimator, MLE, ParCTBNEstimator},
         models::{BN, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
         samplers::{BNSampler, CTBNSampler, ForwardSampler, ParCTBNSampler},
     };

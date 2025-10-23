@@ -1,3 +1,2 @@
-mod model;
-mod parameters;
-mod potential;
+mod categorical;
+mod gaussian;

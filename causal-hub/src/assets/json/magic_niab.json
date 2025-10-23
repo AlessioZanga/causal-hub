@@ -69,7 +69,8 @@
       ["G1033", "FUS"],
       ["G418", "G2835"],
       ["G311", "G43"]
-    ]
+    ],
+    "type": "digraph"
   },
   "cpds": [
     {
@@ -83,7 +84,8 @@
         "covariance": [
           [0.1108]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["HT"],
@@ -96,7 +98,8 @@
         "covariance": [
           [10.9772]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["YR.FIELD"],
@@ -109,7 +112,8 @@
         "covariance": [
           [0.1618]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["MIL"],
@@ -122,7 +126,8 @@
         "covariance": [
           [0.4731]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["FT"],
@@ -135,7 +140,8 @@
         "covariance": [
           [7.9686]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G418"],
@@ -148,7 +154,8 @@
         "covariance": [
           [0.7499]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G311"],
@@ -161,7 +168,8 @@
         "covariance": [
           [0.6913]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1217"],
@@ -174,7 +182,8 @@
         "covariance": [
           [0.7931]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G800"],
@@ -187,7 +196,8 @@
         "covariance": [
           [0.8981]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G866"],
@@ -200,7 +210,8 @@
         "covariance": [
           [0.9065]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G795"],
@@ -213,7 +224,8 @@
         "covariance": [
           [0.884]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2570"],
@@ -226,7 +238,8 @@
         "covariance": [
           [0.3526]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G260"],
@@ -239,7 +252,8 @@
         "covariance": [
           [0.4231]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2920"],
@@ -252,7 +266,8 @@
         "covariance": [
           [0.7001]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G832"],
@@ -265,7 +280,8 @@
         "covariance": [
           [0.7775]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1896"],
@@ -278,7 +294,8 @@
         "covariance": [
           [0.8708]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2953"],
@@ -291,7 +308,8 @@
         "covariance": [
           [0.5335]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G266"],
@@ -304,7 +322,8 @@
         "covariance": [
           [0.4397]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G847"],
@@ -317,7 +336,8 @@
         "covariance": [
           [0.8607]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G942"],
@@ -330,7 +350,8 @@
         "covariance": [
           [0.4609]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G200"],
@@ -343,7 +364,8 @@
         "covariance": [
           [0.3765]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G257"],
@@ -356,7 +378,8 @@
         "covariance": [
           [0.7808]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2208"],
@@ -369,7 +392,8 @@
         "covariance": [
           [0.0655]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1373"],
@@ -382,7 +406,8 @@
         "covariance": [
           [0.7135]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G599"],
@@ -395,7 +420,8 @@
         "covariance": [
           [0.4453]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G261"],
@@ -408,7 +434,8 @@
         "covariance": [
           [0.6642]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G383"],
@@ -421,7 +448,8 @@
         "covariance": [
           [0.3452]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1853"],
@@ -434,7 +462,8 @@
         "covariance": [
           [0.4382]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1033"],
@@ -447,7 +476,8 @@
         "covariance": [
           [0.4982]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1945"],
@@ -460,7 +490,8 @@
         "covariance": [
           [0.9754]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1338"],
@@ -473,7 +504,8 @@
         "covariance": [
           [0.9496]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1276"],
@@ -486,7 +518,8 @@
         "covariance": [
           [0.8419]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1263"],
@@ -499,7 +532,8 @@
         "covariance": [
           [0.5569]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1789"],
@@ -512,7 +546,8 @@
         "covariance": [
           [0.4516]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2318"],
@@ -525,7 +560,8 @@
         "covariance": [
           [0.8881]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1294"],
@@ -538,7 +574,8 @@
         "covariance": [
           [0.8405]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1800"],
@@ -551,7 +588,8 @@
         "covariance": [
           [0.0509]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["YLD"],
@@ -564,7 +602,8 @@
         "covariance": [
           [0.193]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["FUS"],
@@ -577,7 +616,8 @@
         "covariance": [
           [0.6016]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G1750"],
@@ -590,7 +630,8 @@
         "covariance": [
           [0.4231]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G524"],
@@ -603,7 +644,8 @@
         "covariance": [
           [0.69]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G775"],
@@ -616,7 +658,8 @@
         "covariance": [
           [0.3722]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G2835"],
@@ -629,7 +672,8 @@
         "covariance": [
           [0.0729]
         ]
-      }
+      },
+      "type": "gausscpd"
     },
     {
       "labels": ["G43"],
@@ -642,7 +686,9 @@
         "covariance": [
           [0.2103]
         ]
-      }
+      },
+      "type": "gausscpd"
     }
-  ]
+  ],
+  "type": "gaussbn"
 }

@@ -26,16 +26,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `cargo` test and release workflows.
 * Added `maturin` build system for Python bindings.
 * Added `Arc<RwLock<...>>` wrapping to reduce memory allocation and allow concurrency.
+* Added `PseudoInverse` trait for matrix pseudo-inversion.
 
 ### Fixed
 
-* Fix `GaussCPD` fit stability with SVD.
+* Fixed `GaussCPD` fit stability with SVD.
+* Fixed `GaussPhi` implementation.
 
 ## v0.0.1 - 2025-10-09
 
 ### Added
 
-* Initial release.
+* Added initial release.
 * Added `README.md` file.
 * Added `CHANGELOG.md` file.
 * Added `LICENSE` file.

@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::CatTable,
-    estimation::{BE, MLE},
+    estimators::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -13,7 +13,6 @@ use backend::{
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
-    set,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -26,7 +25,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTable,
-    estimation::PyBNEstimator,
+    estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };
@@ -44,7 +43,7 @@ impl_from_into_lock!(PyCatBN, CatBN);
 
 impl PartialEq for PyCatBN {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 

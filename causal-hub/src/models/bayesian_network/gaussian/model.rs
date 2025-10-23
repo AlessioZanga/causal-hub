@@ -6,7 +6,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{GaussSample, GaussTable},
+    datasets::{GaussEv, GaussSample, GaussTable},
     impl_json_io,
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
@@ -94,6 +94,7 @@ impl Labelled for GaussBN {
 
 impl BN for GaussBN {
     type CPD = GaussCPD;
+    type Evidence = GaussEv;
     type Sample = GaussSample;
     type Samples = GaussTable;
 
@@ -221,7 +222,7 @@ impl Serialize for GaussBN {
         S: Serializer,
     {
         // Count the number of fields.
-        let mut size = 2;
+        let mut size = 3;
         // Add optional fields, if any.
         size += self.name.is_some() as usize;
         size += self.description.is_some() as usize;
@@ -245,6 +246,9 @@ impl Serialize for GaussBN {
         // Serialize CPDs.
         map.serialize_entry("cpds", &cpds)?;
 
+        // Serialize type.
+        map.serialize_entry("type", "gaussbn")?;
+
         // Finalize the map.
         map.end()
     }
@@ -262,6 +266,7 @@ impl<'de> Deserialize<'de> for GaussBN {
             Description,
             Graph,
             Cpds,
+            Type,
         }
 
         struct GaussBNVisitor;
@@ -284,6 +289,7 @@ impl<'de> Deserialize<'de> for GaussBN {
                 let mut description = None;
                 let mut graph = None;
                 let mut cpds = None;
+                let mut type_ = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -312,12 +318,22 @@ impl<'de> Deserialize<'de> for GaussBN {
                             }
                             cpds = Some(map.next_value()?);
                         }
+                        Field::Type => {
+                            if type_.is_some() {
+                                return Err(E::duplicate_field("type"));
+                            }
+                            type_ = Some(map.next_value()?);
+                        }
                     }
                 }
 
                 // Check required fields.
                 let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
                 let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
+
+                // Assert type is correct.
+                let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
+                assert_eq!(type_, "gaussbn", "Invalid type for GaussBN.");
 
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
@@ -326,7 +342,7 @@ impl<'de> Deserialize<'de> for GaussBN {
             }
         }
 
-        const FIELDS: &[&str] = &["name", "description", "graph", "cpds"];
+        const FIELDS: &[&str] = &["name", "description", "graph", "cpds", "type"];
 
         deserializer.deserialize_struct("GaussBN", FIELDS, GaussBNVisitor)
     }

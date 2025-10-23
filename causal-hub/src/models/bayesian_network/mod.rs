@@ -10,6 +10,8 @@ use crate::{models::graphs::DiGraph, types::Map};
 pub trait BN {
     /// The type of the CPD.
     type CPD;
+    /// The type of the evidence.
+    type Evidence;
     /// The type of the sample.
     type Sample;
     /// The type of the samples.

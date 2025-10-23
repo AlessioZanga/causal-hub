@@ -5,6 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
+    models::Labelled,
     types::{Set, States},
 };
 use numpy::{PyArray1, prelude::*};

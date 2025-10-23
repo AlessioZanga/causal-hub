@@ -26,11 +26,16 @@
             "items": {
                 "$ref": "catcim.schema.json"
             }
+        },
+        "type": {
+            "type": "string",
+            "const": "catctbn"
         }
     },
     "required": [
         "initial_distribution",
         "graph",
-        "cims"
+        "cims",
+        "type"
     ]
 }

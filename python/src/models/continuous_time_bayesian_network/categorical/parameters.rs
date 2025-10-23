@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CPD, CatCIM, Labelled},
+    models::{CIM, CatCIM, Labelled},
 };
 use numpy::{PyArray3, prelude::*};
 use pyo3::{
@@ -29,7 +29,7 @@ impl_from_into_lock!(PyCatCIM, CatCIM);
 
 impl PartialEq for PyCatCIM {
     fn eq(&self, other: &Self) -> bool {
-        (&*self.lock()).eq(&*other.lock())
+        (*self.lock()).eq(&*other.lock())
     }
 }
 
