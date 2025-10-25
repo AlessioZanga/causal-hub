@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatType, Dataset, IncDataset, MissingTable},
+    datasets::{CatTable, CatType, Dataset, IncDataset, MissingTable},
     models::Labelled,
     types::{Labels, Set, States},
 };
@@ -62,7 +62,9 @@ impl Dataset for CatIncTable {
 }
 
 impl IncDataset for CatIncTable {
+    type Complete = CatTable;
     type Missing = CatType;
+
     const MISSING: Self::Missing = CatType::MAX;
 
     #[inline]
@@ -70,7 +72,7 @@ impl IncDataset for CatIncTable {
         &self.missing
     }
 
-    fn lw_deletion(&self) -> Self {
+    fn lw_deletion(&self) -> Self::Complete {
         todo!() // FIXME:
     }
 
@@ -83,6 +85,10 @@ impl IncDataset for CatIncTable {
     }
 
     fn aipw_deletion(&self, _x: &Set<usize>) -> Self {
+        todo!() // FIXME:
+    }
+
+    fn into_complete(self) -> Self::Complete {
         todo!() // FIXME:
     }
 }

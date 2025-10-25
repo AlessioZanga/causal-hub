@@ -34,8 +34,11 @@ pub trait Dataset {
 
 /// A trait for incomplete datasets.
 pub trait IncDataset: Dataset + Sized {
+    /// The type of the complete dataset.
+    type Complete;
     /// The type of the missing data indicator.
     type Missing;
+
     /// The value of the missing data indicator.
     const MISSING: Self::Missing;
 
@@ -53,7 +56,7 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// A new dataset with list-wise deletion applied.
     ///
-    fn lw_deletion(&self) -> Self;
+    fn lw_deletion(&self) -> Self::Complete;
 
     /// Perform pair-wise deletion to handle missing data for the specified columns.
     ///
@@ -90,4 +93,16 @@ pub trait IncDataset: Dataset + Sized {
     /// A new dataset with augmented inverse probability weighting deletion applied.
     ///
     fn aipw_deletion(&self, x: &Set<usize>) -> Self;
+
+    /// Convert the incomplete dataset into a complete dataset.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there are still missing values in the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A complete dataset.
+    ///
+    fn into_complete(self) -> Self::Complete;
 }
