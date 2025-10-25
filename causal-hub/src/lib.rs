@@ -1,7 +1,8 @@
 #![warn(missing_docs)]
-//! # CausalHub
+//! # causal-hub
 //!
-//! CausalHub is a library for causal inference and causal discovery.
+//! `causal-hub` is a library for causal inference and causal discovery.
+//!
 //! It provides tools for estimating causal effects, learning causal structures, and more.
 
 // Link to the BLAS library.
