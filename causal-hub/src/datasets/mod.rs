@@ -2,6 +2,7 @@ mod table;
 pub use table::*;
 
 mod trajectory;
+use either::Either;
 pub use trajectory::*;
 
 use crate::types::Set;
@@ -32,15 +33,31 @@ pub trait Dataset {
     fn sample_size(&self) -> f64;
 }
 
+/// An enum representing different methods for handling missing data.
+#[non_exhaustive]
+#[derive(Clone, Debug)]
+pub enum MissingMethod {
+    /// List-wise deletion missing handling method.
+    LW,
+    /// Pair-wise deletion missing handling method with specified columns.
+    PW(Set<usize>),
+    /// Inverse probability weighting missing handling method with specified columns.
+    IPW(Set<usize>),
+    /// Augmented inverse probability weighting missing handling method with specified columns.
+    AIPW(Set<usize>),
+}
+
 /// A trait for incomplete datasets.
 pub trait IncDataset: Dataset + Sized {
-    /// The type of the complete dataset.
-    type Complete;
     /// The type of the missing data indicator.
     type Missing;
-
     /// The value of the missing data indicator.
     const MISSING: Self::Missing;
+
+    /// The type of the complete dataset.
+    type Complete;
+    /// The type of the weighted dataset.
+    type Weighted;
 
     /// Get the missing information.
     ///
@@ -50,59 +67,66 @@ pub trait IncDataset: Dataset + Sized {
     ///
     fn missing(&self) -> &MissingTable;
 
-    /// Perform list-wise deletion to handle missing data.
+    /// Apply the specified missing data handling method.
+    ///
+    /// # Arguments
+    ///
+    /// * `method` - The missing data handling method to apply.
     ///
     /// # Returns
     ///
-    /// A new dataset with list-wise deletion applied.
+    /// Either a complete dataset or a weighted dataset, depending on the method applied.
+    ///
+    fn apply(&self, method: &MissingMethod) -> Either<Self::Complete, Self::Weighted> {
+        match method {
+            MissingMethod::LW => Either::Left(self.lw_deletion()),
+            MissingMethod::PW(x) => Either::Left(self.pw_deletion(x)),
+            MissingMethod::IPW(x) => Either::Right(self.ipw_deletion(x)),
+            MissingMethod::AIPW(x) => Either::Right(self.aipw_deletion(x)),
+        }
+    }
+
+    /// Perform list-wise (LW) deletion to handle missing data.
+    ///
+    /// # Returns
+    ///
+    /// A complete dataset obtained via LW deletion.
     ///
     fn lw_deletion(&self) -> Self::Complete;
 
-    /// Perform pair-wise deletion to handle missing data for the specified columns.
+    /// Perform pair-wise (PW) deletion to handle missing data for the specified columns.
     ///
     /// # Arguments
     ///
-    /// * `x` - A set of column indices for pair-wise deletion.
+    /// * `x` - A set of column indices for PW deletion.
     ///
     /// # Returns
     ///
-    /// A new dataset with pair-wise deletion applied.
+    /// A complete dataset restricted to the specified columns via PW deletion.
     ///
-    fn pw_deletion(&self, x: &Set<usize>) -> Self;
+    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete;
 
-    /// Perform inverse probability weighting deletion to handle missing data for the specified columns.
+    /// Perform inverse probability weighting (IPW) deletion to handle missing data for the specified columns.
     ///
     /// # Arguments
     ///
-    /// * `x` - A set of column indices for inverse probability weighting deletion.
+    /// * `x` - A set of column indices for IPW deletion.
     ///
     /// # Returns
     ///
-    /// A new dataset with inverse probability weighting deletion applied.
+    /// A weighted dataset restricted to the specified columns via IPW deletion.
     ///
-    fn ipw_deletion(&self, x: &Set<usize>) -> Self;
+    fn ipw_deletion(&self, x: &Set<usize>) -> Self::Weighted;
 
-    /// Perform augmented inverse probability weighting deletion to handle missing data for the specified columns.
+    /// Perform augmented inverse probability weighting (AIPW) deletion to handle missing data for the specified columns.
     ///
     /// # Arguments
     ///
-    /// * `x` - A set of column indices for augmented inverse probability weighting deletion.
+    /// * `x` - A set of column indices for AIPW deletion.
     ///
     /// # Returns
     ///
-    /// A new dataset with augmented inverse probability weighting deletion applied.
+    /// A weighted dataset restricted to the specified columns via AIPW deletion.
     ///
-    fn aipw_deletion(&self, x: &Set<usize>) -> Self;
-
-    /// Convert the incomplete dataset into a complete dataset.
-    ///
-    /// # Panics
-    ///
-    /// Panics if there are still missing values in the dataset.
-    ///
-    /// # Returns
-    ///
-    /// A complete dataset.
-    ///
-    fn into_complete(self) -> Self::Complete;
+    fn aipw_deletion(&self, x: &Set<usize>) -> Self::Weighted;
 }

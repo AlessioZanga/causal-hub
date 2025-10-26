@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatType, Dataset, IncDataset, MissingTable},
+    datasets::{CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingTable},
     models::Labelled,
     types::{Labels, Set, States},
 };
@@ -24,6 +24,11 @@ impl Labelled for CatIncTable {
 }
 
 impl CatIncTable {
+    /// Creates a new categorical incomplete tabular data instance.
+    pub fn new(_states: States, _values: Array2<CatType>) -> Self {
+        todo!() // FIXME:
+    }
+
     /// Returns the states of the variables in the categorical distribution.
     ///
     /// # Returns
@@ -62,10 +67,11 @@ impl Dataset for CatIncTable {
 }
 
 impl IncDataset for CatIncTable {
-    type Complete = CatTable;
     type Missing = CatType;
-
     const MISSING: Self::Missing = CatType::MAX;
+
+    type Complete = CatTable;
+    type Weighted = CatWtdTable;
 
     #[inline]
     fn missing(&self) -> &MissingTable {
@@ -76,19 +82,15 @@ impl IncDataset for CatIncTable {
         todo!() // FIXME:
     }
 
-    fn pw_deletion(&self, _x: &Set<usize>) -> Self {
+    fn pw_deletion(&self, _x: &Set<usize>) -> Self::Complete {
         todo!() // FIXME:
     }
 
-    fn ipw_deletion(&self, _x: &Set<usize>) -> Self {
+    fn ipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {
         todo!() // FIXME:
     }
 
-    fn aipw_deletion(&self, _x: &Set<usize>) -> Self {
-        todo!() // FIXME:
-    }
-
-    fn into_complete(self) -> Self::Complete {
+    fn aipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {
         todo!() // FIXME:
     }
 }

@@ -168,6 +168,7 @@ dependencies = [
  "blas-src",
  "csv",
  "dry",
+ "either",
  "fxhash",
  "indexmap",
  "itertools 0.14.0",
