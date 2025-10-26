@@ -39,9 +39,33 @@ impl MissingTable {
     ///
     /// A new missing information instance.
     ///
-    pub fn new(labels: Labels, missing_mask: Array2<bool>) -> Self {
-        // FIXME: Assertions.
-        // FIXME: Check for sorted labels.
+    pub fn new(mut labels: Labels, mut missing_mask: Array2<bool>) -> Self {
+        // Assert dimensions match.
+        assert_eq!(
+            labels.len(),
+            missing_mask.ncols(),
+            "Number of labels must match the number of columns in the missing mask."
+        );
+
+        // Check if labels are sorted.
+        if !labels.is_sorted() {
+            // Allocate indices to sort labels.
+            let mut indices: Vec<usize> = (0..labels.len()).collect();
+            // Sort the indices by labels.
+            indices.sort_by_key(|&i| &labels[i]);
+            // Sort the labels.
+            labels.sort();
+            // Allocate new missing mask.
+            let mut new_missing_mask = missing_mask.clone();
+            // Sort the new missing mask according to the sorted indices.
+            indices.into_iter().enumerate().for_each(|(i, j)| {
+                new_missing_mask
+                    .column_mut(i)
+                    .assign(&missing_mask.column(j));
+            });
+            // Update missing mask.
+            missing_mask = new_missing_mask;
+        }
 
         // Map to numeric (integer) mask.
         let missing_mask_numeric = missing_mask.mapv(|x| x as usize);
