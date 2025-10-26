@@ -79,7 +79,25 @@ impl IncDataset for CatIncTable {
     }
 
     fn lw_deletion(&self) -> Self::Complete {
-        todo!() // FIXME:
+        // Allocate new values.
+        let mut new_values = Array::zeros((
+            self.missing.complete_rows_count(), //
+            self.values.ncols(),
+        ));
+
+        // Get row-indicator pairs.
+        self.values
+            .rows()
+            .into_iter()
+            .zip(self.missing.missing_mask_by_rows())
+            // Filter for complete rows only.
+            .filter_map(|(row, &is_complete)| if !is_complete { Some(row) } else { None })
+            // Fill new values with complete rows only.
+            .zip(new_values.rows_mut())
+            .for_each(|(row, mut new_row)| new_row.assign(&row));
+
+        // Return new complete categorical table.
+        CatTable::new(self.states.clone(), new_values)
     }
 
     fn pw_deletion(&self, _x: &Set<usize>) -> Self::Complete {

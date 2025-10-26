@@ -96,6 +96,17 @@ mod tests {
                 [-0.0833333333333333, -0.0833333333333333, 0.25]
             ]
         );
+
+        // Check complete columns count.
+        assert_eq!(
+            missing_table.complete_cols_count(), //
+            0
+        );
+        // Check complete rows count.
+        assert_eq!(
+            missing_table.complete_rows_count(), //
+            1
+        );
     }
 
     #[test]
@@ -194,6 +205,17 @@ mod tests {
                 [-0.0833333333333333, 0.25, -0.0833333333333333], //
                 [-0.0833333333333333, -0.0833333333333333, 0.25]
             ]
+        );
+
+        // Check complete columns count.
+        assert_eq!(
+            missing_table.complete_cols_count(), //
+            0
+        );
+        // Check complete rows count.
+        assert_eq!(
+            missing_table.complete_rows_count(), //
+            1
         );
     }
 }

@@ -18,6 +18,8 @@ pub struct MissingTable {
     missing_rate_by_rows: Array1<f64>,
     missing_correlation: Array2<f64>,
     missing_covariance: Array2<f64>,
+    complete_cols_count: usize,
+    complete_rows_count: usize,
 }
 
 impl Labelled for MissingTable {
@@ -67,17 +69,26 @@ impl MissingTable {
             missing_mask = new_missing_mask;
         }
 
-        // Map to numeric (integer) mask.
-        let missing_mask_numeric = missing_mask.mapv(|x| x as usize);
-
         // Compute missing counts.
-        let missing_count_by_cols = missing_mask_numeric.sum_axis(Axis(0));
-        let missing_count_by_rows = missing_mask_numeric.sum_axis(Axis(1));
+        let missing_count_by_cols = missing_mask.rows().into_iter().fold(
+            // Map to numeric one at a time to save memory.
+            Array::zeros(missing_mask.ncols()),
+            |acc, row| acc + row.mapv(|x| x as usize),
+        );
+        let missing_count_by_rows = missing_mask.columns().into_iter().fold(
+            // Map to numeric one at a time to save memory.
+            Array::zeros(missing_mask.nrows()),
+            |acc, col| acc + col.mapv(|x| x as usize),
+        );
         let missing_count = missing_count_by_cols.sum();
 
         // Compute missing mask by cols and rows.
         let missing_mask_by_cols = missing_count_by_cols.mapv(|x| x > 0);
         let missing_mask_by_rows = missing_count_by_rows.mapv(|x| x > 0);
+
+        // Compute complete counts.
+        let complete_cols_count = missing_mask_by_cols.mapv(|x| (!x) as usize).sum();
+        let complete_rows_count = missing_mask_by_rows.mapv(|x| (!x) as usize).sum();
 
         // Compute missing rates.
         let missing_rate_by_cols =
@@ -86,12 +97,11 @@ impl MissingTable {
             missing_count_by_rows.mapv(|x| x as f64) / missing_mask.ncols() as f64;
         let missing_rate = missing_count as f64 / missing_mask.len() as f64;
 
+        // TODO: Make this optional for large datasets.
         // Map to numeric (float) mask.
-        let missing_mask_numeric = missing_mask_numeric.mapv(|x| x as f64);
-
+        let missing_mask_numeric = missing_mask.mapv(|x| x as u8 as f64);
         // Transpose for correlation/covariance computation.
         let missing_mask_numeric = missing_mask_numeric.t();
-
         // Compute missing correlation.
         let missing_correlation = missing_mask_numeric
             .pearson_correlation()
@@ -114,6 +124,8 @@ impl MissingTable {
             missing_rate_by_rows,
             missing_correlation,
             missing_covariance,
+            complete_cols_count,
+            complete_rows_count,
         }
     }
 
@@ -236,5 +248,27 @@ impl MissingTable {
     #[inline]
     pub const fn missing_covariance(&self) -> &Array2<f64> {
         &self.missing_covariance
+    }
+
+    /// Get the count of complete columns (without any missing values) in the table.
+    ///
+    /// # Returns
+    ///
+    /// The count of complete columns.
+    ///
+    #[inline]
+    pub const fn complete_cols_count(&self) -> usize {
+        self.complete_cols_count
+    }
+
+    /// Get the count of complete rows (without any missing values) in the table.
+    ///
+    /// # Returns
+    ///
+    /// The count of complete rows.
+    ///
+    #[inline]
+    pub const fn complete_rows_count(&self) -> usize {
+        self.complete_rows_count
     }
 }
