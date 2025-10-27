@@ -257,15 +257,15 @@ impl CsvIO for CatTable {
             .flat_map(|(i, row)| {
                 // Get the record row.
                 let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                // Zip the row with the states.
+                let row = row.into_iter().zip(states.values_mut());
                 // Get the record values and convert to indices.
                 let row: Vec<_> = row
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, x)| {
+                    .map(|(x, states)| {
                         // Assert no missing values.
                         assert!(!x.is_empty(), "Missing value on line {}.", i + 1);
                         // Insert the value into the states, if not present.
-                        let (x, _) = states[i].insert_full(x.to_owned());
+                        let (x, _) = states.insert_full(x.to_owned());
                         // Cast the value.
                         x as CatType
                     })

@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
 
+use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
 
 use crate::{
@@ -264,11 +265,97 @@ impl IncDataset for CatIncTable {
 }
 
 impl CsvIO for CatIncTable {
-    fn from_csv_reader<R: Read>(_csv: R) -> Self {
-        todo!() // FIXME:
+    fn from_csv_reader<R: Read>(reader: R) -> Self {
+        // Create a CSV reader from the string.
+        let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
+
+        // Assert that the reader has headers.
+        assert!(reader.has_headers(), "Reader must have headers.");
+
+        // Read the headers.
+        let labels: Labels = reader
+            .headers()
+            .expect("Failed to read the headers.")
+            .into_iter()
+            .map(|x| x.to_owned())
+            .collect();
+
+        // Get the states of the variables.
+        let mut states: States = labels
+            .iter()
+            .map(|x| (x.clone(), Default::default()))
+            .collect();
+
+        // Read the records.
+        let values: Array1<_> = reader
+            .into_records()
+            .enumerate()
+            .flat_map(|(i, row)| {
+                // Get the record row.
+                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                // Get the record values and convert to indices.
+                let row: Vec<_> = row
+                    .into_iter()
+                    .zip(states.values_mut())
+                    .map(|(x, states)| {
+                        // Check if the value is not missing.
+                        if !x.is_empty() {
+                            // Insert the value into the states, if not present.
+                            let (x, _) = states.insert_full(x.to_owned());
+                            // Cast the value.
+                            x as CatType
+                        } else {
+                            // Return missing value.
+                            Self::MISSING
+                        }
+                    })
+                    .collect();
+                // Collect the values.
+                row
+            })
+            .collect();
+
+        // Get the number of rows and columns.
+        let ncols = labels.len();
+        let nrows = values.len() / ncols;
+        // Reshape the values to the correct shape.
+        let values = values
+            .into_shape_with_order((nrows, ncols))
+            .expect("Failed to rearrange values to the correct shape.");
+
+        // Construct the dataset.
+        Self::new(states, values)
     }
 
-    fn to_csv_writer<W: Write>(&self, _writer: W) {
-        todo!() // FIXME:
+    fn to_csv_writer<W: Write>(&self, writer: W) {
+        // Create the CSV writer.
+        let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
+
+        // Write the headers.
+        writer
+            .write_record(self.labels.iter())
+            .expect("Failed to write CSV headers.");
+
+        // Create an empty string for missing values.
+        let missing = String::new();
+
+        // Write the records.
+        self.values.rows().into_iter().for_each(|row| {
+            // Zip the row with the states.
+            let record = row.iter().zip(self.states().values());
+            // Map the row values to states.
+            let record = record.map(|(&x, states)| {
+                // Check if the value is not missing.
+                if x != Self::MISSING {
+                    &states[x as usize]
+                } else {
+                    &missing
+                }
+            });
+            // Write the record.
+            writer
+                .write_record(record)
+                .expect("Failed to write CSV record.");
+        });
     }
 }
