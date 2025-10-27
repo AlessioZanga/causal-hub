@@ -14,7 +14,7 @@ mod tests {
         mod categorical {
             use super::*;
 
-            mod dataset {
+            mod complete {
                 use super::*;
 
                 #[test]

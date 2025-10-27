@@ -3,19 +3,23 @@ mod trajectory;
 
 use crate::{datasets::MissingMethod, models::Labelled, types::Labels};
 
-/// A struct representing a sufficient statistics estimator.
+/// A struct representing a maximum likelihood estimator.
 #[derive(Clone, Debug)]
-pub struct SSE<'a, D> {
+pub struct MLE<'a, D> {
     dataset: &'a D,
     missing_method: Option<MissingMethod>,
 }
 
-impl<'a, D> SSE<'a, D> {
-    /// Constructs a new sufficient statistics estimator.
+impl<'a, D> MLE<'a, D> {
+    /// Creates a new maximum likelihood estimator.
+    ///
+    /// # Arguments
+    ///
+    /// * `dataset` - A reference to the dataset to fit the estimator to.
     ///
     /// # Returns
     ///
-    /// A new sufficient statistics estimator instance.
+    /// A new `MaximumLikelihoodEstimator` instance.
     ///
     #[inline]
     pub const fn new(dataset: &'a D) -> Self {
@@ -24,6 +28,7 @@ impl<'a, D> SSE<'a, D> {
             missing_method: None,
         }
     }
+
     /// Sets the missing data handling method.
     ///
     /// # Arguments
@@ -32,7 +37,8 @@ impl<'a, D> SSE<'a, D> {
     ///
     /// # Returns
     ///
-    /// A new sufficient statistics estimator instance with the specified missing data handling method.
+    /// A new maximum likelihood estimator with the specified missing data handling method.
+    ///
     #[inline]
     pub fn with_missing_method(mut self, missing_method: MissingMethod) -> Self {
         self.missing_method = Some(missing_method);
@@ -40,7 +46,7 @@ impl<'a, D> SSE<'a, D> {
     }
 }
 
-impl<D> Labelled for SSE<'_, D>
+impl<D> Labelled for MLE<'_, D>
 where
     D: Labelled,
 {

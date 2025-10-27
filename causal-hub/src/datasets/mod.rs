@@ -71,14 +71,14 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// # Arguments
     ///
-    /// * `method` - The missing data handling method to apply.
+    /// * `missing_method` - The missing data handling method to apply.
     ///
     /// # Returns
     ///
     /// Either a complete dataset or a weighted dataset, depending on the method applied.
     ///
-    fn apply(&self, method: &MissingMethod) -> Either<Self::Complete, Self::Weighted> {
-        match method {
+    fn apply(&self, missing_method: &MissingMethod) -> Either<Self::Complete, Self::Weighted> {
+        match missing_method {
             MissingMethod::LW => Either::Left(self.lw_deletion()),
             MissingMethod::PW(x) => Either::Left(self.pw_deletion(x)),
             MissingMethod::IPW(x) => Either::Right(self.ipw_deletion(x)),
