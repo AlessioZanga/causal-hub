@@ -3,7 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
-use csv::ReaderBuilder;
+use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Itertools;
 use log::debug;
 use ndarray::prelude::*;
@@ -287,7 +287,26 @@ impl CsvIO for CatTable {
         Self::new(states, values)
     }
 
-    fn to_csv_writer<W: Write>(&self, _writer: W) {
-        todo!() // FIXME:
+    fn to_csv_writer<W: Write>(&self, writer: W) {
+        // Create the CSV writer.
+        let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
+
+        // Write the headers.
+        writer
+            .write_record(self.labels.iter())
+            .expect("Failed to write CSV headers.");
+
+        // Write the records.
+        self.values.rows().into_iter().for_each(|row| {
+            // Map the row values to states.
+            let record = row
+                .iter()
+                .zip(self.states().values())
+                .map(|(&x, states)| &states[x as usize]);
+            // Write the record.
+            writer
+                .write_record(record)
+                .expect("Failed to write CSV record.");
+        });
     }
 }
