@@ -199,7 +199,7 @@ mod tests {
                     "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                     "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                 );
-                let dataset = GaussTable::from_csv(csv);
+                let dataset = GaussTable::from_csv_string(csv);
 
                 let estimator = MLE::new(&dataset);
 
@@ -285,7 +285,7 @@ mod tests {
                     "yes,yes,no\n",
                     "yes,yes,yes"
                 );
-                let dataset = CatTable::from_csv(csv);
+                let dataset = CatTable::from_csv_string(csv);
 
                 let mut graph = DiGraph::empty(["A", "B", "C"]);
                 graph.add_edge(0, 1);

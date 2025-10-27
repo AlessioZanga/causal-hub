@@ -17,7 +17,7 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let dataset = CatTable::from_csv(csv);
+        let dataset = CatTable::from_csv_string(csv);
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
@@ -55,7 +55,7 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let _ = CatTable::from_csv(csv);
+        let _ = CatTable::from_csv_string(csv);
     }
 
     #[test]
@@ -68,6 +68,6 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let _ = CatTable::from_csv(csv);
+        let _ = CatTable::from_csv_string(csv);
     }
 }

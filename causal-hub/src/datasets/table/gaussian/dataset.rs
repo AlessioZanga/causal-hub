@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+
 use csv::ReaderBuilder;
 use ndarray::prelude::*;
 
@@ -88,11 +90,9 @@ impl Dataset for GaussTable {
 }
 
 impl CsvIO for GaussTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Self {
         // Create a CSV reader from the string.
-        let mut reader = ReaderBuilder::new()
-            .has_headers(true)
-            .from_reader(csv.as_bytes());
+        let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
         // Assert that the reader has headers.
         assert!(reader.has_headers(), "Reader must have headers.");
@@ -140,7 +140,7 @@ impl CsvIO for GaussTable {
         Self::new(labels, values)
     }
 
-    fn to_csv(&self) -> String {
+    fn to_csv_writer<W: Write>(&self, _writer: W) {
         todo!() // FIXME:
     }
 }

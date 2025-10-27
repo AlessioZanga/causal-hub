@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+
 use ndarray::prelude::*;
 
 use crate::{
@@ -262,11 +264,11 @@ impl IncDataset for CatIncTable {
 }
 
 impl CsvIO for CatIncTable {
-    fn from_csv(_csv: &str) -> Self {
+    fn from_csv_reader<R: Read>(_csv: R) -> Self {
         todo!() // FIXME:
     }
 
-    fn to_csv(&self) -> String {
+    fn to_csv_writer<W: Write>(&self, _writer: W) {
         todo!() // FIXME:
     }
 }

@@ -16,7 +16,7 @@ macro_for!(
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));
             // Read the BIF file and return the BN.
-            CatBN::from_bif(include_str!(concat!(stringify!($bn), ".bif")))
+            CatBN::from_bif_string(include_str!(concat!(stringify!($bn), ".bif")))
         }
     }
 });

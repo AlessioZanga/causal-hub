@@ -1,4 +1,7 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    io::{Read, Write},
+};
 
 use csv::ReaderBuilder;
 use itertools::Itertools;
@@ -226,11 +229,9 @@ impl Dataset for CatTable {
 }
 
 impl CsvIO for CatTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Self {
         // Create a CSV reader from the string.
-        let mut reader = ReaderBuilder::new()
-            .has_headers(true)
-            .from_reader(csv.as_bytes());
+        let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
         // Assert that the reader has headers.
         assert!(reader.has_headers(), "Reader must have headers.");
@@ -286,7 +287,7 @@ impl CsvIO for CatTable {
         Self::new(states, values)
     }
 
-    fn to_csv(&self) -> String {
+    fn to_csv_writer<W: Write>(&self, _writer: W) {
         todo!() // FIXME:
     }
 }

@@ -106,16 +106,16 @@ def test_asia_fit() -> None:
     assert asia_fitted.graph() == asia.graph(), "Wrong fitted BN graph."
 
 
-def test_asia_read_write_json() -> None:
+def test_asia_read_to_json_file() -> None:
     # Load the Asia BN.
     asia = load_asia()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    asia.write_json(path)
+    asia.to_json_file(path)
     # Read from the JSON file.
-    asia_from_json = CatBN.read_json(path)
+    asia_from_json = CatBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert asia.labels() == asia_from_json.labels(), "Wrong labels after read/write."
@@ -263,16 +263,16 @@ def test_ecoli70_fit() -> None:
     assert ecoli70_fitted.graph() == ecoli70.graph(), "Wrong fitted BN graph."
 
 
-def test_ecoli70_read_write_json() -> None:
+def test_ecoli70_read_to_json_file() -> None:
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    ecoli70.write_json(path)
+    ecoli70.to_json_file(path)
     # Read from the JSON file.
-    ecoli70_from_json = GaussBN.read_json(path)
+    ecoli70_from_json = GaussBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert (
@@ -335,16 +335,16 @@ def test_eating_fit() -> None:
     assert eating_fitted.graph() == eating.graph(), "Wrong fitted CTBN graph."
 
 
-def test_eating_read_write_json() -> None:
+def test_eating_read_to_json_file() -> None:
     # Load the Eating CTBN.
     eating = load_eating()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    eating.write_json(path)
+    eating.to_json_file(path)
     # Read from the JSON file.
-    eating_from_json = CatCTBN.read_json(path)
+    eating_from_json = CatCTBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert (

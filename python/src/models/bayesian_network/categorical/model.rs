@@ -390,9 +390,9 @@ impl PyCatBN {
     ///     A new Bayesian network instance.
     ///
     #[classmethod]
-    pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
+    pub fn from_bif_string(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif(bif))),
+            inner: Arc::new(RwLock::new(CatBN::from_bif_string(bif))),
         })
     }
 
@@ -403,8 +403,8 @@ impl PyCatBN {
     /// str
     ///     A BIF string representation of the model.
     ///
-    pub fn to_bif(&self) -> PyResult<String> {
-        Ok(self.lock().to_bif())
+    pub fn to_bif_string(&self) -> PyResult<String> {
+        Ok(self.lock().to_bif_string())
     }
 
     /// Read class from a BIF file.
@@ -420,9 +420,9 @@ impl PyCatBN {
     ///     A new Bayesian network instance.
     ///
     #[classmethod]
-    pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+    pub fn from_bif_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::read_bif(path))),
+            inner: Arc::new(RwLock::new(CatBN::from_bif_file(path))),
         })
     }
 
@@ -433,8 +433,8 @@ impl PyCatBN {
     /// path: str
     ///     The path to the BIF file to write to.
     ///
-    pub fn write_bif(&self, path: &str) -> PyResult<()> {
-        self.lock().write_bif(path);
+    pub fn to_bif_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_bif_file(path);
         Ok(())
     }
 
@@ -451,9 +451,9 @@ impl PyCatBN {
     ///     A new instance.
     ///
     #[classmethod]
-    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+    pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json(json))),
+            inner: Arc::new(RwLock::new(CatBN::from_json_string(json))),
         })
     }
 
@@ -464,8 +464,8 @@ impl PyCatBN {
     /// str
     ///     A JSON string representation of the instance.
     ///
-    pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.lock().to_json())
+    pub fn to_json_string(&self) -> PyResult<String> {
+        Ok(self.lock().to_json_string())
     }
 
     /// Read instance from a JSON file.
@@ -481,9 +481,9 @@ impl PyCatBN {
     ///     A new instance.
     ///
     #[classmethod]
-    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+    pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::read_json(path))),
+            inner: Arc::new(RwLock::new(CatBN::from_json_file(path))),
         })
     }
 
@@ -494,8 +494,8 @@ impl PyCatBN {
     /// path: str
     ///     The path to the JSON file to write to.
     ///
-    pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.lock().write_json(path);
+    pub fn to_json_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_json_file(path);
         Ok(())
     }
 }
