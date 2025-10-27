@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn new_unsorted_labels() {
+    fn new_unordered_labels() {
         // Set the labels.
         let labels = labels!("C", "A", "B");
         // Set the missing mask.

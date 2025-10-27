@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingTable},
+    io::CsvIO,
     models::Labelled,
     types::{Labels, Set, States},
 };
@@ -25,8 +26,107 @@ impl Labelled for CatIncTable {
 
 impl CatIncTable {
     /// Creates a new categorical incomplete tabular data instance.
-    pub fn new(_states: States, _values: Array2<CatType>) -> Self {
-        todo!() // FIXME:
+    pub fn new(mut states: States, mut values: Array2<CatType>) -> Self {
+        // Check if the number of states is less than `CatType::MAX`.
+        states.iter().for_each(|(label, state)| {
+            assert!(
+                state.len() <= CatType::MAX as usize,
+                "Variable '{label}' should have less than 256 states: \n\
+                \t expected:    |states| <  256 , \n\
+                \t found:       |states| == {} .",
+                state.len()
+            );
+        });
+        // Check if the number of variables is equal to the number of columns.
+        assert_eq!(
+            states.len(),
+            values.ncols(),
+            "Number of variables must be equal to the number of columns: \n\
+            \t expected:    |states| == |values.columns()| , \n\
+            \t found:       |states| == {} and |values.columns()| == {} .",
+            states.len(),
+            values.ncols()
+        );
+        // Check if the maximum value of the values is less than the number of states.
+        values
+            .fold_axis(
+                Axis(0),
+                0,
+                // Find max while ignoring missing values.
+                |&a, &b| if a > b || b == Self::MISSING { a } else { b },
+            )
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, x)| {
+                assert!(
+                    x < states[i].len() as CatType,
+                    "Values of variable '{label}' must be less than the number of states: \n\
+                    \t expected: values[.., '{label}'] < |states['{label}']| , \n\
+                    \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
+                    states[i].len(),
+                    label = states.get_index(i).unwrap().0,
+                );
+            });
+
+        // Check that the labels are sorted.
+        if !states.keys().is_sorted() {
+            // Allocate indices to sort labels.
+            let mut indices: Vec<usize> = (0..states.len()).collect();
+            // Sort the indices by labels.
+            indices.sort_by_key(|&i| states.get_index(i).unwrap().0);
+            // Sort the states.
+            states.sort_keys();
+            // Allocate new values.
+            let mut new_values = values.clone();
+            // Sort the new values according to the sorted indices.
+            indices.into_iter().enumerate().for_each(|(i, j)| {
+                new_values.column_mut(i).assign(&values.column(j));
+            });
+            // Update values.
+            values = new_values;
+        }
+
+        // For each variable ...
+        for (mut col, states) in values.columns_mut().into_iter().zip(states.values_mut()) {
+            // ... check if the states are sorted.
+            if !states.is_sorted() {
+                // Clone the states.
+                let mut new_states = states.clone();
+                // Sort the states.
+                new_states.sort();
+                // Map values to sorted states.
+                col.iter_mut().for_each(|value| {
+                    // If the value is not missing ...
+                    if *value != Self::MISSING {
+                        // ... map it to the new state index.
+                        *value = new_states
+                            .get_index_of(&states[*value as usize])
+                            .expect("Failed to get new state index.")
+                            as CatType;
+                    }
+                });
+                // Update the states.
+                *states = new_states;
+            }
+        }
+
+        // Get the labels of the variables.
+        let labels: Labels = states.keys().cloned().collect();
+        // Get the shape of the states.
+        let shape = states.values().map(Set::len).collect();
+
+        // Create the missing mask.
+        let missing_mask = values.mapv(|x| x == Self::MISSING);
+        // Initialize the missing table.
+        let missing = MissingTable::new(labels.clone(), missing_mask);
+
+        Self {
+            labels,
+            states,
+            shape,
+            values,
+            missing,
+        }
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -97,7 +197,7 @@ impl IncDataset for CatIncTable {
             .for_each(|(row, mut new_row)| new_row.assign(&row));
 
         // Return new complete categorical table.
-        CatTable::new(self.states.clone(), new_values)
+        Self::Complete::new(self.states.clone(), new_values)
     }
 
     fn pw_deletion(&self, _x: &Set<usize>) -> Self::Complete {
@@ -109,6 +209,16 @@ impl IncDataset for CatIncTable {
     }
 
     fn aipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {
+        todo!() // FIXME:
+    }
+}
+
+impl CsvIO for CatIncTable {
+    fn from_csv(_csv: &str) -> Self {
+        todo!() // FIXME:
+    }
+
+    fn to_csv(&self) -> String {
         todo!() // FIXME:
     }
 }

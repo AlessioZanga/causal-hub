@@ -68,7 +68,7 @@ impl CatTable {
         // Check if the number of states is less than `CatType::MAX`.
         states.iter().for_each(|(label, state)| {
             assert!(
-                state.len() < CatType::MAX as usize,
+                state.len() <= CatType::MAX as usize,
                 "Variable '{label}' should have less than 256 states: \n\
                 \t expected:    |states| <  256 , \n\
                 \t found:       |states| == {} .",
