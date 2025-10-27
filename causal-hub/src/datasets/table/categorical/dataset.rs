@@ -18,7 +18,7 @@ pub type CatType = u8;
 pub type CatSample = Array1<CatType>;
 
 /// A struct representing a categorical dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CatTable {
     labels: Labels,
     states: States,

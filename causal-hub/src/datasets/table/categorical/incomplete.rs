@@ -200,8 +200,56 @@ impl IncDataset for CatIncTable {
         Self::Complete::new(self.states.clone(), new_values)
     }
 
-    fn pw_deletion(&self, _x: &Set<usize>) -> Self::Complete {
-        todo!() // FIXME:
+    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete {
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in pair-wise deletion: \n\
+                \t expected:    index < |values.columns()| , \n\
+                \t found:       index == {} and |values.columns()| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+
+        // Clone the indices.
+        let mut cols = x.clone();
+        // Sort the indices.
+        cols.sort();
+
+        // Get the indices of complete rows for the specified columns.
+        let rows: Vec<_> = self
+            .missing
+            .missing_mask()
+            .rows()
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, row)| {
+                // Check if all specified columns are not missing.
+                if !cols.iter().any(|&j| row[j]) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Collect the values for the specified rows and columns.
+        let new_values = Array::from_shape_fn(
+            (rows.len(), cols.len()), //
+            |(i, j)| self.values[[rows[i], cols[j]]],
+        );
+
+        // Select the states for the specified columns.
+        let new_states = cols
+            .iter()
+            .map(|&j| self.states.get_index(j).unwrap())
+            .map(|(label, state)| (label.clone(), state.clone()))
+            .collect();
+
+        // Return new complete categorical table.
+        Self::Complete::new(new_states, new_values)
     }
 
     fn ipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {

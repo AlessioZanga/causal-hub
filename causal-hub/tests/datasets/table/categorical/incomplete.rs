@@ -2,10 +2,10 @@
 mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
-        datasets::{CatIncTable, Dataset, IncDataset},
+        datasets::{CatIncTable, CatTable, Dataset, IncDataset},
         labels,
         models::Labelled,
-        states,
+        set, states,
     };
     use ndarray::prelude::*;
 
@@ -400,16 +400,84 @@ mod tests {
         );
     }
 
-    #[ignore]
     #[test]
     fn lw_deletion() {
-        todo!() // FIXME:
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2", "c3", "c4"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0],
+            [M, 0, 1],
+            [0, M, 3],
+            [1, 1, M],
+            [M, M, M],
+            [M, 1, 3]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+        // Perform list-wise deletion.
+        let pred_dataset = dataset.lw_deletion();
+
+        // Set the true values.
+        let true_values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0]
+        ];
+        // Create the true categorical table.
+        let true_dataset = CatTable::new(states.clone(), true_values);
+
+        // Assert the predicted dataset is equal to the true dataset.
+        assert_eq!(true_dataset, pred_dataset);
     }
 
-    #[ignore]
     #[test]
     fn pw_deletion() {
-        todo!() // FIXME:
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2", "c3", "c4"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0],
+            [M, 0, 1],
+            [0, M, 3],
+            [1, 1, M],
+            [M, M, M],
+            [M, 1, 3]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+        // Perform pair-wise deletion.
+        let pred_dataset = dataset.pw_deletion(&set![0, 1]);
+
+        // Set the true states.
+        let true_states = states!(
+            ("A", ["a1", "a2", "a3"]), //
+            ("B", ["b1", "b2"])
+        );
+        // Set the true values.
+        let true_values = array![
+            [0, 1], //
+            [1, 0],
+            [2, 1],
+            [1, 1]
+        ];
+        // Create the true categorical table.
+        let true_dataset = CatTable::new(true_states, true_values);
+
+        // Assert the predicted dataset is equal to the true dataset.
+        assert_eq!(true_dataset, pred_dataset);
     }
 
     #[ignore]
