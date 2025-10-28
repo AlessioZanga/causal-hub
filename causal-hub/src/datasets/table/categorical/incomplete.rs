@@ -255,11 +255,11 @@ impl IncDataset for CatIncTable {
         Self::Complete::new(new_states, new_values)
     }
 
-    fn ipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {
+    fn ipw_deletion(&self, _x: &Set<usize>, _r: () /* FIXME: */) -> Self::Weighted {
         todo!() // FIXME:
     }
 
-    fn aipw_deletion(&self, _x: &Set<usize>) -> Self::Weighted {
+    fn aipw_deletion(&self, _x: &Set<usize>, _r: () /* FIXME: */) -> Self::Weighted {
         todo!() // FIXME:
     }
 }
