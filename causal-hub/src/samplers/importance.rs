@@ -156,6 +156,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
             let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -266,6 +267,7 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
 
             // Get the evidence of the vertex.
@@ -503,6 +505,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(&set![i]);
+        let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -579,6 +582,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 let cim_j = &self.model.cims()[j];
                 // Compute the index on the parents to condition on.
                 let pa_j = self.model.graph().parents(&set![j]);
+                let pa_j = pa_j.unwrap_or_else(|_| unreachable!());
                 let pa_j = pa_j.iter().map(|&z| event[z] as usize);
                 let pa_j = cim_j.conditioning_multi_index().ravel(pa_j);
                 // Get the distribution of the vertex.
@@ -737,6 +741,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 let cim_i = &self.model.cims()[i];
                 // Compute the index on the parents to condition on.
                 let pa_i = self.model.graph().parents(&set![i]);
+                let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
                 let pa_i = pa_i.iter().map(|&z| event[z] as usize);
                 let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
                 // Get the distribution of the vertex.
@@ -802,13 +807,14 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 // Append the event to the trajectory.
                 sample_events.push(event.clone());
                 sample_times.push(time);
+                // Get the children of the variable.
+                let ch_i = self.model.graph().children(&set![i]);
+                let ch_i = ch_i.unwrap_or_else(|_| unreachable!());
                 // Update the transition times for { X } U Ch(X).
-                std::iter::once(i)
-                    .chain(self.model.graph().children(&set![i]))
-                    .for_each(|j| {
-                        // Sample the transition time.
-                        times[j] = time + self.sample_time(&mut rng, &evidence, &event, j, time);
-                    });
+                std::iter::once(i).chain(ch_i).for_each(|j| {
+                    // Sample the transition time.
+                    times[j] = time + self.sample_time(&mut rng, &evidence, &event, j, time);
+                });
             }
 
             // Add a small epsilon to avoid zero transition times.

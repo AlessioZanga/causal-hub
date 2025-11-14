@@ -4,7 +4,7 @@ use crate::{
     inference::{BNInference, BackdoorCriterion, Modelled, ParBNInference},
     models::{BN, CatBN, GaussBN, Labelled, Phi},
     set,
-    types::Set,
+    types::{Error, Set},
 };
 
 /// A causal inference engine.
@@ -51,7 +51,7 @@ where
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
+    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>, Error> {
         self.cace_estimate(x, y, &set![])
     }
 
@@ -75,7 +75,12 @@ where
     ///
     /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
     ///
-    fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<T::CPD>;
+    fn cace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Option<T::CPD>, Error>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -84,7 +89,12 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + BNInference<$type>,
     {
-        fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<<$type as BN>::CPD> {
+        fn cace_estimate(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>
+        ) -> Result<Option<<$type as BN>::CPD>, Error> {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
             // Assert Y is not empty.
@@ -101,18 +111,18 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the model.
             let m = self.engine.model();
             // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None);
+            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
 
             /* Effect Estimation */
 
             // Match on the backdoor adjustment set.
             match z_s {
                 // If no backdoor adjustment set exists, return None.
-                None => None,
+                None => Ok(None),
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Some(self.engine.estimate(y, &(x | z)))
+                    Ok(Some(self.engine.estimate(y, &(x | z))))
                 }
                 // If the backdoor adjustment set is non-empty ...
                 Some(z_s) => {
@@ -137,7 +147,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // Convert back to CPD.
                     let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z));
                     // Return the result.
-                    Some(p_y_do_x_z)
+                    Ok(Some(p_y_do_x_z))
                 }
             }
         }
@@ -167,7 +177,7 @@ where
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn par_ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
+    fn par_ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>, Error> {
         self.par_cace_estimate(x, y, &set![])
     }
 
@@ -191,7 +201,12 @@ where
     ///
     /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
     ///
-    fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<T::CPD>;
+    fn par_cace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Option<T::CPD>, Error>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -200,7 +215,12 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + ParBNInference<$type>,
     {
-        fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<<$type as BN>::CPD> {
+        fn par_cace_estimate(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>
+        ) -> Result<Option<<$type as BN>::CPD>, Error> {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
             // Assert Y is not empty.
@@ -217,18 +237,18 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the model.
             let m = self.engine.model();
             // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None);
+            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
 
             /* Effect Estimation */
 
             // Match on the backdoor adjustment set.
             match z_s {
                 // If no backdoor adjustment set exists, return None.
-                None => None,
+                None => Ok(None),
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Some(self.engine.par_estimate(y, &(x | z)))
+                    Ok(Some(self.engine.par_estimate(y, &(x | z))))
                 }
                 // If the backdoor adjustment set is non-empty ...
                 Some(z_s) => {
@@ -253,7 +273,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // Convert back to CPD.
                     let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z));
                     // Return the result.
-                    Some(p_y_do_x_z)
+                    Ok(Some(p_y_do_x_z))
                 }
             }
         }

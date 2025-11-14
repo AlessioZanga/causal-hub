@@ -13,7 +13,7 @@ use crate::{
     io::{BifIO, BifParser},
     models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Map, States},
+    types::{Error, Labels, Map, States},
 };
 
 /// A categorical Bayesian network.
@@ -134,9 +134,10 @@ impl BN for CatBN {
     type Sample = CatSample;
     type Samples = CatTable;
 
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CPD>,
+        Self: Sized,
     {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
@@ -187,9 +188,9 @@ impl BN for CatBN {
         let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        graph.vertices().iter().try_for_each(|&i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
@@ -201,12 +202,13 @@ impl BN for CatBN {
                 \t found:       {:?} .",
                 pa_i, pa_j
             );
-        });
+            Ok(())
+        })?;
 
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().expect("Graph must be acyclic.");
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
@@ -215,7 +217,7 @@ impl BN for CatBN {
             graph,
             cpds,
             topological_order,
-        }
+        })
     }
 
     #[inline]
@@ -253,9 +255,10 @@ impl BN for CatBN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CPD>,
+        Self: Sized,
     {
         // Assert name is not empty string.
         if let Some(name) = &name {
@@ -270,13 +273,13 @@ impl BN for CatBN {
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds);
+        let mut bn = Self::new(graph, cpds)?;
 
         // Set the optional fields.
         bn.name = name;
         bn.description = description;
 
-        bn
+        Ok(bn)
     }
 }
 
@@ -401,7 +404,8 @@ impl<'de> Deserialize<'de> for CatBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(CatBN::with_optionals(name, description, graph, cpds))
+                // FIXME: Handle errors properly.
+                Ok(CatBN::with_optionals(name, description, graph, cpds).unwrap())
             }
         }
 

@@ -79,7 +79,7 @@ pub fn sem<'a>(
                 // Apply the prior knowledge to the initial graph.
                 for (i, j) in prior_knowledge.forbidden_edges() {
                     // Remove the edge if it is forbidden.
-                    initial_graph.del_edge(i, j);
+                    let _ = initial_graph.del_edge(i, j);
                 }
                 // Check if the number of vertices is less than or equal to the maximum number of parents.
                 if initial_graph.vertices().len() > max_parents + 1 {
@@ -89,6 +89,7 @@ pub fn sem<'a>(
                     for i in 0..initial_graph.vertices().len() {
                         // Get the parents.
                         let pa_i = initial_graph.parents(&set![i]);
+                        let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
                         // Check the maximum number of parents.
                         if pa_i.len() > max_parents + 1 {
                             // Convert to a mutable vector.
@@ -98,7 +99,7 @@ pub fn sem<'a>(
                             // Remove the excess parents.
                             for j in pa_i.split_off(max_parents) {
                                 // Remove the edge.
-                                initial_graph.del_edge(j, i);
+                                let _ = initial_graph.del_edge(j, i);
                             }
                         }
                     }
@@ -114,7 +115,7 @@ pub fn sem<'a>(
                 // Apply the prior knowledge to the initial graph.
                 for (i, j) in prior_knowledge.required_edges() {
                     // Add the edge if it is required.
-                    initial_graph.add_edge(i, j);
+                    let _ = initial_graph.add_edge(i, j);
                 }
                 // Return the initial graph.
                 initial_graph
@@ -220,6 +221,7 @@ pub fn sem<'a>(
                     let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
                     // Set prior knowledge.
                     let ctpc = ctpc.with_prior_knowledge(prior_knowledge);
+                    let ctpc = ctpc.unwrap_or_else(|_| unreachable!());
                     // Fit the new structure using CTPC.
                     ctpc.par_fit()
                 }
@@ -230,6 +232,7 @@ pub fn sem<'a>(
                     let cthc = CTHC::new(&initial_graph, &bic).with_max_parents(max_parents);
                     // Set prior knowledge.
                     let cthc = cthc.with_prior_knowledge(prior_knowledge);
+                    let cthc = cthc.unwrap_or_else(|_| unreachable!());
                     // Fit the new structure using CTHC.
                     cthc.par_fit()
                 }

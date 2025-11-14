@@ -17,9 +17,9 @@ mod tests {
         assert_eq!(&labels!["Eating", "FullStomach", "Hungry"], ctbn.labels());
         // Check the graph structure.
         assert_eq!(ctbn.graph().vertices().len(), 3);
-        assert!(ctbn.graph().has_edge(0, 1));
-        assert!(ctbn.graph().has_edge(1, 2));
-        assert!(ctbn.graph().has_edge(2, 0));
+        assert_eq!(ctbn.graph().has_edge(0, 1), Ok(true));
+        assert_eq!(ctbn.graph().has_edge(1, 2), Ok(true));
+        assert_eq!(ctbn.graph().has_edge(2, 0), Ok(true));
         // Check the distributions.
         assert_eq!(ctbn.cims().len(), 3);
         assert_eq!(&labels!["Eating"], ctbn.cims()[0].labels());

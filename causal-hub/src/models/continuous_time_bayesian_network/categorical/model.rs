@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Map, Set, States},
+    types::{Error, Labels, Map, Set, States},
 };
 
 /// A categorical continuous time Bayesian network.
@@ -144,7 +144,7 @@ impl CTBN for CatCTBN {
     type Trajectory = CatTrj;
     type Trajectories = CatTrjs;
 
-    fn new<I>(graph: DiGraph, cims: I) -> Self
+    fn new<I>(graph: DiGraph, cims: I) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CIM>,
     {
@@ -197,9 +197,9 @@ impl CTBN for CatCTBN {
         );
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        graph.vertices().iter().try_for_each(|&i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
             // Get the conditioning labels of the CIM.
             let pa_j = cims[&labels[i]].conditioning_labels();
@@ -211,7 +211,8 @@ impl CTBN for CatCTBN {
                 \t found:       {:?} .",
                 pa_i, pa_j
             );
-        });
+            Ok(())
+        })?;
 
         // Initialize an empty graph for the uniform initial distribution.
         let initial_graph = DiGraph::empty(graph.labels());
@@ -229,9 +230,9 @@ impl CTBN for CatCTBN {
             CatCPD::new(states, conditioning_states, parameters)
         });
         // Initialize a uniform initial distribution.
-        let initial_distribution = CatBN::new(initial_graph, initial_cpds);
+        let initial_distribution = CatBN::new(initial_graph, initial_cpds)?;
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
@@ -240,7 +241,7 @@ impl CTBN for CatCTBN {
             initial_distribution,
             graph,
             cims,
-        }
+        })
     }
 
     fn initial_distribution(&self) -> &Self::InitialDistribution {
@@ -272,7 +273,7 @@ impl CTBN for CatCTBN {
         initial_distribution: Self::InitialDistribution,
         graph: DiGraph,
         cims: I,
-    ) -> Self
+    ) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CIM>,
     {
@@ -289,7 +290,7 @@ impl CTBN for CatCTBN {
         }
 
         // Construct the categorical CTBN.
-        let mut ctbn = Self::new(graph, cims);
+        let mut ctbn = Self::new(graph, cims)?;
 
         // Assert the initial distribution has same labels.
         assert!(
@@ -311,7 +312,7 @@ impl CTBN for CatCTBN {
         ctbn.description = description;
         ctbn.initial_distribution = initial_distribution;
 
-        ctbn
+        Ok(ctbn)
     }
 }
 
@@ -447,13 +448,11 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 // Set helper types.
                 let cims: Vec<_> = cims;
 
-                Ok(CatCTBN::with_optionals(
-                    name,
-                    description,
-                    initial_distribution,
-                    graph,
-                    cims,
-                ))
+                // FIXME: Handle error properly.
+                Ok(
+                    CatCTBN::with_optionals(name, description, initial_distribution, graph, cims)
+                        .unwrap(),
+                )
             }
         }
 

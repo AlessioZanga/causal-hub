@@ -62,6 +62,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Sample from the distribution.
             sample[i] = cpd_i.sample(&mut rng, &pa_i)[0];
@@ -131,6 +132,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
             let cpd_i = &self.model.cpds()[i];
             // Get the parents.
             let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Compute the value of the variable.
             sample[i] = cpd_i.sample(&mut rng, &pa_i)[0];
@@ -193,6 +195,7 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
         let pa_i = self.model.graph().parents(&set![i]);
+        let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -264,6 +267,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
             let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
             let pa_i = pa_i.iter().map(|&z| event[z] as usize);
             let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -279,13 +283,14 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Append the event to the trajectory.
             sample_events.push(event.clone());
             sample_times.push(time);
+            // Get the childeren of the variable.
+            let ch_i = self.model.graph().children(&set![i]);
+            let ch_i = ch_i.unwrap_or_else(|_| unreachable!());
             // Update the transition times for { X } U Ch(X).
-            std::iter::once(i)
-                .chain(self.model.graph().children(&set![i]))
-                .for_each(|j| {
-                    // Sample the transition time.
-                    times[j] = time + self.sample_time(&event, j);
-                });
+            std::iter::once(i).chain(ch_i).for_each(|j| {
+                // Sample the transition time.
+                times[j] = time + self.sample_time(&event, j);
+            });
             // Add a small epsilon to avoid zero transition times.
             times += EPSILON;
             // Get the variable to transition first.

@@ -13,7 +13,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{impl_from_into_lock, indices_from};
+use crate::{impl_from_into_lock, indices_from, types::Error};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
@@ -163,7 +163,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x);
         let y = lock.label_to_index(y);
         // Check if the edge exists in the graph.
-        Ok(lock.has_edge(x, y))
+        Ok(lock.has_edge(x, y).map_err(Error::from)?)
     }
 
     /// Adds an edge between vertices `x` and `y`.
@@ -187,7 +187,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x);
         let y = lock.label_to_index(y);
         // Add the edge to the graph.
-        Ok(lock.add_edge(x, y))
+        Ok(lock.add_edge(x, y).map_err(Error::from)?)
     }
 
     /// Deletes the edge between vertices `x` and `y`.
@@ -211,7 +211,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x);
         let y = lock.label_to_index(y);
         // Delete the edge from the graph.
-        Ok(lock.del_edge(x, y))
+        Ok(lock.del_edge(x, y).map_err(Error::from)?)
     }
 
     /// Returns the parents of a vertex `x`.
@@ -232,11 +232,9 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the parents of the vertex.
-        Ok(lock
-            .parents(&x)
-            .iter()
-            .map(|&i| lock.index_to_label(i).into())
-            .collect())
+        let z = lock.parents(&x).map_err(Error::from)?;
+        // Convert the indices back to labels.
+        Ok(z.iter().map(|&i| lock.index_to_label(i).into()).collect())
     }
 
     /// Returns the ancestors of a vertex `x`.
@@ -257,11 +255,9 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the ancestors of the vertex.
-        Ok(lock
-            .ancestors(&x)
-            .iter()
-            .map(|&i| lock.index_to_label(i).into())
-            .collect())
+        let z = lock.ancestors(&x).map_err(Error::from)?;
+        // Convert the indices back to labels.
+        Ok(z.iter().map(|&i| lock.index_to_label(i).into()).collect())
     }
 
     /// Returns the children of a vertex `x`.
@@ -282,11 +278,9 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the children of the vertex.
-        Ok(lock
-            .children(&x)
-            .iter()
-            .map(|&i| lock.index_to_label(i).into())
-            .collect())
+        let z = lock.children(&x).map_err(Error::from)?;
+        // Convert the indices back to labels.
+        Ok(z.iter().map(|&i| lock.index_to_label(i).into()).collect())
     }
 
     /// Returns the descendants of a vertex `x`.
@@ -307,11 +301,9 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the descendants of the vertex.
-        Ok(lock
-            .descendants(&x)
-            .iter()
-            .map(|&i| lock.index_to_label(i).into())
-            .collect())
+        let z = lock.descendants(&x).map_err(Error::from)?;
+        // Convert the indices back to labels.
+        Ok(z.iter().map(|&i| lock.index_to_label(i).into()).collect())
     }
 
     /// Checks if the vertex set `Z` is a separator set for `X` and `Y`.
@@ -351,7 +343,7 @@ impl PyDiGraph {
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(lock.is_separator_set(&x, &y, &z))
+        Ok(lock.is_separator_set(&x, &y, &z).map_err(Error::from)?)
     }
 
     /// Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
@@ -401,7 +393,9 @@ impl PyDiGraph {
         let w = w.map(|w| indices_from!(w, lock)).transpose()?;
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(lock.is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        Ok(lock
+            .is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref())
+            .map_err(Error::from)?)
     }
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
@@ -449,7 +443,9 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal separator.
-        let z = lock.find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock
+            .find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref())
+            .map_err(Error::from)?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
@@ -499,7 +495,7 @@ impl PyDiGraph {
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(lock.is_backdoor_set(&x, &y, &z))
+        Ok(lock.is_backdoor_set(&x, &y, &z).map_err(Error::from)?)
     }
 
     /// Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
@@ -549,7 +545,9 @@ impl PyDiGraph {
         let w = w.map(|w| indices_from!(w, lock)).transpose()?;
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(lock.is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        Ok(lock
+            .is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref())
+            .map_err(Error::from)?)
     }
 
     /// Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
@@ -597,7 +595,9 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal backdoor.
-        let z = lock.find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock
+            .find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref())
+            .map_err(Error::from)?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
@@ -655,7 +655,7 @@ impl PyDiGraph {
             let x = graph.label_to_index(&x);
             let y = graph.label_to_index(&y);
             // Add the edge to the graph.
-            graph.add_edge(x, y);
+            let _ = graph.add_edge(x, y);
         }
 
         // Create a new DiGraph from the adjacency matrix.

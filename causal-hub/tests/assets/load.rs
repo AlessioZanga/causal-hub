@@ -45,14 +45,14 @@ mod tests {
 
                 // Check graph structure.
                 assert_eq!(bn.graph().vertices().len(), 8);
-                assert!(bn.graph().has_edge(0, 6));
-                assert!(bn.graph().has_edge(1, 2));
-                assert!(bn.graph().has_edge(3, 2));
-                assert!(bn.graph().has_edge(3, 7));
-                assert!(bn.graph().has_edge(4, 3));
-                assert!(bn.graph().has_edge(5, 1));
-                assert!(bn.graph().has_edge(5, 4));
-                assert!(bn.graph().has_edge(6, 3));
+                assert_eq!(bn.graph().has_edge(0, 6), Ok(true));
+                assert_eq!(bn.graph().has_edge(1, 2), Ok(true));
+                assert_eq!(bn.graph().has_edge(3, 2), Ok(true));
+                assert_eq!(bn.graph().has_edge(3, 7), Ok(true));
+                assert_eq!(bn.graph().has_edge(4, 3), Ok(true));
+                assert_eq!(bn.graph().has_edge(5, 1), Ok(true));
+                assert_eq!(bn.graph().has_edge(5, 4), Ok(true));
+                assert_eq!(bn.graph().has_edge(6, 3), Ok(true));
 
                 // Check CPDs.
                 assert_eq!(bn.cpds()[0].labels()[0], "asia");

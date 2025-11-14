@@ -8,10 +8,12 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
-/// Estimators for parameters and structures.
+/// Parameter and structure learning algorithms.
 pub mod estimators;
-/// Models.
+/// Models structures.
 pub mod models;
+/// Support types.
+pub mod types;
 /// Utility functions.
 pub mod utils;
 

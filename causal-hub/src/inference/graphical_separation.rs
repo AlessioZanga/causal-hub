@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{
     models::{DiGraph, Graph},
     set,
-    types::Set,
+    types::{Error, Set},
 };
 
 /// A trait for graphical separation.
@@ -26,7 +26,12 @@ pub trait GraphicalSeparation {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
+    fn is_separator_set(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<bool, Error>;
 
     /// Checks if the `Z` is a minimal separator set for `X` and `Y`.
     ///
@@ -56,7 +61,7 @@ pub trait GraphicalSeparation {
         z: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> bool;
+    ) -> Result<bool, Error>;
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
     ///
@@ -82,7 +87,7 @@ pub trait GraphicalSeparation {
         y: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> Option<Set<usize>>;
+    ) -> Result<Option<Set<usize>>, Error>;
 }
 
 // Implementation of the `GraphicalSeparation` trait for directed graphs.
@@ -144,7 +149,12 @@ pub(crate) mod digraph {
         }
     }
 
-    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
+    fn _reachable(
+        g: &DiGraph,
+        x: &Set<usize>,
+        an_x: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Set<usize>, Error> {
         // Assert the graph is a DAG.
         assert!(g.topological_order().is_some(), "Graph must be a DAG.");
 
@@ -162,11 +172,11 @@ pub(crate) mod digraph {
         // For each vertex in X ...
         for &w in x {
             // If the vertex has predecessors, add it to the queue as a backward edge.
-            if !g.parents(&set![w]).is_empty() {
+            if !g.parents(&set![w])?.is_empty() {
                 queue.push_back((false, w));
             }
             // If the vertex has successors, add it to the queue as a forward edge.
-            if !g.children(&set![w]).is_empty() {
+            if !g.children(&set![w])?.is_empty() {
                 queue.push_back((true, w));
             }
         }
@@ -177,8 +187,8 @@ pub(crate) mod digraph {
         // For each element in the queue ...
         while let Some((e, v)) = queue.pop_front() {
             // Get the predecessors and successors of the vertex.
-            let pa_v = g.parents(&set![v]).into_iter().map(|n| (false, n));
-            let ch_v = g.children(&set![v]).into_iter().map(|n| (true, n));
+            let pa_v = g.parents(&set![v])?.into_iter().map(|n| (false, n));
+            let ch_v = g.children(&set![v])?.into_iter().map(|n| (true, n));
 
             // Create pairs of (forward, vertex) for predecessors and successors.
             let f_n_pairs = pa_v.chain(ch_v);
@@ -195,11 +205,16 @@ pub(crate) mod digraph {
         }
 
         // Return the set of visited vertices.
-        visited.into_iter().map(|(_, w)| w).collect()
+        Ok(visited.into_iter().map(|(_, w)| w).collect())
     }
 
     impl GraphicalSeparation for DiGraph {
-        fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        fn is_separator_set(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>,
+        ) -> Result<bool, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
 
@@ -216,7 +231,7 @@ pub(crate) mod digraph {
             backward_deque.extend(x.iter().cloned());
 
             // Compute the ancestors of X and Z.
-            let ancestors_or_z = &self.ancestors(z) | &(z | x);
+            let ancestors_or_z = &self.ancestors(z)? | &(z | x);
 
             // While there are vertices to visit in the forward or backward deques ...
             while !forward_deque.is_empty() || !backward_deque.is_empty() {
@@ -226,20 +241,20 @@ pub(crate) mod digraph {
                     backward_visited.insert(w);
                     // If the W is in Y, return false (not separated).
                     if y.contains(&w) {
-                        return false;
+                        return Ok(false);
                     }
                     // If the W is in Z, continue to the next iteration.
                     if z.contains(&w) {
                         continue;
                     }
                     // Add all predecessors of the W to the backward deque.
-                    for pred in self.parents(&set![w]) {
+                    for pred in self.parents(&set![w])? {
                         if !backward_visited.contains(&pred) {
                             backward_deque.push_back(pred);
                         }
                     }
                     // Add all successors of the W to the forward deque.
-                    for succ in self.children(&set![w]) {
+                    for succ in self.children(&set![w])? {
                         if !forward_visited.contains(&succ) {
                             forward_deque.push_back(succ);
                         }
@@ -252,11 +267,11 @@ pub(crate) mod digraph {
                     forward_visited.insert(w);
                     // If the W is in Y, return false (not separated).
                     if y.contains(&w) {
-                        return false;
+                        return Ok(false);
                     }
                     // If the W is an ancestor or in Z, add its predecessors to the backward deque.
                     if ancestors_or_z.contains(&w) {
-                        for pred in self.parents(&set![w]) {
+                        for pred in self.parents(&set![w])? {
                             if !backward_visited.contains(&pred) {
                                 backward_deque.push_back(pred);
                             }
@@ -264,7 +279,7 @@ pub(crate) mod digraph {
                     }
                     // If the W is not in Z, add its successors to the forward deque.
                     if !z.contains(&w) {
-                        for succ in self.children(&set![w]) {
+                        for succ in self.children(&set![w])? {
                             if !forward_visited.contains(&succ) {
                                 forward_deque.push_back(succ);
                             }
@@ -274,7 +289,7 @@ pub(crate) mod digraph {
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn is_minimal_separator_set(
@@ -284,7 +299,7 @@ pub(crate) mod digraph {
             z: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> bool {
+        ) -> Result<bool, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, Some(z), w, v);
 
@@ -296,27 +311,27 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
-            let an_x_y_w = &self.ancestors(&x_y_w) | &x_y_w;
+            let an_x_y_w = &self.ancestors(&x_y_w)? | &x_y_w;
 
             // a) Check that Z is a separator.
-            let x_closure = _reachable(self, x, &an_x_y_w, z);
+            let x_closure = _reachable(self, x, &an_x_y_w, z)?;
             if !x_closure.is_disjoint(y) {
-                return false;
+                return Ok(false);
             }
 
             // b) Check that Z is constrained to An(X, Y).
             if !z.is_subset(&an_x_y_w) {
-                return false;
+                return Ok(false);
             }
 
             // c) Check that Z is minimal.
-            let y_closure = _reachable(self, y, &an_x_y_w, z);
+            let y_closure = _reachable(self, y, &an_x_y_w, z)?;
             if !((z - w).is_subset(&(&x_closure & &y_closure))) {
-                return false;
+                return Ok(false);
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn find_minimal_separator_set(
@@ -325,7 +340,7 @@ pub(crate) mod digraph {
             y: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> Option<Set<usize>> {
+        ) -> Result<Option<Set<usize>>, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, None::<&Set<_>>, w, v);
 
@@ -341,25 +356,25 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
-            let an_x_y_w = &self.ancestors(&x_y_w) | &x_y_w;
+            let an_x_y_w = &self.ancestors(&x_y_w)? | &x_y_w;
 
             // Initialize the restricted set with the intersection of X, Y, and included.
             let z = v & &(&an_x_y_w - &(x | y));
 
             // Check if Z is a separator.
-            let x_closure = _reachable(self, x, &an_x_y_w, &z);
+            let x_closure = _reachable(self, x, &an_x_y_w, &z)?;
             if !x_closure.is_disjoint(y) {
-                return None; // No minimal separator exists.
+                return Ok(None); // No minimal separator exists.
             }
 
             // Update Z.
             let z = &z & &(&x_closure | w);
 
             // Check if Z is a separator.
-            let y_closure = _reachable(self, y, &an_x_y_w, &z);
+            let y_closure = _reachable(self, y, &an_x_y_w, &z)?;
 
             // Return the minimal separator.
-            Some(&z & &(&y_closure | w))
+            Ok(Some(&z & &(&y_closure | w)))
         }
     }
 }

@@ -28,6 +28,7 @@ use crate::{
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
+    types::Error,
 };
 
 /// A categorical Bayesian network (BN).
@@ -76,7 +77,9 @@ impl PyCatBN {
         // Convert Vec<PyCatCPD> to Vec<CatCPD>.
         let cpds = cpds.into_iter().map(|x| x.into());
         // Create a new CatBN with the given parameters.
-        Ok(CatBN::new(graph, cpds).into())
+        let model = CatBN::new(graph, cpds);
+        // Return the new PyCatBN instance.
+        Ok(model.map_err(Error::from)?.into())
     }
 
     /// Returns the name of the model, if any.
@@ -374,7 +377,7 @@ impl PyCatBN {
             CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
         };
         // Return the dataset.
-        Ok(estimate.map(|e| e.into()))
+        Ok(estimate.map_err(Error::from)?.map(|e| e.into()))
     }
 
     /// Read class from a BIF string.

@@ -145,11 +145,14 @@ mod tests {
                     .into_iter()
                     .map(|i| {
                         let i = set![i];
-                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                        let pa_i = model.graph().parents(&i);
+                        let pa_i = pa_i.unwrap_or_else(|_| unreachable!());
+                        CIMEstimator::fit(&raw, &i, &pa_i)
                     })
                     .collect();
                 // Set the initial model.
                 let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);
+                let initial_model = initial_model.unwrap_or_else(|_| unreachable!());
 
                 // Wrap the random number generator in a RefCell to allow mutable borrowing.
                 let rng = RefCell::new(rng);

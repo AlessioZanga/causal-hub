@@ -37,12 +37,12 @@ mod tests {
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 
         // Check that the ACE is correct.
-        assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
+        assert_relative_eq!(true_ace, pred_ace.unwrap().unwrap(), epsilon = 1e-8);
 
         // Compute the ACE of "dysp" on "bronc".
         let pred_ace = engine.ace_estimate(&y, &x);
 
         // Check that the ACE does not exist.
-        assert!(pred_ace.is_none());
+        assert_eq!(pred_ace, Ok(None));
     }
 }

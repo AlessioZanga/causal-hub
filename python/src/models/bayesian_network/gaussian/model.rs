@@ -24,6 +24,7 @@ use crate::{
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from,
     models::{PyDiGraph, PyGaussCPD},
+    types::Error,
 };
 
 /// A Gaussian Bayesian network.
@@ -72,7 +73,9 @@ impl PyGaussBN {
         // Convert Vec<PyGaussCPD> to Vec<GaussCPD>.
         let cpds = cpds.into_iter().map(|x| x.into());
         // Create a new GaussBN with the given parameters.
-        Ok(GaussBN::new(graph, cpds).into())
+        let model = GaussBN::new(graph, cpds);
+        // Return the new PyGaussBN instance.
+        Ok(model.map_err(Error::from)?.into())
     }
 
     /// Returns the name of the model, if any.
@@ -353,7 +356,7 @@ impl PyGaussBN {
             CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
         };
         // Return the dataset.
-        Ok(estimate.map(|e| e.into()))
+        Ok(estimate.map_err(Error::from)?.map(|e| e.into()))
     }
 
     /// Read instance from a JSON string.

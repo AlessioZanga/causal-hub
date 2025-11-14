@@ -24,6 +24,7 @@ use crate::{
     estimators::PyCTBNEstimator,
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
+    types::Error,
 };
 
 /// A continuous-time Bayesian network (CTBN).
@@ -72,7 +73,9 @@ impl PyCatCTBN {
         // Convert Vec<PyCatCPD> to Vec<CatCIM>.
         let cims = cims.into_iter().map(|x| x.into());
         // Create a new CatCTBN with the given parameters.
-        Ok(CatCTBN::new(graph, cims).into())
+        let model = CatCTBN::new(graph, cims);
+        // Return the new PyCatCTBN instance.
+        Ok(model.map_err(Error::from)?.into())
     }
 
     /// Returns the name of the model, if any.

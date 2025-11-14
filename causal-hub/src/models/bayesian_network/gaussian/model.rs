@@ -11,7 +11,7 @@ use crate::{
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
     set,
-    types::{Labels, Map},
+    types::{Error, Labels, Map},
 };
 
 /// A Gaussian Bayesian network.
@@ -98,9 +98,10 @@ impl BN for GaussBN {
     type Sample = GaussSample;
     type Samples = GaussTable;
 
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CPD>,
+        Self: Sized,
     {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
@@ -125,9 +126,9 @@ impl BN for GaussBN {
         let labels: Labels = graph.labels().clone();
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        graph.vertices().iter().try_for_each(|&i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
@@ -139,19 +140,20 @@ impl BN for GaussBN {
                 \t found:       {:?} .",
                 pa_i, pa_j
             );
-        });
+            Ok(())
+        })?;
 
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().expect("Graph must be acyclic.");
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
             graph,
             cpds,
             topological_order,
-        }
+        })
     }
 
     #[inline]
@@ -189,9 +191,10 @@ impl BN for GaussBN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self, Error>
     where
         I: IntoIterator<Item = Self::CPD>,
+        Self: Sized,
     {
         // Assert name is not empty string.
         if let Some(name) = &name {
@@ -206,13 +209,13 @@ impl BN for GaussBN {
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds);
+        let mut bn = Self::new(graph, cpds)?;
 
         // Set the optional fields.
         bn.name = name;
         bn.description = description;
 
-        bn
+        Ok(bn)
     }
 }
 
@@ -338,7 +341,8 @@ impl<'de> Deserialize<'de> for GaussBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(GaussBN::with_optionals(name, description, graph, cpds))
+                // FIXME: Handle errors properly.
+                Ok(GaussBN::with_optionals(name, description, graph, cpds).unwrap())
             }
         }
 

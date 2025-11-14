@@ -8,7 +8,7 @@ use serde::{
 use crate::{
     impl_json_io,
     models::{Graph, Labelled},
-    types::{Labels, Set},
+    types::{Error, Labels, Set},
 };
 
 /// A struct representing an undirected graph using an adjacency matrix.
@@ -33,7 +33,7 @@ impl UnGraph {
     ///
     /// The neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn neighbors(&self, x: &Set<usize>) -> Result<Set<usize>, Error> {
         // Check if the vertices are within bounds.
         x.iter().for_each(|&v| {
             assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
@@ -55,7 +55,7 @@ impl UnGraph {
         neighbors.sort();
 
         // Return the neighbors.
-        neighbors
+        Ok(neighbors)
     }
 }
 
@@ -156,46 +156,46 @@ impl Graph for UnGraph {
             .collect()
     }
 
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
-        self.adjacency_matrix[[x, y]]
+        Ok(self.adjacency_matrix[[x, y]])
     }
 
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
         self.adjacency_matrix[[y, x]] = true;
 
-        true
+        Ok(true)
     }
 
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
         self.adjacency_matrix[[y, x]] = false;
 
-        true
+        Ok(true)
     }
 
     fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {

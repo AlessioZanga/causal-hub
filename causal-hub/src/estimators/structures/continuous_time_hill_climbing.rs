@@ -5,7 +5,7 @@ use crate::{
     estimators::{CIMEstimator, PK},
     models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Set},
+    types::{Error, Labels, Set},
 };
 
 /// A trait for scoring criteria used in score-based structure learning.
@@ -153,7 +153,7 @@ where
     /// A mutable reference to the current instance.
     ///
     #[inline]
-    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Self {
+    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self, Error> {
         // Assert labels of prior knowledge and initial graph are the same.
         assert_eq!(
             self.initial_graph.labels(),
@@ -169,11 +169,11 @@ where
             .vertices()
             .into_iter()
             .permutations(2)
-            .for_each(|edge| {
+            .try_for_each(|edge| {
                 // Get the edge indices.
                 let (i, j) = (edge[0], edge[1]);
                 // Assert edge must be either present and not forbidden ...
-                if self.initial_graph.has_edge(i, j) {
+                if self.initial_graph.has_edge(i, j)? {
                     assert!(
                         !prior_knowledge.is_forbidden(i, j),
                         "Initial graph contains forbidden edge ({i}, {j})."
@@ -185,10 +185,11 @@ where
                         "Initial graph does not contain required edge ({i}, {j})."
                     );
                 }
-            });
+                Ok(())
+            })?;
         // Set prior knowledge.
         self.prior_knowledge = Some(prior_knowledge);
-        self
+        Ok(self)
     }
 
     /// Execute the CTHC algorithm.
@@ -207,7 +208,8 @@ where
             let mut prev_score = f64::NEG_INFINITY;
 
             // Set the initial parent set as the current parent set.
-            let mut curr_pa = self.initial_graph.parents(&set![i]);
+            let curr_pa = self.initial_graph.parents(&set![i]);
+            let mut curr_pa = curr_pa.unwrap_or_else(|_| unreachable!());
             // Compute the score of the current parent set.
             let mut curr_score = self.score.call(&set![i], &curr_pa);
 
@@ -275,7 +277,7 @@ where
             // Set the current parent set.
             for j in curr_pa {
                 // Add an edge from vertex `j` to vertex `i`.
-                graph.add_edge(j, i);
+                let _ = graph.add_edge(j, i);
             }
         }
 
@@ -305,7 +307,8 @@ where
                 let mut prev_score = f64::NEG_INFINITY;
 
                 // Set the initial parent set as the current parent set.
-                let mut curr_pa = self.initial_graph.parents(&set![i]);
+                let curr_pa = self.initial_graph.parents(&set![i]);
+                let mut curr_pa = curr_pa.unwrap_or_else(|_| unreachable!());
                 // Compute the score of the current parent set.
                 let mut curr_score = self.score.call(&set![i], &curr_pa);
 
@@ -388,7 +391,7 @@ where
         for (i, curr_pa) in parents.into_iter().enumerate() {
             for j in curr_pa {
                 // Add an edge from vertex `j` to vertex `i`.
-                graph.add_edge(j, i);
+                let _ = graph.add_edge(j, i);
             }
         }
 

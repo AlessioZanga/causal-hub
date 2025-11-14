@@ -1,7 +1,7 @@
 use crate::{
     models::{DiGraph, Graph},
     set,
-    types::Set,
+    types::{Error, Set},
 };
 
 /// A trait for backdoor adjustment criterion.
@@ -24,7 +24,12 @@ pub trait BackdoorCriterion {
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
+    fn is_backdoor_set(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<bool, Error>;
 
     /// Checks if the `Z` is a minimal backdoor adjustment set for `X` and `Y`.
     ///
@@ -54,7 +59,7 @@ pub trait BackdoorCriterion {
         z: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> bool;
+    ) -> Result<bool, Error>;
 
     /// Finds a minimal backdoor adjustment set for the vertex sets `X` and `Y`, if any.
     ///
@@ -81,12 +86,15 @@ pub trait BackdoorCriterion {
         y: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> Option<Set<usize>>;
+    ) -> Result<Option<Set<usize>>, Error>;
 }
 
 mod digraph {
     use super::*;
-    use crate::inference::{GraphicalSeparation, digraph::_assert};
+    use crate::{
+        inference::{GraphicalSeparation, digraph::_assert},
+        types::Error,
+    };
 
     // Returns the set of vertices:
     //
@@ -97,7 +105,11 @@ mod digraph {
     //     * possible causal path in a directed graph is a directed path from X to Y,
     //     * proper path is a directed path from X to Y that does not contain any vertex in X.
     //
-    fn _proper_causal_path(g: &DiGraph, x: &Set<usize>, y: &Set<usize>) -> Set<usize> {
+    fn _proper_causal_path(
+        g: &DiGraph,
+        x: &Set<usize>,
+        y: &Set<usize>,
+    ) -> Result<Set<usize>, Error> {
         // Initialize the PCP set.
         let mut pcp = set![];
 
@@ -110,7 +122,7 @@ mod digraph {
             // While there are vertices to visit ...
             while let Some(z) = stack.pop() {
                 // For each child of the current node ...
-                for w in g.children(&set![z]) {
+                for w in g.children(&set![z])? {
                     // Skip if W is in X or already visited.
                     if x.contains(&w) || visited.contains(&w) {
                         continue;
@@ -135,7 +147,7 @@ mod digraph {
             }
         }
 
-        pcp
+        Ok(pcp)
     }
 
     // Returns the proper backdoor graph:
@@ -148,7 +160,7 @@ mod digraph {
         // Remove all the edge from X to PCP(X, Y).
         for &i in x {
             for &j in pcp {
-                g_pdb.del_edge(i, j);
+                let _ = g_pdb.del_edge(i, j);
             }
         }
         // Return the modified graph.
@@ -156,7 +168,12 @@ mod digraph {
     }
 
     impl BackdoorCriterion for DiGraph {
-        fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        fn is_backdoor_set(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>,
+        ) -> Result<bool, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
 
@@ -169,23 +186,23 @@ mod digraph {
             //
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
             if !z.is_subset(&(&self.vertices() - &pde)) {
-                return false;
+                return Ok(false);
             }
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);
             // b) Check if Z separates X from Y in G^PDB.
-            if !g_pdb.is_separator_set(x, y, z) {
-                return false;
+            if !g_pdb.is_separator_set(x, y, z)? {
+                return Ok(false);
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn is_minimal_backdoor_set(
@@ -195,7 +212,7 @@ mod digraph {
             z: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> bool {
+        ) -> Result<bool, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, Some(z), w, v);
 
@@ -214,9 +231,9 @@ mod digraph {
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // Constraint the restricted vertices.
             let v_prime = &(v - &pde);
 
@@ -233,7 +250,7 @@ mod digraph {
             y: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> Option<Set<usize>> {
+        ) -> Result<Option<Set<usize>>, Error> {
             // Perform sanity checks and convert sets.
             _assert(self, x, y, None::<&Set<_>>, w, v);
 
@@ -252,9 +269,9 @@ mod digraph {
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // Constraint the restricted vertices.
             let v_prime = &(v - &pde);
 
@@ -273,16 +290,16 @@ mod digraph {
         #[test]
         fn proper_causal_path() {
             let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
-            graph.add_edge(0, 1);
-            graph.add_edge(0, 2);
-            graph.add_edge(1, 2);
-            graph.add_edge(1, 3);
-            graph.add_edge(2, 3);
-            graph.add_edge(3, 4);
+            let _ = graph.add_edge(0, 1);
+            let _ = graph.add_edge(0, 2);
+            let _ = graph.add_edge(1, 2);
+            let _ = graph.add_edge(1, 3);
+            let _ = graph.add_edge(2, 3);
+            let _ = graph.add_edge(3, 4);
 
             assert_eq!(
                 _proper_causal_path(&graph, &set![0], &set![3]),
-                set![1, 2, 3]
+                Ok(set![1, 2, 3])
             );
         }
     }

@@ -139,12 +139,13 @@ impl BifParser {
                     .get_index_of(z)
                     .unwrap_or_else(|| panic!("Failed to get index of label '{z}'."));
                 // Add edge from parent to child.
-                graph.add_edge(z, x);
+                let _ = graph.add_edge(z, x);
             });
         });
 
         // Construct the Bayesian network.
-        CatBN::with_optionals(name, description, graph, cpds)
+        // FIXME: Handle the error properly.
+        CatBN::with_optionals(name, description, graph, cpds).unwrap()
     }
 }
 

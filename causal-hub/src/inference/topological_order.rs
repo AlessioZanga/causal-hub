@@ -39,8 +39,10 @@ impl TopologicalOrder for DiGraph {
         while let Some(i) = to_be_visited.pop_front() {
             // Add the vertex to the order.
             order.push(i);
+            // Get the neighbors of the vertex.
+            let neighbors = self.children(&set![i]).unwrap_or_else(|_| unreachable!());
             // For each neighbor, reduce its in-degree.
-            self.children(&set![i]).into_iter().for_each(|y| {
+            neighbors.into_iter().for_each(|y| {
                 // Decrement the in-degree of the child.
                 in_degree[y] -= 1;
                 // If the in-degree becomes 0, add it to the queue.

@@ -5,7 +5,7 @@ mod undirected;
 use ndarray::prelude::*;
 pub use undirected::*;
 
-use crate::types::{Labels, Set};
+use crate::types::{Error, Labels, Set};
 
 /// A trait for graphs.
 pub trait Graph {
@@ -99,7 +99,7 @@ pub trait Graph {
     ///
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
-    fn has_edge(&self, x: usize, y: usize) -> bool;
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool, Error>;
 
     /// Adds an edge between vertices `x` and `y`.
     ///
@@ -116,7 +116,7 @@ pub trait Graph {
     ///
     /// `true` if the edge was added, `false` if it already existed.
     ///
-    fn add_edge(&mut self, x: usize, y: usize) -> bool;
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool, Error>;
 
     /// Deletes the edge between vertices `x` and `y`.
     ///
@@ -133,7 +133,7 @@ pub trait Graph {
     ///
     /// `true` if the edge was deleted, `false` if it did not exist.
     ///
-    fn del_edge(&mut self, x: usize, y: usize) -> bool;
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool, Error>;
 
     /// Creates a graph from an adjacency matrix and labels.
     ///

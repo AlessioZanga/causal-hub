@@ -82,6 +82,7 @@ mod tests {
             ];
             // Set the initial model.
             let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims);
+            let initial_model = initial_model.unwrap_or_else(|_| unreachable!());
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);

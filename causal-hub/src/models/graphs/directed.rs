@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{Graph, Labelled},
     set,
-    types::{Labels, Set},
+    types::{Error, Labels, Set},
 };
 
 /// A struct representing a directed graph using an adjacency matrix.
@@ -36,7 +36,7 @@ impl DiGraph {
     ///
     /// The parents of the vertices.
     ///
-    pub fn parents(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn parents(&self, x: &Set<usize>) -> Result<Set<usize>, Error> {
         // Assert the vertices are within bounds.
         x.iter().for_each(|&v| {
             assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
@@ -58,7 +58,7 @@ impl DiGraph {
         parents.sort();
 
         // Return the parents.
-        parents
+        Ok(parents)
     }
 
     /// Returns the ancestors of a set of vertices.
@@ -75,7 +75,7 @@ impl DiGraph {
     ///
     /// The ancestors of the vertices.
     ///
-    pub fn ancestors(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn ancestors(&self, x: &Set<usize>) -> Result<Set<usize>, Error> {
         // Assert the vertices are within bounds.
         x.iter().for_each(|&v| {
             assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
@@ -91,7 +91,7 @@ impl DiGraph {
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each incoming edge ...
-            for z in self.parents(&set![y]) {
+            for z in self.parents(&set![y])? {
                 // If there is an edge from z to y and z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -106,7 +106,7 @@ impl DiGraph {
         visited.sort();
 
         // Return the visited set.
-        visited
+        Ok(visited)
     }
 
     /// Returns the children of a set of vertices.
@@ -123,7 +123,7 @@ impl DiGraph {
     ///
     /// The children of the vertices.
     ///
-    pub fn children(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn children(&self, x: &Set<usize>) -> Result<Set<usize>, Error> {
         // Check if the vertices are within bounds.
         x.iter().for_each(|&v| {
             assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
@@ -145,7 +145,7 @@ impl DiGraph {
         children.sort();
 
         // Return the children.
-        children
+        Ok(children)
     }
 
     /// Returns the descendants of a set of vertices.
@@ -162,7 +162,7 @@ impl DiGraph {
     ///
     /// The descendants of the vertices.
     ///
-    pub fn descendants(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn descendants(&self, x: &Set<usize>) -> Result<Set<usize>, Error> {
         // Assert the vertices are within bounds.
         x.iter().for_each(|&v| {
             assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
@@ -178,7 +178,7 @@ impl DiGraph {
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each outgoing edge ...
-            for z in self.children(&set![y]) {
+            for z in self.children(&set![y])? {
                 // If z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -193,7 +193,7 @@ impl DiGraph {
         visited.sort();
 
         // Return the visited set.
-        visited
+        Ok(visited)
     }
 }
 
@@ -287,44 +287,44 @@ impl Graph for DiGraph {
             .collect()
     }
 
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
-        self.adjacency_matrix[[x, y]]
+        Ok(self.adjacency_matrix[[x, y]])
     }
 
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
 
-        true
+        Ok(true)
     }
 
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool, Error> {
         // Check if the vertices are within bounds.
         assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
         assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
 
-        true
+        Ok(true)
     }
 
     fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {
