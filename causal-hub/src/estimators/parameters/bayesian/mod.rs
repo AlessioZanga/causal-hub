@@ -1,13 +1,18 @@
 mod table;
 mod trajectory;
 
-use crate::{datasets::MissingMethod, models::Labelled, types::Labels};
+use crate::{
+    datasets::MissingMethod,
+    models::Labelled,
+    types::{Labels, Map, Set},
+};
 
 /// A struct representing a Bayesian estimator.
 #[derive(Clone, Debug)]
 pub struct BE<'a, D, T> {
     dataset: &'a D,
     missing_method: Option<MissingMethod>,
+    missing_mechanism: Option<Map<usize, Set<usize>>>,
     prior: T,
 }
 
@@ -27,6 +32,7 @@ impl<'a, D> BE<'a, D, ()> {
         Self {
             dataset,
             missing_method: None,
+            missing_mechanism: None,
             prior: (),
         }
     }
@@ -38,14 +44,20 @@ impl<'a, D, T> BE<'a, D, T> {
     /// # Arguments
     ///
     /// * `missing_method` - The missing data handling method to set.
+    /// * `missing_mechanism` - An optional missing data mechanism to set.
     ///
     /// # Returns
     ///
-    /// A new Bayesian estimator with the specified missing data handling method.
+    /// A new sufficient statistics estimator instance with the specified missing data handling method.
     ///
     #[inline]
-    pub fn with_missing_method(mut self, missing_method: MissingMethod) -> Self {
+    pub fn with_missing_method(
+        mut self,
+        missing_method: MissingMethod,
+        missing_mechanism: Option<Map<usize, Set<usize>>>,
+    ) -> Self {
         self.missing_method = Some(missing_method);
+        self.missing_mechanism = missing_mechanism;
         self
     }
 
@@ -64,6 +76,7 @@ impl<'a, D, T> BE<'a, D, T> {
         BE {
             dataset: self.dataset,
             missing_method: self.missing_method,
+            missing_mechanism: self.missing_mechanism,
             prior,
         }
     }

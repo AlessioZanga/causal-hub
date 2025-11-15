@@ -6,6 +6,7 @@ pub use bayesian_network::*;
 
 mod continuous_time_bayesian_network;
 pub use continuous_time_bayesian_network::*;
+use itertools::Either;
 use rand::Rng;
 
 mod graphs;
@@ -161,6 +162,19 @@ pub trait Labelled {
     #[inline]
     fn indices_from(&self, x: &Set<usize>, other: &Labels) -> Set<usize> {
         x.iter().map(|&x| self.index_from(x, other)).collect()
+    }
+}
+
+impl<L, R> Labelled for Either<L, R>
+where
+    L: Labelled,
+    R: Labelled,
+{
+    fn labels(&self) -> &Labels {
+        match self {
+            Either::Left(l) => l.labels(),
+            Either::Right(r) => r.labels(),
+        }
     }
 }
 

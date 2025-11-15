@@ -1,88 +1,60 @@
-use itertools::Either;
-
 use crate::{
-    datasets::{CatIncTable, CatTable, CatWtdTable, IncDataset, MissingMethod as MM},
+    datasets::{CatIncTable, IncDataset, MissingMethod},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::{CatCPDS, Labelled},
     types::Set,
 };
 
-impl SSE<'_, CatIncTable> {
-    /// Apply the missing data handling method to obtain a complete or weighted dataset.
-    fn apply_missing_method(
-        d: &CatIncTable,
-        m: &Option<MM>,
-        x: &Set<usize>,
-        z: &Set<usize>,
-    ) -> Either<CatTable, CatWtdTable> {
-        // Compute the union of X and Z indices.
-        let x_z = &(x | z);
-        // Apply the missing handling method if any, or default to pair-wise deletion.
-        match m.as_ref().unwrap_or(&MM::PW) {
-            MM::LW => Either::Left(d.lw_deletion()),
-            MM::PW => Either::Left(d.pw_deletion(x_z)),
-            MM::IPW(r) => Either::Right(d.ipw_deletion(x_z, *r)),
-            MM::AIPW(r) => Either::Right(d.aipw_deletion(x_z, *r)),
-        }
-    }
-}
-
 impl CSSEstimator<CatCPDS> for SSE<'_, CatIncTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
-        // Get dataset and missing method.
-        let (d, m) = (self.dataset, &self.missing_method);
+        // Get the union of X and Z.
+        let x_z = Some(&(x | z));
+        // Get the missing method or default to PW.
+        let m = self.missing_method.as_ref().unwrap_or(&MissingMethod::PW);
+        // Get the missing mechanism or default to None.
+        let r = self.missing_mechanism.as_ref();
+
         // Apply the missing handling method.
-        let dataset = Self::apply_missing_method(d, m, x, z);
+        let d = self.dataset.apply_missing_method(m, x_z, r);
+
+        // Get the labels of the original dataset.
+        let labels = self.dataset.labels();
+        // Map the indices from the original dataset to the new one.
+        let x = &d.indices_from(x, labels);
+        let z = &d.indices_from(z, labels);
+
         // Estimate based on the resulting dataset.
-        match dataset {
-            Either::Left(complete) => {
-                // Create a new estimator for the complete dataset.
-                let sse = SSE::new(&complete);
-                // Map the original indices to the new dataset.
-                let x = &sse.indices_from(x, d.labels());
-                let z = &sse.indices_from(z, d.labels());
-                // Estimate on the complete dataset.
-                sse.fit(x, z)
-            }
-            Either::Right(weighed) => {
-                // Create a new estimator for the weighted dataset.
-                let sse = SSE::new(&weighed);
-                // Map the original indices to the new dataset.
-                let x = &sse.indices_from(x, d.labels());
-                let z = &sse.indices_from(z, d.labels());
-                // Estimate on the weighted dataset.
-                sse.fit(x, z)
-            }
-        }
+        d.map_either(
+            |d| SSE::new(&d).fit(x, z), // Complete case.
+            |d| SSE::new(&d).fit(x, z), // Weighted case.
+        )
+        .either_into()
     }
 }
 
 impl ParCSSEstimator<CatCPDS> for SSE<'_, CatIncTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
-        // Get dataset and missing method.
-        let (d, m) = (self.dataset, &self.missing_method);
+        // Get the union of X and Z.
+        let x_z = Some(&(x | z));
+        // Get the missing method or default to PW.
+        let m = self.missing_method.as_ref().unwrap_or(&MissingMethod::PW);
+        // Get the missing mechanism or default to None.
+        let r = self.missing_mechanism.as_ref();
+
         // Apply the missing handling method.
-        let dataset = Self::apply_missing_method(d, m, x, z);
-        // Estimate based on the resulting dataset.
-        match dataset {
-            Either::Left(complete) => {
-                // Create a new estimator for the complete dataset.
-                let sse = SSE::new(&complete);
-                // Map the original indices to the new dataset.
-                let x = &sse.indices_from(x, d.labels());
-                let z = &sse.indices_from(z, d.labels());
-                // Estimate on the complete dataset in parallel.
-                sse.par_fit(x, z)
-            }
-            Either::Right(weighted) => {
-                // Create a new estimator for the weighted dataset.
-                let sse = SSE::new(&weighted);
-                // Map the original indices to the new dataset.
-                let x = &sse.indices_from(x, d.labels());
-                let z = &sse.indices_from(z, d.labels());
-                // Estimate on the weighted dataset in parallel.
-                sse.par_fit(x, z)
-            }
-        }
+        let d = self.dataset.apply_missing_method(m, x_z, r);
+
+        // Get the labels of the original dataset.
+        let labels = self.dataset.labels();
+        // Map the indices from the original dataset to the new one.
+        let x = &d.indices_from(x, labels);
+        let z = &d.indices_from(z, labels);
+
+        // Estimate based on the resulting dataset in parallel.
+        d.map_either(
+            |d| SSE::new(&d).par_fit(x, z), // Complete case.
+            |d| SSE::new(&d).par_fit(x, z), // Weighted case.
+        )
+        .either_into()
     }
 }
