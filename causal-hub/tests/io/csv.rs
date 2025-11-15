@@ -17,7 +17,8 @@ mod tests {
             "no,yes,yes\n",
             "yes,yes,yes"
         );
-        let dataset = CatTable::from_csv(csv);
+        // FIXME: Handle error properly.
+        let dataset = CatTable::from_csv(csv).unwrap();
 
         let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 

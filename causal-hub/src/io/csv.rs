@@ -1,3 +1,5 @@
+use crate::types::Error;
+
 /// A trait for reading and writing CSV files.
 pub trait CsvIO: Sized {
     /// Create an instance of the type from a CSV string.
@@ -10,7 +12,7 @@ pub trait CsvIO: Sized {
     ///
     /// A new instance of the type.
     ///
-    fn from_csv(csv: &str) -> Self;
+    fn from_csv(csv: &str) -> Result<Self, Error>;
 
     /// Convert the instance to a CSV string.
     ///
@@ -30,7 +32,7 @@ pub trait CsvIO: Sized {
     ///
     /// A new instance of the type.
     ///
-    fn read_csv(path: &str) -> Self {
+    fn read_csv(path: &str) -> Result<Self, Error> {
         // TODO: Reading the entire file to a string is not efficient.
         Self::from_csv(&std::fs::read_to_string(path).expect("Failed to read CSV file."))
     }

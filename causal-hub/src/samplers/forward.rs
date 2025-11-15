@@ -81,8 +81,8 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             row.assign(&self.sample());
         });
 
-        // Construct the dataset.
-        CatTable::new(self.model.states().clone(), dataset)
+        // Construct the dataset. FIXME: Handle error properly.
+        CatTable::new(self.model.states().clone(), dataset).unwrap()
     }
 }
 
@@ -111,8 +111,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
                 row.assign(&sampler.sample());
             });
 
-        // Construct the dataset.
-        CatTable::new(self.model.states().clone(), samples)
+        // Construct the dataset. FIXME: Handle error properly.
+        CatTable::new(self.model.states().clone(), samples).unwrap()
     }
 }
 
@@ -151,8 +151,8 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
             row.assign(&self.sample());
         });
 
-        // Construct the dataset.
-        GaussTable::new(self.model.labels().clone(), samples)
+        // Construct the dataset. FIXME: Handle error properly.
+        GaussTable::new(self.model.labels().clone(), samples).unwrap()
     }
 }
 
@@ -181,8 +181,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
                 row.assign(&sampler.sample());
             });
 
-        // Construct the dataset.
-        GaussTable::new(self.model.labels().clone(), samples)
+        // Construct the dataset. FIXME: Handle error properly.
+        GaussTable::new(self.model.labels().clone(), samples).unwrap()
     }
 }
 
@@ -310,8 +310,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
-        // Return the trajectory.
-        CatTrj::new(states, sample_events, sample_times)
+        // Return the trajectory. FIXME: Handle error properly.
+        CatTrj::new(states, sample_events, sample_times).unwrap()
     }
 
     #[inline]

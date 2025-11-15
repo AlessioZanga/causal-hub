@@ -235,8 +235,8 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                 *weight = w_i;
             });
 
-        // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        // Construct the samples. FIXME: Handle error properly.
+        let samples = CatTable::new(self.model.states().clone(), samples).unwrap();
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -320,8 +320,8 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
                 *weight = w_i;
             });
 
-        // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        // Construct the samples. FIXME: Handle error properly.
+        let samples = GaussTable::new(self.model.labels().clone(), samples).unwrap();
 
         // Return the weighted samples.
         GaussWtdTable::new(samples, weights)
@@ -359,8 +359,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
                 weight.fill(w_i);
             });
 
-        // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        // Construct the samples. FIXME: Handle error properly.
+        let samples = CatTable::new(self.model.states().clone(), samples).unwrap();
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -398,8 +398,8 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, Ga
                 weight.fill(w_i);
             });
 
-        // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        // Construct the samples. FIXME: Handle error properly.
+        let samples = GaussTable::new(self.model.labels().clone(), samples).unwrap();
 
         // Return the weighted samples.
         GaussWtdTable::new(samples, weights)
@@ -838,8 +838,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
-        // Construct the trajectory.
-        let trajectory = CatTrj::new(states, sample_events, sample_times);
+        // Construct the trajectory. FIXME: Handle error properly.
+        let trajectory = CatTrj::new(states, sample_events, sample_times).unwrap();
 
         // Return the trajectory and its weight.
         (trajectory, weight).into()

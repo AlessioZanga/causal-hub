@@ -339,8 +339,8 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Reshape the times to the number of events.
         let times = Array::from_iter(new_times);
 
-        // Construct the fully observed trajectory.
-        CatTrj::new(states, events, times)
+        // Construct the fully observed trajectory. FIXME: Handle error properly.
+        CatTrj::new(states, events, times).unwrap()
     }
 }
 

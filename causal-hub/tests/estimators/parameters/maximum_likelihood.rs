@@ -32,7 +32,8 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::new(states, values).unwrap();
 
                 let estimator = MLE::new(&dataset);
 
@@ -147,7 +148,8 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::new(states, values).unwrap();
 
                 let estimator = MLE::new(&dataset);
 
@@ -170,7 +172,8 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::new(states, values).unwrap();
 
                 let estimator = MLE::new(&dataset);
 
@@ -199,7 +202,8 @@ mod tests {
                     "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                     "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                 );
-                let dataset = GaussTable::from_csv(csv);
+                // FIXME: Handle error properly.
+                let dataset = GaussTable::from_csv(csv).unwrap();
 
                 let estimator = MLE::new(&dataset);
 
@@ -285,7 +289,8 @@ mod tests {
                     "yes,yes,no\n",
                     "yes,yes,yes"
                 );
-                let dataset = CatTable::from_csv(csv);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::from_csv(csv).unwrap();
 
                 let mut graph = DiGraph::empty(["A", "B", "C"]);
                 let _ = graph.add_edge(0, 1);

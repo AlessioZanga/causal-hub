@@ -31,7 +31,8 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::new(states, values).unwrap();
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
@@ -146,7 +147,8 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                // FIXME: Handle error properly.
+                let dataset = CatTable::new(states, values).unwrap();
 
                 let estimator = BE::new(&dataset).with_prior(1);
 

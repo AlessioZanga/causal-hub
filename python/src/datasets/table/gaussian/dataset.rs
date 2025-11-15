@@ -140,8 +140,8 @@ impl PyGaussTable {
                 Ok::<_, PyErr>(())
             })?;
 
-        // Create the Gaussian tabular dataset.
-        let inner = GaussTable::new(columns, values);
+        // Create the Gaussian tabular dataset. FIXME: Handle error properly.
+        let inner = GaussTable::new(columns, values).unwrap();
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 

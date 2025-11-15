@@ -9,7 +9,7 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Set, States},
 };
 
 /// A type alias for a categorical variable.
@@ -57,7 +57,7 @@ impl CatTable {
     ///
     /// A new categorical dataset instance.
     ///
-    pub fn new(mut states: States, mut values: Array2<CatType>) -> Self {
+    pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self, Error> {
         // Get the labels of the variables.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.
@@ -71,25 +71,24 @@ impl CatTable {
         );
 
         // Check if the number of states is less than `CatType::MAX`.
-        states.iter().for_each(|(label, state)| {
-            assert!(
-                state.len() < CatType::MAX as usize,
-                "Variable '{label}' should have less than 256 states: \n\
-                \t expected:    |states| <  256 , \n\
-                \t found:       |states| == {} .",
-                state.len()
-            );
-        });
+        for (label, state) in &states {
+            if state.len() >= CatType::MAX as usize {
+                return Err(Error::TooManyStates {
+                    label: label.clone(),
+                    states: state.len(),
+                    max_states: CatType::MAX as usize,
+                });
+            }
+        }
+
         // Check if the number of variables is equal to the number of columns.
-        assert_eq!(
-            states.len(),
-            values.ncols(),
-            "Number of variables must be equal to the number of columns: \n\
-            \t expected:    |states| == |values.columns()| , \n\
-            \t found:       |states| == {} and |values.columns()| == {} .",
-            states.len(),
-            values.ncols()
-        );
+        if states.len() != values.ncols() {
+            return Err(Error::ColumnsStatesMismatch {
+                columns: values.ncols(),
+                states: states.len(),
+            });
+        }
+
         // Check if the maximum value of the values is less than the number of states.
         values
             .fold_axis(Axis(0), 0, |&a, &b| if a > b { a } else { b })
@@ -193,12 +192,12 @@ impl CatTable {
             "Shape must match the number of states values."
         );
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             values,
-        }
+        })
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -275,7 +274,7 @@ impl Dataset for CatTable {
 }
 
 impl CsvIO for CatTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv(csv: &str) -> Result<Self, Error> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new()
             .has_headers(true)

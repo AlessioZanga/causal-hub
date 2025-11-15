@@ -33,8 +33,8 @@ mod tests {
             ];
             // Set the times.
             let times = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
-            // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            // Construct a new trajectory. FIXME: Handle error properly.
+            let trj = CatTrj::new(states, events, times).unwrap();
 
             // Check the labels.
             assert_eq!(&labels!["A", "B", "C"], trj.labels());
@@ -85,8 +85,8 @@ mod tests {
             ];
             // Set the times.
             let times = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
-            // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            // Construct a new trajectory. FIXME: Handle error properly.
+            let trj = CatTrj::new(states, events, times).unwrap();
 
             // Check the labels.
             assert_eq!(&labels!["A", "B", "C"], trj.labels());
@@ -137,8 +137,8 @@ mod tests {
             ];
             // Set the times.
             let times = array![0.1, 0.2, 0.3, 0.4, 0.5, 0.0];
-            // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            // Construct a new trajectory. FIXME: Handle error properly.
+            let trj = CatTrj::new(states, events, times).unwrap();
 
             // Check the labels.
             assert_eq!(&labels!["A", "B", "C"], trj.labels());
@@ -172,7 +172,7 @@ mod tests {
 
         #[test]
         fn new_trajectories() {
-            // Initialize the first trajectory.
+            // Initialize the first trajectory. FIXME: Handle error properly.
             let trj_0 = CatTrj::new(
                 states![
                     ("A", ["0", "1", "2", "3"]), //
@@ -186,8 +186,9 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
-            // Initialize the second trajectory.
+            )
+            .unwrap();
+            // Initialize the second trajectory. FIXME: Handle error properly.
             let trj_1 = CatTrj::new(
                 states![
                     ("A", ["0", "1", "2", "3"]), //
@@ -201,7 +202,8 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )
+            .unwrap();
             // Construct a new set of trajectories.
             let trjs = CatTrjs::new([trj_0, trj_1]);
 
@@ -251,7 +253,7 @@ mod tests {
 
         #[test]
         fn new_trajectories_unordered_states() {
-            // Initialize the first trajectory.
+            // Initialize the first trajectory. FIXME: Handle error properly.
             let trj_0 = CatTrj::new(
                 states![
                     ("A", ["0", "1", "2", "3"]), //
@@ -265,8 +267,9 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
-            // Initialize the second trajectory.
+            )
+            .unwrap();
+            // Initialize the second trajectory. FIXME: Handle error properly.
             let trj_1 = CatTrj::new(
                 states![
                     ("A", ["0", "1", "2", "3"]), //
@@ -280,7 +283,8 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )
+            .unwrap();
 
             // Construct a new set of trajectories.
             let trjs = CatTrjs::new([trj_0, trj_1]);

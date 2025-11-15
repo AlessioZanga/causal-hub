@@ -1,7 +1,12 @@
 use csv::ReaderBuilder;
 use ndarray::prelude::*;
 
-use crate::{datasets::Dataset, io::CsvIO, models::Labelled, types::Labels};
+use crate::{
+    datasets::Dataset,
+    io::CsvIO,
+    models::Labelled,
+    types::{Error, Labels},
+};
 
 /// A type alias for a gaussian variable.
 pub type GaussType = f64;
@@ -38,18 +43,23 @@ impl GaussTable {
     ///
     /// A new gaussian dataset instance.
     ///
-    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Self {
-        // Assert that the number of labels matches the number of columns in values.
-        assert_eq!(
-            labels.len(),
-            values.ncols(),
-            "Number of labels must match number of columns in values."
-        );
+    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Result<Self, Error> {
+        // Check that the number of labels matches the number of columns in values.
+        if labels.len() != values.ncols() {
+            return Err(Error::ColumnsLabelsMismatch {
+                columns: values.ncols(),
+                labels: labels.len(),
+            });
+        }
+        // Check values are finite.
+        if !values.iter().all(|&x| x.is_finite()) {
+            return Err(Error::NonFiniteValues);
+        }
 
         // Sort labels and values accordingly.
         if !labels.is_sorted() {
             // Allocate indices to sort labels.
-            let mut indices: Vec<usize> = (0..labels.len()).collect();
+            let mut indices: Vec<_> = (0..labels.len()).collect();
             // Sort the indices by labels.
             indices.sort_by_key(|&i| &labels[i]);
             // Sort the labels.
@@ -63,13 +73,8 @@ impl GaussTable {
             // Update values.
             values = new_values;
         }
-        // Assert values are finite.
-        assert!(
-            values.iter().all(|&x| x.is_finite()),
-            "Values must have finite values."
-        );
 
-        Self { labels, values }
+        Ok(Self { labels, values })
     }
 }
 
@@ -88,7 +93,7 @@ impl Dataset for GaussTable {
 }
 
 impl CsvIO for GaussTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv(csv: &str) -> Result<Self, Error> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new()
             .has_headers(true)

@@ -25,7 +25,8 @@ mod tests {
                 [1, 0, 0], //
                 [1, 0, 1]
             ];
-            let dataset = CatTable::new(states, values.clone());
+            // FIXME: Handle error properly.
+            let dataset = CatTable::new(states, values.clone()).unwrap();
 
             assert_eq!(&labels!["A", "B", "C"], dataset.labels());
             assert!(
@@ -58,7 +59,8 @@ mod tests {
                 [1, 0, 0], //
                 [1, 0, 1]
             ];
-            let dataset = CatTable::new(states, values);
+            // FIXME: Handle error properly.
+            let dataset = CatTable::new(states, values).unwrap();
 
             assert_eq!(&labels!["A", "B", "C"], dataset.labels());
             assert_eq!(
@@ -74,7 +76,7 @@ mod tests {
 
         #[test]
         fn new_unordered_states_2() {
-            // Initialize the dataset.
+            // Initialize the dataset. FIXME: Handle error properly.
             let dataset = CatTable::new(
                 states![
                     ("A", ["0", "1", "2", "3"]), //
@@ -87,7 +89,8 @@ mod tests {
                     [2, 1], //
                     [2, 2]  //
                 ],
-            );
+            )
+            .unwrap();
 
             // Check the labels.
             assert_eq!(&labels!["A", "B"], dataset.labels());
@@ -127,7 +130,7 @@ mod tests {
                 [1, 0, 0, 1], //
                 [1, 0, 1, 0]
             ];
-            CatTable::new(states, values);
+            CatTable::new(states, values).unwrap();
         }
 
         #[test]
@@ -144,7 +147,7 @@ mod tests {
                 [1, 0, 0], //
                 [1, 0, 1]
             ];
-            CatTable::new(states, values);
+            CatTable::new(states, values).unwrap();
         }
 
         #[test]
@@ -161,7 +164,7 @@ mod tests {
                 [1, 0], //
                 [1, 0]
             ];
-            CatTable::new(states, values);
+            CatTable::new(states, values).unwrap();
         }
 
         #[test]
@@ -178,7 +181,7 @@ mod tests {
                 [1, 0, 0],
                 [1, 0, 1]
             ];
-            CatTable::new(states, values);
+            let _ = CatTable::new(states, values);
         }
 
         #[test]
@@ -194,7 +197,8 @@ mod tests {
                 [1, 0, 0], //
                 [1, 0, 1]
             ];
-            let dataset = CatTable::new(states, values);
+            // FIXME: Handle error properly.
+            let dataset = CatTable::new(states, values).unwrap();
 
             assert_eq!(
                 dataset.to_string(),

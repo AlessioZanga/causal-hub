@@ -192,8 +192,8 @@ impl PyCatTable {
             },
         )?;
 
-        // Construct the dataset.
-        let inner = CatTable::new(states, values);
+        // Construct the dataset. FIXME: Handle error properly.
+        let inner = CatTable::new(states, values).unwrap();
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 

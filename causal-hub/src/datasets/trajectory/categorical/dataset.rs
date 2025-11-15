@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatType, Dataset},
     models::Labelled,
-    types::{Labels, States},
+    types::{Error, Labels, States},
 };
 
 /// A multivariate trajectory.
@@ -28,7 +28,11 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new(states: States, mut events: Array2<CatType>, mut times: Array1<f64>) -> Self {
+    pub fn new(
+        states: States,
+        mut events: Array2<CatType>,
+        mut times: Array1<f64>,
+    ) -> Result<Self, Error> {
         // Assert the number of rows in values and times are equal.
         assert_eq!(
             events.nrows(),
@@ -116,10 +120,10 @@ impl CatTrj {
             });
 
         // Create a new categorical dataset instance.
-        let events = CatTable::new(states, events);
+        let events = CatTable::new(states, events)?;
 
         // Return a new trajectory instance.
-        Self { events, times }
+        Ok(Self { events, times })
     }
 
     /// Returns the states of the trajectory.

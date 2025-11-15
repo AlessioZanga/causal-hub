@@ -215,8 +215,8 @@ impl PyCatTrj {
             },
         )?;
 
-        // Construct the categorical trajectory.
-        let inner = CatTrj::new(states, values, time);
+        // Construct the categorical trajectory. FIXME: Handle error properly.
+        let inner = CatTrj::new(states, values, time).unwrap();
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 
