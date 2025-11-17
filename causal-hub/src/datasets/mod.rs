@@ -31,6 +31,18 @@ pub trait Dataset {
     /// The number of samples in the dataset.
     ///
     fn sample_size(&self) -> f64;
+
+    /// Restrict the dataset to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Returns
+    ///
+    /// A dataset restricted to the specified variables.
+    ///
+    fn select(&self, x: &Set<usize>) -> Self;
 }
 
 /// An enum representing different methods for handling missing data.
@@ -73,7 +85,7 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// * `m` - The missing data handling method to apply.
     /// * `x` - An optional set of variables to consider for missing data handling.
-    /// * `r` - An optional missing mechanism specification.
+    /// * `pr` - An optional missing mechanism specification.
     ///
     /// # Returns
     ///
@@ -83,7 +95,7 @@ pub trait IncDataset: Dataset + Sized {
         &self,
         m: &MissingMethod,
         x: Option<&Set<usize>>,
-        r: Option<&Map<usize, Set<usize>>>,
+        pr: Option<&Map<usize, Set<usize>>>,
     ) -> Either<Self::Complete, Self::Weighted>;
 
     /// Perform list-wise (LW) deletion to handle missing data.
@@ -111,24 +123,24 @@ pub trait IncDataset: Dataset + Sized {
     /// # Arguments
     ///
     /// * `x` - A set of column indices for IPW deletion.
-    /// * `r` - The missing data indicators.
+    /// * `pr` - The missing data indicators.
     ///
     /// # Returns
     ///
     /// A weighted dataset restricted to the specified columns via IPW deletion.
     ///
-    fn ipw_deletion(&self, x: &Set<usize>, r: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
 
     /// Perform augmented inverse probability weighting (AIPW) deletion to handle missing data for the specified columns.
     ///
     /// # Arguments
     ///
     /// * `x` - A set of column indices for AIPW deletion.
-    /// * `r` - The missing data indicators.
+    /// * `pr` - The missing data indicators.
     ///
     /// # Returns
     ///
     /// A weighted dataset restricted to the specified columns via AIPW deletion.
     ///
-    fn aipw_deletion(&self, x: &Set<usize>, r: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
 }

@@ -226,6 +226,39 @@ impl Dataset for CatTable {
     fn sample_size(&self) -> f64 {
         self.values.nrows() as f64
     }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in variables selection: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+
+        // Select the states.
+        let states: States = x
+            .iter()
+            .map(|&i| self.states.get_index(i).unwrap())
+            .map(|(label, states)| (label.clone(), states.clone()))
+            .collect();
+
+        // Select the values.
+        let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
+        // Copy the selected columns.
+        x.iter().enumerate().for_each(|(j, &i)| {
+            new_values.column_mut(j).assign(&self.values.column(i));
+        });
+        // Update the values.
+        let values = new_values;
+
+        // Return the new dataset.
+        Self::new(states, values)
+    }
 }
 
 impl CsvIO for CatTable {

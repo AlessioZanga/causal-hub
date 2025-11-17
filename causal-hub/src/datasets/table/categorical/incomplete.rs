@@ -2,14 +2,16 @@ use std::io::{Read, Write};
 
 use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Either;
-use ndarray::prelude::*;
+use ndarray::{Zip, prelude::*};
 
 use crate::{
     datasets::{
         CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMethod as MM, MissingTable,
     },
+    estimators::{BE, CPDEstimator},
     io::CsvIO,
-    models::Labelled,
+    models::{CPD, Labelled},
+    set, states,
     types::{Labels, Map, Set, States},
 };
 
@@ -170,13 +172,46 @@ impl Dataset for CatIncTable {
     fn sample_size(&self) -> f64 {
         self.values.nrows() as f64
     }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in variables selection: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+
+        // Select the states.
+        let states: States = x
+            .iter()
+            .map(|&i| self.states.get_index(i).unwrap())
+            .map(|(label, states)| (label.clone(), states.clone()))
+            .collect();
+
+        // Select the values.
+        let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
+        // Copy the selected columns.
+        x.iter().enumerate().for_each(|(j, &i)| {
+            new_values.column_mut(j).assign(&self.values.column(i));
+        });
+        // Update the values.
+        let values = new_values;
+
+        // Return the new dataset.
+        Self::new(states, values)
+    }
 }
 
 impl CatIncTable {
     /// Compute the weights to perform IPW.
     fn ipw_weights(
         &self,
-        du: &<Self as IncDataset>::Complete,
+        d_u: &<Self as IncDataset>::Complete,
         u: &Set<usize>,
         pr: &Map<usize, Set<usize>>,
     ) -> Array1<f64> {
@@ -186,67 +221,45 @@ impl CatIncTable {
         let pr = pr.filter(|(_, pri)| !pri.is_empty());
 
         // Define function to compute the weights associated to each `R_i`.
-        let beta_i = |du: &CatTable, ri: usize, pri: &Set<usize>| -> Array1<f64> {
-            /* FIXME:
-            // Map parents configuration to a unique index.
-            let m = RavelMultiIndex::new(pri.iter().map(|&i| self.card[i]));
+        let beta_i = |d_u: &CatTable, ri: usize, pri: &Set<usize>| -> Array1<f64> {
+            /* Compute P(Pi_R_i | R_Pi_R_i = 0) and P(Pi_R_i | R_i = 0, R_Pi_R_i = 0) */
 
-            // Apply pairwise deletion depending on (i) the parents of `R_i` and (ii) `R_i` and its parents.
-            let d_pri_rpri = self.pw_deletion(pri); // P(Pi_R_i | R_Pi_R_i = 0)
-            let d_pri_ri_rpri = self.pw_deletion(&[&[ri], pri].concat()); // P(Pi_R_i | R_i = 0, R_Pi_R_i = 0)
-
-            // Allocate the absolute frequency of each parents configuration.
-            let mut f_pri_rpri = Array1::<usize>::zeros(m.len());
-            let mut f_pri_ri_rpri = f_pri_rpri.clone();
-            // Count each parents configuration.
-            d_pri_rpri.rows().into_iter().for_each(|row| {
-                f_pri_rpri[m.call(pri.iter().map(|&i| row[i] as usize))] += 1;
-            });
-            d_pri_ri_rpri.rows().into_iter().for_each(|row| {
-                f_pri_ri_rpri[m.call(pri.iter().map(|&i| row[i] as usize))] += 1;
-            });
-            // Compute the relative frequency of each parents configuration.
-            let f_pri_rpri = f_pri_rpri.mapv(|x| x as f64) / (f_pri_rpri.sum() as f64);
-            let f_pri_ri_rpri = f_pri_ri_rpri.mapv(|x| x as f64) / (f_pri_ri_rpri.sum() as f64);
-
-            // Allocate the `R_i`-specific weights.
-            let mut beta_pri_rpri = Array::zeros(d_u.nrows());
-            let mut beta_pri_ri_rpri = beta_pri_rpri.clone();
-            // Fill the `R_i`-specific weights.
-            d_u.rows().into_iter().enumerate().for_each(|(i, row)| {
-                beta_pri_rpri[i] = f_pri_rpri[m.call(pri.iter().map(|&j| row[j] as usize))];
-                beta_pri_ri_rpri[i] = f_pri_ri_rpri[m.call(pri.iter().map(|&j| row[j] as usize))];
-            });
-            // Compute the `R_i`-specific weights.
-            beta_pri_rpri / beta_pri_ri_rpri
-            */
-
-            /* Compute P(Pi_R_i | R_Pi_R_i = 0) */
-
-            // TODO: Apply pairwise deletion.
-            // TODO: Map the indices w.r.t. the new dataset.
-            // TODO: Compute the distribution.
-
-            /* Compute P(Pi_R_i | R_i = 0, R_Pi_R_i = 0) */
-
-            // TODO: Apply pairwise deletion.
-            // TODO: Map the indices w.r.t. the new dataset.
-            // TODO: Compute the distribution.
+            // Apply pairwise deletion.
+            let d_pri_rpri = self.pw_deletion(pri);
+            let d_pri_ri_rpri = self.pw_deletion(&(&set![ri] | pri));
+            // Map the indices w.r.t. the new dataset.
+            let x_pri_rpri = d_pri_rpri.indices_from(pri, self.labels());
+            let x_pri_ri_rpri = d_pri_ri_rpri.indices_from(pri, self.labels());
+            // Compute the distribution.
+            let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![]);
+            let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri).fit(&x_pri_ri_rpri, &set![]);
 
             /* Compute the weights. */
 
-            // TODO: Allocate the `R_i`-specific weights.
-            // TODO: Fill the `R_i`-specific weights.
-
-            todo!()
+            // Allocate the `R_i`-specific weights.
+            let mut b_pri_rpri = Array::zeros(d_u.values().nrows());
+            let mut b_pri_ri_rpri = b_pri_rpri.clone();
+            // Fill the `R_i`-specific weights.
+            Zip::from(d_u.values().rows())
+                .and(b_pri_rpri.view_mut())
+                .and(b_pri_ri_rpri.view_mut())
+                .for_each(|d_u_j, b_pri_rpri_j, b_pri_ri_rpri_j| {
+                    // Get the parents values for the j-th rows.
+                    let pri_j = pri.iter().map(|&j| d_u_j[j]).collect();
+                    // Get the parents weights associated to each row.
+                    *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![]);
+                    *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![]);
+                });
+            // Compute the `R_i`-specific weights.
+            b_pri_rpri / b_pri_ri_rpri
         };
 
         // Compute the weights associated to each `R_i`.
-        let pr = pr.map(|(ri, pri)| beta_i(du, ri, pri));
+        let pr = pr.map(|(ri, pri)| beta_i(d_u, ri, pri));
         // Compute the product of the weights associated to each `R_i`.
         let mut beta = pr.fold(
             // Fold the weights.
-            Array::ones(du.values().nrows()),
+            Array::ones(d_u.values().nrows()),
             |mut beta, beta_i| {
                 beta *= &beta_i;
                 beta
@@ -276,19 +289,19 @@ impl IncDataset for CatIncTable {
         &self,
         m: &MM,
         x: Option<&Set<usize>>,
-        r: Option<&Map<usize, Set<usize>>>,
+        pr: Option<&Map<usize, Set<usize>>>,
     ) -> Either<Self::Complete, Self::Weighted> {
         // Apply the missing method with the provided arguments.
-        match (m, x, r) {
+        match (m, x, pr) {
             (MM::LW, _, _) => Either::Left(self.lw_deletion()),
             (MM::PW, Some(x), _) => Either::Left(self.pw_deletion(x)),
-            (MM::IPW, Some(x), Some(r)) => Either::Right(self.ipw_deletion(x, r)),
-            (MM::AIPW, Some(x), Some(r)) => Either::Right(self.aipw_deletion(x, r)),
+            (MM::IPW, Some(x), Some(pr)) => Either::Right(self.ipw_deletion(x, pr)),
+            (MM::AIPW, Some(x), Some(pr)) => Either::Right(self.aipw_deletion(x, pr)),
             _ => panic!(
                 "Invalid arguments for applying missing method:\n
                 \t missing method:      '{m:?}' , \n\
                 \t selected variables:  '{x:?}' , \n\
-                \t missing mechanism:   '{r:?}' ."
+                \t missing mechanism:   '{pr:?}' ."
             ),
         }
     }
@@ -318,6 +331,13 @@ impl IncDataset for CatIncTable {
     }
 
     fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete {
+        // If no columns are specified, return an empty dataset.
+        if x.is_empty() {
+            let s = states![];
+            let v = Array::default((0, 0));
+            return Self::Complete::new(s, v);
+        }
+
         // Assert that the indices are valid.
         x.iter().for_each(|&i| {
             assert!(
@@ -370,6 +390,14 @@ impl IncDataset for CatIncTable {
     }
 
     fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted {
+        // If no columns are specified, return an empty dataset.
+        if x.is_empty() {
+            let s = states![];
+            let v = Array::default((0, 0));
+            let w = Array::default(0);
+            return Self::Weighted::new(Self::Complete::new(s, v), w);
+        }
+
         // Assert that the indices are valid.
         x.iter().for_each(|&i| {
             assert!(
@@ -408,42 +436,105 @@ impl IncDataset for CatIncTable {
             "Missing mechanism keys must be sorted."
         );
         assert!(
-            pr.values().all(|pr_i| pr_i.iter().is_sorted()),
+            pr.values().all(|pri| pri.iter().is_sorted()),
             "Missing mechanism values must be sorted."
         );
 
         // Compute U recursively from X and Pi_R following the IPW algorithm.
         let (mut u, mut pru): (_, Set<_>) =
             (x.clone(), x.iter().flat_map(|&x| &pr[x]).copied().collect());
-
         // Compute the transitive closure of the parents.
         while !pru.is_subset(&u) {
             u.extend(pru.drain(..));
             pru.extend(u.iter().flat_map(|&u| &pr[u]).copied());
         }
+        // Sort U.
+        u.sort();
 
         // Apply pairwise deletion.
-        let du = self.pw_deletion(&u);
+        let d_u = self.pw_deletion(&u);
         // Compute the weights w.r.t. pairwise deleted dataset.
-        let b = self.ipw_weights(&du, &u, pr);
+        let b_u = self.ipw_weights(&d_u, &u, pr);
+
+        // Map the indices to the restricted dataset.
+        let x = d_u.indices_from(x, self.labels());
+        // Since U is a superset of X, restrict U to X.
+        let d_x = d_u.select(&x);
 
         // Return new weighted categorical table.
-        Self::Weighted::new(du, b)
+        Self::Weighted::new(d_x, b_u)
     }
 
-    fn aipw_deletion(&self, x: &Set<usize>, r: &Map<usize, Set<usize>>) -> Self::Weighted {
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted {
+        // If no columns are specified, return an empty dataset.
+        if x.is_empty() {
+            let s = states![];
+            let v = Array::default((0, 0));
+            let w = Array::default(0);
+            return Self::Weighted::new(Self::Complete::new(s, v), w);
+        }
+
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in IPW deletion: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+        // Assert that the number of columns in the missing mechanism is valid.
+        assert_eq!(
+            pr.len(),
+            self.values.ncols(),
+            "Number of columns in the missing mechanism must be equal to the number of columns: \n\
+            \t expected:    |missing_mechanism.keys()| == |columns| , \n\
+            \t found:       |missing_mechanism.keys()| == {} and |columns| == {} .",
+            pr.len(),
+            self.values.ncols()
+        );
+        // Assert that the missing mechanism indices are valid.
+        pr.keys().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in IPW deletion missing mechanism: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+        // Assert that the missing mechanism is sorted.
+        assert!(
+            pr.keys().is_sorted(),
+            "Missing mechanism keys must be sorted."
+        );
+        assert!(
+            pr.values().all(|pri| pri.iter().is_sorted()),
+            "Missing mechanism values must be sorted."
+        );
+
+        // Compute U recursively from X and Pi_R following the IPW algorithm.
+        let (mut w, mut prw): (_, Set<_>) =
+            (x.clone(), x.iter().flat_map(|&x| &pr[x]).copied().collect());
+        // Compute the transitive closure of the parents.
+        while !prw.is_subset(&w) {
+            w.extend(prw.drain(..));
+            prw.extend(w.iter().flat_map(|&w| &pr[w]).copied());
+        }
+        // Sort W.
+        w.sort();
+
         /* FIXME:
-        // Compute Pi_R_W from W.
-        let (w__, prw) = (w.iter(), w.iter().filter_map(|&i| pr.get(&i)).flatten());
-        let (w__, prw): (HashSet<_>, HashSet<_>) = (w__.copied().collect(), prw.copied().collect());
+        // Apply pairwise deletion.
+        let d_w = self.pw_deletion(w);
 
         // Compute the set of partially observed variables.
         let v_m = self.partially_observed().into_iter().collect();
         // Check if the intersection of Pi_R_W and V_M is non-empty.
         let f = !(&(&prw - &w__) & &v_m).is_empty();
-
-        // Apply pairwise deletion.
-        let d_w = self.pw_deletion(w);
         // Compute the weights following either ...
         let b = if f {
             Array::ones(d_w.sample_size()) // ... aIPW.
