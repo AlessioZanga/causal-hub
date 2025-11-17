@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use causal_hub::{datasets::MissingTable, labels, models::Labelled};
+    use causal_hub::{datasets::MissingTable, labels, models::Labelled, set};
     use ndarray::prelude::*;
 
     #[test]
@@ -22,6 +22,18 @@ mod tests {
         assert_eq!(
             missing_table.labels(), //
             &labels
+        );
+
+        // Check fully observed columns.
+        assert_eq!(
+            missing_table.fully_observed(), //
+            &set![]
+        );
+
+        // Check partially observed columns.
+        assert_eq!(
+            missing_table.partially_observed(), //
+            &set![0, 1, 2]
         );
 
         // Check missing mask.
@@ -127,6 +139,18 @@ mod tests {
         assert_eq!(
             missing_table.labels(), //
             &labels!("A", "B", "C")
+        );
+
+        // Check fully observed columns.
+        assert_eq!(
+            missing_table.fully_observed(), //
+            &set![]
+        );
+
+        // Check partially observed columns.
+        assert_eq!(
+            missing_table.partially_observed(), //
+            &set![0, 1, 2]
         );
 
         // Check missing mask.

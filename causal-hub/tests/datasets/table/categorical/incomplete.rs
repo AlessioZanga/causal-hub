@@ -643,9 +643,168 @@ mod tests {
         assert_relative_eq!(d_w.weights(), &pred_b_w);
     }
 
-    #[ignore]
     #[test]
     fn aipw_deletion() {
-        todo!() // FIXME:
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2", "b3"]),
+            ("C", ["c1", "c2", "c3"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 0],
+            [1, M, 0],
+            [M, 1, M],
+            [1, 1, 1],
+            [M, M, 0],
+            [M, 1, M],
+            [M, 0, 2],
+            [1, 0, M],
+            [2, 1, M],
+            [0, 2, 0]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Set the Pi_R.
+        let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
+
+        // Set W.
+        let w = set![];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = Array2::<u8>::zeros((0, 0));
+        let pred_b_w = Array1::<f64>::zeros(0);
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [1],
+            [1],
+            [1],
+            [2],
+            [0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1], //
+            [1],
+            [1],
+            [1],
+            [0],
+            [0],
+            [1],
+            [2]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [0],
+            [1],
+            [0],
+            [2],
+            [0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1], //
+            [1, 1],
+            [1, 0],
+            [2, 1],
+            [0, 2]
+        ];
+        let pred_b_w = array![
+            0.8823529411764707,
+            1.1764705882352942,
+            1.1764705882352942,
+            0.8823529411764707,
+            0.8823529411764707
+        ];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 0], //
+            [1, 0],
+            [1, 1],
+            [0, 0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1, 0], //
+            [1, 1],
+            [0, 2],
+            [2, 0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1, 0], //
+            [1, 1, 1],
+            [0, 2, 0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
     }
 }

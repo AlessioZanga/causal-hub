@@ -1,12 +1,18 @@
+use itertools::{Either, Itertools};
 use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
 
-use crate::{models::Labelled, types::Labels};
+use crate::{
+    models::Labelled,
+    types::{Labels, Set},
+};
 
 /// A struct for missing information in a tabular dataset.
 #[derive(Clone, Debug)]
 pub struct MissingTable {
     labels: Labels,
+    fully_observed: Set<usize>,
+    partially_observed: Set<usize>,
     missing_mask: Array2<bool>,
     missing_mask_by_cols: Array1<bool>,
     missing_mask_by_rows: Array1<bool>,
@@ -86,6 +92,18 @@ impl MissingTable {
         let missing_mask_by_cols = missing_count_by_cols.mapv(|x| x > 0);
         let missing_mask_by_rows = missing_count_by_rows.mapv(|x| x > 0);
 
+        // Compute fully and partially observed variable sets.
+        let (fully_observed, partially_observed) = missing_mask_by_cols
+            .iter()
+            .enumerate()
+            .partition_map(|(i, &x)| {
+                if !x {
+                    Either::Left(i)
+                } else {
+                    Either::Right(i)
+                }
+            });
+
         // Compute complete counts.
         let complete_cols_count = missing_mask_by_cols.mapv(|x| (!x) as usize).sum();
         let complete_rows_count = missing_mask_by_rows.mapv(|x| (!x) as usize).sum();
@@ -113,6 +131,8 @@ impl MissingTable {
 
         Self {
             labels,
+            fully_observed,
+            partially_observed,
             missing_mask,
             missing_mask_by_cols,
             missing_mask_by_rows,
@@ -127,6 +147,28 @@ impl MissingTable {
             complete_cols_count,
             complete_rows_count,
         }
+    }
+
+    /// Get the set of fully observed variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the set of fully observed variables.
+    ///
+    #[inline]
+    pub const fn fully_observed(&self) -> &Set<usize> {
+        &self.fully_observed
+    }
+
+    /// Get the set of partially observed variables.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the set of partially observed variables.
+    ///
+    #[inline]
+    pub const fn partially_observed(&self) -> &Set<usize> {
+        &self.partially_observed
     }
 
     /// Get the missing mask indicating the presence of missing values in the table.

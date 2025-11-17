@@ -326,7 +326,7 @@ impl IncDataset for CatIncTable {
         rows.zip(new_values.rows_mut())
             .for_each(|(row, mut new_row)| new_row.assign(&row));
 
-        // Return new complete categorical table.
+        // Return new complete dataset.
         Self::Complete::new(self.states.clone(), new_values)
     }
 
@@ -385,7 +385,7 @@ impl IncDataset for CatIncTable {
             .map(|(label, state)| (label.clone(), state.clone()))
             .collect();
 
-        // Return new complete categorical table.
+        // Return new complete dataset.
         Self::Complete::new(new_states, new_values)
     }
 
@@ -441,8 +441,8 @@ impl IncDataset for CatIncTable {
         );
 
         // Compute U recursively from X and Pi_R following the IPW algorithm.
-        let (mut u, mut pru): (_, Set<_>) =
-            (x.clone(), x.iter().flat_map(|&x| &pr[x]).copied().collect());
+        let mut u = x.clone();
+        let mut pru: Set<_> = x.iter().flat_map(|&x| &pr[x]).copied().collect();
         // Compute the transitive closure of the parents.
         while !pru.is_subset(&u) {
             u.extend(pru.drain(..));
@@ -461,7 +461,7 @@ impl IncDataset for CatIncTable {
         // Since U is a superset of X, restrict U to X.
         let d_x = d_u.select(&x);
 
-        // Return new weighted categorical table.
+        // Return new weighted dataset.
         Self::Weighted::new(d_x, b_u)
     }
 
@@ -516,34 +516,24 @@ impl IncDataset for CatIncTable {
             "Missing mechanism values must be sorted."
         );
 
-        // Compute U recursively from X and Pi_R following the IPW algorithm.
-        let (mut w, mut prw): (_, Set<_>) =
-            (x.clone(), x.iter().flat_map(|&x| &pr[x]).copied().collect());
-        // Compute the transitive closure of the parents.
-        while !prw.is_subset(&w) {
-            w.extend(prw.drain(..));
-            prw.extend(w.iter().flat_map(|&w| &pr[w]).copied());
-        }
+        // Compute W recursively from X and Pi_R following the IPW algorithm.
+        let mut w = x.clone();
+        let prw: Set<_> = x.iter().flat_map(|&x| &pr[x]).copied().collect();
         // Sort W.
         w.sort();
 
-        /* FIXME:
-        // Apply pairwise deletion.
-        let d_w = self.pw_deletion(w);
-
-        // Compute the set of partially observed variables.
-        let v_m = self.partially_observed().into_iter().collect();
-        // Check if the intersection of Pi_R_W and V_M is non-empty.
-        let f = !(&(&prw - &w__) & &v_m).is_empty();
-        // Compute the weights following either ...
-        let b = if f {
-            Array::ones(d_w.sample_size()) // ... aIPW.
-        } else {
-            self.beta(&d_w, w, pr) // ... IPW.
+        // Get the set of partially observed variables.
+        let v_m = self.missing().partially_observed();
+        // Check if the intersection of Pi_R_W and V_M is empty.
+        if (&(&prw - &w) & v_m).is_empty() {
+            return self.ipw_deletion(x, pr); // ... IPW.
         };
-        */
 
-        todo!() // FIXME:
+        // Otherwise, apply pairwise deletion w.r.t. X.
+        let d_x = self.pw_deletion(x);
+        let b_x = Array::ones(d_x.values().nrows()); // ... aIPW.
+        // Return new weighted dataset.
+        Self::Weighted::new(d_x, b_x)
     }
 }
 
@@ -581,16 +571,14 @@ impl CsvIO for CatIncTable {
                     .into_iter()
                     .zip(states.values_mut())
                     .map(|(x, states)| {
-                        // Check if the value is not missing.
-                        if !x.is_empty() {
-                            // Insert the value into the states, if not present.
-                            let (x, _) = states.insert_full(x.to_owned());
-                            // Cast the value.
-                            x as CatType
-                        } else {
-                            // Return missing value.
-                            Self::MISSING
+                        // Check if the value is missing.
+                        if x.is_empty() {
+                            return Self::MISSING;
                         }
+                        // Insert the value into the states, if not present.
+                        let (x, _) = states.insert_full(x.to_owned());
+                        // Cast the value.
+                        x as CatType
                     })
                     .collect();
                 // Collect the values.
@@ -628,12 +616,12 @@ impl CsvIO for CatIncTable {
             let record = row.iter().zip(self.states().values());
             // Map the row values to states.
             let record = record.map(|(&x, states)| {
-                // Check if the value is not missing.
-                if x != Self::MISSING {
-                    &states[x as usize]
-                } else {
-                    &missing
+                // Check if the value is missing.
+                if x == Self::MISSING {
+                    return &missing;
                 }
+                // Return the state label.
+                &states[x as usize]
             });
             // Write the record.
             writer
