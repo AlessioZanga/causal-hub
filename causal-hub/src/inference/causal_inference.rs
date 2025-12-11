@@ -111,15 +111,20 @@ macro_for!($type in [CatBN, GaussBN] {
                 None => None,
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
+                    // ... estimate P(Y | do(X)) as P(Y | X).
+                    Some(self.engine.estimate(y, x))
+                }
+                // If the backdoor adjustment set is equal to Z ...
+                Some(z_s) if z_s.eq(&z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
                     Some(self.engine.estimate(y, &(x | z)))
                 }
-                // If the backdoor adjustment set is non-empty ...
+                // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.estimate(y, &(x | s));
+                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s));
                     let p_s = self.engine.estimate(s, &set![]);
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi();
@@ -227,15 +232,20 @@ macro_for!($type in [CatBN, GaussBN] {
                 None => None,
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
+                    // ... estimate P(Y | do(X)) as P(Y | X).
+                    Some(self.engine.par_estimate(y, x))
+                }
+                // If the backdoor adjustment set is equal to Z ...
+                Some(z_s) if z_s.eq(&z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
                     Some(self.engine.par_estimate(y, &(x | z)))
                 }
-                // If the backdoor adjustment set is non-empty ...
+                // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | s));
+                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s));
                     let p_s = self.engine.par_estimate(s, &set![]);
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi();
