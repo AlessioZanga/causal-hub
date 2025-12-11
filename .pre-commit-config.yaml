@@ -1,0 +1,39 @@
+repos:
+  # Cargo: format
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo-fmt (Rust formatter)
+        entry: cargo +nightly fmt --all --
+        language: system
+        pass_filenames: false
+  
+  # Cargo: lint
+  - repo: local
+    hooks:
+      - id: cargo-clippy
+        name: cargo-clippy (Rust linter)
+        entry: cargo clippy --all --no-deps
+        language: system
+        pass_filenames: false
+
+  # Black: auto-format code
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+        name: black (Python formatter)
+
+  # isort: sort imports consistently
+  - repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        name: isort (Python import sorter)
+
+  # Ruff: linting and auto-fixing issues
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.1
+    hooks:
+      - id: ruff
+        name: ruff (Python linter)

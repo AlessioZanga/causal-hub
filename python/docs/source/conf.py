@@ -1,8 +1,8 @@
 # Configuration file for the Sphinx documentation builder
 # See https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-from importlib.metadata import version, PackageNotFoundError
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 # -- Path setup ---------------------------------------------------------------

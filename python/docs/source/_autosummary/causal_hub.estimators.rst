@@ -1,7 +1,7 @@
-﻿causal\_hub.estimation
+﻿causal\_hub.estimators
 ======================
 
-.. automodule:: causal_hub.estimation
+.. automodule:: causal_hub.estimators
 
    
    .. rubric:: Functions

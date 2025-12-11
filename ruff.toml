@@ -1,0 +1,4 @@
+[lint]
+exclude = [
+    "python/causal_hub/__init__.py",
+]

@@ -1,8 +1,6 @@
 import tempfile
 
 import networkx as nx
-import numpy as np
-
 from causal_hub.assets import load_asia, load_eating, load_ecoli70
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
@@ -73,7 +71,7 @@ def test_asia() -> None:
     # Check the name.
     assert asia.name() == "asia", "Wrong name."
     # Check the description.
-    assert asia.description() == None, "Wrong description."
+    assert asia.description() is None, "Wrong description."
     # Check the vertices labels.
     vertices = ["asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"]
     assert graph.vertices() == vertices, "Wrong vertices labels."
@@ -136,7 +134,7 @@ def test_ecoli70() -> None:
     # Check the name.
     assert ecoli70.name() == "ecoli70", "Wrong name."
     # Check the description.
-    assert ecoli70.description() == None, "Wrong description."
+    assert ecoli70.description() is None, "Wrong description."
     # Check the vertices labels.
     vertices = [
         "aceB",
