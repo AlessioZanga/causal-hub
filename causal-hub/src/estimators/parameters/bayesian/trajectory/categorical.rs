@@ -121,8 +121,15 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), self.prior);
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics.
-            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z);
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }
@@ -146,8 +153,15 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), self.prior);
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z);
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }

@@ -35,24 +35,24 @@ impl<'a, D> MLE<'a, D> {
         }
     }
 
-    /// Sets the missing data handling method.
+    /// Sets the missing handling method.
     ///
     /// # Arguments
     ///
-    /// * `missing_method` - The missing data handling method to set.
-    /// * `missing_mechanism` - An optional missing data mechanism to set.
+    /// * `missing_method` - An optional missing handling method to set.
+    /// * `missing_mechanism` - An optional missing mechanism to set.
     ///
     /// # Returns
     ///
-    /// A new sufficient statistics estimator instance with the specified missing data handling method.
+    /// A new estimator with the specified missing handling method.
     ///
     #[inline]
     pub fn with_missing_method(
         mut self,
-        missing_method: MissingMethod,
+        missing_method: Option<MissingMethod>,
         missing_mechanism: Option<Map<usize, Set<usize>>>,
     ) -> Self {
-        self.missing_method = Some(missing_method);
+        self.missing_method = missing_method;
         self.missing_mechanism = missing_mechanism;
         self
     }

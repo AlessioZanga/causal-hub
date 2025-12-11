@@ -2,7 +2,7 @@ use dry::macro_for;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatWtdTable},
+    datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCPD, CatCPDS},
     types::{Set, States},
@@ -72,7 +72,7 @@ impl BE<'_, CatTable, usize> {
 }
 
 // Implement the CPD estimator for the BE struct.
-macro_for!($type in [CatTable, CatWtdTable] {
+macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for BE<'_, $type, ()> {
         #[inline]
@@ -87,8 +87,15 @@ macro_for!($type in [CatTable, CatWtdTable] {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
             // Get (states, shape, prior).
             let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics.
-            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z);
             // Fit the CPD given the sufficient statistics.
             BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
         }
@@ -107,8 +114,15 @@ macro_for!($type in [CatTable, CatWtdTable] {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
             // Get (states, shape, prior).
             let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z);
             // Fit the CPD given the sufficient statistics.
             BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
         }

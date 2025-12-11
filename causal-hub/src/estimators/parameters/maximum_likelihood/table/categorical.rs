@@ -2,7 +2,7 @@ use dry::macro_for;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatWtdTable},
+    datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCPD, CatCPDS},
     types::{Set, States},
@@ -63,14 +63,21 @@ impl MLE<'_, CatTable> {
 }
 
 // Implement the CatCPD estimator for the MLE struct.
-macro_for!($type in [CatTable, CatWtdTable] {
+macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
             // Get states.
             let states = self.dataset.states();
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics.
-            let sample_statistics = SSE::new(self.dataset).fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z);
             // Fit the CPD given the sufficient statistics.
             MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
         }
@@ -80,8 +87,15 @@ macro_for!($type in [CatTable, CatWtdTable] {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
             // Get states.
             let states = self.dataset.states();
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = SSE::new(self.dataset).par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z);
             // Fit the CPD given the sufficient statistics.
             MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
         }
