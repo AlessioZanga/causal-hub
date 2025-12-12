@@ -23,7 +23,7 @@ jsonschema = { version = "^0.33", default-features = false }
 itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.16", features = ["approx", "rayon", "serde"] }
-ndarray-linalg = "^0.17"
+ndarray-linalg = { version = "^0.17", default-features = false }
 ndarray-stats = "^0.6"
 paste.workspace = true
 pest = "^2.8"
@@ -37,6 +37,7 @@ statrs = { version = "^0.18", default-features = false }
 
 # Optional BLAS support for ndarray.
 blas-src = { version = "^0.14", optional = true }
+accelerate-src = { version = "^0.3", optional = true }
 openblas-src = { version = "^0.10", optional = true }
 
 [dev-dependencies]
@@ -44,6 +45,10 @@ rand_xoshiro = "^0.7"
 
 [features]
 default = []
+accelerate-system = [
+    "ndarray/blas",
+    "blas-src/accelerate",
+]
 openblas-static = [
     "ndarray/blas",
     "ndarray-linalg/openblas-static",
