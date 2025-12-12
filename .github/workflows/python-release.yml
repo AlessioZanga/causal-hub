@@ -43,7 +43,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: --release --features=pyo3/extension-module,backend/openblas-static --out dist
           manylinux: auto
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
@@ -55,7 +55,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t
+          args: --release --features=pyo3/extension-module,backend/openblas-static --out dist -i python3.13t
           manylinux: auto
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
@@ -107,7 +107,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
+          args: --release --features=pyo3/extension-module,backend/openblas-system --out dist
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13t"
@@ -116,7 +116,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
+          args: --release --features=pyo3/extension-module,backend/openblas-system --out dist -i python3.13t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -153,12 +153,12 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: --release --features=pyo3/extension-module,backend/accelerate-system --out dist
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t
+          args: --release --features=pyo3/extension-module,backend/accelerate-system --out dist -i python3.13t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

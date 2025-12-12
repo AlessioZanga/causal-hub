@@ -5,7 +5,19 @@
 //! It provides tools for estimating causal effects, learning causal structures, and more.
 
 // Link to the BLAS library.
-#[cfg(any(feature = "openblas-static", feature = "openblas-system"))]
+#[cfg(not(any(
+    feature = "accelerate-system",
+    feature = "openblas-static",
+    feature = "openblas-system"
+)))]
+compile_error!(
+    "Failed to find a BLAS implementation. See: https://github.com/AlessioZanga/causal-hub#blas."
+);
+#[cfg(any(
+    feature = "accelerate-system",
+    feature = "openblas-static",
+    feature = "openblas-system"
+))]
 extern crate blas_src;
 
 /// Assets such as datasets, models, and other resources.

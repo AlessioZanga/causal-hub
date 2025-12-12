@@ -107,6 +107,6 @@ jobs:
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-
             ${{ matrix.platform.runner }}-
       - name: Build
-        run: cargo build --features=openblas-static
+        run: cargo build --features=accelerate-system
       - name: Test
-        run: cargo test --features=openblas-static
+        run: cargo test --features=accelerate-system

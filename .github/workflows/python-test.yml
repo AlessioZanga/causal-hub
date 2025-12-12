@@ -53,7 +53,7 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release
+          maturin develop --release --features=pyo3/extension-module,backend/openblas-static
         env:
           OPENBLAS_TARGET: GENERIC
           DYNAMIC_ARCH: 1
@@ -151,7 +151,7 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release
+          maturin develop --release --features=pyo3/extension-module,backend/accelerate-system
       - name: Test
         run: |
           conda install pytest
