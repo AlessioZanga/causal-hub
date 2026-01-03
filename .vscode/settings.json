@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.cargo.allFeatures": false,
+    "rust-analyzer.cargo.features": [
+        "openblas-static",
+    ],
+    "rust-analyzer.cargo.noDefaultFeatures": true
+}

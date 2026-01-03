@@ -2,7 +2,7 @@
 mod tests {
     use approx::*;
     use causal_hub::{
-        datasets::{CatTable, GaussTable},
+        datasets::{CatIncTable, CatTable, GaussTable, IncDataset},
         estimators::{BNEstimator, CPDEstimator, MLE},
         io::CsvIO,
         labels,
@@ -10,6 +10,8 @@ mod tests {
         set, states,
     };
     use ndarray::prelude::*;
+
+    const M: <CatIncTable as IncDataset>::Missing = CatIncTable::MISSING;
 
     mod cpd {
         use super::*;
@@ -186,9 +188,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                #[ignore]
                 fn fit() {
-                    /* FIXME:
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -197,12 +197,12 @@ mod tests {
                     let values = array![
                         // A, B, C
                         [0, 0, 0],
-                        [0, 0, 1],
-                        [1, 1, 0],
-                        [0, 1, 1],
+                        [M, 0, 1],
+                        [1, 1, M],
+                        [0, M, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatTable::new(states, values);
+                    let dataset = CatIncTable::new(states, values);
 
                     let estimator = MLE::new(&dataset);
 
@@ -223,18 +223,18 @@ mod tests {
                         distribution.parameters(),
                         &array![
                             // A: no, yes
-                            [0.6, 0.4]
+                            [0.5, 0.5]
                         ]
                     );
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
                         distribution.sample_statistics().map(|s| s.sample_size()),
-                        Some(5.)
+                        Some(4.)
                     );
                     assert_relative_eq!(
                         distribution.sample_log_likelihood().unwrap(),
-                        -3.365058335046282
+                        -2.772588722239781
                     );
 
                     assert_eq!(
@@ -245,13 +245,10 @@ mod tests {
                             "| -------- | -------- |\n",
                             "| no       | yes      |\n",
                             "| -------- | -------- |\n",
-                            "| 0.600000 | 0.400000 |\n",
+                            "| 0.500000 | 0.500000 |\n",
                             "-----------------------\n",
                         )
                     );
-                    */
-
-                    todo!()
                 }
             }
         }

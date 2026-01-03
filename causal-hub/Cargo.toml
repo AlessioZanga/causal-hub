@@ -44,7 +44,7 @@ openblas-src = { version = "^0.10", optional = true }
 rand_xoshiro = "^0.7"
 
 [features]
-default = []
+default = ["openblas-static"]
 accelerate-system = [
     "ndarray/blas",
     "blas-src/accelerate",
