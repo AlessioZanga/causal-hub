@@ -16,7 +16,9 @@ pytest
 # Merge the raw coverage data files into a single file.
 llvm-profdata merge -sparse *.profraw -o coverage.profdata
 # Generate a human-readable coverage report.
-llvm-cov show target/debug/libcausal_hub.so \
+llvm-cov show target/debug/libcausal_hub$( \
+        [ "$(uname)" = "Darwin" ] && echo ".dylib" || echo ".so" \
+    ) \
     --ignore-filename-regex='/.cargo/|.rustup/' \
     -instr-profile=coverage.profdata \
     -show-line-counts-or-regions \

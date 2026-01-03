@@ -3,6 +3,12 @@
 version = 4
 
 [[package]]
+name = "accelerate-src"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "415ed64958754dbe991900f3940677e6a7eefb4d7367afd70d642677b0c7d19d"
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -106,6 +112,7 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5bd439b48f5425c9f4597141b52476358e05e08471bc30f4d1c2a1f4084d7c9f"
 dependencies = [
+ "accelerate-src",
  "openblas-src",
 ]
 
@@ -162,8 +169,9 @@ dependencies = [
 
 [[package]]
 name = "causal-hub"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
+ "accelerate-src",
  "approx",
  "blas-src",
  "csv",
@@ -1447,7 +1455,7 @@ dependencies = [
 
 [[package]]
 name = "python"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "approx",
  "causal-hub",

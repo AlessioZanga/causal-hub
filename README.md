@@ -38,6 +38,14 @@ To use `causal-hub` in your Python project, you can install it via pip:
 pip install causal-hub
 ```
 
+## BLAS
+
+`causal-hub` relies on a BLAS implementation for efficient numerical computations.
+Please select one of the following features when installing the library:
+
+- `openblas-static`: Statically link against OpenBLAS.
+- `openblas-system`: Link against a system-installed OpenBLAS.
+
 ## Changelog
 
 All notable changes to this project will be documented in the [CHANGELOG](CHANGELOG.md) file.
