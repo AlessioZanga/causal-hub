@@ -3,11 +3,10 @@
 
 .. automodule:: causal_hub.estimators
 
-   
+
    .. rubric:: Functions
 
    .. autosummary::
-   
+
       em
       sem
-   

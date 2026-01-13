@@ -21,6 +21,8 @@ jobs:
         platform:
           - runner: ubuntu-latest
             target: x64
+          - runner: ubuntu-24.04-arm
+            target: aarch64
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
@@ -54,7 +56,11 @@ jobs:
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
-            yum install -y pkgconfig openssl-devel
+            if command -v yum &> /dev/null; then
+                yum install -y pkgconfig openssl-devel
+            elif command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y pkg-config libssl-dev
+            fi
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -70,7 +76,11 @@ jobs:
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
-            yum install -y pkgconfig openssl-devel
+            if command -v yum &> /dev/null; then
+                yum install -y pkgconfig openssl-devel
+            elif command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y pkg-config libssl-dev
+            fi
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

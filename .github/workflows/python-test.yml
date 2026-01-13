@@ -21,6 +21,8 @@ jobs:
         platform:
           - runner: ubuntu-latest
             target: x64
+          - runner: ubuntu-24.04-arm
+            target: aarch64
         python: ["3.10", "3.11", "3.12", "3.13"]
     defaults:
       run:
