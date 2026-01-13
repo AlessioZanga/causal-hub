@@ -74,7 +74,7 @@ impl GaussPhiK {
     /// # Returns
     ///
     /// A reference to the precision matrix.
-    ///    
+    ///
     #[inline]
     pub const fn precision_matrix(&self) -> &Array2<f64> {
         &self.k
@@ -506,7 +506,7 @@ impl Phi for GaussPhi {
         // | K_zx  K_zz |
         //
         let k_xx = s.pinv(); //                 Precision of X.
-        let k_xz = -&k_xx.dot(a); //            Cross-precision of X and Z.    
+        let k_xz = -&k_xx.dot(a); //            Cross-precision of X and Z.
         let k_zx = -a.t().dot(&k_xx); //        Cross-precision of Z and X.
         let k_zz = a.t().dot(&k_xx).dot(a); //  Induced precision of Z.
         // Assemble the precision matrix.

@@ -2,5 +2,3 @@
 ==================
 
 .. automodule:: causal_hub.models
-
-   
