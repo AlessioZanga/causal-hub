@@ -1,6 +1,16 @@
 default_stages: [pre-commit]
 
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+
   # Cargo: format
   - repo: local
     hooks:
@@ -9,7 +19,7 @@ repos:
         entry: cargo +nightly fmt --all
         language: system
         pass_filenames: false
-  
+
   # Cargo: lint
   - repo: local
     hooks:
@@ -40,3 +50,19 @@ repos:
     hooks:
       - id: ruff
         name: ruff (Python linter)
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.44.0
+    hooks:
+      - id: markdownlint
+        args: ["--config", ".markdownlint.yaml", "--fix"]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck

@@ -1,7 +1,7 @@
 {
     "rust-analyzer.cargo.allFeatures": false,
     "rust-analyzer.cargo.features": [
-        "openblas-static",
+        "openblas-static"
     ],
     "rust-analyzer.cargo.noDefaultFeatures": true,
     "chat.tools.terminal.autoApprove": {
