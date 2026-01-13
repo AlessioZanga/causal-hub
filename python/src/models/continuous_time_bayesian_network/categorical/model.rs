@@ -65,12 +65,12 @@ impl PyCatCTBN {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
-        let cims: Vec<_> = cims
+        let cims: Vec<PyCatCIM> = cims
             .try_iter()?
-            .map(|x| x?.extract::<PyCatCIM>())
+            .map(|x| x.and_then(|x| x.extract::<PyCatCIM>().map_err(PyErr::from)))
             .collect::<PyResult<_>>()?;
         // Convert Vec<PyCatCPD> to Vec<CatCIM>.
-        let cims = cims.into_iter().map(|x| x.into());
+        let cims = cims.into_iter().map(|x: PyCatCIM| x.into());
         // Create a new CatCTBN with the given parameters.
         Ok(CatCTBN::new(graph, cims).into())
     }

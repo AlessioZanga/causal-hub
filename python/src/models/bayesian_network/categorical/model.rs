@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::CatTable,
+    datasets::{CatIncTable, CatTable},
     estimators::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
@@ -24,7 +24,7 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyCatTable,
+    datasets::{PyCatTable, PyDataset},
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
@@ -69,12 +69,12 @@ impl PyCatBN {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
-        let cpds: Vec<_> = cpds
+        let cpds: Vec<PyCatCPD> = cpds
             .try_iter()?
-            .map(|x| x?.extract::<PyCatCPD>())
+            .map(|x| x.and_then(|x| x.extract::<PyCatCPD>().map_err(PyErr::from)))
             .collect::<PyResult<_>>()?;
         // Convert Vec<PyCatCPD> to Vec<CatCPD>.
-        let cpds = cpds.into_iter().map(|x| x.into());
+        let cpds = cpds.into_iter().map(|x: PyCatCPD| x.into());
         // Create a new CatBN with the given parameters.
         Ok(CatBN::new(graph, cpds).into())
     }
@@ -161,7 +161,7 @@ impl PyCatBN {
     ///
     /// Parameters
     /// ----------
-    /// dataset: CatTable
+    /// dataset: CatTable | CatIncTable
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
@@ -190,49 +190,97 @@ impl PyCatBN {
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
-        dataset: &Bound<'_, PyCatTable>,
+        dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        // Get the dataset and the graph.
-        let dataset: CatTable = dataset.extract::<PyCatTable>()?.into();
+        // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Initialize the estimator.
-        let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
-            // Initialize the maximum likelihood estimator.
-            "mle" => Box::new(MLE::new(&dataset)),
-            // Initialize the Bayesian estimator.
-            "be" => {
-                // Initialize the Bayesian estimator.
-                let estimator = BE::new(&dataset);
-                // Set the prior `alpha`, if any.
-                match kwarg!(kwargs, "alpha", usize) {
-                    None => Box::new(estimator),
-                    Some(alpha) => Box::new(estimator.with_prior(alpha)),
-                }
+
+        // Match the dataset type.
+        match dataset {
+            PyDataset::Categorical(dataset) => {
+                // Get the dataset.
+                let dataset: CatTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Initialize the Bayesian estimator.
+                    "be" => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset);
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", usize) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator, \n\
+                            \t- 'be' - Bayesian estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
             }
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
+            PyDataset::CategoricalIncomplete(dataset) => {
+                // Get the dataset.
+                let dataset: CatIncTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Initialize the Bayesian estimator.
+                    "be" => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset);
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", usize) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator, \n\
+                            \t- 'be' - Bayesian estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
             }
-        };
-        // Fit the model.
-        let model = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || estimator.par_fit(graph))
-        } else {
-            // Execute sequentially.
-            estimator.fit(graph)
-        };
-        // Return the fitted model.
-        Ok(model.into())
+            PyDataset::Gaussian(_) => Err(PyErr::new::<PyValueError, _>(
+                "Expected a categorical dataset for a categorical Bayesian network, but found a Gaussian one.",
+            )),
+        }
     }
 
     /// Generate samples from the model.

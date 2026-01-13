@@ -6,8 +6,9 @@ import typing
 
 import numpy
 import numpy.typing
-from causal_hub.datasets import CatTable, CatTrjs, GaussTable
+from causal_hub.datasets import CatTable, CatTrjs, Dataset, GaussTable
 
+@typing.final
 class CatBN:
     r"""
     A categorical Bayesian network (BN).
@@ -94,18 +95,18 @@ class CatBN:
     @classmethod
     def fit(
         cls,
-        dataset: CatTable,
+        dataset: Dataset,
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> CatBN:
         r"""
         Fit the model to a dataset and a given graph.
 
         Parameters
         ----------
-        dataset: CatTable
+        dataset: CatTable | CatIncTable
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
@@ -306,6 +307,7 @@ class CatBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
@@ -464,6 +466,7 @@ class CatCIM:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution.
@@ -627,6 +630,7 @@ class CatCPD:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCTBN:
     r"""
     A continuous-time Bayesian network (CTBN).
@@ -727,7 +731,7 @@ class CatCTBN:
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> CatCTBN:
         r"""
         Fit the model to a dataset and a given graph.
@@ -837,6 +841,7 @@ class CatCTBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
@@ -1309,6 +1314,7 @@ class DiGraph:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class GaussBN:
     r"""
     A Gaussian Bayesian network.
@@ -1395,7 +1401,7 @@ class GaussBN:
     @classmethod
     def fit(
         cls,
-        dataset: GaussTable,
+        dataset: Dataset,
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
@@ -1550,6 +1556,7 @@ class GaussBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class GaussCPD:
     r"""
     A struct representing a Gaussian conditional probability distribution.

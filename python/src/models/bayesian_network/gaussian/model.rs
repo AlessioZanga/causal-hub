@@ -20,7 +20,7 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyGaussTable,
+    datasets::{PyDataset, PyGaussTable},
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from,
     models::{PyDiGraph, PyGaussCPD},
@@ -65,12 +65,12 @@ impl PyGaussBN {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
-        let cpds: Vec<_> = cpds
+        let cpds: Vec<PyGaussCPD> = cpds
             .try_iter()?
-            .map(|x| x?.extract::<PyGaussCPD>())
+            .map(|x| x.and_then(|x| x.extract::<PyGaussCPD>().map_err(PyErr::from)))
             .collect::<PyResult<_>>()?;
         // Convert Vec<PyGaussCPD> to Vec<GaussCPD>.
-        let cpds = cpds.into_iter().map(|x| x.into());
+        let cpds = cpds.into_iter().map(|x: PyGaussCPD| x.into());
         // Create a new GaussBN with the given parameters.
         Ok(GaussBN::new(graph, cpds).into())
     }
@@ -181,37 +181,47 @@ impl PyGaussBN {
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
-        dataset: &Bound<'_, PyGaussTable>,
+        dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
         parallel: bool,
     ) -> PyResult<Self> {
-        // Get the dataset and the graph.
-        let dataset: GaussTable = dataset.extract::<PyGaussTable>()?.into();
+        // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Initialize the estimator.
-        let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
-            // Initialize the maximum likelihood estimator.
-            "mle" => Box::new(MLE::new(&dataset)),
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator.",
-                    method
-                )));
+
+        // Match the dataset type.
+        match dataset {
+            PyDataset::Gaussian(dataset) => {
+                // Get the dataset.
+                let dataset: GaussTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
             }
-        };
-        // Fit the model.
-        let model = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || estimator.par_fit(graph))
-        } else {
-            // Execute sequentially.
-            estimator.fit(graph)
-        };
-        // Return the fitted model.
-        Ok(model.into())
+            _ => Err(PyErr::new::<PyValueError, _>(
+                "Expected a Gaussian dataset for a Gaussian Bayesian network.",
+            )),
+        }
     }
 
     /// Generate samples from the model.

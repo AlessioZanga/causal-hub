@@ -2,11 +2,97 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import enum
 import typing
 
 import numpy
 import numpy.typing
 
+@typing.final
+class CatIncTable:
+    r"""
+    A categorical incomplete tabular dataset.
+    """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+
+    def states(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        Returns the states of the dataset.
+
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A dictionary mapping each label to a tuple of its possible states.
+        """
+
+    def values(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The values of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the values of the dataset.
+        """
+
+    def sample_size(self) -> builtins.float:
+        r"""
+        The sample size.
+
+        Returns
+        -------
+        float
+            The number of samples in the dataset.
+            If the dataset is weighted, this returns the sum of the weights.
+        """
+
+    def missing(self) -> MissingTable:
+        r"""
+        The missing information table.
+
+        Returns
+        -------
+        MissingTable
+            A missing information table instance.
+        """
+
+    @classmethod
+    def from_pandas(cls, df: typing.Any) -> CatIncTable:
+        r"""
+        Constructs a new categorical incomplete tabular dataset from a Pandas DataFrame.
+
+        Parameters
+        ----------
+
+        df: pandas.DataFrame
+            A Pandas DataFrame containing categorical columns with missing values.
+
+        Returns
+        -------
+        CatIncTable
+            A new categorical incomplete tabular dataset instance.
+        """
+
+    def to_pandas(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Pandas DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame.
+        """
+
+@typing.final
 class CatTable:
     r"""
     A categorical tabular dataset.
@@ -80,6 +166,7 @@ class CatTable:
             A Pandas DataFrame.
         """
 
+@typing.final
 class CatTrj:
     r"""
     A categorical trajectory.
@@ -153,6 +240,7 @@ class CatTrj:
             A Pandas DataFrame representation of the categorical trajectory.
         """
 
+@typing.final
 class CatTrjEv:
     r"""
     A categorical trajectory evidence.
@@ -206,6 +294,7 @@ class CatTrjEv:
             A new categorical trajectory evidence instance.
         """
 
+@typing.final
 class CatTrjs:
     r"""
     A collection of categorical trajectories.
@@ -269,6 +358,7 @@ class CatTrjs:
             A list of Pandas DataFrame representations of the categorical trajectories.
         """
 
+@typing.final
 class CatTrjsEv:
     r"""
     A collection of categorical trajectory evidences.
@@ -322,6 +412,7 @@ class CatTrjsEv:
             A new categorical trajectory evidence instance.
         """
 
+@typing.final
 class CatWtdTrj:
     r"""
     A categorical trajectory with a weight.
@@ -377,6 +468,7 @@ class CatWtdTrj:
             A reference to the times of the trajectory.
         """
 
+@typing.final
 class CatWtdTrjs:
     r"""
     A collection of categorical trajectories with weights.
@@ -412,6 +504,7 @@ class CatWtdTrjs:
             A vector of categorical trajectories.
         """
 
+@typing.final
 class GaussTable:
     r"""
     A Gaussian tabular dataset.
@@ -473,3 +566,207 @@ class GaussTable:
         pandas.DataFrame
             A Pandas DataFrame.
         """
+
+@typing.final
+class MissingTable:
+    r"""
+    A struct for missing information in a tabular dataset.
+    """
+
+    def __new__(
+        cls, labels: typing.Sequence[builtins.str], mask: typing.Any
+    ) -> MissingTable:
+        r"""
+        Constructs a new missing information table.
+
+        Parameters
+        ----------
+        labels: list[str]
+            A list of strings containing the labels of the variables.
+        mask: numpy.ndarray
+            A boolean NumPy array containing the missing information mask.
+
+        Returns
+        -------
+        MissingTable
+            A new missing information table instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+
+    def fully_observed(self) -> builtins.set[builtins.int]:
+        r"""
+        The fully observed variable sets.
+
+        Returns
+        -------
+        set[int]
+            The set of fully observed variables.
+        """
+
+    def partially_observed(self) -> builtins.set[builtins.int]:
+        r"""
+        The partially observed variable sets.
+
+        Returns
+        -------
+        set[int]
+            The set of partially observed variables.
+        """
+
+    def missing_mask(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The missing mask of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the missing mask of the dataset.
+        """
+
+    def missing_mask_by_cols(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The missing mask by columns.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing mask by columns.
+        """
+
+    def missing_mask_by_rows(self) -> numpy.typing.NDArray[numpy.uint8]:
+        r"""
+        The missing mask by rows.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing mask by rows.
+        """
+
+    def missing_count(self) -> builtins.int:
+        r"""
+        The missing count of the dataset.
+
+        Returns
+        -------
+        int
+            The number of missing values in the dataset.
+        """
+
+    def missing_count_by_cols(self) -> numpy.typing.NDArray[numpy.uint64]:
+        r"""
+        The missing count by columns.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing count by columns.
+        """
+
+    def missing_count_by_rows(self) -> numpy.typing.NDArray[numpy.uint64]:
+        r"""
+        The missing count by rows.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing count by rows.
+        """
+
+    def missing_rate(self) -> builtins.float:
+        r"""
+        The missing rate of the dataset.
+
+        Returns
+        -------
+        float
+            The missing rate of the dataset.
+        """
+
+    def missing_rate_by_cols(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The missing rate by columns.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing rate by columns.
+        """
+
+    def missing_rate_by_rows(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The missing rate by rows.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 1D NumPy array containing the missing rate by rows.
+        """
+
+    def missing_correlation(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The missing correlation of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the missing correlation of the dataset.
+        """
+
+    def missing_covariance(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The missing covariance of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D NumPy array containing the missing covariance of the dataset.
+        """
+
+    def complete_cols_count(self) -> builtins.int:
+        r"""
+        The complete columns count.
+
+        Returns
+        -------
+        int
+            The number of complete columns in the dataset.
+        """
+
+    def complete_rows_count(self) -> builtins.int:
+        r"""
+        The complete rows count.
+
+        Returns
+        -------
+        int
+            The number of complete rows in the dataset.
+        """
+
+@typing.final
+class Dataset(enum.Enum):
+    r"""
+    A tabular dataset.
+    """
+
+    Categorical = ...
+    r"""
+    A categorical tabular dataset.
+    """
+    CategoricalIncomplete = ...
+    r"""
+    A categorical incomplete tabular dataset.
+    """
+    Gaussian = ...
+    r"""
+    A Gaussian tabular dataset.
+    """
