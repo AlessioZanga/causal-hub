@@ -7,6 +7,7 @@ import typing
 from causal_hub.datasets import CatTrjsEv
 from causal_hub.models import DiGraph
 
+@typing.final
 class PK:
     r"""
     A struct representing prior knowledge.
@@ -37,7 +38,7 @@ def sem(
     algorithm: builtins.str,
     max_iter: builtins.int = 10,
     seed: builtins.int = 42,
-    **kwargs,
+    **kwargs: typing.Any,
 ) -> dict:
     r"""
     A function to perform structure learning using the Structural Expectation Maximization (SEM) algorithm.

@@ -1,6 +1,9 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    io::{Read, Write},
+};
 
-use csv::ReaderBuilder;
+use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Itertools;
 use log::debug;
 use ndarray::prelude::*;
@@ -18,7 +21,7 @@ pub type CatType = u8;
 pub type CatSample = Array1<CatType>;
 
 /// A struct representing a categorical dataset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CatTable {
     labels: Labels,
     states: States,
@@ -58,11 +61,6 @@ impl CatTable {
     /// A new categorical dataset instance.
     ///
     pub fn new(mut states: States, mut values: Array2<CatType>) -> Self {
-        // Get the labels of the variables.
-        let mut labels: Labels = states.keys().cloned().collect();
-        // Get the shape of the states.
-        let mut shape = Array::from_iter(states.values().map(Set::len));
-
         // Log the creation of the categorical dataset.
         debug!(
             "Creating a new categorical dataset with {} variables and {} samples.",
@@ -73,7 +71,7 @@ impl CatTable {
         // Check if the number of states is less than `CatType::MAX`.
         states.iter().for_each(|(label, state)| {
             assert!(
-                state.len() < CatType::MAX as usize,
+                state.len() <= CatType::MAX as usize,
                 "Variable '{label}' should have less than 256 states: \n\
                 \t expected:    |states| <  256 , \n\
                 \t found:       |states| == {} .",
@@ -102,96 +100,52 @@ impl CatTable {
                     \t expected: values[.., '{label}'] < |states['{label}']| , \n\
                     \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
                     states[i].len(),
-                    label = labels[i],
+                    label = states.get_index(i).unwrap().0,
                 );
             });
 
-        // Check if the values are already sorted.
-        if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
-            // Clone the states.
-            let mut new_states = states.clone();
+        // Check that the labels are sorted.
+        if !states.keys().is_sorted() {
+            // Allocate indices to sort labels.
+            let mut indices: Vec<usize> = (0..states.len()).collect();
+            // Sort the indices by labels.
+            indices.sort_by_key(|&i| states.get_index(i).unwrap().0);
             // Sort the states.
-            new_states.sort_keys();
-            new_states.values_mut().for_each(Set::sort);
-            // Clone the values.
+            states.sort_keys();
+            // Allocate new values.
             let mut new_values = values.clone();
-            // Update the values according to the sorted states.
-            new_states
-                .iter()
-                .enumerate()
-                .for_each(|(i, (new_label, new_states))| {
-                    // Get the index of the new label in the old states.
-                    let (j, _, states_j) = states
-                        .get_full(new_label)
-                        .expect("Failed to get full old states.");
-                    // Update the values.
-                    new_values
-                        .column_mut(i)
-                        .iter_mut()
-                        .zip(values.column(j))
-                        .for_each(|(new_val, old_val)| {
-                            // Get the old state label.
-                            let old_val = &states_j[*old_val as usize];
-                            // Get the new state index.
-                            *new_val = new_states
-                                .get_index_of(old_val)
-                                .expect("Failed to get new state index.")
-                                as CatType;
-                        });
-                });
-            // Update the values.
+            // Sort the new values according to the sorted indices.
+            indices.into_iter().enumerate().for_each(|(i, j)| {
+                new_values.column_mut(i).assign(&values.column(j));
+            });
+            // Update values.
             values = new_values;
-            // Update the states.
-            states = new_states;
-            // Update the labels.
-            labels = states.keys().cloned().collect();
-            // Update the shape.
-            shape = Array::from_iter(states.values().map(Set::len));
         }
 
-        // Debug assert labels are unique.
-        debug_assert_eq!(
-            labels.iter().unique().count(),
-            labels.len(),
-            "Labels must be unique."
-        );
-        // Debug assert labels are sorted.
-        debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
-        // Debug assert states keys are unique.
-        debug_assert_eq!(
-            states.keys().unique().count(),
-            states.len(),
-            "States keys must be unique."
-        );
-        // Debug assert states keys are sorted.
-        debug_assert!(states.keys().is_sorted(), "States keys must be sorted.");
-        // Debug assert states values are unique.
-        debug_assert_eq!(
-            states
-                .values()
-                .map(|x| x.iter().unique().count())
-                .sum::<usize>(),
-            states.values().map(Set::len).sum::<usize>(),
-            "States values must be unique."
-        );
-        // Debug assert states values are sorted.
-        debug_assert!(
-            states.values().all(|x| x.iter().is_sorted()),
-            "States values must be sorted."
-        );
-        // Debug assert labels and states keys are the same.
-        debug_assert!(
-            labels.iter().eq(states.keys()),
-            "Labels and states keys must be the same."
-        );
-        // Debug assert shape must match the number of states.
-        debug_assert!(
-            shape
-                .iter()
-                .zip(states.values())
-                .all(|(&a, b)| a == b.len()),
-            "Shape must match the number of states values."
-        );
+        // For each variable ...
+        for (mut col, states) in values.columns_mut().into_iter().zip(states.values_mut()) {
+            // ... check if the states are sorted.
+            if !states.is_sorted() {
+                // Clone the states.
+                let mut new_states = states.clone();
+                // Sort the states.
+                new_states.sort();
+                // Map values to sorted states.
+                col.iter_mut().for_each(|value| {
+                    *value = new_states
+                        .get_index_of(&states[*value as usize])
+                        .expect("Failed to get new state index.")
+                        as CatType;
+                });
+                // Update the states.
+                *states = new_states;
+            }
+        }
+
+        // Get the labels of the variables.
+        let labels = states.keys().cloned().collect();
+        // Get the shape of the states.
+        let shape = states.values().map(Set::len).collect();
 
         Self {
             labels,
@@ -272,14 +226,45 @@ impl Dataset for CatTable {
     fn sample_size(&self) -> f64 {
         self.values.nrows() as f64
     }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in variables selection: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+
+        // Select the states.
+        let states: States = x
+            .iter()
+            .map(|&i| self.states.get_index(i).unwrap())
+            .map(|(label, states)| (label.clone(), states.clone()))
+            .collect();
+
+        // Select the values.
+        let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
+        // Copy the selected columns.
+        x.iter().enumerate().for_each(|(j, &i)| {
+            new_values.column_mut(j).assign(&self.values.column(i));
+        });
+        // Update the values.
+        let values = new_values;
+
+        // Return the new dataset.
+        Self::new(states, values)
+    }
 }
 
 impl CsvIO for CatTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Self {
         // Create a CSV reader from the string.
-        let mut reader = ReaderBuilder::new()
-            .has_headers(true)
-            .from_reader(csv.as_bytes());
+        let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
         // Assert that the reader has headers.
         assert!(reader.has_headers(), "Reader must have headers.");
@@ -305,15 +290,15 @@ impl CsvIO for CatTable {
             .flat_map(|(i, row)| {
                 // Get the record row.
                 let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                // Zip the row with the states.
+                let row = row.into_iter().zip(states.values_mut());
                 // Get the record values and convert to indices.
                 let row: Vec<_> = row
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, x)| {
+                    .map(|(x, states)| {
                         // Assert no missing values.
                         assert!(!x.is_empty(), "Missing value on line {}.", i + 1);
                         // Insert the value into the states, if not present.
-                        let (x, _) = states[i].insert_full(x.to_owned());
+                        let (x, _) = states.insert_full(x.to_owned());
                         // Cast the value.
                         x as CatType
                     })
@@ -335,7 +320,26 @@ impl CsvIO for CatTable {
         Self::new(states, values)
     }
 
-    fn to_csv(&self) -> String {
-        todo!() // FIXME:
+    fn to_csv_writer<W: Write>(&self, writer: W) {
+        // Create the CSV writer.
+        let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
+
+        // Write the headers.
+        writer
+            .write_record(self.labels.iter())
+            .expect("Failed to write CSV headers.");
+
+        // Write the records.
+        self.values.rows().into_iter().for_each(|row| {
+            // Map the row values to states.
+            let record = row
+                .iter()
+                .zip(self.states().values())
+                .map(|(&x, states)| &states[x as usize]);
+            // Write the record.
+            writer
+                .write_record(record)
+                .expect("Failed to write CSV record.");
+        });
     }
 }

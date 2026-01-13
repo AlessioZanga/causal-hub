@@ -115,7 +115,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     Some(self.engine.estimate(y, x))
                 }
                 // If the backdoor adjustment set is equal to Z ...
-                Some(z_s) if z_s.eq(&z) => {
+                Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
                     Some(self.engine.estimate(y, &(x | z)))
                 }
@@ -236,7 +236,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     Some(self.engine.par_estimate(y, x))
                 }
                 // If the backdoor adjustment set is equal to Z ...
-                Some(z_s) if z_s.eq(&z) => {
+                Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
                     Some(self.engine.par_estimate(y, &(x | z)))
                 }

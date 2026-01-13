@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatSample, CatTable, Dataset},
     models::Labelled,
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A type alias for a categorical weighted sample.
@@ -34,7 +34,7 @@ impl CatWtdTable {
     /// # Panics
     ///
     /// * Panics if the number of weights is not equal to the number of samples.
-    /// * Panics if any weight is not in the range [0, 1].
+    /// * Panics if any weight is not finite.
     ///
     /// # Returns
     ///
@@ -47,8 +47,8 @@ impl CatWtdTable {
             "The number of weights must be equal to the number of samples."
         );
         assert!(
-            weights.iter().all(|&w| (0.0..=1.0).contains(&w)),
-            "All weights must be in the range [0, 1]."
+            weights.iter().all(|&w| w.is_finite()),
+            "All weights must be finite."
         );
 
         Self { dataset, weights }
@@ -99,5 +99,14 @@ impl Dataset for CatWtdTable {
     #[inline]
     fn sample_size(&self) -> f64 {
         self.weights.sum()
+    }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Select the dataset.
+        let dataset = self.dataset.select(x);
+        // Select the weights.
+        let weights = self.weights.clone();
+        // Return the new weighted dataset.
+        Self::new(dataset, weights)
     }
 }

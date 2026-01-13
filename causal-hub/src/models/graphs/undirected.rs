@@ -89,9 +89,6 @@ impl Graph for UnGraph {
         // Initialize the adjacency matrix with `false` values.
         let adjacency_matrix: Array2<_> = Array::from_elem((n, n), false);
 
-        // Debug assert to check the sorting of the labels.
-        debug_assert!(labels.iter().is_sorted(), "Vertices labels must be sorted.");
-
         Self {
             labels,
             adjacency_matrix,
@@ -122,9 +119,6 @@ impl Graph for UnGraph {
         let mut adjacency_matrix: Array2<_> = Array::from_elem((n, n), true);
         // Set the diagonal to `false` to avoid self-loops.
         adjacency_matrix.diag_mut().fill(false);
-
-        // Debug assert to check the sorting of the labels.
-        debug_assert!(labels.iter().is_sorted(), "Vertices labels must be sorted.");
 
         Self {
             labels,

@@ -53,7 +53,10 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release --features=pyo3/extension-module,backend/openblas-static
+          maturin develop \
+            --release \
+            --no-default-features \
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-static
         env:
           OPENBLAS_TARGET: GENERIC
           DYNAMIC_ARCH: 1
@@ -109,7 +112,10 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release --features=pyo3/extension-module,backend/openblas-system
+          maturin develop `
+            --release `
+            --no-default-features `
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
       - name: Test
         run: |
           conda install pytest
@@ -151,7 +157,10 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop --release --features=pyo3/extension-module,backend/accelerate-system
+          maturin develop \
+            --release \
+            --no-default-features \
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/accelerate-system
       - name: Test
         run: |
           conda install pytest

@@ -19,12 +19,12 @@ csv.workspace = true
 dry.workspace = true
 fxhash.workspace = true
 indexmap.workspace = true
-jsonschema = { version = "^0.33", default-features = false }
+jsonschema = { version = "^0.38", default-features = false }
 itertools.workspace = true
 log.workspace = true
-ndarray = { version = "^0.16", features = ["approx", "rayon", "serde"] }
-ndarray-linalg = { version = "^0.17", default-features = false }
-ndarray-stats = "^0.6"
+ndarray = { version = "^0.17", features = ["approx", "rayon", "serde"] }
+ndarray-linalg = { version = "^0.18", default-features = false }
+ndarray-stats = "^0.7"
 paste.workspace = true
 pest = "^2.8"
 pest_derive = "^2.8"
@@ -44,7 +44,7 @@ openblas-src = { version = "^0.10", optional = true }
 rand_xoshiro = "^0.7"
 
 [features]
-default = []
+default = ["openblas-static"]
 accelerate-system = [
     "ndarray/blas",
     "blas-src/accelerate",

@@ -149,7 +149,7 @@ impl PyCatTrj {
         // Invoke the to_numpy method on the time column.
         let time = time.getattr("to_numpy")?.call0()?;
         // Extract the time column as a PyArray1<f64>.
-        let time = time.downcast::<PyArray1<f64>>()?.to_owned_array();
+        let time = time.cast::<PyArray1<f64>>()?.to_owned_array();
         // Remove the "time" column from the columns vector.
         columns.remove(columns.iter().position(|x| x == "time").unwrap());
         // Decrement the shape of the data frame.
@@ -200,7 +200,7 @@ impl PyCatTrj {
                 // Invoke the to_numpy method on the column.
                 let column = column.getattr("to_numpy")?.call0()?;
                 // Extract the column as a PyArray1<PyObject>.
-                let column = column.downcast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
+                let column = column.cast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
                 let column = column.map(|x| {
                     // Get the value.

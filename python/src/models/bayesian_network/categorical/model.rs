@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::CatTable,
+    datasets::{CatIncTable, CatTable},
     estimators::{BE, MLE},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
@@ -24,7 +24,7 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyCatTable,
+    datasets::{PyCatTable, PyDataset},
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
@@ -69,12 +69,12 @@ impl PyCatBN {
         // Convert PyDiGraph to DiGraph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
         // Convert PyAny to Vec<CatCPD>.
-        let cpds: Vec<_> = cpds
+        let cpds: Vec<PyCatCPD> = cpds
             .try_iter()?
-            .map(|x| x?.extract::<PyCatCPD>())
+            .map(|x| x.and_then(|x| x.extract::<PyCatCPD>().map_err(PyErr::from)))
             .collect::<PyResult<_>>()?;
         // Convert Vec<PyCatCPD> to Vec<CatCPD>.
-        let cpds = cpds.into_iter().map(|x| x.into());
+        let cpds = cpds.into_iter().map(|x: PyCatCPD| x.into());
         // Create a new CatBN with the given parameters.
         Ok(CatBN::new(graph, cpds).into())
     }
@@ -161,7 +161,7 @@ impl PyCatBN {
     ///
     /// Parameters
     /// ----------
-    /// dataset: CatTable
+    /// dataset: CatTable | CatIncTable
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
@@ -190,49 +190,97 @@ impl PyCatBN {
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
-        dataset: &Bound<'_, PyCatTable>,
+        dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        // Get the dataset and the graph.
-        let dataset: CatTable = dataset.extract::<PyCatTable>()?.into();
+        // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
-        // Initialize the estimator.
-        let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
-            // Initialize the maximum likelihood estimator.
-            "mle" => Box::new(MLE::new(&dataset)),
-            // Initialize the Bayesian estimator.
-            "be" => {
-                // Initialize the Bayesian estimator.
-                let estimator = BE::new(&dataset);
-                // Set the prior `alpha`, if any.
-                match kwarg!(kwargs, "alpha", usize) {
-                    None => Box::new(estimator),
-                    Some(alpha) => Box::new(estimator.with_prior(alpha)),
-                }
+
+        // Match the dataset type.
+        match dataset {
+            PyDataset::Categorical(dataset) => {
+                // Get the dataset.
+                let dataset: CatTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Initialize the Bayesian estimator.
+                    "be" => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset);
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", usize) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator, \n\
+                            \t- 'be' - Bayesian estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
             }
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
+            PyDataset::CategoricalIncomplete(dataset) => {
+                // Get the dataset.
+                let dataset: CatIncTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Initialize the Bayesian estimator.
+                    "be" => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset);
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", usize) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator, \n\
+                            \t- 'be' - Bayesian estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
             }
-        };
-        // Fit the model.
-        let model = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || estimator.par_fit(graph))
-        } else {
-            // Execute sequentially.
-            estimator.fit(graph)
-        };
-        // Return the fitted model.
-        Ok(model.into())
+            PyDataset::Gaussian(_) => Err(PyErr::new::<PyValueError, _>(
+                "Expected a categorical dataset for a categorical Bayesian network, but found a Gaussian one.",
+            )),
+        }
     }
 
     /// Generate samples from the model.
@@ -390,9 +438,9 @@ impl PyCatBN {
     ///     A new Bayesian network instance.
     ///
     #[classmethod]
-    pub fn from_bif(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
+    pub fn from_bif_string(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif(bif))),
+            inner: Arc::new(RwLock::new(CatBN::from_bif_string(bif))),
         })
     }
 
@@ -403,8 +451,8 @@ impl PyCatBN {
     /// str
     ///     A BIF string representation of the model.
     ///
-    pub fn to_bif(&self) -> PyResult<String> {
-        Ok(self.lock().to_bif())
+    pub fn to_bif_string(&self) -> PyResult<String> {
+        Ok(self.lock().to_bif_string())
     }
 
     /// Read class from a BIF file.
@@ -420,9 +468,9 @@ impl PyCatBN {
     ///     A new Bayesian network instance.
     ///
     #[classmethod]
-    pub fn read_bif(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+    pub fn from_bif_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::read_bif(path))),
+            inner: Arc::new(RwLock::new(CatBN::from_bif_file(path))),
         })
     }
 
@@ -433,8 +481,8 @@ impl PyCatBN {
     /// path: str
     ///     The path to the BIF file to write to.
     ///
-    pub fn write_bif(&self, path: &str) -> PyResult<()> {
-        self.lock().write_bif(path);
+    pub fn to_bif_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_bif_file(path);
         Ok(())
     }
 
@@ -451,9 +499,9 @@ impl PyCatBN {
     ///     A new instance.
     ///
     #[classmethod]
-    pub fn from_json(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
+    pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json(json))),
+            inner: Arc::new(RwLock::new(CatBN::from_json_string(json))),
         })
     }
 
@@ -464,8 +512,8 @@ impl PyCatBN {
     /// str
     ///     A JSON string representation of the instance.
     ///
-    pub fn to_json(&self) -> PyResult<String> {
-        Ok(self.lock().to_json())
+    pub fn to_json_string(&self) -> PyResult<String> {
+        Ok(self.lock().to_json_string())
     }
 
     /// Read instance from a JSON file.
@@ -481,9 +529,9 @@ impl PyCatBN {
     ///     A new instance.
     ///
     #[classmethod]
-    pub fn read_json(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
+    pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::read_json(path))),
+            inner: Arc::new(RwLock::new(CatBN::from_json_file(path))),
         })
     }
 
@@ -494,8 +542,8 @@ impl PyCatBN {
     /// path: str
     ///     The path to the JSON file to write to.
     ///
-    pub fn write_json(&self, path: &str) -> PyResult<()> {
-        self.lock().write_json(path);
+    pub fn to_json_file(&self, path: &str) -> PyResult<()> {
+        self.lock().to_json_file(path);
         Ok(())
     }
 }

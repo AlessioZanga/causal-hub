@@ -1,6 +1,14 @@
 import numpy as np
 import pandas as pd
-from causal_hub.datasets import CatTable, CatTrj, CatTrjEv, CatTrjs, GaussTable
+from causal_hub.datasets import (
+    CatIncTable,
+    CatTable,
+    CatTrj,
+    CatTrjEv,
+    CatTrjs,
+    GaussTable,
+    MissingTable,
+)
 
 
 def test_categorical_table() -> None:
@@ -360,3 +368,67 @@ def test_categorical_trajectory_evidence() -> None:
     assert trj_ev.states()["A"] == ("X", "Y", "Z"), "Wrong states."
     assert trj_ev.states()["B"] == ("X", "Y", "Z"), "Wrong states."
     assert trj_ev.states()["C"] == ("Y", "Z"), "Wrong states."
+
+
+def test_categorical_incomplete_table() -> None:
+    # Create a sample DataFrame with categorical columns and missing values.
+    df = pd.DataFrame(
+        {
+            "column_1": ["A", "B", "A", np.nan, "B"],
+            "column_2": ["X", "Y", np.nan, "Z", "Y"],
+        }
+    )
+
+    # Set data types for categorical columns.
+    df = df.astype("category")
+    # Create a CatIncTable object.
+    table = CatIncTable.from_pandas(df)
+
+    # Check the variables.
+    assert table.labels() == ["column_1", "column_2"], "Wrong labels."
+    # Check the states of the variables.
+    assert table.states()["column_1"] == ("A", "B"), "Wrong states."
+    assert table.states()["column_2"] == ("X", "Y", "Z"), "Wrong states."
+
+    # Check the missing information.
+    missing = table.missing()
+    assert isinstance(missing, MissingTable), "Wrong missing type."
+    assert missing.labels() == ["column_1", "column_2"], "Wrong missing labels."
+    assert missing.missing_count() == 2, "Wrong missing count."
+    assert missing.missing_rate() == 0.2, "Wrong missing rate."
+
+    # Check the values of the variables.
+    # MISSING is CatType::MAX which is 255.
+    np.testing.assert_array_equal(
+        table.values(),
+        np.array(
+            [
+                [0, 0],
+                [1, 1],
+                [0, 255],
+                [255, 2],
+                [1, 1],
+            ]
+        ),
+        "Wrong values.",
+    )
+
+    # Convert back to pandas DataFrame and check equality.
+    pd.testing.assert_frame_equal(df, table.to_pandas())
+
+
+def test_missing_table_numerical() -> None:
+    # Create a MissingTable.
+    # labels, mask.
+    mask = np.array(
+        [[False, True], [True, False], [False, False]],
+        dtype=bool,
+    )
+    labels = ["A", "B"]
+
+    missing = MissingTable(labels, mask)
+
+    assert missing.labels() == labels
+    np.testing.assert_array_equal(missing.missing_mask(), mask)
+    assert missing.missing_count() == 2
+    assert missing.missing_rate() == 1.0 / 3.0

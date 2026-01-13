@@ -10,7 +10,7 @@ mod tests {
     };
     use ndarray::prelude::*;
 
-    mod conditional_probability_distribution {
+    mod cpd {
         use super::*;
 
         mod categorical {

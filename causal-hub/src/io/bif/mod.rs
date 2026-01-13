@@ -13,7 +13,7 @@ pub trait BifIO {
     ///
     /// A new instance of the type.
     ///
-    fn from_bif(bif: &str) -> Self;
+    fn from_bif_string(bif: &str) -> Self;
 
     /// Convert the instance to a BIF string.
     ///
@@ -21,7 +21,7 @@ pub trait BifIO {
     ///
     /// A string slice that holds the BIF data.
     ///
-    fn to_bif(&self) -> String;
+    fn to_bif_string(&self) -> String;
 
     /// Read a BIF file and create an instance of the type.
     ///
@@ -33,7 +33,7 @@ pub trait BifIO {
     ///
     /// A new instance of the type.
     ///
-    fn read_bif(path: &str) -> Self;
+    fn from_bif_file(path: &str) -> Self;
 
     /// Write the instance to a BIF file.
     ///
@@ -41,5 +41,5 @@ pub trait BifIO {
     ///
     /// * `path` - A string slice that holds the path to the BIF file.
     ///
-    fn write_bif(&self, path: &str);
+    fn to_bif_file(&self, path: &str);
 }

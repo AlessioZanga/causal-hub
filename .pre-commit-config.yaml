@@ -1,10 +1,12 @@
+default_stages: [pre-commit]
+
 repos:
   # Cargo: format
   - repo: local
     hooks:
       - id: cargo-fmt
         name: cargo-fmt (Rust formatter)
-        entry: cargo +nightly fmt --all --
+        entry: cargo +nightly fmt --all
         language: system
         pass_filenames: false
   
@@ -30,6 +32,7 @@ repos:
     hooks:
       - id: isort
         name: isort (Python import sorter)
+        args: ["--profile", "black"]
 
   # Ruff: linting and auto-fixing issues
   - repo: https://github.com/astral-sh/ruff-pre-commit

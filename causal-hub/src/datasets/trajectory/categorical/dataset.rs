@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatType, Dataset},
     models::Labelled,
-    types::{Labels, States},
+    types::{Labels, Set, States},
 };
 
 /// A multivariate trajectory.
@@ -175,6 +175,18 @@ impl Dataset for CatTrj {
     fn sample_size(&self) -> f64 {
         self.events.values().nrows() as f64
     }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Select the dataset.
+        let events = self.events.select(x);
+        // Get states and events.
+        let states = events.states().clone();
+        let events = events.values().clone();
+        // Select the times.
+        let times = self.times.clone();
+        // Return the new weighted dataset.
+        Self::new(states, events, times)
+    }
 }
 
 /// A collection of multivariate trajectories.
@@ -323,5 +335,10 @@ impl Dataset for CatTrjs {
     #[inline]
     fn sample_size(&self) -> f64 {
         self.values.iter().map(Dataset::sample_size).sum()
+    }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Return the new collection of selected trajectories.
+        Self::new(self.values.iter().map(|trj| trj.select(x)))
     }
 }
