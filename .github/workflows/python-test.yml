@@ -112,9 +112,9 @@ jobs:
       - name: Build
         run: |
           conda install maturin
-          maturin develop \
-            --release \
-            --no-default-features \
+          maturin develop `
+            --release `
+            --no-default-features `
             --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
       - name: Test
         run: |
