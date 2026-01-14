@@ -16,7 +16,7 @@ mod tests {
     use rand_xoshiro::Xoshiro256PlusPlus;
     use rayon::prelude::*;
 
-    mod continuous_time_bayesian_network {
+    mod ctbn {
         use super::*;
 
         mod categorical {

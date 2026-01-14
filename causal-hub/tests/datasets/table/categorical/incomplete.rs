@@ -1,0 +1,810 @@
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+    use causal_hub::{
+        datasets::{CatIncTable, CatTable, Dataset, IncDataset},
+        labels, map,
+        models::Labelled,
+        set, states,
+    };
+    use ndarray::prelude::*;
+
+    const M: <CatIncTable as IncDataset>::Missing = CatIncTable::MISSING;
+
+    #[test]
+    fn new() {
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2", "c3", "c4"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0],
+            [M, 0, 1],
+            [0, M, 3],
+            [1, 1, M],
+            [M, M, M],
+            [M, 1, 3]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Assert the labels.
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        // Assert the states.
+        assert_eq!(&states, dataset.states());
+        // Assert the shape.
+        assert_eq!(&array![3, 2, 4], dataset.shape());
+        // Assert the values.
+        assert_eq!(&values, dataset.values());
+        // Assert the sample size.
+        assert_eq!(
+            8., //
+            dataset.sample_size()
+        );
+
+        // Assert the missing mask.
+        assert_eq!(
+            &array![
+                [false, false, false], //
+                [false, false, false],
+                [false, false, false],
+                [true, false, false],
+                [false, true, false],
+                [false, false, true],
+                [true, true, true],
+                [true, false, false]
+            ],
+            dataset.missing().missing_mask()
+        );
+        // Assert the missing mask by columns.
+        assert_eq!(
+            &array![true, true, true],
+            dataset.missing().missing_mask_by_cols()
+        );
+        // Assert the missing mask by rows.
+        assert_eq!(
+            &array![false, false, false, true, true, true, true, true],
+            dataset.missing().missing_mask_by_rows()
+        );
+        // Assert the missing count.
+        assert_eq!(7, dataset.missing().missing_count());
+        // Assert the missing count by columns.
+        assert_eq!(
+            &array![3, 2, 2], //
+            dataset.missing().missing_count_by_cols()
+        );
+        // Assert the missing count by rows.
+        assert_eq!(
+            &array![0, 0, 0, 1, 1, 1, 3, 1],
+            dataset.missing().missing_count_by_rows()
+        );
+        // Assert the missing rate.
+        assert_relative_eq!(
+            7. / 24., //
+            dataset.missing().missing_rate()
+        );
+        // Assert the missing rate by columns.
+        assert_relative_eq!(
+            &array![3. / 8., 2. / 8., 2. / 8.], //
+            dataset.missing().missing_rate_by_cols()
+        );
+        // Assert the missing rate by rows.
+        assert_relative_eq!(
+            &array![0., 0., 0., 1. / 3., 1. / 3., 1. / 3., 1., 1. / 3.],
+            dataset.missing().missing_rate_by_rows()
+        );
+        // Assert the missing correlation.
+        assert_relative_eq!(
+            &array![
+                [1.0, 0.149071198499986, 0.149071198499986],
+                [0.149071198499986, 1.0, 0.3333333333333333],
+                [0.149071198499986, 0.3333333333333333, 1.0]
+            ],
+            dataset.missing().missing_correlation()
+        );
+        // Assert the missing covariance.
+        assert_relative_eq!(
+            &array![
+                [0.2678571428571429, 0.0357142857142857, 0.0357142857142857],
+                [0.0357142857142857, 0.2142857142857143, 0.0714285714285714],
+                [0.0357142857142857, 0.0714285714285714, 0.2142857142857143]
+            ],
+            dataset.missing().missing_covariance()
+        );
+        // Assert the complete columns count.
+        assert_eq!(
+            0, //
+            dataset.missing().complete_cols_count()
+        );
+        // Assert the complete rows count.
+        assert_eq!(
+            3, //
+            dataset.missing().complete_rows_count()
+        );
+    }
+
+    #[test]
+    fn new_unordered_labels() {
+        // Set the states.
+        let states = states!(
+            ("C", ["c1", "c2", "c3", "c4"]),
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [2, 0, 1], //
+            [2, 1, 0],
+            [0, 2, 1],
+            [1, M, 0],
+            [3, 0, M],
+            [M, 1, 1],
+            [M, M, M],
+            [3, M, 1]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Assert the labels.
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        // Assert the states.
+        assert_eq!(
+            &states![
+                ("A", ["a1", "a2", "a3"]),
+                ("B", ["b1", "b2"]),
+                ("C", ["c1", "c2", "c3", "c4"])
+            ],
+            dataset.states()
+        );
+        // Assert the shape.
+        assert_eq!(&array![3, 2, 4], dataset.shape());
+        // Assert the values.
+        assert_eq!(
+            &array![
+                [0, 1, 2], //
+                [1, 0, 2],
+                [2, 1, 0],
+                [M, 0, 1],
+                [0, M, 3],
+                [1, 1, M],
+                [M, M, M],
+                [M, 1, 3]
+            ],
+            dataset.values()
+        );
+        // Assert the sample size.
+        assert_eq!(
+            8., //
+            dataset.sample_size()
+        );
+
+        // Assert the missing mask.
+        assert_eq!(
+            &array![
+                [false, false, false], //
+                [false, false, false],
+                [false, false, false],
+                [true, false, false],
+                [false, true, false],
+                [false, false, true],
+                [true, true, true],
+                [true, false, false]
+            ],
+            dataset.missing().missing_mask()
+        );
+        // Assert the missing mask by columns.
+        assert_eq!(
+            &array![true, true, true],
+            dataset.missing().missing_mask_by_cols()
+        );
+        // Assert the missing mask by rows.
+        assert_eq!(
+            &array![false, false, false, true, true, true, true, true],
+            dataset.missing().missing_mask_by_rows()
+        );
+        // Assert the missing count.
+        assert_eq!(7, dataset.missing().missing_count());
+        // Assert the missing count by columns.
+        assert_eq!(
+            &array![3, 2, 2], //
+            dataset.missing().missing_count_by_cols()
+        );
+        // Assert the missing count by rows.
+        assert_eq!(
+            &array![0, 0, 0, 1, 1, 1, 3, 1],
+            dataset.missing().missing_count_by_rows()
+        );
+        // Assert the missing rate.
+        assert_relative_eq!(
+            7. / 24., //
+            dataset.missing().missing_rate()
+        );
+        // Assert the missing rate by columns.
+        assert_relative_eq!(
+            &array![3. / 8., 2. / 8., 2. / 8.], //
+            dataset.missing().missing_rate_by_cols()
+        );
+        // Assert the missing rate by rows.
+        assert_relative_eq!(
+            &array![0., 0., 0., 1. / 3., 1. / 3., 1. / 3., 1., 1. / 3.],
+            dataset.missing().missing_rate_by_rows()
+        );
+        // Assert the missing correlation.
+        assert_relative_eq!(
+            &array![
+                [1.0, 0.149071198499986, 0.149071198499986],
+                [0.149071198499986, 1.0, 0.3333333333333333],
+                [0.149071198499986, 0.3333333333333333, 1.0]
+            ],
+            dataset.missing().missing_correlation()
+        );
+        // Assert the missing covariance.
+        assert_relative_eq!(
+            &array![
+                [0.2678571428571429, 0.0357142857142857, 0.0357142857142857],
+                [0.0357142857142857, 0.2142857142857143, 0.0714285714285714],
+                [0.0357142857142857, 0.0714285714285714, 0.2142857142857143]
+            ],
+            dataset.missing().missing_covariance()
+        );
+        // Assert the complete columns count.
+        assert_eq!(
+            0, //
+            dataset.missing().complete_cols_count()
+        );
+        // Assert the complete rows count.
+        assert_eq!(
+            3, //
+            dataset.missing().complete_rows_count()
+        );
+    }
+
+    #[test]
+    fn new_unordered_states() {
+        // Set the states.
+        let states = states!(
+            ("C", ["c1", "c2", "c3", "c4"]),
+            ("A", ["a1", "a3", "a2"]),
+            ("B", ["b1", "b2"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [2, 0, 1], //
+            [2, 2, 0],
+            [0, 1, 1],
+            [1, M, 0],
+            [3, 0, M],
+            [M, 2, 1],
+            [M, M, M],
+            [3, M, 1]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Assert the labels.
+        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        // Assert the states.
+        assert_eq!(
+            &states![
+                ("A", ["a1", "a2", "a3"]),
+                ("B", ["b1", "b2"]),
+                ("C", ["c1", "c2", "c3", "c4"])
+            ],
+            dataset.states()
+        );
+        // Assert the shape.
+        assert_eq!(&array![3, 2, 4], dataset.shape());
+        // Assert the values.
+        assert_eq!(
+            &array![
+                [0, 1, 2], //
+                [1, 0, 2],
+                [2, 1, 0],
+                [M, 0, 1],
+                [0, M, 3],
+                [1, 1, M],
+                [M, M, M],
+                [M, 1, 3]
+            ],
+            dataset.values()
+        );
+        // Assert the sample size.
+        assert_eq!(
+            8., //
+            dataset.sample_size()
+        );
+
+        // Assert the missing mask.
+        assert_eq!(
+            &array![
+                [false, false, false], //
+                [false, false, false],
+                [false, false, false],
+                [true, false, false],
+                [false, true, false],
+                [false, false, true],
+                [true, true, true],
+                [true, false, false]
+            ],
+            dataset.missing().missing_mask()
+        );
+        // Assert the missing mask by columns.
+        assert_eq!(
+            &array![true, true, true],
+            dataset.missing().missing_mask_by_cols()
+        );
+        // Assert the missing mask by rows.
+        assert_eq!(
+            &array![false, false, false, true, true, true, true, true],
+            dataset.missing().missing_mask_by_rows()
+        );
+        // Assert the missing count.
+        assert_eq!(7, dataset.missing().missing_count());
+        // Assert the missing count by columns.
+        assert_eq!(
+            &array![3, 2, 2], //
+            dataset.missing().missing_count_by_cols()
+        );
+        // Assert the missing count by rows.
+        assert_eq!(
+            &array![0, 0, 0, 1, 1, 1, 3, 1],
+            dataset.missing().missing_count_by_rows()
+        );
+        // Assert the missing rate.
+        assert_relative_eq!(
+            7. / 24., //
+            dataset.missing().missing_rate()
+        );
+        // Assert the missing rate by columns.
+        assert_relative_eq!(
+            &array![3. / 8., 2. / 8., 2. / 8.], //
+            dataset.missing().missing_rate_by_cols()
+        );
+        // Assert the missing rate by rows.
+        assert_relative_eq!(
+            &array![0., 0., 0., 1. / 3., 1. / 3., 1. / 3., 1., 1. / 3.],
+            dataset.missing().missing_rate_by_rows()
+        );
+        // Assert the missing correlation.
+        assert_relative_eq!(
+            &array![
+                [1.0, 0.149071198499986, 0.149071198499986],
+                [0.149071198499986, 1.0, 0.3333333333333333],
+                [0.149071198499986, 0.3333333333333333, 1.0]
+            ],
+            dataset.missing().missing_correlation()
+        );
+        // Assert the missing covariance.
+        assert_relative_eq!(
+            &array![
+                [0.2678571428571429, 0.0357142857142857, 0.0357142857142857],
+                [0.0357142857142857, 0.2142857142857143, 0.0714285714285714],
+                [0.0357142857142857, 0.0714285714285714, 0.2142857142857143]
+            ],
+            dataset.missing().missing_covariance()
+        );
+        // Assert the complete columns count.
+        assert_eq!(
+            0, //
+            dataset.missing().complete_cols_count()
+        );
+        // Assert the complete rows count.
+        assert_eq!(
+            3, //
+            dataset.missing().complete_rows_count()
+        );
+    }
+
+    #[test]
+    fn lw_deletion() {
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2", "c3", "c4"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0],
+            [M, 0, 1],
+            [0, M, 3],
+            [1, 1, M],
+            [M, M, M],
+            [M, 1, 3]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+        // Perform list-wise deletion.
+        let pred_dataset = dataset.lw_deletion();
+
+        // Set the true values.
+        let true_values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0]
+        ];
+        // Create the true categorical table.
+        let true_dataset = CatTable::new(states.clone(), true_values);
+
+        // Assert the predicted dataset is equal to the true dataset.
+        assert_eq!(true_dataset, pred_dataset);
+    }
+
+    #[test]
+    fn pw_deletion() {
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2", "c3", "c4"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 2], //
+            [1, 0, 2],
+            [2, 1, 0],
+            [M, 0, 1],
+            [0, M, 3],
+            [1, 1, M],
+            [M, M, M],
+            [M, 1, 3]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+        // Perform pair-wise deletion.
+        let pred_dataset = dataset.pw_deletion(&set![0, 1]);
+
+        // Set the true states.
+        let true_states = states!(
+            ("A", ["a1", "a2", "a3"]), //
+            ("B", ["b1", "b2"])
+        );
+        // Set the true values.
+        let true_values = array![
+            [0, 1], //
+            [1, 0],
+            [2, 1],
+            [1, 1]
+        ];
+        // Create the true categorical table.
+        let true_dataset = CatTable::new(true_states, true_values);
+
+        // Assert the predicted dataset is equal to the true dataset.
+        assert_eq!(true_dataset, pred_dataset);
+    }
+
+    #[test]
+    fn ipw_deletion() {
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2", "b3"]),
+            ("C", ["c1", "c2", "c3"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 0],
+            [1, M, 0],
+            [M, 1, M],
+            [1, 1, 1],
+            [M, M, 0],
+            [M, 1, M],
+            [M, 0, 2],
+            [1, 0, M],
+            [2, 1, M],
+            [0, 2, 0]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Set the Pi_R.
+        let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
+
+        // Set W.
+        let w = set![];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = Array2::<u8>::zeros((0, 0));
+        let pred_b_w = Array1::<f64>::zeros(0);
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [1],
+            [1],
+            [1],
+            [2],
+            [0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1], //
+            [1],
+            [0],
+            [1],
+            [2]
+        ];
+        let pred_b_w = array![
+            0.8823529411764707,
+            1.1764705882352942,
+            1.1764705882352942,
+            0.8823529411764707,
+            0.8823529411764707
+        ];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![2];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [1],
+            [0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1], //
+            [1, 1],
+            [1, 0],
+            [2, 1],
+            [0, 2]
+        ];
+        let pred_b_w = array![
+            0.8823529411764707,
+            1.1764705882352942,
+            1.1764705882352942,
+            0.8823529411764707,
+            0.8823529411764707
+        ];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 2];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 0], //
+            [1, 1],
+            [0, 0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1, 2];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1, 0], //
+            [1, 1],
+            [2, 0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1, 2];
+        // Apply pairwise deletion with IPW.
+        let d_w = dataset.ipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1, 0], //
+            [1, 1, 1],
+            [0, 2, 0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+    }
+
+    #[test]
+    fn aipw_deletion() {
+        // Set the states.
+        let states = states!(
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2", "b3"]),
+            ("C", ["c1", "c2", "c3"])
+        );
+        // Set the values, using M as missing value.
+        let values = array![
+            [0, 1, 0],
+            [1, M, 0],
+            [M, 1, M],
+            [1, 1, 1],
+            [M, M, 0],
+            [M, 1, M],
+            [M, 0, 2],
+            [1, 0, M],
+            [2, 1, M],
+            [0, 2, 0]
+        ];
+        // Create the categorical incomplete table.
+        let dataset = CatIncTable::new(states.clone(), values.clone());
+
+        // Set the Pi_R.
+        let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
+
+        // Set W.
+        let w = set![];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = Array2::<u8>::zeros((0, 0));
+        let pred_b_w = Array1::<f64>::zeros(0);
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [1],
+            [1],
+            [1],
+            [2],
+            [0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1], //
+            [1],
+            [1],
+            [1],
+            [0],
+            [0],
+            [1],
+            [2]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0], //
+            [0],
+            [1],
+            [0],
+            [2],
+            [0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1], //
+            [1, 1],
+            [1, 0],
+            [2, 1],
+            [0, 2]
+        ];
+        let pred_b_w = array![
+            0.8823529411764707,
+            1.1764705882352942,
+            1.1764705882352942,
+            0.8823529411764707,
+            0.8823529411764707
+        ];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 0], //
+            [1, 0],
+            [1, 1],
+            [0, 0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![1, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [1, 0], //
+            [1, 1],
+            [0, 2],
+            [2, 0]
+        ];
+        let pred_b_w = array![1., 1., 1., 1.];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        // Set W.
+        let w = set![0, 1, 2];
+        // Apply pairwise deletion with aIPW.
+        let d_w = dataset.aipw_deletion(&w, &pr);
+        // Set the expected D_W and B_W.
+        let pred_d_w = array![
+            [0, 1, 0], //
+            [1, 1, 1],
+            [0, 2, 0]
+        ];
+        let pred_b_w = array![0.9, 1.2, 0.9];
+        // Assert pairwise deleted data and weights are equal to the expected values.
+        assert_eq!(d_w.values().values(), &pred_d_w);
+        assert_relative_eq!(d_w.weights(), &pred_b_w);
+    }
+}

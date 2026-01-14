@@ -21,6 +21,8 @@ jobs:
         platform:
           - runner: ubuntu-latest
             target: x64
+          - runner: ubuntu-24.04-arm
+            target: aarch64
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
@@ -43,26 +45,42 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-static
+            --out dist
           manylinux: auto
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
-            yum install -y pkgconfig openssl-devel
+            if command -v yum &> /dev/null; then
+                yum install -y pkgconfig openssl-devel
+            elif command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y pkg-config libssl-dev
+            fi
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-static
+            --out dist -i python3.13t
           manylinux: auto
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
-            yum install -y pkgconfig openssl-devel
+            if command -v yum &> /dev/null; then
+                yum install -y pkgconfig openssl-devel
+            elif command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y pkg-config libssl-dev
+            fi
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -107,7 +125,11 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --features=pyo3/extension-module,backend/openblas-system
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
+            --out dist
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13t"
@@ -116,7 +138,11 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t --features=pyo3/extension-module,backend/openblas-system
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
+            --out dist -i python3.13t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -153,12 +179,20 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/accelerate-system
+            --out dist
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.13t
+          args: |
+            --release
+            --no-default-features
+            --features=pyo3/extension-module,pyo3/abi3-py310,backend/accelerate-system
+            --out dist -i python3.13t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

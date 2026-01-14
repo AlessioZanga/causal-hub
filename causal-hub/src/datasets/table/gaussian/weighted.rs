@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{Dataset, GaussSample, GaussTable},
     models::Labelled,
-    types::Labels,
+    types::{Labels, Set},
 };
 
 /// A type alias for a Gaussian weighted sample.
@@ -77,5 +77,14 @@ impl Dataset for GaussWtdTable {
     #[inline]
     fn sample_size(&self) -> f64 {
         self.weights.sum()
+    }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Select the dataset.
+        let dataset = self.dataset.select(x);
+        // Select the weights.
+        let weights = self.weights.clone();
+        // Return the new weighted dataset.
+        Self::new(dataset, weights)
     }
 }

@@ -133,7 +133,7 @@ impl PyGaussTable {
                 // Invoke the to_numpy method on the column.
                 let column = column.getattr("to_numpy")?.call0()?;
                 // Extract the column as a PyArray1<f64>.
-                let column = column.downcast::<PyArray1<f64>>()?.to_owned_array();
+                let column = column.cast::<PyArray1<f64>>()?.to_owned_array();
                 // Extract the column from the data frame.
                 value.assign(&column);
 

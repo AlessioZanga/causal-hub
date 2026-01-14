@@ -19,19 +19,19 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 approx.workspace = true
-backend = { package = "causal-hub", path = "../causal-hub" }
+backend = { package = "causal-hub", path = "../causal-hub", default-features = false }
 dry.workspace = true
 fxhash.workspace = true
 log.workspace = true
-numpy = "^0.26"
+numpy = "^0.27"
 paste.workspace = true
-pyo3 = "^0.26"
+pyo3 = "^0.27"
 pyo3-log = "^0.13"
-pyo3-stub-gen = { version = "^0.14", features = ["numpy"] }
-pyo3-stub-gen-derive = "^0.14"
+pyo3-stub-gen = { version = "^0.17", features = ["numpy"] }
+pyo3-stub-gen-derive = "^0.17"
 rand.workspace = true
 rand_xoshiro = "^0.7"
 rayon.workspace = true
 
 [features]
-default = ["pyo3/abi3-py310"]
+default = ["pyo3/abi3-py310", "backend/openblas-static"]

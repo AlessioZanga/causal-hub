@@ -503,26 +503,6 @@ impl CatCIM {
         // Make parameters immutable.
         let parameters = parameters;
 
-        // Debug assert to check the sorting of the labels.
-        debug_assert!(labels.iter().is_sorted(), "Labels must be sorted.");
-        debug_assert!(states.keys().is_sorted(), "Labels must be sorted.");
-        debug_assert!(
-            states.values().all(|x| x.iter().is_sorted()),
-            "States must be sorted."
-        );
-        debug_assert!(
-            conditioning_labels.iter().is_sorted(),
-            "Conditioning labels must be sorted."
-        );
-        debug_assert!(
-            conditioning_states.keys().is_sorted(),
-            "Conditioning labels must be sorted."
-        );
-        debug_assert!(
-            conditioning_states.values().all(|x| x.iter().is_sorted()),
-            "Conditioning states must be sorted."
-        );
-
         // Compute the multi index.
         let multi_index = MI::new(shape.clone());
         // Compute the conditioning multi index.

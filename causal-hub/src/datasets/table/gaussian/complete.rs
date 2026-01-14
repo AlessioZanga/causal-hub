@@ -1,7 +1,14 @@
-use csv::ReaderBuilder;
+use std::io::{Read, Write};
+
+use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
 
-use crate::{datasets::Dataset, io::CsvIO, models::Labelled, types::Labels};
+use crate::{
+    datasets::Dataset,
+    io::CsvIO,
+    models::Labelled,
+    types::{Labels, Set},
+};
 
 /// A type alias for a gaussian variable.
 pub type GaussType = f64;
@@ -85,14 +92,45 @@ impl Dataset for GaussTable {
     fn sample_size(&self) -> f64 {
         self.values.nrows() as f64
     }
+
+    fn select(&self, x: &Set<usize>) -> Self {
+        // Assert that the indices are valid.
+        x.iter().for_each(|&i| {
+            assert!(
+                i < self.values.ncols(),
+                "Index out of bounds in variables selection: \n\
+                \t expected:    index < |columns| , \n\
+                \t found:       index == {} and |columns| == {} .",
+                i,
+                self.values.ncols()
+            );
+        });
+
+        // Select the labels.
+        let labels: Labels = x
+            .iter()
+            .map(|&i| self.labels.get_index(i).unwrap())
+            .cloned()
+            .collect();
+
+        // Select the values.
+        let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
+        // Copy the selected columns.
+        x.iter().enumerate().for_each(|(j, &i)| {
+            new_values.column_mut(j).assign(&self.values.column(i));
+        });
+        // Update the values.
+        let values = new_values;
+
+        // Return the new dataset.
+        Self::new(labels, values)
+    }
 }
 
 impl CsvIO for GaussTable {
-    fn from_csv(csv: &str) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Self {
         // Create a CSV reader from the string.
-        let mut reader = ReaderBuilder::new()
-            .has_headers(true)
-            .from_reader(csv.as_bytes());
+        let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
         // Assert that the reader has headers.
         assert!(reader.has_headers(), "Reader must have headers.");
@@ -140,7 +178,23 @@ impl CsvIO for GaussTable {
         Self::new(labels, values)
     }
 
-    fn to_csv(&self) -> String {
-        todo!() // FIXME:
+    fn to_csv_writer<W: Write>(&self, writer: W) {
+        // Create the CSV writer.
+        let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
+
+        // Write the headers.
+        writer
+            .write_record(self.labels.iter())
+            .expect("Failed to write CSV headers.");
+
+        // Write the records.
+        self.values.rows().into_iter().for_each(|row| {
+            // Map the row values to strings.
+            let record = row.iter().map(|x| x.to_string());
+            // Write the record.
+            writer
+                .write_record(record)
+                .expect("Failed to write CSV record.");
+        });
     }
 }

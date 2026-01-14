@@ -165,12 +165,12 @@ impl PyCatTrjEv {
             start_time
                 .getattr("to_numpy")?
                 .call0()?
-                .downcast::<PyArray1<f64>>()?
+                .cast::<PyArray1<f64>>()?
                 .to_owned_array(),
             end_time
                 .getattr("to_numpy")?
                 .call0()?
-                .downcast::<PyArray1<f64>>()?
+                .cast::<PyArray1<f64>>()?
                 .to_owned_array(),
         );
 

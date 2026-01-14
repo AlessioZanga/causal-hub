@@ -1,0 +1,7 @@
+# Markdownlint configuration
+default: true
+MD013: false # Disable line length check
+MD033: false # Allow inline HTML
+MD041: false # Allow first line not to be a top-level header
+MD024:
+  siblings_only: true # Allow duplicate headings in different sections

@@ -30,9 +30,9 @@ mod tests {
                         // Load model.
                         let true_model = [<load_ $bn>]();
                         // Serialize model to JSON.
-                        let json = true_model.to_json();
+                        let json = true_model.to_json_string();
                         // Deserialize model from JSON.
-                        let pred_model = CatBN::from_json(json.as_str());
+                        let pred_model = CatBN::from_json_string(json.as_str());
                         // Assert the models are equal.
                         assert_relative_eq!(true_model, pred_model);
                     }
@@ -44,7 +44,7 @@ mod tests {
                 // Load model.
                 let true_model = load_asia();
                 // Serialize model to JSON.
-                let json = true_model.to_json();
+                let json = true_model.to_json_string();
                 // Assert the JSON string is correct.
                 assert_eq!(
                     json,
@@ -65,9 +65,9 @@ mod tests {
                 // Fit model to dataset.
                 let true_model: CatBN = BNEstimator::fit(&estimator, model.graph().clone());
                 // Serialize model to JSON.
-                let json = true_model.to_json();
+                let json = true_model.to_json_string();
                 // Deserialize model from JSON.
-                let pred_model = CatBN::from_json(json.as_str());
+                let pred_model = CatBN::from_json_string(json.as_str());
                 // Assert the models are equal.
                 assert_relative_eq!(true_model, pred_model);
             }
@@ -85,7 +85,7 @@ mod tests {
                 // Fit model to dataset.
                 let true_model: CatBN = BNEstimator::fit(&estimator, model.graph().clone());
                 // Serialize model to JSON.
-                let json = true_model.to_json();
+                let json = true_model.to_json_string();
                 // Assert the JSON string is correct.
                 assert_eq!(
                     json,
@@ -106,9 +106,9 @@ mod tests {
                             // Load model.
                             let true_model = [<load_ $bn>]();
                             // Serialize model to JSON.
-                            let json = true_model.to_json();
+                            let json = true_model.to_json_string();
                             // Deserialize model from JSON.
-                            let pred_model = GaussBN::from_json(json.as_str());
+                            let pred_model = GaussBN::from_json_string(json.as_str());
                             // Assert the models are equal.
                             assert_relative_eq!(true_model, pred_model);
                         }
@@ -128,9 +128,9 @@ mod tests {
                     // Fit model to dataset.
                     let true_model: GaussBN = BNEstimator::fit(&estimator, model.graph().clone());
                     // Serialize model to JSON.
-                    let json = true_model.to_json();
+                    let json = true_model.to_json_string();
                     // Deserialize model from JSON.
-                    let pred_model = GaussBN::from_json(json.as_str());
+                    let pred_model = GaussBN::from_json_string(json.as_str());
                     // Assert the models are equal.
                     assert_relative_eq!(true_model, pred_model);
                 }
@@ -148,7 +148,7 @@ mod tests {
                     // Fit model to dataset.
                     let true_model: GaussBN = BNEstimator::fit(&estimator, model.graph().clone());
                     // Serialize model to JSON.
-                    let _ = true_model.to_json();
+                    let _ = true_model.to_json_string();
                     // Note: Due to floating-point precision issues, we do not assert equality of the JSON string here.
                 }
             }
@@ -164,9 +164,9 @@ mod tests {
                     // Load model.
                     let true_model = load_eating();
                     // Serialize model to JSON.
-                    let json = true_model.to_json();
+                    let json = true_model.to_json_string();
                     // Deserialize model from JSON.
-                    let pred_model = CatCTBN::from_json(json.as_str());
+                    let pred_model = CatCTBN::from_json_string(json.as_str());
                     // Assert the models are equal.
                     assert_eq!(true_model, pred_model);
                 }
@@ -176,7 +176,7 @@ mod tests {
                     // Load model.
                     let true_model = load_eating();
                     // Serialize model to JSON.
-                    let json = true_model.to_json();
+                    let json = true_model.to_json_string();
                     // Assert the JSON string is correct.
                     assert_eq!(
                         json,
@@ -197,9 +197,9 @@ mod tests {
                     // Fit model to dataset.
                     let true_model: CatCTBN = CTBNEstimator::fit(&estimator, model.graph().clone());
                     // Serialize model to JSON.
-                    let json = true_model.to_json();
+                    let json = true_model.to_json_string();
                     // Deserialize model from JSON.
-                    let pred_model = CatCTBN::from_json(json.as_str());
+                    let pred_model = CatCTBN::from_json_string(json.as_str());
                     // Assert the models are equal.
                     assert_relative_eq!(true_model, pred_model);
                 }
@@ -217,7 +217,7 @@ mod tests {
                     // Fit model to dataset.
                     let true_model: CatCTBN = CTBNEstimator::fit(&estimator, model.graph().clone());
                     // Serialize model to JSON.
-                    let json = true_model.to_json();
+                    let json = true_model.to_json_string();
                     // Assert the JSON string is correct.
                     assert_eq!(
                         json,

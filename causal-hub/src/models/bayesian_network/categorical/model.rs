@@ -415,19 +415,19 @@ impl<'de> Deserialize<'de> for CatBN {
 impl_json_io!(CatBN);
 
 impl BifIO for CatBN {
-    fn from_bif(bif: &str) -> Self {
+    fn from_bif_string(bif: &str) -> Self {
         BifParser::parse_str(bif)
     }
 
-    fn to_bif(&self) -> String {
+    fn to_bif_string(&self) -> String {
         todo!() // FIXME:
     }
 
-    fn read_bif(path: &str) -> Self {
-        Self::from_bif(&std::fs::read_to_string(path).expect("Failed to read BIF file."))
+    fn from_bif_file(path: &str) -> Self {
+        Self::from_bif_string(&std::fs::read_to_string(path).expect("Failed to read BIF file."))
     }
 
-    fn write_bif(&self, path: &str) {
-        std::fs::write(path, self.to_bif()).expect("Failed to write BIF file.");
+    fn to_bif_file(&self, path: &str) {
+        std::fs::write(path, self.to_bif_string()).expect("Failed to write BIF file.");
     }
 }

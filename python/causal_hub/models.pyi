@@ -6,8 +6,9 @@ import typing
 
 import numpy
 import numpy.typing
-from causal_hub.datasets import CatTable, CatTrjs, GaussTable
+from causal_hub.datasets import CatTable, CatTrjs, Dataset, GaussTable
 
+@typing.final
 class CatBN:
     r"""
     A categorical Bayesian network (BN).
@@ -94,18 +95,18 @@ class CatBN:
     @classmethod
     def fit(
         cls,
-        dataset: CatTable,
+        dataset: Dataset,
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> CatBN:
         r"""
         Fit the model to a dataset and a given graph.
 
         Parameters
         ----------
-        dataset: CatTable
+        dataset: CatTable | CatIncTable
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
@@ -203,7 +204,7 @@ class CatBN:
         """
 
     @classmethod
-    def from_bif(cls, bif: builtins.str) -> CatBN:
+    def from_bif_string(cls, bif: builtins.str) -> CatBN:
         r"""
         Read class from a BIF string.
 
@@ -218,7 +219,7 @@ class CatBN:
             A new Bayesian network instance.
         """
 
-    def to_bif(self) -> builtins.str:
+    def to_bif_string(self) -> builtins.str:
         r"""
         Write class to a BIF string.
 
@@ -229,7 +230,7 @@ class CatBN:
         """
 
     @classmethod
-    def read_bif(cls, path: builtins.str) -> CatBN:
+    def from_bif_file(cls, path: builtins.str) -> CatBN:
         r"""
         Read class from a BIF file.
 
@@ -244,7 +245,7 @@ class CatBN:
             A new Bayesian network instance.
         """
 
-    def write_bif(self, path: builtins.str) -> None:
+    def to_bif_file(self, path: builtins.str) -> None:
         r"""
         Write class to a BIF file.
 
@@ -255,7 +256,7 @@ class CatBN:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> CatBN:
+    def from_json_string(cls, json: builtins.str) -> CatBN:
         r"""
         Read instance from a JSON string.
 
@@ -270,7 +271,7 @@ class CatBN:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -281,7 +282,7 @@ class CatBN:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> CatBN:
+    def from_json_file(cls, path: builtins.str) -> CatBN:
         r"""
         Read instance from a JSON file.
 
@@ -296,7 +297,7 @@ class CatBN:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -306,6 +307,7 @@ class CatBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCIM:
     r"""
     A struct representing a categorical conditional intensity matrix (CIM).
@@ -413,7 +415,7 @@ class CatCIM:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> CatCIM:
+    def from_json_string(cls, json: builtins.str) -> CatCIM:
         r"""
         Read instance from a JSON string.
 
@@ -428,7 +430,7 @@ class CatCIM:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -439,7 +441,7 @@ class CatCIM:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> CatCIM:
+    def from_json_file(cls, path: builtins.str) -> CatCIM:
         r"""
         Read instance from a JSON file.
 
@@ -454,7 +456,7 @@ class CatCIM:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -464,6 +466,7 @@ class CatCIM:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCPD:
     r"""
     A struct representing a categorical conditional probability distribution.
@@ -576,7 +579,7 @@ class CatCPD:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> CatCPD:
+    def from_json_string(cls, json: builtins.str) -> CatCPD:
         r"""
         Read instance from a JSON string.
 
@@ -591,7 +594,7 @@ class CatCPD:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -602,7 +605,7 @@ class CatCPD:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> CatCPD:
+    def from_json_file(cls, path: builtins.str) -> CatCPD:
         r"""
         Read instance from a JSON file.
 
@@ -617,7 +620,7 @@ class CatCPD:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -627,6 +630,7 @@ class CatCPD:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class CatCTBN:
     r"""
     A continuous-time Bayesian network (CTBN).
@@ -727,7 +731,7 @@ class CatCTBN:
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
-        **kwargs,
+        **kwargs: typing.Any,
     ) -> CatCTBN:
         r"""
         Fit the model to a dataset and a given graph.
@@ -786,7 +790,7 @@ class CatCTBN:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> CatCTBN:
+    def from_json_string(cls, json: builtins.str) -> CatCTBN:
         r"""
         Read instance from a JSON string.
 
@@ -801,7 +805,7 @@ class CatCTBN:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -812,7 +816,7 @@ class CatCTBN:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> CatCTBN:
+    def from_json_file(cls, path: builtins.str) -> CatCTBN:
         r"""
         Read instance from a JSON file.
 
@@ -827,7 +831,7 @@ class CatCTBN:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -837,6 +841,7 @@ class CatCTBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
@@ -1258,7 +1263,7 @@ class DiGraph:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> DiGraph:
+    def from_json_string(cls, json: builtins.str) -> DiGraph:
         r"""
         Read instance from a JSON string.
 
@@ -1273,7 +1278,7 @@ class DiGraph:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -1284,7 +1289,7 @@ class DiGraph:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> DiGraph:
+    def from_json_file(cls, path: builtins.str) -> DiGraph:
         r"""
         Read instance from a JSON file.
 
@@ -1299,7 +1304,7 @@ class DiGraph:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -1309,6 +1314,7 @@ class DiGraph:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class GaussBN:
     r"""
     A Gaussian Bayesian network.
@@ -1395,7 +1401,7 @@ class GaussBN:
     @classmethod
     def fit(
         cls,
-        dataset: GaussTable,
+        dataset: Dataset,
         graph: DiGraph,
         method: builtins.str = "mle",
         parallel: builtins.bool = True,
@@ -1499,7 +1505,7 @@ class GaussBN:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> GaussBN:
+    def from_json_string(cls, json: builtins.str) -> GaussBN:
         r"""
         Read instance from a JSON string.
 
@@ -1514,7 +1520,7 @@ class GaussBN:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -1525,7 +1531,7 @@ class GaussBN:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> GaussBN:
+    def from_json_file(cls, path: builtins.str) -> GaussBN:
         r"""
         Read instance from a JSON file.
 
@@ -1540,7 +1546,7 @@ class GaussBN:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 
@@ -1550,6 +1556,7 @@ class GaussBN:
             The path to the JSON file to write to.
         """
 
+@typing.final
 class GaussCPD:
     r"""
     A struct representing a Gaussian conditional probability distribution.
@@ -1617,7 +1624,7 @@ class GaussCPD:
         """
 
     @classmethod
-    def from_json(cls, json: builtins.str) -> GaussCPD:
+    def from_json_string(cls, json: builtins.str) -> GaussCPD:
         r"""
         Read instance from a JSON string.
 
@@ -1632,7 +1639,7 @@ class GaussCPD:
             A new instance.
         """
 
-    def to_json(self) -> builtins.str:
+    def to_json_string(self) -> builtins.str:
         r"""
         Write instance to a JSON string.
 
@@ -1643,7 +1650,7 @@ class GaussCPD:
         """
 
     @classmethod
-    def read_json(cls, path: builtins.str) -> GaussCPD:
+    def from_json_file(cls, path: builtins.str) -> GaussCPD:
         r"""
         Read instance from a JSON file.
 
@@ -1658,7 +1665,7 @@ class GaussCPD:
             A new instance.
         """
 
-    def write_json(self, path: builtins.str) -> None:
+    def to_json_file(self, path: builtins.str) -> None:
         r"""
         Write instance to a JSON file.
 

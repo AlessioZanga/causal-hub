@@ -106,16 +106,16 @@ def test_asia_fit() -> None:
     assert asia_fitted.graph() == asia.graph(), "Wrong fitted BN graph."
 
 
-def test_asia_read_write_json() -> None:
+def test_asia_read_to_json_file() -> None:
     # Load the Asia BN.
     asia = load_asia()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    asia.write_json(path)
+    asia.to_json_file(path)
     # Read from the JSON file.
-    asia_from_json = CatBN.read_json(path)
+    asia_from_json = CatBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert asia.labels() == asia_from_json.labels(), "Wrong labels after read/write."
@@ -263,16 +263,16 @@ def test_ecoli70_fit() -> None:
     assert ecoli70_fitted.graph() == ecoli70.graph(), "Wrong fitted BN graph."
 
 
-def test_ecoli70_read_write_json() -> None:
+def test_ecoli70_read_to_json_file() -> None:
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    ecoli70.write_json(path)
+    ecoli70.to_json_file(path)
     # Read from the JSON file.
-    ecoli70_from_json = GaussBN.read_json(path)
+    ecoli70_from_json = GaussBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert (
@@ -335,16 +335,16 @@ def test_eating_fit() -> None:
     assert eating_fitted.graph() == eating.graph(), "Wrong fitted CTBN graph."
 
 
-def test_eating_read_write_json() -> None:
+def test_eating_read_to_json_file() -> None:
     # Load the Eating CTBN.
     eating = load_eating()
 
     # Get a named temp file for the JSON.
     path = tempfile.NamedTemporaryFile().name
     # Write to a JSON file.
-    eating.write_json(path)
+    eating.to_json_file(path)
     # Read from the JSON file.
-    eating_from_json = CatCTBN.read_json(path)
+    eating_from_json = CatCTBN.from_json_file(path)
 
     # Check the labels after read/write.
     assert (
@@ -354,3 +354,80 @@ def test_eating_read_write_json() -> None:
     assert eating.graph() == eating_from_json.graph(), "Wrong graph after read/write."
     # Check the CIMs after read/write.
     assert eating.cims() == eating_from_json.cims(), "Wrong CIMs after read/write."
+
+
+def test_categorical_bayesian_network_fit_incomplete() -> None:
+    import numpy as np
+    import pandas as pd
+    from causal_hub.datasets import CatIncTable
+
+    # Define the DataFrame with missing values.
+    data = {
+        "A": ["X", "Y", "X", "Y", "X"],
+        "B": ["X", "Y", "X", np.nan, "X"],
+    }
+    df = pd.DataFrame(data)
+    df["A"] = df["A"].astype("category")
+    df["B"] = df["B"].astype("category")
+
+    # Construct the dataset.
+    dataset = CatIncTable.from_pandas(df)
+
+    # Define the graph.
+    G = nx.DiGraph([("A", "B")])
+    graph = DiGraph.from_networkx(G)
+
+    # Fit the model.
+    model = CatBN.fit(dataset, graph, method="mle")
+
+    # Check the labels and graph.
+    assert model.labels() == ["A", "B"]
+    assert model.graph().edges() == [("A", "B")]
+
+    # Check the parameters.
+    cpds = model.cpds()
+    # P(A)
+    # A values: X, Y, X, Y, X. P(A=X) = 3/5 = 0.6, P(A=Y) = 2/5 = 0.4
+    np.testing.assert_allclose(cpds["A"].parameters().flatten(), [0.6, 0.4])
+
+    # P(B | A)
+    # When A=X: B is X (3 times). P(B=X | A=X) = 1.0, P(B=Y | A=X) = 0.0
+    # When A=Y: B is Y (1 time), NaN (1 time). P(B=X | A=Y) = 0.0, P(B=Y | A=Y) = 1.0
+    # Parameters for B are organized as [P(B=X|A=X), P(B=Y|A=X), P(B=X|A=Y), P(B=Y|A=Y)]
+    np.testing.assert_allclose(cpds["B"].parameters().flatten(), [1.0, 0.0, 0.0, 1.0])
+
+
+def test_gaussian_bayesian_network_fit_numerical() -> None:
+    import numpy as np
+    import pandas as pd
+    from causal_hub.datasets import GaussTable
+
+    # Define the DataFrame with numerical values.
+    # B = 2*A + 1 + epsilon, epsilon ~ N(0, 0.1^2)
+    np.random.seed(42)
+    A = np.random.normal(0, 1, 1000)
+    B = 2 * A + 1 + np.random.normal(0, 0.1, 1000)
+    df = pd.DataFrame({"A": A, "B": B})
+
+    # Construct the dataset.
+    dataset = GaussTable.from_pandas(df)
+
+    # Define the graph.
+    graph = DiGraph.from_networkx(nx.DiGraph([("A", "B")]))
+
+    # Fit the model.
+    model = GaussBN.fit(dataset, graph, method="mle")
+
+    # Check the parameters.
+    cpds = model.cpds()
+
+    # Check P(A) -> Mean ~ 0, Variance ~ 1
+    params_A = cpds["A"].parameters()
+    np.testing.assert_allclose(params_A["intercept"], [0.0], atol=0.1)
+    np.testing.assert_allclose(params_A["covariance"], [[1.0]], atol=0.1)
+
+    # Check P(B | A) -> Intercept ~ 1, Coeff ~ 2, Variance ~ 0.01 (0.1^2)
+    params_B = cpds["B"].parameters()
+    np.testing.assert_allclose(params_B["intercept"], [1.0], atol=0.05)
+    np.testing.assert_allclose(params_B["coefficients"], [[2.0]], atol=0.05)
+    np.testing.assert_allclose(params_B["covariance"], [[0.01]], atol=0.01)

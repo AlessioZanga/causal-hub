@@ -1,0 +1,20 @@
+{
+    "rust-analyzer.cargo.allFeatures": false,
+    "rust-analyzer.cargo.features": [
+        "openblas-static"
+    ],
+    "rust-analyzer.cargo.noDefaultFeatures": true,
+    "chat.tools.terminal.autoApprove": {
+        "conda": true,
+        "maturin": true,
+        "pytest": true,
+        "/^source ~/miniconda3/etc/profile\\.d/conda\\.sh && conda activate causal-hub && maturin develop && pytest$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^source ~/miniconda3/etc/profile\\.d/conda\\.sh && conda activate causal-hub && pytest$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
