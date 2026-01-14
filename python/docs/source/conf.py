@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 # -- Project information ------------------------------------------------------
 project = "causal-hub"
 author = "Alessio Zanga"
-copyright = f"2025, {author}"
+copyright = f"2026, {author}"
 
 try:
     release = version("causal-hub")
