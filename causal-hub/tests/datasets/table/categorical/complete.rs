@@ -24,7 +24,7 @@ mod tests {
         ];
         let dataset = CatTable::new(states, values.clone());
 
-        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert!(
             dataset
                 .states()
@@ -57,7 +57,7 @@ mod tests {
         ];
         let dataset = CatTable::new(states, values);
 
-        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert_eq!(
             dataset.values(),
             &array![
@@ -87,25 +87,25 @@ mod tests {
         );
 
         // Check the labels.
-        assert_eq!(&labels!["A", "B"], dataset.labels());
+        assert_eq!(dataset.labels(), &labels!["A", "B"]);
         // Check the states.
         assert_eq!(
+            dataset.states(),
             &states![
                 ("A", ["0", "1", "2", "3"]), //
                 ("B", ["0", "1", "2", "3"]), //
-            ],
-            dataset.states()
+            ]
         );
         // Check the events of the first trajectory.
         assert_eq!(
+            dataset.values(),
             &array![
                 [0, 1], //
                 [0, 2], //
                 [1, 2], //
                 [2, 2], //
                 [2, 3]  //
-            ],
-            dataset.values()
+            ]
         );
     }
 

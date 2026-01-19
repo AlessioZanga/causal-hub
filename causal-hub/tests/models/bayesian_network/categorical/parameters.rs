@@ -15,9 +15,9 @@ mod tests {
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
         let cpd = CatCPD::new(x, z, p.clone());
 
-        assert_eq!(&labels!["A"], cpd.labels());
-        assert_eq!(&states![("A", ["no", "yes"])], cpd.states());
-        assert_eq!(&labels!["B", "C"], cpd.conditioning_labels());
+        assert_eq!(cpd.labels(), &labels!["A"]);
+        assert_eq!(cpd.states(), &states![("A", ["no", "yes"])]);
+        assert_eq!(cpd.conditioning_labels(), &labels!["B", "C"]);
         assert!(
             cpd.conditioning_states()
                 .values()

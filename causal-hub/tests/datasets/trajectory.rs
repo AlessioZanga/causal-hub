@@ -37,18 +37,19 @@ mod tests {
             let trj = CatTrj::new(states, events, times);
 
             // Check the labels.
-            assert_eq!(&labels!["A", "B", "C"], trj.labels());
+            assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
             // Check the states.
             assert_eq!(
+                trj.states(),
                 &states![
                     ("A", ["0", "1", "2"]), //
                     ("B", ["0", "1"]),      //
                     ("C", ["0", "1"])       //
-                ],
-                trj.states()
+                ]
             );
             // Check the events.
             assert_eq!(
+                trj.values(),
                 &array![
                     [0, 0, 0],
                     [1, 0, 0],
@@ -56,13 +57,12 @@ mod tests {
                     [1, 0, 0],
                     [2, 0, 0],
                     [2, 0, 1]
-                ],
-                trj.values()
+                ]
             );
             // Check the times.
             assert_eq!(
-                &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5], //
-                trj.times()
+                trj.times(),
+                &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5] //
             );
         }
 
@@ -89,18 +89,19 @@ mod tests {
             let trj = CatTrj::new(states, events, times);
 
             // Check the labels.
-            assert_eq!(&labels!["A", "B", "C"], trj.labels());
+            assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
             // Check the states.
             assert_eq!(
+                trj.states(),
                 &states![
                     ("A", ["0", "1", "2"]), //
                     ("B", ["0", "1"]),      //
                     ("C", ["0", "1"])       //
-                ],
-                trj.states()
+                ]
             );
             // Check the events.
             assert_eq!(
+                trj.values(),
                 &array![
                     [0, 0, 0],
                     [1, 0, 0],
@@ -108,13 +109,12 @@ mod tests {
                     [1, 0, 0],
                     [2, 0, 0],
                     [2, 0, 1]
-                ],
-                trj.values()
+                ]
             );
             // Check the times.
             assert_eq!(
-                &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5], //
-                trj.times()
+                trj.times(),
+                &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5] //
             );
         }
 
@@ -141,15 +141,15 @@ mod tests {
             let trj = CatTrj::new(states, events, times);
 
             // Check the labels.
-            assert_eq!(&labels!["A", "B", "C"], trj.labels());
+            assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
             // Check the states.
             assert_eq!(
+                trj.states(),
                 &states![
                     ("A", ["0", "1", "2"]), //
                     ("B", ["0", "1"]),      //
                     ("C", ["0", "1"])       //
-                ],
-                trj.states()
+                ]
             );
             // Check the events.
             assert_eq!(

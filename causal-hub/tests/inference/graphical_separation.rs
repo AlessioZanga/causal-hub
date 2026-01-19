@@ -190,22 +190,22 @@ mod tests {
                 #[test]
                 fn [<is_separator_set_ $bn>]() {
                     // Get the BN from the assets.
-                    let bn = [<load_ $bn>]();
-                    // Get the g from the BN.
-                    let g = bn.graph();
-                    // Get the vertices of the g.
-                    let v = g.vertices();
+                    let model = [<load_ $bn>]();
+                    // Get the graph from the BN.
+                    let graph = model.graph();
+                    // Get the vertices of the graph.
+                    let v = graph.vertices();
                     // For each vertex ...
                     for &x in &v {
                         // Map to a set.
                         let x = set![x];
                         // Get the parents of the vertex.
-                        let pa_x = g.parents(&x);
+                        let pa_x = graph.parents(&x);
                         // Get the descendants of the vertex.
-                        let de_x = g.descendants(&x);
+                        let de_x = graph.descendants(&x);
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                         let non_de_x = &(&(&v - &de_x) - &pa_x) - &x;
-                        assert!(non_de_x.is_empty() || g.is_separator_set(&x, &non_de_x, &pa_x));
+                        assert!(non_de_x.is_empty() || graph.is_separator_set(&x, &non_de_x, &pa_x));
                     }
                 }
             }

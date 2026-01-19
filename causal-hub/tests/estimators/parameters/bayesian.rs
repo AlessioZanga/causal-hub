@@ -38,9 +38,9 @@ mod tests {
                 // P(A)
                 let distribution = estimator.fit(&set![0], &set![]);
 
-                assert_eq!(&labels!["A"], distribution.labels());
-                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
-                assert_eq!(&labels![], distribution.conditioning_labels());
+                assert_eq!(distribution.labels(), &labels!["A"]);
+                assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
+                assert_eq!(distribution.conditioning_labels(), &labels![]);
                 assert!(
                     distribution
                         .conditioning_states()
@@ -82,9 +82,9 @@ mod tests {
                 // P(A | B, C)
                 let distribution = estimator.fit(&set![0], &set![1, 2]);
 
-                assert_eq!(&labels!["A"], distribution.labels());
-                assert_eq!(&states![("A", ["no", "yes"])], distribution.states());
-                assert_eq!(&labels!["B", "C"], distribution.conditioning_labels());
+                assert_eq!(distribution.labels(), &labels!["A"]);
+                assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
+                assert_eq!(distribution.conditioning_labels(), &labels!["B", "C"]);
                 assert!(
                     distribution
                         .conditioning_states()

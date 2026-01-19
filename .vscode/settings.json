@@ -17,6 +17,12 @@
             "matchCommandLine": true
         },
         "cargo test": true,
-        "cargo run": true
+        "cargo run": true,
+        "cargo llvm-cov": true,
+        "/^source ~/miniconda3/etc/profile\\.d/conda\\.sh && conda activate causal-hub && pytest python/tests/test_model_fitting_sampling\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "./coverage.sh": true
     }
 }

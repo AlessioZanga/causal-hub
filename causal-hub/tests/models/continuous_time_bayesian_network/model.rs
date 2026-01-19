@@ -11,30 +11,30 @@ mod tests {
     #[test]
     fn new() {
         // Initialize the model.
-        let ctbn = load_eating();
+        let model = load_eating();
 
         // Check the labels.
-        assert_eq!(&labels!["Eating", "FullStomach", "Hungry"], ctbn.labels());
+        assert_eq!(model.labels(), &labels!["Eating", "FullStomach", "Hungry"]);
         // Check the graph structure.
-        assert_eq!(ctbn.graph().vertices().len(), 3);
-        assert!(ctbn.graph().has_edge(0, 1));
-        assert!(ctbn.graph().has_edge(1, 2));
-        assert!(ctbn.graph().has_edge(2, 0));
+        assert_eq!(model.graph().vertices().len(), 3);
+        assert!(model.graph().has_edge(0, 1));
+        assert!(model.graph().has_edge(1, 2));
+        assert!(model.graph().has_edge(2, 0));
         // Check the distributions.
-        assert_eq!(ctbn.cims().len(), 3);
-        assert_eq!(&labels!["Eating"], ctbn.cims()[0].labels());
-        assert_eq!(&labels!["FullStomach"], ctbn.cims()[1].labels());
-        assert_eq!(&labels!["Hungry"], ctbn.cims()[2].labels());
-        assert_eq!(&labels!["Hungry"], ctbn.cims()[0].conditioning_labels());
-        assert_eq!(&labels!["Eating"], ctbn.cims()[1].conditioning_labels());
+        assert_eq!(model.cims().len(), 3);
+        assert_eq!(model.cims()[0].labels(), &labels!["Eating"]);
+        assert_eq!(model.cims()[1].labels(), &labels!["FullStomach"]);
+        assert_eq!(model.cims()[2].labels(), &labels!["Hungry"]);
+        assert_eq!(model.cims()[0].conditioning_labels(), &labels!["Hungry"]);
+        assert_eq!(model.cims()[1].conditioning_labels(), &labels!["Eating"]);
         assert_eq!(
-            &labels!["FullStomach"],
-            ctbn.cims()[2].conditioning_labels()
+            model.cims()[2].conditioning_labels(),
+            &labels!["FullStomach"]
         );
 
         // Check the parameters.
         assert_eq!(
-            ctbn.cims()[0].parameters(),
+            model.cims()[0].parameters(),
             &array![
                 [
                     [-0.1, 0.1], //
@@ -47,7 +47,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            ctbn.cims()[1].parameters(),
+            model.cims()[1].parameters(),
             &array![
                 [
                     [-0.1, 0.1], //
@@ -60,7 +60,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            ctbn.cims()[2].parameters(),
+            model.cims()[2].parameters(),
             &array![
                 [
                     [-0.1, 0.1], //
@@ -73,41 +73,47 @@ mod tests {
             ]
         );
         // Check the states.
-        assert_eq!(&states![("Eating", ["no", "yes"])], ctbn.cims()[0].states());
         assert_eq!(
-            &states![("FullStomach", ["no", "yes"])],
-            ctbn.cims()[1].states()
+            model.cims()[0].states(),
+            &states![("Eating", ["no", "yes"])]
         );
-        assert_eq!(&states![("Hungry", ["no", "yes"])], ctbn.cims()[2].states());
+        assert_eq!(
+            model.cims()[1].states(),
+            &states![("FullStomach", ["no", "yes"])]
+        );
+        assert_eq!(
+            model.cims()[2].states(),
+            &states![("Hungry", ["no", "yes"])]
+        );
         // Check the parameters size.
-        assert_eq!(ctbn.parameters_size(), 15);
+        assert_eq!(model.parameters_size(), 15);
 
         // Check the initial distribution.
-        let initial_distribution = ctbn.initial_distribution();
+        let initial_distribution = model.initial_distribution();
 
         // Check the labels.
-        assert_eq!(initial_distribution.labels(), ctbn.labels());
+        assert_eq!(initial_distribution.labels(), model.labels());
         // Check the graph structure.
         assert_eq!(initial_distribution.graph().vertices().len(), 3);
         // Check the distributions.
         assert_eq!(initial_distribution.cpds().len(), 3);
-        assert_eq!(&labels!["Eating"], initial_distribution.cpds()[0].labels());
+        assert_eq!(initial_distribution.cpds()[0].labels(), &labels!["Eating"]);
         assert_eq!(
-            &labels!["FullStomach"],
-            initial_distribution.cpds()[1].labels()
+            initial_distribution.cpds()[1].labels(),
+            &labels!["FullStomach"]
         );
-        assert_eq!(&labels!["Hungry"], initial_distribution.cpds()[2].labels());
+        assert_eq!(initial_distribution.cpds()[2].labels(), &labels!["Hungry"]);
         assert_eq!(
-            &labels![],
-            initial_distribution.cpds()[0].conditioning_labels()
-        );
-        assert_eq!(
-            &labels![],
-            initial_distribution.cpds()[1].conditioning_labels()
+            initial_distribution.cpds()[0].conditioning_labels(),
+            &labels![]
         );
         assert_eq!(
-            &labels![],
-            initial_distribution.cpds()[2].conditioning_labels()
+            initial_distribution.cpds()[1].conditioning_labels(),
+            &labels![]
+        );
+        assert_eq!(
+            initial_distribution.cpds()[2].conditioning_labels(),
+            &labels![]
         );
         // Check the parameters.
         assert_eq!(

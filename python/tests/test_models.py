@@ -9,6 +9,7 @@ from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
 def test_digraph_from_networkx() -> None:
+    """Test creating a Directed Graph from NetworkX graph."""
     # Define vertices and edges for a simple directed graph.
     vertices = ["A", "B", "C", "D"]
     edges = [("A", "B"), ("B", "C"), ("C", "D")]
@@ -26,6 +27,7 @@ def test_digraph_from_networkx() -> None:
 
 
 def test_digraph_to_networkx() -> None:
+    """Test converting a Directed Graph to NetworkX graph."""
     # Define vertices and edges for a simple directed graph.
     vertices = ["A", "B", "C", "D"]
     edges = [("A", "B"), ("B", "C"), ("C", "D")]
@@ -45,6 +47,7 @@ def test_digraph_to_networkx() -> None:
 
 
 def test_digraph_graphical_separation() -> None:
+    """Test graphical separation (d-separation) on a known network (Asia)."""
     # Get the BN from the assets.
     bn = load_asia()
     # Get the graph from the BN.
@@ -66,6 +69,7 @@ def test_digraph_graphical_separation() -> None:
 
 
 def test_asia() -> None:
+    """Test loading and properties of the Asia network."""
     # Load the Asia BN.
     asia = load_asia()
     # Get the graph of the BN.
@@ -81,6 +85,7 @@ def test_asia() -> None:
 
 
 def test_asia_sample() -> None:
+    """Test sampling from the Asia network."""
     # Load the Asia BN.
     asia = load_asia()
     # Sample 1000 data points from the BN.
@@ -96,6 +101,7 @@ def test_asia_sample() -> None:
 
 
 def test_asia_fit() -> None:
+    """Test fitting the Asia network structure to sampled data."""
     # Load the Asia BN.
     asia = load_asia()
     # Sample 1000 data points from the BN.
@@ -110,6 +116,7 @@ def test_asia_fit() -> None:
 
 
 def test_asia_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Asia network."""
     # Load the Asia BN.
     asia = load_asia()
 
@@ -129,6 +136,7 @@ def test_asia_read_to_json_file() -> None:
 
 
 def test_ecoli70() -> None:
+    """Test loading and properties of the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Get the graph of the BN.
@@ -191,6 +199,7 @@ def test_ecoli70() -> None:
 
 
 def test_ecoli70_sample() -> None:
+    """Test sampling from the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Sample 1000 data points from the BN.
@@ -253,6 +262,7 @@ def test_ecoli70_sample() -> None:
 
 
 def test_ecoli70_fit() -> None:
+    """Test fitting the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Sample 1000 data points from the BN.
@@ -267,6 +277,7 @@ def test_ecoli70_fit() -> None:
 
 
 def test_ecoli70_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
 
@@ -288,6 +299,7 @@ def test_ecoli70_read_to_json_file() -> None:
 
 
 def test_eating() -> None:
+    """Test loading and properties of the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Get the graph of the CTBN.
@@ -310,6 +322,7 @@ def test_eating() -> None:
 
 
 def test_eating_sample() -> None:
+    """Test sampling from the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Sample 1000 trajectories from the CTBN.
@@ -325,6 +338,7 @@ def test_eating_sample() -> None:
 
 
 def test_eating_fit() -> None:
+    """Test fitting the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Sample 1000 trajectories from the CTBN.
@@ -339,6 +353,7 @@ def test_eating_fit() -> None:
 
 
 def test_eating_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
 
@@ -360,6 +375,7 @@ def test_eating_read_to_json_file() -> None:
 
 
 def test_categorical_bayesian_network_fit_incomplete() -> None:
+    """Test fitting a Categorical BN from incomplete data using MLE."""
     import numpy as np
     import pandas as pd
     from causal_hub.datasets import CatIncTable
@@ -401,6 +417,7 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
 
 
 def test_gaussian_bayesian_network_fit_numerical() -> None:
+    """Test fitting a Gaussian BN from numerical data using MLE."""
     import numpy as np
     import pandas as pd
     from causal_hub.datasets import GaussTable
@@ -437,6 +454,7 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
 
 
 def test_ecoli70_fit_incomplete() -> None:
+    """Test fitting the Ecoli70 network from incomplete data."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Sample 1000 data points from the BN.
