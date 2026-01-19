@@ -2,7 +2,7 @@
 mod tests {
     use approx::*;
     use causal_hub::{
-        datasets::{CatIncTable, CatTable, GaussTable, IncDataset},
+        datasets::{CatIncTable, CatTable, GaussIncTable, GaussTable, IncDataset},
         estimators::{BNEstimator, CPDEstimator, MLE},
         io::CsvIO,
         labels,
@@ -337,6 +337,37 @@ mod tests {
                         epsilon = 1e-1
                     );
                     */
+                }
+            }
+
+            mod incomplete {
+                use super::*;
+
+                #[test]
+                fn fit() {
+                    let csv = concat!(
+                        "A,B,C\n",
+                        "0.7244759610996034,2.6833663940564696,-1.1657447906269098\n",
+                        "-0.8493802792558207,-1.3627303887930888,0.4017010838572639\n",
+                        "-0.6667130630722627,nan,1.0321217333118256\n",
+                        "0.3512010732206103,0.05304024717622979,0.26298061562130404\n",
+                        "-0.9484265435265308,-1.2909828103942118,0.05138052693081896\n",
+                        "nan,3.976027760990921,-1.915431519452976\n",
+                        "-1.0024750147169819,-4.141699082447313,4.110922335613383\n",
+                        "0.8841740094546542,1.1265489405081641,0.4276912680121733\n",
+                        "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
+                        "0.7850467625426617,0.8527120967629328,1.3250986082936653",
+                    );
+                    let dataset = GaussIncTable::from_csv_string(csv);
+
+                    let estimator = MLE::new(&dataset);
+
+                    // P(A)
+                    let distribution = CPDEstimator::fit(&estimator, &set![0], &set![]);
+                    assert_relative_eq!(
+                        distribution.parameters().coefficients(), //
+                        &array![[]]
+                    );
                 }
             }
         }

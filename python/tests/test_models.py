@@ -1,7 +1,10 @@
 import tempfile
 
 import networkx as nx
+import numpy as np
+import pandas as pd
 from causal_hub.assets import load_asia, load_eating, load_ecoli70
+from causal_hub.datasets import GaussIncTable
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
@@ -431,3 +434,28 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     np.testing.assert_allclose(params_B["intercept"], [1.0], atol=0.05)
     np.testing.assert_allclose(params_B["coefficients"], [[2.0]], atol=0.05)
     np.testing.assert_allclose(params_B["covariance"], [[0.01]], atol=0.01)
+
+
+def test_ecoli70_fit_incomplete() -> None:
+    # Load the Ecoli70 BN.
+    ecoli70 = load_ecoli70()
+    # Sample 1000 data points from the BN.
+    sample = ecoli70.sample(1000, seed=42)
+    # Get values.
+    values = sample.values()
+    # Introduce missing values.
+    # Set 10% of values to NaN.
+    rng = np.random.default_rng(42)
+    mask = rng.random(values.shape) < 0.1
+    values[mask] = np.nan
+
+    # Create incomplete dataset.
+    df = pd.DataFrame(values, columns=sample.labels())
+    dataset = GaussIncTable.from_pandas(df)
+
+    # Fit a new BN to the sample.
+    fitted = GaussBN.fit(dataset, ecoli70.graph())
+
+    # Check the fit.
+    assert fitted.labels() == ecoli70.labels()
+    # TODO: Check parameters.

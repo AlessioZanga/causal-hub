@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use ndarray_linalg::Determinant;
 
 use crate::{
-    datasets::{GaussTable, GaussWtdTable},
+    datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
     types::{LN_2_PI, Labels, Set},
@@ -78,7 +78,7 @@ impl MLE<'_, GaussTable> {
 }
 
 // Implement the GaussCPD estimator for the MLE struct.
-macro_for!($type in [GaussTable, GaussWtdTable] {
+macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
 
     impl CPDEstimator<GaussCPD> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {

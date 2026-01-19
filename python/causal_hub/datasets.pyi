@@ -505,6 +505,100 @@ class CatWtdTrjs:
         """
 
 @typing.final
+class GaussIncTable:
+    r"""
+    A Gaussian incomplete tabular dataset.
+    """
+
+    def __new__(
+        cls,
+        labels: typing.Sequence[builtins.str],
+        values: numpy.typing.NDArray[numpy.float64],
+    ) -> GaussIncTable:
+        r"""
+        Constructs a new Gaussian incomplete tabular dataset.
+
+        Parameters
+        ----------
+        labels : list[str]
+            A list of strings containing the labels of the dataset.
+        values : numpy.ndarray
+            A 2D numpy array containing the values of the dataset.
+
+        Returns
+        -------
+        GaussIncTable
+            A new Gaussian incomplete tabular dataset instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the dataset.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the dataset.
+        """
+
+    def values(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        The values of the dataset.
+
+        Returns
+        -------
+        numpy.ndarray
+            A 2D numpy array containing the values of the dataset.
+        """
+
+    def sample_size(self) -> builtins.int:
+        r"""
+        The number of samples in the dataset.
+
+        Returns
+        -------
+        int
+            To number of samples in the dataset.
+        """
+
+    def missing(self) -> MissingTable:
+        r"""
+        The missing information of the dataset.
+
+        Returns
+        -------
+        MissingTable
+            The missing information of the dataset.
+        """
+
+    @classmethod
+    def from_pandas(cls, df: typing.Any) -> GaussIncTable:
+        r"""
+        Constructs a new gaussian incomplete tabular dataset from a Pandas DataFrame.
+
+        Parameters
+        ----------
+
+        df: pandas.DataFrame
+            A Pandas DataFrame containing gaussian columns with missing values.
+
+        Returns
+        -------
+        GaussIncTable
+            A new gaussian incomplete tabular dataset instance.
+        """
+
+    def to_pandas(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Pandas DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame.
+        """
+
+@typing.final
 class GaussTable:
     r"""
     A Gaussian tabular dataset.
@@ -769,4 +863,8 @@ class Dataset(enum.Enum):
     Gaussian = ...
     r"""
     A Gaussian tabular dataset.
+    """
+    GaussianIncomplete = ...
+    r"""
+    A Gaussian incomplete tabular dataset.
     """

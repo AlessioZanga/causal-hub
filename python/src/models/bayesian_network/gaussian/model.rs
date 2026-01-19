@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::GaussTable,
+    datasets::{GaussIncTable, GaussTable},
     estimators::MLE,
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
@@ -218,9 +218,33 @@ impl PyGaussBN {
                 // Return the fitted model.
                 Ok(model.into())
             }
-            PyDataset::GaussianIncomplete(_) => Err(PyErr::new::<PyValueError, _>(
-                "Gaussian incomplete datasets are not currently supported.",
-            )),
+            PyDataset::GaussianIncomplete(dataset) => {
+                // Get the dataset.
+                let dataset: GaussIncTable = dataset.into();
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
+                    // Initialize the maximum likelihood estimator.
+                    "mle" => Box::new(MLE::new(&dataset)),
+                    // Raise an error if the method is unknown.
+                    method => {
+                        return Err(PyErr::new::<PyValueError, _>(format!(
+                            "Unknown method: '{}', choose one of the following: \n\
+                            \t- 'mle' - Maximum likelihood estimator.",
+                            method
+                        )));
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                };
+                // Return the fitted model.
+                Ok(model.into())
+            }
             _ => Err(PyErr::new::<PyValueError, _>(
                 "Expected a Gaussian dataset for a Gaussian Bayesian network.",
             )),

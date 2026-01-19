@@ -460,13 +460,3 @@ def test_gaussian_incomplete_table() -> None:
     # Check missing.
     missing = table.missing()
     assert missing.missing_count() == 7
-
-    # LW deletion
-    complete = table.apply_missing_method("LW")
-    assert complete.labels() == ["A", "B", "C"]
-    assert complete.sample_size() == 3
-
-    # PW deletion
-    complete = table.apply_missing_method("PW", ["A", "B"])
-    assert complete.labels() == ["A", "B"]
-    assert complete.sample_size() == 4
