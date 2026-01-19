@@ -277,9 +277,11 @@ impl PyCatBN {
                 // Return the fitted model.
                 Ok(model.into())
             }
-            PyDataset::Gaussian(_) => Err(PyErr::new::<PyValueError, _>(
-                "Expected a categorical dataset for a categorical Bayesian network, but found a Gaussian one.",
-            )),
+            PyDataset::Gaussian(_) | PyDataset::GaussianIncomplete(_) => {
+                Err(PyErr::new::<PyValueError, _>(
+                    "Expected a categorical dataset for a categorical Bayesian network, but found a Gaussian one.",
+                ))
+            }
         }
     }
 

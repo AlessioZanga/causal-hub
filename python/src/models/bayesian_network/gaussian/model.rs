@@ -218,6 +218,9 @@ impl PyGaussBN {
                 // Return the fitted model.
                 Ok(model.into())
             }
+            PyDataset::GaussianIncomplete(_) => Err(PyErr::new::<PyValueError, _>(
+                "Gaussian incomplete datasets are not currently supported.",
+            )),
             _ => Err(PyErr::new::<PyValueError, _>(
                 "Expected a Gaussian dataset for a Gaussian Bayesian network.",
             )),

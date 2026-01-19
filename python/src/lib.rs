@@ -92,6 +92,7 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyCatTable>()?;
             m.add_class::<crate::datasets::PyCatIncTable>()?;
             m.add_class::<crate::datasets::PyGaussTable>()?;
+            m.add_class::<crate::datasets::PyGaussIncTable>()?;
             m.add_class::<crate::datasets::PyMissingTable>()?;
             m.add_class::<crate::datasets::PyCatTrj>()?;
             m.add_class::<crate::datasets::PyCatTrjs>()?;
