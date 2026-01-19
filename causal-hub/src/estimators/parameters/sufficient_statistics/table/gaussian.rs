@@ -100,7 +100,7 @@ impl SSE<'_, GaussWtdTable> {
             d_x.column_mut(i).assign(&d.column(j));
         }
         // Compute the weighted mean.
-        let mu_x = (&norm_w * &d_x).mean_axis(Axis(0)).unwrap();
+        let mu_x = (&norm_w * &d_x).sum_axis(Axis(0));
 
         // Select the columns of the conditioning variables.
         let mut d_z = Array::zeros((d.nrows(), z.len()));
@@ -108,7 +108,7 @@ impl SSE<'_, GaussWtdTable> {
             d_z.column_mut(i).assign(&d.column(j));
         }
         // Compute the weighted mean.
-        let mu_z = (&norm_w * &d_z).mean_axis(Axis(0)).unwrap();
+        let mu_z = (&norm_w * &d_z).sum_axis(Axis(0));
 
         // Compute the root weights for centering.
         let sqrt_w = norm_w.mapv(f64::sqrt);
@@ -116,9 +116,9 @@ impl SSE<'_, GaussWtdTable> {
         let d_sqrt_w_z = &sqrt_w * &d_z;
 
         // Compute the weighted second moment statistics.
-        let m_xx = d_sqrt_w_x.t().dot(&d_sqrt_w_x);
-        let m_xz = d_sqrt_w_x.t().dot(&d_sqrt_w_z);
-        let m_zz = d_sqrt_w_z.t().dot(&d_sqrt_w_z);
+        let m_xx = d_sqrt_w_x.t().dot(&d_sqrt_w_x) * sum_w;
+        let m_xz = d_sqrt_w_x.t().dot(&d_sqrt_w_z) * sum_w;
+        let m_zz = d_sqrt_w_z.t().dot(&d_sqrt_w_z) * sum_w;
 
         // Get the sample (mass) size.
         let n = sum_w;
