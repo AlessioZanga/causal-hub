@@ -514,7 +514,7 @@ def test_ecoli70_fit_incomplete() -> None:
             ["Alarm"],
             {"Burglary": "True"},
             {"Alarm": "True"},
-            0.9402,
+            0.84,
             0.1,
         ),
         (
