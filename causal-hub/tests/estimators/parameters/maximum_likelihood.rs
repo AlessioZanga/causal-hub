@@ -384,13 +384,11 @@ mod tests {
                         &array![0.1],
                         epsilon = 1e-1
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[1.]],
+                        &array![[0.7]],
                         epsilon = 1e-1
                     );
-                    */
 
                     // P(B | A, C)
                     let distribution = CPDEstimator::fit(&estimator, &set![1], &set![0, 2]);
@@ -404,13 +402,11 @@ mod tests {
                         &array![0.5],
                         epsilon = 1e-1
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[0.49]],
+                        &array![[0.13]],
                         epsilon = 1e-1
                     );
-                    */
 
                     // P(C)
                     let distribution = CPDEstimator::fit(&estimator, &set![2], &set![]);
@@ -418,20 +414,16 @@ mod tests {
                         distribution.parameters().coefficients(), //
                         &array![[]]
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().intercept(), //
-                        &array![1.],
+                        &array![0.26],
                         epsilon = 1e-1
                     );
-                    */
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[4.]],
+                        &array![[2.8]],
                         epsilon = 1e-1
                     );
-                    */
                 }
 
                 #[test]
@@ -464,13 +456,11 @@ mod tests {
                         &array![0.1],
                         epsilon = 1e-1
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[1.]],
+                        &array![[0.7]],
                         epsilon = 1e-1
                     );
-                    */
 
                     // P(B | A, C)
                     let distribution = ParCPDEstimator::par_fit(&estimator, &set![1], &set![0, 2]);
@@ -484,13 +474,11 @@ mod tests {
                         &array![0.5],
                         epsilon = 1e-1
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[0.49]],
+                        &array![[0.13]],
                         epsilon = 1e-1
                     );
-                    */
 
                     // P(C)
                     let distribution = ParCPDEstimator::par_fit(&estimator, &set![2], &set![]);
@@ -498,20 +486,16 @@ mod tests {
                         distribution.parameters().coefficients(), //
                         &array![[]]
                     );
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().intercept(), //
-                        &array![1.],
+                        &array![0.26],
                         epsilon = 1e-1
                     );
-                    */
-                    /* FIXME:
                     assert_relative_eq!(
                         distribution.parameters().covariance(), //
-                        &array![[4.]],
+                        &array![[2.8]],
                         epsilon = 1e-1
                     );
-                    */
                 }
             }
 

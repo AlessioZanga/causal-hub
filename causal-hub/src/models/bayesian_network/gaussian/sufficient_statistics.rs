@@ -14,11 +14,11 @@ pub struct GaussCPDS {
     mu_x: Array1<f64>,
     /// Design mean vector |Z|.
     mu_z: Array1<f64>,
-    /// Response covariance (uncentered) matrix |X| x |X|.
+    /// Response second moment matrix (sum of outer products) |X| x |X|.
     m_xx: Array2<f64>,
-    /// Cross-covariance (uncentered) matrix |X| x |Z|.
+    /// Cross second moment matrix (sum of outer products) |X| x |Z|.
     m_xz: Array2<f64>,
-    /// Design covariance (uncentered) matrix |Z| x |Z|.
+    /// Design second moment matrix (sum of outer products) |Z| x |Z|.
     m_zz: Array2<f64>,
     /// Sample size.
     n: f64,
@@ -31,9 +31,9 @@ impl GaussCPDS {
     ///
     /// * `mu_x` - Response mean vector |X|.
     /// * `mu_z` - Design mean vector |Z|.
-    /// * `m_xx` - Response covariance (uncentered) matrix |X| x |X|.
-    /// * `m_xz` - Cross-covariance (uncentered) matrix |X| x |Z|.
-    /// * `m_zz` - Design covariance (uncentered) matrix |Z| x |Z|.
+    /// * `m_xx` - Response second moment matrix (uncentered) |X| x |X|.
+    /// * `m_xz` - Cross second moment matrix (uncentered) |X| x |Z|.
+    /// * `m_zz` - Design second moment matrix (uncentered) |Z| x |Z|.
     /// * `n` - Sample size.
     ///
     /// # Panics
@@ -146,11 +146,11 @@ impl GaussCPDS {
         &self.mu_z
     }
 
-    /// Returns the response covariance matrix |X| x |X|.
+    /// Returns the response scatter matrix (sum of squared deviations) |X| x |X|.
     ///
     /// # Returns
     ///
-    /// A reference to the response covariance matrix.
+    /// The response scatter matrix.
     ///
     #[inline]
     pub fn sample_response_covariance(&self) -> Array2<f64> {
@@ -161,11 +161,11 @@ impl GaussCPDS {
         &self.m_xx - self.n * &col_mu_x.dot(&row_mu_x)
     }
 
-    /// Returns the cross-covariance matrix |X| x (|Z| + 1).
+    /// Returns the cross-scatter matrix (sum of squared deviations) |X| x |Z|.
     ///
     /// # Returns
     ///
-    /// A reference to the cross-covariance matrix.
+    /// The cross-scatter matrix.
     ///
     #[inline]
     pub fn sample_cross_covariance(&self) -> Array2<f64> {
@@ -176,11 +176,11 @@ impl GaussCPDS {
         &self.m_xz - self.n * &col_mu_x.dot(&row_mu_z)
     }
 
-    /// Returns the design covariance matrix (|Z| + 1) x (|Z| + 1).
+    /// Returns the design scatter matrix (sum of squared deviations) |Z| x |Z|.
     ///
     /// # Returns
     ///
-    /// A reference to the design covariance matrix.
+    /// The design scatter matrix.
     ///
     #[inline]
     pub fn sample_design_covariance(&self) -> Array2<f64> {
@@ -212,11 +212,11 @@ impl AddAssign for GaussCPDS {
         // Update the design mean vector.
         self.mu_z = (self.n * &self.mu_z + other.n * &other.mu_z) / n;
         // Update the response covariance matrix.
-        self.m_xx = (self.n * &self.m_xx + other.n * &other.m_xx) / n;
+        self.m_xx = &self.m_xx + &other.m_xx;
         // Update the cross-covariance matrix.
-        self.m_xz = (self.n * &self.m_xz + other.n * &other.m_xz) / n;
+        self.m_xz = &self.m_xz + &other.m_xz;
         // Update the design covariance matrix.
-        self.m_zz = (self.n * &self.m_zz + other.n * &other.m_zz) / n;
+        self.m_zz = &self.m_zz + &other.m_zz;
         // Update the sample size.
         self.n = n;
     }

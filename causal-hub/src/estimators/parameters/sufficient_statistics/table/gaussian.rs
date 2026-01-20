@@ -1,4 +1,4 @@
-use ndarray::prelude::*;
+use ndarray::{azip, prelude::*};
 use rayon::prelude::*;
 
 use crate::{
@@ -10,32 +10,50 @@ use crate::{
 
 impl SSE<'_, GaussTable> {
     fn fit(d: ArrayView2<f64>, x: &Set<usize>, z: &Set<usize>) -> GaussCPDS {
-        // Select the columns of the variables.
-        let mut d_x = Array::zeros((d.nrows(), x.len()));
-        for (i, &j) in x.iter().enumerate() {
-            d_x.column_mut(i).assign(&d.column(j));
-        }
-        // Compute the mean.
-        let mu_x = d_x.mean_axis(Axis(0)).unwrap();
+        // Initialize the sufficient statistics.
+        let mut s = {
+            let n = 0.;
+            let mu_x = Array::zeros(x.len());
+            let mu_z = Array::zeros(z.len());
+            let m_xx = Array::zeros((x.len(), x.len()));
+            let m_xz = Array::zeros((x.len(), z.len()));
+            let m_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+        };
 
-        // Select the columns of the conditioning variables.
-        let mut d_z = Array::zeros((d.nrows(), z.len()));
-        for (i, &j) in z.iter().enumerate() {
-            d_z.column_mut(i).assign(&d.column(j));
-        }
-        // Compute the mean.
-        let mu_z = d_z.mean_axis(Axis(0)).unwrap();
+        // Initialize the chunk buffers.
+        d.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
+            .for_each(|d| {
+                // Select the columns of the variables.
+                let mut d_x = Array::zeros((d.nrows(), x.len()));
+                for (i, &j) in x.iter().enumerate() {
+                    d_x.column_mut(i).assign(&d.column(j));
+                }
+                // Compute the mean.
+                let mu_x = d_x.mean_axis(Axis(0)).unwrap();
 
-        // Compute the second moment statistics.
-        let m_xx = d_x.t().dot(&d_x);
-        let m_xz = d_x.t().dot(&d_z);
-        let m_zz = d_z.t().dot(&d_z);
+                // Select the columns of the conditioning variables.
+                let mut d_z = Array::zeros((d.nrows(), z.len()));
+                for (i, &j) in z.iter().enumerate() {
+                    d_z.column_mut(i).assign(&d.column(j));
+                }
+                // Compute the mean.
+                let mu_z = d_z.mean_axis(Axis(0)).unwrap();
 
-        // Get the sample size.
-        let n = d.nrows() as f64;
+                // Compute the second moment statistics.
+                let m_xx = d_x.t().dot(&d_x);
+                let m_xz = d_x.t().dot(&d_z);
+                let m_zz = d_z.t().dot(&d_z);
+
+                // Get the sample size.
+                let n = d.nrows() as f64;
+
+                // Accumulate the sufficient statistics.
+                s += GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n);
+            });
 
         // Return the sufficient statistics.
-        GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+        s
     }
 }
 
@@ -94,37 +112,57 @@ impl SSE<'_, GaussWtdTable> {
         x: &Set<usize>,
         z: &Set<usize>,
     ) -> GaussCPDS {
-        // Select the columns of the variables.
-        let mut d_x = Array::zeros((d.nrows(), x.len()));
-        for (i, &j) in x.iter().enumerate() {
-            d_x.column_mut(i).assign(&d.column(j));
-        }
-        // Compute the weighted mean.
-        let mu_x = (&norm_w * &d_x).sum_axis(Axis(0));
+        // Initialize the sufficient statistics.
+        let mut s = {
+            let n = 0.;
+            let mu_x = Array::zeros(x.len());
+            let mu_z = Array::zeros(z.len());
+            let m_xx = Array::zeros((x.len(), x.len()));
+            let m_xz = Array::zeros((x.len(), z.len()));
+            let m_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+        };
 
-        // Select the columns of the conditioning variables.
-        let mut d_z = Array::zeros((d.nrows(), z.len()));
-        for (i, &j) in z.iter().enumerate() {
-            d_z.column_mut(i).assign(&d.column(j));
-        }
-        // Compute the weighted mean.
-        let mu_z = (&norm_w * &d_z).sum_axis(Axis(0));
+        // Initialize the chunk buffers.
+        d.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
+            .zip(norm_w.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH))
+            .for_each(|(d, w)| {
+                // Compute the root weights for centering.
+                let sqrt_w = w.mapv(f64::sqrt);
 
-        // Compute the root weights for centering.
-        let sqrt_w = norm_w.mapv(f64::sqrt);
-        let d_sqrt_w_x = &sqrt_w * &d_x;
-        let d_sqrt_w_z = &sqrt_w * &d_z;
+                // Select the columns of the variables.
+                let mut d_x = Array::zeros((d.nrows(), x.len()));
+                for (i, &j) in x.iter().enumerate() {
+                    azip!((c_i in &mut d_x.column_mut(i), c_j in d.column(j), w in &sqrt_w.column(0)) *c_i = c_j * w);
+                }
+                // Compute the weighted mean.
+                let mu_x = (&d_x * &sqrt_w).sum_axis(Axis(0));
 
-        // Compute the weighted second moment statistics.
-        let m_xx = d_sqrt_w_x.t().dot(&d_sqrt_w_x) * sum_w;
-        let m_xz = d_sqrt_w_x.t().dot(&d_sqrt_w_z) * sum_w;
-        let m_zz = d_sqrt_w_z.t().dot(&d_sqrt_w_z) * sum_w;
+                // Select the columns of the conditioning variables.
+                let mut d_z = Array::zeros((d.nrows(), z.len()));
+                for (i, &j) in z.iter().enumerate() {
+                    azip!((c_i in &mut d_z.column_mut(i), c_j in d.column(j), w in &sqrt_w.column(0)) *c_i = c_j * w);
+                }
+                // Compute the weighted mean.
+                let mu_z = (&d_z * &sqrt_w).sum_axis(Axis(0));
 
-        // Get the sample (mass) size.
-        let n = sum_w;
+                // Compute the weighted second moment statistics.
+                let m_xx = d_x.t().dot(&d_x) * sum_w;
+                let m_xz = d_x.t().dot(&d_z) * sum_w;
+                let m_zz = d_z.t().dot(&d_z) * sum_w;
+
+                // Get the sample (mass) size.
+                let w_sum = w.sum();
+                let n = w_sum * sum_w;
+
+                // Accumulate the sufficient statistics.
+                if w_sum > 0. {
+                    s += GaussCPDS::new(mu_x / w_sum, mu_z / w_sum, m_xx, m_xz, m_zz, n);
+                }
+            });
 
         // Return the sufficient statistics.
-        GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+        s
     }
 }
 

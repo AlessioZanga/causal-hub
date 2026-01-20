@@ -72,22 +72,22 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatTable> {
             .values()
             .axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
             .into_par_iter()
-            .map(|values| {
-                // Clone the zeros joint counts.
-                let mut n_xz = n_xz.clone();
-                // Count the occurrences of the states.
-                values.rows().into_iter().for_each(|row| {
-                    // Get the value of X and Z as index.
-                    let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
-                    let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
-                    // Increment the joint counts.
-                    n_xz[[idx_z, idx_x]] += 1;
-                });
-                // Return the local joint counts.
-                n_xz
-            })
             // Aggregate the local joint counts.
-            .fold(|| n_xz.clone(), |a, b| a + b)
+            .fold(
+                || n_xz.clone(),
+                |mut n_xz, values| {
+                    // Count the occurrences of the states.
+                    values.rows().into_iter().for_each(|row| {
+                        // Get the value of X and Z as index.
+                        let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
+                        let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
+                        // Increment the joint counts.
+                        n_xz[[idx_z, idx_x]] += 1;
+                    });
+                    // Return the local joint counts.
+                    n_xz
+                },
+            )
             .reduce(|| n_xz.clone(), |a, b| a + b);
 
         // Cast the counts to floating point.
