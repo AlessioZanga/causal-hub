@@ -3,7 +3,7 @@ mod tests {
     use approx::*;
     use causal_hub::{
         datasets::CatTable,
-        estimators::{BE, CPDEstimator},
+        estimators::{BE, CPDEstimator, ParCPDEstimator},
         labels,
         models::{CPD, Labelled},
         set, states,
@@ -127,6 +127,37 @@ mod tests {
                         "| yes      | yes      | 0.500000 | 0.500000 |\n",
                         "---------------------------------------------\n",
                     )
+                );
+            }
+
+            #[test]
+            fn par_fit() {
+                let states = states![
+                    ("A", ["no", "yes"]),
+                    ("B", ["no", "yes"]),
+                    ("C", ["no", "yes"]),
+                ];
+                let values = array![
+                    // A, B, C
+                    [0, 0, 0],
+                    [0, 0, 1],
+                    [1, 1, 0],
+                    [0, 1, 1],
+                    [1, 1, 1]
+                ];
+                let dataset = CatTable::new(states, values);
+
+                let estimator = BE::new(&dataset).with_prior(1);
+
+                // P(A)
+                let distribution = estimator.par_fit(&set![0], &set![]);
+
+                assert_relative_eq!(
+                    distribution.parameters(),
+                    &array![
+                        // A: no, yes
+                        [0.5714285714285714, 0.42857142857142855]
+                    ]
                 );
             }
 
@@ -268,6 +299,28 @@ mod tests {
                     assert_relative_eq!(
                         d.parameters().covariance(),
                         &array![[0.49315]],
+                        epsilon = 1e-4
+                    );
+                }
+
+                #[test]
+                fn par_fit() {
+                    let labels = labels!["X", "Y"];
+                    let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
+                    let dataset = GaussTable::new(labels.clone(), data);
+
+                    let estimator = BE::new(&dataset).with_prior(1.0);
+
+                    // Fit P(X | Y) using parallel fit
+                    let d = estimator.par_fit(&set![0], &set![1]);
+
+                    assert_eq!(d.labels(), &labels!["X"]);
+                    assert_eq!(d.conditioning_labels(), &labels!["Y"]);
+
+                    // Results should be identical to sequential fit
+                    assert_relative_eq!(
+                        d.parameters().coefficients(),
+                        &array![[0.47619]],
                         epsilon = 1e-4
                     );
                 }

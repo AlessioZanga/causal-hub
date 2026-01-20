@@ -4,7 +4,7 @@ use ndarray_linalg::Determinant;
 
 use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
-    estimators::{BE, CPDEstimator, CSSEstimator, SSE},
+    estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
     types::{LN_2_PI, Labels, Set},
     utils::PseudoInverse,
@@ -149,11 +149,39 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
         }
     }
 
+    impl ParCPDEstimator<GaussCPD> for BE<'_, $type, f64> {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+            // Get labels.
+            let labels = self.dataset.labels();
+            // Get prior.
+            let prior = self.prior;
+            // Set sufficient statistics estimator.
+            let sample_statistics = SSE::new(self.dataset);
+            // Set missing handling method, if any.
+            let sample_statistics = sample_statistics.with_missing_method(
+                self.missing_method,
+                self.missing_mechanism.clone()
+            );
+            // Compute sufficient statistics.
+            let sample_statistics = sample_statistics.par_fit(x, z);
+            // Fit the CPD given the sufficient statistics.
+            BE::<'_, GaussTable, f64>::fit(labels, x, z, sample_statistics, prior)
+        }
+    }
+
     impl CPDEstimator<GaussCPD> for BE<'_, $type, ()> {
         #[inline]
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
             // Default to BDeu prior? No, BGe equivalent standard normal.
             self.clone().with_prior(1.0).fit(x, z)
+        }
+    }
+
+    impl ParCPDEstimator<GaussCPD> for BE<'_, $type, ()> {
+        #[inline]
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+            // Default to BDeu prior? No, BGe equivalent standard normal.
+            self.clone().with_prior(1.0).par_fit(x, z)
         }
     }
 });
