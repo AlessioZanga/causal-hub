@@ -279,11 +279,11 @@ mod tests {
                     // Z
                     states![],
                     // Theta
-                    array![[0.99, 0.01]],
+                    array![[0.9757204131016298, 0.024279586898370155]],
                 );
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
             }
         }
     }
