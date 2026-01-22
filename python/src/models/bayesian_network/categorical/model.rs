@@ -391,6 +391,8 @@ impl PyCatBN {
     ///     An outcome variable or an iterable of outcome variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// method: str
+    ///     The method to use for estimation (default is `be`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -401,13 +403,14 @@ impl PyCatBN {
     /// CatCPD | None
     ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
-    #[pyo3(signature = (x, y, z, seed=31, parallel=true))]
+    #[pyo3(signature = (x, y, z, method="be", seed=31, parallel=true))]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        method: &str,
         seed: u64,
         parallel: bool,
     ) -> PyResult<Option<PyCatCPD>> {
@@ -420,14 +423,48 @@ impl PyCatBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
-        let estimate = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || CausalInference::new(&estimator).par_cace_estimate(&x, &y, &z))
-        } else {
-            // Execute sequentially.
-            CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
+        let estimate = match method {
+            // Initialize the maximum likelihood estimator.
+            "mle" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| MLE::new(d).par_fit(x, z));
+                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| MLE::new(d).fit(x, z));
+                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                }
+            }
+            // Initialize the Bayesian estimator.
+            "be" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| BE::new(d).par_fit(x, z));
+                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| BE::new(d).fit(x, z));
+                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                }
+            }
+            // Raise an error if the method is unknown.
+            method => {
+                return Err(PyErr::new::<PyValueError, _>(format!(
+                    "Unknown method: '{}', choose one of the following: \n\
+                    \t- 'mle' - Maximum likelihood estimator, \n\
+                    \t- 'be' - Bayesian estimator.",
+                    method
+                )));
+            }
         };
         // Return the dataset.
         Ok(estimate.map(|e| e.into()))

@@ -181,6 +181,7 @@ class CatBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
+        method: builtins.str = "be",
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[CatCPD]:
@@ -195,6 +196,8 @@ class CatBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        method: str
+            The method to use for estimation (default is `be`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -1490,6 +1493,7 @@ class GaussBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
+        method: builtins.str = "be",
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[GaussCPD]:
@@ -1504,6 +1508,8 @@ class GaussBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        method: str
+            The method to use for estimation (default is `be`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
