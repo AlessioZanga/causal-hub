@@ -97,7 +97,7 @@ class CatBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "mle",
+        method: builtins.str = "be",
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatBN:
@@ -111,7 +111,7 @@ class CatBN:
         graph: DiGraph
             The graph to fit the model to.
         method: str
-            The method to use for fitting (default is `mle`).
+            The method to use for fitting (default is `be`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -150,6 +150,7 @@ class CatBN:
         self,
         x: typing.Any,
         z: typing.Any,
+        method: builtins.str = "be",
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> CatCPD:
@@ -162,6 +163,8 @@ class CatBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        method: str
+            The method to use for estimation (default is `be`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -1403,8 +1406,9 @@ class GaussBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "mle",
+        method: builtins.str = "be",
         parallel: builtins.bool = True,
+        **kwargs: typing.Any,
     ) -> GaussBN:
         r"""
         Fit the model to a dataset and a given graph.
@@ -1416,9 +1420,13 @@ class GaussBN:
         graph: DiGraph
             The graph to fit the model to.
         method: str
-            The method to use for fitting (default is `mle`).
+            The method to use for fitting (default is `be`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
+        **kwargs: dict | None
+            Optional keyword arguments:
+
+                - `alpha`: The prior of the Bayesian estimator (float64).
 
         Returns
         -------

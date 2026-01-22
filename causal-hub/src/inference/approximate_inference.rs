@@ -59,7 +59,10 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// Return a new approximate inference instance with the estimator.
     ///
-    pub fn with_estimator<T>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T> {
+    pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T>
+    where
+        T: Fn(&A) -> B,
+    {
         ApproximateInference {
             rng: self.rng,
             model: self.model,
