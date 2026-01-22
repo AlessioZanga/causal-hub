@@ -1459,6 +1459,7 @@ class GaussBN:
         self,
         x: typing.Any,
         z: typing.Any,
+        method: builtins.str = "be",
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> GaussCPD:
@@ -1471,6 +1472,8 @@ class GaussBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        method: str
+            The method to use for estimation (default is `be`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool

@@ -5,7 +5,7 @@ use std::{
 
 use backend::{
     datasets::{CatIncTable, CatTable},
-    estimators::{BE, MLE},
+    estimators::{BE, CPDEstimator, MLE, ParCPDEstimator},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -331,33 +331,41 @@ impl PyCatBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
         let estimate = match method {
             // Initialize the maximum likelihood estimator.
             "mle" => {
-                // Set the estimator.
-                let estimator = estimator; // FIXME: .with_estimator(|d| MLE::new(d));
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
-                    py.detach(move || estimator.par_estimate(&x, &z))
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| MLE::new(d).par_fit(x, z))
+                            .par_estimate(&x, &z)
+                    })
                 } else {
                     // Execute sequentially.
-                    estimator.estimate(&x, &z)
+                    engine
+                        .with_estimator(|d, x, z| MLE::new(d).fit(x, z))
+                        .estimate(&x, &z)
                 }
             }
             // Initialize the Bayesian estimator.
             "be" => {
-                // Set the estimator.
-                let estimator = estimator; // FIXME: .with_estimator(|d| BE::new(d));
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
-                    py.detach(move || estimator.par_estimate(&x, &z))
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| BE::new(d).par_fit(x, z))
+                            .par_estimate(&x, &z)
+                    })
                 } else {
                     // Execute sequentially.
-                    estimator.estimate(&x, &z)
+                    engine
+                        .with_estimator(|d, x, z| BE::new(d).fit(x, z))
+                        .estimate(&x, &z)
                 }
             }
             _ => {

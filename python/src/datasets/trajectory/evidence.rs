@@ -123,16 +123,16 @@ impl PyCatTrjEv {
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert_eq!(
-            event_dtype, "object",
+        assert!(
+            event_dtype == "object" || event_dtype == "string" || event_dtype == "str",
             "Expected a string column, but '{event_dtype}' found."
         );
         let state_dtype = state
             .getattr("dtype")?
             .getattr("name")?
             .extract::<String>()?;
-        assert_eq!(
-            state_dtype, "object",
+        assert!(
+            state_dtype == "object" || state_dtype == "string" || state_dtype == "str",
             "Expected a string column, but '{state_dtype}' found."
         );
         let start_time_dtype = start_time

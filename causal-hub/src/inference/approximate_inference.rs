@@ -53,7 +53,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Arguments
     ///
-    /// * `estimator` - A function that takes a reference to samples and returns a CPD estimator.
+    /// * `estimator` - A function that takes a reference to samples, the sets of variables `x` and `z`, and returns a CPD estimator.
     ///
     /// # Returns
     ///
@@ -61,7 +61,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T>
     where
-        T: Fn(&A) -> B,
+        T: Fn(&A, &Set<usize>, &Set<usize>) -> B,
     {
         ApproximateInference {
             rng: self.rng,
@@ -216,11 +216,10 @@ macro_for!($type in [CatBN, GaussBN] {
         }
     }
 
-    impl<R, F, F0> BNInference<$type> for ApproximateInference<'_, R, $type, (), F>
+    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, (), F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::Samples) -> F0,
-        F0: CPDEstimator<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
     {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
@@ -247,7 +246,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Fit the CPD.
             match &self.estimator {
                 // Use the provided estimator.
-                Some(f) => f(&dataset).fit(x, z),
+                Some(f) => f(&dataset, x, z),
                 // Otherwise, use the Bayesian estimator.
                 None => BE::new(&dataset).fit(x, z),
             }
@@ -295,11 +294,10 @@ macro_for!($type in [CatBN, GaussBN] {
         }
     }
 
-    impl<R, F, F0> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::WeightedSamples) -> F0,
-        F0: CPDEstimator<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
     {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
@@ -330,7 +328,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // Fit the CPD.
                     match &self.estimator {
                         // Use the provided estimator.
-                        Some(f) => f(&dataset).fit(x, z),
+                        Some(f) => f(&dataset, x, z),
                         // Otherwise, use the Bayesian estimator.
                         None => BE::new(&dataset).fit(x, z),
                     }
@@ -403,11 +401,10 @@ macro_for!($type in [CatBN, GaussBN] {
         }
     }
 
-    impl<R, F, F0> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), F>
+    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::Samples) -> F0,
-        F0: ParCPDEstimator<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
     {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
@@ -434,7 +431,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Fit the CPD.
             match &self.estimator {
                 // Use the provided estimator.
-                Some(f) => f(&dataset).par_fit(x, z),
+                Some(f) => f(&dataset, x, z),
                 // Otherwise, use the Bayesian estimator.
                 None => BE::new(&dataset).par_fit(x, z),
             }
@@ -482,11 +479,10 @@ macro_for!($type in [CatBN, GaussBN] {
         }
     }
 
-    impl<R, F, F0> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::WeightedSamples) -> F0,
-        F0: ParCPDEstimator<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
     {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
@@ -517,7 +513,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // Fit the CPD.
                     match &self.estimator {
                         // Use the provided estimator.
-                        Some(f) => f(&dataset).par_fit(x, z),
+                        Some(f) => f(&dataset, x, z),
                         // Otherwise, use the Bayesian estimator.
                         None => BE::new(&dataset).par_fit(x, z),
                     }

@@ -13,5 +13,8 @@
         "cargo run": true,
         "cargo llvm-cov": true,
         "./coverage.sh": true
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python-envs.pythonProjects": []
 }
