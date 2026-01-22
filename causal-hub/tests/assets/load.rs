@@ -33,75 +33,81 @@ mod tests {
             #[test]
             fn load_asia_full() {
                 // Load BN.
-                let bn = load_asia();
+                let model = load_asia();
 
                 // Check labels.
                 assert_eq!(
+                    model.labels(),
                     &labels![
                         "asia", "bronc", "dysp", "either", "lung", "smoke", "tub", "xray"
-                    ],
-                    bn.labels()
+                    ]
                 );
 
                 // Check graph structure.
-                assert_eq!(bn.graph().vertices().len(), 8);
-                assert!(bn.graph().has_edge(0, 6));
-                assert!(bn.graph().has_edge(1, 2));
-                assert!(bn.graph().has_edge(3, 2));
-                assert!(bn.graph().has_edge(3, 7));
-                assert!(bn.graph().has_edge(4, 3));
-                assert!(bn.graph().has_edge(5, 1));
-                assert!(bn.graph().has_edge(5, 4));
-                assert!(bn.graph().has_edge(6, 3));
+                assert_eq!(model.graph().vertices().len(), 8);
+                assert!(model.graph().has_edge(0, 6));
+                assert!(model.graph().has_edge(1, 2));
+                assert!(model.graph().has_edge(3, 2));
+                assert!(model.graph().has_edge(3, 7));
+                assert!(model.graph().has_edge(4, 3));
+                assert!(model.graph().has_edge(5, 1));
+                assert!(model.graph().has_edge(5, 4));
+                assert!(model.graph().has_edge(6, 3));
 
                 // Check CPDs.
-                assert_eq!(bn.cpds()[0].labels()[0], "asia");
-                assert_eq!(bn.cpds()[1].labels()[0], "bronc");
-                assert_eq!(bn.cpds()[2].labels()[0], "dysp");
-                assert_eq!(bn.cpds()[3].labels()[0], "either");
-                assert_eq!(bn.cpds()[4].labels()[0], "lung");
-                assert_eq!(bn.cpds()[5].labels()[0], "smoke");
-                assert_eq!(bn.cpds()[6].labels()[0], "tub");
-                assert_eq!(bn.cpds()[7].labels()[0], "xray");
+                assert_eq!(model.cpds()[0].labels()[0], "asia");
+                assert_eq!(model.cpds()[1].labels()[0], "bronc");
+                assert_eq!(model.cpds()[2].labels()[0], "dysp");
+                assert_eq!(model.cpds()[3].labels()[0], "either");
+                assert_eq!(model.cpds()[4].labels()[0], "lung");
+                assert_eq!(model.cpds()[5].labels()[0], "smoke");
+                assert_eq!(model.cpds()[6].labels()[0], "tub");
+                assert_eq!(model.cpds()[7].labels()[0], "xray");
 
-                assert_eq!(&labels![], bn.cpds()[0].conditioning_labels());
-                assert_eq!(&labels!["smoke"], bn.cpds()[1].conditioning_labels());
+                assert_eq!(model.cpds()[0].conditioning_labels(), &labels![]);
+                assert_eq!(model.cpds()[1].conditioning_labels(), &labels!["smoke"]);
                 assert_eq!(
-                    &labels!["bronc", "either"],
-                    bn.cpds()[2].conditioning_labels()
+                    model.cpds()[2].conditioning_labels(),
+                    &labels!["bronc", "either"]
                 );
-                assert_eq!(&labels!["lung", "tub"], bn.cpds()[3].conditioning_labels());
-                assert_eq!(&labels!["smoke"], bn.cpds()[4].conditioning_labels());
-                assert_eq!(&labels![], bn.cpds()[5].conditioning_labels());
-                assert_eq!(&labels!["asia"], bn.cpds()[6].conditioning_labels());
-                assert_eq!(&labels!["either"], bn.cpds()[7].conditioning_labels());
+                assert_eq!(
+                    model.cpds()[3].conditioning_labels(),
+                    &labels!["lung", "tub"]
+                );
+                assert_eq!(model.cpds()[4].conditioning_labels(), &labels!["smoke"]);
+                assert_eq!(model.cpds()[5].conditioning_labels(), &labels![]);
+                assert_eq!(model.cpds()[6].conditioning_labels(), &labels!["asia"]);
+                assert_eq!(model.cpds()[7].conditioning_labels(), &labels!["either"]);
 
                 // Check CPDs states.
-                assert_eq!(&states![("asia", ["no", "yes"])], bn.cpds()[0].states());
-                assert_eq!(&states![("bronc", ["no", "yes"])], bn.cpds()[1].states());
-                assert_eq!(&states![("dysp", ["no", "yes"])], bn.cpds()[2].states());
-                assert_eq!(&states![("either", ["no", "yes"])], bn.cpds()[3].states());
-                assert_eq!(&states![("lung", ["no", "yes"])], bn.cpds()[4].states());
-                assert_eq!(&states![("smoke", ["no", "yes"])], bn.cpds()[5].states());
-                assert_eq!(&states![("tub", ["no", "yes"])], bn.cpds()[6].states());
-                assert_eq!(&states![("xray", ["no", "yes"])], bn.cpds()[7].states());
+                assert_eq!(model.cpds()[0].states(), &states![("asia", ["no", "yes"])]);
+                assert_eq!(model.cpds()[1].states(), &states![("bronc", ["no", "yes"])]);
+                assert_eq!(model.cpds()[2].states(), &states![("dysp", ["no", "yes"])]);
+                assert_eq!(
+                    model.cpds()[3].states(),
+                    &states![("either", ["no", "yes"])]
+                );
+                assert_eq!(model.cpds()[4].states(), &states![("lung", ["no", "yes"])]);
+                assert_eq!(model.cpds()[5].states(), &states![("smoke", ["no", "yes"])]);
+                assert_eq!(model.cpds()[6].states(), &states![("tub", ["no", "yes"])]);
+                assert_eq!(model.cpds()[7].states(), &states![("xray", ["no", "yes"])]);
 
                 // Check CPDs parameters.
                 assert_eq!(
-                    bn.cpds()[0].parameters(),
+                    model.cpds()[0].parameters(),
                     array![
                         [0.99, 0.01], //
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[1].parameters(),
+                    model.cpds()[1].parameters(),
                     array![
                         [0.70, 0.30], //
                         [0.40, 0.60],
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[2].parameters(),
+                    model.cpds()[2].parameters(),
                     array![
                         [0.90, 0.10], //
                         [0.30, 0.70], //
@@ -110,7 +116,7 @@ mod tests {
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[3].parameters(),
+                    model.cpds()[3].parameters(),
                     array![
                         [1.00, 0.00], //
                         [0.00, 1.00], //
@@ -119,27 +125,27 @@ mod tests {
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[4].parameters(),
+                    model.cpds()[4].parameters(),
                     array![
                         [0.99, 0.01], //
                         [0.90, 0.10],
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[5].parameters(),
+                    model.cpds()[5].parameters(),
                     array![
                         [0.50, 0.50], //
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[6].parameters(),
+                    model.cpds()[6].parameters(),
                     array![
                         [0.99, 0.01], //
                         [0.95, 0.05],
                     ]
                 );
                 assert_eq!(
-                    bn.cpds()[7].parameters(),
+                    model.cpds()[7].parameters(),
                     array![
                         [0.95, 0.05], //
                         [0.02, 0.98],
@@ -150,10 +156,10 @@ mod tests {
             #[test]
             fn load_child_full() {
                 // Load BN.
-                let bn = load_child();
+                let model = load_child();
 
                 // Get CPD.
-                let cpd = bn.cpds().get("HypDistrib").unwrap();
+                let cpd = model.cpds().get("HypDistrib").unwrap();
 
                 // Check shape.
                 assert_eq!(cpd.shape(), array![2]);
@@ -188,11 +194,11 @@ mod tests {
             #[test]
             fn load_sachs_full() {
                 // Load BN.
-                let bn = load_sachs();
+                let model = load_sachs();
 
                 // Check probability values with exponential notation.
                 assert_eq!(
-                    bn.cpds()[5].to_string(),
+                    model.cpds()[5].to_string(),
                     concat!(
                         "--------------------------------------------------------\n",
                         "|          |          | PIP2     |          |          |\n",

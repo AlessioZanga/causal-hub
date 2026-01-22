@@ -20,4 +20,6 @@ pub enum PyDataset {
     CategoricalIncomplete(PyCatIncTable),
     /// A Gaussian tabular dataset.
     Gaussian(PyGaussTable),
+    /// A Gaussian incomplete tabular dataset.
+    GaussianIncomplete(PyGaussIncTable),
 }

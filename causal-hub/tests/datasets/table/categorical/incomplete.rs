@@ -34,21 +34,22 @@ mod tests {
         let dataset = CatIncTable::new(states.clone(), values.clone());
 
         // Assert the labels.
-        assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+        assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         // Assert the states.
-        assert_eq!(&states, dataset.states());
+        assert_eq!(dataset.states(), &states);
         // Assert the shape.
-        assert_eq!(&array![3, 2, 4], dataset.shape());
+        assert_eq!(dataset.shape(), &array![3, 2, 4],);
         // Assert the values.
-        assert_eq!(&values, dataset.values());
+        assert_eq!(dataset.values(), &values);
         // Assert the sample size.
         assert_eq!(
-            8., //
-            dataset.sample_size()
+            dataset.sample_size(),
+            8. //
         );
 
         // Assert the missing mask.
         assert_eq!(
+            dataset.missing().missing_mask(),
             &array![
                 [false, false, false], //
                 [false, false, false],
@@ -58,73 +59,72 @@ mod tests {
                 [false, false, true],
                 [true, true, true],
                 [true, false, false]
-            ],
-            dataset.missing().missing_mask()
+            ]
         );
         // Assert the missing mask by columns.
         assert_eq!(
-            &array![true, true, true],
-            dataset.missing().missing_mask_by_cols()
+            dataset.missing().missing_mask_by_cols(),
+            &array![true, true, true]
         );
         // Assert the missing mask by rows.
         assert_eq!(
-            &array![false, false, false, true, true, true, true, true],
-            dataset.missing().missing_mask_by_rows()
+            dataset.missing().missing_mask_by_rows(),
+            &array![false, false, false, true, true, true, true, true]
         );
         // Assert the missing count.
-        assert_eq!(7, dataset.missing().missing_count());
+        assert_eq!(dataset.missing().missing_count(), 7);
         // Assert the missing count by columns.
         assert_eq!(
-            &array![3, 2, 2], //
-            dataset.missing().missing_count_by_cols()
+            dataset.missing().missing_count_by_cols(),
+            &array![3, 2, 2] //
         );
         // Assert the missing count by rows.
         assert_eq!(
-            &array![0, 0, 0, 1, 1, 1, 3, 1],
-            dataset.missing().missing_count_by_rows()
+            dataset.missing().missing_count_by_rows(),
+            &array![0, 0, 0, 1, 1, 1, 3, 1]
         );
         // Assert the missing rate.
         assert_relative_eq!(
-            7. / 24., //
-            dataset.missing().missing_rate()
+            dataset.missing().missing_rate(),
+            7. / 24. //
         );
         // Assert the missing rate by columns.
         assert_relative_eq!(
-            &array![3. / 8., 2. / 8., 2. / 8.], //
-            dataset.missing().missing_rate_by_cols()
+            dataset.missing().missing_rate_by_cols(),
+            &array![3. / 8., 2. / 8., 2. / 8.] //
         );
         // Assert the missing rate by rows.
         assert_relative_eq!(
-            &array![0., 0., 0., 1. / 3., 1. / 3., 1. / 3., 1., 1. / 3.],
-            dataset.missing().missing_rate_by_rows()
+            dataset.missing().missing_rate_by_rows(),
+            &array![0., 0., 0., 1. / 3., 1. / 3., 1. / 3., 1., 1. / 3.]
         );
         // Assert the missing correlation.
         assert_relative_eq!(
+            dataset.missing().missing_correlation(),
             &array![
                 [1.0, 0.149071198499986, 0.149071198499986],
                 [0.149071198499986, 1.0, 0.3333333333333333],
                 [0.149071198499986, 0.3333333333333333, 1.0]
-            ],
-            dataset.missing().missing_correlation()
+            ]
         );
         // Assert the missing covariance.
         assert_relative_eq!(
+            dataset.missing().missing_covariance(),
             &array![
                 [0.2678571428571429, 0.0357142857142857, 0.0357142857142857],
                 [0.0357142857142857, 0.2142857142857143, 0.0714285714285714],
                 [0.0357142857142857, 0.0714285714285714, 0.2142857142857143]
-            ],
-            dataset.missing().missing_covariance()
+            ]
         );
         // Assert the complete columns count.
         assert_eq!(
-            0, //
-            dataset.missing().complete_cols_count()
+            dataset.missing().complete_cols_count(),
+            0 //
         );
         // Assert the complete rows count.
         assert_eq!(
-            3, //
-            dataset.missing().complete_rows_count()
+            dataset.missing().complete_rows_count(),
+            3 //
         );
     }
 

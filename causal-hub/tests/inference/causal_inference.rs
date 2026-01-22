@@ -35,7 +35,10 @@ mod tests {
         // Set the true ACE.
         let true_x = states![("bronc", ["no", "yes"])];
         let true_y = states![("dysp", ["no", "yes"])];
-        let true_p = array![[0.8675616185, 0.1324383815], [0.1824193800, 0.8175806200]];
+        let true_p = array![
+            [0.8669638384987691, 0.1330361615012309],
+            [0.18308109137894216, 0.8169189086210579]
+        ];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 
         // Check that the ACE is correct.
@@ -72,10 +75,10 @@ mod tests {
         let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
         let true_y = states![("either", ["no", "yes"])];
         let true_p = array![
-            [0.9765297569, 0.0234702431],
-            [0.8876689189, 0.1123310811],
-            [1.0000000000, 0.0000000000],
-            [0.8260869565, 0.1739130435]
+            [0.9761306532663316, 0.02386934673366834],
+            [0.8873417721518987, 0.11265822784810127],
+            [0.96, 0.04],
+            [0.8, 0.2]
         ];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 
@@ -105,7 +108,10 @@ mod tests {
         // Set the true ACE.
         let true_x = states![("bronc", ["no", "yes"])];
         let true_y = states![("dysp", ["no", "yes"])];
-        let true_p = array![[0.8553890497, 0.1446109503], [0.1864779006, 0.8135220995]];
+        let true_p = array![
+            [0.8548237217683241, 0.145176278231676],
+            [0.18712474554378591, 0.8128752544562141]
+        ];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 
         // Check that the ACE is correct.
@@ -136,10 +142,10 @@ mod tests {
         let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
         let true_y = states![("either", ["no", "yes"])];
         let true_p = array![
-            [0.9805249788, 0.0194750212],
-            [0.8792310907, 0.1207689093],
-            [0.9523809524, 0.0476190476],
-            [0.7083333333, 0.2916666667]
+            [0.9801184433164128, 0.01988155668358714],
+            [0.8789144050104384, 0.12108559498956159],
+            [0.9130434782608695, 0.08695652173913043],
+            [0.6923076923076923, 0.3076923076923077]
         ];
         let true_ace = CatCPD::new(true_y, true_x, true_p);
 

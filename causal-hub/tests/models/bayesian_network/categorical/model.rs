@@ -45,40 +45,40 @@ mod tests {
             ),
         ];
         // Initialize the model.
-        let bn = CatBN::new(graph, cpds);
+        let model = CatBN::new(graph, cpds);
 
         // Check the labels.
-        assert_eq!(&labels!["A", "B", "C"], bn.labels());
+        assert_eq!(model.labels(), &labels!["A", "B", "C"]);
 
         // Check the graph structure.
-        assert_eq!(bn.graph().vertices().len(), 3);
-        assert!(bn.graph().has_edge(0, 1));
-        assert!(bn.graph().has_edge(0, 2));
-        assert!(bn.graph().has_edge(1, 2));
+        assert_eq!(model.graph().vertices().len(), 3);
+        assert!(model.graph().has_edge(0, 1));
+        assert!(model.graph().has_edge(0, 2));
+        assert!(model.graph().has_edge(1, 2));
 
         // Check the distributions.
-        assert_eq!(bn.cpds().len(), 3);
-        assert_eq!(&labels!["A"], bn.cpds()[0].labels());
-        assert_eq!(&labels!["B"], bn.cpds()[1].labels());
-        assert_eq!(&labels!["C"], bn.cpds()[2].labels());
-        assert_eq!(&labels![], bn.cpds()[0].conditioning_labels());
-        assert_eq!(&labels!["A"], bn.cpds()[1].conditioning_labels());
-        assert_eq!(&labels!["A", "B"], bn.cpds()[2].conditioning_labels());
+        assert_eq!(model.cpds().len(), 3);
+        assert_eq!(model.cpds()[0].labels(), &labels!["A"]);
+        assert_eq!(model.cpds()[1].labels(), &labels!["B"]);
+        assert_eq!(model.cpds()[2].labels(), &labels!["C"]);
+        assert_eq!(model.cpds()[0].conditioning_labels(), &labels![]);
+        assert_eq!(model.cpds()[1].conditioning_labels(), &labels!["A"]);
+        assert_eq!(model.cpds()[2].conditioning_labels(), &labels!["A", "B"]);
 
         // Check the states.
         assert_eq!(
-            bn.cpds()[0].parameters(),
+            model.cpds()[0].parameters(),
             &array![[0.1, 0.9]] //
         );
         assert_eq!(
-            bn.cpds()[1].parameters(),
+            model.cpds()[1].parameters(),
             &array![
                 [0.2, 0.8], //
                 [0.4, 0.6], //
             ]
         );
         assert_eq!(
-            bn.cpds()[2].parameters(),
+            model.cpds()[2].parameters(),
             &array![
                 [0.1, 0.9], //
                 [0.3, 0.7], //
@@ -88,7 +88,7 @@ mod tests {
         );
 
         // Check the sample size.
-        assert_eq!(bn.parameters_size(), 7);
+        assert_eq!(model.parameters_size(), 7);
     }
 
     #[test]

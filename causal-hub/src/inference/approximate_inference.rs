@@ -4,7 +4,7 @@ use dry::macro_for;
 use rand::{Rng, SeedableRng};
 
 use crate::{
-    estimators::{CPDEstimator, MLE},
+    estimators::{BE, CPDEstimator, ParCPDEstimator},
     inference::Modelled,
     models::{BN, CatBN, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
@@ -13,14 +13,15 @@ use crate::{
 
 /// An approximate inference engine.
 #[derive(Debug)]
-pub struct ApproximateInference<'a, R, M, E> {
+pub struct ApproximateInference<'a, R, M, E, F> {
     rng: RefCell<&'a mut R>,
     model: &'a M,
     evidence: Option<&'a E>,
+    estimator: Option<F>,
     sample_size: Option<usize>,
 }
 
-impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
+impl<'a, R, M> ApproximateInference<'a, R, M, (), ()> {
     /// Construct a new approximate inference instance.
     ///
     /// # Arguments
@@ -41,12 +42,36 @@ impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
             rng,
             model,
             evidence: None,
+            estimator: None,
             sample_size: None,
         }
     }
 }
 
-impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
+impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
+    /// Add an estimator to the approximate inference instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `estimator` - A function that takes a reference to samples, the sets of variables `x` and `z`, and returns a CPD estimator.
+    ///
+    /// # Returns
+    ///
+    /// Return a new approximate inference instance with the estimator.
+    ///
+    pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T>
+    where
+        T: Fn(&A, &Set<usize>, &Set<usize>) -> B,
+    {
+        ApproximateInference {
+            rng: self.rng,
+            model: self.model,
+            evidence: self.evidence,
+            estimator: Some(estimator),
+            sample_size: self.sample_size,
+        }
+    }
+
     /// Add evidence to the approximate inference instance.
     ///
     /// # Arguments
@@ -58,11 +83,12 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
     /// Return a new approximate inference instance with evidence.
     ///
     #[inline]
-    pub const fn with_evidence<T>(self, evidence: &'a T) -> ApproximateInference<'a, R, M, T> {
+    pub fn with_evidence<T>(self, evidence: &'a T) -> ApproximateInference<'a, R, M, T, F> {
         ApproximateInference {
             rng: self.rng,
             model: self.model,
             evidence: Some(evidence),
+            estimator: self.estimator,
             sample_size: self.sample_size,
         }
     }
@@ -91,7 +117,7 @@ impl<'a, R, M, E> ApproximateInference<'a, R, M, E> {
     }
 }
 
-impl<R, M, E> Modelled<M> for ApproximateInference<'_, R, M, E> {
+impl<R, M, E, F> Modelled<M> for ApproximateInference<'_, R, M, E, F> {
     #[inline]
     fn model(&self) -> &M {
         self.model
@@ -123,7 +149,7 @@ where
     fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> T::CPD;
 }
 
-impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
+impl<'a, R, E, F> ApproximateInference<'a, R, CatBN, E, F> {
     #[inline]
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
         // Get the sample size or compute it if not provided.
@@ -141,7 +167,7 @@ impl<'a, R, E> ApproximateInference<'a, R, CatBN, E> {
     }
 }
 
-impl<'a, R, E> ApproximateInference<'a, R, GaussBN, E> {
+impl<'a, R, E, F> ApproximateInference<'a, R, GaussBN, E, F> {
     #[inline]
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
         // Get the sample size or compute it if not provided.
@@ -159,7 +185,10 @@ impl<'a, R, E> ApproximateInference<'a, R, GaussBN, E> {
 
 macro_for!($type in [CatBN, GaussBN] {
 
-    impl<R: Rng> BNInference<$type> for ApproximateInference<'_, R, $type, ()> {
+    impl<R> BNInference<$type> for ApproximateInference<'_, R, $type, (), ()>
+    where
+        R: Rng,
+    {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
@@ -182,14 +211,52 @@ macro_for!($type in [CatBN, GaussBN] {
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
             let dataset = sampler.sample_n(n);
-            // Initialize the estimator.
-            let estimator = MLE::new(&dataset);
             // Fit the CPD.
-            estimator.fit(x, z)
+            BE::new(&dataset).fit(x, z)
         }
     }
 
-    impl<R: Rng> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence> {
+    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, (), F>
+    where
+        R: Rng,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+    {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+            // Assert X is not empty.
+            assert!(!x.is_empty(), "Variables X must not be empty.");
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            // Assert X and Z are in the model.
+            assert!(
+                x.union(z).all(|&i| i < self.model.labels().len()),
+                "Variables X and Z must be in the model."
+            );
+
+            // Get the sample size.
+            let n = self.sample_size(x, z);
+            // Get the RNG.
+            let mut rng = self.rng.borrow_mut();
+            // Initialize the sampler.
+            let sampler = ForwardSampler::new(&mut rng, self.model);
+            // Generate n samples from the model.
+            // TODO: Avoid generating the full dataset,
+            //       e.g., by only sampling the variables in X U Z, and
+            //       by using batching to reduce memory usage.
+            let dataset = sampler.sample_n(n);
+            // Fit the CPD.
+            match &self.estimator {
+                // Use the provided estimator.
+                Some(f) => f(&dataset, x, z),
+                // Otherwise, use the Bayesian estimator.
+                None => BE::new(&dataset).fit(x, z),
+            }
+        }
+    }
+
+    impl<R> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, ()>
+    where
+        R: Rng,
+    {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
@@ -216,10 +283,55 @@ macro_for!($type in [CatBN, GaussBN] {
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
                     let dataset = sampler.sample_n(n);
-                    // Initialize the estimator.
-                    let estimator = MLE::new(&dataset);
                     // Fit the CPD.
-                    estimator.fit(x, z)
+                    BE::new(&dataset).fit(x, z)
+                }
+                // Delegate to empty evidence case.
+                None => ApproximateInference::new(&mut rng, self.model)
+                    .with_sample_size(n)
+                    .estimate(x, z),
+            }
+        }
+    }
+
+    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    where
+        R: Rng,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+    {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+            // Assert X is not empty.
+            assert!(!x.is_empty(), "Variables X must not be empty.");
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            // Assert X and Z are in the model.
+            assert!(
+                x.union(z).all(|&i| i < self.model.labels().len()),
+                "Variables X and Z must be in the model."
+            );
+
+            // Get the sample size.
+            let n = self.sample_size(x, z);
+            // Get the RNG.
+            let mut rng = self.rng.borrow_mut();
+            // Check if evidence is actually provided.
+            match self.evidence {
+                // Get the evidence.
+                Some(evidence) => {
+                    // Initialize the sampler.
+                    let sampler = ImportanceSampler::new(&mut rng, self.model, evidence);
+                    // Generate n samples from the model.
+                    // TODO: Avoid generating the full dataset,
+                    //       e.g., by only sampling the variables in X U Z, and
+                    //       by using batching to reduce memory usage.
+                    let dataset = sampler.sample_n(n);
+                    // Fit the CPD.
+                    match &self.estimator {
+                        // Use the provided estimator.
+                        Some(f) => f(&dataset, x, z),
+                        // Otherwise, use the Bayesian estimator.
+                        None => BE::new(&dataset).fit(x, z),
+                    }
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)
@@ -258,7 +370,10 @@ where
 
 macro_for!($type in [CatBN, GaussBN] {
 
-    impl<R: Rng + SeedableRng> ParBNInference<$type> for ApproximateInference<'_, R, $type, ()> {
+    impl<R> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), ()>
+    where
+        R: Rng + SeedableRng,
+    {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
@@ -281,14 +396,52 @@ macro_for!($type in [CatBN, GaussBN] {
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
             let dataset = sampler.par_sample_n(n);
-            // Initialize the estimator.
-            let estimator = MLE::new(&dataset);
             // Fit the CPD.
-            estimator.fit(x, z)
+            BE::new(&dataset).par_fit(x, z)
         }
     }
 
-    impl<R: Rng + SeedableRng> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence> {
+    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), F>
+    where
+        R: Rng + SeedableRng,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+    {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+            // Assert X is not empty.
+            assert!(!x.is_empty(), "Variables X must not be empty.");
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            // Assert X and Z are in the model.
+            assert!(
+                x.union(z).all(|&i| i < self.model.labels().len()),
+                "Variables X and Z must be in the model."
+            );
+
+            // Get the sample size.
+            let n = self.sample_size(x, z);
+            // Get the RNG.
+            let mut rng = self.rng.borrow_mut();
+            // Initialize the sampler.
+            let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model);
+            // Generate n samples from the model.
+            // TODO: Avoid generating the full dataset,
+            //       e.g., by only sampling the variables in X U Z, and
+            //       by using batching to reduce memory usage.
+            let dataset = sampler.par_sample_n(n);
+            // Fit the CPD.
+            match &self.estimator {
+                // Use the provided estimator.
+                Some(f) => f(&dataset, x, z),
+                // Otherwise, use the Bayesian estimator.
+                None => BE::new(&dataset).par_fit(x, z),
+            }
+        }
+    }
+
+    impl<R> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, ()>
+    where
+        R: Rng + SeedableRng,
+    {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
             // Assert X is not empty.
             assert!(!x.is_empty(), "Variables X must not be empty.");
@@ -315,10 +468,55 @@ macro_for!($type in [CatBN, GaussBN] {
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
                     let dataset = sampler.par_sample_n(n);
-                    // Initialize the estimator.
-                    let estimator = MLE::new(&dataset);
                     // Fit the CPD.
-                    estimator.fit(x, z)
+                    BE::new(&dataset).par_fit(x, z)
+                }
+                // Delegate to empty evidence case.
+                None => ApproximateInference::new(&mut rng, self.model)
+                    .with_sample_size(n)
+                    .estimate(x, z),
+            }
+        }
+    }
+
+    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    where
+        R: Rng + SeedableRng,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+    {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+            // Assert X is not empty.
+            assert!(!x.is_empty(), "Variables X must not be empty.");
+            // Assert X and Z are disjoint.
+            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            // Assert X and Z are in the model.
+            assert!(
+                x.union(z).all(|&i| i < self.model.labels().len()),
+                "Variables X and Z must be in the model."
+            );
+
+            // Get the sample size.
+            let n = self.sample_size(x, z);
+            // Get the RNG.
+            let mut rng = self.rng.borrow_mut();
+            // Check if evidence is actually provided.
+            match self.evidence {
+                // Get the evidence.
+                Some(evidence) => {
+                    // Initialize the sampler.
+                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence);
+                    // Generate n samples from the model.
+                    // TODO: Avoid generating the full dataset,
+                    //       e.g., by only sampling the variables in X U Z, and
+                    //       by using batching to reduce memory usage.
+                    let dataset = sampler.par_sample_n(n);
+                    // Fit the CPD.
+                    match &self.estimator {
+                        // Use the provided estimator.
+                        Some(f) => f(&dataset, x, z),
+                        // Otherwise, use the Bayesian estimator.
+                        None => BE::new(&dataset).par_fit(x, z),
+                    }
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)

@@ -6,12 +6,14 @@ from causal_hub.datasets import (
     CatTrj,
     CatTrjEv,
     CatTrjs,
+    GaussIncTable,
     GaussTable,
     MissingTable,
 )
 
 
 def test_categorical_table() -> None:
+    """Test creation and conversion of complete Categorical Table."""
     # Create a sample DataFrame with categorical columns.
     df = pd.DataFrame(
         {
@@ -49,6 +51,7 @@ def test_categorical_table() -> None:
 
 
 def test_gaussian_table() -> None:
+    """Test creation and conversion of complete Gaussian Table."""
     # Create a sample DataFrame with float64 columns.
     df = pd.DataFrame(
         {
@@ -82,6 +85,7 @@ def test_gaussian_table() -> None:
 
 
 def test_categorical_trajectory() -> None:
+    """Test creation and conversion of Categorical Trajectory (single)."""
     # Create a sample DataFrame with a time column and categorical columns.
     df = pd.DataFrame(
         {
@@ -129,6 +133,7 @@ def test_categorical_trajectory() -> None:
 
 
 def test_categorical_trajectory_with_states() -> None:
+    """Test creation of Categorical Trajectory with predefined states."""
     # Create a sample DataFrame with a time column and categorical columns.
     df = pd.DataFrame(
         {
@@ -164,6 +169,7 @@ def test_categorical_trajectory_with_states() -> None:
 
 
 def test_categorical_trajectories() -> None:
+    """Test creation and conversion of multiple Categorical Trajectories."""
     # Create two sample DataFrames with a time column and categorical columns.
     dfs = [
         pd.DataFrame(
@@ -246,6 +252,7 @@ def test_categorical_trajectories() -> None:
 
 
 def test_categorical_trajectories_with_states() -> None:
+    """Test creation of multiple Categorical Trajectories with predefined states."""
     # Create two sample DataFrames with a time column and categorical columns.
     dfs = [
         pd.DataFrame(
@@ -338,6 +345,7 @@ def test_categorical_trajectories_with_states() -> None:
 
 
 def test_categorical_trajectory_evidence() -> None:
+    """Test creation of Categorical Trajectory Evidence handling."""
     # Create a sample DataFrame with `event`, `state`, `start_time`, and `end_time` columns.
     df = pd.DataFrame(
         {
@@ -371,6 +379,7 @@ def test_categorical_trajectory_evidence() -> None:
 
 
 def test_categorical_incomplete_table() -> None:
+    """Test creation and conversion of Categorical Incomplete Table (with missing values)."""
     # Create a sample DataFrame with categorical columns and missing values.
     df = pd.DataFrame(
         {
@@ -418,6 +427,7 @@ def test_categorical_incomplete_table() -> None:
 
 
 def test_missing_table_numerical() -> None:
+    """Test MissingTable from numerical mask."""
     # Create a MissingTable.
     # labels, mask.
     mask = np.array(
@@ -432,3 +442,31 @@ def test_missing_table_numerical() -> None:
     np.testing.assert_array_equal(missing.missing_mask(), mask)
     assert missing.missing_count() == 2
     assert missing.missing_rate() == 1.0 / 3.0
+
+
+def test_gaussian_incomplete_table() -> None:
+    """Test creation and conversion of Gaussian Incomplete Table (with missing values)."""
+    # Create a sample DataFrame with missing values.
+    df = pd.DataFrame(
+        {
+            "A": [0.0, 1.0, 2.0, np.nan, 0.0, 1.0, np.nan, np.nan],
+            "B": [1.0, 0.0, 1.0, 0.0, np.nan, 1.0, np.nan, 1.0],
+            "C": [2.0, 2.0, 0.0, 1.0, 3.0, np.nan, np.nan, 3.0],
+        }
+    )
+
+    # Create a GaussIncTable object.
+    table = GaussIncTable.from_pandas(df)
+
+    # Check the variables.
+    assert table.labels() == ["A", "B", "C"]
+
+    # Check values.
+    np.testing.assert_array_equal(table.values(), df.to_numpy())
+
+    # Convert back.
+    pd.testing.assert_frame_equal(df, table.to_pandas())
+
+    # Check missing.
+    missing = table.missing()
+    assert missing.missing_count() == 7

@@ -1,11 +1,24 @@
 import tempfile
 
 import networkx as nx
-from causal_hub.assets import load_asia, load_eating, load_ecoli70
+import numpy as np
+import pandas as pd
+import pytest
+from causal_hub.assets import (
+    load_asia,
+    load_cancer,
+    load_earthquake,
+    load_eating,
+    load_ecoli70,
+    load_sachs,
+    load_survey,
+)
+from causal_hub.datasets import GaussIncTable
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
 def test_digraph_from_networkx() -> None:
+    """Test creating a Directed Graph from NetworkX graph."""
     # Define vertices and edges for a simple directed graph.
     vertices = ["A", "B", "C", "D"]
     edges = [("A", "B"), ("B", "C"), ("C", "D")]
@@ -23,6 +36,7 @@ def test_digraph_from_networkx() -> None:
 
 
 def test_digraph_to_networkx() -> None:
+    """Test converting a Directed Graph to NetworkX graph."""
     # Define vertices and edges for a simple directed graph.
     vertices = ["A", "B", "C", "D"]
     edges = [("A", "B"), ("B", "C"), ("C", "D")]
@@ -42,6 +56,7 @@ def test_digraph_to_networkx() -> None:
 
 
 def test_digraph_graphical_separation() -> None:
+    """Test graphical separation (d-separation) on a known network (Asia)."""
     # Get the BN from the assets.
     bn = load_asia()
     # Get the graph from the BN.
@@ -63,6 +78,7 @@ def test_digraph_graphical_separation() -> None:
 
 
 def test_asia() -> None:
+    """Test loading and properties of the Asia network."""
     # Load the Asia BN.
     asia = load_asia()
     # Get the graph of the BN.
@@ -78,6 +94,7 @@ def test_asia() -> None:
 
 
 def test_asia_sample() -> None:
+    """Test sampling from the Asia network."""
     # Load the Asia BN.
     asia = load_asia()
     # Sample 1000 data points from the BN.
@@ -93,6 +110,7 @@ def test_asia_sample() -> None:
 
 
 def test_asia_fit() -> None:
+    """Test fitting the Asia network structure to sampled data."""
     # Load the Asia BN.
     asia = load_asia()
     # Sample 1000 data points from the BN.
@@ -107,6 +125,7 @@ def test_asia_fit() -> None:
 
 
 def test_asia_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Asia network."""
     # Load the Asia BN.
     asia = load_asia()
 
@@ -126,6 +145,7 @@ def test_asia_read_to_json_file() -> None:
 
 
 def test_ecoli70() -> None:
+    """Test loading and properties of the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Get the graph of the BN.
@@ -188,6 +208,7 @@ def test_ecoli70() -> None:
 
 
 def test_ecoli70_sample() -> None:
+    """Test sampling from the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Sample 1000 data points from the BN.
@@ -250,6 +271,7 @@ def test_ecoli70_sample() -> None:
 
 
 def test_ecoli70_fit() -> None:
+    """Test fitting the Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
     # Sample 1000 data points from the BN.
@@ -264,6 +286,7 @@ def test_ecoli70_fit() -> None:
 
 
 def test_ecoli70_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Ecoli70 network."""
     # Load the Ecoli70 BN.
     ecoli70 = load_ecoli70()
 
@@ -285,6 +308,7 @@ def test_ecoli70_read_to_json_file() -> None:
 
 
 def test_eating() -> None:
+    """Test loading and properties of the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Get the graph of the CTBN.
@@ -307,6 +331,7 @@ def test_eating() -> None:
 
 
 def test_eating_sample() -> None:
+    """Test sampling from the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Sample 1000 trajectories from the CTBN.
@@ -322,6 +347,7 @@ def test_eating_sample() -> None:
 
 
 def test_eating_fit() -> None:
+    """Test fitting the Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
     # Sample 1000 trajectories from the CTBN.
@@ -336,6 +362,7 @@ def test_eating_fit() -> None:
 
 
 def test_eating_read_to_json_file() -> None:
+    """Test JSON serialization/deserialization for Eating network."""
     # Load the Eating CTBN.
     eating = load_eating()
 
@@ -357,6 +384,7 @@ def test_eating_read_to_json_file() -> None:
 
 
 def test_categorical_bayesian_network_fit_incomplete() -> None:
+    """Test fitting a Categorical BN from incomplete data using MLE."""
     import numpy as np
     import pandas as pd
     from causal_hub.datasets import CatIncTable
@@ -398,6 +426,7 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
 
 
 def test_gaussian_bayesian_network_fit_numerical() -> None:
+    """Test fitting a Gaussian BN from numerical data using MLE."""
     import numpy as np
     import pandas as pd
     from causal_hub.datasets import GaussTable
@@ -431,3 +460,152 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     np.testing.assert_allclose(params_B["intercept"], [1.0], atol=0.05)
     np.testing.assert_allclose(params_B["coefficients"], [[2.0]], atol=0.05)
     np.testing.assert_allclose(params_B["covariance"], [[0.01]], atol=0.01)
+
+
+def test_ecoli70_fit_incomplete() -> None:
+    """Test fitting the Ecoli70 network from incomplete data."""
+    # Load the Ecoli70 BN.
+    ecoli70 = load_ecoli70()
+    # Sample 1000 data points from the BN.
+    sample = ecoli70.sample(1000, seed=42)
+    # Get values.
+    values = sample.values()
+    # Introduce missing values.
+    # Set 10% of values to NaN.
+    rng = np.random.default_rng(42)
+    mask = rng.random(values.shape) < 0.1
+    values[mask] = np.nan
+
+    # Create incomplete dataset.
+    df = pd.DataFrame(values, columns=sample.labels())
+    dataset = GaussIncTable.from_pandas(df)
+
+    # Fit a new BN to the sample.
+    fitted = GaussBN.fit(dataset, ecoli70.graph())
+
+    # Check the fit.
+    assert fitted.labels() == ecoli70.labels()
+    # TODO: Check parameters.
+
+
+@pytest.mark.parametrize(
+    "loader, x, z, target, expected, tol",
+    [
+        (load_asia, ["lung"], {"smoke": "yes"}, {"lung": "yes"}, 0.1000, 0.05),
+        (
+            load_asia,
+            ["lung", "bronc"],
+            {"smoke": "yes", "asia": "yes"},
+            {"lung": "yes", "bronc": "yes"},
+            0.0600,
+            0.05,
+        ),
+        (load_cancer, ["Cancer"], {"Smoker": "True"}, {"Cancer": "True"}, 0.0320, 0.02),
+        (
+            load_cancer,
+            ["Cancer", "Dyspnoea"],
+            {"Smoker": "True", "Pollution": "low"},
+            {"Cancer": "True", "Dyspnoea": "True"},
+            0.0195,
+            0.02,
+        ),
+        (
+            load_earthquake,
+            ["Alarm"],
+            {"Burglary": "True"},
+            {"Alarm": "True"},
+            0.84,
+            0.1,
+        ),
+        (
+            load_earthquake,
+            ["MaryCalls", "JohnCalls"],
+            {"Alarm": "True", "Earthquake": "True"},
+            {"MaryCalls": "True", "JohnCalls": "True"},
+            0.6300,
+            0.05,
+        ),
+        (load_sachs, ["Raf"], {"PKA": "LOW"}, {"Raf": "LOW"}, 0.1146, 0.05),
+        (
+            load_sachs,
+            ["Akt", "Erk"],
+            {"PKA": "LOW", "PKC": "LOW"},
+            {"Akt": "LOW", "Erk": "LOW"},
+            0.1903,
+            0.05,
+        ),
+        (load_survey, ["E"], {"R": "big"}, {"E": "high"}, 0.7330, 0.05),
+        (
+            load_survey,
+            ["T", "O"],
+            {"A": "adult", "S": "M"},
+            {"T": "car", "O": "emp"},
+            0.5279,
+            0.05,
+        ),
+    ],
+)
+def test_inference_accuracy(loader, x, z, target, expected, tol) -> None:
+    """Test inference accuracy against precomputed values."""
+    # Load the model.
+    bn = loader()
+
+    # Estimate the query.
+    # We use a fixed seed for reproducibility.
+    # Since 'estimate' uses approximate inference by default (sampling),
+    # we need to ensure reasonable convergence or sample size.
+    # The default checks usually run with reasonable defaults.
+    est_cpd = bn.estimate(x=x, z=list(z.keys()), seed=42)
+
+    # Get the parameters.
+    params = est_cpd.parameters()
+
+    # Helper to map configuration to index
+    def map_config(config, variables, shapes, states_dict):
+        idx = 0
+        stride = 1
+        # Reverse iteration for C-order (last dim varies fastest)
+        for i in range(len(variables) - 1, -1, -1):
+            var = variables[i]
+            val = config[var]
+            state_idx = states_dict[var].index(val)
+            idx += state_idx * stride
+            stride *= shapes[i]
+        return idx
+
+    # Get states mapping
+    t_states = est_cpd.states()
+    c_states = est_cpd.conditioning_states()
+
+    # Calculate indices
+    # Conditioning index (rows)
+    # Handle empty evidence case
+    if not z:
+        z_idx = 0
+    else:
+        # Note: estimate() uses conditioning_labels() which might define the order.
+        z_idx = map_config(
+            z,
+            est_cpd.conditioning_labels(),
+            est_cpd.conditioning_shape(),
+            c_states,
+        )
+
+    # Target index (cols)
+    x_idx = map_config(target, est_cpd.labels(), est_cpd.shape(), t_states)
+
+    # Get probability
+    # Layout matches: (Conditioning, Target)
+    if params.ndim == 2:
+        prob = params[z_idx, x_idx]
+    else:
+        # Should be 2D even if singleton dims?
+        # If 1D, it might be flattened.
+        # Check layout.
+
+        # Let's assume 2D as seen in inspection.
+        # But for empty Z, shape was (1, 2).
+        prob = params[z_idx, x_idx]
+
+    print(f"Computed: {prob}, Expected: {expected}")
+    assert abs(prob - expected) < tol

@@ -4,8 +4,8 @@ use std::{
 };
 
 use backend::{
-    datasets::GaussTable,
-    estimators::MLE,
+    datasets::{GaussIncTable, GaussTable},
+    estimators::{BE, CPDEstimator, MLE, ParCPDEstimator},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
@@ -14,7 +14,11 @@ use backend::{
     models::{BN, DiGraph, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
+use pyo3::{
+    exceptions::PyValueError,
+    prelude::*,
+    types::{PyDict, PyType},
+};
 use pyo3_stub_gen::derive::*;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -22,7 +26,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use crate::{
     datasets::{PyDataset, PyGaussTable},
     estimators::PyBNEstimator,
-    impl_from_into_lock, indices_from,
+    impl_from_into_lock, indices_from, kwarg,
     models::{PyDiGraph, PyGaussCPD},
 };
 
@@ -162,9 +166,13 @@ impl PyGaussBN {
     /// graph: DiGraph
     ///     The graph to fit the model to.
     /// method: str
-    ///     The method to use for fitting (default is `mle`).
+    ///     The method to use for fitting (default is `be`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
+    /// **kwargs: dict | None
+    ///     Optional keyword arguments:
+    ///
+    ///         - `alpha`: The prior of the Bayesian estimator (float64).
     ///
     /// Returns
     /// -------
@@ -175,8 +183,9 @@ impl PyGaussBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        method="mle",
+        method="be",
         parallel=true,
+        **kwargs
     ))]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
@@ -185,24 +194,36 @@ impl PyGaussBN {
         graph: &Bound<'_, PyDiGraph>,
         method: &str,
         parallel: bool,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
 
-        // Match the dataset type.
-        match dataset {
-            PyDataset::Gaussian(dataset) => {
+        // Macro to fit the model.
+        macro_rules! fit {
+            ($type: ty, $dataset: expr) => {{
                 // Get the dataset.
-                let dataset: GaussTable = dataset.into();
+                let dataset: $type = $dataset.into();
                 // Initialize the estimator.
                 let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
                     // Initialize the maximum likelihood estimator.
                     "mle" => Box::new(MLE::new(&dataset)),
+                    // Initialize the Bayesian estimator.
+                    "be" => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset);
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", f64) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
                     // Raise an error if the method is unknown.
                     method => {
                         return Err(PyErr::new::<PyValueError, _>(format!(
                             "Unknown method: '{}', choose one of the following: \n\
-                            \t- 'mle' - Maximum likelihood estimator.",
+                            \t- 'mle' - Maximum likelihood estimator, \n\
+                            \t- 'be' - Bayesian estimator.",
                             method
                         )));
                     }
@@ -217,7 +238,13 @@ impl PyGaussBN {
                 };
                 // Return the fitted model.
                 Ok(model.into())
-            }
+            }};
+        }
+
+        // Match the dataset type.
+        match dataset {
+            PyDataset::Gaussian(dataset) => fit!(GaussTable, dataset),
+            PyDataset::GaussianIncomplete(dataset) => fit!(GaussIncTable, dataset),
             _ => Err(PyErr::new::<PyValueError, _>(
                 "Expected a Gaussian dataset for a Gaussian Bayesian network.",
             )),
@@ -274,6 +301,8 @@ impl PyGaussBN {
     ///     A variable or an iterable of variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// method: str
+    ///     The method to use for estimation (default is `be`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -284,12 +313,13 @@ impl PyGaussBN {
     /// GaussCPD
     ///     A new conditional probability distribution.
     ///
-    #[pyo3(signature = (x, z, seed=31, parallel=true))]
+    #[pyo3(signature = (x, z, method = "be", seed=31, parallel=true))]
     pub fn estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        method: &str,
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyGaussCPD> {
@@ -301,14 +331,51 @@ impl PyGaussBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
-        let estimate = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || estimator.par_estimate(&x, &z))
-        } else {
-            // Execute sequentially.
-            estimator.estimate(&x, &z)
+        let estimate = match method {
+            // Initialize the maximum likelihood estimator.
+            "mle" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| MLE::new(d).par_fit(x, z))
+                            .par_estimate(&x, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    engine
+                        .with_estimator(|d, x, z| MLE::new(d).fit(x, z))
+                        .estimate(&x, &z)
+                }
+            }
+            // Initialize the Bayesian estimator.
+            "be" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| BE::new(d).par_fit(x, z))
+                            .par_estimate(&x, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    engine
+                        .with_estimator(|d, x, z| BE::new(d).fit(x, z))
+                        .estimate(&x, &z)
+                }
+            }
+            _ => {
+                return Err(PyErr::new::<PyValueError, _>(format!(
+                    "Unknown method: '{}', choose one of the following: \n\
+                    \t- 'mle' - Maximum likelihood estimator, \n\
+                    \t- 'be' - Bayesian estimator.",
+                    method
+                )));
+            }
         };
         // Return the dataset.
         Ok(estimate.into())
@@ -324,6 +391,8 @@ impl PyGaussBN {
     ///     An outcome variable or an iterable of outcome variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// method: str
+    ///     The method to use for estimation (default is `be`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -334,13 +403,14 @@ impl PyGaussBN {
     /// GaussCPD | None
     ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
-    #[pyo3(signature = (x, y, z, seed=31, parallel=true))]
+    #[pyo3(signature = (x, y, z, method="be", seed=31, parallel=true))]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        method: &str,
         seed: u64,
         parallel: bool,
     ) -> PyResult<Option<PyGaussCPD>> {
@@ -353,14 +423,48 @@ impl PyGaussBN {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
         // Estimate from the model.
-        let estimate = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || CausalInference::new(&estimator).par_cace_estimate(&x, &y, &z))
-        } else {
-            // Execute sequentially.
-            CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
+        let estimate = match method {
+            // Initialize the maximum likelihood estimator.
+            "mle" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| MLE::new(d).par_fit(x, z));
+                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| MLE::new(d).fit(x, z));
+                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                }
+            }
+            // Initialize the Bayesian estimator.
+            "be" => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| BE::new(d).par_fit(x, z));
+                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| BE::new(d).fit(x, z));
+                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                }
+            }
+            // Raise an error if the method is unknown.
+            method => {
+                return Err(PyErr::new::<PyValueError, _>(format!(
+                    "Unknown method: '{}', choose one of the following: \n\
+                    \t- 'mle' - Maximum likelihood estimator, \n\
+                    \t- 'be' - Bayesian estimator.",
+                    method
+                )));
+            }
         };
         // Return the dataset.
         Ok(estimate.map(|e| e.into()))

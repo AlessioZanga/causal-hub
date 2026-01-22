@@ -30,7 +30,7 @@ mod tests {
 
                     let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
-                    assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+                    assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
                     assert!(
                         dataset
                             .states()
@@ -118,7 +118,7 @@ mod tests {
 
                     let values = array![[0, 0, 0], [0, M, 1], [M, 1, 1], [1, 1, 1]];
 
-                    assert_eq!(&labels!["A", "B", "C"], dataset.labels());
+                    assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
                     assert!(
                         dataset
                             .states()
@@ -177,7 +177,7 @@ mod tests {
 
                 let values = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
-                assert_eq!(&labels!["X", "Y", "Z"], dataset.labels());
+                assert_eq!(dataset.labels(), &labels!["X", "Y", "Z"]);
                 assert_eq!(dataset.values(), &values);
             }
 

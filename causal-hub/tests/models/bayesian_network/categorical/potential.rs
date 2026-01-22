@@ -28,7 +28,7 @@ mod tests {
         let phi = CatPhi::new(s.clone(), p.clone());
 
         // Assert the labels.
-        assert_eq!(&labels!["A", "B", "C"], phi.labels(),);
+        assert_eq!(phi.labels(), &labels!["A", "B", "C"]);
         // Assert the states.
         assert_eq!(phi.states(), &s);
         // Assert the shape.
