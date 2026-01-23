@@ -12,7 +12,7 @@ use crate::{
     io::CsvIO,
     models::{CPD, Labelled},
     set, states,
-    types::{Labels, Map, Set, States},
+    types::{Labels, Map, Result, Set, States},
 };
 
 /// A struct representing an incomplete categorical dataset.
@@ -228,11 +228,13 @@ impl CatIncTable {
             let d_pri_rpri = self.pw_deletion(pri);
             let d_pri_ri_rpri = self.pw_deletion(&(&set![ri] | pri));
             // Map the indices w.r.t. the new dataset.
-            let x_pri_rpri = d_pri_rpri.indices_from(pri, self.labels());
-            let x_pri_ri_rpri = d_pri_ri_rpri.indices_from(pri, self.labels());
+            let x_pri_rpri = d_pri_rpri.indices_from(pri, self.labels()).unwrap();
+            let x_pri_ri_rpri = d_pri_ri_rpri.indices_from(pri, self.labels()).unwrap();
             // Compute the distribution.
-            let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![]);
-            let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri).fit(&x_pri_ri_rpri, &set![]);
+            let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![]).unwrap();
+            let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri)
+                .fit(&x_pri_ri_rpri, &set![])
+                .unwrap();
 
             /* Compute the weights. */
 
@@ -247,8 +249,8 @@ impl CatIncTable {
                     // Get the parents values for the j-th rows.
                     let pri_j = pri.iter().map(|&j| d_u_j[j]).collect();
                     // Get the parents weights associated to each row.
-                    *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![]);
-                    *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![]);
+                    *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![]).unwrap();
+                    *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![]).unwrap();
                 });
             // Compute the `R_i`-specific weights.
             b_pri_rpri / b_pri_ri_rpri
@@ -457,7 +459,7 @@ impl IncDataset for CatIncTable {
         let b_u = self.ipw_weights(&d_u, &u, pr);
 
         // Map the indices to the restricted dataset.
-        let x = d_u.indices_from(x, self.labels());
+        let x = d_u.indices_from(x, self.labels()).unwrap();
         // Since U is a superset of X, restrict U to X.
         let d_x = d_u.select(&x);
 
@@ -538,7 +540,7 @@ impl IncDataset for CatIncTable {
 }
 
 impl CsvIO for CatIncTable {
-    fn from_csv_reader<R: Read>(reader: R) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
@@ -547,8 +549,7 @@ impl CsvIO for CatIncTable {
 
         // Read the headers.
         let labels: Labels = reader
-            .headers()
-            .expect("Failed to read the headers.")
+            .headers()?
             .into_iter()
             .map(|x| x.to_owned())
             .collect();
@@ -590,28 +591,24 @@ impl CsvIO for CatIncTable {
         let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
+        let values = values.into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
-        Self::new(states, values)
+        Ok(Self::new(states, values))
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) {
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
         // Create the CSV writer.
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
         // Write the headers.
-        writer
-            .write_record(self.labels.iter())
-            .expect("Failed to write CSV headers.");
+        writer.write_record(self.labels.iter())?;
 
         // Create an empty string for missing values.
         let missing = String::new();
 
         // Write the records.
-        self.values.rows().into_iter().for_each(|row| {
+        for row in self.values.rows() {
             // Zip the row with the states.
             let record = row.iter().zip(self.states().values());
             // Map the row values to states.
@@ -624,9 +621,9 @@ impl CsvIO for CatIncTable {
                 &states[x as usize]
             });
             // Write the record.
-            writer
-                .write_record(record)
-                .expect("Failed to write CSV record.");
-        });
+            writer.write_record(record)?;
+        }
+
+        Ok(())
     }
 }

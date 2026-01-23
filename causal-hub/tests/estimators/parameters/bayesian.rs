@@ -36,7 +36,7 @@ mod tests {
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
-                let distribution = estimator.fit(&set![0], &set![]);
+                let distribution = estimator.fit(&set![0], &set![]).unwrap();
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
                 assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -80,7 +80,7 @@ mod tests {
                 );
 
                 // P(A | B, C)
-                let distribution = estimator.fit(&set![0], &set![1, 2]);
+                let distribution = estimator.fit(&set![0], &set![1, 2]).unwrap();
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
                 assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -150,7 +150,7 @@ mod tests {
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
-                let distribution = estimator.par_fit(&set![0], &set![]);
+                let distribution = estimator.par_fit(&set![0], &set![]).unwrap();
 
                 assert_relative_eq!(
                     distribution.parameters(),
@@ -182,7 +182,7 @@ mod tests {
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A | A, C)
-                let _ = estimator.fit(&set![0], &set![0, 2]);
+                let _ = estimator.fit(&set![0], &set![0, 2]).unwrap();
             }
         }
 
@@ -203,7 +203,7 @@ mod tests {
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // P(X | Y)
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1]).unwrap();
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -236,7 +236,7 @@ mod tests {
                     // a = 10 / 6 = 5/3 = 1.666
                     // b = mu_Y - a * mu_X = 3.0 - (5/3) * 1.5 = 3 - 2.5 = 0.5.
                     // s = (S_YY - a * S_YX) / N_post = (21 - (5/3)*10) / 4 = (21 - 50/3)/4 = (13/3)/4 = 13/12 = 1.0833
-                    let d = estimator.fit(&set![1], &set![0]);
+                    let d = estimator.fit(&set![1], &set![0]).unwrap();
                     assert_relative_eq!(
                         d.parameters().coefficients(),
                         &array![[1.66666]],
@@ -260,7 +260,7 @@ mod tests {
                     let estimator = BE::new(&dataset).with_prior(2.0);
 
                     // Fit P(X | Y)
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1]).unwrap();
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -312,7 +312,7 @@ mod tests {
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // Fit P(X | Y) using parallel fit
-                    let d = estimator.par_fit(&set![0], &set![1]);
+                    let d = estimator.par_fit(&set![0], &set![1]).unwrap();
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -338,7 +338,7 @@ mod tests {
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // P(X1, X2 | Z1, Z2)
-                    let d = estimator.fit(&set![0, 1], &set![2, 3]);
+                    let d = estimator.fit(&set![0, 1], &set![2, 3]).unwrap();
 
                     assert_eq!(d.labels(), &labels!["X1", "X2"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Z1", "Z2"]);
@@ -382,7 +382,7 @@ mod tests {
                         .with_prior(1.0)
                         .with_missing_method(Some(MissingMethod::LW), None);
 
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1]).unwrap();
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
@@ -426,7 +426,7 @@ mod tests {
                         .with_missing_method(Some(MissingMethod::LW), None);
 
                     // P(X1, X2 | Z1, Z2)
-                    let d = estimator.fit(&set![0, 1], &set![2, 3]);
+                    let d = estimator.fit(&set![0, 1], &set![2, 3]).unwrap();
 
                     assert_eq!(d.labels(), &labels!["X1", "X2"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Z1", "Z2"]);
@@ -469,7 +469,7 @@ mod tests {
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1]).unwrap();
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 

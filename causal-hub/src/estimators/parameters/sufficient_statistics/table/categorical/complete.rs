@@ -5,17 +5,18 @@ use crate::{
     datasets::{CatTable, Dataset},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::CatCPDS,
-    types::{AXIS_CHUNK_LENGTH, Set},
+    types::{AXIS_CHUNK_LENGTH, Error, Result, Set},
     utils::MI,
 };
 
 impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
         // Assert variables and conditioning variables must be disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must be disjoint.".into(),
+            ));
+        }
 
         // Get the shape.
         let shape = self.dataset.shape();
@@ -43,17 +44,18 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatTable> {
         let n = n_xz.sum();
 
         // Return the sufficient statistics.
-        CatCPDS::new(n_xz, n)
+        Ok(CatCPDS::new(n_xz, n))
     }
 }
 
 impl ParCSSEstimator<CatCPDS> for SSE<'_, CatTable> {
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
         // Assert variables and conditioning variables must be disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must be disjoint.".into(),
+            ));
+        }
 
         // Get the shape.
         let shape = self.dataset.shape();
@@ -96,6 +98,6 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatTable> {
         let n = n_xz.sum();
 
         // Return the sufficient statistics.
-        CatCPDS::new(n_xz, n)
+        Ok(CatCPDS::new(n_xz, n))
     }
 }

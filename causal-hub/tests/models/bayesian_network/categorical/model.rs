@@ -22,7 +22,8 @@ mod tests {
                 states![("A", ["no", "yes"])], //
                 states![],                     //
                 array![[0.1, 0.9]],            //
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])], //
@@ -31,7 +32,8 @@ mod tests {
                     [0.2, 0.8], //
                     [0.4, 0.6], //
                 ],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(C | A, B)
                 states![("C", ["no", "yes"])],
@@ -42,10 +44,11 @@ mod tests {
                     [0.5, 0.5], //
                     [0.6, 0.4], //
                 ],
-            ),
+            )
+            .unwrap(),
         ];
         // Initialize the model.
-        let model = CatBN::new(graph, cpds);
+        let model = CatBN::new(graph, cpds).unwrap();
 
         // Check the labels.
         assert_eq!(model.labels(), &labels!["A", "B", "C"]);
@@ -106,16 +109,18 @@ mod tests {
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])],
                 states![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
-            ),
+            )
+            .unwrap(),
         ];
 
-        let _ = CatBN::new(graph, cpds);
+        let _ = CatBN::new(graph, cpds).unwrap();
     }
 
     #[test]
@@ -133,28 +138,28 @@ mod tests {
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(A)
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])],
                 states![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
-            ),
+            )
+            .unwrap(),
         ];
 
-        let _ = CatBN::new(graph, cpds);
+        let _ = CatBN::new(graph, cpds).unwrap();
     }
 
     #[test]
-    #[should_panic(
-        expected = "Graph parents labels and CPD conditioning labels must be the same:\n\t expected:    {\"A\"} ,\n\t found:       {\"A\", \"B\"} ."
-    )]
     fn same_parents() {
         let mut graph = DiGraph::empty(["A", "B", "C"]);
 
@@ -167,21 +172,29 @@ mod tests {
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])],
                 states![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
-            ),
+            )
+            .unwrap(),
             CatCPD::new(
                 // P(C | A, B)
                 states![("C", ["no", "yes"])],
                 states![("A", ["no", "yes"]), ("B", ["no", "yes"])],
                 array![[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.6, 0.4],],
-            ),
+            )
+            .unwrap(),
         ];
 
-        let _ = CatBN::new(graph, cpds);
+        let res = CatBN::new(graph, cpds);
+        assert!(res.is_err());
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Model error: Graph parents labels and CPD conditioning labels must be the same:\n\t expected:    {\"A\"} ,\n\t found:       {\"A\", \"B\"} ."
+        );
     }
 }

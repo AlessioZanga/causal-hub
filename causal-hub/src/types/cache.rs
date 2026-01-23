@@ -5,7 +5,7 @@ use dry::macro_for;
 use crate::{
     estimators::{CIMEstimator, CPDEstimator},
     models::{CIM, CPD, Labelled},
-    types::{Labels, Map, Set},
+    types::{Labels, Map, Result, Set},
 };
 
 /// A cache for calling a function with a key and value.
@@ -57,7 +57,7 @@ macro_for!($type in [CPD, CIM] {
             P: $type + Clone,
             P::Statistics: Clone,
         {
-            fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
+            fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<P> {
                 // Get the key.
                 let key: (Vec<_>, Vec<_>) = (
                     x.into_iter().cloned().collect(),
@@ -66,14 +66,14 @@ macro_for!($type in [CPD, CIM] {
                 // Check if the key is in the cache.
                 if let Some(value) = self.cache.read().unwrap().get(&key) {
                     // If it is, return the value.
-                    return value.clone();
+                    return Ok(value.clone());
                 }
                 // If it is not, call the function.
-                let value = self.call.fit(x, z);
+                let value = self.call.fit(x, z)?;
                 // Insert the value into the cache.
                 self.cache.write().unwrap().insert(key, value.clone());
                 // Return the value.
-                value
+                Ok(value)
             }
         }
 

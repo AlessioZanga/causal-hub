@@ -48,7 +48,7 @@ mod tests {
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z);
+            let cpd: CatCPDS = sse.fit(&x, &z).unwrap();
 
             // Check sample size matches dataset samples
             assert_eq!(cpd.sample_size(), 4.0);
@@ -100,7 +100,7 @@ mod tests {
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z);
+            let cpd: CatCPDS = sse.fit(&x, &z).unwrap();
 
             assert_eq!(cpd.sample_size(), 4.0);
 
@@ -132,7 +132,7 @@ mod tests {
             let z = set![1];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z);
+            let cpd: GaussCPDS = sse.fit(&x, &z).unwrap();
 
             // Check sample size.
             assert_eq!(cpd.sample_size(), 4.0);
@@ -185,7 +185,7 @@ mod tests {
             let z = set![y_idx];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z);
+            let cpd: GaussCPDS = sse.fit(&x, &z).unwrap();
 
             // Check sample size.
             assert_eq!(cpd.sample_size(), 4.0);

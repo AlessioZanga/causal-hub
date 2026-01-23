@@ -26,7 +26,7 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from BN.
-                let dataset = forward.sample_n(10);
+                let dataset = forward.sample_n(10).unwrap();
 
                 // Check labels.
                 assert!(dataset.labels().eq(model.labels()));
@@ -64,12 +64,12 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from BN.
-                let dataset = forward.sample_n(150_000);
+                let dataset = forward.sample_n(150_000).unwrap();
 
                 // Initialize estimator.
                 let estimator = MLE::new(&dataset);
                 // Fit with generated dataset.
-                let fitted_model: CatBN = estimator.fit(model.graph().clone());
+                let fitted_model: CatBN = estimator.fit(model.graph().clone()).unwrap();
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-2);
@@ -88,12 +88,12 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from BN.
-                let dataset = forward.sample_n(5_000);
+                let dataset = forward.sample_n(5_000).unwrap();
 
                 // Initialize estimator.
                 let estimator = MLE::new(&dataset);
                 // Fit with generated dataset.
-                let fitted_model: GaussBN = estimator.fit(model.graph().clone());
+                let fitted_model: GaussBN = estimator.fit(model.graph().clone()).unwrap();
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-1);
@@ -116,7 +116,7 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from CTBN.
-                let trajectory = forward.sample_by_length(10);
+                let trajectory = forward.sample_by_length(10).unwrap();
 
                 // Check labels.
                 assert!(trajectory.labels().eq(model.labels()));
@@ -133,7 +133,7 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from CTBN.
-                let trajectory = forward.sample_by_time(100.);
+                let trajectory = forward.sample_by_time(100.).unwrap();
 
                 // Check labels.
                 assert!(trajectory.labels().eq(model.labels()));
@@ -150,12 +150,12 @@ mod tests {
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample from CTBN.
-                let trajectory = forward.par_sample_n_by_length(1_000, 1_000);
+                let trajectory = forward.par_sample_n_by_length(1_000, 1_000).unwrap();
 
                 // Initialize estimator.
                 let estimator = MLE::new(&trajectory);
                 // Fit with generated dataset.
-                let fitted_model: CatCTBN = estimator.par_fit(model.graph().clone());
+                let fitted_model: CatCTBN = estimator.par_fit(model.graph().clone()).unwrap();
 
                 // Check fitted CIMs.
                 assert_relative_eq!(model, fitted_model, epsilon = 5e-2);

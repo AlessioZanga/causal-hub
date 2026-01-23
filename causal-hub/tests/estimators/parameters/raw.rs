@@ -42,7 +42,8 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
+        let filled_evidence =
+            RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence).unwrap();
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.
@@ -97,7 +98,8 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
+        let filled_evidence =
+            RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence).unwrap();
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.

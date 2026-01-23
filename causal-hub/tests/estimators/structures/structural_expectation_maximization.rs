@@ -6,7 +6,7 @@ mod tests {
         use approx::relative_eq;
         use causal_hub::{
             assets::load_eating,
-            datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
+            datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
@@ -30,7 +30,7 @@ mod tests {
             // Initialize a new sampler with no evidence.
             let forward = ForwardSampler::new(&mut rng, &model);
             // Sample the fully-observed trajectories from the model.
-            let trajectories = forward.par_sample_n_by_length(100, 10_000);
+            let trajectories = forward.par_sample_n_by_length(100, 10_000).unwrap();
 
             // Set the probability of the evidence.
             let p = 0.5;
@@ -81,7 +81,7 @@ mod tests {
                 ),
             ];
             // Set the initial model.
-            let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims);
+            let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims).unwrap();
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
@@ -111,7 +111,7 @@ mod tests {
                         // Initialize a new sampler.
                         let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                         // Perform multiple imputation.
-                        let trjs = importance.sample_n_by_length(2 * max_len, 10);
+                        let trjs = importance.sample_n_by_length(2 * max_len, 10).unwrap();
                         // Get the one with the highest weight.
                         trjs.values()
                             .iter()
@@ -120,7 +120,7 @@ mod tests {
                             .clone()
                     })
                     // Reject trajectories with low weight.
-                    .filter(|trj| trj.weight() >= 1e-3)
+                    .filter(|trj: &CatWtdTrj| trj.weight() >= 1e-3)
                     .collect()
             };
 
@@ -131,15 +131,15 @@ mod tests {
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Initialize the F test.
-                let f_test = FTest::new(&cache, 1e-4);
+                let f_test = FTest::new(&cache, 1e-4).unwrap();
                 // Initialize the chi-squared test.
-                let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4);
+                let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4).unwrap();
                 // Initialize the CTPC algorithm.
-                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test).unwrap();
                 // Fit the new structure using CTPC.
-                let fitted_graph = ctpc.par_fit();
+                let fitted_graph = ctpc.par_fit().unwrap();
                 // Fit the new model using the expectation.
-                estimator.par_fit(fitted_graph)
+                estimator.par_fit(fitted_graph).unwrap()
             };
 
             // Define the stopping criteria.

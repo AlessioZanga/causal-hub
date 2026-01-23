@@ -13,7 +13,7 @@ mod tests {
         let x = states![("A", ["no", "yes"])];
         let z = states![("B", ["no", "yes"]), ("C", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
         assert_eq!(cpd.labels(), &labels!["A"]);
         assert_eq!(cpd.states(), &states![("A", ["no", "yes"])]);
@@ -32,7 +32,7 @@ mod tests {
         let x = states![("A", ["no", "yes"])];
         let z = states![("A", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CatCPD::new(x, z, p);
+        CatCPD::new(x, z, p).unwrap();
     }
 
     #[test]
@@ -41,7 +41,7 @@ mod tests {
         let x = states![];
         let z = states![];
         let p = array![[]];
-        CatCPD::new(x, z, p);
+        CatCPD::new(x, z, p).unwrap();
     }
 
     #[test]
@@ -49,7 +49,7 @@ mod tests {
         let x = states![("A", ["no", "yes"])];
         let z = states![("B", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        let cpd = CatCPD::new(x, z, p);
+        let cpd = CatCPD::new(x, z, p).unwrap();
 
         assert_eq!(
             cpd.to_string(),
@@ -78,9 +78,9 @@ mod tests {
             [0.30, 0.20, 0.35, 0.15],
             [0.40, 0.10, 0.45, 0.05],
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![0], &set![]);
+        let pred_cpd = cpd.marginalize(&set![0], &set![]).unwrap();
 
         let true_x = states![("B", ["no", "yes"])];
         let true_z = states![("C", ["no", "yes"]), ("D", ["no", "yes"])];
@@ -92,7 +92,7 @@ mod tests {
             [p[[3, 0]] + p[[3, 2]], p[[3, 1]] + p[[3, 3]]], //  (1, 1)
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }
@@ -122,9 +122,9 @@ mod tests {
             [0.04, 0.10, 0.06, 0.16, 0.21, 0.17, 0.12, 0.14],
             [0.09, 0.16, 0.13, 0.11, 0.05, 0.21, 0.04, 0.21]
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![0, 2], &set![]);
+        let pred_cpd = cpd.marginalize(&set![0, 2], &set![]).unwrap();
 
         let true_x = states![("B", ["no", "yes"])];
         let true_z = states![
@@ -184,7 +184,7 @@ mod tests {
             ] //                                                   (1, 1, 1)
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }
@@ -200,9 +200,9 @@ mod tests {
             [0.30, 0.70], //    (1, 0)
             [0.40, 0.60]  //    (1, 1)
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![], &set![0]);
+        let pred_cpd = cpd.marginalize(&set![], &set![0]).unwrap();
 
         let true_x = states![("A", ["no", "yes"])];
         let true_z = states![("C", ["no", "yes"])];
@@ -212,11 +212,11 @@ mod tests {
             [(p[[1, 0]] + p[[3, 0]]), (p[[1, 1]] + p[[3, 1]])]  //  (1)
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
 
-        let pred_cpd = cpd.marginalize(&set![], &set![1]);
+        let pred_cpd = cpd.marginalize(&set![], &set![1]).unwrap();
 
         let true_x = states![("A", ["no", "yes"])];
         let true_z = states![("B", ["no", "yes"])];
@@ -226,7 +226,7 @@ mod tests {
             [(p[[2, 0]] + p[[3, 0]]), (p[[2, 1]] + p[[3, 1]])]  //  (1)
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }
@@ -254,9 +254,9 @@ mod tests {
             [0.04, 0.10, 0.06, 0.16, 0.21, 0.17, 0.12, 0.14], // (1, 1, 0)
             [0.09, 0.16, 0.13, 0.11, 0.05, 0.21, 0.04, 0.21]  // (1, 1, 1)
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![], &set![0, 2]);
+        let pred_cpd = cpd.marginalize(&set![], &set![0, 2]).unwrap();
 
         let true_x = states![
             ("A", ["no", "yes"]),
@@ -288,7 +288,7 @@ mod tests {
             ] //                                                (1)
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }
@@ -318,9 +318,9 @@ mod tests {
             [0.04, 0.10, 0.06, 0.16, 0.21, 0.17, 0.12, 0.14], // (1, 1, 0)
             [0.09, 0.16, 0.13, 0.11, 0.05, 0.21, 0.04, 0.21]  // (1, 1, 1)
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![1], &set![2]);
+        let pred_cpd = cpd.marginalize(&set![1], &set![2]).unwrap();
 
         let true_x = states![("A", ["no", "yes"]), ("C", ["no", "yes"])];
         let true_z = states![("D", ["no", "yes"]), ("E", ["no", "yes"])];
@@ -351,7 +351,7 @@ mod tests {
             ]
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }
@@ -381,9 +381,9 @@ mod tests {
             [0.04, 0.10, 0.06, 0.16, 0.21, 0.17, 0.12, 0.14], // (1, 1, 0)
             [0.09, 0.16, 0.13, 0.11, 0.05, 0.21, 0.04, 0.21]  // (1, 1, 1)
         ];
-        let cpd = CatCPD::new(x, z, p.clone());
+        let cpd = CatCPD::new(x, z, p.clone()).unwrap();
 
-        let pred_cpd = cpd.marginalize(&set![0, 1], &set![0, 2]);
+        let pred_cpd = cpd.marginalize(&set![0, 1], &set![0, 2]).unwrap();
         let true_x = states![("C", ["no", "yes"])];
         let true_z = states![("E", ["no", "yes"])];
         let true_p = array![
@@ -409,7 +409,7 @@ mod tests {
             ]
         ];
         let true_p = &true_p / &true_p.sum_axis(Axis(1)).insert_axis(Axis(1));
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         assert_relative_eq!(true_cpd, pred_cpd);
     }

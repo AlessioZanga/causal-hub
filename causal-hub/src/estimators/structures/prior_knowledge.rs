@@ -3,7 +3,7 @@ use std::fmt::Display;
 use itertools::Itertools;
 use ndarray::prelude::*;
 
-use crate::types::Labels;
+use crate::types::{Error, Labels, Result};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -62,7 +62,12 @@ impl PK {
     ///
     /// A new instance of prior knowledge.
     ///
-    pub fn new<I, J, K, L>(labels: Labels, forbidden: I, required: J, temporal_order: K) -> Self
+    pub fn new<I, J, K, L>(
+        labels: Labels,
+        forbidden: I,
+        required: J,
+        temporal_order: K,
+    ) -> Result<Self>
     where
         I: IntoIterator<Item = (usize, usize)>,
         J: IntoIterator<Item = (usize, usize)>,
@@ -77,24 +82,25 @@ impl PK {
         let mut adjacency_matrix = Array::from_elem((n, n), PKS::Unknown);
 
         // Set the forbidden edges to `Forbidden`.
-        forbidden.into_iter().for_each(|(i, j)| {
+        for (i, j) in forbidden {
             // Set the edge to `Forbidden`.
             adjacency_matrix[[i, j]] = PKS::Forbidden;
-        });
+        }
 
         // Set the required edges to `Required`.
-        required.into_iter().for_each(|(i, j)| {
+        for (i, j) in required {
             // Assert that the edge is set to unknown.
-            assert!(
-                adjacency_matrix[[i, j]].is_unknown(),
-                "Edge ({i}, {j}) is already set to a non-unknown state: \n\
-                \t expected:    ({i}, {j}) set to 'Unknown', \n\",
-                \t found:       ({i}, {j}) set to '{}'.",
-                adjacency_matrix[[i, j]]
-            );
+            if !adjacency_matrix[[i, j]].is_unknown() {
+                return Err(Error::Model(format!(
+                    "Edge ({i}, {j}) is already set to a non-unknown state: \n\
+                    \t expected:    ({i}, {j}) set to 'Unknown', \n\
+                    \t found:       ({i}, {j}) set to '{}'.",
+                    adjacency_matrix[[i, j]]
+                )));
+            }
             // Set the edge to `Required`.
             adjacency_matrix[[i, j]] = PKS::Required;
-        });
+        }
 
         // Collect the tiered edges.
         let temporal_order: Vec<Vec<_>> = temporal_order
@@ -102,30 +108,29 @@ impl PK {
             .map(|tier| tier.into_iter().collect())
             .collect();
         // Edges from a vertex in a higher tier to a vertex in a lower tier are forbidden.
-        temporal_order.iter().enumerate().for_each(|(t, tier)| {
+        for (t, tier) in temporal_order.iter().enumerate() {
             // Get the vertices in previous tiers.
             let previous_tiers = temporal_order[..t].iter().flatten();
             // For each vertex in the current tier, set edges to previous tiers as forbidden.
-            tier.iter()
-                .cartesian_product(previous_tiers)
-                .for_each(|(&i, &j)| {
-                    // Assert that the edge is not required.
-                    assert!(
-                        !adjacency_matrix[[i, j]].is_required(),
+            for (&i, &j) in tier.iter().cartesian_product(previous_tiers) {
+                // Assert that the edge is not required.
+                if adjacency_matrix[[i, j]].is_required() {
+                    return Err(Error::Model(format!(
                         "Edge ({i}, {j}) is already set to a 'Required' state: \n\
-                        \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\",
+                        \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
                         \t found:       ({i}, {j}) set to '{}'.",
                         adjacency_matrix[[i, j]]
-                    );
-                    // Set the edge to `Forbidden`.
-                    adjacency_matrix[[i, j]] = PKS::Forbidden;
-                });
-        });
+                    )));
+                }
+                // Set the edge to `Forbidden`.
+                adjacency_matrix[[i, j]] = PKS::Forbidden;
+            }
+        }
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
     /// Returns a reference to the labels of the prior knowledge.

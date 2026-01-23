@@ -5,11 +5,16 @@ use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCPD, CatCPDS},
-    types::{Set, States},
+    types::{Result, Set, States},
 };
 
 impl MLE<'_, CatTable> {
-    fn fit(states: &States, x: &Set<usize>, z: &Set<usize>, sample_statistics: CatCPDS) -> CatCPD {
+    fn fit(
+        states: &States,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        sample_statistics: CatCPDS,
+    ) -> Result<CatCPD> {
         // Get the conditional counts.
         let n_xz = sample_statistics.sample_conditional_counts();
         // Marginalize the counts.
@@ -52,13 +57,13 @@ impl MLE<'_, CatTable> {
         let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CPD.
-        CatCPD::with_optionals(
+        Ok(CatCPD::with_optionals(
             states,
             conditioning_states,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        )
+        )?)
     }
 }
 
@@ -66,7 +71,7 @@ impl MLE<'_, CatTable> {
 macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for MLE<'_, $type> {
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
@@ -77,14 +82,14 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
         }
     }
 
     impl ParCPDEstimator<CatCPD> for MLE<'_, $type> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
@@ -95,7 +100,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = sample_statistics.par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             MLE::<'_, CatTable>::fit(states, x, z, sample_statistics)
         }

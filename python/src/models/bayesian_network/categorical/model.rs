@@ -76,7 +76,9 @@ impl PyCatBN {
         // Convert Vec<PyCatCPD> to Vec<CatCPD>.
         let cpds = cpds.into_iter().map(|x: PyCatCPD| x.into());
         // Create a new CatBN with the given parameters.
-        Ok(CatBN::new(graph, cpds).into())
+        Ok(CatBN::new(graph, cpds)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .into())
     }
 
     /// Returns the name of the model, if any.
@@ -235,7 +237,8 @@ impl PyCatBN {
                 } else {
                     // Execute sequentially.
                     estimator.fit(graph)
-                };
+                }
+                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
                 // Return the fitted model.
                 Ok(model.into())
             }};
@@ -288,7 +291,8 @@ impl PyCatBN {
         } else {
             // Execute sequentially.
             sampler.sample_n(n)
-        };
+        }
+        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -378,7 +382,9 @@ impl PyCatBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.into())
+        Ok(estimate
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .into())
     }
 
     /// Estimate a conditional causal effect (CACE).
@@ -467,7 +473,9 @@ impl PyCatBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.map(|e| e.into()))
+        Ok(estimate
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .map(|e| e.into()))
     }
 
     /// Read class from a BIF string.
@@ -485,7 +493,10 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_bif_string(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif_string(bif))),
+            inner: Arc::new(RwLock::new(
+                CatBN::from_bif_string(bif)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -497,7 +508,9 @@ impl PyCatBN {
     ///     A BIF string representation of the model.
     ///
     pub fn to_bif_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_bif_string())
+        self.lock()
+            .to_bif_string()
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Read class from a BIF file.
@@ -515,7 +528,10 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_bif_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif_file(path))),
+            inner: Arc::new(RwLock::new(
+                CatBN::from_bif_file(path)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -527,7 +543,9 @@ impl PyCatBN {
     ///     The path to the BIF file to write to.
     ///
     pub fn to_bif_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_bif_file(path);
+        self.lock()
+            .to_bif_file(path)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         Ok(())
     }
 
@@ -546,7 +564,10 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json_string(json))),
+            inner: Arc::new(RwLock::new(
+                CatBN::from_json_string(json)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -558,7 +579,9 @@ impl PyCatBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock()
+            .to_json_string()
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -576,7 +599,10 @@ impl PyCatBN {
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json_file(path))),
+            inner: Arc::new(RwLock::new(
+                CatBN::from_json_file(path)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -588,7 +614,9 @@ impl PyCatBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
+        self.lock()
+            .to_json_file(path)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         Ok(())
     }
 }

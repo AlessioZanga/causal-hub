@@ -1,7 +1,7 @@
 use crate::{
     models::{DiGraph, Graph},
     set,
-    types::Set,
+    types::{Result, Set},
 };
 
 /// A trait for backdoor adjustment criterion.
@@ -14,17 +14,17 @@ pub trait BackdoorCriterion {
     /// * `y` - A set vertices representing set `Y`.
     /// * `z` - A set vertices representing set `Z`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    /// * If `X`, `Y` or `Z` are not disjoint sets.
-    /// * If `X` and `Y` are empty sets.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `IllegalArgument` if `X` and `Y` are empty sets.
     ///
     /// # Returns
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
+    fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool>;
 
     /// Checks if the `Z` is a minimal backdoor adjustment set for `X` and `Y`.
     ///
@@ -36,12 +36,12 @@ pub trait BackdoorCriterion {
     /// * `w` - An optional iterable collection of vertices representing set `W`.
     /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    /// * If `X`, `Y` or `Z` are not disjoint sets.
-    /// * If `X` and `Y` are empty sets.
-    /// * If not `W` <= `Z` <= `V`.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `IllegalArgument` if `X` and `Y` are empty sets.
+    /// * `IllegalArgument` if not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
@@ -54,7 +54,7 @@ pub trait BackdoorCriterion {
         z: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> bool;
+    ) -> Result<bool>;
 
     /// Finds a minimal backdoor adjustment set for the vertex sets `X` and `Y`, if any.
     ///
@@ -63,12 +63,12 @@ pub trait BackdoorCriterion {
     /// * `x` - A set vertices representing set `X`.
     /// * `y` - A set vertices representing set `Y`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    /// * If `X` and `Y` are not disjoint sets.
-    /// * If `X` or `Y` are empty sets.
-    /// * If not `W` <= `V`.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint sets.
+    /// * `IllegalArgument` if `X` or `Y` are empty sets.
+    /// * `IllegalArgument` if not `W` <= `V`.
     ///
     /// # Returns
     ///
@@ -81,7 +81,7 @@ pub trait BackdoorCriterion {
         y: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> Option<Set<usize>>;
+    ) -> Result<Option<Set<usize>>>;
 }
 
 mod digraph {
@@ -156,9 +156,9 @@ mod digraph {
     }
 
     impl BackdoorCriterion for DiGraph {
-        fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        fn is_backdoor_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
+            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>)?;
 
             // Constructive backdoor criterion:
             //
@@ -174,18 +174,18 @@ mod digraph {
             let pde = self.descendants(&pcp);
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
             if !z.is_subset(&(&self.vertices() - &pde)) {
-                return false;
+                return Ok(false);
             }
 
             // Compute the proper backdoor graph.
             let g_pdb = _proper_backdoor_graph(self, x, &pcp);
             // b) Check if Z separates X from Y in G^PDB.
-            if !g_pdb.is_separator_set(x, y, z) {
-                return false;
+            if !g_pdb.is_separator_set(x, y, z)? {
+                return Ok(false);
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn is_minimal_backdoor_set(
@@ -195,9 +195,9 @@ mod digraph {
             z: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> bool {
+        ) -> Result<bool> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, Some(z), w, v);
+            _assert(self, x, y, Some(z), w, v)?;
 
             // Set default values for W and V if not provided.
             let w = match w {
@@ -233,9 +233,9 @@ mod digraph {
             y: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> Option<Set<usize>> {
+        ) -> Result<Option<Set<usize>>> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, None::<&Set<_>>, w, v);
+            _assert(self, x, y, None::<&Set<_>>, w, v)?;
 
             // Set default values for W and V if not provided.
             let w = match w {

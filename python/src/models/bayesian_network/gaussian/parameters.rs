@@ -165,7 +165,10 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(GaussCPD::from_json_string(json))),
+            inner: Arc::new(RwLock::new(
+                GaussCPD::from_json_string(json)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -177,7 +180,9 @@ impl PyGaussCPD {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock()
+            .to_json_string()
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -195,7 +200,10 @@ impl PyGaussCPD {
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(GaussCPD::from_json_file(path))),
+            inner: Arc::new(RwLock::new(
+                GaussCPD::from_json_file(path)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -207,7 +215,9 @@ impl PyGaussCPD {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
+        self.lock()
+            .to_json_file(path)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         Ok(())
     }
 }

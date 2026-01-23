@@ -1,7 +1,10 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{models::graphs::DiGraph, types::Map};
+use crate::{
+    models::graphs::DiGraph,
+    types::{Map, Result},
+};
 
 /// A trait for continuous time Bayesian networks (CTBNs).
 pub trait CTBN {
@@ -32,9 +35,10 @@ pub trait CTBN {
     ///
     /// A new CTBN instance.
     ///
-    fn new<I>(graph: DiGraph, cims: I) -> Self
+    fn new<I>(graph: DiGraph, cims: I) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CIM>;
+        I: IntoIterator<Item = Self::CIM>,
+        Self: Sized;
 
     /// Returns the initial distribution.
     ///
@@ -92,7 +96,8 @@ pub trait CTBN {
         initial_distribution: Self::InitialDistribution,
         graph: DiGraph,
         cims: I,
-    ) -> Self
+    ) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CIM>;
+        I: IntoIterator<Item = Self::CIM>,
+        Self: Sized;
 }

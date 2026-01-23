@@ -113,7 +113,9 @@ impl PyDiGraph {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Get the labels of the vertices.
-        let x = lock.label_to_index(x);
+        let x = lock
+            .label_to_index(x)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         // Check if the vertex exists in the graph.
         Ok(lock.has_vertex(x))
     }
@@ -134,8 +136,8 @@ impl PyDiGraph {
             .into_iter()
             .map(|(x, y)| {
                 // Get the labels of the vertices.
-                let x = lock.index_to_label(x).into();
-                let y = lock.index_to_label(y).into();
+                let x = lock.index_to_label(x).unwrap().into();
+                let y = lock.index_to_label(y).unwrap().into();
                 // Return the labels as a tuple.
                 (x, y)
             })
@@ -160,8 +162,12 @@ impl PyDiGraph {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Get the indices of the vertices.
-        let x = lock.label_to_index(x);
-        let y = lock.label_to_index(y);
+        let x = lock
+            .label_to_index(x)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        let y = lock
+            .label_to_index(y)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         // Check if the edge exists in the graph.
         Ok(lock.has_edge(x, y))
     }
@@ -184,8 +190,12 @@ impl PyDiGraph {
         // Get a mutable lock on the inner field.
         let mut lock = self.lock_mut();
         // Get the indices of the vertices.
-        let x = lock.label_to_index(x);
-        let y = lock.label_to_index(y);
+        let x = lock
+            .label_to_index(x)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        let y = lock
+            .label_to_index(y)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         // Add the edge to the graph.
         Ok(lock.add_edge(x, y))
     }
@@ -208,8 +218,12 @@ impl PyDiGraph {
         // Get a mutable lock on the inner field.
         let mut lock = self.lock_mut();
         // Get the indices of the vertices.
-        let x = lock.label_to_index(x);
-        let y = lock.label_to_index(y);
+        let x = lock
+            .label_to_index(x)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        let y = lock
+            .label_to_index(y)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
         // Delete the edge from the graph.
         Ok(lock.del_edge(x, y))
     }
@@ -235,7 +249,7 @@ impl PyDiGraph {
         Ok(lock
             .parents(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).into())
+            .map(|&i| lock.index_to_label(i).unwrap().into())
             .collect())
     }
 
@@ -260,7 +274,7 @@ impl PyDiGraph {
         Ok(lock
             .ancestors(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).into())
+            .map(|&i| lock.index_to_label(i).unwrap().into())
             .collect())
     }
 
@@ -285,7 +299,7 @@ impl PyDiGraph {
         Ok(lock
             .children(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).into())
+            .map(|&i| lock.index_to_label(i).unwrap().into())
             .collect())
     }
 
@@ -310,7 +324,7 @@ impl PyDiGraph {
         Ok(lock
             .descendants(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).into())
+            .map(|&i| lock.index_to_label(i).unwrap().into())
             .collect())
     }
 
@@ -351,7 +365,8 @@ impl PyDiGraph {
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(lock.is_separator_set(&x, &y, &z))
+        lock.is_separator_set(&x, &y, &z)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
@@ -401,7 +416,8 @@ impl PyDiGraph {
         let w = w.map(|w| indices_from!(w, lock)).transpose()?;
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(lock.is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        lock.is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref())
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
@@ -449,12 +465,14 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal separator.
-        let z = lock.find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock
+            .find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref())
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| lock.index_to_label(i).into())
+                .map(|i| lock.index_to_label(i).unwrap().into())
                 .collect()
         });
 
@@ -499,7 +517,8 @@ impl PyDiGraph {
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
-        Ok(lock.is_backdoor_set(&x, &y, &z))
+        lock.is_backdoor_set(&x, &y, &z)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
@@ -549,7 +568,8 @@ impl PyDiGraph {
         let w = w.map(|w| indices_from!(w, lock)).transpose()?;
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
-        Ok(lock.is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref()))
+        lock.is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref())
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
@@ -597,12 +617,14 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
 
         // Find the minimal backdoor.
-        let z = lock.find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref());
+        let z = lock
+            .find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref())
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| lock.index_to_label(i).into())
+                .map(|i| lock.index_to_label(i).unwrap().into())
                 .collect()
         });
 
@@ -652,8 +674,12 @@ impl PyDiGraph {
             // Extract the edge as a tuple of strings.
             let (x, y): (String, String) = edge?.extract()?;
             // Get the indices of the vertices.
-            let x = graph.label_to_index(&x);
-            let y = graph.label_to_index(&y);
+            let x = graph
+                .label_to_index(&x)
+                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            let y = graph
+                .label_to_index(&y)
+                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
             // Add the edge to the graph.
             graph.add_edge(x, y);
         }
@@ -709,7 +735,10 @@ impl PyDiGraph {
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(DiGraph::from_json_string(json))),
+            inner: Arc::new(RwLock::new(
+                DiGraph::from_json_string(json)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -721,7 +750,9 @@ impl PyDiGraph {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock()
+            .to_json_string()
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -739,7 +770,10 @@ impl PyDiGraph {
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
-            inner: Arc::new(RwLock::new(DiGraph::from_json_file(path))),
+            inner: Arc::new(RwLock::new(
+                DiGraph::from_json_file(path)
+                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+            )),
         })
     }
 
@@ -751,7 +785,8 @@ impl PyDiGraph {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock()
+            .to_json_file(path)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))
     }
 }

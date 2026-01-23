@@ -8,6 +8,8 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
+/// Error types.
+pub mod error;
 /// Estimators for parameters and structures.
 pub mod estimators;
 /// Models.
@@ -154,9 +156,12 @@ mod causal_hub {
     }
 
     #[pymodule_init]
-    fn init(_m: &Bound<'_, PyModule>) -> PyResult<()> {
+    fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
         // Initialize the logger.
         pyo3_log::init();
+
+        // Register the exception.
+        m.add("Error", m.py().get_type::<crate::error::Error>())?;
 
         Ok(())
     }

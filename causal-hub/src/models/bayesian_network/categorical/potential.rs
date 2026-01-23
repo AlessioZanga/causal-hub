@@ -7,7 +7,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatEvT},
     models::{CPD, CatCPD, Labelled, Phi},
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A categorical potential.
@@ -190,7 +190,7 @@ impl Phi for CatPhi {
         self.parameters.len()
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Self {
+    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
         // Assert that the evidence states match the potential states.
         assert_eq!(
             e.states(),
@@ -209,7 +209,7 @@ impl Phi for CatPhi {
         let e = e.map(|e| match e {
             CatEvT::CertainPositive { event, state } => (event, state),
             _ => panic!(
-                "Failed to condition on evidence: \n
+                "Failed to condition on evidence: \n\
                 \t expected:    CertainPositive , \n\
                 \t found:       {:?} .",
                 e
@@ -227,13 +227,13 @@ impl Phi for CatPhi {
         });
 
         // Return self.
-        Self::new(states, parameters)
+        Ok(Self::new(states, parameters))
     }
 
-    fn marginalize(&self, x: &Set<usize>) -> Self {
+    fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
         // Base case: if no variables to marginalize, return self.
         if x.is_empty() {
-            return self.clone();
+            return Ok(self.clone());
         }
 
         // Assert X is a subset of the variables.
@@ -263,20 +263,20 @@ impl Phi for CatPhi {
         });
 
         // Return the new potential.
-        Self::new(states, parameters)
+        Ok(Self::new(states, parameters))
     }
 
     #[inline]
-    fn normalize(&self) -> Self {
+    fn normalize(&self) -> Result<Self> {
         // Get the parameters.
         let mut parameters = self.parameters.clone();
         // Normalize the parameters.
         parameters /= parameters.sum();
         // Return the new potential.
-        Self::new(self.states.clone(), parameters)
+        Ok(Self::new(self.states.clone(), parameters))
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Self {
+    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
         // Merge conditioning states and states in this order.
         let mut states = cpd.conditioning_states().clone();
         states.extend(cpd.states().clone());
@@ -287,7 +287,7 @@ impl Phi for CatPhi {
         let parameters = parameters
             .into_dyn()
             .into_shape_with_order(shape)
-            .expect("Failed to reshape parameters.");
+            .map_err(|e| Error::NdarrayShape(e))?;
 
         // Get the new axes order w.r.t. sorted labels.
         let mut axes: Vec<_> = (0..states.len()).collect();
@@ -298,15 +298,16 @@ impl Phi for CatPhi {
         let parameters = parameters.permuted_axes(axes);
 
         // Return the new potential.
-        Self::new(states, parameters)
+        Ok(Self::new(states, parameters))
     }
 
-    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD {
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         // Assert that X and Z are disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must be disjoint.".into(),
+            ));
+        }
         // Assert that X and Z cover all variables.
         assert!(
             (x | z).iter().sorted().cloned().eq(0..self.labels.len()),

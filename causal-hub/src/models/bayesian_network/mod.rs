@@ -4,7 +4,10 @@ pub use categorical::*;
 mod gaussian;
 pub use gaussian::*;
 
-use crate::{models::graphs::DiGraph, types::Map};
+use crate::{
+    models::graphs::DiGraph,
+    types::{Map, Result},
+};
 
 /// A trait for Bayesian networks.
 pub trait BN {
@@ -30,9 +33,10 @@ pub trait BN {
     ///
     /// A new Bayesian network instance.
     ///
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CPD>;
+        I: IntoIterator<Item = Self::CPD>,
+        Self: Sized;
 
     /// Returns the name of the model, if any.
     ///
@@ -91,11 +95,6 @@ pub trait BN {
     /// * `graph` - The underlying graph.
     /// * `cpds` - The conditional probability distributions.
     ///
-    /// # Panics
-    ///
-    /// * Panics if `name` is an empty string.
-    /// * Panics if `description` is an empty string.
-    ///
     /// # Returns
     ///
     /// A new Bayesian network instance.
@@ -105,7 +104,8 @@ pub trait BN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CPD>;
+        I: IntoIterator<Item = Self::CPD>,
+        Self: Sized;
 }

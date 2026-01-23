@@ -20,23 +20,23 @@ mod tests {
         // Initialize a sampler.
         let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
-        let dataset = forward.par_sample_n_by_length(100, 100);
+        let dataset = forward.par_sample_n_by_length(100, 100).unwrap();
 
         // Initialize a parameter estimator.
         let estimator = MLE::new(&dataset);
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Initialize the F test.
-        let f_test = FTest::new(&cache, 0.01);
+        let f_test = FTest::new(&cache, 0.01).unwrap();
         // Initialize the chi-squared test.
-        let chi_sq_test = ChiSquaredTest::new(&cache, 0.01);
+        let chi_sq_test = ChiSquaredTest::new(&cache, 0.01).unwrap();
 
         // Set the initial graph.
         let initial_graph = DiGraph::complete(dataset.labels());
         // Initialize the CTPC algorithm.
-        let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+        let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test).unwrap();
         // Run the CTPC algorithm.
-        let fitted_graph = ctpc.fit();
+        let fitted_graph = ctpc.fit().unwrap();
 
         // Assert that the fitted model is equal to the original model.
         assert_eq!(model.graph(), &fitted_graph);
@@ -52,23 +52,23 @@ mod tests {
         // Initialize a sampler.
         let forward = ForwardSampler::new(&mut rng, &model);
         // Sample 1000 samples.
-        let dataset = forward.par_sample_n_by_length(100, 1_000);
+        let dataset = forward.par_sample_n_by_length(100, 1_000).unwrap();
 
         // Initialize a parameter estimator.
         let estimator = MLE::new(&dataset);
         // Cache the parameter estimator.
         let cache = Cache::new(&estimator);
         // Initialize the F test.
-        let f_test = FTest::new(&cache, 0.01);
+        let f_test = FTest::new(&cache, 0.01).unwrap();
         // Initialize the chi-squared test.
-        let chi_sq_test = ChiSquaredTest::new(&cache, 0.01);
+        let chi_sq_test = ChiSquaredTest::new(&cache, 0.01).unwrap();
 
         // Set the initial graph.
         let initial_graph = DiGraph::complete(dataset.labels());
         // Initialize the CTPC algorithm.
-        let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+        let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test).unwrap();
         // Run the CTPC algorithm.
-        let fitted_graph = ctpc.par_fit();
+        let fitted_graph = ctpc.par_fit().unwrap();
 
         // Assert that the fitted model is equal to the original model.
         assert_eq!(model.graph(), &fitted_graph);

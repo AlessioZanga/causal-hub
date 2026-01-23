@@ -60,7 +60,10 @@ pub fn em<'a>(
         // Log the initial model fitting.
         debug!("Fitting the initial model using the raw estimator ...");
         // Set the initial model.
-        let model = raw.par_fit(graph.clone());
+        let model = raw
+            .expect("Failed to initialize raw estimator")
+            .par_fit(graph.clone())
+            .expect("Failed to fit the initial model");
 
         // Wrap the random number generator in a RefCell to allow mutable borrowing.
         let rng = RefCell::new(rng);
@@ -91,7 +94,9 @@ pub fn em<'a>(
                     // Initialize a new sampler.
                     let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                     // Perform multiple imputation.
-                    let trjs = importance.par_sample_n_by_length(max_length, 10);
+                    let trjs = importance
+                        .par_sample_n_by_length(max_length, 10)
+                        .expect("Failed to sample trajectories");
                     // Get the one with the highest weight.
                     trjs.values()
                         .iter()
@@ -107,7 +112,9 @@ pub fn em<'a>(
             // Initialize the parameter estimator.
             let estimator = BE::new(expectation).with_prior((1, 1.));
             // Fit the model using the parameter estimator.
-            estimator.par_fit(prev_model.graph().clone())
+            estimator
+                .par_fit(prev_model.graph().clone())
+                .expect("Failed to fit the model during the M-step")
         };
 
         // Define the stopping criteria.

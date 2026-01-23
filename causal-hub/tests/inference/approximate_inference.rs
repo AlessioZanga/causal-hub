@@ -25,7 +25,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![], &set![]);
+                let _ = engine.estimate(&set![], &set![]).unwrap();
             }
             #[test]
             #[should_panic(expected = "Variables X and Z must be disjoint.")]
@@ -38,7 +38,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]);
+                let _ = engine.estimate(&set![0], &set![0]).unwrap();
             }
 
             #[test]
@@ -52,7 +52,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![10], &set![]);
+                let _ = engine.estimate(&set![10], &set![]).unwrap();
             }
 
             #[test]
@@ -63,7 +63,9 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let _ = ApproximateInference::new(&mut rng, &model).with_sample_size(0);
+                let _ = ApproximateInference::new(&mut rng, &model)
+                    .with_sample_size(0)
+                    .unwrap();
             }
 
             #[test]
@@ -73,10 +75,12 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model)
+                    .with_sample_size(1000)
+                    .unwrap();
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -85,7 +89,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
@@ -101,7 +106,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -110,7 +115,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
@@ -140,7 +146,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -149,7 +155,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
@@ -166,7 +173,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![], &set![]);
+                let _ = engine.par_estimate(&set![], &set![]).unwrap();
             }
 
             #[test]
@@ -180,7 +187,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]);
+                let _ = engine.estimate(&set![0], &set![0]).unwrap();
             }
 
             #[test]
@@ -194,7 +201,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![10], &set![]);
+                let _ = engine.par_estimate(&set![10], &set![]).unwrap();
             }
 
             #[test]
@@ -204,10 +211,12 @@ mod tests {
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model)
+                    .with_sample_size(1000)
+                    .unwrap();
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -216,7 +225,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
@@ -232,7 +242,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -241,7 +251,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
@@ -258,12 +269,12 @@ mod tests {
                     model.states().clone(),
                     [
                         CatEvT::CertainPositive {
-                            event: model.label_to_index("lung"), // lung
-                            state: 1,                            // yes
+                            event: model.label_to_index("lung").unwrap(), // lung
+                            state: 1,                                     // yes
                         },
                         CatEvT::CertainPositive {
-                            event: model.label_to_index("tub"), // tub
-                            state: 0,                           // no
+                            event: model.label_to_index("tub").unwrap(), // tub
+                            state: 0,                                    // no
                         },
                     ],
                 );
@@ -271,7 +282,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![]).unwrap();
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -280,7 +291,8 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.9757204131016298, 0.024279586898370155]],
-                );
+                )
+                .unwrap();
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);

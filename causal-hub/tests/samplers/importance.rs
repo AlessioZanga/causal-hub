@@ -54,7 +54,7 @@ mod tests {
             // Initialize sampler.
             let importance = ImportanceSampler::new(&mut rng, &model, &evidence);
             // Sample from CTBN.
-            let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
+            let weighted_trajectory = importance.par_sample_n_by_length(10, 10).unwrap();
 
             // Get trajectory.
             let trajectory = weighted_trajectory.into_iter().next().unwrap().trajectory();

@@ -10,7 +10,7 @@ use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
     estimators::{BE, CIMEstimator, ParCIMEstimator},
     models::{CatCIM, Labelled},
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 // TODO: This must be refactored to be stateless.
@@ -56,7 +56,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// A new `RAWE` instance.
     ///
-    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Self {
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Result<Self> {
         // Initialize the estimator.
         let mut estimator = Self {
             rng,
@@ -65,9 +65,9 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         };
 
         // Fill the evidence with the raw estimator.
-        estimator.dataset = Some(estimator.par_fill());
+        estimator.dataset = Some(estimator.par_fill()?);
 
-        estimator
+        Ok(estimator)
     }
 
     /// Sample uncertain evidence.
@@ -146,7 +146,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// A new `CatTrj` instance.
     ///
-    fn par_fill(&mut self) -> CatTrj {
+    fn par_fill(&mut self) -> Result<CatTrj> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Set missing placeholder.
@@ -335,12 +335,12 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Reshape the events to the number of events and states.
         let events = Array::from_iter(new_events.into_iter().flatten())
             .into_shape_with_order((new_times.len(), states.len()))
-            .expect("Failed to reshape events.");
+            .map_err(|e| Error::NdarrayShape(e))?;
         // Reshape the times to the number of events.
         let times = Array::from_iter(new_times);
 
         // Construct the fully observed trajectory.
-        CatTrj::new(states, events, times)
+        Ok(CatTrj::new(states, events, times))
     }
 }
 
@@ -355,7 +355,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     ///
     /// A new `RAWE` instance.
     ///
-    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Self {
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Result<Self> {
         // Get evidence.
         let _evidence = evidence.evidences();
         // Sample seed for parallel sampling.
@@ -369,44 +369,56 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
                     // Create a new random number generator with the seed.
                     let mut rng = R::seed_from_u64(seed);
                     // Fill the evidence with the raw estimator.
-                    RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)
+                    RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)?
                         .dataset
-                        .unwrap()
+                        .ok_or_else(|| Error::Model("Dataset not generated.".into()))
                 })
-                .collect(),
+                .collect::<Result<_>>()?,
         );
 
-        Self {
+        Ok(Self {
             rng,
             evidence,
             dataset,
-        }
+        })
     }
 }
 
 impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::Model("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::Model("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> ParCIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .par_fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::Model("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .par_fit(x, z)
     }
 }

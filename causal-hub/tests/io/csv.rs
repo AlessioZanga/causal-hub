@@ -26,7 +26,7 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let dataset = CatTable::from_csv_string(csv);
+                    let dataset = CatTable::from_csv_string(csv).unwrap();
 
                     let values = array![[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]];
 
@@ -64,7 +64,7 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatTable::from_csv_string(csv);
+                    let _ = CatTable::from_csv_string(csv).unwrap();
                 }
 
                 #[test]
@@ -77,7 +77,7 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatTable::from_csv_string(csv);
+                    let _ = CatTable::from_csv_string(csv).unwrap();
                 }
 
                 #[test]
@@ -89,11 +89,11 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes\n"
                     );
-                    let dataset = CatTable::from_csv_string(csv);
+                    let dataset = CatTable::from_csv_string(csv).unwrap();
 
                     // Create a buffer to write the CSV data.
                     let mut buffer = Vec::new();
-                    dataset.to_csv_writer(&mut buffer);
+                    dataset.to_csv_writer(&mut buffer).unwrap();
 
                     // Assert that the written CSV matches the original.
                     assert_eq!(String::from_utf8(buffer).unwrap(), csv);
@@ -114,7 +114,7 @@ mod tests {
                         ",yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let dataset = CatIncTable::from_csv_string(csv);
+                    let dataset = CatIncTable::from_csv_string(csv).unwrap();
 
                     let values = array![[0, 0, 0], [0, M, 1], [M, 1, 1], [1, 1, 1]];
 
@@ -138,7 +138,7 @@ mod tests {
                         ",yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatIncTable::from_csv_string(csv);
+                    let _ = CatIncTable::from_csv_string(csv).unwrap();
                 }
 
                 #[test]
@@ -150,11 +150,11 @@ mod tests {
                         ",yes,yes\n",
                         "yes,yes,yes\n"
                     );
-                    let dataset = CatIncTable::from_csv_string(csv);
+                    let dataset = CatIncTable::from_csv_string(csv).unwrap();
 
                     // Create a buffer to write the CSV data.
                     let mut buffer = Vec::new();
-                    dataset.to_csv_writer(&mut buffer);
+                    dataset.to_csv_writer(&mut buffer).unwrap();
 
                     // Assert that the written CSV matches the original.
                     assert_eq!(String::from_utf8(buffer).unwrap(), csv);
@@ -173,7 +173,7 @@ mod tests {
                     "4,5,6\n", //
                     "7,8,9\n"
                 );
-                let dataset = GaussTable::from_csv_string(csv);
+                let dataset = GaussTable::from_csv_string(csv).unwrap();
 
                 let values = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
@@ -190,7 +190,7 @@ mod tests {
                     "4,5\n",   //
                     "7,8,9\n"
                 );
-                let _ = GaussTable::from_csv_string(csv);
+                let _ = GaussTable::from_csv_string(csv).unwrap();
             }
 
             #[test]
@@ -202,7 +202,7 @@ mod tests {
                     "4,,6\n",  //
                     "7,8,9\n"
                 );
-                let _ = GaussTable::from_csv_string(csv);
+                let _ = GaussTable::from_csv_string(csv).unwrap();
             }
 
             #[test]
@@ -213,11 +213,11 @@ mod tests {
                     "4,5,6\n", //
                     "7,8,9\n"
                 );
-                let dataset = GaussTable::from_csv_string(csv);
+                let dataset = GaussTable::from_csv_string(csv).unwrap();
 
                 // Create a buffer to write the CSV data.
                 let mut buffer = Vec::new();
-                dataset.to_csv_writer(&mut buffer);
+                dataset.to_csv_writer(&mut buffer).unwrap();
 
                 // Assert that the written CSV matches the original.
                 assert_eq!(String::from_utf8(buffer).unwrap(), csv);

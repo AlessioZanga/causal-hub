@@ -133,7 +133,10 @@ pub fn sem<'a>(
         // Log the initial model fitting.
         debug!("Fitting the initial model using the raw estimator ...");
         // Set the initial model.
-        let initial_model = raw.par_fit(initial_graph.clone());
+        let initial_model = raw
+            .expect("Failed to initialize raw estimator")
+            .par_fit(initial_graph.clone())
+            .expect("Failed to fit the initial model");
 
         // Wrap the random number generator in a RefCell to allow mutable borrowing.
         let rng = RefCell::new(rng);
@@ -167,7 +170,9 @@ pub fn sem<'a>(
                             // Initialize a new sampler.
                             let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                             // Perform multiple imputation.
-                            let trjs = importance.par_sample_n_by_length(max_length, 10);
+                            let trjs = importance
+                                .par_sample_n_by_length(max_length, 10)
+                                .expect("Failed to sample trajectories");
                             // Get the one with the highest weight.
                             trjs.values()
                                 .iter()
@@ -183,7 +188,9 @@ pub fn sem<'a>(
                     // Initialize the parameter estimator.
                     let estimator = BE::new(expectation).with_prior((1, 1.));
                     // Fit the model using the parameter estimator.
-                    estimator.par_fit(prev_model.graph().clone())
+                    estimator
+                        .par_fit(prev_model.graph().clone())
+                        .expect("Failed to fit the model during the M-step")
                 };
 
                 // Define the stopping criteria.
@@ -213,25 +220,33 @@ pub fn sem<'a>(
             let fitted_graph = match algorithm {
                 "ctpc" => {
                     // Initialize the F test.
-                    let f_test = FTest::new(&cache, f_test);
+                    let f_test = FTest::new(&cache, f_test).expect("Failed to initialize F-test");
                     // Initialize the chi-squared test.
-                    let chi_sq_test = ChiSquaredTest::new(&cache, c_test);
+                    let chi_sq_test = ChiSquaredTest::new(&cache, c_test)
+                        .expect("Failed to initialize Chi-squared test");
                     // Initialize the CTPC algorithm.
-                    let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test);
+                    let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)
+                        .expect("Failed to initialize CTPC");
                     // Set prior knowledge.
-                    let ctpc = ctpc.with_prior_knowledge(prior_knowledge);
+                    let ctpc = ctpc
+                        .with_prior_knowledge(prior_knowledge)
+                        .expect("Failed to set prior knowledge");
                     // Fit the new structure using CTPC.
-                    ctpc.par_fit()
+                    ctpc.par_fit().expect("Failed to fit structure with CTPC")
                 }
                 "cthc" => {
                     // Initialize the scoring criterion.
                     let bic = BIC::new(&cache);
                     // Initialize the CTHC algorithm and set the maximum number of parents.
-                    let cthc = CTHC::new(&initial_graph, &bic).with_max_parents(max_parents);
+                    let cthc = CTHC::new(&initial_graph, &bic)
+                        .expect("Failed to initialize CTHC")
+                        .with_max_parents(max_parents);
                     // Set prior knowledge.
-                    let cthc = cthc.with_prior_knowledge(prior_knowledge);
+                    let cthc = cthc
+                        .with_prior_knowledge(prior_knowledge)
+                        .expect("Failed to set prior knowledge");
                     // Fit the new structure using CTHC.
-                    cthc.par_fit()
+                    cthc.par_fit().expect("Failed to fit structure with CTHC")
                 }
                 _ => panic!(
                     "Failed to get the structure learning algorithm: \n\
@@ -240,7 +255,9 @@ pub fn sem<'a>(
                 ),
             };
             // Fit the new model using the expectation.
-            estimator.par_fit(fitted_graph)
+            estimator
+                .par_fit(fitted_graph)
+                .expect("Failed to fit the model structure")
         };
 
         // Define the stopping criteria.

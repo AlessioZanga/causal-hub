@@ -7,7 +7,7 @@ use crate::{
     datasets::Dataset,
     io::CsvIO,
     models::Labelled,
-    types::{Labels, Set},
+    types::{Labels, Result, Set},
 };
 
 /// A type alias for a gaussian variable.
@@ -128,7 +128,7 @@ impl Dataset for GaussTable {
 }
 
 impl CsvIO for GaussTable {
-    fn from_csv_reader<R: Read>(reader: R) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
@@ -137,8 +137,7 @@ impl CsvIO for GaussTable {
 
         // Read the headers.
         let labels: Labels = reader
-            .headers()
-            .expect("Failed to read the headers.")
+            .headers()?
             .into_iter()
             .map(|x| x.to_owned())
             .collect();
@@ -170,31 +169,27 @@ impl CsvIO for GaussTable {
         let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
+        let values = values.into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
-        Self::new(labels, values)
+        Ok(Self::new(labels, values))
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) {
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
         // Create the CSV writer.
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
         // Write the headers.
-        writer
-            .write_record(self.labels.iter())
-            .expect("Failed to write CSV headers.");
+        writer.write_record(self.labels.iter())?;
 
         // Write the records.
-        self.values.rows().into_iter().for_each(|row| {
+        for row in self.values.rows() {
             // Map the row values to strings.
             let record = row.iter().map(|x| x.to_string());
             // Write the record.
-            writer
-                .write_record(record)
-                .expect("Failed to write CSV record.");
-        });
+            writer.write_record(record)?;
+        }
+
+        Ok(())
     }
 }

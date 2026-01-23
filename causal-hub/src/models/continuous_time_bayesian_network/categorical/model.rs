@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Map, Set, States},
+    types::{Error, Labels, Map, Result, Set, States},
 };
 
 /// A categorical continuous time Bayesian network.
@@ -144,20 +144,20 @@ impl CTBN for CatCTBN {
     type Trajectory = CatTrj;
     type Trajectories = CatTrjs;
 
-    fn new<I>(graph: DiGraph, cims: I) -> Self
+    fn new<I>(graph: DiGraph, cims: I) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CIM>,
     {
         // Collect the CPDs into a map.
         let mut cims: Map<_, _> = cims
             .into_iter()
-            // Assert CIM contains exactly one label.
-            // TODO: Refactor code and remove this assumption.
-            .inspect(|x| {
-                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            .map(|x| {
+                if x.labels().len() != 1 {
+                    return Err(Error::Model("CPD must contain exactly one label.".into()));
+                }
+                Ok((x.labels()[0].to_owned(), x))
             })
-            .map(|x| (x.labels()[0].to_owned(), x))
-            .collect();
+            .collect::<Result<_>>()?;
         // Sort the CPDs by their labels.
         cims.sort_keys();
 
@@ -168,19 +168,21 @@ impl CTBN for CatCTBN {
             cim.states()
                 .iter()
                 .chain(cim.conditioning_states())
-                .for_each(|(l, s)| {
+                .try_for_each(|(l, s)| {
                     // Check if the states are already in the map.
                     if let Some(existing_states) = states.get(l) {
                         // Check if the states are the same.
-                        assert_eq!(
-                            existing_states, s,
-                            "States of `{l}` must be the same across CIMs.",
-                        );
+                        if existing_states != s {
+                            return Err(Error::Model(format!(
+                                "States of `{l}` must be the same across CIMs.",
+                            )));
+                        }
                     } else {
                         // Insert the states into the map.
                         states.insert(l.to_owned(), s.clone());
                     }
-                });
+                    Ok(())
+                })?;
         }
         // Sort the states of the variables.
         states.sort_keys();
@@ -191,47 +193,52 @@ impl CTBN for CatCTBN {
         let shape = Array::from_iter(states.values().map(Set::len));
 
         // Assert same number of graph labels and CIMs.
-        assert!(
-            graph.labels().iter().eq(cims.keys()),
-            "Graph labels and distributions labels must be the same."
-        );
+        if !graph.labels().iter().eq(cims.keys()) {
+            return Err(Error::Model(
+                "Graph labels and distributions labels must be the same.".into(),
+            ));
+        }
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        for i in graph.vertices() {
             // Get the parents of the vertex.
             let pa_i = graph.parents(&set![i]).into_iter();
-            let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
+            let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones
             // Get the conditioning labels of the CIM.
             let pa_j = cims[&labels[i]].conditioning_labels();
             // Assert they are the same.
-            assert_eq!(
-                pa_i, pa_j,
-                "Graph parents labels and CIM conditioning labels must be the same:\n\
+            if pa_i != pa_j {
+                return Err(Error::Model(format!(
+                    "Graph parents labels and CIM conditioning labels must be the same:\n\
                 \t expected:    {:?} ,\n\
                 \t found:       {:?} .",
-                pa_i, pa_j
-            );
-        });
+                    pa_i, pa_j
+                )));
+            }
+        }
 
         // Initialize an empty graph for the uniform initial distribution.
         let initial_graph = DiGraph::empty(graph.labels());
         // Initialize the CPDs as uniform distributions.
-        let initial_cpds = cims.values().map(|cim| {
-            // Get label and states of the CIM.
-            let states = cim.states().clone();
-            // Set empty conditioning states.
-            let conditioning_states = States::default();
-            // Set uniform parameters.
-            let alpha = cim.shape().product();
-            let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
-            let parameters = parameters.insert_axis(Axis(0));
-            // Construct the CPD.
-            CatCPD::new(states, conditioning_states, parameters)
-        });
+        let initial_cpds: Vec<_> = cims
+            .values()
+            .map(|cim| {
+                // Get label and states of the CIM.
+                let states = cim.states().clone();
+                // Set empty conditioning states.
+                let conditioning_states = States::default();
+                // Set uniform parameters.
+                let alpha = cim.shape().product();
+                let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);
+                let parameters = parameters.insert_axis(Axis(0));
+                // Construct the CPD.
+                CatCPD::new(states, conditioning_states, parameters)
+            })
+            .collect::<Result<_>>()?;
         // Initialize a uniform initial distribution.
-        let initial_distribution = CatBN::new(initial_graph, initial_cpds);
+        let initial_distribution = CatBN::new(initial_graph, initial_cpds)?;
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
@@ -240,7 +247,7 @@ impl CTBN for CatCTBN {
             initial_distribution,
             graph,
             cims,
-        }
+        })
     }
 
     fn initial_distribution(&self) -> &Self::InitialDistribution {
@@ -272,51 +279,57 @@ impl CTBN for CatCTBN {
         initial_distribution: Self::InitialDistribution,
         graph: DiGraph,
         cims: I,
-    ) -> Self
+    ) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CIM>,
     {
         // Assert name is not empty string.
         if let Some(name) = &name {
-            assert!(!name.is_empty(), "Name cannot be an empty string.");
+            if name.is_empty() {
+                return Err(Error::Model("Name cannot be an empty string.".into()));
+            }
         }
         // Assert description is not empty string.
         if let Some(description) = &description {
-            assert!(
-                !description.is_empty(),
-                "Description cannot be an empty string."
-            );
+            if description.is_empty() {
+                return Err(Error::Model(
+                    "Description cannot be an empty string.".into(),
+                ));
+            }
         }
 
         // Construct the categorical CTBN.
-        let mut ctbn = Self::new(graph, cims);
+        let mut ctbn = Self::new(graph, cims)?;
 
         // Assert the initial distribution has same labels.
-        assert!(
-            initial_distribution.labels().eq(ctbn.labels()),
-            "Initial distribution labels must be the same as the CIMs labels."
-        );
+        if !initial_distribution.labels().eq(ctbn.labels()) {
+            return Err(Error::Model(
+                "Initial distribution labels must be the same as the CIMs labels.".into(),
+            ));
+        }
         // Assert the initial distribution has same states.
-        assert!(
-            initial_distribution
-                .cpds()
-                .into_iter()
-                .zip(ctbn.cims())
-                .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states())),
-            "Initial distribution states must be the same as the CIMs states."
-        );
+        if !initial_distribution
+            .cpds()
+            .into_iter()
+            .zip(ctbn.cims())
+            .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states()))
+        {
+            return Err(Error::Model(
+                "Initial distribution states must be the same as the CIMs states.".into(),
+            ));
+        }
 
         // Set the optional fields.
         ctbn.name = name;
         ctbn.description = description;
         ctbn.initial_distribution = initial_distribution;
 
-        ctbn
+        Ok(ctbn)
     }
 }
 
 impl Serialize for CatCTBN {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -354,7 +367,7 @@ impl Serialize for CatCTBN {
 }
 
 impl<'de> Deserialize<'de> for CatCTBN {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -378,7 +391,7 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 formatter.write_str("struct CatCTBN")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatCTBN, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatCTBN, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -447,13 +460,8 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 // Set helper types.
                 let cims: Vec<_> = cims;
 
-                Ok(CatCTBN::with_optionals(
-                    name,
-                    description,
-                    initial_distribution,
-                    graph,
-                    cims,
-                ))
+                CatCTBN::with_optionals(name, description, initial_distribution, graph, cims)
+                    .map_err(serde::de::Error::custom)
             }
         }
 

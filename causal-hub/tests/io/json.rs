@@ -30,9 +30,9 @@ mod tests {
                         // Load model.
                         let true_model = [<load_ $bn>]();
                         // Serialize model to JSON.
-                        let json = true_model.to_json_string();
+                        let json = true_model.to_json_string().unwrap();
                         // Deserialize model from JSON.
-                        let pred_model = CatBN::from_json_string(json.as_str());
+                        let pred_model = CatBN::from_json_string(json.as_str()).unwrap();
                         // Assert the models are equal.
                         assert_relative_eq!(true_model, pred_model);
                     }
@@ -44,7 +44,7 @@ mod tests {
                 // Load model.
                 let true_model = load_asia();
                 // Serialize model to JSON.
-                let json = true_model.to_json_string();
+                let json = true_model.to_json_string().unwrap();
                 // Assert the JSON string is correct.
                 assert_eq!(
                     json,
@@ -59,15 +59,16 @@ mod tests {
                 // Load model.
                 let model = load_asia();
                 // Sample from model.
-                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100);
+                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100).unwrap();
                 // Set estimator.
                 let estimator = BE::new(&dataset).with_prior(1);
                 // Fit model to dataset.
-                let true_model: CatBN = BNEstimator::fit(&estimator, model.graph().clone());
+                let true_model: CatBN =
+                    BNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                 // Serialize model to JSON.
-                let json = true_model.to_json_string();
+                let json = true_model.to_json_string().unwrap();
                 // Deserialize model from JSON.
-                let pred_model = CatBN::from_json_string(json.as_str());
+                let pred_model = CatBN::from_json_string(json.as_str()).unwrap();
                 // Assert the models are equal.
                 assert_relative_eq!(true_model, pred_model);
             }
@@ -79,13 +80,14 @@ mod tests {
                 // Load model.
                 let model = load_asia();
                 // Sample from model.
-                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100);
+                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100).unwrap();
                 // Set estimator.
                 let estimator = BE::new(&dataset).with_prior(1);
                 // Fit model to dataset.
-                let true_model: CatBN = BNEstimator::fit(&estimator, model.graph().clone());
+                let true_model: CatBN =
+                    BNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                 // Serialize model to JSON.
-                let json = true_model.to_json_string();
+                let json = true_model.to_json_string().unwrap();
                 // Assert the JSON string is correct.
                 assert_eq!(
                     json,
@@ -106,9 +108,9 @@ mod tests {
                             // Load model.
                             let true_model = [<load_ $bn>]();
                             // Serialize model to JSON.
-                            let json = true_model.to_json_string();
+                            let json = true_model.to_json_string().unwrap();
                             // Deserialize model from JSON.
-                            let pred_model = GaussBN::from_json_string(json.as_str());
+                            let pred_model = GaussBN::from_json_string(json.as_str()).unwrap();
                             // Assert the models are equal.
                             assert_relative_eq!(true_model, pred_model);
                         }
@@ -122,15 +124,16 @@ mod tests {
                     // Load model.
                     let model = load_ecoli70();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100);
+                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100).unwrap();
                     // Set estimator.
                     let estimator = MLE::new(&dataset);
                     // Fit model to dataset.
-                    let true_model: GaussBN = BNEstimator::fit(&estimator, model.graph().clone());
+                    let true_model: GaussBN =
+                        BNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                     // Serialize model to JSON.
-                    let json = true_model.to_json_string();
+                    let json = true_model.to_json_string().unwrap();
                     // Deserialize model from JSON.
-                    let pred_model = GaussBN::from_json_string(json.as_str());
+                    let pred_model = GaussBN::from_json_string(json.as_str()).unwrap();
                     // Assert the models are equal.
                     assert_relative_eq!(true_model, pred_model);
                 }
@@ -142,13 +145,14 @@ mod tests {
                     // Load model.
                     let model = load_ecoli70();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100);
+                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100).unwrap();
                     // Set estimator.
                     let estimator = MLE::new(&dataset);
                     // Fit model to dataset.
-                    let true_model: GaussBN = BNEstimator::fit(&estimator, model.graph().clone());
+                    let true_model: GaussBN =
+                        BNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                     // Serialize model to JSON.
-                    let _ = true_model.to_json_string();
+                    let _ = true_model.to_json_string().unwrap();
                     // Note: Due to floating-point precision issues, we do not assert equality of the JSON string here.
                 }
             }
@@ -164,9 +168,9 @@ mod tests {
                     // Load model.
                     let true_model = load_eating();
                     // Serialize model to JSON.
-                    let json = true_model.to_json_string();
+                    let json = true_model.to_json_string().unwrap();
                     // Deserialize model from JSON.
-                    let pred_model = CatCTBN::from_json_string(json.as_str());
+                    let pred_model = CatCTBN::from_json_string(json.as_str()).unwrap();
                     // Assert the models are equal.
                     assert_eq!(true_model, pred_model);
                 }
@@ -176,7 +180,7 @@ mod tests {
                     // Load model.
                     let true_model = load_eating();
                     // Serialize model to JSON.
-                    let json = true_model.to_json_string();
+                    let json = true_model.to_json_string().unwrap();
                     // Assert the JSON string is correct.
                     assert_eq!(
                         json,
@@ -191,15 +195,18 @@ mod tests {
                     // Load model.
                     let model = load_eating();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n_by_length(100, 10);
+                    let dataset = ForwardSampler::new(&mut rng, &model)
+                        .sample_n_by_length(100, 10)
+                        .unwrap();
                     // Set estimator.
                     let estimator = BE::new(&dataset).with_prior((1, 1.));
                     // Fit model to dataset.
-                    let true_model: CatCTBN = CTBNEstimator::fit(&estimator, model.graph().clone());
+                    let true_model: CatCTBN =
+                        CTBNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                     // Serialize model to JSON.
-                    let json = true_model.to_json_string();
+                    let json = true_model.to_json_string().unwrap();
                     // Deserialize model from JSON.
-                    let pred_model = CatCTBN::from_json_string(json.as_str());
+                    let pred_model = CatCTBN::from_json_string(json.as_str()).unwrap();
                     // Assert the models are equal.
                     assert_relative_eq!(true_model, pred_model);
                 }
@@ -211,13 +218,16 @@ mod tests {
                     // Load model.
                     let model = load_eating();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n_by_length(100, 10);
+                    let dataset = ForwardSampler::new(&mut rng, &model)
+                        .sample_n_by_length(100, 10)
+                        .unwrap();
                     // Set estimator.
                     let estimator = BE::new(&dataset).with_prior((1, 1.));
                     // Fit model to dataset.
-                    let true_model: CatCTBN = CTBNEstimator::fit(&estimator, model.graph().clone());
+                    let true_model: CatCTBN =
+                        CTBNEstimator::fit(&estimator, model.graph().clone()).unwrap();
                     // Serialize model to JSON.
-                    let json = true_model.to_json_string();
+                    let json = true_model.to_json_string().unwrap();
                     // Assert the JSON string is correct.
                     assert_eq!(
                         json,

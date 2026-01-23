@@ -8,7 +8,7 @@ use crate::{
     inference::Modelled,
     models::{BN, CatBN, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
-    types::Set,
+    types::{Error, Result, Set},
 };
 
 /// An approximate inference engine.
@@ -99,21 +99,21 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// * `n` - The sample size.
     ///
-    /// # Panics
-    ///
-    /// * Panics if `n` is zero.
-    ///
     /// # Returns
     ///
     /// Return a new approximate inference instance with the specified sample size.
     ///
     #[inline]
-    pub const fn with_sample_size(mut self, n: usize) -> Self {
+    pub fn with_sample_size(mut self, n: usize) -> Result<Self> {
         // Assert the sample size is positive.
-        assert!(n > 0, "Sample size must be positive.");
+        if n == 0 {
+            return Err(Error::IllegalArgument(
+                "Sample size must be positive.".into(),
+            ));
+        }
         // Set the sample size.
         self.sample_size = Some(n);
-        self
+        Ok(self)
     }
 }
 
@@ -136,17 +136,11 @@ where
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
-    /// # Panics
-    ///
-    /// * Panics if `x` is empty.
-    /// * Panics if `x` and `z` are not disjoint.
-    /// * Panics if `x` or `z` are not in the model.
-    ///
     /// # Returns
     ///
     /// The estimated values of `x` conditioned on `z`.
     ///
-    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> T::CPD;
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T::CPD>;
 }
 
 impl<'a, R, E, F> ApproximateInference<'a, R, CatBN, E, F> {
@@ -189,16 +183,23 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         R: Rng,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -210,7 +211,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
-            let dataset = sampler.sample_n(n);
+            let dataset = sampler.sample_n(n)?;
             // Fit the CPD.
             BE::new(&dataset).fit(x, z)
         }
@@ -219,18 +220,25 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, (), F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -242,7 +250,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
-            let dataset = sampler.sample_n(n);
+            let dataset = sampler.sample_n(n)?;
             // Fit the CPD.
             match &self.estimator {
                 // Use the provided estimator.
@@ -257,16 +265,23 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         R: Rng,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -282,13 +297,13 @@ macro_for!($type in [CatBN, GaussBN] {
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
-                    let dataset = sampler.sample_n(n);
+                    let dataset = sampler.sample_n(n)?;
                     // Fit the CPD.
                     BE::new(&dataset).fit(x, z)
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)
-                    .with_sample_size(n)
+                    .with_sample_size(n)?
                     .estimate(x, z),
             }
         }
@@ -297,18 +312,25 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -324,7 +346,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
-                    let dataset = sampler.sample_n(n);
+                    let dataset = sampler.sample_n(n)?;
                     // Fit the CPD.
                     match &self.estimator {
                         // Use the provided estimator.
@@ -335,7 +357,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)
-                    .with_sample_size(n)
+                    .with_sample_size(n)?
                     .estimate(x, z),
             }
         }
@@ -355,17 +377,17 @@ where
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * Panics if `x` is empty.
-    /// * Panics if `x` and `z` are not disjoint.
-    /// * Panics if `x` or `z` are not in the model.
+    /// * `IllegalArgument` if `x` is empty.
+    /// * `IllegalArgument` if `x` and `z` are not disjoint.
+    /// * `IllegalArgument` if `x` or `z` are not in the model.
     ///
     /// # Returns
     ///
     /// The estimated values of `x` conditioned on `z`.
     ///
-    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> T::CPD;
+    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T::CPD>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -374,16 +396,23 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         R: Rng + SeedableRng,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -395,7 +424,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
-            let dataset = sampler.par_sample_n(n);
+            let dataset = sampler.par_sample_n(n)?;
             // Fit the CPD.
             BE::new(&dataset).par_fit(x, z)
         }
@@ -404,18 +433,25 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -427,7 +463,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
             //       by using batching to reduce memory usage.
-            let dataset = sampler.par_sample_n(n);
+            let dataset = sampler.par_sample_n(n)?;
             // Fit the CPD.
             match &self.estimator {
                 // Use the provided estimator.
@@ -442,16 +478,23 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         R: Rng + SeedableRng,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -467,13 +510,13 @@ macro_for!($type in [CatBN, GaussBN] {
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
-                    let dataset = sampler.par_sample_n(n);
+                    let dataset = sampler.par_sample_n(n)?;
                     // Fit the CPD.
                     BE::new(&dataset).par_fit(x, z)
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)
-                    .with_sample_size(n)
+                    .with_sample_size(n)?
                     .estimate(x, z),
             }
         }
@@ -482,18 +525,25 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> <$type as BN>::CPD,
+        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> <$type as BN>::CPD {
+        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert X and Z are in the model.
-            assert!(
-                x.union(z).all(|&i| i < self.model.labels().len()),
-                "Variables X and Z must be in the model."
-            );
+            if !x.union(z).all(|&i| i < self.model.labels().len()) {
+                return Err(Error::IllegalArgument(
+                    "Variables X and Z must be in the model.".into(),
+                ));
+            }
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -509,7 +559,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
                     //       by using batching to reduce memory usage.
-                    let dataset = sampler.par_sample_n(n);
+                    let dataset = sampler.par_sample_n(n)?;
                     // Fit the CPD.
                     match &self.estimator {
                         // Use the provided estimator.
@@ -520,7 +570,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 }
                 // Delegate to empty evidence case.
                 None => ApproximateInference::new(&mut rng, self.model)
-                    .with_sample_size(n)
+                    .with_sample_size(n)?
                     .estimate(x, z),
             }
         }

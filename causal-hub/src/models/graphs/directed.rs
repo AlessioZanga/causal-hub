@@ -389,8 +389,8 @@ impl Serialize for DiGraph {
             .into_iter()
             .map(|(x, y)| {
                 (
-                    self.index_to_label(x).to_owned(),
-                    self.index_to_label(y).to_owned(),
+                    self.index_to_label(x).unwrap().to_owned(),
+                    self.index_to_label(y).unwrap().to_owned(),
                 )
             })
             .collect();

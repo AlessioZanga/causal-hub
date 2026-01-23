@@ -3,6 +3,8 @@ use std::{
     io::{BufReader, BufWriter, Read, Write},
 };
 
+use crate::types::Result;
+
 /// A trait for reading and writing CSV files.
 pub trait CsvIO: Sized {
     /// Create an instance of the type from a CSV reader.
@@ -15,7 +17,7 @@ pub trait CsvIO: Sized {
     ///
     /// A new instance of the type.
     ///
-    fn from_csv_reader<R: Read>(reader: R) -> Self;
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self>;
 
     /// Write the instance to a CSV writer.
     ///
@@ -23,7 +25,7 @@ pub trait CsvIO: Sized {
     ///
     /// * `writer` - The CSV writer to write to.
     ///
-    fn to_csv_writer<W: Write>(&self, writer: W);
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()>;
 
     /// Create an instance of the type from a CSV string.
     ///
@@ -35,7 +37,7 @@ pub trait CsvIO: Sized {
     ///
     /// A new instance of the type.
     ///
-    fn from_csv_string(csv: &str) -> Self {
+    fn from_csv_string(csv: &str) -> Result<Self> {
         // Read from the string as buffer.
         Self::from_csv_reader(csv.as_bytes())
     }
@@ -46,13 +48,13 @@ pub trait CsvIO: Sized {
     ///
     /// A CSV string representation of the instance.
     ///
-    fn to_csv_string(&self) -> String {
+    fn to_csv_string(&self) -> Result<String> {
         // Create a buffer to write to.
         let mut buffer = Vec::new();
         // Write to the buffer.
-        self.to_csv_writer(&mut buffer);
+        self.to_csv_writer(&mut buffer)?;
         // Convert the buffer to a string.
-        String::from_utf8(buffer).expect("Failed to convert CSV to string.")
+        String::from_utf8(buffer).map_err(Into::into)
     }
 
     /// Create an instance of the type from a CSV file.
@@ -65,9 +67,9 @@ pub trait CsvIO: Sized {
     ///
     /// A new instance of the type.
     ///
-    fn from_csv_file(path: &str) -> Self {
+    fn from_csv_file(path: &str) -> Result<Self> {
         // Open the CSV file.
-        let file = File::open(path).expect("Failed to open CSV file.");
+        let file = File::open(path)?;
         // Create a buffered reader.
         let reader = BufReader::new(file);
         // Read from the reader.
@@ -80,12 +82,12 @@ pub trait CsvIO: Sized {
     ///
     /// * `path` - The path to the CSV file to write.
     ///
-    fn to_csv_file(&self, path: &str) {
+    fn to_csv_file(&self, path: &str) -> Result<()> {
         // Create a file to write to.
-        let file = File::create(path).expect("Failed to create CSV file.");
+        let file = File::create(path)?;
         // Create a buffered writer.
         let writer = BufWriter::new(file);
         // Write to the file.
-        self.to_csv_writer(writer);
+        self.to_csv_writer(writer)
     }
 }

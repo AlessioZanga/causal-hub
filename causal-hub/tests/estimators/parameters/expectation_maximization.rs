@@ -85,7 +85,7 @@ mod tests {
                             // Initialize a new sampler.
                             let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                             // Sample the trajectories.
-                            importance.sample_by_length(100)
+                            importance.sample_by_length(100).unwrap()
                         })
                         .collect()
                 };
@@ -94,6 +94,7 @@ mod tests {
                 let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
                     // Fit the new model using the expectation.
                     ParCTBNEstimator::par_fit(&MLE::new(expectation), prev_model.graph().clone())
+                        .unwrap()
                 };
 
                 // Define the stopping criteria.
@@ -127,7 +128,7 @@ mod tests {
                 // Initialize a new sampler with no evidence.
                 let forward = ForwardSampler::new(&mut rng, &model);
                 // Sample the fully-observed trajectories from the model.
-                let trajectories = forward.par_sample_n_by_length(100, 10_000);
+                let trajectories = forward.par_sample_n_by_length(100, 10_000).unwrap();
 
                 // Set the probability of the evidence.
                 let p = 0.5;
@@ -137,7 +138,7 @@ mod tests {
                 let evidence = generator.random();
 
                 // Initialize a raw estimator for an initial guess.
-                let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence);
+                let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, &evidence).unwrap();
                 // Set the initial CIMs.
                 let initial_cims: Vec<_> = model
                     .graph()
@@ -145,11 +146,11 @@ mod tests {
                     .into_iter()
                     .map(|i| {
                         let i = set![i];
-                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i)).unwrap()
                     })
                     .collect();
                 // Set the initial model.
-                let initial_model = CatCTBN::new(model.graph().clone(), initial_cims);
+                let initial_model = CatCTBN::new(model.graph().clone(), initial_cims).unwrap();
 
                 // Wrap the random number generator in a RefCell to allow mutable borrowing.
                 let rng = RefCell::new(rng);
@@ -180,7 +181,7 @@ mod tests {
                             // Initialize a new sampler.
                             let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                             // Perform multiple imputation.
-                            let trjs = importance.sample_n_by_length(max_length, 10);
+                            let trjs = importance.sample_n_by_length(max_length, 10).unwrap();
                             // Get the one with the highest weight.
                             trjs.values()
                                 .iter()
@@ -198,6 +199,7 @@ mod tests {
                         &BE::new(expectation).with_prior((1, 1.)),
                         prev_model.graph().clone(),
                     )
+                    .unwrap()
                 };
 
                 // Define the stopping criteria.

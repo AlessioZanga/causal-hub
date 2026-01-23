@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{
     models::{DiGraph, Graph},
     set,
-    types::Set,
+    types::{Error, Result, Set},
 };
 
 /// A trait for graphical separation.
@@ -16,17 +16,17 @@ pub trait GraphicalSeparation {
     /// * `y` - A set of vertices representing set `Y`.
     /// * `z` - A set of vertices representing set `Z`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    /// * If `X`, `Y` or `Z` are not disjoint sets.
-    /// * If `X` and `Y` are empty sets.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `IllegalArgument` if `X` and `Y` are empty sets.
     ///
     /// # Returns
     ///
     /// `true` if `X` and `Y` are separated by `Z`, `false` otherwise.
     ///
-    fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
+    fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool>;
 
     /// Checks if the `Z` is a minimal separator set for `X` and `Y`.
     ///
@@ -38,12 +38,12 @@ pub trait GraphicalSeparation {
     /// * `w` - An optional iterable collection of vertices representing set `W`.
     /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    /// * If `X`, `Y` or `Z` are not disjoint sets.
-    /// * If `X` and `Y` are empty sets.
-    /// * If not `W` <= `Z` <= `V`.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `IllegalArgument` if `X` and `Y` are empty sets.
+    /// * `IllegalArgument` if not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
@@ -56,7 +56,7 @@ pub trait GraphicalSeparation {
         z: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> bool;
+    ) -> Result<bool>;
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
     ///
@@ -65,12 +65,12 @@ pub trait GraphicalSeparation {
     /// * `x` - A set of vertices representing set `X`.
     /// * `y` - A set of vertices representing set `Y`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    /// * If `X` and `Y` are not disjoint sets.
-    /// * If `X` or `Y` are empty sets.
-    /// * If not `W` <= `V`.
+    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint sets.
+    /// * `IllegalArgument` if `X` or `Y` are empty sets.
+    /// * `IllegalArgument` if not `W` <= `V`.
     ///
     /// # Returns
     ///
@@ -82,7 +82,7 @@ pub trait GraphicalSeparation {
         y: &Set<usize>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) -> Option<Set<usize>>;
+    ) -> Result<Option<Set<usize>>>;
 }
 
 // Implementation of the `GraphicalSeparation` trait for directed graphs.
@@ -98,55 +98,103 @@ pub(crate) mod digraph {
         z: Option<&Set<usize>>,
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
-    ) {
+    ) -> Result<()> {
         // Assert the included set is a subset of the restricted set.
         if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref()) {
-            assert!(w.is_subset(v), "Set W must be a subset of set V.");
+            if !w.is_subset(v) {
+                return Err(Error::IllegalArgument(
+                    "Set W must be a subset of set V.".into(),
+                ));
+            }
         }
 
         // Convert X to set, while checking for out of bounds.
         for &x in x {
-            assert!(g.has_vertex(x), "Vertex `{x}` in set X is out of bounds.");
+            if !g.has_vertex(x) {
+                return Err(Error::IllegalArgument(
+                    format!("Vertex `{x}` in set X is out of bounds.").into(),
+                ));
+            }
         }
         // Convert Y to set, while checking for out of bounds.
         for &y in y {
-            assert!(g.has_vertex(y), "Vertex `{y}` in set Y is out of bounds.");
+            if !g.has_vertex(y) {
+                return Err(Error::IllegalArgument(
+                    format!("Vertex `{y}` in set Y is out of bounds.").into(),
+                ));
+            }
         }
         // Convert Z to set, while checking for out of bounds.
         if let Some(z) = z {
             for &z in z {
-                assert!(g.has_vertex(z), "Vertex `{z}` in set Z is out of bounds.");
+                if !g.has_vertex(z) {
+                    return Err(Error::IllegalArgument(
+                        format!("Vertex `{z}` in set Z is out of bounds.").into(),
+                    ));
+                }
             }
         }
 
         // Assert X is non-empty.
-        assert!(!x.is_empty(), "Set X must not be empty.");
+        if x.is_empty() {
+            return Err(Error::IllegalArgument("Set X must not be empty.".into()));
+        }
         // Assert Y is non-empty.
-        assert!(!y.is_empty(), "Set Y must not be empty.");
+        if y.is_empty() {
+            return Err(Error::IllegalArgument("Set Y must not be empty.".into()));
+        }
 
         // Assert X and Y are disjoint.
-        assert!(x.is_disjoint(y), "Sets X and Y must be disjoint.");
+        if !x.is_disjoint(y) {
+            return Err(Error::IllegalArgument(
+                "Sets X and Y must be disjoint.".into(),
+            ));
+        }
 
         // If Z is provided, convert it to a set.
         if let Some(z) = &z {
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Sets X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Sets X and Z must be disjoint.".into(),
+                ));
+            }
             // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(z), "Sets Y and Z must be disjoint.");
+            if !y.is_disjoint(z) {
+                return Err(Error::IllegalArgument(
+                    "Sets Y and Z must be disjoint.".into(),
+                ));
+            }
             // Assert Z includes.
             if let Some(w) = w {
-                assert!(z.is_superset(w), "Set Z must be a superset of set W.");
+                if !z.is_superset(w) {
+                    return Err(Error::IllegalArgument(
+                        "Set Z must be a superset of set W.".into(),
+                    ));
+                }
             }
             // Assert Z is restricted.
             if let Some(v) = v {
-                assert!(z.is_subset(v), "Set Z must be a subset of set V.");
+                if !z.is_subset(v) {
+                    return Err(Error::IllegalArgument(
+                        "Set Z must be a subset of set V.".into(),
+                    ));
+                }
             }
         }
+        Ok(())
     }
 
-    fn _reachable(g: &DiGraph, x: &Set<usize>, an_x: &Set<usize>, z: &Set<usize>) -> Set<usize> {
+    fn _reachable(
+        g: &DiGraph,
+        x: &Set<usize>,
+        an_x: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Set<usize>> {
         // Assert the graph is a DAG.
-        assert!(g.topological_order().is_some(), "Graph must be a DAG.");
+        if g.topological_order().is_none() {
+            return Err(Error::IllegalArgument("Graph must be a DAG.".into()));
+        }
 
         // Check if the ball passes or not.
         let _pass = |e: bool, v: usize, f: bool, n: usize| {
@@ -195,13 +243,13 @@ pub(crate) mod digraph {
         }
 
         // Return the set of visited vertices.
-        visited.into_iter().map(|(_, w)| w).collect()
+        Ok(visited.into_iter().map(|(_, w)| w).collect())
     }
 
     impl GraphicalSeparation for DiGraph {
-        fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+        fn is_separator_set(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>);
+            _assert(self, x, y, Some(z), None::<&Set<_>>, None::<&Set<_>>)?;
 
             // Initialize the forward and backward deques and visited sets.
 
@@ -226,7 +274,7 @@ pub(crate) mod digraph {
                     backward_visited.insert(w);
                     // If the W is in Y, return false (not separated).
                     if y.contains(&w) {
-                        return false;
+                        return Ok(false);
                     }
                     // If the W is in Z, continue to the next iteration.
                     if z.contains(&w) {
@@ -252,7 +300,7 @@ pub(crate) mod digraph {
                     forward_visited.insert(w);
                     // If the W is in Y, return false (not separated).
                     if y.contains(&w) {
-                        return false;
+                        return Ok(false);
                     }
                     // If the W is an ancestor or in Z, add its predecessors to the backward deque.
                     if ancestors_or_z.contains(&w) {
@@ -274,7 +322,7 @@ pub(crate) mod digraph {
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn is_minimal_separator_set(
@@ -284,9 +332,9 @@ pub(crate) mod digraph {
             z: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> bool {
+        ) -> Result<bool> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, Some(z), w, v);
+            _assert(self, x, y, Some(z), w, v)?;
 
             // Set default values for W if not provided.
             let w = match w {
@@ -299,24 +347,24 @@ pub(crate) mod digraph {
             let an_x_y_w = &self.ancestors(&x_y_w) | &x_y_w;
 
             // a) Check that Z is a separator.
-            let x_closure = _reachable(self, x, &an_x_y_w, z);
+            let x_closure = _reachable(self, x, &an_x_y_w, z)?;
             if !x_closure.is_disjoint(y) {
-                return false;
+                return Ok(false);
             }
 
             // b) Check that Z is constrained to An(X, Y).
             if !z.is_subset(&an_x_y_w) {
-                return false;
+                return Ok(false);
             }
 
             // c) Check that Z is minimal.
-            let y_closure = _reachable(self, y, &an_x_y_w, z);
+            let y_closure = _reachable(self, y, &an_x_y_w, z)?;
             if !((z - w).is_subset(&(&x_closure & &y_closure))) {
-                return false;
+                return Ok(false);
             }
 
             // Otherwise, return true.
-            true
+            Ok(true)
         }
 
         fn find_minimal_separator_set(
@@ -325,9 +373,9 @@ pub(crate) mod digraph {
             y: &Set<usize>,
             w: Option<&Set<usize>>,
             v: Option<&Set<usize>>,
-        ) -> Option<Set<usize>> {
+        ) -> Result<Option<Set<usize>>> {
             // Perform sanity checks and convert sets.
-            _assert(self, x, y, None::<&Set<_>>, w, v);
+            _assert(self, x, y, None::<&Set<_>>, w, v)?;
 
             // Set default values for W and V if not provided.
             let w = match w {
@@ -347,19 +395,19 @@ pub(crate) mod digraph {
             let z = v & &(&an_x_y_w - &(x | y));
 
             // Check if Z is a separator.
-            let x_closure = _reachable(self, x, &an_x_y_w, &z);
+            let x_closure = _reachable(self, x, &an_x_y_w, &z)?;
             if !x_closure.is_disjoint(y) {
-                return None; // No minimal separator exists.
+                return Ok(None); // No minimal separator exists.
             }
 
             // Update Z.
             let z = &z & &(&x_closure | w);
 
             // Check if Z is a separator.
-            let y_closure = _reachable(self, y, &an_x_y_w, &z);
+            let y_closure = _reachable(self, y, &an_x_y_w, &z)?;
 
             // Return the minimal separator.
-            Some(&z & &(&y_closure | w))
+            Ok(Some(&z & &(&y_closure | w)))
         }
     }
 }

@@ -79,6 +79,8 @@ impl PyPK {
             .collect::<PyResult<_>>()?;
 
         // Create the prior knowledge structure.
-        Ok(PK::new(labels, forbidden, required, temporal_order).into())
+        Ok(PK::new(labels, forbidden, required, temporal_order)
+            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .into())
     }
 }

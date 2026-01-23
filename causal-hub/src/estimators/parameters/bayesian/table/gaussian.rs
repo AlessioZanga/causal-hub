@@ -6,7 +6,7 @@ use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{LN_2_PI, Labels, Set},
+    types::{Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
 
@@ -17,9 +17,11 @@ impl BE<'_, GaussTable, f64> {
         z: &Set<usize>,
         sample_statistics: GaussCPDS,
         prior: f64,
-    ) -> GaussCPD {
+    ) -> Result<GaussCPD> {
         // Assert likelihood of prior.
-        assert!(prior >= 0.0, "Prior must be non-negative.");
+        if prior < 0.0 {
+            return Err(Error::Model("Prior must be non-negative.".into()));
+        }
 
         // Get the sample scatter matrices and size.
         let (mu_x, mu_z, s_xx, s_xz, s_zz, n) = (
@@ -85,7 +87,7 @@ impl BE<'_, GaussTable, f64> {
             (a, b, s)
         } else {
             // Compute the pseudo-inverse of S_zz.
-            let s_zz_pinv = s_zz_post.pinv();
+            let s_zz_pinv = s_zz_post.pinv()?;
             // Compute the coefficient matrix.
             let a = s_xz_post.dot(&s_zz_pinv);
             // Compute the intercept vector.
@@ -98,12 +100,14 @@ impl BE<'_, GaussTable, f64> {
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
-        let (_, ln_det) = s.sln_det().expect("Failed to compute determinant of S.");
+        let (_, ln_det) = s
+            .sln_det()
+            .map_err(|e| Error::Linalg(format!("Failed to compute determinant of S: {e}")))?;
         // This is the likelihood of the posterior "samples".
         let sample_log_likelihood = -0.5 * n_post * (p * LN_2_PI + ln_det + p);
 
         // Construct the CPD parameters.
-        let parameters = GaussCPDP::new(a, b, s);
+        let parameters = GaussCPDP::new(a, b, s)?;
 
         // Subset the conditioning labels, states and shape.
         let conditioning_labels = z.iter().map(|&i| labels[i].clone()).collect();
@@ -116,13 +120,13 @@ impl BE<'_, GaussTable, f64> {
         let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CPD.
-        GaussCPD::with_optionals(
+        Ok(GaussCPD::with_optionals(
             labels,
             conditioning_labels,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        )
+        )?)
     }
 }
 
@@ -130,7 +134,7 @@ impl BE<'_, GaussTable, f64> {
 macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
 
     impl CPDEstimator<GaussCPD> for BE<'_, $type, f64> {
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPD> {
             // Get labels.
             let labels = self.dataset.labels();
             // Get prior.
@@ -143,14 +147,14 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             BE::<'_, GaussTable, f64>::fit(labels, x, z, sample_statistics, prior)
         }
     }
 
     impl ParCPDEstimator<GaussCPD> for BE<'_, $type, f64> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPD> {
             // Get labels.
             let labels = self.dataset.labels();
             // Get prior.
@@ -163,7 +167,7 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             BE::<'_, GaussTable, f64>::fit(labels, x, z, sample_statistics, prior)
         }
@@ -171,7 +175,7 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
 
     impl CPDEstimator<GaussCPD> for BE<'_, $type, ()> {
         #[inline]
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPD> {
             // Default to BDeu prior? No, BGe equivalent standard normal.
             self.clone().with_prior(1.0).fit(x, z)
         }
@@ -179,7 +183,7 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
 
     impl ParCPDEstimator<GaussCPD> for BE<'_, $type, ()> {
         #[inline]
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> GaussCPD {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPD> {
             // Default to BDeu prior? No, BGe equivalent standard normal.
             self.clone().with_prior(1.0).par_fit(x, z)
         }

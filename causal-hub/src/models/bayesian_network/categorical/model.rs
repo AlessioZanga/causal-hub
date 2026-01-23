@@ -13,7 +13,7 @@ use crate::{
     io::{BifIO, BifParser},
     models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Map, States},
+    types::{Error, Labels, Map, Result, States},
 };
 
 /// A categorical Bayesian network.
@@ -135,28 +135,29 @@ impl BN for CatBN {
     type Samples = CatTable;
     type WeightedSamples = CatWtdTable;
 
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CPD>,
     {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
             .into_iter()
-            // Assert CPD contains exactly one label.
-            // TODO: Refactor code and remove this assumption.
-            .inspect(|x| {
-                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            .map(|x| {
+                if x.labels().len() != 1 {
+                    return Err(Error::Model("CPD must contain exactly one label.".into()));
+                }
+                Ok((x.labels()[0].to_owned(), x))
             })
-            .map(|x| (x.labels()[0].to_owned(), x))
-            .collect();
+            .collect::<Result<_>>()?;
         // Sort the CPDs by their labels.
         cpds.sort_keys();
 
         // Assert same number of graph labels and CPDs.
-        assert!(
-            graph.labels().iter().eq(cpds.keys()),
-            "Graph labels and distributions labels must be the same."
-        );
+        if !graph.labels().iter().eq(cpds.keys()) {
+            return Err(Error::Model(
+                "Graph labels and distributions labels must be the same.".into(),
+            ));
+        }
 
         // Allocate the states of the variables.
         let mut states: States = Default::default();
@@ -165,19 +166,21 @@ impl BN for CatBN {
             cpd.states()
                 .iter()
                 .chain(cpd.conditioning_states())
-                .for_each(|(l, s)| {
+                .try_for_each(|(l, s)| {
                     // Check if the states are already in the map.
                     if let Some(existing_states) = states.get(l) {
                         // Check if the states are the same.
-                        assert_eq!(
-                            existing_states, s,
-                            "States of `{l}` must be the same across CPDs.",
-                        );
+                        if existing_states != s {
+                            return Err(Error::Model(format!(
+                                "States of `{l}` must be the same across CPDs.",
+                            )));
+                        }
                     } else {
                         // Insert the states into the map.
                         states.insert(l.to_owned(), s.clone());
                     }
-                });
+                    Ok(())
+                })?;
         }
         // Sort the states of the variables.
         states.sort_keys();
@@ -188,26 +191,29 @@ impl BN for CatBN {
         let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        for i in graph.vertices() {
             // Get the parents of the vertex.
             let pa_i = graph.parents(&set![i]).into_iter();
-            let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
+            let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones.
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
             // Assert they are the same.
-            assert_eq!(
-                pa_i, pa_j,
-                "Graph parents labels and CPD conditioning labels must be the same:\n\
+            if pa_i != pa_j {
+                return Err(Error::Model(format!(
+                    "Graph parents labels and CPD conditioning labels must be the same:\n\
                 \t expected:    {:?} ,\n\
                 \t found:       {:?} .",
-                pa_i, pa_j
-            );
-        });
+                    pa_i, pa_j
+                )));
+            }
+        }
 
         // Assert the graph is acyclic.
-        let topological_order = graph.topological_order().expect("Graph must be acyclic.");
+        let topological_order = graph
+            .topological_order()
+            .ok_or_else(|| Error::Model("Graph must be acyclic.".into()))?;
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
@@ -216,7 +222,7 @@ impl BN for CatBN {
             graph,
             cpds,
             topological_order,
-        }
+        })
     }
 
     #[inline]
@@ -254,35 +260,38 @@ impl BN for CatBN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CPD>,
     {
         // Assert name is not empty string.
         if let Some(name) = &name {
-            assert!(!name.is_empty(), "Name cannot be an empty string.");
+            if name.is_empty() {
+                return Err(Error::Model("Name cannot be an empty string.".into()));
+            }
         }
         // Assert description is not empty string.
         if let Some(description) = &description {
-            assert!(
-                !description.is_empty(),
-                "Description cannot be an empty string."
-            );
+            if description.is_empty() {
+                return Err(Error::Model(
+                    "Description cannot be an empty string.".into(),
+                ));
+            }
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds);
+        let mut bn = Self::new(graph, cpds)?;
 
         // Set the optional fields.
         bn.name = name;
         bn.description = description;
 
-        bn
+        Ok(bn)
     }
 }
 
 impl Serialize for CatBN {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -319,7 +328,7 @@ impl Serialize for CatBN {
 }
 
 impl<'de> Deserialize<'de> for CatBN {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -342,7 +351,7 @@ impl<'de> Deserialize<'de> for CatBN {
                 formatter.write_str("struct CatBN")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatBN, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatBN, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -402,7 +411,8 @@ impl<'de> Deserialize<'de> for CatBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(CatBN::with_optionals(name, description, graph, cpds))
+                CatBN::with_optionals(name, description, graph, cpds)
+                    .map_err(serde::de::Error::custom)
             }
         }
 
@@ -416,19 +426,19 @@ impl<'de> Deserialize<'de> for CatBN {
 impl_json_io!(CatBN);
 
 impl BifIO for CatBN {
-    fn from_bif_string(bif: &str) -> Self {
+    fn from_bif_string(bif: &str) -> Result<Self> {
         BifParser::parse_str(bif)
     }
 
-    fn to_bif_string(&self) -> String {
+    fn to_bif_string(&self) -> Result<String> {
         todo!() // FIXME:
     }
 
-    fn from_bif_file(path: &str) -> Self {
-        Self::from_bif_string(&std::fs::read_to_string(path).expect("Failed to read BIF file."))
+    fn from_bif_file(path: &str) -> Result<Self> {
+        Self::from_bif_string(&std::fs::read_to_string(path).map_err(Error::from)?)
     }
 
-    fn to_bif_file(&self, path: &str) {
-        std::fs::write(path, self.to_bif_string()).expect("Failed to write BIF file.");
+    fn to_bif_file(&self, path: &str) -> Result<()> {
+        std::fs::write(path, self.to_bif_string()?).map_err(Error::from)
     }
 }

@@ -57,7 +57,7 @@ mod tests {
 
         // Condition the potential.
         let e = CatEv::new(s, [CatEvT::CertainPositive { event: 2, state: 0 }]);
-        let pred_phi = phi.condition(&e);
+        let pred_phi = phi.condition(&e).unwrap();
 
         // Set the true potential.
         let true_s = states![("A", ["a1", "a2", "a3"]), ("B", ["b1", "b2"]),];
@@ -90,7 +90,7 @@ mod tests {
         let phi = CatPhi::new(s, p);
 
         // Marginalize the potential.
-        let pred_phi = phi.marginalize(&set![1]);
+        let pred_phi = phi.marginalize(&set![1]).unwrap();
 
         // Set the true potential.
         let true_s = states![("A", ["a1", "a2", "a3"]), ("C", ["c1", "c2"]),];
@@ -123,7 +123,7 @@ mod tests {
         let phi = CatPhi::new(s.clone(), p.clone());
 
         // Marginalize the potential.
-        let pred_phi = phi.normalize();
+        let pred_phi = phi.normalize().unwrap();
 
         // Set the true potential.
         let true_s = s;
@@ -229,10 +229,10 @@ mod tests {
             [0.10, 0.90, 0.00]
         ];
         // Initialize the CPD.
-        let cpd = CatCPD::new(x, z, p);
+        let cpd = CatCPD::new(x, z, p).unwrap();
 
         // Convert the CPD into a potential.
-        let pred_phi = CatPhi::from_cpd(cpd);
+        let pred_phi = CatPhi::from_cpd(cpd).unwrap();
 
         // Set the true potential.
         let true_s = states![
@@ -269,7 +269,7 @@ mod tests {
         let phi = CatPhi::new(s, p);
 
         // Convert the potential into a CPD.
-        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1]);
+        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1]).unwrap();
 
         // Set the true CPD.
         let true_x = states![("A", ["a1", "a2", "a3"])];
@@ -280,7 +280,7 @@ mod tests {
             [0.30, 0.70, 0.00],
             [0.10, 0.90, 0.00]
         ];
-        let true_cpd = CatCPD::new(true_x, true_z, true_p);
+        let true_cpd = CatCPD::new(true_x, true_z, true_p).unwrap();
 
         // Compare the CPDs.
         assert_relative_eq!(true_cpd, pred_cpd);

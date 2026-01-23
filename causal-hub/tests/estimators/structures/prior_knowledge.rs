@@ -13,7 +13,7 @@ mod tests {
         // Set the temporal order.
         let temporal_order = vec![vec![0], vec![1, 2]];
         // Create a new instance of prior knowledge.
-        let pk = PK::new(labels, forbidden, required, temporal_order);
+        let pk = PK::new(labels, forbidden, required, temporal_order).unwrap();
 
         // Assert a single forbidden edge.
         assert!(pk.is_forbidden(0, 1));
