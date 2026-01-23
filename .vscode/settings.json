@@ -12,7 +12,9 @@
         "cargo test": true,
         "cargo run": true,
         "cargo llvm-cov": true,
-        "./coverage.sh": true
+        "./coverage.sh": true,
+        "cargo clippy": true,
+        "git rev-parse": true
     },
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",

@@ -1,12 +1,12 @@
 use approx::assert_relative_eq;
 use causal_hub::{
     datasets::{CatEv, CatEvT},
-    types::States,
+    types::{Result, States},
 };
 use ndarray::prelude::*;
 
 #[test]
-fn test_new_sorted() {
+fn test_new_sorted() -> Result<()> {
     let mut states = States::default();
     states.insert(
         "X".to_string(),
@@ -19,7 +19,7 @@ fn test_new_sorted() {
 
     let values = vec![CatEvT::CertainPositive { event: 0, state: 1 }];
 
-    let ev = CatEv::new(states, values);
+    let ev = CatEv::new(states, values)?;
 
     assert_eq!(ev.evidences().len(), 2);
     match &ev.evidences()[0] {
@@ -30,10 +30,12 @@ fn test_new_sorted() {
         _ => panic!("Expected CertainPositive"),
     }
     assert!(ev.evidences()[1].is_none());
+
+    Ok(())
 }
 
 #[test]
-fn test_new_unsorted_keys_and_values() {
+fn test_new_unsorted_keys_and_values() -> Result<()> {
     // Construct states manually to be unsorted
     let mut states = States::default();
     // Insert "B" before "A" -> Keys unsorted
@@ -62,7 +64,7 @@ fn test_new_unsorted_keys_and_values() {
         },
     ];
 
-    let ev = CatEv::new(states, values);
+    let ev = CatEv::new(states, values)?;
 
     // Sorted indices:
     // 0: A (states: 0:"x", 1:"y")
@@ -98,10 +100,12 @@ fn test_new_unsorted_keys_and_values() {
         }
         _ => panic!("Expected CertainPositive at index 1"),
     }
+
+    Ok(())
 }
 
 #[test]
-fn test_new_unsorted_uncertain() {
+fn test_new_unsorted_uncertain() -> Result<()> {
     let mut states = States::default();
     // B: ["2", "1"]
     states.insert(
@@ -135,7 +139,7 @@ fn test_new_unsorted_uncertain() {
         },
     ];
 
-    let ev = CatEv::new(states, values);
+    let ev = CatEv::new(states, values)?;
 
     // Sorted:
     // 0->A: ["x", "y"]
@@ -171,10 +175,11 @@ fn test_new_unsorted_uncertain() {
         }
         _ => panic!("Expected UncertainPositive at index 1"),
     }
+
+    Ok(())
 }
 
 #[test]
-#[should_panic(expected = "Evidence states distributions must have the correct size")]
 fn test_invalid_size_uncertain_positive() {
     let mut states = States::default();
     states.insert(
@@ -187,11 +192,10 @@ fn test_invalid_size_uncertain_positive() {
         p_states: array![0.5], // Wrong size
     }];
 
-    CatEv::new(states, values);
+    assert!(CatEv::new(states, values).is_err());
 }
 
 #[test]
-#[should_panic(expected = "Evidence states distributions must be non-negative")]
 fn test_negative_probability() {
     let mut states = States::default();
     states.insert(
@@ -204,11 +208,10 @@ fn test_negative_probability() {
         p_states: array![-0.1, 1.1],
     }];
 
-    CatEv::new(states, values);
+    assert!(CatEv::new(states, values).is_err());
 }
 
 #[test]
-#[should_panic(expected = "Evidence states distributions must sum to 1")]
 fn test_sum_probability() {
     let mut states = States::default();
     states.insert(
@@ -221,5 +224,5 @@ fn test_sum_probability() {
         p_states: array![0.5, 0.6],
     }];
 
-    CatEv::new(states, values);
+    assert!(CatEv::new(states, values).is_err());
 }

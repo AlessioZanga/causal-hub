@@ -4,7 +4,7 @@ use backend::{estimators::PK, types::Labels};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::Error, impl_from_into_lock};
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
@@ -80,7 +80,7 @@ impl PyPK {
 
         // Create the prior knowledge structure.
         Ok(PK::new(labels, forbidden, required, temporal_order)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .map_err(|e| Error::new_err(e.to_string()))?
             .into())
     }
 }

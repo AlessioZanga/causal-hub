@@ -8,7 +8,7 @@ use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray};
 use pyo3::prelude::*;
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::Error, impl_from_into_lock};
 
 /// A struct for missing information in a tabular dataset.
 #[gen_stub_pyclass]
@@ -46,7 +46,9 @@ impl PyMissingTable {
         let mask = mask.as_array().to_owned();
         // Construct the labels.
         let labels = labels.into_iter().collect();
-        Ok(MissingTable::new(labels, mask).into())
+        Ok(MissingTable::new(labels, mask)
+            .map_err(|e| Error::new_err(e.to_string()))?
+            .into())
     }
 
     /// The labels of the dataset.

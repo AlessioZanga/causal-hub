@@ -95,8 +95,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn unique_labels() {
+    fn unique_labels() -> Result<()> {
         let mut graph = DiGraph::empty(["A", "B", "C"]);
 
         graph.add_edge(0, 1);
@@ -109,23 +108,22 @@ mod tests {
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            )
-            .unwrap(),
+            )?,
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])],
                 states![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
-            )
-            .unwrap(),
+            )?,
         ];
 
-        let _ = CatBN::new(graph, cpds).unwrap();
+        assert!(CatBN::new(graph, cpds).is_err());
+
+        Ok(())
     }
 
     #[test]
-    #[should_panic(expected = "Graph labels and distributions labels must be the same.")]
-    fn missing_distribution() {
+    fn missing_distribution() -> Result<()> {
         let mut graph = DiGraph::empty(["A", "B", "C"]);
 
         graph.add_edge(0, 1);
@@ -138,25 +136,24 @@ mod tests {
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            )
-            .unwrap(),
+            )?,
             CatCPD::new(
                 // P(A)
                 states![("A", ["no", "yes"])],
                 states![],
                 array![[0.1, 0.9]],
-            )
-            .unwrap(),
+            )?,
             CatCPD::new(
                 // P(B | A)
                 states![("B", ["no", "yes"])],
                 states![("A", ["no", "yes"])],
                 array![[0.2, 0.8], [0.4, 0.6]],
-            )
-            .unwrap(),
+            )?,
         ];
 
-        let _ = CatBN::new(graph, cpds).unwrap();
+        assert!(CatBN::new(graph, cpds).is_err());
+
+        Ok(())
     }
 
     #[test]

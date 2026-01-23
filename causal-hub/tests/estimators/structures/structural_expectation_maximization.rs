@@ -6,7 +6,7 @@ mod tests {
         use approx::relative_eq;
         use causal_hub::{
             assets::load_eating,
-            datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
+            datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
@@ -28,16 +28,16 @@ mod tests {
             // Load eating.
             let model = load_eating();
             // Initialize a new sampler with no evidence.
-            let forward = ForwardSampler::new(&mut rng, &model);
+            let forward = ForwardSampler::new(&mut rng, &model)?;
             // Sample the fully-observed trajectories from the model.
             let trajectories = forward.par_sample_n_by_length(100, 10_000)?;
 
             // Set the probability of the evidence.
             let p = 0.5;
             // Initialize the evidence generator.
-            let mut generator = RngEv::new(&mut rng, &trajectories, p);
+            let mut generator = RngEv::new(&mut rng, &trajectories, p)?;
             // Sample the evidence from the fully-observed trajectories.
-            let evidence = generator.random();
+            let evidence = generator.random()?;
 
             // Set the initial graph.
             let initial_graph = DiGraph::complete(model.labels());
@@ -87,7 +87,7 @@ mod tests {
             let rng = RefCell::new(rng);
 
             // Define the expectation step.
-            let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
+            let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> Result<CatWtdTrjs> {
                 // Reference the random number generator.
                 let mut rng = rng.borrow_mut();
                 // Sample the seeds to parallelize the sampling.
@@ -109,54 +109,56 @@ mod tests {
                         // Initialize a new random number generator.
                         let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
                         // Initialize a new sampler.
-                        let importance = ImportanceSampler::new(&mut rng, prev_model, e);
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
                         // Perform multiple imputation.
-                        let trjs = importance.sample_n_by_length(2 * max_len, 10).unwrap();
+                        let trjs = importance.sample_n_by_length(2 * max_len, 10)?;
                         // Get the one with the highest weight.
-                        trjs.values()
+                        Ok(trjs
+                            .values()
                             .iter()
                             .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
                             .unwrap()
-                            .clone()
+                            .clone())
                     })
                     // Reject trajectories with low weight.
-                    .filter(|trj: &CatWtdTrj| trj.weight() >= 1e-3)
+                    .filter(|trj| trj.as_ref().map_or(true, |t| t.weight() >= 1e-3))
                     .collect()
             };
 
             // Define the maximization step.
-            let m_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
+            let m_step = |_prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> Result<CatCTBN> {
                 // Initialize the parameter estimator.
                 let estimator = BE::new(expectation).with_prior((1, 1.));
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Initialize the F test.
-                let f_test = FTest::new(&cache, 1e-4).unwrap();
+                let f_test = FTest::new(&cache, 1e-4)?;
                 // Initialize the chi-squared test.
-                let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4).unwrap();
+                let chi_sq_test = ChiSquaredTest::new(&cache, 1e-4)?;
                 // Initialize the CTPC algorithm.
-                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test).unwrap();
+                let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)?;
                 // Fit the new structure using CTPC.
-                let fitted_graph = ctpc.par_fit().unwrap();
+                let fitted_graph = ctpc.par_fit()?;
                 // Fit the new model using the expectation.
-                estimator.par_fit(fitted_graph).unwrap()
+                estimator.par_fit(fitted_graph)
             };
 
             // Define the stopping criteria.
-            let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
-                // Check if the models are equal or the counter is greater than the limit.
-                relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= 100
-            };
+            let stop =
+                |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> Result<bool> {
+                    // Check if the models are equal or the counter is greater than the limit.
+                    Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= 100)
+                };
 
             // Create a new builder.
             let em = EMBuilder::new(&initial_model, &evidence)
                 .with_e_step(&e_step)
                 .with_m_step(&m_step)
                 .with_stop(&stop)
-                .build();
+                .build()?;
 
             // Fit the model.
-            let output = em.fit();
+            let output = em.fit()?;
 
             // Check if the models are equal.
             assert_eq!(model.graph(), output.last_model.graph());

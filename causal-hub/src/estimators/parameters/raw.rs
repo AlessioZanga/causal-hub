@@ -72,7 +72,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
 
     /// Sample uncertain evidence.
     /// TODO: Taken from importance sampling, deduplicate.
-    fn sample_evidence(&mut self) -> CatTrjEv {
+    fn sample_evidence(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -84,14 +84,16 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
             .flatten()
-            .flat_map(|e| {
+            .map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositiveInterval { p_states, .. } => {
                         // Construct the sampler.
-                        let state = WeightedIndex::new(p_states).unwrap();
+                        let state = WeightedIndex::new(p_states).map_err(|e| {
+                            Error::Dataset(format!("Invalid state distribution: {e}"))
+                        })?;
                         // Sample the state.
                         let state = state.sample(self.rng);
                         // Return the sample.
@@ -129,8 +131,9 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                 };
 
                 // Return the certain evidence.
-                Some(e)
-            });
+                Ok(e)
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
         CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
@@ -164,7 +167,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .flatten()
             .map(|e| e.end_time())
             // Get the maximum time.
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             // Unwrap the maximum time.
             .unwrap_or(0.);
 
@@ -179,7 +182,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             // Add initial and ending time.
             .chain([0., end_time])
             // Sort the times.
-            .sorted_by(|a, b| a.partial_cmp(b).unwrap())
+            .sorted_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             // Deduplicate the times to aggregate the events.
             .dedup()
             .collect();
@@ -188,7 +191,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         let mut events = Array2::from_elem((times.len(), states.len()), M);
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence();
+        let evidence = self.sample_evidence()?;
 
         // Set the states of the events given the evidence.
         Zip::from(&times)
@@ -239,14 +242,16 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         events
             .axis_iter_mut(Axis(1))
             .into_par_iter()
-            .for_each(|mut event| {
+            .try_for_each(|mut event| -> Result<()> {
                 // Set the first known state position.
                 let mut first_known = 0;
                 // Check if the first state is known.
                 if event[first_known] == M {
                     // If the first state is unknown, get the first known state.
                     // NOTE: Safe unwrap since we know at least one state is present.
-                    first_known = event.iter().position(|e| *e != M).unwrap();
+                    first_known = event.iter().position(|e| *e != M).ok_or_else(|| {
+                        Error::Dataset("Failed to find known state in event.".to_string())
+                    })?;
                     // Get the event to fill with.
                     let e = event[first_known];
                     // Backward fill the unknown states.
@@ -276,7 +281,9 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     // Set the last known state position as the last unknown state position.
                     last_known = last_unknown;
                 }
-            });
+
+                Ok(())
+            })?;
 
         // Initialize the events and times with first event and time, if any.
         let mut new_events: Vec<_> = events
@@ -340,7 +347,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         let times = Array::from_iter(new_times);
 
         // Construct the fully observed trajectory.
-        Ok(CatTrj::new(states, events, times))
+        CatTrj::new(states, events, times)
     }
 }
 

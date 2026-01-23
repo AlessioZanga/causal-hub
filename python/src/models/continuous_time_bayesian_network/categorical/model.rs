@@ -21,6 +21,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::PyCatTrjs,
+    error::Error,
     estimators::PyCTBNEstimator,
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
@@ -73,7 +74,7 @@ impl PyCatCTBN {
         let cims = cims.into_iter().map(|x: PyCatCIM| x.into());
         // Create a new CatCTBN with the given parameters.
         Ok(CatCTBN::new(graph, cims)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .map_err(|e| Error::new_err(e.to_string()))?
             .into())
     }
 
@@ -181,7 +182,7 @@ impl PyCatCTBN {
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
-    ///         - `alpha`: The prior of the Bayesian estimator (int, float64).
+    /// - `alpha`: The prior of the Bayesian estimator (int, float64).
     ///
     /// Returns
     /// -------
@@ -240,7 +241,7 @@ impl PyCatCTBN {
             // Execute sequentially.
             estimator.fit(graph)
         }
-        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        .map_err(|e| Error::new_err(e.to_string()))?;
         // Return the fitted model.
         Ok(model.into())
     }
@@ -294,7 +295,8 @@ impl PyCatCTBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*lock);
+        let sampler =
+            ForwardSampler::new(&mut rng, &*lock).map_err(|e| Error::new_err(e.to_string()))?;
         // Get the maximum length and time.
         let max_len = max_len.unwrap_or(usize::MAX);
         let max_time = max_time.unwrap_or(f64::INFINITY);
@@ -306,7 +308,7 @@ impl PyCatCTBN {
             // Sample sequentially.
             sampler.sample_n_by_length_or_time(max_len, max_time, n)
         }
-        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        .map_err(|e| Error::new_err(e.to_string()))?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -327,8 +329,7 @@ impl PyCatCTBN {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatCTBN::from_json_string(json)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatCTBN::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -343,7 +344,7 @@ impl PyCatCTBN {
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock()
             .to_json_string()
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -362,8 +363,7 @@ impl PyCatCTBN {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatCTBN::from_json_file(path)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatCTBN::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -378,7 +378,7 @@ impl PyCatCTBN {
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock()
             .to_json_file(path)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         Ok(())
     }
 }

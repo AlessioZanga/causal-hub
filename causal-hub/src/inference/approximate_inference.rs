@@ -206,7 +206,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Initialize the sampler.
-            let sampler = ForwardSampler::new(&mut rng, self.model);
+            let sampler = ForwardSampler::new(&mut rng, self.model)?;
             // Generate n samples from the model.
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
@@ -245,7 +245,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Initialize the sampler.
-            let sampler = ForwardSampler::new(&mut rng, self.model);
+            let sampler = ForwardSampler::new(&mut rng, self.model)?;
             // Generate n samples from the model.
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
@@ -292,7 +292,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::new(&mut rng, self.model, evidence);
+                    let sampler = ImportanceSampler::new(&mut rng, self.model, evidence)?;
                     // Generate n samples from the model.
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
@@ -341,7 +341,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::new(&mut rng, self.model, evidence);
+                    let sampler = ImportanceSampler::new(&mut rng, self.model, evidence)?;
                     // Generate n samples from the model.
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
@@ -419,7 +419,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Initialize the sampler.
-            let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model);
+            let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model)?;
             // Generate n samples from the model.
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
@@ -458,7 +458,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Initialize the sampler.
-            let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model);
+            let sampler = ForwardSampler::<R, _>::new(&mut rng, self.model)?;
             // Generate n samples from the model.
             // TODO: Avoid generating the full dataset,
             //       e.g., by only sampling the variables in X U Z, and
@@ -505,7 +505,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence);
+                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence)?;
                     // Generate n samples from the model.
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and
@@ -554,7 +554,7 @@ macro_for!($type in [CatBN, GaussBN] {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence);
+                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, self.model, evidence)?;
                     // Generate n samples from the model.
                     // TODO: Avoid generating the full dataset,
                     //       e.g., by only sampling the variables in X U Z, and

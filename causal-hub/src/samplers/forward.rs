@@ -38,11 +38,11 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
     /// Return a new `ForwardSampler` instance.
     ///
     #[inline]
-    pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
+    pub fn new(rng: &'a mut R, model: &'a M) -> Result<Self> {
         // Wrap the RNG in a RefCell to allow interior mutability.
         let rng = RefCell::new(rng);
 
-        Self { rng, model }
+        Ok(Self { rng, model })
     }
 }
 
@@ -81,7 +81,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         }
 
         // Construct the dataset.
-        Ok(CatTable::new(self.model.states().clone(), dataset))
+        CatTable::new(self.model.states().clone(), dataset)
     }
 }
 
@@ -105,7 +105,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample from the distribution.
                 row.assign(&sampler.sample()?);
 
@@ -113,7 +113,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
             })?;
 
         // Construct the dataset.
-        Ok(CatTable::new(self.model.states().clone(), samples))
+        CatTable::new(self.model.states().clone(), samples)
     }
 }
 
@@ -152,7 +152,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
         }
 
         // Construct the dataset.
-        Ok(GaussTable::new(self.model.labels().clone(), samples))
+        GaussTable::new(self.model.labels().clone(), samples)
     }
 }
 
@@ -176,14 +176,14 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample from the distribution.
                 row.assign(&sampler.sample()?);
                 Ok(())
             })?;
 
         // Construct the dataset.
-        Ok(GaussTable::new(self.model.labels().clone(), samples))
+        GaussTable::new(self.model.labels().clone(), samples)
     }
 }
 
@@ -246,7 +246,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let mut event = {
             let mut rng = self.rng.borrow_mut();
             let initial = self.model.initial_distribution();
-            let initial = ForwardSampler::new(&mut rng, initial);
+            let initial = ForwardSampler::new(&mut rng, initial)?;
             initial.sample()?
         };
         // Append the initial state to the trajectory.
@@ -318,7 +318,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let sample_times = Array::from_iter(sample_times);
 
         // Return the trajectory.
-        Ok(CatTrj::new(states, sample_events, sample_times))
+        CatTrj::new(states, sample_events, sample_times)
     }
 
     #[inline]
@@ -374,7 +374,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample the trajectory.
                 sampler.sample_by_length_or_time(max_length, max_time)
             })

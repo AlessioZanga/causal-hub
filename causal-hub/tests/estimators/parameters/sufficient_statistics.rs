@@ -33,7 +33,7 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values);
+            let d = CatIncTable::new(states, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism = Map::default();
@@ -88,7 +88,7 @@ mod tests {
             .mapv(|x| x);
 
             // Create dataset.
-            let d = CatIncTable::new(states, values);
+            let d = CatIncTable::new(states, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
             let mut missing_mechanism = Map::default();
@@ -127,7 +127,7 @@ mod tests {
             // Define values.
             let values = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
             let labels = labels!["X", "Y"];
-            let d = GaussTable::new(labels, values);
+            let d = GaussTable::new(labels, values)?;
 
             let sse = SSE::new(&d);
 
@@ -168,7 +168,7 @@ mod tests {
             ];
 
             let labels = labels!["X", "Y", "W"];
-            let d = GaussIncTable::new(labels, values);
+            let d = GaussIncTable::new(labels, values)?;
 
             // PW Deletion.
             // Fit P(X | Y). X=0, Y=1.

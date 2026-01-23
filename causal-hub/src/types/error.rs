@@ -56,6 +56,9 @@ pub enum Error {
     /// An error related to unreachable code.
     #[error("Unreachable error: {0}")]
     Unreachable(String),
+    /// An error related to lock poisoning.
+    #[error("Lock poisoning error: {0}")]
+    Poison(String),
     /// Other errors.
     #[error(transparent)]
     Other(Arc<Box<dyn std::error::Error + Send + Sync>>),

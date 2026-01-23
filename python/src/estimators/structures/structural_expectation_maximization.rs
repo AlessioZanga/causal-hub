@@ -9,7 +9,7 @@ use backend::{
     models::{CTBN, CatCTBN, DiGraph, Graph, Labelled},
     samplers::{ImportanceSampler, ParCTBNSampler},
     set,
-    types::Cache,
+    types::{Cache, Error as BackendError, Result as BackendResult},
 };
 use log::debug;
 use pyo3::{
@@ -142,76 +142,82 @@ pub fn sem<'a>(
         let rng = RefCell::new(rng);
 
         // Define the expectation-maximization step.
-        let em_step =
-            |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> EMOutput<CatCTBN, CatWtdTrjs> {
-                // Define the expectation step.
-                let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
-                    // Reference the random number generator.
-                    let mut rng = rng.borrow_mut();
-                    // Get the maximum length of the trajectories.
-                    let max_length = evidence
-                        .evidences()
-                        .iter()
-                        .flat_map(|e| e.evidences())
-                        .map(|e| e.len())
-                        .max()
-                        .unwrap_or(0);
-                    // Sample the seeds to parallelize the sampling.
-                    let seeds: Vec<_> = (0..evidence.evidences().len())
-                        .map(|_| rng.next_u64())
-                        .collect();
-                    // For each (seed, evidence) ...
-                    seeds
-                        .into_par_iter()
-                        .zip(evidence.par_iter())
-                        .map(|(s, e)| {
-                            // Initialize a new random number generator.
-                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
-                            // Initialize a new sampler.
-                            let importance = ImportanceSampler::new(&mut rng, prev_model, e);
-                            // Perform multiple imputation.
-                            let trjs = importance
-                                .par_sample_n_by_length(max_length, 10)
-                                .expect("Failed to sample trajectories");
-                            // Get the one with the highest weight.
-                            trjs.values()
-                                .iter()
-                                .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
-                                .unwrap()
-                                .clone()
-                        })
-                        .collect()
-                };
+        let em_step = |prev_model: &CatCTBN,
+                       evidence: &CatTrjsEv|
+         -> BackendResult<EMOutput<CatCTBN, CatWtdTrjs>> {
+            // Define the expectation step.
+            let e_step = |prev_model: &CatCTBN,
+                          evidence: &CatTrjsEv|
+             -> BackendResult<CatWtdTrjs> {
+                // Reference the random number generator.
+                let mut rng = rng.borrow_mut();
+                // Get the maximum length of the trajectories.
+                let max_length = evidence
+                    .evidences()
+                    .iter()
+                    .flat_map(|e| e.evidences())
+                    .map(|e| e.len())
+                    .max()
+                    .unwrap_or(0);
+                // Sample the seeds to parallelize the sampling.
+                let seeds: Vec<_> = (0..evidence.evidences().len())
+                    .map(|_| rng.next_u64())
+                    .collect();
+                // For each (seed, evidence) ...
+                seeds
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
+                        // Initialize a new random number generator.
+                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                        // Initialize a new sampler.
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                        // Perform multiple imputation.
+                        let trjs = importance.par_sample_n_by_length(max_length, 10)?;
+                        // Get the one with the highest weight.
+                        trjs.values()
+                            .iter()
+                            .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
+                            .cloned()
+                            .ok_or_else(|| BackendError::Model("No trajectories sampled".into()))
+                    })
+                    .collect()
+            };
 
-                // Define the maximization step.
-                let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
+            // Define the maximization step.
+            let m_step =
+                |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> BackendResult<CatCTBN> {
                     // Initialize the parameter estimator.
                     let estimator = BE::new(expectation).with_prior((1, 1.));
                     // Fit the model using the parameter estimator.
-                    estimator
-                        .par_fit(prev_model.graph().clone())
-                        .expect("Failed to fit the model during the M-step")
+                    estimator.par_fit(prev_model.graph().clone())
                 };
 
-                // Define the stopping criteria.
-                let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
-                    // Check if the models are equal or the counter is greater than the limit.
-                    relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter
-                };
-
-                // Create a new EM.
-                let em = EMBuilder::new(prev_model, evidence)
-                    .with_e_step(&e_step)
-                    .with_m_step(&m_step)
-                    .with_stop(&stop)
-                    .build();
-
-                // Fit the model.
-                em.fit()
+            // Define the stopping criteria.
+            let stop = |prev_model: &CatCTBN,
+                        curr_model: &CatCTBN,
+                        counter: usize|
+             -> BackendResult<bool> {
+                // Check if the models are equal or the counter is greater than the limit.
+                Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
             };
 
+            // Create a new EM.
+            let em = EMBuilder::new(prev_model, evidence)
+                .with_e_step(&e_step)
+                .with_m_step(&m_step)
+                .with_stop(&stop)
+                .build()
+                .expect("Failed to build the EM algorithm");
+
+            // Fit the model.
+            em.fit()
+        };
+
         // Define the structure learning step.
-        let sl_step = |_prev_model: &CatCTBN, em: &EMOutput<CatCTBN, CatWtdTrjs>| -> CatCTBN {
+        let sl_step = |_prev_model: &CatCTBN,
+                       em: &EMOutput<CatCTBN, CatWtdTrjs>|
+         -> BackendResult<CatCTBN> {
             // Initialize the parameter estimator.
             let estimator = BE::new(em.expectations.last().unwrap()).with_prior((1, 1.));
             // Cache the parameter estimator.
@@ -255,26 +261,26 @@ pub fn sem<'a>(
                 ),
             };
             // Fit the new model using the expectation.
-            estimator
-                .par_fit(fitted_graph)
-                .expect("Failed to fit the model structure")
+            estimator.par_fit(fitted_graph)
         };
 
         // Define the stopping criteria.
-        let sem_stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
-            // Check if the models are equal or the counter is greater than the limit.
-            relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter
-        };
+        let sem_stop =
+            |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> BackendResult<bool> {
+                // Check if the models are equal or the counter is greater than the limit.
+                Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
+            };
 
         // Create a new SEM.
         let sem = EMBuilder::new(&initial_model, evidence)
             .with_e_step(&em_step)
             .with_m_step(&sl_step)
             .with_stop(&sem_stop)
-            .build();
+            .build()
+            .expect("Failed to build the SEM algorithm");
 
         // Fit the model.
-        sem.fit()
+        sem.fit().expect("Failed to fit the model using SEM")
     });
 
     // Convert the output to a Python object.

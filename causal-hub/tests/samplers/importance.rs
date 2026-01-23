@@ -50,10 +50,10 @@ mod tests {
                         end_time: 0.5,
                     },
                 ],
-            );
+            )?;
 
             // Initialize sampler.
-            let importance = ImportanceSampler::new(&mut rng, &model, &evidence);
+            let importance = ImportanceSampler::new(&mut rng, &model, &evidence)?;
             // Sample from CTBN.
             let weighted_trajectory = importance.par_sample_n_by_length(10, 10)?;
 

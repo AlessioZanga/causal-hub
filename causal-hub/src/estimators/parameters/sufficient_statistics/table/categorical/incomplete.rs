@@ -15,7 +15,7 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatIncTable> {
         let r = self.missing_mechanism.as_ref();
 
         // Apply the missing handling method.
-        let d = self.dataset.apply_missing_method(m, x_z, r);
+        let d = self.dataset.apply_missing_method(m, x_z, r)?;
 
         // Get the labels of the original dataset.
         let labels = self.dataset.labels();
@@ -42,7 +42,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatIncTable> {
         let r = self.missing_mechanism.as_ref();
 
         // Apply the missing handling method.
-        let d = self.dataset.apply_missing_method(m, x_z, r);
+        let d = self.dataset.apply_missing_method(m, x_z, r)?;
 
         // Get the labels of the original dataset.
         let labels = self.dataset.labels();

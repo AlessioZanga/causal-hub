@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatSample, CatTable, Dataset},
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A type alias for a categorical weighted sample.
@@ -31,27 +31,23 @@ impl CatWtdTable {
     /// * `dataset` - The categorical dataset.
     /// * `weights` - The weights of the samples.
     ///
-    /// # Panics
-    ///
-    /// * Panics if the number of weights is not equal to the number of samples.
-    /// * Panics if any weight is not finite.
-    ///
     /// # Returns
     ///
     /// A new categorical weighted dataset instance.
     ///
-    pub fn new(dataset: CatTable, weights: Array1<f64>) -> Self {
-        assert_eq!(
-            dataset.values().nrows(),
-            weights.len(),
-            "The number of weights must be equal to the number of samples."
-        );
-        assert!(
-            weights.iter().all(|&w| w.is_finite()),
-            "All weights must be finite."
-        );
+    pub fn new(dataset: CatTable, weights: Array1<f64>) -> Result<Self> {
+        // Check if the number of weights is equal to the number of samples.
+        if dataset.values().nrows() != weights.len() {
+            return Err(Error::Dataset(
+                "The number of weights must be equal to the number of samples.".to_string(),
+            ));
+        }
+        // Check if any weight is finite.
+        if !weights.iter().all(|&w| w.is_finite()) {
+            return Err(Error::Dataset("All weights must be finite.".to_string()));
+        }
 
-        Self { dataset, weights }
+        Ok(Self { dataset, weights })
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -101,9 +97,9 @@ impl Dataset for CatWtdTable {
         self.weights.sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let dataset = self.dataset.select(x);
+        let dataset = self.dataset.select(x)?;
         // Select the weights.
         let weights = self.weights.clone();
         // Return the new weighted dataset.

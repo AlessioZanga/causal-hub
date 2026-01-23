@@ -1,3 +1,5 @@
+use crate::types::{Error, Result};
+
 /// A struct representing the output of the expectation-maximization algorithm.
 #[derive(Clone, Debug)]
 pub struct EMOutput<M, E2M> {
@@ -18,9 +20,9 @@ pub struct EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     E2M: Clone,
-    EStep: Fn(&M, &E) -> E2M,
-    MStep: Fn(&M, &E2M) -> M,
-    Stop: Fn(&M, &M, usize) -> bool,
+    EStep: Fn(&M, &E) -> Result<E2M>,
+    MStep: Fn(&M, &E2M) -> Result<M>,
+    Stop: Fn(&M, &M, usize) -> Result<bool>,
 {
     /// The model to be fitted.
     initial_model: &'a M,
@@ -38,9 +40,9 @@ impl<'a, M, E, EStep, E2M, MStep, Stop> EM<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     E2M: Clone,
-    EStep: Fn(&M, &E) -> E2M,
-    MStep: Fn(&M, &E2M) -> M,
-    Stop: Fn(&M, &M, usize) -> bool,
+    EStep: Fn(&M, &E) -> Result<E2M>,
+    MStep: Fn(&M, &E2M) -> Result<M>,
+    Stop: Fn(&M, &M, usize) -> Result<bool>,
 {
     /// Executes the expectation-maximization algorithm.
     ///
@@ -48,7 +50,7 @@ where
     ///
     /// The fitted model.
     ///
-    pub fn fit(&self) -> EMOutput<M, E2M> {
+    pub fn fit(&self) -> Result<EMOutput<M, E2M>> {
         // Initialize the output.
         let mut output = EMOutput {
             models: Vec::new(),
@@ -63,27 +65,28 @@ where
         let mut curr_model: M = self.initial_model.clone();
 
         // Do while ...
-        while {
+        let mut stop = false;
+        while !stop {
             // Set the previous model to the current model.
             prev_model = curr_model;
             // Store the current model in the output.
             output.models.push(prev_model.clone());
             // Expectation step.
-            let expectation = (self.expectation)(&prev_model, self.evidence);
+            let expectation = (self.expectation)(&prev_model, self.evidence)?;
             // Store the expected sufficient statistics in the output.
             output.expectations.push(expectation.clone());
             // Maximization step.
-            curr_model = (self.maximization)(&prev_model, &expectation);
+            curr_model = (self.maximization)(&prev_model, &expectation)?;
             // Store the last model in the output.
             output.last_model = curr_model.clone();
             // Increment the counter.
             output.iterations += 1;
             // Check stopping criteria.
-            !(self.stop)(&prev_model, &curr_model, output.iterations)
-        } {}
+            stop = (self.stop)(&prev_model, &curr_model, output.iterations)?;
+        }
 
         // Return the output.
-        output
+        Ok(output)
     }
 }
 
@@ -92,9 +95,9 @@ pub struct EMBuilder<'a, M, E, EStep, E2M, MStep, Stop>
 where
     M: Clone,
     E2M: Clone,
-    EStep: Fn(&M, &E) -> E2M,
-    MStep: Fn(&M, &E2M) -> M,
-    Stop: Fn(&M, &M, usize) -> bool,
+    EStep: Fn(&M, &E) -> Result<E2M>,
+    MStep: Fn(&M, &E2M) -> Result<M>,
+    Stop: Fn(&M, &M, usize) -> Result<bool>,
 {
     initial_model: &'a M,
     evidence: &'a E,
@@ -107,9 +110,9 @@ impl<'a, M, E, EStep, E2M, MStep, Stop> EMBuilder<'a, M, E, EStep, E2M, MStep, S
 where
     M: Clone,
     E2M: Clone,
-    EStep: Fn(&M, &E) -> E2M,
-    MStep: Fn(&M, &E2M) -> M,
-    Stop: Fn(&M, &M, usize) -> bool,
+    EStep: Fn(&M, &E) -> Result<E2M>,
+    MStep: Fn(&M, &E2M) -> Result<M>,
+    Stop: Fn(&M, &M, usize) -> Result<bool>,
 {
     /// Creates a new builder for the expectation-maximization algorithm.
     ///
@@ -194,21 +197,23 @@ where
 
     /// Builds the expectation-maximization algorithm.
     ///
-    /// # Panics
-    ///
-    /// Panics if any of the expectation, maximization, or stopping criteria steps are not set.
-    ///
     /// # Returns
     ///
     /// The expectation-maximization algorithm.
     ///
-    pub fn build(self) -> EM<'a, M, E, EStep, E2M, MStep, Stop> {
-        EM {
+    pub fn build(self) -> Result<EM<'a, M, E, EStep, E2M, MStep, Stop>> {
+        Ok(EM {
             initial_model: self.initial_model,
             evidence: self.evidence,
-            expectation: self.expectation.expect("Expectation step not set"),
-            maximization: self.maximization.expect("Maximization step not set"),
-            stop: self.stop.expect("Stopping criteria not set"),
-        }
+            expectation: self
+                .expectation
+                .ok_or_else(|| Error::Model("Expectation step not set".into()))?,
+            maximization: self
+                .maximization
+                .ok_or_else(|| Error::Model("Maximization step not set".into()))?,
+            stop: self
+                .stop
+                .ok_or_else(|| Error::Model("Stopping criteria not set".into()))?,
+        })
     }
 }

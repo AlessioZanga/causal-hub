@@ -261,16 +261,15 @@ impl Serialize for UnGraph {
         S: Serializer,
     {
         // Convert adjacency matrix to a flat format.
-        let edges: Vec<_> = self
+        let edges = self
             .edges()
             .into_iter()
             .map(|(x, y)| {
-                (
-                    self.index_to_label(x).unwrap().to_owned(),
-                    self.index_to_label(y).unwrap().to_owned(),
-                )
+                let x = self.index_to_label(x).map_err(serde::ser::Error::custom)?;
+                let y = self.index_to_label(y).map_err(serde::ser::Error::custom)?;
+                Ok((x.to_owned(), y.to_owned()))
             })
-            .collect();
+            .collect::<std::result::Result<Vec<_>, S::Error>>()?;
 
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(3))?;

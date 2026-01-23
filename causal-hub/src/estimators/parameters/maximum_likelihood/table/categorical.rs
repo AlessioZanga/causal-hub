@@ -5,7 +5,7 @@ use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCPD, CatCPDS},
-    types::{Result, Set, States},
+    types::{Error, Result, Set, States},
 };
 
 impl MLE<'_, CatTable> {
@@ -20,11 +20,10 @@ impl MLE<'_, CatTable> {
         // Marginalize the counts.
         let n_z = &n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
 
-        // Assert the marginal counts are not zero.
-        assert!(
-            n_z.iter().all(|&x| x > 0.),
-            "Failed to get non-zero counts.",
-        );
+        // Check the marginal counts are not zero.
+        if !n_z.iter().all(|&x| x > 0.) {
+            return Err(Error::Dataset("Failed to get non-zero counts.".to_string()));
+        }
 
         // Compute the parameters by normalizing the counts.
         let parameters = n_xz / n_z;
@@ -38,18 +37,22 @@ impl MLE<'_, CatTable> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .ok_or_else(|| Error::Dataset(format!("Index {i} out of bounds for states.")))
             })
-            .collect();
+            .collect::<Result<States>>()?;
         // Get the labels of the conditioned variables.
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .ok_or_else(|| Error::Dataset(format!("Index {i} out of bounds for states.")))
             })
-            .collect();
+            .collect::<Result<States>>()?;
 
         // Wrap the sample statistics in an option.
         let sample_statistics = Some(sample_statistics);

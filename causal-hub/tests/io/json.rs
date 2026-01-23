@@ -64,7 +64,7 @@ mod tests {
                 // Load model.
                 let model = load_asia();
                 // Sample from model.
-                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100)?;
+                let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                 // Set estimator.
                 let estimator = BE::new(&dataset).with_prior(1);
                 // Fit model to dataset.
@@ -86,7 +86,7 @@ mod tests {
                 // Load model.
                 let model = load_asia();
                 // Sample from model.
-                let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100)?;
+                let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                 // Set estimator.
                 let estimator = BE::new(&dataset).with_prior(1);
                 // Fit model to dataset.
@@ -133,7 +133,7 @@ mod tests {
                     // Load model.
                     let model = load_ecoli70();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100)?;
+                    let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                     // Set estimator.
                     let estimator = MLE::new(&dataset);
                     // Fit model to dataset.
@@ -155,7 +155,7 @@ mod tests {
                     // Load model.
                     let model = load_ecoli70();
                     // Sample from model.
-                    let dataset = ForwardSampler::new(&mut rng, &model).sample_n(100)?;
+                    let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                     // Set estimator.
                     let estimator = MLE::new(&dataset);
                     // Fit model to dataset.
@@ -211,7 +211,7 @@ mod tests {
                     let model = load_eating();
                     // Sample from model.
                     let dataset =
-                        ForwardSampler::new(&mut rng, &model).sample_n_by_length(100, 10)?;
+                        ForwardSampler::new(&mut rng, &model)?.sample_n_by_length(100, 10)?;
                     // Set estimator.
                     let estimator = BE::new(&dataset).with_prior((1, 1.));
                     // Fit model to dataset.
@@ -235,7 +235,7 @@ mod tests {
                     let model = load_eating();
                     // Sample from model.
                     let dataset =
-                        ForwardSampler::new(&mut rng, &model).sample_n_by_length(100, 10)?;
+                        ForwardSampler::new(&mut rng, &model)?.sample_n_by_length(100, 10)?;
                     // Set estimator.
                     let estimator = BE::new(&dataset).with_prior((1, 1.));
                     // Fit model to dataset.

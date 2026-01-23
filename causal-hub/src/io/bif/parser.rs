@@ -188,12 +188,10 @@ fn build_ast(pair: Pair<Rule>) -> Result<Network> {
         .ok_or_else(|| Error::Parsing("Expected network name".into()))?
         .as_str()
         .to_string();
-    let mut properties = vec![];
-    for p in inner {
-        if p.as_rule() == Rule::property {
-            properties.push(parse_property(p)?);
-        }
-    }
+    let properties: Vec<_> = inner
+        .filter(|p| p.as_rule() == Rule::property)
+        .map(parse_property)
+        .collect::<Result<_>>()?;
 
     let mut variables = vec![];
     let mut probabilities = vec![];
@@ -296,11 +294,12 @@ fn parse_probability(pair: Pair<Rule>) -> Result<Probability> {
         }
         Rule::entry => {
             entries.push(parse_entry(next)?);
-            for entry in inner {
-                if entry.as_rule() == Rule::entry {
-                    entries.push(parse_entry(entry)?);
-                }
-            }
+            entries.extend(
+                inner
+                    .filter(|entry| entry.as_rule() == Rule::entry)
+                    .map(parse_entry)
+                    .collect::<Result<Vec<_>>>()?,
+            );
         }
         _ => {}
     }

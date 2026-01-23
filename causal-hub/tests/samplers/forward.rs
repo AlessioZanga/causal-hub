@@ -25,7 +25,7 @@ mod tests {
                 // Load BN.
                 let model = load_child();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
                 let dataset = forward.sample_n(10)?;
 
@@ -54,6 +54,7 @@ mod tests {
                         "-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
                     )
                 );
+
                 Ok(())
             }
 
@@ -64,7 +65,7 @@ mod tests {
                 // Load BN.
                 let model = load_cancer();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
                 let dataset = forward.sample_n(150_000)?;
 
@@ -75,6 +76,7 @@ mod tests {
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-2);
+
                 Ok(())
             }
         }
@@ -89,7 +91,7 @@ mod tests {
                 // Load BN.
                 let model = load_ecoli70();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
                 let dataset = forward.sample_n(5_000)?;
 
@@ -100,6 +102,7 @@ mod tests {
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-1);
+
                 Ok(())
             }
         }
@@ -118,7 +121,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_eating();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
                 let trajectory = forward.sample_by_length(10)?;
 
@@ -126,6 +129,7 @@ mod tests {
                 assert!(trajectory.labels().eq(model.labels()));
                 // Check sample size.
                 assert_eq!(trajectory.sample_size(), 10.);
+
                 Ok(())
             }
 
@@ -136,7 +140,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_eating();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
                 let trajectory = forward.sample_by_time(100.)?;
 
@@ -151,6 +155,7 @@ mod tests {
                         .ok_or(Error::IllegalArgument("No times".into()))?
                         < 100.
                 );
+
                 Ok(())
             }
 
@@ -161,7 +166,7 @@ mod tests {
                 // Initialize the model.
                 let model = load_eating();
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
                 let trajectory = forward.par_sample_n_by_length(1_000, 1_000)?;
 
@@ -172,6 +177,7 @@ mod tests {
 
                 // Check fitted CIMs.
                 assert_relative_eq!(model, fitted_model, epsilon = 5e-2);
+
                 Ok(())
             }
         }

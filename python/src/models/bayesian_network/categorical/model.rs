@@ -25,6 +25,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::{PyCatTable, PyDataset},
+    error::Error,
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
@@ -77,7 +78,7 @@ impl PyCatBN {
         let cpds = cpds.into_iter().map(|x: PyCatCPD| x.into());
         // Create a new CatBN with the given parameters.
         Ok(CatBN::new(graph, cpds)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .map_err(|e| Error::new_err(e.to_string()))?
             .into())
     }
 
@@ -174,7 +175,7 @@ impl PyCatBN {
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
-    ///         - `alpha`: The prior of the Bayesian estimator (float64).
+    /// - `alpha`: The prior of the Bayesian estimator (float64).
     ///
     /// Returns
     /// -------
@@ -238,7 +239,7 @@ impl PyCatBN {
                     // Execute sequentially.
                     estimator.fit(graph)
                 }
-                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+                .map_err(|e| Error::new_err(e.to_string()))?;
                 // Return the fitted model.
                 Ok(model.into())
             }};
@@ -283,7 +284,8 @@ impl PyCatBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*lock);
+        let sampler =
+            ForwardSampler::new(&mut rng, &*lock).map_err(|e| Error::new_err(e.to_string()))?;
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -292,7 +294,7 @@ impl PyCatBN {
             // Execute sequentially.
             sampler.sample_n(n)
         }
-        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        .map_err(|e| Error::new_err(e.to_string()))?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -382,9 +384,7 @@ impl PyCatBN {
             }
         };
         // Return the dataset.
-        Ok(estimate
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
-            .into())
+        Ok(estimate.map_err(|e| Error::new_err(e.to_string()))?.into())
     }
 
     /// Estimate a conditional causal effect (CACE).
@@ -409,6 +409,7 @@ impl PyCatBN {
     /// CatCPD | None
     ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
+    #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (x, y, z, method="be", seed=31, parallel=true))]
     pub fn do_estimate(
         &self,
@@ -474,7 +475,7 @@ impl PyCatBN {
         };
         // Return the dataset.
         Ok(estimate
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?
+            .map_err(|e| Error::new_err(e.to_string()))?
             .map(|e| e.into()))
     }
 
@@ -494,8 +495,7 @@ impl PyCatBN {
     pub fn from_bif_string(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatBN::from_bif_string(bif)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatBN::from_bif_string(bif).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -510,7 +510,7 @@ impl PyCatBN {
     pub fn to_bif_string(&self) -> PyResult<String> {
         self.lock()
             .to_bif_string()
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Read class from a BIF file.
@@ -529,8 +529,7 @@ impl PyCatBN {
     pub fn from_bif_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatBN::from_bif_file(path)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatBN::from_bif_file(path).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -545,7 +544,7 @@ impl PyCatBN {
     pub fn to_bif_file(&self, path: &str) -> PyResult<()> {
         self.lock()
             .to_bif_file(path)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         Ok(())
     }
 
@@ -565,8 +564,7 @@ impl PyCatBN {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatBN::from_json_string(json)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatBN::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -581,7 +579,7 @@ impl PyCatBN {
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock()
             .to_json_string()
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -600,8 +598,7 @@ impl PyCatBN {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatBN::from_json_file(path)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatBN::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -616,7 +613,7 @@ impl PyCatBN {
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock()
             .to_json_file(path)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         Ok(())
     }
 }

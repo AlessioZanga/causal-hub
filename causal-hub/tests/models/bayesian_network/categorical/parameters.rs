@@ -30,21 +30,19 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Labels and conditioning labels must be disjoint.")]
     fn unique_labels() {
         let x = states![("A", ["no", "yes"])];
         let z = states![("A", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
-        CatCPD::new(x, z, p).unwrap();
+        assert!(CatCPD::new(x, z, p).is_err());
     }
 
     #[test]
-    #[should_panic(expected = "Failed to sum probability to one: [].")]
     fn empty_labels() {
         let x = states![];
         let z = states![];
         let p = array![[]];
-        CatCPD::new(x, z, p).unwrap();
+        assert!(CatCPD::new(x, z, p).is_err());
     }
 
     #[test]

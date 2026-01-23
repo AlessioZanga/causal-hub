@@ -4,7 +4,7 @@ use ndarray_stats::CorrelationExt;
 
 use crate::{
     models::Labelled,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A struct for missing information in a tabular dataset.
@@ -47,13 +47,15 @@ impl MissingTable {
     ///
     /// A new missing information instance.
     ///
-    pub fn new(mut labels: Labels, mut missing_mask: Array2<bool>) -> Self {
-        // Assert dimensions match.
-        assert_eq!(
-            labels.len(),
-            missing_mask.ncols(),
-            "Number of labels must match the number of columns in the missing mask."
-        );
+    pub fn new(mut labels: Labels, mut missing_mask: Array2<bool>) -> Result<Self> {
+        // Check if dimensions match.
+        if labels.len() != missing_mask.ncols() {
+            return Err(Error::Dataset(format!(
+                "Number of labels ({}) must match the number of columns in the missing mask ({}).",
+                labels.len(),
+                missing_mask.ncols()
+            )));
+        }
 
         // Check if labels are sorted.
         if !labels.is_sorted() {
@@ -123,13 +125,13 @@ impl MissingTable {
         // Compute missing correlation.
         let missing_correlation = missing_mask_numeric
             .pearson_correlation()
-            .expect("Failed to compute missing correlation.");
+            .map_err(|e| Error::Stats(e.to_string()))?;
         // Compute missing covariance.
         let missing_covariance = missing_mask_numeric
             .cov(1.)
-            .expect("Failed to compute missing covariance.");
+            .map_err(|e| Error::Stats(e.to_string()))?;
 
-        Self {
+        Ok(Self {
             labels,
             fully_observed,
             partially_observed,
@@ -146,7 +148,7 @@ impl MissingTable {
             missing_covariance,
             complete_cols_count,
             complete_rows_count,
-        }
+        })
     }
 
     /// Get the set of fully observed variables.

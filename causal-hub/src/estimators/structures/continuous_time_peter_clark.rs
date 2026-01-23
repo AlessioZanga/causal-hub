@@ -393,40 +393,53 @@ where
             // While the counter is smaller than the number of parents ...
             while k < pa_i.len() {
                 // Initialize the set of vertices to remove, to ensure stability.
-                let mut not_pa_i = Vec::new();
 
-                // For each parent ...
-                for &j in &pa_i {
-                    // Check prior knowledge, if available.
-                    if let Some(pk) = self.prior_knowledge {
-                        // If the edge is required, skip the tests.
-                        // NOTE: Since CTPC only removes edges,
-                        //  it is sufficient to check for required edges.
-                        if pk.is_required(j, i) {
-                            // Log the skipped CIT.
-                            debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
-                            continue;
+                // For each parent, check if it is independent of the child given a subset of size k.
+                let not_pa_i: Vec<_> = pa_i
+                    .iter()
+                    .filter_map(|&j| {
+                        // Check prior knowledge, if available.
+                        if let Some(pk) = self.prior_knowledge {
+                            // If the edge is required, skip the tests.
+                            // NOTE: Since CTPC only removes edges,
+                            //  it is sufficient to check for required edges.
+                            if pk.is_required(j, i) {
+                                // Log the skipped CIT.
+                                debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
+                                return None;
+                            }
                         }
-                    }
-                    // Filter out the parent.
-                    let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
-                    // For any combination of size k of Pa(X_i) \ { X_j } ...
-                    for s_ij in pa_i_not_j.combinations(k).map(Set::from_iter) {
-                        // Log the current combination.
-                        debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
-                        // If X_i _||_ X_j | S_{X_i, X_j} ...
-                        if self.null_time.call(&set![i], &set![j], &s_ij)?
-                            && self.null_state.call(&set![i], &set![j], &s_ij)?
-                        {
-                            // Log the result of the CIT.
-                            debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
-                            // Add the parent to the set of vertices to remove.
-                            not_pa_i.push(j);
-                            // Break the outer loop.
-                            break;
-                        }
-                    }
-                }
+
+                        // Filter out the parent.
+                        let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
+                        // For any combination of size k of Pa(X_i) \ { X_j } ...
+                        pa_i_not_j
+                            .combinations(k)
+                            .map(Set::from_iter)
+                            .find_map(|s_ij| {
+                                // Log the current combination.
+                                debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
+                                // If X_i _||_ X_j | S_{X_i, X_j} ...
+                                match self.null_time.call(&set![i], &set![j], &s_ij) {
+                                    Ok(true) => {
+                                        match self.null_state.call(&set![i], &set![j], &s_ij) {
+                                            Ok(true) => {
+                                                // Log the result of the CIT.
+                                                debug!(
+                                                    "CIT for {i} _||_ {j} | {s_ij:?} ... PASSED"
+                                                );
+                                                Some(Ok(j))
+                                            }
+                                            Ok(false) => None,
+                                            Err(e) => Some(Err(e)),
+                                        }
+                                    }
+                                    Ok(false) => None,
+                                    Err(e) => Some(Err(e)),
+                                }
+                            })
+                    })
+                    .collect::<Result<_>>()?;
 
                 // Remove the vertices from the graph.
                 for &j in &not_pa_i {

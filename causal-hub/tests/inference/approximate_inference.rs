@@ -16,7 +16,6 @@ mod tests {
             use rand_xoshiro::Xoshiro256PlusPlus;
 
             #[test]
-            #[should_panic(expected = "Variables X must not be empty.")]
             fn estimate_empty_x() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -26,10 +25,10 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![], &set![]).unwrap();
+                assert!(engine.estimate(&set![], &set![]).is_err());
             }
+
             #[test]
-            #[should_panic(expected = "Variables X and Z must be disjoint.")]
             fn estimate_non_disjoint_xz() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -39,11 +38,10 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]).unwrap();
+                assert!(engine.estimate(&set![0], &set![0]).is_err());
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be in the model.")]
             fn estimate_x_not_in_model() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -53,20 +51,21 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![10], &set![]).unwrap();
+                assert!(engine.estimate(&set![10], &set![]).is_err());
             }
 
             #[test]
-            #[should_panic(expected = "Sample size must be positive.")]
             fn estimate_zero_sample_size() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
                 let model = load_asia();
                 // Initialize the inference engine.
-                let _ = ApproximateInference::new(&mut rng, &model)
-                    .with_sample_size(0)
-                    .unwrap();
+                assert!(
+                    ApproximateInference::new(&mut rng, &model)
+                        .with_sample_size(0)
+                        .is_err()
+                );
             }
 
             #[test]
@@ -148,7 +147,7 @@ mod tests {
                             state: 0, // no
                         },
                     ],
-                );
+                )?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
@@ -171,7 +170,6 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Variables X must not be empty.")]
             fn par_estimate_empty_x() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -181,11 +179,10 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![], &set![]).unwrap();
+                assert!(engine.par_estimate(&set![], &set![]).is_err());
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be disjoint.")]
             fn par_estimate_non_disjoint_xz() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -195,11 +192,10 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]).unwrap();
+                assert!(engine.estimate(&set![0], &set![0]).is_err());
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be in the model.")]
             fn par_estimate_x_not_in_model() {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -209,7 +205,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![10], &set![]).unwrap();
+                assert!(engine.par_estimate(&set![10], &set![]).is_err());
             }
 
             #[test]
@@ -285,7 +281,7 @@ mod tests {
                             state: 0,                            // no
                         },
                     ],
-                );
+                )?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 

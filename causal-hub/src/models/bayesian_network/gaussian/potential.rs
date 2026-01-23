@@ -644,7 +644,7 @@ impl GaussPhi {
         if !labels.is_sorted() {
             // Get the new indices order w.r.t. sorted labels.
             let mut indices: Vec<_> = (0..labels.len()).collect();
-            indices.sort_by_key(|&i| labels.get_index(i).unwrap());
+            indices.sort_by(|&i, &j| labels.get_index(i).cmp(&labels.get_index(j)));
             // Sort the labels.
             labels.sort();
 

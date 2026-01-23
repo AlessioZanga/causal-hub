@@ -14,7 +14,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::Error, impl_from_into_lock};
 
 /// A struct representing a categorical conditional probability distribution.
 #[gen_stub_pyclass]
@@ -211,8 +211,7 @@ impl PyCatCPD {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatCPD::from_json_string(json)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatCPD::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -227,7 +226,7 @@ impl PyCatCPD {
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock()
             .to_json_string()
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -246,8 +245,7 @@ impl PyCatCPD {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                CatCPD::from_json_file(path)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                CatCPD::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -262,7 +260,7 @@ impl PyCatCPD {
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock()
             .to_json_file(path)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         Ok(())
     }
 }

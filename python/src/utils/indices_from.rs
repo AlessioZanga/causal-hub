@@ -5,14 +5,14 @@ macro_rules! indices_from {
         if let Ok(x) = $x.extract::<String>() {
             let i = $labels
                 .label_to_index(&x)
-                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+                .map_err(|e| $crate::error::Error::new_err(e.to_string()))?;
             Ok(backend::set![i])
         } else if let Ok(x) = $x.try_iter() {
             x.map(|x| {
                 let x = x?.extract::<String>()?;
                 $labels
                     .label_to_index(&x)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))
+                    .map_err(|e| $crate::error::Error::new_err(e.to_string()))
             })
             .collect::<PyResult<_>>()
         } else {

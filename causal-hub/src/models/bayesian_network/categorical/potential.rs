@@ -80,7 +80,12 @@ impl MulAssign<&CatPhi> for CatPhi {
 
         // Order LHS axes w.r.t. new states.
         let mut lhs_axes: Vec<_> = (0..self.states.len()).collect();
-        lhs_axes.sort_by_key(|&i| self.states.get_index(i).unwrap().0);
+        lhs_axes.sort_by(|&i, &j| {
+            self.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&self.states.get_index(j).map(|(l, _)| l))
+        });
         let mut lhs_parameters = self.parameters.clone().permuted_axes(lhs_axes);
         // Get the axes to insert for LHS broadcasting.
         let lhs_axes = states.keys().enumerate();
@@ -93,7 +98,12 @@ impl MulAssign<&CatPhi> for CatPhi {
 
         // Order RHS axes w.r.t. new states.
         let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
-        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        rhs_axes.sort_by(|&i, &j| {
+            rhs.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+        });
         let mut rhs_parameters = rhs.parameters.clone().permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
         let rhs_axes = states.keys().enumerate();
@@ -149,7 +159,12 @@ impl DivAssign<&CatPhi> for CatPhi {
 
         // Order RHS axes w.r.t. new states.
         let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
-        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        rhs_axes.sort_by(|&i, &j| {
+            rhs.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+        });
         let mut rhs_parameters = rhs_parameters.permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
         let rhs_axes = self.states.keys().enumerate();
@@ -291,7 +306,12 @@ impl Phi for CatPhi {
 
         // Get the new axes order w.r.t. sorted labels.
         let mut axes: Vec<_> = (0..states.len()).collect();
-        axes.sort_by_key(|&i| states.get_index(i).unwrap().0);
+        axes.sort_by(|&i, &j| {
+            states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&states.get_index(j).map(|(l, _)| l))
+        });
         // Sort the states by labels.
         states.sort_keys();
         // Swap axes to match the new order.
@@ -388,7 +408,12 @@ impl CatPhi {
         if !states.keys().is_sorted() {
             // Get the new axes order w.r.t. sorted labels.
             let mut axes: Vec<_> = (0..states.len()).collect();
-            axes.sort_by_key(|&i| states.get_index(i).unwrap().0);
+            axes.sort_by(|&i, &j| {
+                states
+                    .get_index(i)
+                    .map(|(l, _)| l)
+                    .cmp(&states.get_index(j).map(|(l, _)| l))
+            });
             // Sort the states by labels.
             states.sort_keys();
             // Permute the parameters to match the new order.

@@ -15,7 +15,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::Error, impl_from_into_lock};
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
@@ -193,7 +193,7 @@ impl PyCatTable {
         )?;
 
         // Construct the dataset.
-        let inner = CatTable::new(states, values);
+        let inner = CatTable::new(states, values).map_err(|e| Error::new_err(e.to_string()))?;
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 

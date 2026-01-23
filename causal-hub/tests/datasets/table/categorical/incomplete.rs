@@ -6,13 +6,14 @@ mod tests {
         labels, map,
         models::Labelled,
         set, states,
+        types::Result,
     };
     use ndarray::prelude::*;
 
     const M: <CatIncTable as IncDataset>::Missing = CatIncTable::MISSING;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Set the states.
         let states = states!(
             ("A", ["a1", "a2", "a3"]),
@@ -31,7 +32,7 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
@@ -126,10 +127,12 @@ mod tests {
             dataset.missing().complete_rows_count(),
             3 //
         );
+
+        Ok(())
     }
 
     #[test]
-    fn new_unordered_labels() {
+    fn new_unordered_labels() -> Result<()> {
         // Set the states.
         let states = states!(
             ("C", ["c1", "c2", "c3", "c4"]),
@@ -148,7 +151,7 @@ mod tests {
             [3, M, 1]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B", "C"], dataset.labels());
@@ -262,10 +265,12 @@ mod tests {
             3, //
             dataset.missing().complete_rows_count()
         );
+
+        Ok(())
     }
 
     #[test]
-    fn new_unordered_states() {
+    fn new_unordered_states() -> Result<()> {
         // Set the states.
         let states = states!(
             ("C", ["c1", "c2", "c3", "c4"]),
@@ -284,7 +289,7 @@ mod tests {
             [3, M, 1]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B", "C"], dataset.labels());
@@ -398,10 +403,12 @@ mod tests {
             3, //
             dataset.missing().complete_rows_count()
         );
+
+        Ok(())
     }
 
     #[test]
-    fn lw_deletion() {
+    fn lw_deletion() -> Result<()> {
         // Set the states.
         let states = states!(
             ("A", ["a1", "a2", "a3"]),
@@ -420,9 +427,9 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
         // Perform list-wise deletion.
-        let pred_dataset = dataset.lw_deletion();
+        let pred_dataset = dataset.lw_deletion()?;
 
         // Set the true values.
         let true_values = array![
@@ -431,14 +438,16 @@ mod tests {
             [2, 1, 0]
         ];
         // Create the true categorical table.
-        let true_dataset = CatTable::new(states.clone(), true_values);
+        let true_dataset = CatTable::new(states.clone(), true_values)?;
 
         // Assert the predicted dataset is equal to the true dataset.
         assert_eq!(true_dataset, pred_dataset);
+
+        Ok(())
     }
 
     #[test]
-    fn pw_deletion() {
+    fn pw_deletion() -> Result<()> {
         // Set the states.
         let states = states!(
             ("A", ["a1", "a2", "a3"]),
@@ -457,9 +466,9 @@ mod tests {
             [M, 1, 3]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
         // Perform pair-wise deletion.
-        let pred_dataset = dataset.pw_deletion(&set![0, 1]);
+        let pred_dataset = dataset.pw_deletion(&set![0, 1])?;
 
         // Set the true states.
         let true_states = states!(
@@ -474,14 +483,16 @@ mod tests {
             [1, 1]
         ];
         // Create the true categorical table.
-        let true_dataset = CatTable::new(true_states, true_values);
+        let true_dataset = CatTable::new(true_states, true_values)?;
 
         // Assert the predicted dataset is equal to the true dataset.
         assert_eq!(true_dataset, pred_dataset);
+
+        Ok(())
     }
 
     #[test]
-    fn ipw_deletion() {
+    fn ipw_deletion() -> Result<()> {
         // Set the states.
         let states = states!(
             ("A", ["a1", "a2", "a3"]),
@@ -502,7 +513,7 @@ mod tests {
             [0, 2, 0]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Set the Pi_R.
         let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
@@ -510,7 +521,7 @@ mod tests {
         // Set W.
         let w = set![];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = Array2::<u8>::zeros((0, 0));
         let pred_b_w = Array1::<f64>::zeros(0);
@@ -521,7 +532,7 @@ mod tests {
         // Set W.
         let w = set![0];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0], //
@@ -539,7 +550,7 @@ mod tests {
         // Set W.
         let w = set![1];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [1], //
@@ -562,7 +573,7 @@ mod tests {
         // Set W.
         let w = set![2];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0], //
@@ -577,7 +588,7 @@ mod tests {
         // Set W.
         let w = set![0, 1];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 1], //
@@ -600,7 +611,7 @@ mod tests {
         // Set W.
         let w = set![0, 2];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 0], //
@@ -615,7 +626,7 @@ mod tests {
         // Set W.
         let w = set![1, 2];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [1, 0], //
@@ -630,7 +641,7 @@ mod tests {
         // Set W.
         let w = set![0, 1, 2];
         // Apply pairwise deletion with IPW.
-        let d_w = dataset.ipw_deletion(&w, &pr);
+        let d_w = dataset.ipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 1, 0], //
@@ -641,10 +652,12 @@ mod tests {
         // Assert pairwise deleted data and weights are equal to the expected values.
         assert_eq!(d_w.values().values(), &pred_d_w);
         assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        Ok(())
     }
 
     #[test]
-    fn aipw_deletion() {
+    fn aipw_deletion() -> Result<()> {
         // Set the states.
         let states = states!(
             ("A", ["a1", "a2", "a3"]),
@@ -665,7 +678,7 @@ mod tests {
             [0, 2, 0]
         ];
         // Create the categorical incomplete table.
-        let dataset = CatIncTable::new(states.clone(), values.clone());
+        let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Set the Pi_R.
         let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
@@ -673,7 +686,7 @@ mod tests {
         // Set W.
         let w = set![];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = Array2::<u8>::zeros((0, 0));
         let pred_b_w = Array1::<f64>::zeros(0);
@@ -684,7 +697,7 @@ mod tests {
         // Set W.
         let w = set![0];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0], //
@@ -702,7 +715,7 @@ mod tests {
         // Set W.
         let w = set![1];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [1], //
@@ -722,7 +735,7 @@ mod tests {
         // Set W.
         let w = set![2];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0], //
@@ -740,7 +753,7 @@ mod tests {
         // Set W.
         let w = set![0, 1];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 1], //
@@ -763,7 +776,7 @@ mod tests {
         // Set W.
         let w = set![0, 2];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 0], //
@@ -779,7 +792,7 @@ mod tests {
         // Set W.
         let w = set![1, 2];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [1, 0], //
@@ -795,7 +808,7 @@ mod tests {
         // Set W.
         let w = set![0, 1, 2];
         // Apply pairwise deletion with aIPW.
-        let d_w = dataset.aipw_deletion(&w, &pr);
+        let d_w = dataset.aipw_deletion(&w, &pr)?;
         // Set the expected D_W and B_W.
         let pred_d_w = array![
             [0, 1, 0], //
@@ -806,5 +819,7 @@ mod tests {
         // Assert pairwise deleted data and weights are equal to the expected values.
         assert_eq!(d_w.values().values(), &pred_d_w);
         assert_relative_eq!(d_w.weights(), &pred_b_w);
+
+        Ok(())
     }
 }

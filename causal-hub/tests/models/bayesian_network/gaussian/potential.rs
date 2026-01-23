@@ -36,7 +36,7 @@ mod tests {
                 event: 1,
                 value: 0.5,
             }],
-        );
+        )?;
         let pred_phi = phi.condition(&e)?;
 
         // Set the true potential.

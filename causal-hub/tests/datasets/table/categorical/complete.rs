@@ -5,12 +5,12 @@ mod tests {
         labels,
         models::Labelled,
         states,
-        types::Set,
+        types::{Result, Set},
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
@@ -22,7 +22,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values.clone());
+        let dataset = CatTable::new(states, values.clone())?;
 
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert!(
@@ -40,10 +40,12 @@ mod tests {
                 [1, 1, 1]
             ]
         );
+
+        Ok(())
     }
 
     #[test]
-    fn new_unordered_states() {
+    fn new_unordered_states() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no", "maybe"]),
@@ -55,7 +57,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values);
+        let dataset = CatTable::new(states, values)?;
 
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
         assert_eq!(
@@ -67,10 +69,12 @@ mod tests {
                 [1, 1, 2]
             ]
         );
+
+        Ok(())
     }
 
     #[test]
-    fn new_unordered_states_2() {
+    fn new_unordered_states_2() -> Result<()> {
         // Initialize the dataset.
         let dataset = CatTable::new(
             states![
@@ -84,7 +88,7 @@ mod tests {
                 [2, 1], //
                 [2, 2]  //
             ],
-        );
+        )?;
 
         // Check the labels.
         assert_eq!(dataset.labels(), &labels!["A", "B"]);
@@ -107,10 +111,11 @@ mod tests {
                 [2, 3]  //
             ]
         );
+
+        Ok(())
     }
 
     #[test]
-    #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 4 ."]
     fn new_non_unique_labels() {
         let states = states![
             ("B", ["no", "yes"]),
@@ -124,11 +129,10 @@ mod tests {
             [1, 0, 0, 1], //
             [1, 0, 1, 0]
         ];
-        CatTable::new(states, values);
+        assert!(CatTable::new(states, values).is_err());
     }
 
     #[test]
-    #[should_panic = "Variable 'A' should have less than 256 states: \n\t expected:    |states| <  256 , \n\t found:       |states| == 256 ."]
     fn new_too_many_states() {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
         let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
@@ -141,11 +145,10 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        CatTable::new(states, values);
+        assert!(CatTable::new(states, values).is_err());
     }
 
     #[test]
-    #[should_panic = "Number of variables must be equal to the number of columns: \n\t expected:    |states| == |values.columns()| , \n\t found:       |states| == 3 and |values.columns()| == 2 ."]
     fn new_wrong_variables_and_columns() {
         let states = states![
             ("B", ["no", "yes"]),
@@ -158,11 +161,10 @@ mod tests {
             [1, 0], //
             [1, 0]
         ];
-        CatTable::new(states, values);
+        assert!(CatTable::new(states, values).is_err());
     }
 
     #[test]
-    #[should_panic = "Values of variable 'A' must be less than the number of states: \n\t expected: values[.., 'A'] < |states['A']| , \n\t found:    values[.., 'A'] == 2 and |states['A']| == 2 ."]
     fn new_wrong_values() {
         let states = states![
             ("B", ["no", "yes"]),
@@ -175,11 +177,11 @@ mod tests {
             [1, 0, 0],
             [1, 0, 1]
         ];
-        CatTable::new(states, values);
+        assert!(CatTable::new(states, values).is_err());
     }
 
     #[test]
-    fn display() {
+    fn display() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
@@ -191,7 +193,7 @@ mod tests {
             [1, 0, 0], //
             [1, 0, 1]
         ];
-        let dataset = CatTable::new(states, values);
+        let dataset = CatTable::new(states, values)?;
 
         assert_eq!(
             dataset.to_string(),
@@ -206,5 +208,7 @@ mod tests {
                 "-------------------\n",
             )
         );
+
+        Ok(())
     }
 }

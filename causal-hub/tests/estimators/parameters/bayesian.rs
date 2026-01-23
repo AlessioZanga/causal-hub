@@ -32,7 +32,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
@@ -152,7 +152,7 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
@@ -171,8 +171,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
-            fn unique_variables() {
+            fn unique_variables() -> Result<()> {
                 let states = states![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
@@ -186,12 +185,19 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A | A, C)
-                let _ = estimator.fit(&set![0], &set![0, 2]).unwrap();
+                let res = estimator.fit(&set![0], &set![0, 2]);
+                assert!(res.is_err());
+                assert_eq!(
+                    res.unwrap_err().to_string(),
+                    "Illegal argument error: Variables and conditioning variables must be disjoint."
+                );
+
+                Ok(())
             }
         }
 
@@ -207,7 +213,7 @@ mod tests {
                 fn fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
@@ -265,7 +271,7 @@ mod tests {
                 fn fit_informative_prior() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     // Prior nu = 2.0
                     let estimator = BE::new(&dataset).with_prior(2.0);
@@ -320,7 +326,7 @@ mod tests {
                 fn par_fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
@@ -349,7 +355,7 @@ mod tests {
                         [0.0, 1.0, 1.0, 0.0],
                         [0.0, 0.0, 0.0, 1.0]
                     ];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // P(X1, X2 | Z1, Z2)
@@ -393,7 +399,7 @@ mod tests {
                 fn fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, f64::NAN], [3.0, 6.0]];
-                    let dataset = GaussIncTable::new(labels.clone(), data);
+                    let dataset = GaussIncTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
@@ -439,7 +445,7 @@ mod tests {
                         [0.0, 0.0, 0.0, 1.0],
                         [f64::NAN, 0.0, 0.0, 1.0] // Missing value, should be dropped
                     ];
-                    let dataset = GaussIncTable::new(labels.clone(), data);
+                    let dataset = GaussIncTable::new(labels.clone(), data)?;
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
                         .with_missing_method(Some(MissingMethod::LW), None);
@@ -485,8 +491,8 @@ mod tests {
                         [3.0, 6.0]  // w=1
                     ];
                     let weights = array![1.0, 0.0, 1.0];
-                    let dataset = GaussTable::new(labels.clone(), data);
-                    let dataset = GaussWtdTable::new(dataset, weights);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
+                    let dataset = GaussWtdTable::new(dataset, weights)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 

@@ -15,7 +15,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::Error, impl_from_into_lock};
 
 /// A categorical trajectory evidence.
 #[gen_stub_pyclass]
@@ -75,10 +75,10 @@ impl PyCatTrjEv {
     ///     A Pandas DataFrame containing the trajectory evidence data.
     ///     The data frame must contain the following columns:
     ///
-    ///         - `event`: The event type (str),
-    ///         - `state`: The state of the event (str),
-    ///         - `start_time`: The start time of the event (float64),
-    ///         - `end_time`: The end time of the event (float64).
+    /// - `event`: The event type (str),
+    /// - `state`: The state of the event (str),
+    /// - `start_time`: The start time of the event (float64),
+    /// - `end_time`: The end time of the event (float64).
     ///
     /// with_states: dict[str, Iterable[str]] | None
     ///     An optional dictionary mapping event labels to their possible states.
@@ -244,7 +244,7 @@ impl PyCatTrjEv {
             .collect::<PyResult<_>>()?;
 
         // Construct the evidence.
-        let inner = CatTrjEv::new(states, evidence);
+        let inner = CatTrjEv::new(states, evidence).map_err(|e| Error::new_err(e.to_string()))?;
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 
@@ -310,10 +310,10 @@ impl PyCatTrjsEv {
     ///     An iterable of Pandas DataFrames containing the trajectory evidence data.
     ///     The data frames must contain the following columns:
     ///
-    ///         - `event`: The event type (str),
-    ///         - `state`: The state of the event (str),
-    ///         - `start_time`: The start time of the event (float64),
-    ///         - `end_time`: The end time of the event (float64).
+    /// - `event`: The event type (str),
+    /// - `state`: The state of the event (str),
+    /// - `start_time`: The start time of the event (float64),
+    /// - `end_time`: The end time of the event (float64).
     ///
     /// with_states: dict[str, Iterable[str]] | None
     ///     An optional dictionary mapping event labels to their possible states.
@@ -341,7 +341,7 @@ impl PyCatTrjsEv {
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
 
         // Create a new CatTrjsEv with the given parameters.
-        let inner = CatTrjsEv::new(dfs);
+        let inner = CatTrjsEv::new(dfs).map_err(|e| Error::new_err(e.to_string()))?;
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 

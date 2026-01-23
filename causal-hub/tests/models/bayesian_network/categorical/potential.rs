@@ -57,7 +57,7 @@ mod tests {
         let phi = CatPhi::new(s.clone(), p);
 
         // Condition the potential.
-        let e = CatEv::new(s, [CatEvT::CertainPositive { event: 2, state: 0 }]);
+        let e = CatEv::new(s, [CatEvT::CertainPositive { event: 2, state: 0 }])?;
         let pred_phi = phi.condition(&e)?;
 
         // Set the true potential.

@@ -6,13 +6,14 @@ mod tests {
         labels,
         models::Labelled,
         set,
+        types::Result,
     };
     use ndarray::prelude::*;
 
     const M: <GaussIncTable as IncDataset>::Missing = GaussIncTable::MISSING;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the values, using M as missing value.
@@ -27,7 +28,7 @@ mod tests {
             [M, 1., 3.]
         ];
         // Create the gaussian incomplete table.
-        let dataset = GaussIncTable::new(labels.clone(), values.clone());
+        let dataset = GaussIncTable::new(labels.clone(), values.clone())?;
 
         // Assert the labels.
         assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
@@ -114,10 +115,12 @@ mod tests {
         assert_eq!(0, dataset.missing().complete_cols_count());
         // Assert the complete rows count.
         assert_eq!(3, dataset.missing().complete_rows_count());
+
+        Ok(())
     }
 
     #[test]
-    fn lw_deletion() {
+    fn lw_deletion() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the values, using M as missing value.
@@ -132,10 +135,10 @@ mod tests {
             [M, 1., 3.]
         ];
         // Create the gaussian incomplete table.
-        let dataset = GaussIncTable::new(labels.clone(), values.clone());
+        let dataset = GaussIncTable::new(labels.clone(), values.clone())?;
 
         // Apply list-wise deletion.
-        let dataset = dataset.lw_deletion();
+        let dataset = dataset.lw_deletion()?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B", "C"], dataset.labels());
@@ -148,10 +151,12 @@ mod tests {
             ],
             dataset.values()
         );
+
+        Ok(())
     }
 
     #[test]
-    fn pw_deletion() {
+    fn pw_deletion() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the values, using M as missing value.
@@ -166,10 +171,10 @@ mod tests {
             [M, 1., 3.]
         ];
         // Create the gaussian incomplete table.
-        let dataset = GaussIncTable::new(labels.clone(), values.clone());
+        let dataset = GaussIncTable::new(labels.clone(), values.clone())?;
 
         // Apply pw-wise deletion.
-        let dataset = dataset.pw_deletion(&set![0, 1]);
+        let dataset = dataset.pw_deletion(&set![0, 1])?;
 
         // Assert the labels.
         assert_eq!(&labels!["A", "B"], dataset.labels());
@@ -183,11 +188,12 @@ mod tests {
             ],
             dataset.values()
         );
+
+        Ok(())
     }
 
     #[test]
-    #[should_panic]
-    fn apply_missing_method_ipw() {
+    fn apply_missing_method_ipw() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the values, using M as missing value.
@@ -202,9 +208,11 @@ mod tests {
             [M, 1., 3.]
         ];
         // Create the gaussian incomplete table.
-        let dataset = GaussIncTable::new(labels.clone(), values.clone());
+        let dataset = GaussIncTable::new(labels.clone(), values.clone())?;
 
         // Apply IPW deletion.
-        dataset.apply_missing_method(&MM::IPW, None, None);
+        assert!(dataset.apply_missing_method(&MM::IPW, None, None).is_err());
+
+        Ok(())
     }
 }

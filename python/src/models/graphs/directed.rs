@@ -13,7 +13,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{impl_from_into_lock, indices_from};
+use crate::{error::Error, impl_from_into_lock, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
@@ -115,7 +115,7 @@ impl PyDiGraph {
         // Get the labels of the vertices.
         let x = lock
             .label_to_index(x)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         // Check if the vertex exists in the graph.
         Ok(lock.has_vertex(x))
     }
@@ -164,10 +164,10 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = lock
             .label_to_index(x)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         let y = lock
             .label_to_index(y)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         // Check if the edge exists in the graph.
         Ok(lock.has_edge(x, y))
     }
@@ -192,10 +192,10 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = lock
             .label_to_index(x)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         let y = lock
             .label_to_index(y)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         // Add the edge to the graph.
         Ok(lock.add_edge(x, y))
     }
@@ -220,10 +220,10 @@ impl PyDiGraph {
         // Get the indices of the vertices.
         let x = lock
             .label_to_index(x)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         let y = lock
             .label_to_index(y)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
         // Delete the edge from the graph.
         Ok(lock.del_edge(x, y))
     }
@@ -343,9 +343,9 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    ///     * `X`, `Y` or `Z` are not disjoint sets.
-    ///     * `X` and `Y` are empty sets.
+    /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `X`, `Y` or `Z` are not disjoint sets.
+    /// * `X` and `Y` are empty sets.
     ///
     /// Returns
     /// -------
@@ -366,7 +366,7 @@ impl PyDiGraph {
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
         lock.is_separator_set(&x, &y, &z)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Checks if the vertex set `Z` is a minimal separator set for `X` and `Y`.
@@ -388,10 +388,10 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    ///     * `X`, `Y` or `Z` are not disjoint sets.
-    ///     * `X` and `Y` are empty sets.
-    ///     * Not `W` <= `Z` <= `V`.
+    /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+    /// * `X`, `Y` or `Z` are not disjoint sets.
+    /// * `X` and `Y` are empty sets.
+    /// * Not `W` <= `Z` <= `V`.
     ///
     /// Returns
     /// -------
@@ -417,7 +417,7 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
         lock.is_minimal_separator_set(&x, &y, &z, w.as_ref(), v.as_ref())
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Finds a minimal separator set for the vertex sets `X` and `Y`, if any.
@@ -437,10 +437,10 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    ///     * `X` and `Y` are not disjoint sets.
-    ///     * `X` or `Y` are empty sets.
-    ///     * Not `W` <= `V`.
+    /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+    /// * `X` and `Y` are not disjoint sets.
+    /// * `X` or `Y` are empty sets.
+    /// * Not `W` <= `V`.
     ///
     /// Returns
     /// -------
@@ -467,7 +467,7 @@ impl PyDiGraph {
         // Find the minimal separator.
         let z = lock
             .find_minimal_separator_set(&x, &y, w.as_ref(), v.as_ref())
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
@@ -495,9 +495,9 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    ///     * `X`, `Y` or `Z` are not disjoint sets.
-    ///     * `X` and `Y` are empty sets.
+    /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `X`, `Y` or `Z` are not disjoint sets.
+    /// * `X` and `Y` are empty sets.
     ///
     /// Returns
     /// -------
@@ -518,7 +518,7 @@ impl PyDiGraph {
         let z = indices_from!(z, lock)?;
         // Delegate to the inner method.
         lock.is_backdoor_set(&x, &y, &z)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Checks if the vertex set `Z` is a minimal backdoor set for `X` and `Y`.
@@ -540,10 +540,10 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    ///     * `X`, `Y` or `Z` are not disjoint sets.
-    ///     * `X` and `Y` are empty sets.
-    ///     * Not `W` <= `Z` <= `V`.
+    /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+    /// * `X`, `Y` or `Z` are not disjoint sets.
+    /// * `X` and `Y` are empty sets.
+    /// * Not `W` <= `Z` <= `V`.
     ///
     /// Returns
     /// -------
@@ -569,7 +569,7 @@ impl PyDiGraph {
         let v = v.map(|v| indices_from!(v, lock)).transpose()?;
         // Delegate to the inner method.
         lock.is_minimal_backdoor_set(&x, &y, &z, w.as_ref(), v.as_ref())
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Finds a minimal backdoor set for the vertex sets `X` and `Y`, if any.
@@ -589,10 +589,10 @@ impl PyDiGraph {
     /// ----------
     /// Raises an exception if:
     ///
-    ///     * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    ///     * `X` and `Y` are not disjoint sets.
-    ///     * `X` or `Y` are empty sets.
-    ///     * Not `W` <= `V`.
+    /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+    /// * `X` and `Y` are not disjoint sets.
+    /// * `X` or `Y` are empty sets.
+    /// * Not `W` <= `V`.
     ///
     /// Returns
     /// -------
@@ -619,7 +619,7 @@ impl PyDiGraph {
         // Find the minimal backdoor.
         let z = lock
             .find_minimal_backdoor_set(&x, &y, w.as_ref(), v.as_ref())
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+            .map_err(|e| Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
         let z = z.map(|z| {
@@ -676,10 +676,10 @@ impl PyDiGraph {
             // Get the indices of the vertices.
             let x = graph
                 .label_to_index(&x)
-                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+                .map_err(|e| Error::new_err(e.to_string()))?;
             let y = graph
                 .label_to_index(&y)
-                .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+                .map_err(|e| Error::new_err(e.to_string()))?;
             // Add the edge to the graph.
             graph.add_edge(x, y);
         }
@@ -736,8 +736,7 @@ impl PyDiGraph {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                DiGraph::from_json_string(json)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                DiGraph::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -752,7 +751,7 @@ impl PyDiGraph {
     pub fn to_json_string(&self) -> PyResult<String> {
         self.lock()
             .to_json_string()
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 
     /// Read instance from a JSON file.
@@ -771,8 +770,7 @@ impl PyDiGraph {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                DiGraph::from_json_file(path)
-                    .map_err(|e| crate::error::Error::new_err(e.to_string()))?,
+                DiGraph::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
             )),
         })
     }
@@ -787,6 +785,6 @@ impl PyDiGraph {
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
         self.lock()
             .to_json_file(path)
-            .map_err(|e| crate::error::Error::new_err(e.to_string()))
+            .map_err(|e| Error::new_err(e.to_string()))
     }
 }

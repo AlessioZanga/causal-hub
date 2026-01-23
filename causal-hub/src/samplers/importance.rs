@@ -47,22 +47,22 @@ where
     /// Return a new `ImportanceSampler` instance.
     ///
     #[inline]
-    pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Self {
+    pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {
+        // Assert the model and the evidences have the same labels.
+        if model.labels() != evidence.labels() {
+            return Err(Error::Model(
+                "The model and the evidences must have the same variables.".into(),
+            ));
+        }
+
         // Wrap the RNG in a RefCell to allow interior mutability.
         let rng = RefCell::new(rng);
 
-        // Assert the model and the evidences have the same labels.
-        assert_eq!(
-            model.labels(),
-            evidence.labels(),
-            "The model and the evidences must have the same variables."
-        );
-
-        Self {
+        Ok(Self {
             rng,
             model,
             evidence,
-        }
+        })
     }
 }
 
@@ -119,7 +119,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
-        Ok(CatEv::new(self.evidence.states().clone(), certain_evidence))
+        CatEv::new(self.evidence.states().clone(), certain_evidence)
     }
 }
 
@@ -235,10 +235,10 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         }
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        let samples = CatTable::new(self.model.states().clone(), samples)?;
 
         // Return the weighted samples.
-        Ok(CatWtdTable::new(samples, weights))
+        CatWtdTable::new(samples, weights)
     }
 }
 
@@ -316,10 +316,10 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
         }
 
         // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        let samples = GaussTable::new(self.model.labels().clone(), samples)?;
 
         // Return the weighted samples.
-        Ok(GaussWtdTable::new(samples, weights))
+        GaussWtdTable::new(samples, weights)
     }
 }
 
@@ -345,7 +345,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
                 // Create a new RNG with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the RNG.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample a weighted sample.
                 let (s_i, w_i) = sampler.sample()?;
                 // Assign the sample.
@@ -356,10 +356,10 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
             })?;
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        let samples = CatTable::new(self.model.states().clone(), samples)?;
 
         // Return the weighted samples.
-        Ok(CatWtdTable::new(samples, weights))
+        CatWtdTable::new(samples, weights)
     }
 }
 
@@ -385,7 +385,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, Ga
                 // Create a new RNG with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the RNG.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample a weighted sample.
                 let (s_i, w_i) = sampler.sample()?;
                 // Assign the sample.
@@ -396,10 +396,10 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, Ga
             })?;
 
         // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        let samples = GaussTable::new(self.model.labels().clone(), samples)?;
 
         // Return the weighted samples.
-        Ok(GaussWtdTable::new(samples, weights))
+        GaussWtdTable::new(samples, weights)
     }
 }
 
@@ -471,10 +471,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             .collect();
 
         // Collect the certain evidence.
-        Ok(CatTrjEv::new(
-            self.evidence.states().clone(),
-            certain_evidence,
-        ))
+        CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
     }
 
     /// Sample transition time for variable X_i with state x_i.
@@ -700,9 +697,9 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
             // Get the initial state distribution.
             let initial_d = self.model.initial_distribution();
             // Get the initial evidence.
-            let initial_e = &evidence.initial_evidence();
+            let initial_e = evidence.initial_evidence()?;
             // Initialize the sampler for the initial state.
-            let initial = ImportanceSampler::new(&mut *rng, initial_d, initial_e);
+            let initial = ImportanceSampler::new(&mut *rng, initial_d, &initial_e)?;
             // Sample the initial state.
             initial.sample()?
         };
@@ -845,15 +842,15 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .map_err(|e| Error::Shape(e.to_string()))?;
+            .map_err(|e: ndarray::ShapeError| Error::Shape(e.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
         // Construct the trajectory.
-        let trajectory = CatTrj::new(states, sample_events, sample_times);
+        let trajectory = CatTrj::new(states, sample_events, sample_times)?;
 
         // Return the trajectory and its weight.
-        Ok((trajectory, weight).into())
+        CatWtdTrj::new(trajectory, weight)
     }
 
     #[inline]
@@ -909,7 +906,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, 
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample the trajectory.
                 sampler.sample_by_length_or_time(max_length, max_time)
             })

@@ -38,7 +38,7 @@ mod tests {
                         [0, 1, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatTable::new(states, values);
+                    let dataset = CatTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 
@@ -159,7 +159,7 @@ mod tests {
                         [0, 1, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatTable::new(states, values);
+                    let dataset = CatTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 
@@ -178,8 +178,7 @@ mod tests {
                 }
 
                 #[test]
-                #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
-                fn unique_variables() {
+                fn unique_variables() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -193,17 +192,18 @@ mod tests {
                         [0, 1, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatTable::new(states, values);
+                    let dataset = CatTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A | A, C)
-                    let _ = CPDEstimator::fit(&estimator, &set![0], &set![0, 2]).unwrap();
+                    assert!(CPDEstimator::fit(&estimator, &set![0], &set![0, 2]).is_err());
+
+                    Ok(())
                 }
 
                 #[test]
-                #[should_panic(expected = "Failed to get non-zero counts.")]
-                fn non_zero_counts() {
+                fn non_zero_counts() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -216,12 +216,14 @@ mod tests {
                         [0, 1, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatTable::new(states, values);
+                    let dataset = CatTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A | B, C)
-                    let _ = CPDEstimator::fit(&estimator, &set![0], &set![1, 2]).unwrap();
+                    assert!(CPDEstimator::fit(&estimator, &set![0], &set![1, 2]).is_err());
+
+                    Ok(())
                 }
             }
 
@@ -243,7 +245,7 @@ mod tests {
                         [0, M, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatIncTable::new(states, values);
+                    let dataset = CatIncTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 
@@ -311,7 +313,7 @@ mod tests {
                         [0, M, 1],
                         [1, 1, 1]
                     ];
-                    let dataset = CatIncTable::new(states, values);
+                    let dataset = CatIncTable::new(states, values)?;
 
                     let estimator = MLE::new(&dataset);
 

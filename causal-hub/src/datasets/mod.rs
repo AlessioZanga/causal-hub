@@ -5,7 +5,7 @@ mod trajectory;
 use itertools::Either;
 pub use trajectory::*;
 
-use crate::types::{Map, Set};
+use crate::types::{Map, Result, Set};
 
 /// A trait for dataset.
 pub trait Dataset {
@@ -42,7 +42,9 @@ pub trait Dataset {
     ///
     /// A dataset restricted to the specified variables.
     ///
-    fn select(&self, x: &Set<usize>) -> Self;
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 /// An enum representing different methods for handling missing data.
@@ -96,7 +98,7 @@ pub trait IncDataset: Dataset + Sized {
         m: &MissingMethod,
         x: Option<&Set<usize>>,
         pr: Option<&Map<usize, Set<usize>>>,
-    ) -> Either<Self::Complete, Self::Weighted>;
+    ) -> Result<Either<Self::Complete, Self::Weighted>>;
 
     /// Perform list-wise (LW) deletion to handle missing data.
     ///
@@ -104,7 +106,7 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// A complete dataset obtained via LW deletion.
     ///
-    fn lw_deletion(&self) -> Self::Complete;
+    fn lw_deletion(&self) -> Result<Self::Complete>;
 
     /// Perform pair-wise (PW) deletion to handle missing data for the specified columns.
     ///
@@ -116,7 +118,7 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// A complete dataset restricted to the specified columns via PW deletion.
     ///
-    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete;
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete>;
 
     /// Perform inverse probability weighting (IPW) deletion to handle missing data for the specified columns.
     ///
@@ -129,7 +131,7 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// A weighted dataset restricted to the specified columns via IPW deletion.
     ///
-    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted>;
 
     /// Perform augmented inverse probability weighting (AIPW) deletion to handle missing data for the specified columns.
     ///
@@ -142,5 +144,5 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// A weighted dataset restricted to the specified columns via AIPW deletion.
     ///
-    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted>;
 }

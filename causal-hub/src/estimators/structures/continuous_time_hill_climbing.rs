@@ -368,7 +368,9 @@ where
                     if let Some((next_score, next_pa)) = scores
                         .into_iter()
                         // Get the one with the highest score in parallel.
-                        .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
+                        .max_by(|(a, _), (b, _)| {
+                            a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
+                        })
                     {
                         // If the score of the candidate parent set is higher ...
                         if curr_score < next_score {

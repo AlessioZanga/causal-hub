@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{Dataset, GaussSample, GaussTable},
     models::Labelled,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a Gaussian weighted sample.
@@ -31,27 +31,25 @@ impl GaussWtdTable {
     /// * `dataset` - The Gaussian dataset.
     /// * `weights` - The weights of the samples.
     ///
-    /// # Panics
-    ///
-    /// * Panics if the number of weights is not equal to the number of samples.
-    /// * Panics if any weight is not in the range [0, 1].
-    ///
     /// # Returns
     ///
     /// A new Gaussian weighted dataset instance.
     ///
-    pub fn new(dataset: GaussTable, weights: Array1<f64>) -> Self {
-        assert_eq!(
-            dataset.values().nrows(),
-            weights.len(),
-            "The number of weights must be equal to the number of samples."
-        );
-        assert!(
-            weights.iter().all(|&w| (0.0..=1.0).contains(&w)),
-            "All weights must be in the range [0, 1]."
-        );
+    pub fn new(dataset: GaussTable, weights: Array1<f64>) -> Result<Self> {
+        // Check if the number of weights is equal to the number of samples.
+        if dataset.values().nrows() != weights.len() {
+            return Err(Error::Dataset(
+                "The number of weights must be equal to the number of samples.".to_string(),
+            ));
+        }
+        // Check if any weight is in the range [0, 1].
+        if !weights.iter().all(|&w| (0.0..=1.0).contains(&w)) {
+            return Err(Error::Dataset(
+                "All weights must be in the range [0, 1].".to_string(),
+            ));
+        }
 
-        Self { dataset, weights }
+        Ok(Self { dataset, weights })
     }
 
     /// Returns the weights of the samples in the Gaussian distribution.
@@ -79,9 +77,9 @@ impl Dataset for GaussWtdTable {
         self.weights.sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let dataset = self.dataset.select(x);
+        let dataset = self.dataset.select(x)?;
         // Select the weights.
         let weights = self.weights.clone();
         // Return the new weighted dataset.

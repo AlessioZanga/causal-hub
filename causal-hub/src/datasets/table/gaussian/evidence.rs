@@ -1,4 +1,8 @@
-use crate::{datasets::GaussType, models::Labelled, types::Labels};
+use crate::{
+    datasets::GaussType,
+    models::Labelled,
+    types::{Error, Labels, Result},
+};
 
 /// Gaussian evidence type.
 #[non_exhaustive]
@@ -53,23 +57,32 @@ impl GaussEv {
     ///
     /// A new Gaussian evidence structure.
     ///
-    pub fn new<I>(mut labels: Labels, values: I) -> Self
+    pub fn new<I>(mut labels: Labels, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = GaussEvT>,
     {
         // Get shortened variable type.
         use GaussEvT as E;
 
-        // Allocate evidences.
-        let mut evidences = vec![None; labels.len()];
-
         // Fill the evidences.
-        values.into_iter().for_each(|e| {
-            // Get the event of the evidence.
-            let event = e.event();
-            // Push the value into the variable events.
-            evidences[event] = Some(e);
-        });
+        let mut evidences = values.into_iter().try_fold(
+            vec![None; labels.len()],
+            |mut evidences, e| -> Result<_> {
+                // Get the event of the evidence.
+                let event = e.event();
+                // Check if event is in bounds.
+                if event >= evidences.len() {
+                    return Err(Error::Dataset(format!(
+                        "Event index {} is out of bounds.",
+                        event
+                    )));
+                }
+                // Push the value into the variable events.
+                evidences[event] = Some(e);
+
+                Ok(evidences)
+            },
+        )?;
 
         // Sort labels, if necessary.
         if !labels.is_sorted() {
@@ -78,28 +91,30 @@ impl GaussEv {
             // Sort the labels.
             new_labels.sort();
 
-            // Create new evidences.
-            let mut new_evidences = vec![None; new_labels.len()];
-
             // Sort the evidences.
-            evidences.into_iter().flatten().for_each(|e| {
-                // Get the event of the evidence.
-                let event = labels
-                    .get_index(e.event())
-                    .expect("Failed to get label of evidence.");
-                // Sort the event index.
-                let event = new_labels
-                    .get_index_of(event)
-                    .expect("Failed to get index of evidence.");
+            let new_evidences = evidences.into_iter().flatten().try_fold(
+                vec![None; new_labels.len()],
+                |mut new_evidences, e| -> Result<_> {
+                    // Get the event of the evidence.
+                    let event_name = labels.get_index(e.event()).ok_or_else(|| {
+                        Error::Dataset("Failed to get label of evidence.".to_string())
+                    })?;
+                    // Sort the event index.
+                    let event = new_labels.get_index_of(event_name).ok_or_else(|| {
+                        Error::Dataset("Failed to get index of evidence.".to_string())
+                    })?;
 
-                // Sort the variable events.
-                let e = match e {
-                    E::CertainPositive { value, .. } => E::CertainPositive { event, value },
-                };
+                    // Sort the variable events.
+                    let e = match e {
+                        E::CertainPositive { value, .. } => E::CertainPositive { event, value },
+                    };
 
-                // Push the value into the variable events.
-                new_evidences[event] = Some(e);
-            });
+                    // Push the value into the variable events.
+                    new_evidences[event] = Some(e);
+
+                    Ok(new_evidences)
+                },
+            )?;
 
             // Update the labels.
             labels = new_labels;
@@ -107,7 +122,7 @@ impl GaussEv {
             evidences = new_evidences;
         }
 
-        Self { labels, evidences }
+        Ok(Self { labels, evidences })
     }
 
     /// The evidences of the evidence.

@@ -58,7 +58,6 @@ mod tests {
                 }
 
                 #[test]
-                #[should_panic(expected = "Malformed record on line 2.")]
                 fn from_csv_reader_malformed_record() {
                     let csv = concat!(
                         "A,B,C\n",
@@ -67,11 +66,10 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatTable::from_csv_string(csv).unwrap();
+                    assert!(CatTable::from_csv_string(csv).is_err());
                 }
 
                 #[test]
-                #[should_panic(expected = "Missing value on line 2.")]
                 fn from_csv_reader_missing_value() {
                     let csv = concat!(
                         "A,B,C\n",
@@ -80,7 +78,7 @@ mod tests {
                         "no,yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatTable::from_csv_string(csv).unwrap();
+                    assert!(CatTable::from_csv_string(csv).is_err());
                 }
 
                 #[test]
@@ -136,7 +134,6 @@ mod tests {
                 }
 
                 #[test]
-                #[should_panic(expected = "Malformed record on line 2.")]
                 fn from_csv_reader_malformed_record() {
                     let csv = concat!(
                         "A,B,C\n",
@@ -145,7 +142,7 @@ mod tests {
                         ",yes,yes\n",
                         "yes,yes,yes"
                     );
-                    let _ = CatIncTable::from_csv_string(csv).unwrap();
+                    assert!(CatIncTable::from_csv_string(csv).is_err());
                 }
 
                 #[test]
@@ -193,7 +190,6 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "Malformed record on line 2.")]
             fn from_csv_reader_malformed_record() {
                 let csv = concat!(
                     "X,Y,Z\n", //
@@ -201,11 +197,10 @@ mod tests {
                     "4,5\n",   //
                     "7,8,9\n"
                 );
-                let _ = GaussTable::from_csv_string(csv).unwrap();
+                assert!(GaussTable::from_csv_string(csv).is_err());
             }
 
             #[test]
-            #[should_panic(expected = "Missing value on line 2.")]
             fn from_csv_reader_missing_value() {
                 let csv = concat!(
                     "X,Y,Z\n", //
@@ -213,7 +208,7 @@ mod tests {
                     "4,,6\n",  //
                     "7,8,9\n"
                 );
-                let _ = GaussTable::from_csv_string(csv).unwrap();
+                assert!(GaussTable::from_csv_string(csv).is_err());
             }
 
             #[test]
