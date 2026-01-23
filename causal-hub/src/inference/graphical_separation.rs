@@ -100,37 +100,37 @@ pub(crate) mod digraph {
         v: Option<&Set<usize>>,
     ) -> Result<()> {
         // Assert the included set is a subset of the restricted set.
-        if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref()) {
-            if !w.is_subset(v) {
-                return Err(Error::IllegalArgument(
-                    "Set W must be a subset of set V.".into(),
-                ));
-            }
+        if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref())
+            && !w.is_subset(v)
+        {
+            return Err(Error::IllegalArgument(
+                "Set W must be a subset of set V.".into(),
+            ));
         }
 
         // Convert X to set, while checking for out of bounds.
         for &x in x {
             if !g.has_vertex(x) {
-                return Err(Error::IllegalArgument(
-                    format!("Vertex `{x}` in set X is out of bounds.").into(),
-                ));
+                return Err(Error::IllegalArgument(format!(
+                    "Vertex `{x}` in set X is out of bounds."
+                )));
             }
         }
         // Convert Y to set, while checking for out of bounds.
         for &y in y {
             if !g.has_vertex(y) {
-                return Err(Error::IllegalArgument(
-                    format!("Vertex `{y}` in set Y is out of bounds.").into(),
-                ));
+                return Err(Error::IllegalArgument(format!(
+                    "Vertex `{y}` in set Y is out of bounds."
+                )));
             }
         }
         // Convert Z to set, while checking for out of bounds.
         if let Some(z) = z {
             for &z in z {
                 if !g.has_vertex(z) {
-                    return Err(Error::IllegalArgument(
-                        format!("Vertex `{z}` in set Z is out of bounds.").into(),
-                    ));
+                    return Err(Error::IllegalArgument(format!(
+                        "Vertex `{z}` in set Z is out of bounds."
+                    )));
                 }
             }
         }
@@ -166,20 +166,20 @@ pub(crate) mod digraph {
                 ));
             }
             // Assert Z includes.
-            if let Some(w) = w {
-                if !z.is_superset(w) {
-                    return Err(Error::IllegalArgument(
-                        "Set Z must be a superset of set W.".into(),
-                    ));
-                }
+            if let Some(w) = w
+                && !z.is_superset(w)
+            {
+                return Err(Error::IllegalArgument(
+                    "Set Z must be a superset of set W.".into(),
+                ));
             }
             // Assert Z is restricted.
-            if let Some(v) = v {
-                if !z.is_subset(v) {
-                    return Err(Error::IllegalArgument(
-                        "Set Z must be a subset of set V.".into(),
-                    ));
-                }
+            if let Some(v) = v
+                && !z.is_subset(v)
+            {
+                return Err(Error::IllegalArgument(
+                    "Set Z must be a subset of set V.".into(),
+                ));
             }
         }
         Ok(())

@@ -287,7 +287,7 @@ impl Phi for CatPhi {
         let parameters = parameters
             .into_dyn()
             .into_shape_with_order(shape)
-            .map_err(|e| Error::NdarrayShape(e))?;
+            .map_err(Error::NdarrayShape)?;
 
         // Get the new axes order w.r.t. sorted labels.
         let mut axes: Vec<_> = (0..states.len()).collect();

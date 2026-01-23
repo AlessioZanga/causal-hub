@@ -6,7 +6,7 @@ mod tests {
         labels,
         models::{CatCPDS, GaussCPDS, Labelled},
         set, states,
-        types::Map,
+        types::{Error, Map, Result},
     };
     use ndarray::prelude::*;
 
@@ -14,7 +14,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn incomplete_ipw() {
+        fn incomplete_ipw() -> Result<()> {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
@@ -30,7 +30,7 @@ mod tests {
                 [M, 1], // Missing X
                 [1, 1],
             ]
-            .mapv(|x| x as u8);
+            .mapv(|x| x);
 
             // Create dataset.
             let d = CatIncTable::new(states, values);
@@ -48,7 +48,7 @@ mod tests {
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z).unwrap();
+            let cpd: CatCPDS = sse.fit(&x, &z)?;
 
             // Check sample size matches dataset samples
             assert_eq!(cpd.sample_size(), 4.0);
@@ -64,10 +64,12 @@ mod tests {
             // Indexing: Row=Z (Y=0, Y=1), Col=X (X=0, X=1)
             let expected = array![[1.6, 0.8], [0.0, 1.6]];
             assert_eq!(cpd.sample_conditional_counts(), &expected);
+
+            Ok(())
         }
 
         #[test]
-        fn incomplete_aipw() {
+        fn incomplete_aipw() -> Result<()> {
             // Define the missing value.
             const M: u8 = CatIncTable::MISSING;
 
@@ -83,7 +85,7 @@ mod tests {
                 [M, 1], // Missing X
                 [1, 1],
             ]
-            .mapv(|x| x as u8);
+            .mapv(|x| x);
 
             // Create dataset.
             let d = CatIncTable::new(states, values);
@@ -100,7 +102,7 @@ mod tests {
             let x = set![0];
             let z = set![1];
 
-            let cpd: CatCPDS = sse.fit(&x, &z).unwrap();
+            let cpd: CatCPDS = sse.fit(&x, &z)?;
 
             assert_eq!(cpd.sample_size(), 4.0);
 
@@ -112,6 +114,8 @@ mod tests {
             assert!(counts[[0, 1]] > 0.0);
             assert_eq!(counts[[1, 0]], 0.0); // No observed samples for (0, 1)
             assert!(counts[[1, 1]] > 0.0);
+
+            Ok(())
         }
     }
 
@@ -119,7 +123,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn complete() {
+        fn complete() -> Result<()> {
             // Define values.
             let values = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
             let labels = labels!["X", "Y"];
@@ -132,7 +136,7 @@ mod tests {
             let z = set![1];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z).unwrap();
+            let cpd: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
             assert_eq!(cpd.sample_size(), 4.0);
@@ -143,10 +147,12 @@ mod tests {
             // Check means.
             assert_eq!(cpd.sample_response_mean(), &array![0.5]);
             assert_eq!(cpd.sample_design_mean(), &array![0.5]);
+
+            Ok(())
         }
 
         #[test]
-        fn incomplete_pw() {
+        fn incomplete_pw() -> Result<()> {
             // Define missing value.
             const M: f64 = f64::NAN;
 
@@ -178,14 +184,20 @@ mod tests {
 
             let sse = SSE::new(&d).with_missing_method(Some(MissingMethod::PW), None);
 
-            let x_idx = d.labels().get_index_of("X").unwrap();
-            let y_idx = d.labels().get_index_of("Y").unwrap();
+            let x_idx = d
+                .labels()
+                .get_index_of("X")
+                .ok_or(Error::IllegalArgument("No X".into()))?;
+            let y_idx = d
+                .labels()
+                .get_index_of("Y")
+                .ok_or(Error::IllegalArgument("No Y".into()))?;
 
             let x = set![x_idx];
             let z = set![y_idx];
 
             // Compute the sufficient statistics.
-            let cpd: GaussCPDS = sse.fit(&x, &z).unwrap();
+            let cpd: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
             assert_eq!(cpd.sample_size(), 4.0);
@@ -193,6 +205,8 @@ mod tests {
             // Check means.
             assert_eq!(cpd.sample_response_mean(), &array![0.5]);
             assert_eq!(cpd.sample_design_mean(), &array![0.5]);
+
+            Ok(())
         }
     }
 }

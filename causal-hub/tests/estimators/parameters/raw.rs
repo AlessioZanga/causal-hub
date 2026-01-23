@@ -4,13 +4,14 @@ mod tests {
         assets::load_eating,
         datasets::{CatTrj, CatTrjEv, CatTrjEvT, Dataset},
         estimators::RAWE,
+        types::Result,
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn raw_fill_1() {
+    fn raw_fill_1() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.
@@ -42,8 +43,7 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence =
-            RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence).unwrap();
+        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.
@@ -57,10 +57,12 @@ mod tests {
                 [0, 0, 0], // 0.6 (Ending time of the last event)
             ]
         );
+
+        Ok(())
     }
 
     #[test]
-    fn raw_fill_2() {
+    fn raw_fill_2() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.
@@ -98,8 +100,7 @@ mod tests {
             ],
         );
         // Fill the evidence.
-        let filled_evidence =
-            RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence).unwrap();
+        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
         assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
         // Check the filled evidence.
@@ -113,5 +114,7 @@ mod tests {
                 [1, 0, 0], // 0.6 (Ending time of the last event)
             ]
         );
+
+        Ok(())
     }
 }

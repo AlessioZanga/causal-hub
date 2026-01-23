@@ -558,14 +558,14 @@ impl CatCPD {
             }
         }
         // Assert the sample log-likelihood is finite and non-positive.
-        if let Some(sample_log_likelihood) = &sample_log_likelihood {
-            if !sample_log_likelihood.is_finite() || *sample_log_likelihood > 0. {
-                return Err(Error::Model(format!(
-                    "Sample log-likelihood must be finite and non-positive: \n\
+        if let Some(sample_log_likelihood) = &sample_log_likelihood
+            && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
+        {
+            return Err(Error::Model(format!(
+                "Sample log-likelihood must be finite and non-positive: \n\
                 \t expected: sample_ll <= 0 , \n\
                 \t found:    sample_ll == {sample_log_likelihood} ."
-                )));
-            }
+            )));
         }
 
         // Construct the categorical CPD.

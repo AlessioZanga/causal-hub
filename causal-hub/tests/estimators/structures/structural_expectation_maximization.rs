@@ -12,7 +12,7 @@ mod tests {
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             states,
-            types::Cache,
+            types::{Cache, Result},
         };
         use ndarray::prelude::*;
         use rand::{RngCore, SeedableRng};
@@ -21,7 +21,7 @@ mod tests {
 
         #[test]
         #[ignore = "this test is slow and should be run manually in release mode."]
-        fn sem_with_evidence() {
+        fn sem_with_evidence() -> Result<()> {
             // Initialize a new random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
@@ -30,7 +30,7 @@ mod tests {
             // Initialize a new sampler with no evidence.
             let forward = ForwardSampler::new(&mut rng, &model);
             // Sample the fully-observed trajectories from the model.
-            let trajectories = forward.par_sample_n_by_length(100, 10_000).unwrap();
+            let trajectories = forward.par_sample_n_by_length(100, 10_000)?;
 
             // Set the probability of the evidence.
             let p = 0.5;
@@ -81,7 +81,7 @@ mod tests {
                 ),
             ];
             // Set the initial model.
-            let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims).unwrap();
+            let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims)?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
             let rng = RefCell::new(rng);
@@ -160,6 +160,8 @@ mod tests {
 
             // Check if the models are equal.
             assert_eq!(model.graph(), output.last_model.graph());
+
+            Ok(())
         }
     }
 }

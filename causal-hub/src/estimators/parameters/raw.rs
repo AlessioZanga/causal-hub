@@ -335,7 +335,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Reshape the events to the number of events and states.
         let events = Array::from_iter(new_events.into_iter().flatten())
             .into_shape_with_order((new_times.len(), states.len()))
-            .map_err(|e| Error::NdarrayShape(e))?;
+            .map_err(Error::NdarrayShape)?;
         // Reshape the times to the number of events.
         let times = Array::from_iter(new_times);
 

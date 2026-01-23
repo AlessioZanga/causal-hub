@@ -279,8 +279,7 @@ impl CsvIO for GaussIncTable {
                 // Get the record values and convert to indices.
                 let row: Vec<_> = row
                     .into_iter()
-                    .enumerate()
-                    .map(|(_, x)| {
+                    .map(|x| {
                         // Cast the value.
                         x.parse::<GaussType>().unwrap_or(Self::MISSING)
                     })

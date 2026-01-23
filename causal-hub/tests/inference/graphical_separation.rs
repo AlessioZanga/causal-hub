@@ -6,6 +6,7 @@ mod tests {
             inference::GraphicalSeparation,
             models::{BN, DiGraph, Graph, Labelled},
             set,
+            types::Result,
         };
         use dry::macro_for;
         use paste::paste;
@@ -69,80 +70,90 @@ mod tests {
         }
 
         #[test]
-        fn is_separator_set_edge() {
+        fn is_separator_set_edge() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B"]);
             // Add edges to the g.
             g.add_edge(0, 1);
 
-            assert!(!g.is_separator_set(&set![0], &set![1], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![1], &set![0], &set![]).unwrap());
+            assert!(!g.is_separator_set(&set![0], &set![1], &set![])?);
+            assert!(!g.is_separator_set(&set![1], &set![0], &set![])?);
 
             // Remove the edge and test again.
             g.del_edge(0, 1);
 
-            assert!(g.is_separator_set(&set![0], &set![1], &set![]).unwrap());
-            assert!(g.is_separator_set(&set![1], &set![0], &set![]).unwrap());
+            assert!(g.is_separator_set(&set![0], &set![1], &set![])?);
+            assert!(g.is_separator_set(&set![1], &set![0], &set![])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_separator_set_chain() {
+        fn is_separator_set_chain() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(0, 1);
             g.add_edge(1, 2);
 
-            assert!(!g.is_separator_set(&set![0], &set![2], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![2], &set![0], &set![]).unwrap());
-            assert!(g.is_separator_set(&set![0], &set![2], &set![1]).unwrap());
-            assert!(g.is_separator_set(&set![2], &set![0], &set![1]).unwrap());
+            assert!(!g.is_separator_set(&set![0], &set![2], &set![])?);
+            assert!(!g.is_separator_set(&set![2], &set![0], &set![])?);
+            assert!(g.is_separator_set(&set![0], &set![2], &set![1])?);
+            assert!(g.is_separator_set(&set![2], &set![0], &set![1])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_separator_set_fork() {
+        fn is_separator_set_fork() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(0, 1);
             g.add_edge(0, 2);
 
-            assert!(!g.is_separator_set(&set![1], &set![2], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![2], &set![1], &set![]).unwrap());
-            assert!(g.is_separator_set(&set![1], &set![2], &set![0]).unwrap());
-            assert!(g.is_separator_set(&set![2], &set![1], &set![0]).unwrap());
+            assert!(!g.is_separator_set(&set![1], &set![2], &set![])?);
+            assert!(!g.is_separator_set(&set![2], &set![1], &set![])?);
+            assert!(g.is_separator_set(&set![1], &set![2], &set![0])?);
+            assert!(g.is_separator_set(&set![2], &set![1], &set![0])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_separator_set_collider() {
+        fn is_separator_set_collider() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
             g.add_edge(1, 0);
             g.add_edge(2, 0);
 
-            assert!(g.is_separator_set(&set![1], &set![2], &set![]).unwrap());
-            assert!(g.is_separator_set(&set![2], &set![1], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![1], &set![2], &set![0]).unwrap());
-            assert!(!g.is_separator_set(&set![2], &set![1], &set![0]).unwrap());
+            assert!(g.is_separator_set(&set![1], &set![2], &set![])?);
+            assert!(g.is_separator_set(&set![2], &set![1], &set![])?);
+            assert!(!g.is_separator_set(&set![1], &set![2], &set![0])?);
+            assert!(!g.is_separator_set(&set![2], &set![1], &set![0])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_separator_set_primer_figure_2_7() {
+        fn is_separator_set_primer_figure_2_7() -> Result<()> {
             let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(g.is_separator_set(&set![3], &set![4], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![3], &set![4], &set![1]).unwrap());
-            assert!(!g.is_separator_set(&set![3], &set![4], &set![0]).unwrap());
-            assert!(g.is_separator_set(&set![3], &set![4], &set![1, 2]).unwrap());
-            assert!(g.is_separator_set(&set![3], &set![4], &set![2, 1]).unwrap());
+            assert!(g.is_separator_set(&set![3], &set![4], &set![])?);
+            assert!(!g.is_separator_set(&set![3], &set![4], &set![1])?);
+            assert!(!g.is_separator_set(&set![3], &set![4], &set![0])?);
+            assert!(g.is_separator_set(&set![3], &set![4], &set![1, 2])?);
+            assert!(g.is_separator_set(&set![3], &set![4], &set![2, 1])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_separator_set_primer_figure_2_8() {
+        fn is_separator_set_primer_figure_2_8() -> Result<()> {
             let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
@@ -152,68 +163,34 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(!g.is_separator_set(&set![4], &set![5], &set![]).unwrap());
-            assert!(!g.is_separator_set(&set![5], &set![4], &set![]).unwrap());
+            assert!(!g.is_separator_set(&set![4], &set![5], &set![])?);
+            assert!(!g.is_separator_set(&set![5], &set![4], &set![])?);
 
-            assert!(g.is_separator_set(&set![4], &set![5], &set![0]).unwrap());
-            assert!(g.is_separator_set(&set![5], &set![4], &set![0]).unwrap());
+            assert!(g.is_separator_set(&set![4], &set![5], &set![0])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![0])?);
 
-            assert!(!g.is_separator_set(&set![4], &set![5], &set![0, 2]).unwrap());
-            assert!(!g.is_separator_set(&set![5], &set![4], &set![0, 2]).unwrap());
-            assert!(!g.is_separator_set(&set![4], &set![5], &set![2, 0]).unwrap());
-            assert!(!g.is_separator_set(&set![5], &set![4], &set![2, 0]).unwrap());
+            assert!(!g.is_separator_set(&set![4], &set![5], &set![0, 2])?);
+            assert!(!g.is_separator_set(&set![5], &set![4], &set![0, 2])?);
+            assert!(!g.is_separator_set(&set![4], &set![5], &set![2, 0])?);
+            assert!(!g.is_separator_set(&set![5], &set![4], &set![2, 0])?);
 
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![0, 2, 3])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![0, 2, 3])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![0, 3, 2])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![0, 3, 2])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![2, 0, 3])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![2, 0, 3])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![2, 3, 0])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![2, 3, 0])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![3, 0, 2])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![3, 0, 2])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![5], &set![4], &set![3, 2, 0])
-                    .unwrap()
-            );
-            assert!(
-                g.is_separator_set(&set![4], &set![5], &set![3, 2, 0])
-                    .unwrap()
-            );
+            assert!(g.is_separator_set(&set![4], &set![5], &set![0, 2, 3])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![0, 2, 3])?);
+            assert!(g.is_separator_set(&set![4], &set![5], &set![0, 3, 2])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![0, 3, 2])?);
+            assert!(g.is_separator_set(&set![4], &set![5], &set![2, 0, 3])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![2, 0, 3])?);
+            assert!(g.is_separator_set(&set![4], &set![5], &set![2, 3, 0])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![2, 3, 0])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![3, 0, 2])?);
+            assert!(g.is_separator_set(&set![4], &set![5], &set![3, 0, 2])?);
+            assert!(g.is_separator_set(&set![5], &set![4], &set![3, 2, 0])?);
+            assert!(g.is_separator_set(&set![4], &set![5], &set![3, 2, 0])?);
+
+            Ok(())
         }
 
         macro_for!(
@@ -224,7 +201,7 @@ mod tests {
             ] {
             paste! {
                 #[test]
-                fn [<is_separator_set_ $bn>]() {
+                fn [<is_separator_set_ $bn>]() -> Result<()> {
                     // Get the BN from the assets.
                     let model = [<load_ $bn>]();
                     // Get the graph from the BN.
@@ -241,8 +218,10 @@ mod tests {
                         let de_x = graph.descendants(&x);
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                         let non_de_x = &(&(&v - &de_x) - &pa_x) - &x;
-                        assert!(non_de_x.is_empty() || graph.is_separator_set(&x, &non_de_x, &pa_x).unwrap());
+                        assert!(non_de_x.is_empty() || graph.is_separator_set(&x, &non_de_x, &pa_x)?);
                     }
+
+                    Ok(())
                 }
             }
         });
@@ -314,134 +293,81 @@ mod tests {
         }
 
         #[test]
-        fn is_minimal_separator_set_edge() {
+        fn is_minimal_separator_set_edge() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B"]);
             g.add_edge(0, 1);
 
-            assert!(
-                !g.is_minimal_separator_set(&set![0], &set![1], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![1], &set![0], &set![], None, None)
-                    .unwrap()
-            );
+            assert!(!g.is_minimal_separator_set(&set![0], &set![1], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![1], &set![0], &set![], None, None)?);
 
             g.del_edge(0, 1);
 
-            assert!(
-                g.is_minimal_separator_set(&set![0], &set![1], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![1], &set![0], &set![], None, None)
-                    .unwrap()
-            );
+            assert!(g.is_minimal_separator_set(&set![0], &set![1], &set![], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![1], &set![0], &set![], None, None)?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_minimal_separator_set_chain() {
+        fn is_minimal_separator_set_chain() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(1, 2);
 
-            assert!(
-                !g.is_minimal_separator_set(&set![0], &set![2], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![2], &set![0], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![0], &set![2], &set![1], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![2], &set![0], &set![1], None, None)
-                    .unwrap()
-            );
+            assert!(!g.is_minimal_separator_set(&set![0], &set![2], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![2], &set![0], &set![], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![0], &set![2], &set![1], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![2], &set![0], &set![1], None, None)?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_minimal_separator_set_fork() {
+        fn is_minimal_separator_set_fork() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(0, 2);
 
-            assert!(
-                !g.is_minimal_separator_set(&set![1], &set![2], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![2], &set![1], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None)
-                    .unwrap()
-            );
+            assert!(!g.is_minimal_separator_set(&set![1], &set![2], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![2], &set![1], &set![], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None)?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_minimal_separator_set_collider() {
+        fn is_minimal_separator_set_collider() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(1, 0);
             g.add_edge(2, 0);
 
-            assert!(
-                g.is_minimal_separator_set(&set![1], &set![2], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![2], &set![1], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None)
-                    .unwrap()
-            );
+            assert!(g.is_minimal_separator_set(&set![1], &set![2], &set![], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![2], &set![1], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![1], &set![2], &set![0], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![2], &set![1], &set![0], None, None)?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_minimal_separator_set_primer_figure_2_7() {
+        fn is_minimal_separator_set_primer_figure_2_7() -> Result<()> {
             let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(
-                g.is_minimal_separator_set(&set![3], &set![4], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![3], &set![4], &set![1], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![3], &set![4], &set![0], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![3], &set![4], &set![1, 2], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![3], &set![4], &set![2, 1], None, None)
-                    .unwrap()
-            );
+            assert!(g.is_minimal_separator_set(&set![3], &set![4], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![3], &set![4], &set![1], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![3], &set![4], &set![0], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![3], &set![4], &set![1, 2], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![3], &set![4], &set![2, 1], None, None)?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_minimal_separator_set_primer_figure_2_8() {
+        fn is_minimal_separator_set_primer_figure_2_8() -> Result<()> {
             let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
@@ -451,26 +377,16 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(
-                !g.is_minimal_separator_set(&set![4], &set![5], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_separator_set(&set![5], &set![4], &set![], None, None)
-                    .unwrap()
-            );
+            assert!(!g.is_minimal_separator_set(&set![4], &set![5], &set![], None, None)?);
+            assert!(!g.is_minimal_separator_set(&set![5], &set![4], &set![], None, None)?);
 
-            assert!(
-                g.is_minimal_separator_set(&set![4], &set![5], &set![0], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_separator_set(&set![5], &set![4], &set![0], None, None)
-                    .unwrap()
-            );
+            assert!(g.is_minimal_separator_set(&set![4], &set![5], &set![0], None, None)?);
+            assert!(g.is_minimal_separator_set(&set![5], &set![4], &set![0], None, None)?);
+
+            Ok(())
         }
 
         // Test for `find_minimal_separator_set` method.
@@ -516,105 +432,104 @@ mod tests {
         }
 
         #[test]
-        fn find_minimal_separator_set_edge() {
+        fn find_minimal_separator_set_edge() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B"]);
             g.add_edge(0, 1);
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![0], &set![1], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![0], &set![1], None, None)?,
                 None
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![1], &set![0], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![1], &set![0], None, None)?,
                 None
             );
 
             g.del_edge(0, 1);
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![0], &set![1], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![0], &set![1], None, None)?,
                 Some(set![])
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![1], &set![0], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![1], &set![0], None, None)?,
                 Some(set![])
             );
+
+            Ok(())
         }
 
         #[test]
-        fn find_minimal_separator_set_chain() {
+        fn find_minimal_separator_set_chain() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(1, 2);
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![0], &set![2], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![0], &set![2], None, None)?,
                 Some(set![1])
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![2], &set![0], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![2], &set![0], None, None)?,
                 Some(set![1])
             );
+
+            Ok(())
         }
 
         #[test]
-        fn find_minimal_separator_set_fork() {
+        fn find_minimal_separator_set_fork() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(0, 1);
             g.add_edge(0, 2);
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![1], &set![2], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![1], &set![2], None, None)?,
                 Some(set![0])
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![2], &set![1], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![2], &set![1], None, None)?,
                 Some(set![0])
             );
+
+            Ok(())
         }
 
         #[test]
-        fn find_minimal_separator_set_collider() {
+        fn find_minimal_separator_set_collider() -> Result<()> {
             let mut g = DiGraph::empty(["A", "B", "C"]);
             g.add_edge(1, 0);
             g.add_edge(2, 0);
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![1], &set![2], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![1], &set![2], None, None)?,
                 Some(set![])
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![2], &set![1], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![2], &set![1], None, None)?,
                 Some(set![])
             );
+
+            Ok(())
         }
 
         #[test]
-        fn find_minimal_separator_set_primer_figure_2_7() {
+        fn find_minimal_separator_set_primer_figure_2_7() -> Result<()> {
             let mut g = DiGraph::empty(["U", "W", "X", "Y", "Z"]);
             for (i, j) in [("X", "Y"), ("X", "W"), ("Z", "W"), ("W", "U")] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![3], &set![4], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![3], &set![4], None, None)?,
                 Some(set![])
             );
+
+            Ok(())
         }
 
         #[test]
-        fn find_minimal_separator_set_primer_figure_2_8() {
+        fn find_minimal_separator_set_primer_figure_2_8() -> Result<()> {
             let mut g = DiGraph::empty(["T", "U", "W", "X", "Y", "Z"]);
             for (i, j) in [
                 ("T", "Z"),
@@ -624,19 +539,19 @@ mod tests {
                 ("Z", "W"),
                 ("W", "U"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
             assert_eq!(
-                g.find_minimal_separator_set(&set![4], &set![5], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![4], &set![5], None, None)?,
                 Some(set![0])
             );
             assert_eq!(
-                g.find_minimal_separator_set(&set![5], &set![4], None, None)
-                    .unwrap(),
+                g.find_minimal_separator_set(&set![5], &set![4], None, None)?,
                 Some(set![0])
             );
+
+            Ok(())
         }
     }
 }

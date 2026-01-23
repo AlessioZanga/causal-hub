@@ -5,6 +5,7 @@ mod tests {
             inference::BackdoorCriterion,
             models::{DiGraph, Graph, Labelled},
             set,
+            types::Result,
         };
 
         // Tests for `is_backdoor_set` method.
@@ -66,26 +67,28 @@ mod tests {
         }
 
         #[test]
-        fn is_backdoor_set_edge() {
+        fn is_backdoor_set_edge() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B"]);
             // Add edges to the g.
             g.add_edge(0, 1);
 
             // Test for backdoor criterion.
-            assert!(g.is_backdoor_set(&set![0], &set![1], &set![]).unwrap());
-            assert!(!g.is_backdoor_set(&set![1], &set![0], &set![]).unwrap());
+            assert!(g.is_backdoor_set(&set![0], &set![1], &set![])?);
+            assert!(!g.is_backdoor_set(&set![1], &set![0], &set![])?);
 
             // Remove the edge and test again.
             g.del_edge(0, 1);
 
             // Test for backdoor criterion after removing the edge.
-            assert!(g.is_backdoor_set(&set![0], &set![1], &set![]).unwrap());
-            assert!(g.is_backdoor_set(&set![1], &set![0], &set![]).unwrap());
+            assert!(g.is_backdoor_set(&set![0], &set![1], &set![])?);
+            assert!(g.is_backdoor_set(&set![1], &set![0], &set![])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_backdoor_set_chain() {
+        fn is_backdoor_set_chain() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
@@ -93,12 +96,14 @@ mod tests {
             g.add_edge(1, 2);
 
             // Test for backdoor criterion.
-            assert!(g.is_backdoor_set(&set![0], &set![2], &set![]).unwrap());
-            assert!(g.is_backdoor_set(&set![2], &set![0], &set![1]).unwrap());
+            assert!(g.is_backdoor_set(&set![0], &set![2], &set![])?);
+            assert!(g.is_backdoor_set(&set![2], &set![0], &set![1])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_backdoor_set_fork() {
+        fn is_backdoor_set_fork() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
@@ -106,14 +111,16 @@ mod tests {
             g.add_edge(0, 2);
 
             // Test for backdoor criterion.
-            assert!(!g.is_backdoor_set(&set![1], &set![2], &set![]).unwrap());
-            assert!(!g.is_backdoor_set(&set![2], &set![1], &set![]).unwrap());
-            assert!(g.is_backdoor_set(&set![1], &set![2], &set![0]).unwrap());
-            assert!(g.is_backdoor_set(&set![2], &set![1], &set![0]).unwrap());
+            assert!(!g.is_backdoor_set(&set![1], &set![2], &set![])?);
+            assert!(!g.is_backdoor_set(&set![2], &set![1], &set![])?);
+            assert!(g.is_backdoor_set(&set![1], &set![2], &set![0])?);
+            assert!(g.is_backdoor_set(&set![2], &set![1], &set![0])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_backdoor_set_collider() {
+        fn is_backdoor_set_collider() -> Result<()> {
             // Initialize an empty g.
             let mut g = DiGraph::empty(["A", "B", "C"]);
             // Add edges to the g.
@@ -121,12 +128,14 @@ mod tests {
             g.add_edge(2, 0);
 
             // Test for backdoor criterion.
-            assert!(g.is_backdoor_set(&set![1], &set![2], &set![]).unwrap());
-            assert!(g.is_backdoor_set(&set![2], &set![1], &set![]).unwrap());
+            assert!(g.is_backdoor_set(&set![1], &set![2], &set![])?);
+            assert!(g.is_backdoor_set(&set![2], &set![1], &set![])?);
+
+            Ok(())
         }
 
         #[test]
-        fn is_backdoor_set_primer_figure_3_7() {
+        fn is_backdoor_set_primer_figure_3_7() -> Result<()> {
             let mut g = DiGraph::empty(["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),
@@ -137,17 +146,16 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(!g.is_backdoor_set(&set![2], &set![3], &set![]).unwrap());
-            assert!(!g.is_backdoor_set(&set![2], &set![3], &set![4]).unwrap());
-            assert!(g.is_backdoor_set(&set![2], &set![3], &set![0, 4]).unwrap());
-            assert!(g.is_backdoor_set(&set![2], &set![3], &set![1, 4]).unwrap());
-            assert!(
-                g.is_backdoor_set(&set![2], &set![3], &set![0, 1, 4])
-                    .unwrap()
-            );
+            assert!(!g.is_backdoor_set(&set![2], &set![3], &set![])?);
+            assert!(!g.is_backdoor_set(&set![2], &set![3], &set![4])?);
+            assert!(g.is_backdoor_set(&set![2], &set![3], &set![0, 4])?);
+            assert!(g.is_backdoor_set(&set![2], &set![3], &set![1, 4])?);
+            assert!(g.is_backdoor_set(&set![2], &set![3], &set![0, 1, 4])?);
+
+            Ok(())
         }
 
         // Test for `is_minimal_backdoor_set` method.
@@ -217,7 +225,7 @@ mod tests {
         }
 
         #[test]
-        fn is_minimal_backdoor_set_primer_figure_3_7() {
+        fn is_minimal_backdoor_set_primer_figure_3_7() -> Result<()> {
             let mut g = DiGraph::empty(["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),
@@ -228,39 +236,23 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
-            assert!(
-                !g.is_minimal_backdoor_set(&set![2], &set![3], &set![], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_backdoor_set(&set![2], &set![3], &set![4], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_backdoor_set(&set![2], &set![3], &set![0, 4], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_backdoor_set(&set![2], &set![3], &set![1, 4], None, None)
-                    .unwrap()
-            );
-            assert!(
-                !g.is_minimal_backdoor_set(&set![2], &set![3], &set![0, 1, 4], None, None)
-                    .unwrap()
-            );
-            assert!(
-                g.is_minimal_backdoor_set(
-                    &set![2],
-                    &set![3],
-                    &set![0, 1, 4],
-                    Some(&set![0, 1]),
-                    None
-                )
-                .unwrap()
-            );
+            assert!(!g.is_minimal_backdoor_set(&set![2], &set![3], &set![], None, None)?);
+            assert!(!g.is_minimal_backdoor_set(&set![2], &set![3], &set![4], None, None)?);
+            assert!(g.is_minimal_backdoor_set(&set![2], &set![3], &set![0, 4], None, None)?);
+            assert!(g.is_minimal_backdoor_set(&set![2], &set![3], &set![1, 4], None, None)?);
+            assert!(!g.is_minimal_backdoor_set(&set![2], &set![3], &set![0, 1, 4], None, None)?);
+            assert!(g.is_minimal_backdoor_set(
+                &set![2],
+                &set![3],
+                &set![0, 1, 4],
+                Some(&set![0, 1]),
+                None
+            )?);
+
+            Ok(())
         }
 
         // Test for `find_minimal_backdoor_set` method.
@@ -306,7 +298,7 @@ mod tests {
         }
 
         #[test]
-        fn find_minimal_backdoor_set_primer_figure_3_7() {
+        fn find_minimal_backdoor_set_primer_figure_3_7() -> Result<()> {
             let mut g = DiGraph::empty(["A", "E", "X", "Y", "Z"]);
             for (i, j) in [
                 ("A", "Y"),
@@ -317,29 +309,27 @@ mod tests {
                 ("Z", "X"),
                 ("Z", "Y"),
             ] {
-                g.add_edge(g.label_to_index(i).unwrap(), g.label_to_index(j).unwrap());
+                g.add_edge(g.label_to_index(i)?, g.label_to_index(j)?);
             }
 
             assert_eq!(
-                g.find_minimal_backdoor_set(&set![2], &set![3], None, Some(&set![0, 1]))
-                    .unwrap(),
+                g.find_minimal_backdoor_set(&set![2], &set![3], None, Some(&set![0, 1]))?,
                 None
             );
             assert_eq!(
-                g.find_minimal_backdoor_set(&set![2], &set![3], Some(&set![0]), None)
-                    .unwrap(),
+                g.find_minimal_backdoor_set(&set![2], &set![3], Some(&set![0]), None)?,
                 Some(set![0, 4])
             );
             assert_eq!(
-                g.find_minimal_backdoor_set(&set![2], &set![3], None, None)
-                    .unwrap(),
+                g.find_minimal_backdoor_set(&set![2], &set![3], None, None)?,
                 Some(set![1, 4])
             );
             assert_eq!(
-                g.find_minimal_backdoor_set(&set![2], &set![3], Some(&set![0, 1]), None)
-                    .unwrap(),
+                g.find_minimal_backdoor_set(&set![2], &set![3], Some(&set![0, 1]), None)?,
                 Some(set![0, 1, 4])
             );
+
+            Ok(())
         }
     }
 }

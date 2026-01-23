@@ -120,13 +120,13 @@ impl BE<'_, GaussTable, f64> {
         let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CPD.
-        Ok(GaussCPD::with_optionals(
+        GaussCPD::with_optionals(
             labels,
             conditioning_labels,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        )?)
+        )
     }
 }
 

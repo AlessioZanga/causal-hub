@@ -611,7 +611,7 @@ impl Phi for GaussPhi {
         let parameters = GaussCPDP::new(a, b, s)?;
 
         // Create the new CPD.
-        Ok(GaussCPD::new(labels_x, labels_z, parameters)?)
+        GaussCPD::new(labels_x, labels_z, parameters)
     }
 }
 

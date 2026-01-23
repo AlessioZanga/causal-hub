@@ -67,13 +67,13 @@ impl BE<'_, CatTable, usize> {
         let sample_statistics = Some(sample_statistics);
 
         // Construct the CPD.
-        Ok(CatCPD::with_optionals(
+        CatCPD::with_optionals(
             states,
             conditioning_states,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        )?)
+        )
     }
 }
 

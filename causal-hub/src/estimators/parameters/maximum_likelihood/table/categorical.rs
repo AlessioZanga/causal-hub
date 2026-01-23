@@ -57,13 +57,13 @@ impl MLE<'_, CatTable> {
         let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CPD.
-        Ok(CatCPD::with_optionals(
+        CatCPD::with_optionals(
             states,
             conditioning_states,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        )?)
+        )
     }
 }
 

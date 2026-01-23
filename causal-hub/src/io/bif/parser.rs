@@ -164,7 +164,7 @@ impl BifParser {
         }
 
         // Construct the Bayesian network.
-        Ok(CatBN::with_optionals(name, description, graph, cpds)?)
+        CatBN::with_optionals(name, description, graph, cpds)
     }
 }
 

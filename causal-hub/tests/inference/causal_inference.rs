@@ -8,13 +8,14 @@ mod tests {
         },
         models::{CatCPD, Labelled},
         set, states,
+        types::{Error, Result},
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn ace_estimate() {
+    fn ace_estimate() -> Result<()> {
         // Load the model.
         let model = load_asia();
 
@@ -26,11 +27,11 @@ mod tests {
         let engine = CausalInference::new(&engine);
 
         // Set variables.
-        let x = set![model.label_to_index("bronc").unwrap()];
-        let y = set![model.label_to_index("dysp").unwrap()];
+        let x = set![model.label_to_index("bronc")?];
+        let y = set![model.label_to_index("dysp")?];
 
         // Compute the ACE of "bronc" on "dysp".
-        let pred_ace = engine.ace_estimate(&x, &y).unwrap();
+        let pred_ace = engine.ace_estimate(&x, &y)?;
 
         // Set the true ACE.
         let true_x = states![("bronc", ["no", "yes"])];
@@ -39,20 +40,26 @@ mod tests {
             [0.8669638384987691, 0.1330361615012309],
             [0.18308109137894216, 0.8169189086210579]
         ];
-        let true_ace = CatCPD::new(true_y, true_x, true_p).unwrap();
+        let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
         // Check that the ACE is correct.
-        assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
+        assert_relative_eq!(
+            true_ace,
+            pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+            epsilon = 1e-8
+        );
 
         // Compute the ACE of "dysp" on "bronc".
-        let pred_ace = engine.ace_estimate(&y, &x).unwrap();
+        let pred_ace = engine.ace_estimate(&y, &x)?;
 
         // Check that the ACE does not exist.
         assert!(pred_ace.is_none());
+
+        Ok(())
     }
 
     #[test]
-    fn cace_estimate() {
+    fn cace_estimate() -> Result<()> {
         // Load the model.
         let model = load_asia();
 
@@ -64,12 +71,12 @@ mod tests {
         let engine = CausalInference::new(&engine);
 
         // Set variables.
-        let x = set![model.label_to_index("smoke").unwrap()];
-        let y = set![model.label_to_index("either").unwrap()];
-        let z = set![model.label_to_index("asia").unwrap()];
+        let x = set![model.label_to_index("smoke")?];
+        let y = set![model.label_to_index("either")?];
+        let z = set![model.label_to_index("asia")?];
 
         // Compute the ACE of "smoke" on "either" conditionally on "asia".
-        let pred_ace = engine.cace_estimate(&x, &y, &z).unwrap();
+        let pred_ace = engine.cace_estimate(&x, &y, &z)?;
 
         // Set the true ACE.
         let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
@@ -80,14 +87,20 @@ mod tests {
             [0.96, 0.04],
             [0.8, 0.2]
         ];
-        let true_ace = CatCPD::new(true_y, true_x, true_p).unwrap();
+        let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
         // Check that the ACE is correct.
-        assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
+        assert_relative_eq!(
+            true_ace,
+            pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+            epsilon = 1e-8
+        );
+
+        Ok(())
     }
 
     #[test]
-    fn par_ace_estimate() {
+    fn par_ace_estimate() -> Result<()> {
         // Load the model.
         let model = load_asia();
 
@@ -99,11 +112,11 @@ mod tests {
         let engine = CausalInference::new(&engine);
 
         // Set variables.
-        let x = set![model.label_to_index("bronc").unwrap()];
-        let y = set![model.label_to_index("dysp").unwrap()];
+        let x = set![model.label_to_index("bronc")?];
+        let y = set![model.label_to_index("dysp")?];
 
         // Compute the ACE of "bronc" on "dysp".
-        let pred_ace = engine.par_ace_estimate(&x, &y).unwrap();
+        let pred_ace = engine.par_ace_estimate(&x, &y)?;
 
         // Set the true ACE.
         let true_x = states![("bronc", ["no", "yes"])];
@@ -112,14 +125,20 @@ mod tests {
             [0.8548237217683241, 0.145176278231676],
             [0.18712474554378591, 0.8128752544562141]
         ];
-        let true_ace = CatCPD::new(true_y, true_x, true_p).unwrap();
+        let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
         // Check that the ACE is correct.
-        assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
+        assert_relative_eq!(
+            true_ace,
+            pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+            epsilon = 1e-8
+        );
+
+        Ok(())
     }
 
     #[test]
-    fn par_cace_estimate() {
+    fn par_cace_estimate() -> Result<()> {
         // Load the model.
         let model = load_asia();
 
@@ -131,12 +150,12 @@ mod tests {
         let engine = CausalInference::new(&engine);
 
         // Set variables.
-        let x = set![model.label_to_index("smoke").unwrap()];
-        let y = set![model.label_to_index("either").unwrap()];
-        let z = set![model.label_to_index("asia").unwrap()];
+        let x = set![model.label_to_index("smoke")?];
+        let y = set![model.label_to_index("either")?];
+        let z = set![model.label_to_index("asia")?];
 
         // Compute the ACE of "smoke" on "either" conditionally on "asia".
-        let pred_ace = engine.par_cace_estimate(&x, &y, &z).unwrap();
+        let pred_ace = engine.par_cace_estimate(&x, &y, &z)?;
 
         // Set the true ACE.
         let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
@@ -147,9 +166,15 @@ mod tests {
             [0.9130434782608695, 0.08695652173913043],
             [0.6923076923076923, 0.3076923076923077]
         ];
-        let true_ace = CatCPD::new(true_y, true_x, true_p).unwrap();
+        let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
         // Check that the ACE is correct.
-        assert_relative_eq!(true_ace, pred_ace.unwrap(), epsilon = 1e-8);
+        assert_relative_eq!(
+            true_ace,
+            pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+            epsilon = 1e-8
+        );
+
+        Ok(())
     }
 }

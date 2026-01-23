@@ -8,6 +8,7 @@ mod tests {
         labels,
         models::{BN, CPD, CatBN, CatCPD, DiGraph, GaussCPD, Graph, Labelled},
         set, states,
+        types::{Error, Result},
     };
     use ndarray::prelude::*;
 
@@ -23,7 +24,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -42,8 +43,7 @@ mod tests {
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
-                    let distribution: CatCPD =
-                        CPDEstimator::fit(&estimator, &set![0], &set![]).unwrap();
+                    let distribution: CatCPD = CPDEstimator::fit(&estimator, &set![0], &set![])?;
 
                     assert_eq!(distribution.labels(), &labels!["A"]);
                     assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -69,7 +69,9 @@ mod tests {
                         Some(5.)
                     );
                     assert_relative_eq!(
-                        distribution.sample_log_likelihood().unwrap(),
+                        distribution
+                            .sample_log_likelihood()
+                            .ok_or(Error::IllegalArgument("no ll".into()))?,
                         -3.365058335046282
                     );
 
@@ -88,7 +90,7 @@ mod tests {
 
                     // P(A | B, C)
                     let distribution: CatCPD =
-                        CPDEstimator::fit(&estimator, &set![0], &set![1, 2]).unwrap();
+                        CPDEstimator::fit(&estimator, &set![0], &set![1, 2])?;
 
                     assert_eq!(distribution.labels(), &labels!["A"]);
                     assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -117,7 +119,9 @@ mod tests {
                         Some(5.)
                     );
                     assert_relative_eq!(
-                        distribution.sample_log_likelihood().unwrap(),
+                        distribution
+                            .sample_log_likelihood()
+                            .ok_or(Error::IllegalArgument("no ll".into()))?,
                         -1.3862943611198906
                     );
 
@@ -136,10 +140,12 @@ mod tests {
                             "---------------------------------------------\n",
                         )
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn par_fit() {
+                fn par_fit() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -158,7 +164,7 @@ mod tests {
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
-                    let distribution: CatCPD = estimator.par_fit(&set![0], &set![]).unwrap();
+                    let distribution: CatCPD = estimator.par_fit(&set![0], &set![])?;
 
                     assert_relative_eq!(
                         distribution.parameters(),
@@ -167,6 +173,8 @@ mod tests {
                             [0.6, 0.4]
                         ]
                     );
+
+                    Ok(())
                 }
 
                 #[test]
@@ -221,7 +229,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -240,8 +248,7 @@ mod tests {
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
-                    let distribution: CatCPD =
-                        CPDEstimator::fit(&estimator, &set![0], &set![]).unwrap();
+                    let distribution: CatCPD = CPDEstimator::fit(&estimator, &set![0], &set![])?;
 
                     assert_eq!(distribution.labels(), &labels!["A"]);
                     assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -267,7 +274,9 @@ mod tests {
                         Some(4.)
                     );
                     assert_relative_eq!(
-                        distribution.sample_log_likelihood().unwrap(),
+                        distribution
+                            .sample_log_likelihood()
+                            .ok_or(Error::IllegalArgument("no ll".into()))?,
                         -2.772588722239781
                     );
 
@@ -283,10 +292,12 @@ mod tests {
                             "-----------------------\n",
                         )
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn par_fit() {
+                fn par_fit() -> Result<()> {
                     let states = states![
                         ("A", ["no", "yes"]),
                         ("B", ["no", "yes"]),
@@ -306,7 +317,7 @@ mod tests {
 
                     // P(A)
                     let distribution: CatCPD =
-                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![]).unwrap();
+                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![])?;
 
                     assert_eq!(distribution.labels(), &labels!["A"]);
                     assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -332,7 +343,9 @@ mod tests {
                         Some(4.)
                     );
                     assert_relative_eq!(
-                        distribution.sample_log_likelihood().unwrap(),
+                        distribution
+                            .sample_log_likelihood()
+                            .ok_or(Error::IllegalArgument("no ll".into()))?,
                         -2.772588722239781
                     );
 
@@ -348,6 +361,8 @@ mod tests {
                             "-----------------------\n",
                         )
                     );
+
+                    Ok(())
                 }
             }
         }
@@ -359,7 +374,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "0.7244759610996034,2.6833663940564696,-1.1657447906269098\n",
@@ -373,13 +388,12 @@ mod tests {
                         "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                         "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                     );
-                    let dataset = GaussTable::from_csv_string(csv).unwrap();
+                    let dataset = GaussTable::from_csv_string(csv)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
-                    let distribution: GaussCPD =
-                        CPDEstimator::fit(&estimator, &set![0], &set![]).unwrap();
+                    let distribution: GaussCPD = CPDEstimator::fit(&estimator, &set![0], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
@@ -397,7 +411,7 @@ mod tests {
 
                     // P(B | A, C)
                     let distribution: GaussCPD =
-                        CPDEstimator::fit(&estimator, &set![1], &set![0, 2]).unwrap();
+                        CPDEstimator::fit(&estimator, &set![1], &set![0, 2])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[1.5, -0.8]],
@@ -415,8 +429,7 @@ mod tests {
                     );
 
                     // P(C)
-                    let distribution: GaussCPD =
-                        CPDEstimator::fit(&estimator, &set![2], &set![]).unwrap();
+                    let distribution: GaussCPD = CPDEstimator::fit(&estimator, &set![2], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
@@ -431,10 +444,12 @@ mod tests {
                         &array![[2.8]],
                         epsilon = 1e-1
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn par_fit() {
+                fn par_fit() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "0.7244759610996034,2.6833663940564696,-1.1657447906269098\n",
@@ -448,13 +463,13 @@ mod tests {
                         "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                         "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                     );
-                    let dataset = GaussTable::from_csv_string(csv).unwrap();
+                    let dataset = GaussTable::from_csv_string(csv)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
                     let distribution: GaussCPD =
-                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![]).unwrap();
+                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
@@ -472,7 +487,7 @@ mod tests {
 
                     // P(B | A, C)
                     let distribution: GaussCPD =
-                        ParCPDEstimator::par_fit(&estimator, &set![1], &set![0, 2]).unwrap();
+                        ParCPDEstimator::par_fit(&estimator, &set![1], &set![0, 2])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[1.5, -0.8]],
@@ -491,7 +506,7 @@ mod tests {
 
                     // P(C)
                     let distribution: GaussCPD =
-                        ParCPDEstimator::par_fit(&estimator, &set![2], &set![]).unwrap();
+                        ParCPDEstimator::par_fit(&estimator, &set![2], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
@@ -506,6 +521,8 @@ mod tests {
                         &array![[2.8]],
                         epsilon = 1e-1
                     );
+
+                    Ok(())
                 }
             }
 
@@ -513,7 +530,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "0.7244759610996034,2.6833663940564696,-1.1657447906269098\n",
@@ -527,21 +544,22 @@ mod tests {
                         "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                         "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                     );
-                    let dataset = GaussIncTable::from_csv_string(csv).unwrap();
+                    let dataset = GaussIncTable::from_csv_string(csv)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
-                    let distribution: GaussCPD =
-                        CPDEstimator::fit(&estimator, &set![0], &set![]).unwrap();
+                    let distribution: GaussCPD = CPDEstimator::fit(&estimator, &set![0], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn par_fit() {
+                fn par_fit() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "0.7244759610996034,2.6833663940564696,-1.1657447906269098\n",
@@ -555,17 +573,19 @@ mod tests {
                         "0.302767814223984,2.833698289205031,-1.9026596606194954\n",
                         "0.7850467625426617,0.8527120967629328,1.3250986082936653",
                     );
-                    let dataset = GaussIncTable::from_csv_string(csv).unwrap();
+                    let dataset = GaussIncTable::from_csv_string(csv)?;
 
                     let estimator = MLE::new(&dataset);
 
                     // P(A)
                     let distribution: GaussCPD =
-                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![]).unwrap();
+                        ParCPDEstimator::par_fit(&estimator, &set![0], &set![])?;
                     assert_relative_eq!(
                         distribution.parameters().coefficients(), //
                         &array![[]]
                     );
+
+                    Ok(())
                 }
             }
         }
@@ -581,7 +601,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "no,no,no\n",
@@ -593,7 +613,7 @@ mod tests {
                         "yes,yes,no\n",
                         "yes,yes,yes"
                     );
-                    let dataset = CatTable::from_csv_string(csv).unwrap();
+                    let dataset = CatTable::from_csv_string(csv)?;
 
                     let mut graph = DiGraph::empty(["A", "B", "C"]);
                     graph.add_edge(0, 1);
@@ -602,7 +622,7 @@ mod tests {
 
                     let estimator = MLE::new(&dataset);
 
-                    let model: CatBN = BNEstimator::fit(&estimator, graph).unwrap();
+                    let model: CatBN = BNEstimator::fit(&estimator, graph)?;
 
                     // P(A)
                     let distribution = &model.cpds()["A"];
@@ -631,7 +651,9 @@ mod tests {
                         Some(8.)
                     );
                     assert_relative_eq!(
-                        distribution.sample_log_likelihood().unwrap(),
+                        distribution
+                            .sample_log_likelihood()
+                            .ok_or(Error::IllegalArgument("no ll".into()))?,
                         -5.545177444479562
                     );
 
@@ -647,6 +669,8 @@ mod tests {
                             "-----------------------\n",
                         )
                     );
+
+                    Ok(())
                 }
             }
         }

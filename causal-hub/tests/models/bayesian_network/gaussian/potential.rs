@@ -6,11 +6,12 @@ mod tests {
         labels,
         models::{GaussCPD, GaussCPDP, GaussPhi, GaussPhiK, Phi},
         set,
+        types::Result,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn condition() {
+    fn condition() -> Result<()> {
         // Set the labels.
         let l = labels!("A", "B", "C");
         // Set the precision matrix.
@@ -24,7 +25,7 @@ mod tests {
         // Set the log-normalization constant.
         let g = 0.0;
         // Set the parameters.
-        let parameters = GaussPhiK::new(k.clone(), h.clone(), g).unwrap();
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
         // Initialize the potential.
         let phi = GaussPhi::new(l.clone(), parameters);
 
@@ -36,22 +37,24 @@ mod tests {
                 value: 0.5,
             }],
         );
-        let pred_phi = phi.condition(&e).unwrap();
+        let pred_phi = phi.condition(&e)?;
 
         // Set the true potential.
         let true_l = labels!("A", "C");
         let true_k = array![[1.4020, -0.0288], [-0.0288, 1.1274]];
         let true_h = array![0.48735, 0.4806];
         let true_g = -0.221275;
-        let true_parameters = GaussPhiK::new(true_k, true_h, true_g).unwrap();
+        let true_parameters = GaussPhiK::new(true_k, true_h, true_g)?;
         let true_phi = GaussPhi::new(true_l, true_parameters);
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn marginalize() {
+    fn marginalize() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the precision matrix.
@@ -65,11 +68,11 @@ mod tests {
         // Set the log-normalization constant.
         let g = 0.0;
         // Set the parameters.
-        let parameters = GaussPhiK::new(k.clone(), h.clone(), g).unwrap();
+        let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
         // Initialize the potential.
         let phi = GaussPhi::new(labels.clone(), parameters);
         // Marginalize out variable "B" (index 1).
-        let pred_phi = phi.marginalize(&set![1]).unwrap();
+        let pred_phi = phi.marginalize(&set![1])?;
 
         // Set the true potential.
         let true_labels = labels!("A", "C");
@@ -79,15 +82,17 @@ mod tests {
         ];
         let true_h = array![0.15805721792439062, 0.27363888483433074];
         let true_g = 0.7651092782321709;
-        let true_parameters = GaussPhiK::new(true_k, true_h, true_g).unwrap();
+        let true_parameters = GaussPhiK::new(true_k, true_h, true_g)?;
         let true_phi = GaussPhi::new(true_labels, true_parameters);
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn normalize() {
+    fn normalize() -> Result<()> {
         // Set the labels.
         let x = labels!("A");
         let z = labels!("B", "C");
@@ -95,22 +100,24 @@ mod tests {
         let a = array![[3., -1.]];
         let b = array![2.];
         let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s).unwrap();
+        let p = GaussCPDP::new(a, b, s)?;
         // Initialize the CPD.
-        let cpd = GaussCPD::new(x, z, p).unwrap();
+        let cpd = GaussCPD::new(x, z, p)?;
 
         // Convert to potential.
-        let true_phi = GaussPhi::from_cpd(cpd).unwrap();
+        let true_phi = GaussPhi::from_cpd(cpd)?;
 
         // Normalize the potential.
-        let pred_phi = true_phi.normalize().unwrap();
+        let pred_phi = true_phi.normalize()?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn multiply() {
+    fn multiply() -> Result<()> {
         // Set the labels.
         let l_1 = labels!("A", "B");
         let l_2 = labels!("B", "C");
@@ -122,8 +129,7 @@ mod tests {
             ],
             array![1., -1.], //
             -3.,
-        )
-        .unwrap();
+        )?;
         let p_2 = GaussPhiK::new(
             array![
                 [3., -2.], //
@@ -131,8 +137,7 @@ mod tests {
             ],
             array![5., -1.], //
             1.,
-        )
-        .unwrap();
+        )?;
         // Initialize the potential.
         let phi_1 = GaussPhi::new(l_1, p_1);
         let phi_2 = GaussPhi::new(l_2, p_2);
@@ -150,8 +155,7 @@ mod tests {
             ],
             array![1., 4., -1.],
             -2.,
-        )
-        .unwrap();
+        )?;
         let true_phi = GaussPhi::new(true_l, true_p);
 
         // Compare the potentials.
@@ -161,10 +165,12 @@ mod tests {
         let mut pred_phi = phi_1.clone();
         pred_phi *= &phi_2;
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn divide() {
+    fn divide() -> Result<()> {
         // Set the labels.
         let l_1 = labels!("A", "B");
         let l_2 = labels!("B", "C");
@@ -176,8 +182,7 @@ mod tests {
             ],
             array![1., -1.], //
             -3.,
-        )
-        .unwrap();
+        )?;
         let p_2 = GaussPhiK::new(
             array![
                 [3., -2.], //
@@ -185,8 +190,7 @@ mod tests {
             ],
             array![5., -1.], //
             1.,
-        )
-        .unwrap();
+        )?;
         // Initialize the potential.
         let phi_1 = GaussPhi::new(l_1, p_1);
         let phi_2 = GaussPhi::new(l_2, p_2);
@@ -204,8 +208,7 @@ mod tests {
             ],
             array![1., -6., 1.],
             -4.,
-        )
-        .unwrap();
+        )?;
         let true_phi = GaussPhi::new(true_l, true_p);
 
         // Compare the potentials.
@@ -215,10 +218,12 @@ mod tests {
         let mut pred_phi = phi_1.clone();
         pred_phi /= &phi_2;
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn from_cpd() {
+    fn from_cpd() -> Result<()> {
         // Set the labels.
         let x = labels!("A");
         let z = labels!("B", "C");
@@ -226,12 +231,12 @@ mod tests {
         let a = array![[3., -1.]];
         let b = array![2.];
         let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s).unwrap();
+        let p = GaussCPDP::new(a, b, s)?;
         // Initialize the CPD.
-        let cpd = GaussCPD::new(x, z, p).unwrap();
+        let cpd = GaussCPD::new(x, z, p)?;
 
         // Convert to potential.
-        let pred_phi = GaussPhi::from_cpd(cpd).unwrap();
+        let pred_phi = GaussPhi::from_cpd(cpd)?;
 
         // Set the true potential.
         let true_l = labels!("A", "B", "C");
@@ -242,15 +247,17 @@ mod tests {
         ];
         let true_h = array![0.5, -1.5, 0.5];
         let true_g = -2.112085713764618;
-        let true_p = GaussPhiK::new(true_k, true_h, true_g).unwrap();
+        let true_p = GaussPhiK::new(true_k, true_h, true_g)?;
         let true_phi = GaussPhi::new(true_l, true_p);
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
+
+        Ok(())
     }
 
     #[test]
-    fn into_cpd() {
+    fn into_cpd() -> Result<()> {
         // Set the labels.
         let x = labels!("A");
         let z = labels!("B", "C");
@@ -258,17 +265,19 @@ mod tests {
         let a = array![[3., -1.]];
         let b = array![2.];
         let s = array![[4.]];
-        let p = GaussCPDP::new(a, b, s).unwrap();
+        let p = GaussCPDP::new(a, b, s)?;
         // Initialize the CPD.
-        let true_cpd = GaussCPD::new(x, z, p).unwrap();
+        let true_cpd = GaussCPD::new(x, z, p)?;
 
         // Convert to potential.
-        let phi = GaussPhi::from_cpd(true_cpd.clone()).unwrap();
+        let phi = GaussPhi::from_cpd(true_cpd.clone())?;
 
         // Convert back to CPD.
-        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1]).unwrap();
+        let pred_cpd = phi.into_cpd(&set![0], &set![2, 1])?;
 
         // Compare the CPDs.
         assert_relative_eq!(true_cpd, pred_cpd);
+
+        Ok(())
     }
 }

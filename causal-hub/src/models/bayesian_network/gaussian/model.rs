@@ -199,18 +199,18 @@ impl BN for GaussBN {
         I: IntoIterator<Item = Self::CPD>,
     {
         // Assert name is not empty string.
-        if let Some(name) = &name {
-            if name.is_empty() {
-                return Err(Error::Model("Name cannot be an empty string.".into()));
-            }
+        if let Some(name) = &name
+            && name.is_empty()
+        {
+            return Err(Error::Model("Name cannot be an empty string.".into()));
         }
         // Assert description is not empty string.
-        if let Some(description) = &description {
-            if description.is_empty() {
-                return Err(Error::Model(
-                    "Description cannot be an empty string.".into(),
-                ));
-            }
+        if let Some(description) = &description
+            && description.is_empty()
+        {
+            return Err(Error::Model(
+                "Description cannot be an empty string.".into(),
+            ));
         }
 
         // Construct the BN.

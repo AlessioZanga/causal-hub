@@ -11,6 +11,7 @@ mod tests {
         random::RngEv,
         samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
         set,
+        types::Result,
     };
     use rand::{RngCore, SeedableRng};
     use rand_xoshiro::Xoshiro256PlusPlus;
@@ -23,7 +24,7 @@ mod tests {
             use super::*;
 
             #[test]
-            fn em_builder() {
+            fn em_builder() -> Result<()> {
                 // Load eating.
                 let model = load_eating();
                 // Set the evidence.
@@ -52,10 +53,12 @@ mod tests {
                     .with_m_step(&m_step)
                     .with_stop(&stop)
                     .build();
+
+                Ok(())
             }
 
             #[test]
-            fn em_with_no_evidence() {
+            fn em_with_no_evidence() -> Result<()> {
                 // Load eating.
                 let model = load_eating();
                 // Set the evidence.
@@ -85,9 +88,10 @@ mod tests {
                             // Initialize a new sampler.
                             let importance = ImportanceSampler::new(&mut rng, prev_model, e);
                             // Sample the trajectories.
-                            importance.sample_by_length(100).unwrap()
+                            importance.sample_by_length(100)
                         })
-                        .collect()
+                        .collect::<Result<CatWtdTrjs>>()
+                        .unwrap()
                 };
 
                 // Define the maximization step.
@@ -115,11 +119,13 @@ mod tests {
 
                 // Check if the models are equal.
                 assert_relative_eq!(model, output.last_model, epsilon = 5e-2);
+
+                Ok(())
             }
 
             #[test]
             #[ignore = "this test is slow and should be run manually in release mode."]
-            fn em_with_evidence() {
+            fn em_with_evidence() -> Result<()> {
                 // Initialize a new random number generator.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
@@ -220,6 +226,8 @@ mod tests {
 
                 // Check if the models are equal.
                 assert_relative_eq!(model, output.last_model, epsilon = 5e-2);
+
+                Ok(())
             }
         }
     }

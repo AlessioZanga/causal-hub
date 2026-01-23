@@ -123,7 +123,7 @@ where
             })
             .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
-        Ok(T::new(graph, cpds)?)
+        T::new(graph, cpds)
     }
 }
 
@@ -160,7 +160,7 @@ where
             })
             .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
-        Ok(T::new(graph, cpds)?)
+        T::new(graph, cpds)
     }
 }
 
@@ -235,7 +235,7 @@ where
             })
             .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.
-        Ok(T::new(graph, cims)?)
+        T::new(graph, cims)
     }
 }
 
@@ -272,6 +272,6 @@ where
             })
             .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.
-        Ok(T::new(graph, cims)?)
+        T::new(graph, cims)
     }
 }
