@@ -47,7 +47,12 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     // SSE (Sufficient Statistics Estimator)
     let sse = SSE::new(&data);
 
-    group.bench_function("sse", |b| b.iter(|| sse.fit(_b(&x), _b(&z)).unwrap()));
+    group.bench_function("sse", |b| {
+        b.iter(|| -> Result<()> {
+            sse.fit(_b(&x), _b(&z))?;
+            Ok(())
+        })
+    });
 
     // MLE (Maximum Likelihood Estimator)
     let mle = MLE::new(&data);

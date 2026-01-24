@@ -1,3 +1,5 @@
+#![deny(clippy::expect_used)]
+#![deny(clippy::unwrap_used)]
 #![warn(missing_docs)]
 //! # CausalHub
 //!
