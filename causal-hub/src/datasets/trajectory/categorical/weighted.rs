@@ -247,14 +247,15 @@ impl CatWtdTrjs {
 impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter).unwrap()
+        Self::new(iter).expect("Failed to create CatWtdTrjs from iterator. Data validation failed.")
     }
 }
 
 impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>()).unwrap()
+        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+            .expect("Failed to create CatWtdTrjs from parallel iterator. Data validation failed.")
     }
 }
 

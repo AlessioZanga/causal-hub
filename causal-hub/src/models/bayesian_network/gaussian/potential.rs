@@ -240,8 +240,8 @@ impl MulAssign<&GaussPhi> for GaussPhi {
         let h = lhs_h + rhs_h;
         let g = lhs_g + rhs_g;
         // Assemble parameters.
-        let parameters =
-            GaussPhiK::new(k, h, g).expect("Failed to construct parameters during multiplication.");
+        let parameters = GaussPhiK::new(k, h, g)
+            .expect("Failed to construct parameters during multiplication. This indicates invalid parameter dimensions or numerical issues.");
 
         // Update the labels.
         self.labels = labels;
@@ -304,7 +304,7 @@ impl DivAssign<&GaussPhi> for GaussPhi {
         let g_prime = lhs_g - rhs_g;
         // Assemble parameters.
         let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)
-            .expect("Failed to construct parameters during division.");
+            .expect("Failed to construct parameters during division. This indicates invalid parameter dimensions or numerical issues.");
 
         // Update the labels.
         self.labels = labels;

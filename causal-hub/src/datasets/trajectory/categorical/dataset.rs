@@ -294,14 +294,15 @@ impl CatTrjs {
 impl FromIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrj>>(iter: I) -> Self {
-        Self::new(iter).unwrap()
+        Self::new(iter).expect("Failed to create CatTrjs from iterator. Data validation failed.")
     }
 }
 
 impl FromParallelIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>()).unwrap()
+        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+            .expect("Failed to create CatTrjs from parallel iterator. Data validation failed.")
     }
 }
 

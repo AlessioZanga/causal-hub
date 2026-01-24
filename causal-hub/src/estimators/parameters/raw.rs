@@ -31,7 +31,8 @@ impl<R, E, D> Deref for RAWE<'_, R, E, D> {
     type Target = D;
 
     fn deref(&self) -> &Self::Target {
-        self.dataset.as_ref().unwrap()
+        // Dataset is guaranteed to be Some after construction via par_new or new.
+        self.dataset.as_ref().expect("Dataset must be initialized. This is a bug if it's None.")
     }
 }
 
@@ -41,7 +42,8 @@ where
 {
     #[inline]
     fn labels(&self) -> &Labels {
-        self.dataset.as_ref().unwrap().labels()
+        // Dataset is guaranteed to be Some after construction via par_new or new.
+        self.dataset.as_ref().expect("Dataset must be initialized. This is a bug if it's None.").labels()
     }
 }
 

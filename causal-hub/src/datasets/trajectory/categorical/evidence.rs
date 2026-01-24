@@ -782,14 +782,15 @@ impl CatTrjsEv {
 impl FromIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrjEv>>(iter: I) -> Self {
-        Self::new(iter).unwrap()
+        Self::new(iter).expect("Failed to create CatTrjsEv from iterator. Data validation failed.")
     }
 }
 
 impl FromParallelIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrjEv>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>()).unwrap()
+        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+            .expect("Failed to create CatTrjsEv from parallel iterator. Data validation failed.")
     }
 }
 

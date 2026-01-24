@@ -17,7 +17,8 @@ macro_for!(
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));
             // Read the JSON file and return the BN.
-            GaussBN::from_json_string(include_str!(concat!(stringify!($bn), ".json"))).unwrap()
+            GaussBN::from_json_string(include_str!(concat!(stringify!($bn), ".json")))
+                .expect("Failed to load embedded JSON asset. This is a bug in the library.")
         }
     }
 });
@@ -32,7 +33,8 @@ macro_for!(
             // Log the loading of the CTBN.
             debug!("Loading the '{}' CTBN from assets.", stringify!($ctbn));
             // Read the JSON file and return the CTBN.
-            CatCTBN::from_json_string(include_str!(concat!(stringify!($ctbn), ".json"))).unwrap()
+            CatCTBN::from_json_string(include_str!(concat!(stringify!($ctbn), ".json")))
+                .expect("Failed to load embedded JSON asset. This is a bug in the library.")
         }
     }
 });

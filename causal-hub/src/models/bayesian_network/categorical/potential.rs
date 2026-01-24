@@ -242,7 +242,7 @@ impl Phi for CatPhi {
         });
 
         // Return self.
-        Ok(Self::new(states, parameters))
+        Self::new(states, parameters)
     }
 
     fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
@@ -278,7 +278,7 @@ impl Phi for CatPhi {
         });
 
         // Return the new potential.
-        Ok(Self::new(states, parameters))
+        Self::new(states, parameters)
     }
 
     #[inline]
@@ -288,7 +288,7 @@ impl Phi for CatPhi {
         // Normalize the parameters.
         parameters /= parameters.sum();
         // Return the new potential.
-        Ok(Self::new(self.states.clone(), parameters))
+        Self::new(self.states.clone(), parameters)
     }
 
     fn from_cpd(cpd: Self::CPD) -> Result<Self> {
@@ -318,7 +318,7 @@ impl Phi for CatPhi {
         let parameters = parameters.permuted_axes(axes);
 
         // Return the new potential.
-        Ok(Self::new(states, parameters))
+        Self::new(states, parameters)
     }
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
@@ -335,24 +335,20 @@ impl Phi for CatPhi {
         );
 
         // Split states into states and conditioning states.
-        let states_x: States = x
-            .iter()
-            .map(|&i| {
-                self.states
-                    .get_index(i)
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .unwrap()
-            })
-            .collect();
-        let states_z: States = z
-            .iter()
-            .map(|&i| {
-                self.states
-                    .get_index(i)
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .unwrap()
-            })
-            .collect();
+        let mut states_x: States = Default::default();
+        for &i in x.iter() {
+            let (k, v) = self.states
+                .get_index(i)
+                .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
+            states_x.insert(k.clone(), v.clone());
+        }
+        let mut states_z: States = Default::default();
+        for &i in z.iter() {
+            let (k, v) = self.states
+                .get_index(i)
+                .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
+            states_z.insert(k.clone(), v.clone());
+        }
 
         // Get new axes order.
         let axes: Vec<_> = z.iter().chain(x).cloned().collect();
@@ -366,7 +362,7 @@ impl Phi for CatPhi {
         // Reshape the parameters to the new 2D shape.
         let mut parameters = parameters
             .into_shape_clone(shape)
-            .expect("Failed to reshape parameters.");
+            .map_err(|e| Error::Shape(format!("Failed to reshape parameters: {}", e)))?;
 
         // Normalize the parameters.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
@@ -388,21 +384,26 @@ impl CatPhi {
     ///
     /// A new categorical potential instance.
     ///
-    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Self {
+    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Result<Self> {
         // Get labels.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get shape.
         let mut shape = Array::from_iter(states.values().map(Set::len));
-        // Assert parameters shape matches states shape.
-        assert_eq!(
-            parameters.shape(),
-            shape.as_slice().unwrap(),
-            "Parameters shape does not match states shape: \n\
-            \t expected:    {:?} , \n\
-            \t found:       {:?} .",
-            shape,
-            parameters.shape(),
-        );
+        // Validate parameters shape matches states shape.
+        let shape_slice = shape.as_slice().ok_or_else(|| {
+            Error::Shape(format!(
+                "Failed to convert shape array to slice: shape is not contiguous"
+            ))
+        })?;
+        if parameters.shape() != shape_slice {
+            return Err(Error::Shape(format!(
+                "Parameters shape does not match states shape: \n\
+                \t expected:    {:?} , \n\
+                \t found:       {:?} .",
+                shape_slice,
+                parameters.shape(),
+            )));
+        }
 
         // Sort states if not sorted and permute parameters accordingly.
         if !states.keys().is_sorted() {
@@ -424,12 +425,12 @@ impl CatPhi {
             shape = states.values().map(Set::len).collect();
         }
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             parameters,
-        }
+        })
     }
 
     /// States of the potential.

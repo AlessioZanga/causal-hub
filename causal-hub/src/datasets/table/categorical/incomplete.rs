@@ -205,11 +205,13 @@ impl Dataset for CatIncTable {
         }
 
         // Select the states.
-        let states: States = x
-            .iter()
-            .map(|&i| self.states.get_index(i).unwrap())
-            .map(|(label, states)| (label.clone(), states.clone()))
-            .collect();
+        let mut states: States = Default::default();
+        for &i in x.iter() {
+            let (label, state_set) = self.states
+                .get_index(i)
+                .ok_or_else(|| Error::Dataset(format!("Invalid state index: {}", i)))?;
+            states.insert(label.clone(), state_set.clone());
+        }
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));

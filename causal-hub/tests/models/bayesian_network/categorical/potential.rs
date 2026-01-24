@@ -25,7 +25,7 @@ mod tests {
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
         // Initialize the potential.
-        let phi = CatPhi::new(s.clone(), p.clone());
+        let phi = CatPhi::new(s.clone(), p.clone())?;
 
         // Assert the labels.
         assert_eq!(phi.labels(), &labels!["A", "B", "C"]);
@@ -54,7 +54,7 @@ mod tests {
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
         // Initialize the potential.
-        let phi = CatPhi::new(s.clone(), p);
+        let phi = CatPhi::new(s.clone(), p)?;
 
         // Condition the potential.
         let e = CatEv::new(s, [CatEvT::CertainPositive { event: 2, state: 0 }])?;
@@ -65,7 +65,7 @@ mod tests {
         let true_p = array![0.25, 0.08, 0.05, 0., 0.15, 0.09]
             .into_shape_with_order((3, 2))?
             .into_dyn();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -88,7 +88,7 @@ mod tests {
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
         // Initialize the potential.
-        let phi = CatPhi::new(s, p);
+        let phi = CatPhi::new(s, p)?;
 
         // Marginalize the potential.
         let pred_phi = phi.marginalize(&set![1])?;
@@ -98,7 +98,7 @@ mod tests {
         let true_p = array![0.33, 0.51, 0.05, 0.07, 0.24, 0.39]
             .into_shape_with_order((3, 2))?
             .into_dyn();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -121,7 +121,7 @@ mod tests {
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
         // Initialize the potential.
-        let phi = CatPhi::new(s.clone(), p.clone());
+        let phi = CatPhi::new(s.clone(), p.clone())?;
 
         // Marginalize the potential.
         let pred_phi = phi.normalize()?;
@@ -129,7 +129,7 @@ mod tests {
         // Set the true potential.
         let true_s = s;
         let true_p = &p / p.sum();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -150,8 +150,8 @@ mod tests {
             .into_shape_with_order((2, 2))?
             .into_dyn();
         // Initialize the potential.
-        let phi_1 = CatPhi::new(s_1, p_1);
-        let phi_2 = CatPhi::new(s_2, p_2);
+        let phi_1 = CatPhi::new(s_1, p_1)?;
+        let phi_2 = CatPhi::new(s_2, p_2)?;
 
         // Multiply the potentials.
         let pred_phi = &phi_1 * &phi_2;
@@ -167,7 +167,7 @@ mod tests {
         ]
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -191,8 +191,8 @@ mod tests {
             .into_dyn();
         let p_2 = array![0.8, 0., 0.6].into_shape_with_order((3,))?.into_dyn();
         // Initialize the potential.
-        let phi_1 = CatPhi::new(s_1, p_1);
-        let phi_2 = CatPhi::new(s_2, p_2);
+        let phi_1 = CatPhi::new(s_1, p_1)?;
+        let phi_2 = CatPhi::new(s_2, p_2)?;
 
         // Divide the potentials.
         let pred_phi = &phi_1 / &phi_2;
@@ -202,7 +202,7 @@ mod tests {
         let true_p = array![0.625, 0.25, 0., 0., 0.5, 0.75]
             .into_shape_with_order((3, 2))?
             .into_dyn();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -244,7 +244,7 @@ mod tests {
         ]
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
-        let true_phi = CatPhi::new(true_s, true_p);
+        let true_phi = CatPhi::new(true_s, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -265,7 +265,7 @@ mod tests {
         ]
         .into_shape_with_order((3, 2, 2))?
         .into_dyn();
-        let phi = CatPhi::new(s, p);
+        let phi = CatPhi::new(s, p)?;
 
         // Convert the potential into a CPD.
         let pred_cpd = phi.into_cpd(&set![0], &set![2, 1])?;
