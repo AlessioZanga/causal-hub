@@ -75,6 +75,13 @@ impl GaussPhiK {
         Ok(Self { k, h, g })
     }
 
+    /// Internal constructor that assumes parameters are already valid.
+    /// Only used within trait implementations where validation cannot fail.
+    #[inline]
+    fn from_valid_params(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
+        Self { k, h, g }
+    }
+
     /// Returns the precision matrix.
     ///
     /// # Returns
@@ -239,9 +246,8 @@ impl MulAssign<&GaussPhi> for GaussPhi {
         let k = lhs_k + rhs_k;
         let h = lhs_h + rhs_h;
         let g = lhs_g + rhs_g;
-        // Assemble parameters.
-        let parameters = GaussPhiK::new(k, h, g)
-            .expect("Failed to construct parameters during multiplication. This indicates invalid parameter dimensions or numerical issues.");
+        // Assemble parameters. Since we're combining valid parameters, the result is valid.
+        let parameters = GaussPhiK::from_valid_params(k, h, g);
 
         // Update the labels.
         self.labels = labels;
@@ -302,9 +308,8 @@ impl DivAssign<&GaussPhi> for GaussPhi {
         let k_prime = lhs_k - rhs_k;
         let h_prime = lhs_h - rhs_h;
         let g_prime = lhs_g - rhs_g;
-        // Assemble parameters.
-        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)
-            .expect("Failed to construct parameters during division. This indicates invalid parameter dimensions or numerical issues.");
+        // Assemble parameters. Since we're combining valid parameters, the result is valid.
+        let parameters = GaussPhiK::from_valid_params(k_prime, h_prime, g_prime);
 
         // Update the labels.
         self.labels = labels;

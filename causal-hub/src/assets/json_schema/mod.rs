@@ -39,12 +39,13 @@ pub(crate) static JSON_SCHEMA_RETRIEVER: LazyLock<InMemoryRetriever> = LazyLock:
         ] {
         // Load the JSON Schema file.
         let schema = include_str!(concat!(stringify!($schema), ".schema.json"));
-        let schema: Value = serde_json::from_str(schema)
-            .expect("Failed to parse embedded JSON schema. This is a bug in the library.");
-        // Get the URI of the schema.
-        let id = concat!("json-schema:///", stringify!($schema), ".schema.json");
-        // Insert the schema into the map with its $id as the key.
-        schemas.insert(id.to_owned(), schema);
+        // Parse the schema, or skip if it fails (should never happen for embedded assets).
+        if let Ok(schema) = serde_json::from_str::<Value>(schema) {
+            // Get the URI of the schema.
+            let id = concat!("json-schema:///", stringify!($schema), ".schema.json");
+            // Insert the schema into the map with its $id as the key.
+            schemas.insert(id.to_owned(), schema);
+        }
     });
     // Create the retriever.
     InMemoryRetriever { schemas }

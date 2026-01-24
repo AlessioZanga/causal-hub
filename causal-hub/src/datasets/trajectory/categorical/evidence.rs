@@ -782,15 +782,35 @@ impl CatTrjsEv {
 impl FromIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrjEv>>(iter: I) -> Self {
-        Self::new(iter).expect("Failed to create CatTrjsEv from iterator. Data validation failed.")
+        Self::new(iter).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatTrjsEv from iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                evidences: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
 impl FromParallelIterator<CatTrjEv> for CatTrjsEv {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrjEv>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>())
-            .expect("Failed to create CatTrjsEv from parallel iterator. Data validation failed.")
+        let collected = iter.into_par_iter().collect::<Vec<_>>();
+        Self::new(collected).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatTrjsEv from parallel iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                evidences: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 

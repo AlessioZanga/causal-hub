@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
 use rand::{Rng, SeedableRng, seq::SliceRandom};
@@ -27,12 +25,28 @@ pub struct RAWE<'a, R, E, D> {
     dataset: Option<D>,
 }
 
-impl<R, E, D> Deref for RAWE<'_, R, E, D> {
-    type Target = D;
-
-    fn deref(&self) -> &Self::Target {
-        // Dataset is guaranteed to be Some after construction via par_new or new.
-        self.dataset.as_ref().expect("Dataset must be initialized. This is a bug if it's None.")
+impl<R, E, D> RAWE<'_, R, E, D> {
+    /// Returns a reference to the dataset.
+    /// 
+    /// # Returns
+    /// 
+    /// A reference to the dataset if it has been initialized.
+    /// 
+    /// # Panics
+    /// 
+    /// This method will panic if the dataset has not been initialized.
+    /// The dataset is guaranteed to be initialized after calling `new()` or `par_new()`.
+    #[inline]
+    pub fn dataset(&self) -> &D {
+        match &self.dataset {
+            Some(d) => d,
+            None => {
+                // This should never happen if used correctly.
+                // Log an error before panicking to aid debugging.
+                log::error!("RAWE dataset accessed before initialization");
+                panic!("RAWE dataset must be initialized before use")
+            }
+        }
     }
 }
 
@@ -43,7 +57,14 @@ where
     #[inline]
     fn labels(&self) -> &Labels {
         // Dataset is guaranteed to be Some after construction via par_new or new.
-        self.dataset.as_ref().expect("Dataset must be initialized. This is a bug if it's None.").labels()
+        match &self.dataset {
+            Some(d) => d.labels(),
+            None => {
+                // This should never happen if used correctly.
+                log::error!("RAWE labels accessed before dataset initialization");
+                panic!("RAWE dataset must be initialized before accessing labels")
+            }
+        }
     }
 }
 

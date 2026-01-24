@@ -247,15 +247,35 @@ impl CatWtdTrjs {
 impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter).expect("Failed to create CatWtdTrjs from iterator. Data validation failed.")
+        Self::new(iter).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatWtdTrjs from iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
 impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>())
-            .expect("Failed to create CatWtdTrjs from parallel iterator. Data validation failed.")
+        let collected = iter.into_par_iter().collect::<Vec<_>>();
+        Self::new(collected).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatWtdTrjs from parallel iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 

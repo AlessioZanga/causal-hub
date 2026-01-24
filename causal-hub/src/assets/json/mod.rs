@@ -5,6 +5,7 @@ use paste::paste;
 use crate::{
     io::JsonIO,
     models::{CatCTBN, GaussBN},
+    types::Result,
 };
 
 macro_for!(
@@ -13,12 +14,11 @@ macro_for!(
     ] {
     paste! {
         #[doc = "Load the `" $bn:upper "` Gaussian BN from the assets."]
-        pub fn [<load_ $bn>]() -> GaussBN {
+        pub fn [<load_ $bn>]() -> Result<GaussBN> {
             // Log the loading of the BN.
             debug!("Loading the '{}' BN from assets.", stringify!($bn));
             // Read the JSON file and return the BN.
             GaussBN::from_json_string(include_str!(concat!(stringify!($bn), ".json")))
-                .expect("Failed to load embedded JSON asset. This is a bug in the library.")
         }
     }
 });
@@ -29,12 +29,11 @@ macro_for!(
     ] {
     paste! {
         #[doc = "Load the `" $ctbn:upper "` categorical CTBN from the assets."]
-        pub fn [<load_ $ctbn>]() -> CatCTBN {
+        pub fn [<load_ $ctbn>]() -> Result<CatCTBN> {
             // Log the loading of the CTBN.
             debug!("Loading the '{}' CTBN from assets.", stringify!($ctbn));
             // Read the JSON file and return the CTBN.
             CatCTBN::from_json_string(include_str!(concat!(stringify!($ctbn), ".json")))
-                .expect("Failed to load embedded JSON asset. This is a bug in the library.")
         }
     }
 });
