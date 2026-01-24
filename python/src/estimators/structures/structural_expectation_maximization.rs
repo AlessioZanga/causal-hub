@@ -119,11 +119,12 @@ pub fn sem<'a>(
                 // Return the initial graph.
                 initial_graph
             }
-            _ => panic!(
+            _ => return Err(BackendError::Model(format!(
                 "Failed to get the structure learning algorithm: \n\
                 \t expected:   'ctpc' or 'cthc', \n\
-                \t found:      '{algorithm}'"
-            ),
+                \t found:      '{}'",
+                algorithm
+            ))),
         };
 
         // Log the raw estimator initialization.
@@ -262,11 +263,12 @@ pub fn sem<'a>(
                     cthc.par_fit()
                         .map_err(|e| BackendError::Model(format!("Failed to fit structure with CTHC: {}", e)))?
                 }
-                _ => panic!(
+                _ => return Err(BackendError::Model(format!(
                     "Failed to get the structure learning algorithm: \n\
                     \t expected:   'ctpc' or 'cthc', \n\
-                    \t found:      '{algorithm}'"
-                ),
+                    \t found:      '{}'",
+                    algorithm
+                ))),
             };
             // Fit the new model using the expectation.
             estimator.par_fit(fitted_graph)

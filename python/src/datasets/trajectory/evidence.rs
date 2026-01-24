@@ -227,10 +227,10 @@ impl PyCatTrjEv {
                 // Convert the event and state.
                 let event = states
                     .get_index_of(&event)
-                    .unwrap_or_else(|| panic!("Event '{event}' not found in states."));
+                    .ok_or_else(|| Error::new_err(format!("Event '{}' not found in states", event)))?;
                 let state = states[event]
                     .get_index_of(&state)
-                    .unwrap_or_else(|| panic!("State '{state}' not found for event '{event}'."));
+                    .ok_or_else(|| Error::new_err(format!("State '{}' not found for event '{}'", state, event)))?;
                 // Construct the evidence.
                 Ok(E::CertainPositiveInterval {
                     event,
