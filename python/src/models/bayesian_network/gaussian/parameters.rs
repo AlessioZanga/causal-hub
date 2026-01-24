@@ -98,36 +98,39 @@ impl PyGaussCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        self.lock().sample_statistics().map(|s| {
-            // Allocate the dictionary.
-            let dict = PyDict::new(py);
-            // Add the response mean vector.
-            dict.set_item(
-                "sample_response_mean",
-                s.sample_response_mean().to_pyarray(py),
-            )?;
-            // Add the design mean vector.
-            dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))?;
-            // Add the response covariance matrix.
-            dict.set_item(
-                "sample_response_covariance",
-                s.sample_response_covariance().to_pyarray(py),
-            )?;
-            // Add the cross covariance matrix.
-            dict.set_item(
-                "sample_cross_covariance",
-                s.sample_cross_covariance().to_pyarray(py),
-            )?;
-            // Add the design covariance matrix.
-            dict.set_item(
-                "sample_design_covariance",
-                s.sample_design_covariance().to_pyarray(py),
-            )?;
-            // Add the sample size.
-            dict.set_item("sample_size", s.sample_size())?;
-            // Return the dictionary.
-            Ok(dict)
-        }).transpose()
+        self.lock()
+            .sample_statistics()
+            .map(|s| {
+                // Allocate the dictionary.
+                let dict = PyDict::new(py);
+                // Add the response mean vector.
+                dict.set_item(
+                    "sample_response_mean",
+                    s.sample_response_mean().to_pyarray(py),
+                )?;
+                // Add the design mean vector.
+                dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))?;
+                // Add the response covariance matrix.
+                dict.set_item(
+                    "sample_response_covariance",
+                    s.sample_response_covariance().to_pyarray(py),
+                )?;
+                // Add the cross covariance matrix.
+                dict.set_item(
+                    "sample_cross_covariance",
+                    s.sample_cross_covariance().to_pyarray(py),
+                )?;
+                // Add the design covariance matrix.
+                dict.set_item(
+                    "sample_design_covariance",
+                    s.sample_design_covariance().to_pyarray(py),
+                )?;
+                // Add the sample size.
+                dict.set_item("sample_size", s.sample_size())?;
+                // Return the dictionary.
+                Ok(dict)
+            })
+            .transpose()
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.

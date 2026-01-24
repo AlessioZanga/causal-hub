@@ -1,15 +1,17 @@
 #[cfg(test)]
 mod tests {
+    use causal_hub::{
+        assets::*,
+        inference::GraphicalSeparation,
+        models::{BN, DiGraph, Graph, Labelled},
+        set,
+        types::Result,
+    };
+    use dry::macro_for;
+    use paste::paste;
+
     mod digraph {
-        use causal_hub::{
-            assets::*,
-            inference::GraphicalSeparation,
-            models::{BN, DiGraph, Graph, Labelled},
-            set,
-            types::Result,
-        };
-        use dry::macro_for;
-        use paste::paste;
+        use super::*;
 
         // Tests for `is_separator_set` method.
 
@@ -195,7 +197,7 @@ mod tests {
                 #[test]
                 fn [<is_separator_set_ $bn>]() -> Result<()> {
                     // Get the BN from the assets.
-                    let model = [<load_ $bn>]();
+                    let model = [<load_ $bn>]()?;
                     // Get the graph from the BN.
                     let graph = model.graph();
                     // Get the vertices of the graph.

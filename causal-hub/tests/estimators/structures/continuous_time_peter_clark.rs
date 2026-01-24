@@ -16,7 +16,7 @@ mod tests {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
         // Load Eating.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize a sampler.
         let forward = ForwardSampler::new(&mut rng, &model)?;
         // Sample 1000 samples.
@@ -50,7 +50,7 @@ mod tests {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
         // Load Eating.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize a sampler.
         let forward = ForwardSampler::new(&mut rng, &model)?;
         // Sample 1000 samples.

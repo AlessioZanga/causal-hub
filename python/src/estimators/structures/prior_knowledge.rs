@@ -46,9 +46,11 @@ impl PyPK {
             .map(|x| {
                 // Get the strings and convert them to indices.
                 x?.extract::<(String, String)>().and_then(|(a, b)| {
-                    let a_idx = labels.get_index_of(&a)
+                    let a_idx = labels
+                        .get_index_of(&a)
                         .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a)))?;
-                    let b_idx = labels.get_index_of(&b)
+                    let b_idx = labels
+                        .get_index_of(&b)
                         .ok_or_else(|| Error::new_err(format!("Unknown label: {}", b)))?;
                     Ok((a_idx, b_idx))
                 })
@@ -59,9 +61,11 @@ impl PyPK {
             .map(|x| {
                 // Get the strings and convert them to indices.
                 x?.extract::<(String, String)>().and_then(|(a, b)| {
-                    let a_idx = labels.get_index_of(&a)
+                    let a_idx = labels
+                        .get_index_of(&a)
                         .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a)))?;
-                    let b_idx = labels.get_index_of(&b)
+                    let b_idx = labels
+                        .get_index_of(&b)
                         .ok_or_else(|| Error::new_err(format!("Unknown label: {}", b)))?;
                     Ok((a_idx, b_idx))
                 })
@@ -73,9 +77,11 @@ impl PyPK {
                 x?.try_iter()?
                     .map(|x| {
                         // Get the string and convert it to an index.
-                        x?.extract::<String>()
-                            .and_then(|a| labels.get_index_of(&a)
-                                .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a))))
+                        x?.extract::<String>().and_then(|a| {
+                            labels
+                                .get_index_of(&a)
+                                .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a)))
+                        })
                     })
                     .collect::<PyResult<Vec<_>>>()
             })

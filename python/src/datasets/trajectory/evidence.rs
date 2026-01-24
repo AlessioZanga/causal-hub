@@ -182,8 +182,8 @@ impl PyCatTrjEv {
                     .into_iter()
                     .map(|key_value| {
                         // Cast the key_value to a tuple.
-                        let (key, value) = key_value
-                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()?;
+                        let (key, value) =
+                            key_value.extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()?;
                         // Convert the key to a String.
                         let key = key.extract::<String>()?;
                         // Convert the value to a Vec<String>.
@@ -225,12 +225,12 @@ impl PyCatTrjEv {
             // Flatten the nested tuples.
             .map(|(((event, state), start_time), end_time)| {
                 // Convert the event and state.
-                let event = states
-                    .get_index_of(&event)
-                    .ok_or_else(|| Error::new_err(format!("Event '{}' not found in states", event)))?;
-                let state = states[event]
-                    .get_index_of(&state)
-                    .ok_or_else(|| Error::new_err(format!("State '{}' not found for event '{}'", state, event)))?;
+                let event = states.get_index_of(&event).ok_or_else(|| {
+                    Error::new_err(format!("Event '{}' not found in states", event))
+                })?;
+                let state = states[event].get_index_of(&state).ok_or_else(|| {
+                    Error::new_err(format!("State '{}' not found for event '{}'", state, event))
+                })?;
                 // Construct the evidence.
                 Ok(E::CertainPositiveInterval {
                     event,

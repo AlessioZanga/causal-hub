@@ -23,7 +23,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_child();
+                let model = load_child()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
@@ -63,7 +63,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_cancer();
+                let model = load_cancer()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
@@ -89,7 +89,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_ecoli70();
+                let model = load_ecoli70()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
@@ -119,7 +119,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
@@ -138,7 +138,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
@@ -164,7 +164,7 @@ mod tests {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.

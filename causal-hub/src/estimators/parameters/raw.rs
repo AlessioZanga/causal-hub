@@ -27,13 +27,13 @@ pub struct RAWE<'a, R, E, D> {
 
 impl<R, E, D> RAWE<'_, R, E, D> {
     /// Returns a reference to the dataset.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A reference to the dataset if it has been initialized.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This method will panic if the dataset has not been initialized.
     /// The dataset is guaranteed to be initialized after calling `new()` or `par_new()`.
     #[inline]

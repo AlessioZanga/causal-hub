@@ -5,13 +5,14 @@ mod tests {
         labels,
         models::{BN, CIM, CPD, CTBN, Graph, Labelled},
         states,
+        types::Result,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Initialize the model.
-        let model = load_eating();
+        let model = load_eating()?;
 
         // Check the labels.
         assert_eq!(model.labels(), &labels!["Eating", "FullStomach", "Hungry"]);
@@ -145,5 +146,7 @@ mod tests {
         assert_eq!(initial_distribution.parameters_size(), 3);
         // Check the topological order.
         assert_eq!(initial_distribution.topological_order(), &[0, 1, 2]);
+
+        Ok(())
     }
 }

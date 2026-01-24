@@ -136,10 +136,12 @@ impl PyDiGraph {
             .into_iter()
             .map(|(x, y)| {
                 // Get the labels of the vertices.
-                let x = lock.index_to_label(x)
+                let x = lock
+                    .index_to_label(x)
                     .map_err(|e| Error::new_err(e.to_string()))?
                     .into();
-                let y = lock.index_to_label(y)
+                let y = lock
+                    .index_to_label(y)
                     .map_err(|e| Error::new_err(e.to_string()))?
                     .into();
                 // Return the labels as a tuple.
@@ -486,15 +488,17 @@ impl PyDiGraph {
             .map_err(|e| Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
-        let z = z.map(|z| {
-            z.into_iter()
-                .map(|i| {
-                    lock.index_to_label(i)
-                        .map_err(|e| Error::new_err(e.to_string()))
-                        .map(|label| label.into())
-                })
-                .collect::<PyResult<Vec<_>>>()
-        }).transpose()?;
+        let z = z
+            .map(|z| {
+                z.into_iter()
+                    .map(|i| {
+                        lock.index_to_label(i)
+                            .map_err(|e| Error::new_err(e.to_string()))
+                            .map(|label| label.into())
+                    })
+                    .collect::<PyResult<Vec<_>>>()
+            })
+            .transpose()?;
 
         // Return the result.
         Ok(z)
@@ -642,15 +646,17 @@ impl PyDiGraph {
             .map_err(|e| Error::new_err(e.to_string()))?;
 
         // Convert the indices back to labels.
-        let z = z.map(|z| {
-            z.into_iter()
-                .map(|i| {
-                    lock.index_to_label(i)
-                        .map_err(|e| Error::new_err(e.to_string()))
-                        .map(|label| label.into())
-                })
-                .collect::<PyResult<Vec<_>>>()
-        }).transpose()?;
+        let z = z
+            .map(|z| {
+                z.into_iter()
+                    .map(|i| {
+                        lock.index_to_label(i)
+                            .map_err(|e| Error::new_err(e.to_string()))
+                            .map(|label| label.into())
+                    })
+                    .collect::<PyResult<Vec<_>>>()
+            })
+            .transpose()?;
 
         // Return the result.
         Ok(z)

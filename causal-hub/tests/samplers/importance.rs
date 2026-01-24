@@ -19,7 +19,7 @@ mod tests {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let model = load_eating();
+            let model = load_eating()?;
 
             // Initialize evidence.
             let evidence = CatTrjEv::new(

@@ -29,7 +29,7 @@ mod tests {
                     #[test]
                     fn [<from_json_ $bn>]() -> Result<()> {
                         // Load model.
-                        let true_model = [<load_ $bn>]();
+                        let true_model = [<load_ $bn>]()?;
                         // Serialize model to JSON.
                         let json = true_model.to_json_string()?;
                         // Deserialize model from JSON.
@@ -45,7 +45,7 @@ mod tests {
             #[test]
             fn to_json_asia() -> Result<()> {
                 // Load model.
-                let true_model = load_asia();
+                let true_model = load_asia()?;
                 // Serialize model to JSON.
                 let json = true_model.to_json_string()?;
                 // Assert the JSON string is correct.
@@ -62,7 +62,7 @@ mod tests {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Sample from model.
                 let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                 // Set estimator.
@@ -84,7 +84,7 @@ mod tests {
                 // Initialize random number generator.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Sample from model.
                 let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                 // Set estimator.
@@ -113,7 +113,7 @@ mod tests {
                         #[test]
                         fn [<from_json_ $bn>]() -> Result<()> {
                             // Load model.
-                            let true_model = [<load_ $bn>]();
+                            let true_model = [<load_ $bn>]()?;
                             // Serialize model to JSON.
                             let json = true_model.to_json_string()?;
                             // Deserialize model from JSON.
@@ -131,7 +131,7 @@ mod tests {
                     // Initialize random number generator.
                     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                     // Load model.
-                    let model = load_ecoli70();
+                    let model = load_ecoli70()?;
                     // Sample from model.
                     let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                     // Set estimator.
@@ -153,7 +153,7 @@ mod tests {
                     // Initialize random number generator.
                     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                     // Load model.
-                    let model = load_ecoli70();
+                    let model = load_ecoli70()?;
                     // Sample from model.
                     let dataset = ForwardSampler::new(&mut rng, &model)?.sample_n(100)?;
                     // Set estimator.
@@ -177,7 +177,7 @@ mod tests {
                 #[test]
                 fn from_json_eating() -> Result<()> {
                     // Load model.
-                    let true_model = load_eating();
+                    let true_model = load_eating()?;
                     // Serialize model to JSON.
                     let json = true_model.to_json_string()?;
                     // Deserialize model from JSON.
@@ -191,7 +191,7 @@ mod tests {
                 #[test]
                 fn to_json_eating() -> Result<()> {
                     // Load model.
-                    let true_model = load_eating();
+                    let true_model = load_eating()?;
                     // Serialize model to JSON.
                     let json = true_model.to_json_string()?;
                     // Assert the JSON string is correct.
@@ -208,7 +208,7 @@ mod tests {
                     // Initialize random number generator.
                     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                     // Load model.
-                    let model = load_eating();
+                    let model = load_eating()?;
                     // Sample from model.
                     let dataset =
                         ForwardSampler::new(&mut rng, &model)?.sample_n_by_length(100, 10)?;
@@ -232,7 +232,7 @@ mod tests {
                     // Initialize random number generator.
                     let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                     // Load model.
-                    let model = load_eating();
+                    let model = load_eating()?;
                     // Sample from model.
                     let dataset =
                         ForwardSampler::new(&mut rng, &model)?.sample_n_by_length(100, 10)?;

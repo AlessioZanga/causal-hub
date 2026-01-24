@@ -17,7 +17,7 @@ mod tests {
     #[test]
     fn ace_estimate() -> Result<()> {
         // Load the model.
-        let model = load_asia();
+        let model = load_asia()?;
 
         // Initialize a RNG.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn cace_estimate() -> Result<()> {
         // Load the model.
-        let model = load_asia();
+        let model = load_asia()?;
 
         // Initialize a RNG.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn par_ace_estimate() -> Result<()> {
         // Load the model.
-        let model = load_asia();
+        let model = load_asia()?;
 
         // Initialize a RNG.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn par_cace_estimate() -> Result<()> {
         // Load the model.
-        let model = load_asia();
+        let model = load_asia()?;
 
         // Initialize a RNG.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);

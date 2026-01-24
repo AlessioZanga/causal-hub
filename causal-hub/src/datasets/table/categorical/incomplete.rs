@@ -207,7 +207,8 @@ impl Dataset for CatIncTable {
         // Select the states.
         let mut states: States = Default::default();
         for &i in x.iter() {
-            let (label, state_set) = self.states
+            let (label, state_set) = self
+                .states
                 .get_index(i)
                 .ok_or_else(|| Error::Dataset(format!("Invalid state index: {}", i)))?;
             states.insert(label.clone(), state_set.clone());

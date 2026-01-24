@@ -17,7 +17,7 @@ mod tests {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
             model.states().clone(),
@@ -45,10 +45,13 @@ mod tests {
         // Fill the evidence.
         let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
-        assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
+        assert_eq!(
+            filled_evidence.dataset().times(),
+            array![0., 0.1, 0.3, 0.5, 0.6]
+        );
         // Check the filled evidence.
         assert_eq!(
-            filled_evidence.values(),
+            filled_evidence.dataset().values(),
             array![
                 [0, 0, 0], // 0.
                 [0, 0, 0], // 0.1
@@ -68,7 +71,7 @@ mod tests {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
             model.states().clone(),
@@ -102,10 +105,13 @@ mod tests {
         // Fill the evidence.
         let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
-        assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
+        assert_eq!(
+            filled_evidence.dataset().times(),
+            array![0., 0.1, 0.3, 0.5, 0.6]
+        );
         // Check the filled evidence.
         assert_eq!(
-            filled_evidence.values(),
+            filled_evidence.dataset().values(),
             array![
                 [0, 0, 0], // 0.
                 [0, 0, 0], // 0.1

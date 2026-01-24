@@ -26,7 +26,7 @@ mod tests {
                 paste! {
                     #[test]
                     fn [<_load_ $bn>]() -> Result<()> {
-                        let _ = [<load_ $bn>]();
+                        let _ = [<load_ $bn>]()?;
 
                         Ok(())
                     }
@@ -36,7 +36,7 @@ mod tests {
             #[test]
             fn load_asia_full() -> Result<()> {
                 // Load BN.
-                let model = load_asia();
+                let model = load_asia()?;
 
                 // Check labels.
                 assert_eq!(
@@ -161,7 +161,7 @@ mod tests {
             #[test]
             fn load_child_full() -> Result<()> {
                 // Load BN.
-                let model = load_child();
+                let model = load_child()?;
 
                 // Get CPD.
                 let cpd = model
@@ -204,7 +204,7 @@ mod tests {
             #[test]
             fn load_sachs_full() -> Result<()> {
                 // Load BN.
-                let model = load_sachs();
+                let model = load_sachs()?;
 
                 // Check probability values with exponential notation.
                 assert_eq!(

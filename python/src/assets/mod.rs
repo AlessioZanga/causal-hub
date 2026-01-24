@@ -15,8 +15,10 @@ macro_for!(
         #[doc = "Load the `" $bn:upper "` categorical BN from the assets."]
         #[gen_stub_pyfunction(module = "causal_hub.assets")]
         #[pyfunction]
-        pub fn [<load_ $bn>]() -> PyCatBN {
-            backend::assets::[<load_ $bn>]().into()
+        pub fn [<load_ $bn>]() -> PyResult<PyCatBN> {
+            backend::assets::[<load_ $bn>]()
+                .map_err(crate::error::to_pyerr)
+                .map(Into::into)
         }
     }
 });
@@ -29,8 +31,10 @@ macro_for!(
         #[doc = "Load the `" $bn:upper "` Gaussian BN from the assets."]
         #[gen_stub_pyfunction(module = "causal_hub.assets")]
         #[pyfunction]
-        pub fn [<load_ $bn>]() -> PyGaussBN {
-            backend::assets::[<load_ $bn>]().into()
+        pub fn [<load_ $bn>]() -> PyResult<PyGaussBN> {
+            backend::assets::[<load_ $bn>]()
+                .map_err(crate::error::to_pyerr)
+                .map(Into::into)
         }
     }
 });
@@ -38,6 +42,8 @@ macro_for!(
 /// Load the `EATING` categorical CTBN from the assets.
 #[gen_stub_pyfunction(module = "causal_hub.assets")]
 #[pyfunction]
-pub fn load_eating() -> PyCatCTBN {
-    backend::assets::load_eating().into()
+pub fn load_eating() -> PyResult<PyCatCTBN> {
+    backend::assets::load_eating()
+        .map_err(crate::error::to_pyerr)
+        .map(Into::into)
 }

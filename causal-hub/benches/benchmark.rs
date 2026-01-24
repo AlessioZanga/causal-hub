@@ -133,9 +133,12 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
 }
 
 fn bench_main(c: &mut Criterion) {
-    let _ = bench_catbn(c, load_asia());
-    let _ = bench_catbn(c, load_child());
-    let _ = bench_catbn(c, load_hailfinder());
+    let _ = || -> Result<()> {
+        bench_catbn(c, load_asia()?)?;
+        bench_catbn(c, load_child()?)?;
+        bench_catbn(c, load_hailfinder()?)?;
+        Ok(())
+    }();
 }
 
 criterion_group!(benches, bench_main);

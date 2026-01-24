@@ -26,7 +26,7 @@ mod tests {
             #[test]
             fn em_builder() -> Result<()> {
                 // Load eating.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Set the evidence.
                 let evidence = CatTrjsEv::new([
                     // A single empty evidence.
@@ -63,7 +63,7 @@ mod tests {
             #[test]
             fn em_with_no_evidence() -> Result<()> {
                 // Load eating.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Set the evidence.
                 let evidence = CatTrjsEv::new(vec![
                     // A thousands empty evidence.
@@ -133,7 +133,7 @@ mod tests {
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
                 // Load eating.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize a new sampler with no evidence.
                 let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample the fully-observed trajectories from the model.

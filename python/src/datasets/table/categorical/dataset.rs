@@ -179,14 +179,18 @@ impl PyCatTable {
                 // Extract the column as a PyArray1<PyObject>.
                 let column = column.cast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
-                let column: Result<Vec<_>, _> = column.iter().map(|x| {
-                    // Get the value.
-                    let x = x.extract::<String>(py)?;
-                    // Map the value to CatType.
-                    states.get_index_of(&x)
-                        .ok_or_else(|| Error::new_err(format!("Unknown state: {}", x)))
-                        .map(|idx| idx as CatType)
-                }).collect();
+                let column: Result<Vec<_>, _> = column
+                    .iter()
+                    .map(|x| {
+                        // Get the value.
+                        let x = x.extract::<String>(py)?;
+                        // Map the value to CatType.
+                        states
+                            .get_index_of(&x)
+                            .ok_or_else(|| Error::new_err(format!("Unknown state: {}", x)))
+                            .map(|idx| idx as CatType)
+                    })
+                    .collect();
                 let column = Array1::from_vec(column?);
                 // Extract the column from the data frame.
                 value.assign(&column);

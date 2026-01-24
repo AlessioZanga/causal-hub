@@ -219,32 +219,27 @@ impl Phi for CatPhi {
         }
 
         // Get the evidence and remove nones.
-        let e: Result<Vec<_>> = e
-            .evidences()
-            .iter()
-            .flatten()
-            .cloned()
-            .map(|ev| match ev {
-                CatEvT::CertainPositive { event, state } => Ok((event, state)),
-                _ => Err(Error::Model(format!(
-                    "Failed to condition on evidence: \n\
+        let e = e.evidences().iter().flatten().map(|ev| match ev {
+            CatEvT::CertainPositive { event, state } => Ok((event, state)),
+            _ => Err(Error::Model(format!(
+                "Failed to condition on evidence: \n\
                     \t expected:    CertainPositive , \n\
                     \t found:       {:?} .",
-                    ev
-                ))),
-            })
-            .collect();
-        let e = e?;
+                ev
+            ))),
+        });
 
         // Get states and parameters.
         let mut states = self.states.clone();
         let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
-        e.into_iter().rev().for_each(|(event, state)| {
+        e.rev().try_for_each(|e| -> Result<_> {
+            let (&event, &state) = e?;
             parameters.index_axis_inplace(Axis(event), state);
             states.shift_remove_index(event);
-        });
+            Ok(())
+        })?;
 
         // Return self.
         Self::new(states, parameters)
@@ -342,14 +337,16 @@ impl Phi for CatPhi {
         // Split states into states and conditioning states.
         let mut states_x: States = Default::default();
         for &i in x.iter() {
-            let (k, v) = self.states
+            let (k, v) = self
+                .states
                 .get_index(i)
                 .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
             states_x.insert(k.clone(), v.clone());
         }
         let mut states_z: States = Default::default();
         for &i in z.iter() {
-            let (k, v) = self.states
+            let (k, v) = self
+                .states
                 .get_index(i)
                 .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
             states_z.insert(k.clone(), v.clone());

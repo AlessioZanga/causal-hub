@@ -26,7 +26,7 @@ mod tests {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
 
             // Load eating.
-            let model = load_eating();
+            let model = load_eating()?;
             // Initialize a new sampler with no evidence.
             let forward = ForwardSampler::new(&mut rng, &model)?;
             // Sample the fully-observed trajectories from the model.
