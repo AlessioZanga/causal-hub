@@ -206,37 +206,42 @@ impl Phi for CatPhi {
     }
 
     fn condition(&self, e: &Self::Evidence) -> Result<Self> {
-        // Assert that the evidence states match the potential states.
-        assert_eq!(
-            e.states(),
-            self.states(),
-            "Failed to condition on evidence: \n\
-            \t expected:    evidence states to match potential states , \n\
-            \t found:       potential states = {:?} , \n\
-            \t              evidence  states = {:?} .",
-            self.states(),
-            e.states(),
-        );
+        // Check that the evidence states match the potential states.
+        if e.states() != self.states() {
+            return Err(Error::Model(format!(
+                "Failed to condition on evidence: \n\
+                \t expected:    evidence states to match potential states , \n\
+                \t found:       potential states = {:?} , \n\
+                \t              evidence  states = {:?} .",
+                self.states(),
+                e.states(),
+            )));
+        }
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten().cloned();
-        // Assert that the evidence is certain and positive.
-        let e = e.map(|e| match e {
-            CatEvT::CertainPositive { event, state } => (event, state),
-            _ => panic!(
-                "Failed to condition on evidence: \n\
-                \t expected:    CertainPositive , \n\
-                \t found:       {:?} .",
-                e
-            ),
-        });
+        let e: Result<Vec<_>> = e
+            .evidences()
+            .iter()
+            .flatten()
+            .cloned()
+            .map(|ev| match ev {
+                CatEvT::CertainPositive { event, state } => Ok((event, state)),
+                _ => Err(Error::Model(format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    CertainPositive , \n\
+                    \t found:       {:?} .",
+                    ev
+                ))),
+            })
+            .collect();
+        let e = e?;
 
         // Get states and parameters.
         let mut states = self.states.clone();
         let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
-        e.rev().for_each(|(event, state)| {
+        e.into_iter().rev().for_each(|(event, state)| {
             parameters.index_axis_inplace(Axis(event), state);
             states.shift_remove_index(event);
         });
