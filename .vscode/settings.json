@@ -14,7 +14,8 @@
         "cargo llvm-cov": true,
         "./coverage.sh": true,
         "cargo clippy": true,
-        "git rev-parse": true
+        "git rev-parse": true,
+        "cargo bench": true
     },
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",

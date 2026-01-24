@@ -43,6 +43,11 @@ openblas-src = { version = "^0.10", optional = true }
 
 [dev-dependencies]
 rand_xoshiro = "^0.7"
+criterion = { version = "^0.8", features = ["html_reports"] }
+
+[[bench]]
+name = "benchmark"
+harness = false
 
 [features]
 default = ["openblas-static"]
