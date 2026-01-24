@@ -177,7 +177,10 @@ pub fn sem<'a>(
                         // Get the one with the highest weight.
                         trjs.values()
                             .iter()
-                            .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
+                            .max_by(|a, b| {
+                                a.weight().partial_cmp(&b.weight())
+                                    .unwrap_or(std::cmp::Ordering::Equal)
+                            })
                             .cloned()
                             .ok_or_else(|| BackendError::Model("No trajectories sampled".into()))
                     })
@@ -208,7 +211,7 @@ pub fn sem<'a>(
                 .with_m_step(&m_step)
                 .with_stop(&stop)
                 .build()
-                .expect("Failed to build the EM algorithm");
+                .map_err(|e| BackendError::Model(format!("Failed to build EM algorithm: {}", e)))?;
 
             // Fit the model.
             em.fit()
@@ -219,40 +222,45 @@ pub fn sem<'a>(
                        em: &EMOutput<CatCTBN, CatWtdTrjs>|
          -> BackendResult<CatCTBN> {
             // Initialize the parameter estimator.
-            let estimator = BE::new(em.expectations.last().unwrap()).with_prior((1, 1.));
+            let estimator = BE::new(em.expectations.last()
+                .ok_or_else(|| BackendError::Model("No expectations in EM output".into()))?
+            ).with_prior((1, 1.));
             // Cache the parameter estimator.
             let cache = Cache::new(&estimator);
             // Learn the graph.
             let fitted_graph = match algorithm {
                 "ctpc" => {
                     // Initialize the F test.
-                    let f_test = FTest::new(&cache, f_test).expect("Failed to initialize F-test");
+                    let f_test = FTest::new(&cache, f_test)
+                        .map_err(|e| BackendError::Model(format!("Failed to initialize F-test: {}", e)))?;
                     // Initialize the chi-squared test.
                     let chi_sq_test = ChiSquaredTest::new(&cache, c_test)
-                        .expect("Failed to initialize Chi-squared test");
+                        .map_err(|e| BackendError::Model(format!("Failed to initialize Chi-squared test: {}", e)))?;
                     // Initialize the CTPC algorithm.
                     let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)
-                        .expect("Failed to initialize CTPC");
+                        .map_err(|e| BackendError::Model(format!("Failed to initialize CTPC: {}", e)))?;
                     // Set prior knowledge.
                     let ctpc = ctpc
                         .with_prior_knowledge(prior_knowledge)
-                        .expect("Failed to set prior knowledge");
+                        .map_err(|e| BackendError::Model(format!("Failed to set prior knowledge: {}", e)))?;
                     // Fit the new structure using CTPC.
-                    ctpc.par_fit().expect("Failed to fit structure with CTPC")
+                    ctpc.par_fit()
+                        .map_err(|e| BackendError::Model(format!("Failed to fit structure with CTPC: {}", e)))?
                 }
                 "cthc" => {
                     // Initialize the scoring criterion.
                     let bic = BIC::new(&cache);
                     // Initialize the CTHC algorithm and set the maximum number of parents.
                     let cthc = CTHC::new(&initial_graph, &bic)
-                        .expect("Failed to initialize CTHC")
+                        .map_err(|e| BackendError::Model(format!("Failed to initialize CTHC: {}", e)))?
                         .with_max_parents(max_parents);
                     // Set prior knowledge.
                     let cthc = cthc
                         .with_prior_knowledge(prior_knowledge)
-                        .expect("Failed to set prior knowledge");
+                        .map_err(|e| BackendError::Model(format!("Failed to set prior knowledge: {}", e)))?;
                     // Fit the new structure using CTHC.
-                    cthc.par_fit().expect("Failed to fit structure with CTHC")
+                    cthc.par_fit()
+                        .map_err(|e| BackendError::Model(format!("Failed to fit structure with CTHC: {}", e)))?
                 }
                 _ => panic!(
                     "Failed to get the structure learning algorithm: \n\
@@ -286,8 +294,8 @@ pub fn sem<'a>(
     // Convert the output to a Python object.
     let result = PyDict::new(py);
     // Convert the intermediate models.
-    let models = PyList::new(py, output.models.into_iter().map(Into::<PyCatCTBN>::into));
-    result.set_item("models", models?)?;
+    let models = PyList::new(py, output.models.into_iter().map(Into::<PyCatCTBN>::into))?;
+    result.set_item("models", models)?;
     // Convert the intermediate EM outputs.
     let expectations = PyList::new(
         py,
@@ -296,23 +304,23 @@ pub fn sem<'a>(
             let result = PyDict::new(py);
             // Convert the models.
             let models = em.models.into_iter().map(Into::<PyCatCTBN>::into);
-            let models = PyList::new(py, models).unwrap();
-            result.set_item("models", models).unwrap();
+            let models = PyList::new(py, models)?;
+            result.set_item("models", models)?;
             // Convert the expectations.
             let expectations = em.expectations.into_iter().map(Into::<PyCatWtdTrjs>::into);
-            let expectations = PyList::new(py, expectations).unwrap();
-            result.set_item("expectations", expectations).unwrap();
+            let expectations = PyList::new(py, expectations)?;
+            result.set_item("expectations", expectations)?;
             // Convert the last model.
             let last_model: PyCatCTBN = em.last_model.into();
-            result.set_item("last_model", last_model).unwrap();
+            result.set_item("last_model", last_model)?;
             // Set the number of iterations.
             let iterations = em.iterations;
-            result.set_item("iterations", iterations).unwrap();
+            result.set_item("iterations", iterations)?;
             // Return the converted EM output.
-            result
-        }),
-    );
-    result.set_item("expectations", expectations?)?;
+            Ok::<_, PyErr>(result)
+        }).collect::<PyResult<Vec<_>>>()?,
+    )?;
+    result.set_item("expectations", expectations)?;
     // Convert the last model.
     let last_model: PyCatCTBN = output.last_model.into();
     result.set_item("last_model", last_model)?;

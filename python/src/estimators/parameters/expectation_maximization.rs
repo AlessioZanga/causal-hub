@@ -99,7 +99,10 @@ pub fn em<'a>(
                     // Get the one with the highest weight.
                     trjs.values()
                         .iter()
-                        .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
+                        .max_by(|a, b| {
+                            a.weight().partial_cmp(&b.weight())
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
                         .cloned()
                         .ok_or_else(|| BackendError::Model("No trajectories sampled".into()))
                 })
@@ -137,21 +140,21 @@ pub fn em<'a>(
     let result = PyDict::new(py);
     // Convert the models.
     let models = output.models.into_iter().map(Into::<PyCatCTBN>::into);
-    let models = PyList::new(py, models).unwrap();
-    result.set_item("models", models).unwrap();
+    let models = PyList::new(py, models)?;
+    result.set_item("models", models)?;
     // Convert the expectations.
     let expectations = output
         .expectations
         .into_iter()
         .map(Into::<PyCatWtdTrjs>::into);
-    let expectations = PyList::new(py, expectations).unwrap();
-    result.set_item("expectations", expectations).unwrap();
+    let expectations = PyList::new(py, expectations)?;
+    result.set_item("expectations", expectations)?;
     // Convert the last model.
     let last_model: PyCatCTBN = output.last_model.into();
-    result.set_item("last_model", last_model).unwrap();
+    result.set_item("last_model", last_model)?;
     // Set the number of iterations.
     let iterations = output.iterations;
-    result.set_item("iterations", iterations).unwrap();
+    result.set_item("iterations", iterations)?;
     // Return the converted EM output.
     Ok(result)
 }

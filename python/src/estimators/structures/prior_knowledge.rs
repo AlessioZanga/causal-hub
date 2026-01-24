@@ -45,11 +45,12 @@ impl PyPK {
             .try_iter()?
             .map(|x| {
                 // Get the strings and convert them to indices.
-                x?.extract::<(String, String)>().map(|(a, b)| {
-                    (
-                        labels.get_index_of(&a).unwrap(),
-                        labels.get_index_of(&b).unwrap(),
-                    )
+                x?.extract::<(String, String)>().and_then(|(a, b)| {
+                    let a_idx = labels.get_index_of(&a)
+                        .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a)))?;
+                    let b_idx = labels.get_index_of(&b)
+                        .ok_or_else(|| Error::new_err(format!("Unknown label: {}", b)))?;
+                    Ok((a_idx, b_idx))
                 })
             })
             .collect::<PyResult<_>>()?;
@@ -57,11 +58,12 @@ impl PyPK {
             .try_iter()?
             .map(|x| {
                 // Get the strings and convert them to indices.
-                x?.extract::<(String, String)>().map(|(a, b)| {
-                    (
-                        labels.get_index_of(&a).unwrap(),
-                        labels.get_index_of(&b).unwrap(),
-                    )
+                x?.extract::<(String, String)>().and_then(|(a, b)| {
+                    let a_idx = labels.get_index_of(&a)
+                        .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a)))?;
+                    let b_idx = labels.get_index_of(&b)
+                        .ok_or_else(|| Error::new_err(format!("Unknown label: {}", b)))?;
+                    Ok((a_idx, b_idx))
                 })
             })
             .collect::<PyResult<_>>()?;
@@ -72,7 +74,8 @@ impl PyPK {
                     .map(|x| {
                         // Get the string and convert it to an index.
                         x?.extract::<String>()
-                            .map(|a| labels.get_index_of(&a).unwrap())
+                            .and_then(|a| labels.get_index_of(&a)
+                                .ok_or_else(|| Error::new_err(format!("Unknown label: {}", a))))
                     })
                     .collect::<PyResult<Vec<_>>>()
             })

@@ -55,7 +55,7 @@ impl PyCatCPD {
     ///     The states of the conditioned variable.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
+        self
             .lock()
             .states()
             .iter()
@@ -64,11 +64,11 @@ impl PyCatCPD {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect()
     }
 
     /// Returns the shape of the conditioned variable.
@@ -113,11 +113,11 @@ impl PyCatCPD {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()?)
     }
 
     /// Returns the shape of the conditioning variables.
@@ -161,21 +161,19 @@ impl PyCatCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.lock().sample_statistics().map(|s| {
+        self.lock().sample_statistics().map(|s| {
             // Allocate the dictionary.
             let dict = PyDict::new(py);
             // Add the conditional counts.
             dict.set_item(
                 "sample_conditional_counts",
                 s.sample_conditional_counts().to_pyarray(py),
-            )
-            .expect("Failed to set sample conditional counts.");
+            )?;
             // Add the sample size.
-            dict.set_item("sample_size", s.sample_size())
-                .expect("Failed to set sample size.");
+            dict.set_item("sample_size", s.sample_size())?;
             // Return the dictionary.
-            dict
-        }))
+            Ok(dict)
+        }).transpose()
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.

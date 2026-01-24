@@ -136,12 +136,16 @@ impl PyDiGraph {
             .into_iter()
             .map(|(x, y)| {
                 // Get the labels of the vertices.
-                let x = lock.index_to_label(x).unwrap().into();
-                let y = lock.index_to_label(y).unwrap().into();
+                let x = lock.index_to_label(x)
+                    .map_err(|e| Error::new_err(e.to_string()))?
+                    .into();
+                let y = lock.index_to_label(y)
+                    .map_err(|e| Error::new_err(e.to_string()))?
+                    .into();
                 // Return the labels as a tuple.
-                (x, y)
+                Ok((x, y))
             })
-            .collect())
+            .collect::<PyResult<_>>()?)
     }
 
     /// Checks if there is an edge between vertices `x` and `y`.
@@ -246,11 +250,14 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the parents of the vertex.
-        Ok(lock
-            .parents(&x)
+        lock.parents(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).unwrap().into())
-            .collect())
+            .map(|&i| {
+                lock.index_to_label(i)
+                    .map_err(|e| Error::new_err(e.to_string()))
+                    .map(|label| label.into())
+            })
+            .collect()
     }
 
     /// Returns the ancestors of a vertex `x`.
@@ -271,11 +278,14 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the ancestors of the vertex.
-        Ok(lock
-            .ancestors(&x)
+        lock.ancestors(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).unwrap().into())
-            .collect())
+            .map(|&i| {
+                lock.index_to_label(i)
+                    .map_err(|e| Error::new_err(e.to_string()))
+                    .map(|label| label.into())
+            })
+            .collect()
     }
 
     /// Returns the children of a vertex `x`.
@@ -296,11 +306,14 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the children of the vertex.
-        Ok(lock
-            .children(&x)
+        lock.children(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).unwrap().into())
-            .collect())
+            .map(|&i| {
+                lock.index_to_label(i)
+                    .map_err(|e| Error::new_err(e.to_string()))
+                    .map(|label| label.into())
+            })
+            .collect()
     }
 
     /// Returns the descendants of a vertex `x`.
@@ -321,11 +334,14 @@ impl PyDiGraph {
         // Get the index of the vertex.
         let x = indices_from!(x, lock)?;
         // Get the descendants of the vertex.
-        Ok(lock
-            .descendants(&x)
+        lock.descendants(&x)
             .iter()
-            .map(|&i| lock.index_to_label(i).unwrap().into())
-            .collect())
+            .map(|&i| {
+                lock.index_to_label(i)
+                    .map_err(|e| Error::new_err(e.to_string()))
+                    .map(|label| label.into())
+            })
+            .collect()
     }
 
     /// Checks if the vertex set `Z` is a separator set for `X` and `Y`.
@@ -472,9 +488,13 @@ impl PyDiGraph {
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| lock.index_to_label(i).unwrap().into())
-                .collect()
-        });
+                .map(|i| {
+                    lock.index_to_label(i)
+                        .map_err(|e| Error::new_err(e.to_string()))
+                        .map(|label| label.into())
+                })
+                .collect::<PyResult<Vec<_>>>()
+        }).transpose()?;
 
         // Return the result.
         Ok(z)
@@ -624,9 +644,13 @@ impl PyDiGraph {
         // Convert the indices back to labels.
         let z = z.map(|z| {
             z.into_iter()
-                .map(|i| lock.index_to_label(i).unwrap().into())
-                .collect()
-        });
+                .map(|i| {
+                    lock.index_to_label(i)
+                        .map_err(|e| Error::new_err(e.to_string()))
+                        .map(|label| label.into())
+                })
+                .collect::<PyResult<Vec<_>>>()
+        }).transpose()?;
 
         // Return the result.
         Ok(z)

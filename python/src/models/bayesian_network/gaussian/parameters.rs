@@ -70,14 +70,11 @@ impl PyGaussCPD {
         // Get the parameters.
         let parameters = lock.parameters();
         // Add the coefficients matrix.
-        dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))
-            .expect("Failed to set coefficients.");
+        dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))?;
         // Add the intercept vector.
-        dict.set_item("intercept", parameters.intercept().to_pyarray(py))
-            .expect("Failed to set intercept.");
+        dict.set_item("intercept", parameters.intercept().to_pyarray(py))?;
         // Add the covariance matrix.
-        dict.set_item("covariance", parameters.covariance().to_pyarray(py))
-            .expect("Failed to set covariance.");
+        dict.set_item("covariance", parameters.covariance().to_pyarray(py))?;
         // Return the dictionary.
         Ok(dict)
     }
@@ -101,42 +98,36 @@ impl PyGaussCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.lock().sample_statistics().map(|s| {
+        self.lock().sample_statistics().map(|s| {
             // Allocate the dictionary.
             let dict = PyDict::new(py);
             // Add the response mean vector.
             dict.set_item(
                 "sample_response_mean",
                 s.sample_response_mean().to_pyarray(py),
-            )
-            .expect("Failed to set sample response mean.");
+            )?;
             // Add the design mean vector.
-            dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))
-                .expect("Failed to set sample design mean.");
+            dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))?;
             // Add the response covariance matrix.
             dict.set_item(
                 "sample_response_covariance",
                 s.sample_response_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample response covariance.");
+            )?;
             // Add the cross covariance matrix.
             dict.set_item(
                 "sample_cross_covariance",
                 s.sample_cross_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample cross covariance.");
+            )?;
             // Add the design covariance matrix.
             dict.set_item(
                 "sample_design_covariance",
                 s.sample_design_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample design covariance.");
+            )?;
             // Add the sample size.
-            dict.set_item("sample_size", s.sample_size())
-                .expect("Failed to set sample size.");
+            dict.set_item("sample_size", s.sample_size())?;
             // Return the dictionary.
-            dict
-        }))
+            Ok(dict)
+        }).transpose()
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.

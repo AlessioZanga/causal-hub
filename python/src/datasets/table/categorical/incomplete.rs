@@ -59,11 +59,11 @@ impl PyCatIncTable {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()?)
     }
 
     /// The values of the dataset.

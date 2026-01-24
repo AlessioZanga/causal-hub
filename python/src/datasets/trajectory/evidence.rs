@@ -51,8 +51,7 @@ impl PyCatTrjEv {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -60,11 +59,11 @@ impl PyCatTrjEv {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect()
     }
 
     /// Constructs a new categorical trajectory evidence from a Pandas DataFrame.
@@ -286,8 +285,7 @@ impl PyCatTrjsEv {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -295,11 +293,11 @@ impl PyCatTrjsEv {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect()
     }
 
     /// Constructs a new categorical trajectory evidence from an iterable of Pandas DataFrames.
