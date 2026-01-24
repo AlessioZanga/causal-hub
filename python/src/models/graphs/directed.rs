@@ -131,8 +131,7 @@ impl PyDiGraph {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Get the edges of the graph.
-        Ok(lock
-            .edges()
+        lock.edges()
             .into_iter()
             .map(|(x, y)| {
                 // Get the labels of the vertices.
@@ -147,7 +146,7 @@ impl PyDiGraph {
                 // Return the labels as a tuple.
                 Ok((x, y))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Checks if there is an edge between vertices `x` and `y`.

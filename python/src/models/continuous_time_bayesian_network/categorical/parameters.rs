@@ -55,8 +55,7 @@ impl PyCatCIM {
     ///     A reference to the states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -68,7 +67,7 @@ impl PyCatCIM {
                 // Return a tuple of the label and states.
                 Ok((label, states))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the shape of the conditioned variable.
@@ -104,8 +103,7 @@ impl PyCatCIM {
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .conditioning_states()
             .iter()
             .map(|(label, states)| {
@@ -117,7 +115,7 @@ impl PyCatCIM {
                 // Return a tuple of the label and states.
                 Ok((label, states))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the shape of the conditioning variables.

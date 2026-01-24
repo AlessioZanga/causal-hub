@@ -393,9 +393,9 @@ impl CatPhi {
         let mut shape = Array::from_iter(states.values().map(Set::len));
         // Validate parameters shape matches states shape.
         let shape_slice = shape.as_slice().ok_or_else(|| {
-            Error::Shape(format!(
-                "Failed to convert shape array to slice: shape is not contiguous"
-            ))
+            Error::Shape(
+                "Failed to convert shape array to slice: shape is not contiguous".to_string(),
+            )
         })?;
         if parameters.shape() != shape_slice {
             return Err(Error::Shape(format!(

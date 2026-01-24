@@ -68,8 +68,7 @@ impl PyCatWtdTrj {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -81,7 +80,7 @@ impl PyCatWtdTrj {
                 // Return a tuple of the label and states.
                 Ok((label, states))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the times of the trajectory.
@@ -129,8 +128,7 @@ impl PyCatWtdTrjs {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -142,7 +140,7 @@ impl PyCatWtdTrjs {
                 // Return a tuple of the label and states.
                 Ok((label, states))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Return the trajectories.

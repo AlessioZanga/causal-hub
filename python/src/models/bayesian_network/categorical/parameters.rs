@@ -103,8 +103,7 @@ impl PyCatCPD {
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .conditioning_states()
             .iter()
             .map(|(label, states)| {
@@ -116,7 +115,7 @@ impl PyCatCPD {
                 // Return a tuple of the label and states.
                 Ok((label, states))
             })
-            .collect::<PyResult<_>>()?)
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the shape of the conditioning variables.

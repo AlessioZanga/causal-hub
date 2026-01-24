@@ -85,7 +85,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     // Forward Sampling
     for n in sample_sizes {
         group.bench_with_input(BenchmarkId::new("forward_sampling", n), &n, |b, &n| {
-            b.iter(|| -> Result<_> { Ok(sampler.sample_n(_b(n))?) })
+            b.iter(|| -> Result<_> { sampler.sample_n(_b(n)) })
         });
     }
 
@@ -101,7 +101,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
 
     for n in sample_sizes {
         group.bench_with_input(BenchmarkId::new("importance_sampling", n), &n, |b, &n| {
-            b.iter(|| -> Result<_> { Ok(sampler.sample_n(_b(n))?) })
+            b.iter(|| -> Result<_> { sampler.sample_n(_b(n)) })
         });
     }
 
@@ -117,19 +117,19 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(100)?;
 
     group.bench_function("approximate_inference", |b| {
-        b.iter(|| -> Result<_> { Ok(engine.estimate(_b(&x), _b(&z))?) })
+        b.iter(|| -> Result<_> { engine.estimate(_b(&x), _b(&z)) })
     });
 
     // Causal Inference
     let engine = CausalInference::new(&engine);
     // ACE(X -> Y).
     group.bench_function("causal_inference (ace)", |b| {
-        b.iter(|| -> Result<_> { Ok(engine.ace_estimate(_b(&x), _b(&y))?) })
+        b.iter(|| -> Result<_> { engine.ace_estimate(_b(&x), _b(&y)) })
     });
 
     // CACE(X -> Y | Z).
     group.bench_function("causal_inference (cace)", |b| {
-        b.iter(|| -> Result<_> { Ok(engine.cace_estimate(_b(&x), _b(&y), _b(&z))?) })
+        b.iter(|| -> Result<_> { engine.cace_estimate(_b(&x), _b(&y), _b(&z)) })
     });
 
     group.finish();
