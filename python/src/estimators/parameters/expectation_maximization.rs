@@ -50,7 +50,7 @@ pub fn em<'a>(
     let graph: &DiGraph = &graph.lock();
 
     // Release the GIL to allow parallel execution.
-    let output = py.detach(|| {
+    let output = py.detach(|| -> BackendResult<_> {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
@@ -62,9 +62,9 @@ pub fn em<'a>(
         debug!("Fitting the initial model using the raw estimator ...");
         // Set the initial model.
         let model = raw
-            .expect("Failed to initialize raw estimator")
+            .map_err(|e| BackendError::Model(format!("Failed to initialize raw estimator: {}", e)))?
             .par_fit(graph.clone())
-            .expect("Failed to fit the initial model");
+            .map_err(|e| BackendError::Model(format!("Failed to fit the initial model: {}", e)))?;
 
         // Wrap the random number generator in a RefCell to allow mutable borrowing.
         let rng = RefCell::new(rng);
@@ -130,11 +130,13 @@ pub fn em<'a>(
             .with_m_step(&m_step)
             .with_stop(&stop)
             .build()
-            .expect("Failed to build the EM algorithm");
+            .map_err(|e| BackendError::Model(format!("Failed to build the EM algorithm: {}", e)))?;
 
         // Fit the model.
-        em.fit().expect("Failed to fit the model using EM")
-    });
+        em.fit()
+            .map_err(|e| BackendError::Model(format!("Failed to fit the model using EM: {}", e)))
+    })
+    .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
 
     // Convert each EM output.
     let result = PyDict::new(py);

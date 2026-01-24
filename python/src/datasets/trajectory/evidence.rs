@@ -183,10 +183,9 @@ impl PyCatTrjEv {
                     .map(|key_value| {
                         // Cast the key_value to a tuple.
                         let (key, value) = key_value
-                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()
-                            .unwrap();
+                            .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()?;
                         // Convert the key to a String.
-                        let key = key.extract::<String>().unwrap();
+                        let key = key.extract::<String>()?;
                         // Convert the value to a Vec<String>.
                         let value: Set<_> = value
                             .try_iter()?
@@ -333,7 +332,7 @@ impl PyCatTrjsEv {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrjEv> = dfs
             .try_iter()?
-            .map(|df| PyCatTrjEv::from_pandas(_cls, py, &df.unwrap(), with_states))
+            .map(|df| PyCatTrjEv::from_pandas(_cls, py, &df?, with_states))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();

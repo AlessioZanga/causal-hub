@@ -65,7 +65,7 @@ pub fn sem<'a>(
     let c_test = kwarg!(kwargs, "c_test", f64).unwrap_or(0.01);
 
     // Release the GIL to allow parallel execution.
-    let output = py.detach(|| {
+    let output = py.detach(|| -> BackendResult<_> {
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
@@ -134,9 +134,9 @@ pub fn sem<'a>(
         debug!("Fitting the initial model using the raw estimator ...");
         // Set the initial model.
         let initial_model = raw
-            .expect("Failed to initialize raw estimator")
+            .map_err(|e| BackendError::Model(format!("Failed to initialize raw estimator: {}", e)))?
             .par_fit(initial_graph.clone())
-            .expect("Failed to fit the initial model");
+            .map_err(|e| BackendError::Model(format!("Failed to fit the initial model: {}", e)))?;
 
         // Wrap the random number generator in a RefCell to allow mutable borrowing.
         let rng = RefCell::new(rng);
@@ -285,11 +285,13 @@ pub fn sem<'a>(
             .with_m_step(&sl_step)
             .with_stop(&sem_stop)
             .build()
-            .expect("Failed to build the SEM algorithm");
+            .map_err(|e| BackendError::Model(format!("Failed to build the SEM algorithm: {}", e)))?;
 
         // Fit the model.
-        sem.fit().expect("Failed to fit the model using SEM")
-    });
+        sem.fit()
+            .map_err(|e| BackendError::Model(format!("Failed to fit the model using SEM: {}", e)))
+    })
+    .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
 
     // Convert the output to a Python object.
     let result = PyDict::new(py);

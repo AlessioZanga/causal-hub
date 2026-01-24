@@ -150,7 +150,11 @@ impl PyCatTrj {
         // Extract the time column as a PyArray1<f64>.
         let time = time.cast::<PyArray1<f64>>()?.to_owned_array();
         // Remove the "time" column from the columns vector.
-        columns.remove(columns.iter().position(|x| x == "time").unwrap());
+        let time_idx = columns
+            .iter()
+            .position(|x| x == "time")
+            .ok_or_else(|| Error::new_err("'time' column not found in DataFrame".to_string()))?;
+        columns.remove(time_idx);
         // Decrement the shape of the data frame.
         shape.1 -= 1;
 
@@ -201,14 +205,21 @@ impl PyCatTrj {
                 // Extract the column as a PyArray1<PyObject>.
                 let column = column.cast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
-                let column = column.map(|x| {
-                    // Get the value.
-                    let x = x.extract::<String>(py).unwrap();
-                    // Map the value to CatType.
-                    states.get_index_of(&x).unwrap() as CatType
-                });
+                let column: Result<Vec<CatType>, PyErr> = column
+                    .iter()
+                    .map(|x| {
+                        // Get the value.
+                        let x = x.extract::<String>(py)?;
+                        // Map the value to CatType.
+                        let idx = states.get_index_of(&x).ok_or_else(|| {
+                            Error::new_err(format!("State '{}' not found in states", x))
+                        })?;
+                        Ok(idx as CatType)
+                    })
+                    .collect();
+                let column = column?;
                 // Extract the column from the data frame.
-                value.assign(&column);
+                value.assign(&Array1::from_vec(column));
 
                 Ok::<_, PyErr>(())
             },
@@ -357,7 +368,7 @@ impl PyCatTrjs {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrj> = dfs
             .try_iter()?
-            .map(|df| PyCatTrj::from_pandas(_cls, py, &df.unwrap()))
+            .map(|df| PyCatTrj::from_pandas(_cls, py, &df?))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
