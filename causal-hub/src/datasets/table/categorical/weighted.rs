@@ -38,13 +38,17 @@ impl CatWtdTable {
     pub fn new(dataset: CatTable, weights: Array1<f64>) -> Result<Self> {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
-            return Err(Error::Dataset(
-                "The number of weights must be equal to the number of samples.".to_string(),
+            return Err(Error::InvalidParameter(
+                "weights".into(),
+                "must have the same length as the dataset".into(),
             ));
         }
         // Check if any weight is finite.
         if !weights.iter().all(|&w| w.is_finite()) {
-            return Err(Error::Dataset("All weights must be finite.".to_string()));
+            return Err(Error::InvalidParameter(
+                "weights".into(),
+                "must be finite".into(),
+            ));
         }
 
         Ok(Self { dataset, weights })

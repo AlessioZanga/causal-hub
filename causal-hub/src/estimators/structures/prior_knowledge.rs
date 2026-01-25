@@ -91,7 +91,7 @@ impl PK {
         for (i, j) in required {
             // Assert that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
-                return Err(Error::Model(format!(
+                return Err(Error::PriorKnowledgeConflict(format!(
                     "Edge ({i}, {j}) is already set to a non-unknown state: \n\
                     \t expected:    ({i}, {j}) set to 'Unknown', \n\
                     \t found:       ({i}, {j}) set to '{}'.",
@@ -115,7 +115,7 @@ impl PK {
             for (&i, &j) in tier.iter().cartesian_product(previous_tiers) {
                 // Assert that the edge is not required.
                 if adjacency_matrix[[i, j]].is_required() {
-                    return Err(Error::Model(format!(
+                    return Err(Error::PriorKnowledgeConflict(format!(
                         "Edge ({i}, {j}) is already set to a 'Required' state: \n\
                         \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
                         \t found:       ({i}, {j}) set to '{}'.",

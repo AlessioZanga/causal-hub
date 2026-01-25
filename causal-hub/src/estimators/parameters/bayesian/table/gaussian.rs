@@ -20,7 +20,10 @@ impl BE<'_, GaussTable, f64> {
     ) -> Result<GaussCPD> {
         // Assert likelihood of prior.
         if prior < 0.0 {
-            return Err(Error::Model("Prior must be non-negative.".into()));
+            return Err(Error::InvalidParameter(
+                "prior".to_string(),
+                "must be non-negative".to_string(),
+            ));
         }
 
         // Get the sample scatter matrices and size.

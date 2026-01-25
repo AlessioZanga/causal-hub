@@ -38,14 +38,16 @@ impl GaussWtdTable {
     pub fn new(dataset: GaussTable, weights: Array1<f64>) -> Result<Self> {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
-            return Err(Error::Dataset(
-                "The number of weights must be equal to the number of samples.".to_string(),
+            return Err(Error::IncompatibleShape(
+                dataset.values().nrows().to_string(),
+                weights.len().to_string(),
             ));
         }
         // Check if any weight is in the range [0, 1].
         if !weights.iter().all(|&w| (0.0..=1.0).contains(&w)) {
-            return Err(Error::Dataset(
-                "All weights must be in the range [0, 1].".to_string(),
+            return Err(Error::InvalidParameter(
+                "weights".to_string(),
+                "must be in the range [0, 1]".to_string(),
             ));
         }
 

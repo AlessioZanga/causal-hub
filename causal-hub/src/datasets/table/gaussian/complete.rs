@@ -51,11 +51,10 @@ impl GaussTable {
     pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Result<Self> {
         // Check if the number of labels matches the number of columns in values.
         if labels.len() != values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of labels ({}) must match number of columns in values ({}).",
-                labels.len(),
-                values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                labels.len().to_string(),
+                values.ncols().to_string(),
+            ));
         }
 
         // Sort labels and values accordingly.
@@ -77,8 +76,9 @@ impl GaussTable {
         }
         // Assert values are finite.
         if !values.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Dataset(
-                "Values must have finite values.".to_string(),
+            return Err(Error::InvalidParameter(
+                "values".to_string(),
+                "must be finite".to_string(),
             ));
         }
 
@@ -102,13 +102,7 @@ impl Dataset for GaussTable {
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
         if let Some(&i) = x.iter().find(|&&i| i >= self.values.ncols()) {
-            return Err(Error::Dataset(format!(
-                "Index out of bounds in variables selection: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            )));
+            return Err(Error::VertexOutOfBounds(i));
         }
 
         // Select the labels.
@@ -118,7 +112,7 @@ impl Dataset for GaussTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or_else(|| Error::Dataset(format!("Index {i} not found in labels.")))
+                    .ok_or(Error::VertexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -143,7 +137,7 @@ impl CsvIO for GaussTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::Dataset("Reader must have headers.".to_string()));
+            return Err(Error::MissingHeader);
         }
 
         // Read the headers.
@@ -166,15 +160,10 @@ impl CsvIO for GaussTable {
                     .map(|(j, x)| {
                         // Check for missing values.
                         if x.is_empty() {
-                            return Err(Error::Dataset(format!(
-                                "Missing value on line {}, column {}.",
-                                i + 1,
-                                j + 1
-                            )));
+                            return Err(Error::MissingValue(i + 1, j + 1));
                         }
                         // Cast the value.
-                        x.parse::<GaussType>()
-                            .map_err(|e| Error::Parsing(e.to_string()))
+                        Ok(x.parse::<GaussType>()?)
                     })
                     .collect::<Result<Vec<_>>>()
             })

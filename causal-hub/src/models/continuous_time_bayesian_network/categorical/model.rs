@@ -153,7 +153,10 @@ impl CTBN for CatCTBN {
             .into_iter()
             .map(|x| {
                 if x.labels().len() != 1 {
-                    return Err(Error::Model("CPD must contain exactly one label.".into()));
+                    return Err(Error::InvalidParameter(
+                        "cpd".to_string(),
+                        "CPD must contain exactly one label.".to_string(),
+                    ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
             })
@@ -173,9 +176,10 @@ impl CTBN for CatCTBN {
                     if let Some(existing_states) = states.get(l) {
                         // Check if the states are the same.
                         if existing_states != s {
-                            return Err(Error::Model(format!(
-                                "States of `{l}` must be the same across CIMs.",
-                            )));
+                            return Err(Error::InvalidParameter(
+                                "cims".to_string(),
+                                format!("States of `{l}` must be the same across CIMs."),
+                            ));
                         }
                     } else {
                         // Insert the states into the map.
@@ -194,8 +198,9 @@ impl CTBN for CatCTBN {
 
         // Assert same number of graph labels and CIMs.
         if !graph.labels().iter().eq(cims.keys()) {
-            return Err(Error::Model(
-                "Graph labels and distributions labels must be the same.".into(),
+            return Err(Error::LabelMismatch(
+                "graph labels".to_string(),
+                "distributions labels".to_string(),
             ));
         }
 
@@ -208,12 +213,10 @@ impl CTBN for CatCTBN {
             let pa_j = cims[&labels[i]].conditioning_labels();
             // Assert they are the same.
             if pa_i != pa_j {
-                return Err(Error::Model(format!(
-                    "Graph parents labels and CIM conditioning labels must be the same:\n\
-                \t expected:    {:?} ,\n\
-                \t found:       {:?} .",
-                    pa_i, pa_j
-                )));
+                return Err(Error::LabelMismatch(
+                    format!("{pa_i:?}"),
+                    format!("{pa_j:?}"),
+                ));
             }
         }
 
@@ -287,14 +290,18 @@ impl CTBN for CatCTBN {
         if let Some(name) = &name
             && name.is_empty()
         {
-            return Err(Error::Model("Name cannot be an empty string.".into()));
+            return Err(Error::InvalidParameter(
+                "name".to_string(),
+                "cannot be empty".to_string(),
+            ));
         }
         // Assert description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
-            return Err(Error::Model(
-                "Description cannot be an empty string.".into(),
+            return Err(Error::InvalidParameter(
+                "description".to_string(),
+                "cannot be empty".to_string(),
             ));
         }
 
@@ -303,8 +310,9 @@ impl CTBN for CatCTBN {
 
         // Assert the initial distribution has same labels.
         if !initial_distribution.labels().eq(ctbn.labels()) {
-            return Err(Error::Model(
-                "Initial distribution labels must be the same as the CIMs labels.".into(),
+            return Err(Error::LabelMismatch(
+                "initial distribution labels".to_string(),
+                "cims labels".to_string(),
             ));
         }
         // Assert the initial distribution has same states.
@@ -314,8 +322,9 @@ impl CTBN for CatCTBN {
             .zip(ctbn.cims())
             .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states()))
         {
-            return Err(Error::Model(
-                "Initial distribution states must be the same as the CIMs states.".into(),
+            return Err(Error::InvalidParameter(
+                "initial distribution".to_string(),
+                "Initial distribution states must be the same as the CIMs states.".to_string(),
             ));
         }
 

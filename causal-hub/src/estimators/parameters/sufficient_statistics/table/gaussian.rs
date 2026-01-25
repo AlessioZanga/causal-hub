@@ -32,7 +32,7 @@ impl SSE<'_, GaussTable> {
                 // Compute the mean.
                 let mu_x = d_x
                     .mean_axis(Axis(0))
-                    .ok_or_else(|| Error::Dataset("Failed to compute mean of X".into()))?;
+                    .ok_or(Error::MissingSufficientStatistics)?;
 
                 // Select the columns of the conditioning variables.
                 let mut d_z = Array::zeros((d.nrows(), z.len()));
@@ -42,7 +42,7 @@ impl SSE<'_, GaussTable> {
                 // Compute the mean.
                 let mu_z = d_z
                     .mean_axis(Axis(0))
-                    .ok_or_else(|| Error::Dataset("Failed to compute mean of Z".into()))?;
+                    .ok_or(Error::MissingSufficientStatistics)?;
 
                 // Compute the second moment statistics.
                 let m_xx = d_x.t().dot(&d_x);
@@ -67,8 +67,9 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
         // Assert variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::Dataset(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                format!("{:?}", x),
+                format!("{:?}", z),
             ));
         }
         // Get the values.
@@ -82,8 +83,9 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
         // Assert variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::Dataset(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                format!("{:?}", x),
+                format!("{:?}", z),
             ));
         }
 
@@ -179,8 +181,9 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
         // Assert variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::Dataset(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                format!("{:?}", x),
+                format!("{:?}", z),
             ));
         }
 
@@ -204,8 +207,9 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
         // Assert variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::Dataset(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                format!("{:?}", x),
+                format!("{:?}", z),
             ));
         }
 

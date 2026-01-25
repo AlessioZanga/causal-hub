@@ -72,23 +72,18 @@ impl CatTable {
         // Check if the number of states is less than `CatType::MAX`.
         for (label, state) in &states {
             if state.len() > CatType::MAX as usize {
-                return Err(Error::Dataset(format!(
-                    "Variable '{label}' should have less than 256 states: \n\
-                    \t expected:    |states| <  256 , \n\
-                    \t found:       |states| == {} .",
-                    state.len()
-                )));
+                return Err(Error::InvalidParameter(
+                    format!("states[{label}]"),
+                    format!("should have less than 256 states, found {}", state.len()),
+                ));
             }
         }
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of variables must be equal to the number of columns: \n\
-                \t expected:    |states| == |values.columns()| , \n\
-                \t found:       |states| == {} and |values.columns()| == {} .",
-                states.len(),
-                values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                format!("|states| = {}", states.len()),
+                format!("|cols| = {}", values.ncols()),
+            ));
         }
         // Check if the maximum value of the values is less than the number of states.
         for (i, x) in values
@@ -96,17 +91,16 @@ impl CatTable {
             .into_iter()
             .enumerate()
         {
-            let (label, states) = states
-                .get_index(i)
-                .ok_or_else(|| Error::Dataset(format!("Index {i} not found in states.")))?;
+            let (label, states) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
 
             if x >= states.len() as CatType {
-                return Err(Error::Dataset(format!(
-                    "Values of variable '{label}' must be less than the number of states: \n\
-                    \t expected: values[.., '{label}'] < |states['{label}']| , \n\
-                    \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
-                    states.len()
-                )));
+                return Err(Error::InvalidParameter(
+                    format!("values[.., '{label}']"),
+                    format!(
+                        "must be less than the number of states ({}), found {x}",
+                        states.len()
+                    ),
+                ));
             }
         }
 
@@ -141,9 +135,8 @@ impl CatTable {
                 for value in col.iter_mut() {
                     *value = new_states
                         .get_index_of(&states[*value as usize])
-                        .ok_or_else(|| {
-                            Error::Dataset("Failed to get new state index.".to_string())
-                        })? as CatType;
+                        .ok_or_else(|| Error::MissingState(states[*value as usize].clone()))?
+                        as CatType;
                 }
                 // Update the states.
                 *states = new_states;
@@ -239,13 +232,7 @@ impl Dataset for CatTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in variables selection: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
 
@@ -256,7 +243,7 @@ impl Dataset for CatTable {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or_else(|| Error::Dataset(format!("Index {i} not found in states.")))
+                    .ok_or(Error::VertexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -281,7 +268,7 @@ impl CsvIO for CatTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::Dataset("Reader must have headers.".to_string()));
+            return Err(Error::MissingHeader);
         }
 
         // Read the headers.
@@ -309,11 +296,7 @@ impl CsvIO for CatTable {
                     for (j, (x, states)) in row.into_iter().zip(states.values_mut()).enumerate() {
                         // Check if the value is empty.
                         if x.is_empty() {
-                            return Err(Error::Dataset(format!(
-                                "Missing value on line {}, column {}.",
-                                i + 1,
-                                j + 1
-                            )));
+                            return Err(Error::MissingValue(i + 1, j + 1));
                         }
                         // Insert the value into the states, if not present.
                         let (idx, _) = states.insert_full(x.to_owned());

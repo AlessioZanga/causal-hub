@@ -168,10 +168,7 @@ impl CatTrjEv {
             let event = e.event();
             // Check if the event index is valid.
             if event >= states.len() {
-                return Err(Error::Dataset(format!(
-                    "Event index {event} out of bounds for {} variables.",
-                    states.len()
-                )));
+                return Err(Error::VertexOutOfBounds(event));
             }
             // Push the value into the events.
             evidences[event].push(e);
@@ -198,22 +195,21 @@ impl CatTrjEv {
                     // Get the event index, starting time, and ending time.
                     let (start_time, end_time) = (e.start_time(), e.end_time());
                     // Get the event and states of the evidence.
-                    let (event, states) = states.get_index(e.event()).ok_or_else(|| {
-                        Error::Dataset("Failed to get label of evidence.".to_string())
-                    })?;
+                    let (event, states) = states
+                        .get_index(e.event())
+                        .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
                     // Sort the event index.
                     let (event, _, new_states) = new_states
                         .get_full(event)
-                        .ok_or_else(|| Error::Dataset("Failed to get full state.".to_string()))?;
+                        .ok_or_else(|| Error::MissingLabel(event.clone()))?;
 
                     // Sort the event states.
                     let e = match e {
                         E::CertainPositiveInterval { state, .. } => {
                             // Sort the variable states.
-                            let state =
-                                new_states.get_index_of(&states[state]).ok_or_else(|| {
-                                    Error::Dataset("Failed to get index of state.".to_string())
-                                })?;
+                            let state = new_states
+                                .get_index_of(&states[state])
+                                .ok_or_else(|| Error::MissingState(states[state].clone()))?;
                             // Construct the sorted evidence.
                             E::CertainPositiveInterval {
                                 event,
@@ -227,9 +223,9 @@ impl CatTrjEv {
                             let not_states = not_states
                                 .iter()
                                 .map(|&state| {
-                                    new_states.get_index_of(&states[state]).ok_or_else(|| {
-                                        Error::Dataset("Failed to get index of state.".to_string())
-                                    })
+                                    new_states
+                                        .get_index_of(&states[state])
+                                        .ok_or_else(|| Error::MissingState(states[state].clone()))
                                 })
                                 .collect::<Result<Set<_>>>()?;
                             // Construct the sorted evidence.
@@ -248,12 +244,9 @@ impl CatTrjEv {
                                 .indexed_iter()
                                 .try_for_each(|(i, &p)| -> Result<()> {
                                     // Get sorted index.
-                                    let state =
-                                        new_states.get_index_of(&states[i]).ok_or_else(|| {
-                                            Error::Dataset(
-                                                "Failed to get index of state.".to_string(),
-                                            )
-                                        })?;
+                                    let state = new_states
+                                        .get_index_of(&states[i])
+                                        .ok_or_else(|| Error::MissingState(states[i].clone()))?;
                                     // Assign probability to sorted index.
                                     new_p_states[state] = p;
 
@@ -277,12 +270,9 @@ impl CatTrjEv {
                                 .indexed_iter()
                                 .try_for_each(|(i, &p)| -> Result<()> {
                                     // Get sorted index.
-                                    let state =
-                                        new_states.get_index_of(&states[i]).ok_or_else(|| {
-                                            Error::Dataset(
-                                                "Failed to get index of state.".to_string(),
-                                            )
-                                        })?;
+                                    let state = new_states
+                                        .get_index_of(&states[i])
+                                        .ok_or_else(|| Error::MissingState(states[i].clone()))?;
                                     // Assign probability to sorted index.
                                     new_p_not_states[state] = p;
 
@@ -325,20 +315,23 @@ impl CatTrjEv {
                 e.iter().try_for_each(|e_i| -> Result<()> {
                     // Check starting time must be positive and finite.
                     if !e_i.start_time().is_finite() || e_i.start_time() < 0.0 {
-                        return Err(Error::Dataset(
-                            "Starting time must be positive and finite.".to_string(),
+                        return Err(Error::InvalidParameter(
+                            "start_time".to_string(),
+                            "must be positive and finite".to_string(),
                         ));
                     }
                     // Check ending time must be positive and finite.
                     if !e_i.end_time().is_finite() || e_i.end_time() < 0.0 {
-                        return Err(Error::Dataset(
-                            "Ending time must be positive and finite.".to_string(),
+                        return Err(Error::InvalidParameter(
+                            "end_time".to_string(),
+                            "must be positive and finite".to_string(),
                         ));
                     }
                     // Check starting time is less or equal than ending time.
                     if e_i.start_time() > e_i.end_time() {
-                        return Err(Error::Dataset(
-                            "Starting time must be less or equal than ending time.".to_string(),
+                        return Err(Error::InvalidParameter(
+                            "start_time".to_string(),
+                            "must be less or equal than ending time".to_string(),
                         ));
                     }
                     // Check states distributions have the correct size.
@@ -347,15 +340,17 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if p_states.len() != *shape {
-                                return Err(Error::Dataset(
-                                    "States distributions must have the correct size.".to_string(),
+                                return Err(Error::IncompatibleShape(
+                                    p_states.len().to_string(),
+                                    shape.to_string(),
                                 ));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if p_not_states.len() != *shape {
-                                return Err(Error::Dataset(
-                                    "States distributions must have the correct size.".to_string(),
+                                return Err(Error::IncompatibleShape(
+                                    p_not_states.len().to_string(),
+                                    shape.to_string(),
                                 ));
                             }
                         }
@@ -366,15 +361,17 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if !p_states.iter().all(|&x| x >= 0.) {
-                                return Err(Error::Dataset(
-                                    "States distributions must be non-negative.".to_string(),
+                                return Err(Error::InvalidParameter(
+                                    "p_states".to_string(),
+                                    "must be non-negative".to_string(),
                                 ));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if !p_not_states.iter().all(|&x| x >= 0.) {
-                                return Err(Error::Dataset(
-                                    "States distributions must be non-negative.".to_string(),
+                                return Err(Error::InvalidParameter(
+                                    "p_not_states".to_string(),
+                                    "must be non-negative".to_string(),
                                 ));
                             }
                         }
@@ -385,14 +382,14 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if !relative_eq!(p_states.sum(), 1., epsilon = EPSILON) {
-                                return Err(Error::Dataset(
+                                return Err(Error::Probability(
                                     "States distributions must sum to one.".to_string(),
                                 ));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if !relative_eq!(p_not_states.sum(), 1., epsilon = EPSILON) {
-                                return Err(Error::Dataset(
+                                return Err(Error::Probability(
                                     "States distributions must sum to one.".to_string(),
                                 ));
                             }
@@ -426,15 +423,18 @@ impl CatTrjEv {
                 })?;
                 // Check intervals times are coherent.
                 if e_i.start_time() > e_j.start_time() {
-                    return Err(Error::Dataset(format!(
-                        "Two evidences for the same variable must have non-increasing starting time: \n\
-                        \t expected: e(i).start_time <= e(i+1).start_time, \n\
-                        \t found:    e(i).start_time >  e(i+1).start_time, \n\
-                        \t for:      e(i).start_time == {} , \n\
-                        \t and:    e(i+1).start_time == {} .",
-                        e_i.start_time(),
-                        e_j.start_time()
-                    )));
+                    return Err(Error::InvalidParameter(
+                        "evidence".to_string(),
+                        format!(
+                            "Two evidences for the same variable must have non-increasing starting time: \n\
+                            \t expected: e(i).start_time <= e(i+1).start_time, \n\
+                            \t found:    e(i).start_time >  e(i+1).start_time, \n\
+                            \t for:      e(i).start_time == {} , \n\
+                            \t and:    e(i+1).start_time == {} .",
+                            e_i.start_time(),
+                            e_j.start_time()
+                        ),
+                    ));
                 }
                 // If the current evidence ends before the next one starts ...
                 if e_i.end_time() <= e_j.start_time() {
@@ -499,9 +499,9 @@ impl CatTrjEv {
                     ) => {
                         // Check if they are the same states.
                         if s_i != s_j {
-                            return Err(Error::Dataset(
-                                "Overlapping negative evidence must have the same states."
-                                    .to_string(),
+                            return Err(Error::InvalidParameter(
+                                "evidence".to_string(),
+                                "Overlapping negative evidence must have the same states.".to_string(),
                             ));
                         }
                         // Get evidence event, not states, start time and end time.
@@ -525,7 +525,8 @@ impl CatTrjEv {
                     ) => {
                         // Check if they are the same states.
                         if !relative_eq!(s_i, s_j) {
-                            return Err(Error::Dataset(
+                            return Err(Error::InvalidParameter(
+                                "evidence".to_string(),
                                 "Overlapping uncertain evidence must have the same states."
                                     .to_string(),
                             ));
@@ -555,7 +556,8 @@ impl CatTrjEv {
                     ) => {
                         // Check if they are the same states.
                         if !relative_eq!(s_i, s_j) {
-                            return Err(Error::Dataset(
+                            return Err(Error::InvalidParameter(
+                                "evidence".to_string(),
                                 "Overlapping uncertain evidence must have the same states."
                                     .to_string(),
                             ));
@@ -577,7 +579,8 @@ impl CatTrjEv {
                     }
                     // If they are not the same type of evidence ...
                     _ => {
-                        return Err(Error::Dataset(
+                        return Err(Error::InvalidParameter(
+                            "evidence".to_string(),
                             "Overlapping evidence must have the same type".to_string(),
                         ));
                     }
@@ -587,7 +590,8 @@ impl CatTrjEv {
 
             // Check current ending time is less or equal than next starting time.
             if !e.windows(2).all(|e| e[0].end_time() <= e[1].start_time()) {
-                return Err(Error::Dataset(
+                return Err(Error::InvalidParameter(
+                    "evidence".to_string(),
                     "Ending time must be less or equal than next starting time.".to_string(),
                 ));
             }
@@ -708,7 +712,8 @@ impl CatTrjsEv {
             .windows(2)
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
-            return Err(Error::Dataset(
+            return Err(Error::InvalidParameter(
+                "evidences".to_string(),
                 "All trajectories must have the same labels.".to_string(),
             ));
         }
@@ -717,7 +722,8 @@ impl CatTrjsEv {
             .windows(2)
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
-            return Err(Error::Dataset(
+            return Err(Error::InvalidParameter(
+                "evidences".to_string(),
                 "All trajectories must have the same states.".to_string(),
             ));
         }
@@ -726,8 +732,9 @@ impl CatTrjsEv {
             .windows(2)
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
-            return Err(Error::Dataset(
-                "All trajectories must have the same shape.".to_string(),
+            return Err(Error::IncompatibleShape(
+                "trajectories shape".to_string(),
+                "must be equal".to_string(),
             ));
         }
 

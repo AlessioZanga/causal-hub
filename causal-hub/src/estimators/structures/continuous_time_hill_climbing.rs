@@ -68,11 +68,11 @@ where
         let n = q_xz
             .sample_statistics()
             .map(|s| s.sample_size())
-            .ok_or_else(|| Error::Model("Failed to get the sample size.".into()))?;
+            .ok_or(Error::MissingSufficientStatistics)?;
         // Get the log-likelihood.
         let ll = q_xz
             .sample_log_likelihood()
-            .ok_or_else(|| Error::Model("Failed to compute the log-likelihood.".into()))?;
+            .ok_or_else(|| Error::Probability("Failed to compute the log-likelihood.".into()))?;
         // Get the number of parameters.
         let k = q_xz.parameters_size() as f64;
 
@@ -109,13 +109,10 @@ where
     pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Result<Self> {
         // Assert labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != score.labels() {
-            return Err(Error::Model(format!(
-                "Labels of initial graph and estimator must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-                initial_graph.labels(),
-                score.labels()
-            )));
+            return Err(Error::LabelMismatch(
+                format!("{:?}", initial_graph.labels()),
+                format!("{:?}", score.labels()),
+            ));
         }
 
         Ok(Self {
@@ -156,13 +153,10 @@ where
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
         // Assert labels of prior knowledge and initial graph are the same.
         if self.initial_graph.labels() != prior_knowledge.labels() {
-            return Err(Error::Model(format!(
-                "Labels of initial graph and prior knowledge must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-                self.initial_graph.labels(),
-                prior_knowledge.labels()
-            )));
+            return Err(Error::LabelMismatch(
+                format!("{:?}", self.initial_graph.labels()),
+                format!("{:?}", prior_knowledge.labels()),
+            ));
         }
         // Assert prior knowledge is consistent with initial graph.
         for edge in self.initial_graph.vertices().into_iter().permutations(2) {
@@ -171,13 +165,13 @@ where
             // Assert edge must be either present and not forbidden ...
             if self.initial_graph.has_edge(i, j) {
                 if prior_knowledge.is_forbidden(i, j) {
-                    return Err(Error::Model(format!(
+                    return Err(Error::PriorKnowledgeConflict(format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
                     )));
                 }
             // ... or absent and not required.
             } else if prior_knowledge.is_required(i, j) {
-                return Err(Error::Model(format!(
+                return Err(Error::PriorKnowledgeConflict(format!(
                     "Initial graph does not contain required edge ({i}, {j})."
                 )));
             }
@@ -362,7 +356,7 @@ where
                         .collect::<Result<Vec<_>>>()?;
 
                     if scores.iter().any(|(s, _)| s.is_nan()) {
-                        return Err(Error::Model("Score returned NaN".into()));
+                        return Err(Error::NanValue);
                     }
 
                     if let Some((next_score, next_pa)) = scores

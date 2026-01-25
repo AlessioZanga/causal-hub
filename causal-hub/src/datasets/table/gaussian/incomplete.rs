@@ -38,13 +38,10 @@ impl GaussIncTable {
     pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Result<Self> {
         // Check if the number of variables is equal to the number of columns.
         if labels.len() != values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of variables must be equal to the number of columns: \n\
-                \t expected:    |labels| == |values.columns()| , \n\
-                \t found:       |labels| == {} and |values.columns()| == {} .",
-                labels.len(),
-                values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                labels.len().to_string(),
+                values.ncols().to_string(),
+            ));
         }
 
         // Check that the labels are sorted.
@@ -115,13 +112,7 @@ impl GaussIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in PW deletion: \n\
-                    \t expected:    index < |values.columns()| , \n\
-                    \t found:       index == {} and |values.columns()| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
 
@@ -159,7 +150,7 @@ impl GaussIncTable {
                 self.labels
                     .get_index(j)
                     .cloned()
-                    .ok_or_else(|| Error::Dataset(format!("Index {j} not found in labels.")))
+                    .ok_or_else(|| Error::VertexOutOfBounds(j))
             })
             .collect::<Result<_>>()?;
 
@@ -185,13 +176,7 @@ impl Dataset for GaussIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in variables selection: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
 
@@ -202,7 +187,7 @@ impl Dataset for GaussIncTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or_else(|| Error::Dataset(format!("Index {i} not found in labels.")))
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -242,11 +227,18 @@ impl IncDataset for GaussIncTable {
         match (m, x) {
             (MM::LW, _) => self.lw_deletion().map(Either::Left),
             (MM::PW, Some(x)) => self.pw_deletion(x).map(Either::Left),
-            _ => Err(Error::Dataset(format!(
-                "Invalid arguments for applying missing method:\n
-                \t missing method:      '{m:?}' , \n\
-                \t selected variables:  '{x:?}' ."
-            ))),
+            (MM::IPW, _) | (MM::AIPW, _) => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!("{:?} deletion not implemented for Gaussian data yet.", m),
+            )),
+            _ => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!(
+                    "Invalid arguments for applying missing method:\n\
+                    \t missing method:      '{m:?}' , \n\
+                    \t selected variables:  '{x:?}' .",
+                ),
+            )),
         }
     }
 
@@ -263,7 +255,8 @@ impl IncDataset for GaussIncTable {
         _x: &Set<usize>,
         _pr: &Map<usize, Set<usize>>,
     ) -> Result<Self::Weighted> {
-        Err(Error::Dataset(
+        Err(Error::InvalidParameter(
+            "missing_method".to_string(),
             "IPW deletion not implemented for Gaussian data yet.".to_string(),
         ))
     }
@@ -273,7 +266,8 @@ impl IncDataset for GaussIncTable {
         _x: &Set<usize>,
         _pr: &Map<usize, Set<usize>>,
     ) -> Result<Self::Weighted> {
-        Err(Error::Dataset(
+        Err(Error::InvalidParameter(
+            "missing_method".to_string(),
             "AIPW deletion not implemented for Gaussian data yet.".to_string(),
         ))
     }
@@ -286,7 +280,7 @@ impl CsvIO for GaussIncTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::Dataset("Reader must have headers.".to_string()));
+            return Err(Error::MissingHeader);
         }
 
         // Read the headers.

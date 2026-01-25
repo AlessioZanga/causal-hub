@@ -50,7 +50,10 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Assert that the significance level is in [0, 1].
         if !(0.0..=1.0).contains(&alpha) {
-            return Err(Error::Model("Alpha must be in [0, 1]".into()));
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be in [0, 1]".into(),
+            ));
         }
 
         Ok(Self { estimator, alpha })
@@ -75,14 +78,17 @@ where
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
         if y.len() != 1 {
-            return Err(Error::Model("Y must contain exactly one label.".into()));
+            return Err(Error::InvalidParameter(
+                "y".into(),
+                "must contain exactly one label".into(),
+            ));
         }
 
         // Compute the extended separation set.
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
-            Ok(_) => return Err(Error::Model("Y must not be in Z.".into())),
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
@@ -95,11 +101,11 @@ where
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or_else(|| Error::Model("Failed to get sufficient statistics.".into()))?;
+            .ok_or(Error::MissingSufficientStatistics)?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or_else(|| Error::Model("Failed to get sufficient statistics.".into()))?;
+            .ok_or(Error::MissingSufficientStatistics)?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -168,7 +174,10 @@ impl<'a, E> FTest<'a, E> {
     pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Assert that the significance level is in [0, 1].
         if !(0.0..=1.0).contains(&alpha) {
-            return Err(Error::Model("Alpha must be in [0, 1]".into()));
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be in [0, 1]".into(),
+            ));
         }
 
         Ok(Self { estimator, alpha })
@@ -193,7 +202,10 @@ where
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
         if y.len() != 1 {
-            return Err(Error::Model("Y must contain exactly one label.".into()));
+            return Err(Error::InvalidParameter(
+                "y".into(),
+                "must contain exactly one label".into(),
+            ));
         }
 
         // Compute the alpha range.
@@ -203,7 +215,7 @@ where
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
-            Ok(_) => return Err(Error::Model("Y must not be conditioning set Z.".into())),
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
@@ -216,11 +228,11 @@ where
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or_else(|| Error::Model("Failed to get sufficient statistics.".into()))?;
+            .ok_or(Error::MissingSufficientStatistics)?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or_else(|| Error::Model("Failed to get sufficient statistics.".into()))?;
+            .ok_or(Error::MissingSufficientStatistics)?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -299,23 +311,17 @@ where
     pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Result<Self> {
         // Assert labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != null_time.labels() {
-            return Err(Error::Model(format!(
-                "Labels of initial graph and estimator must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-                initial_graph.labels(),
-                null_time.labels()
-            )));
+            return Err(Error::LabelMismatch(
+                format!("{:?}", initial_graph.labels()),
+                format!("{:?}", null_time.labels()),
+            ));
         }
         // Assert labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != null_state.labels() {
-            return Err(Error::Model(format!(
-                "Labels of initial graph and estimator must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-                initial_graph.labels(),
-                null_state.labels()
-            )));
+            return Err(Error::LabelMismatch(
+                format!("{:?}", initial_graph.labels()),
+                format!("{:?}", null_state.labels()),
+            ));
         }
 
         Ok(Self {
@@ -340,13 +346,10 @@ where
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
         // Assert labels of prior knowledge and initial graph are the same.
         if self.initial_graph.labels() != prior_knowledge.labels() {
-            return Err(Error::Model(format!(
-                "Labels of initial graph and prior knowledge must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-                self.initial_graph.labels(),
-                prior_knowledge.labels()
-            )));
+            return Err(Error::LabelMismatch(
+                format!("{:?}", self.initial_graph.labels()),
+                format!("{:?}", prior_knowledge.labels()),
+            ));
         }
         // Assert prior knowledge is consistent with initial graph.
         for edge in self.initial_graph.vertices().into_iter().permutations(2) {
@@ -355,14 +358,14 @@ where
             // Assert edge must be either present and not forbidden ...
             if self.initial_graph.has_edge(i, j) {
                 if prior_knowledge.is_forbidden(i, j) {
-                    return Err(Error::Model(format!(
+                    return Err(Error::PriorKnowledgeConflict(format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
                     )));
                 }
             }
             // ... or absent and not required.
             else if prior_knowledge.is_required(i, j) {
-                return Err(Error::Model(format!(
+                return Err(Error::PriorKnowledgeConflict(format!(
                     "Initial graph does not contain required edge ({i}, {j})."
                 )));
             }

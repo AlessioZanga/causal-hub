@@ -50,11 +50,10 @@ impl MissingTable {
     pub fn new(mut labels: Labels, mut missing_mask: Array2<bool>) -> Result<Self> {
         // Check if dimensions match.
         if labels.len() != missing_mask.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of labels ({}) must match the number of columns in the missing mask ({}).",
-                labels.len(),
-                missing_mask.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                format!("|labels| = {}", labels.len()),
+                format!("|cols| = {}", missing_mask.ncols()),
+            ));
         }
 
         // Check if labels are sorted.

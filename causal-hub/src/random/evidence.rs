@@ -28,7 +28,10 @@ impl<'a, R, D> RngEv<'a, R, D> {
     pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Result<Self> {
         // Check that the probability is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
-            return Err(Error::Dataset("Probability must be in [0, 1]".to_string()));
+            return Err(Error::InvalidParameter(
+                "p".to_string(),
+                "must be in [0, 1]".to_string(),
+            ));
         }
 
         Ok(Self { rng, dataset, p })

@@ -22,7 +22,7 @@ impl MLE<'_, CatTable> {
 
         // Check the marginal counts are not zero.
         if !n_z.iter().all(|&x| x > 0.) {
-            return Err(Error::Dataset("Failed to get non-zero counts.".to_string()));
+            return Err(Error::MissingSufficientStatistics);
         }
 
         // Compute the parameters by normalizing the counts.
@@ -40,7 +40,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or_else(|| Error::Dataset(format!("Index {i} out of bounds for states.")))
+                    .ok_or(Error::VertexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
         // Get the labels of the conditioned variables.
@@ -50,7 +50,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or_else(|| Error::Dataset(format!("Index {i} out of bounds for states.")))
+                    .ok_or(Error::VertexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
 

@@ -35,18 +35,18 @@ impl CatTrj {
     ) -> Result<Self> {
         // Assert the number of rows in values and times are equal.
         if events.nrows() != times.len() {
-            return Err(Error::Dataset(
-                "Trajectory events and times must have the same length.".to_string(),
+            return Err(Error::IncompatibleShape(
+                events.nrows().to_string(),
+                times.len().to_string(),
             ));
         }
         // Assert times must be positive and finite.
         for &t in &times {
             if !t.is_finite() || t < 0. {
-                return Err(Error::Dataset(format!(
-                    "Trajectory times must be finite and positive: \n\
-                    \t expected: time >= 0 , \n\
-                    \t found:    time == {t} ."
-                )));
+                return Err(Error::InvalidParameter(
+                    "times".to_string(),
+                    format!("value must be finite and positive, found {t}"),
+                ));
             }
         }
 
@@ -92,28 +92,23 @@ impl CatTrj {
             let length = times.len();
             // Assert the number of unique times is equal to the length of the times array.
             if count != length {
-                return Err(Error::Dataset(format!(
-                    "Trajectory times must be unique: \n\
-                    \t expected: {count} deduplicated time-points, \n\
-                    \t found:    {length} non-deduplicated time-points, \n\
-                    \t for:      {times}."
-                )));
+                return Err(Error::InvalidParameter(
+                    "times".to_string(),
+                    format!("must be unique, found {} duplicates", length - count),
+                ));
             }
         }
 
         // Assert at max one state change per transition.
-        for ((e_i, t_i), (e_j, t_j)) in events.rows().into_iter().zip(&times).tuple_windows() {
+        for ((e_i, _), (e_j, _)) in events.rows().into_iter().zip(&times).tuple_windows() {
             // Count the number of state changes.
             let count = e_i.iter().zip(e_j).filter(|(a, b)| a != b).count();
             // Assert there is one and only one state change.
             if count > 1 {
-                return Err(Error::Dataset(format!(
-                    "Trajectory events must contain at max one change per transition: \n\
-                    \t expected: count <= 1 state change, \n\
-                    \t found:    count == {count} state changes, \n\
-                    \t for:      {e_i} event with time {t_i}, \n\
-                    \t and:      {e_j} event with time {t_j}."
-                )));
+                return Err(Error::InvalidParameter(
+                    "events".to_string(),
+                    format!("must contain at max one change per transition, found {count}"),
+                ));
             }
         }
 
@@ -231,7 +226,7 @@ impl CatTrjs {
             .windows(2)
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
-            return Err(Error::Dataset(
+            return Err(Error::ConstructionError(
                 "All trajectories must have the same labels.".to_string(),
             ));
         }
@@ -240,7 +235,7 @@ impl CatTrjs {
             .windows(2)
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
-            return Err(Error::Dataset(
+            return Err(Error::ConstructionError(
                 "All trajectories must have the same states.".to_string(),
             ));
         }
@@ -249,7 +244,7 @@ impl CatTrjs {
             .windows(2)
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
-            return Err(Error::Dataset(
+            return Err(Error::ConstructionError(
                 "All trajectories must have the same shape.".to_string(),
             ));
         }

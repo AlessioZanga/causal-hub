@@ -72,10 +72,7 @@ impl GaussEv {
                 let event = e.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
-                    return Err(Error::Dataset(format!(
-                        "Event index {} is out of bounds.",
-                        event
-                    )));
+                    return Err(Error::VertexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
                 evidences[event] = Some(e);
@@ -96,13 +93,13 @@ impl GaussEv {
                 vec![None; new_labels.len()],
                 |mut new_evidences, e| -> Result<_> {
                     // Get the event of the evidence.
-                    let event_name = labels.get_index(e.event()).ok_or_else(|| {
-                        Error::Dataset("Failed to get label of evidence.".to_string())
-                    })?;
+                    let event_name = labels
+                        .get_index(e.event())
+                        .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
                     // Sort the event index.
-                    let event = new_labels.get_index_of(event_name).ok_or_else(|| {
-                        Error::Dataset("Failed to get index of evidence.".to_string())
-                    })?;
+                    let event = new_labels
+                        .get_index_of(event_name)
+                        .ok_or_else(|| Error::MissingLabel(event_name.clone()))?;
 
                     // Sort the variable events.
                     let e = match e {

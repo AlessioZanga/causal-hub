@@ -245,8 +245,9 @@ impl CatCPD {
 
         // Assert labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::Model(
-                "Labels and conditioning labels must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                "labels".to_string(),
+                "conditioning labels".to_string(),
             ));
         }
 
@@ -255,13 +256,10 @@ impl CatCPD {
 
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.ncols() != shape.product() {
-            return Err(Error::Model(format!(
-                "Product of the number of states must match the number of columns: \n\
-            \t expected:    parameters.ncols() == {} , \n\
-            \t found:       parameters.ncols() == {} .",
-                shape.product(),
-                parameters.ncols(),
-            )));
+            return Err(Error::IncompatibleShape(
+                shape.product().to_string(),
+                parameters.ncols().to_string(),
+            ));
         }
 
         // Get the shape of the set of states.
@@ -269,19 +267,16 @@ impl CatCPD {
 
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.nrows() != conditioning_shape.product() {
-            return Err(Error::Model(format!(
-                "Product of the number of conditioning states must match the number of rows: \n\
-            \t expected:    parameters.nrows() == {} , \n\
-            \t found:       parameters.nrows() == {} .",
-                conditioning_shape.product(),
-                parameters.nrows(),
-            )));
+            return Err(Error::IncompatibleShape(
+                conditioning_shape.product().to_string(),
+                parameters.nrows().to_string(),
+            ));
         }
 
         // Check parameters validity.
         for (i, &x) in parameters.sum_axis(Axis(1)).iter().enumerate() {
             if !relative_eq!(x, 1.0, epsilon = EPSILON) {
-                return Err(Error::Model(format!(
+                return Err(Error::Probability(format!(
                     "Failed to sum probability to one: {}.",
                     parameters.row(i)
                 )));
@@ -548,20 +543,17 @@ impl CatCPD {
             let sample_conditional_counts = &sample_statistics.n_xz;
             // Assert the sample conditional counts have the same shape as parameters.
             if sample_conditional_counts.shape() != parameters.shape() {
-                return Err(Error::Model(format!(
-                    "Sample conditional counts must have the same shape as parameters: \n\
-                \t expected:    sample_conditional_counts.shape() == {:?} , \n\
-                \t found:       sample_conditional_counts.shape() == {:?} .",
-                    parameters.shape(),
-                    sample_conditional_counts.shape(),
-                )));
+                return Err(Error::IncompatibleShape(
+                    format!("{:?}", sample_conditional_counts.shape()),
+                    format!("{:?}", parameters.shape()),
+                ));
             }
         }
         // Assert the sample log-likelihood is finite and non-positive.
         if let Some(sample_log_likelihood) = &sample_log_likelihood
             && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
         {
-            return Err(Error::Model(format!(
+            return Err(Error::Stats(format!(
                 "Sample log-likelihood must be finite and non-positive: \n\
                 \t expected: sample_ll <= 0 , \n\
                 \t found:    sample_ll == {sample_log_likelihood} ."
@@ -716,23 +708,11 @@ impl CPD for CatCPD {
 
         // Assert X matches number of variables.
         if x.len() != n {
-            return Err(Error::Model(format!(
-                "Vector X must match number of variables: \n\
-                \t expected:    |X| == {} , \n\
-                \t found:       |X| == {} .",
-                n,
-                x.len(),
-            )));
+            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
         }
         // Assert Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::Model(format!(
-                "Vector Z must match number of conditioning variables: \n\
-                \t expected:    |Z| == {} , \n\
-                \t found:       |Z| == {} .",
-                m,
-                z.len(),
-            )));
+            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
 
         // No variables.
@@ -780,13 +760,7 @@ impl CPD for CatCPD {
 
         // Assert Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::Model(format!(
-                "Vector Z must match number of conditioning variables: \n\
-                \t expected:    |Z| == {} , \n\
-                \t found:       |Z| == {} .",
-                m,
-                z.len(),
-            )));
+            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
 
         // No variables.

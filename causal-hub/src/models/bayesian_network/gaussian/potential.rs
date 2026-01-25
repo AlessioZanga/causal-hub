@@ -45,29 +45,30 @@ impl GaussPhiK {
     pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Result<Self> {
         // Assert K is square.
         if !k.is_square() {
-            return Err(Error::Model("Precision matrix must be square.".into()));
+            return Err(Error::Shape("Precision matrix must be square.".into()));
         }
         // Assert the length of h matches the size of K.
         if k.nrows() != h.len() {
-            return Err(Error::Model(
-                "Information vector length must match precision matrix size.".into(),
+            return Err(Error::IncompatibleShape(
+                k.nrows().to_string(),
+                h.len().to_string(),
             ));
         }
         // Assert K is finite.
         if !k.iter().all(|x| x.is_finite()) {
-            return Err(Error::Model("Precision matrix must be finite.".into()));
+            return Err(Error::Linalg("Precision matrix must be finite.".into()));
         }
         // Assert K is symmetric.
         if k != k.t() {
-            return Err(Error::Model("Precision matrix must be symmetric.".into()));
+            return Err(Error::Linalg("Precision matrix must be symmetric.".into()));
         }
         // Assert h is finite.
         if !h.iter().all(|x| x.is_finite()) {
-            return Err(Error::Model("Information vector must be finite.".into()));
+            return Err(Error::Linalg("Information vector must be finite.".into()));
         }
         // Assert g is finite.
         if !g.is_finite() {
-            return Err(Error::Model(
+            return Err(Error::Linalg(
                 "Log-normalization constant must be finite.".into(),
             ));
         }
@@ -353,14 +354,17 @@ impl Phi for GaussPhi {
     fn condition(&self, e: &Self::Evidence) -> Result<Self> {
         // Assert that the evidence labels match the potential labels.
         if e.labels() != self.labels() {
-            return Err(Error::Model(format!(
-                "Failed to condition on evidence: \n\
-            \t expected:    evidence labels to match potential labels , \n\
-            \t found:       potential labels = {:?} , \n\
-            \t              evidence  labels = {:?} .",
-                self.labels(),
-                e.labels(),
-            )));
+            return Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    evidence labels to match potential labels , \n\
+                    \t found:       potential labels = {:?} , \n\
+                    \t              evidence  labels = {:?} .",
+                    self.labels(),
+                    e.labels(),
+                ),
+            ));
         }
 
         // Get the evidence and remove nones.
@@ -425,13 +429,7 @@ impl Phi for GaussPhi {
         // Assert X is a subset of the variables.
         for &x in x.iter() {
             if x >= self.labels.len() {
-                return Err(Error::Model(format!(
-                    "Variable index out of bounds: \n\
-                \t expected:    x <  {} , \n\
-                \t found:       x == {} .",
-                    self.labels.len(),
-                    x,
-                )));
+                return Err(Error::VertexOutOfBounds(x));
             }
         }
 
@@ -570,14 +568,17 @@ impl Phi for GaussPhi {
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         // Assert that X and Z are disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::Model(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                "variables".to_string(),
+                "conditioning variables".to_string(),
             ));
         }
         // Assert that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
-            return Err(Error::Model(
-                "Variables and conditioning variables must cover all potential variables.".into(),
+            return Err(Error::InvalidParameter(
+                "variables".to_string(),
+                "Variables and conditioning variables must cover all potential variables."
+                    .to_string(),
             ));
         }
 

@@ -17,6 +17,9 @@ pub enum Error {
     /// An error related to UTF-8 conversion.
     #[error(transparent)]
     Utf8(#[from] std::string::FromUtf8Error),
+    /// An error related to float parsing.
+    #[error(transparent)]
+    ParseFloat(#[from] std::num::ParseFloatError),
     /// An error related to ndarray shape operations.
     #[error(transparent)]
     NdarrayShape(#[from] ndarray::ShapeError),
@@ -35,12 +38,6 @@ pub enum Error {
     /// An error related to missing data.
     #[error("Missing data error: {0}")]
     MissingData(String),
-    /// An error related to datasets.
-    #[error("Dataset error: {0}")]
-    Dataset(String),
-    /// An error related to models.
-    #[error("Model error: {0}")]
-    Model(String),
     /// An error related to statistics.
     #[error("Statistics error: {0}")]
     Stats(String),
@@ -59,6 +56,54 @@ pub enum Error {
     /// An error related to lock poisoning.
     #[error("Lock poisoning error: {0}")]
     Poison(String),
+    /// An error indicating that a vertex index is out of bounds.
+    #[error("Vertex index {0} is out of bounds")]
+    VertexOutOfBounds(usize),
+    /// An error indicating that a set cannot be empty.
+    #[error("Set {0} must not be empty")]
+    EmptySet(String),
+    /// An error indicating that two sets must be disjoint.
+    #[error("Sets {0} and {1} must be disjoint")]
+    SetsNotDisjoint(String, String),
+    /// An error indicating that one set must be a subset of another.
+    #[error("Set {0} must be a subset of set {1}")]
+    SubsetMismatch(String, String),
+    /// An error indicating that the graph must be a DAG.
+    #[error("Graph must be a DAG")]
+    NotADag,
+    /// An error indicating that a parameter is invalid.
+    #[error("Invalid parameter {0}: {1}")]
+    InvalidParameter(String, String),
+    /// An error indicating a conflict in prior knowledge.
+    #[error("Prior knowledge conflict: {0}")]
+    PriorKnowledgeConflict(String),
+    /// An error indicating that the labels of the graphs are incompatible.
+    #[error("Labels mismatch: {0} != {1}")]
+    LabelMismatch(String, String),
+    /// An error indicating that sufficient statistics are missing.
+    #[error("Missing sufficient statistics")]
+    MissingSufficientStatistics,
+    /// An error indicating that a CSV file is missing headers.
+    #[error("CSV file must have headers")]
+    MissingHeader,
+    /// An error indicating that the shape of the data is incompatible.
+    #[error("Incompatible shape: {0} != {1}")]
+    IncompatibleShape(String, String),
+    /// An error indicating that a state is missing.
+    #[error("State {0} not found")]
+    MissingState(String),
+    /// An error indicating that a label is missing.
+    #[error("Label {0} not found")]
+    MissingLabel(String),
+    /// An error indicating that a value is NaN.
+    #[error("Value is NaN")]
+    NanValue,
+    /// An error indicating that a value is missing.
+    #[error("Missing value at line {0}, column {1}")]
+    MissingValue(usize, usize),
+    /// An error indicating that an object construction failed.
+    #[error("Object construction failed: {0}")]
+    ConstructionError(String),
     /// Other errors.
     #[error(transparent)]
     Other(Arc<Box<dyn std::error::Error + Send + Sync>>),

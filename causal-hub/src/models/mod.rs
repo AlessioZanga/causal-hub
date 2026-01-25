@@ -44,7 +44,7 @@ pub trait Labelled {
     fn label_to_index(&self, x: &str) -> Result<usize> {
         self.labels()
             .get_index_of(x)
-            .ok_or_else(|| Error::Model(format!("Variable `{x}` label does not exist.")))
+            .ok_or_else(|| Error::MissingLabel(x.to_string()))
     }
 
     /// Return the label for a given variable index.
@@ -66,7 +66,7 @@ pub trait Labelled {
         self.labels()
             .get_index(x)
             .map(|x| x.as_str())
-            .ok_or_else(|| Error::Model(format!("Variable `{x}` is out of bounds.")))
+            .ok_or_else(|| Error::VertexOutOfBounds(x))
     }
 
     /// Maps an index from this model to another model with the same label.
@@ -90,11 +90,9 @@ pub trait Labelled {
         // Get the label of the variable in this model.
         let label = self.index_to_label(x)?;
         // Get the index of the variable in the other model.
-        other.get_index_of(label).ok_or_else(|| {
-            Error::Model(format!(
-                "Variable `{label}` label does not exist in the other model."
-            ))
-        })
+        other
+            .get_index_of(label)
+            .ok_or_else(|| Error::MissingLabel(label.to_string()))
     }
 
     /// Maps a set of indices from this model to another model with the same labels.
@@ -137,15 +135,13 @@ pub trait Labelled {
     #[inline]
     fn index_from(&self, x: usize, other: &Labels) -> Result<usize> {
         // Get the label of the variable in the other model.
-        let label = other.get_index(x).ok_or_else(|| {
-            Error::Model(format!(
-                "Variable `{x}` is out of bounds in the other model."
-            ))
-        })?;
+        let label = other
+            .get_index(x)
+            .ok_or_else(|| Error::VertexOutOfBounds(x))?;
         // Get the index of the variable in this model.
         self.labels()
             .get_index_of(label)
-            .ok_or_else(|| Error::Model(format!("Variable `{label}` label does not exist.")))
+            .ok_or_else(|| Error::MissingLabel(label.clone()))
     }
 
     /// Maps a set of indices from another model to this model with the same labels.

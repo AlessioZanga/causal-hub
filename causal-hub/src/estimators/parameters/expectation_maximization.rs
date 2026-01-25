@@ -207,13 +207,13 @@ where
             evidence: self.evidence,
             expectation: self
                 .expectation
-                .ok_or_else(|| Error::Model("Expectation step not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Expectation step not set".into()))?,
             maximization: self
                 .maximization
-                .ok_or_else(|| Error::Model("Maximization step not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Maximization step not set".into()))?,
             stop: self
                 .stop
-                .ok_or_else(|| Error::Model("Stopping criteria not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Stopping criteria not set".into()))?,
         })
     }
 }

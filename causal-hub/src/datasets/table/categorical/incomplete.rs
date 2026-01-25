@@ -41,23 +41,18 @@ impl CatIncTable {
         // Check if the number of states is less than `CatType::MAX`.
         for (label, state) in &states {
             if state.len() > CatType::MAX as usize {
-                return Err(Error::Dataset(format!(
-                    "Variable '{label}' should have less than 256 states: \n\
-                    \t expected:    |states| <  256 , \n\
-                    \t found:       |states| == {} .",
-                    state.len()
-                )));
+                return Err(Error::InvalidParameter(
+                    label.to_string(),
+                    format!("should have less than 256 states, found {}", state.len()),
+                ));
             }
         }
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of variables must be equal to the number of columns: \n\
-                \t expected:    |states| == |values.columns()| , \n\
-                \t found:       |states| == {} and |values.columns()| == {} .",
-                states.len(),
-                values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                states.len().to_string(),
+                values.ncols().to_string(),
+            ));
         }
         // Check if the maximum value of the values is less than the number of states.
         let max_values = values.fold_axis(
@@ -68,16 +63,7 @@ impl CatIncTable {
         );
         for (i, x) in max_values.into_iter().enumerate() {
             if x >= states[i].len() as CatType {
-                let label = states
-                    .get_index(i)
-                    .ok_or_else(|| Error::Unreachable("Variable index out of bounds".to_string()))?
-                    .0;
-                return Err(Error::Dataset(format!(
-                    "Values of variable '{label}' must be less than the number of states: \n\
-                    \t expected: values[.., '{label}'] < |states['{label}']| , \n\
-                    \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
-                    states[i].len()
-                )));
+                return Err(Error::VertexOutOfBounds(x as usize));
             }
         }
 
@@ -124,7 +110,7 @@ impl CatIncTable {
                             *value = new_states
                                 .get_index_of(&states[*value as usize])
                                 .ok_or_else(|| {
-                                    Error::Dataset("Failed to get new state index.".to_string())
+                                    Error::MissingState(states[*value as usize].clone())
                                 })? as CatType;
                         }
                         Ok::<_, Error>(())
@@ -194,13 +180,7 @@ impl Dataset for CatIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in variables selection: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
 
@@ -210,7 +190,7 @@ impl Dataset for CatIncTable {
             let (label, state_set) = self
                 .states
                 .get_index(i)
-                .ok_or_else(|| Error::Dataset(format!("Invalid state index: {}", i)))?;
+                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
             states.insert(label.clone(), state_set.clone());
         }
 
@@ -317,12 +297,15 @@ impl IncDataset for CatIncTable {
             (MM::PW, Some(x), _) => self.pw_deletion(x).map(Either::Left),
             (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
             (MM::AIPW, Some(x), Some(pr)) => self.aipw_deletion(x, pr).map(Either::Right),
-            _ => Err(Error::Dataset(format!(
-                "Invalid arguments for applying missing method:\n
-                \t missing method:      '{m:?}' , \n\
-                \t selected variables:  '{x:?}' , \n\
-                \t missing mechanism:   '{pr:?}' ."
-            ))),
+            _ => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!(
+                    "Invalid arguments for applying missing method:\n\
+                    \t missing method:      '{m:?}' , \n\
+                    \t selected variables:  '{x:?}' , \n\
+                    \t missing mechanism:   '{pr:?}' .",
+                ),
+            )),
         }
     }
 
@@ -361,13 +344,7 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in PW deletion: \n\
-                    \t expected:    index < |values.columns()| , \n\
-                    \t found:       index == {} and |values.columns()| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
 
@@ -406,7 +383,7 @@ impl IncDataset for CatIncTable {
                 self.states
                     .get_index(j)
                     .map(|(label, state)| (label.clone(), state.clone()))
-                    .ok_or_else(|| Error::Dataset(format!("Index {j} not found in states.")))
+                    .ok_or_else(|| Error::VertexOutOfBounds(j))
             })
             .collect::<Result<_>>()?;
 
@@ -426,46 +403,33 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in IPW deletion: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of columns in the missing mechanism must be equal to the number of columns: \n\
-                \t expected:    |missing_mechanism.keys()| == |columns| , \n\
-                \t found:       |missing_mechanism.keys()| == {} and |columns| == {} .",
-                pr.len(),
-                self.values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                pr.len().to_string(),
+                self.values.ncols().to_string(),
+            ));
         }
         // Check that the missing mechanism indices are valid.
         for &i in pr.keys() {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in IPW deletion missing mechanism: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
-            return Err(Error::Dataset(
-                "Missing mechanism keys must be sorted.".to_string(),
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "keys must be sorted.".to_string(),
             ));
         }
         if !pr.values().all(|pri| pri.iter().is_sorted()) {
-            return Err(Error::Dataset(
-                "Missing mechanism values must be sorted.".to_string(),
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "values must be sorted.".to_string(),
             ));
         }
 
@@ -506,46 +470,33 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         for &i in x {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in IPW deletion: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
-            return Err(Error::Dataset(format!(
-                "Number of columns in the missing mechanism must be equal to the number of columns: \n\
-                \t expected:    |missing_mechanism.keys()| == |columns| , \n\
-                \t found:       |missing_mechanism.keys()| == {} and |columns| == {} .",
-                pr.len(),
-                self.values.ncols()
-            )));
+            return Err(Error::IncompatibleShape(
+                pr.len().to_string(),
+                self.values.ncols().to_string(),
+            ));
         }
         // Check that the missing mechanism indices are valid.
         for &i in pr.keys() {
             if i >= self.values.ncols() {
-                return Err(Error::Dataset(format!(
-                    "Index out of bounds in IPW deletion missing mechanism: \n\
-                    \t expected:    index < |columns| , \n\
-                    \t found:       index == {} and |columns| == {} .",
-                    i,
-                    self.values.ncols()
-                )));
+                return Err(Error::VertexOutOfBounds(i));
             }
         }
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
-            return Err(Error::Dataset(
-                "Missing mechanism keys must be sorted.".to_string(),
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "keys must be sorted.".to_string(),
             ));
         }
         if !pr.values().all(|pri| pri.iter().is_sorted()) {
-            return Err(Error::Dataset(
-                "Missing mechanism values must be sorted.".to_string(),
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "values must be sorted.".to_string(),
             ));
         }
 
@@ -577,7 +528,7 @@ impl CsvIO for CatIncTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::Dataset("Reader must have headers.".to_string()));
+            return Err(Error::MissingHeader);
         }
 
         // Read the headers.

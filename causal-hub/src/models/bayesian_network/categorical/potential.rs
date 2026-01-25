@@ -208,25 +208,31 @@ impl Phi for CatPhi {
     fn condition(&self, e: &Self::Evidence) -> Result<Self> {
         // Check that the evidence states match the potential states.
         if e.states() != self.states() {
-            return Err(Error::Model(format!(
-                "Failed to condition on evidence: \n\
-                \t expected:    evidence states to match potential states , \n\
-                \t found:       potential states = {:?} , \n\
-                \t              evidence  states = {:?} .",
-                self.states(),
-                e.states(),
-            )));
+            return Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    evidence states to match potential states , \n\
+                    \t found:       potential states = {:?} , \n\
+                    \t              evidence  states = {:?} .",
+                    self.states(),
+                    e.states(),
+                ),
+            ));
         }
 
         // Get the evidence and remove nones.
         let e = e.evidences().iter().flatten().map(|ev| match ev {
             CatEvT::CertainPositive { event, state } => Ok((event, state)),
-            _ => Err(Error::Model(format!(
-                "Failed to condition on evidence: \n\
+            _ => Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
                     \t expected:    CertainPositive , \n\
                     \t found:       {:?} .",
-                ev
-            ))),
+                    ev
+                ),
+            )),
         });
 
         // Get states and parameters.
@@ -340,7 +346,7 @@ impl Phi for CatPhi {
             let (k, v) = self
                 .states
                 .get_index(i)
-                .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
+                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
             states_x.insert(k.clone(), v.clone());
         }
         let mut states_z: States = Default::default();
@@ -348,7 +354,7 @@ impl Phi for CatPhi {
             let (k, v) = self
                 .states
                 .get_index(i)
-                .ok_or_else(|| Error::Model(format!("Invalid state index: {}", i)))?;
+                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
             states_z.insert(k.clone(), v.clone());
         }
 

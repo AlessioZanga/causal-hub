@@ -22,7 +22,7 @@ impl MLE<'_, CatTrj> {
 
         // Assert the conditional times counts are not zero.
         if !t_xz.iter().all(|&x| x > 0.) {
-            return Err(Error::Model(
+            return Err(Error::Stats(
                 "Failed to get non-zero conditional times.".into(),
             ));
         }
@@ -87,7 +87,7 @@ impl MLE<'_, CatTrj> {
             .map(|&i| {
                 let (k, v) = states
                     .get_index(i)
-                    .ok_or_else(|| Error::Model(format!("Index {i} not found in states.")))?;
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -97,7 +97,7 @@ impl MLE<'_, CatTrj> {
             .map(|&i| {
                 let (k, v) = states
                     .get_index(i)
-                    .ok_or_else(|| Error::Model(format!("Index {i} not found in states.")))?;
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;

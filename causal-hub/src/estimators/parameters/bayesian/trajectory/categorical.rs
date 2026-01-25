@@ -22,11 +22,17 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let (alpha, tau) = prior;
         // Assert alpha is positive.
         if alpha == 0 {
-            return Err(Error::Model("Alpha must be positive.".into()));
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be positive".into(),
+            ));
         }
         // Assert tau is positive.
         if tau <= 0.0 {
-            return Err(Error::Model("Tau must be positive.".into()));
+            return Err(Error::InvalidParameter(
+                "tau".into(),
+                "must be positive".into(),
+            ));
         }
 
         // Get the conditional counts and times.
@@ -82,9 +88,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states
-                    .get_index(i)
-                    .ok_or_else(|| Error::Model(format!("Index {i} not found in states.")))?;
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -92,9 +96,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states
-                    .get_index(i)
-                    .ok_or_else(|| Error::Model(format!("Index {i} not found in states.")))?;
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;

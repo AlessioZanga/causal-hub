@@ -103,83 +103,65 @@ pub(crate) mod digraph {
         if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref())
             && !w.is_subset(v)
         {
-            return Err(Error::IllegalArgument(
-                "Set W must be a subset of set V.".into(),
-            ));
+            return Err(Error::SubsetMismatch("W".into(), "V".into()));
         }
 
         // Convert X to set, while checking for out of bounds.
         for &x in x {
             if !g.has_vertex(x) {
-                return Err(Error::IllegalArgument(format!(
-                    "Vertex `{x}` in set X is out of bounds."
-                )));
+                return Err(Error::VertexOutOfBounds(x));
             }
         }
         // Convert Y to set, while checking for out of bounds.
         for &y in y {
             if !g.has_vertex(y) {
-                return Err(Error::IllegalArgument(format!(
-                    "Vertex `{y}` in set Y is out of bounds."
-                )));
+                return Err(Error::VertexOutOfBounds(y));
             }
         }
         // Convert Z to set, while checking for out of bounds.
         if let Some(z) = z {
             for &z in z {
                 if !g.has_vertex(z) {
-                    return Err(Error::IllegalArgument(format!(
-                        "Vertex `{z}` in set Z is out of bounds."
-                    )));
+                    return Err(Error::VertexOutOfBounds(z));
                 }
             }
         }
 
         // Assert X is non-empty.
         if x.is_empty() {
-            return Err(Error::IllegalArgument("Set X must not be empty.".into()));
+            return Err(Error::EmptySet("X".into()));
         }
         // Assert Y is non-empty.
         if y.is_empty() {
-            return Err(Error::IllegalArgument("Set Y must not be empty.".into()));
+            return Err(Error::EmptySet("Y".into()));
         }
 
         // Assert X and Y are disjoint.
         if !x.is_disjoint(y) {
-            return Err(Error::IllegalArgument(
-                "Sets X and Y must be disjoint.".into(),
-            ));
+            return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
         }
 
         // If Z is provided, convert it to a set.
         if let Some(z) = &z {
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Sets X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert Y and Z are disjoint.
             if !y.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Sets Y and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
             }
             // Assert Z includes.
             if let Some(w) = w
                 && !z.is_superset(w)
             {
-                return Err(Error::IllegalArgument(
-                    "Set Z must be a superset of set W.".into(),
-                ));
+                return Err(Error::SubsetMismatch("W".into(), "Z".into()));
             }
             // Assert Z is restricted.
             if let Some(v) = v
                 && !z.is_subset(v)
             {
-                return Err(Error::IllegalArgument(
-                    "Set Z must be a subset of set V.".into(),
-                ));
+                return Err(Error::SubsetMismatch("Z".into(), "V".into()));
             }
         }
         Ok(())
@@ -193,7 +175,7 @@ pub(crate) mod digraph {
     ) -> Result<Set<usize>> {
         // Assert the graph is a DAG.
         if g.topological_order().is_none() {
-            return Err(Error::IllegalArgument("Graph must be a DAG.".into()));
+            return Err(Error::NotADag);
         }
 
         // Check if the ball passes or not.

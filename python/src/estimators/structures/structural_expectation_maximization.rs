@@ -9,7 +9,7 @@ use backend::{
     models::{CTBN, CatCTBN, DiGraph, Graph, Labelled},
     samplers::{ImportanceSampler, ParCTBNSampler},
     set,
-    types::{Cache, Error as BackendError, Result as BackendResult},
+    types::{Cache, Error as BackendError, Result},
 };
 use log::debug;
 use pyo3::{
@@ -66,7 +66,7 @@ pub fn sem<'a>(
 
     // Release the GIL to allow parallel execution.
     let output = py
-        .detach(|| -> BackendResult<_> {
+        .detach(|| -> Result<_> {
             // Initialize the random number generator.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
@@ -121,10 +121,10 @@ pub fn sem<'a>(
                     initial_graph
                 }
                 _ => {
-                    return Err(BackendError::Model(format!(
+                    return Err(BackendError::IllegalArgument(format!(
                         "Failed to get the structure learning algorithm: \n\
-                \t expected:   'ctpc' or 'cthc', \n\
-                \t found:      '{}'",
+                        \t expected:   'ctpc' or 'cthc', \n\
+                        \t found:      '{}'",
                         algorithm
                     )));
                 }
@@ -139,11 +139,11 @@ pub fn sem<'a>(
             // Set the initial model.
             let initial_model = raw
                 .map_err(|e| {
-                    BackendError::Model(format!("Failed to initialize raw estimator: {}", e))
+                    BackendError::Stats(format!("Failed to initialize raw estimator: {}", e))
                 })?
                 .par_fit(initial_graph.clone())
                 .map_err(|e| {
-                    BackendError::Model(format!("Failed to fit the initial model: {}", e))
+                    BackendError::Stats(format!("Failed to fit the initial model: {}", e))
                 })?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
@@ -152,68 +152,65 @@ pub fn sem<'a>(
             // Define the expectation-maximization step.
             let em_step = |prev_model: &CatCTBN,
                            evidence: &CatTrjsEv|
-             -> BackendResult<EMOutput<CatCTBN, CatWtdTrjs>> {
+             -> Result<EMOutput<CatCTBN, CatWtdTrjs>> {
                 // Define the expectation step.
-                let e_step =
-                    |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> BackendResult<CatWtdTrjs> {
-                        // Reference the random number generator.
-                        let mut rng = rng.borrow_mut();
-                        // Get the maximum length of the trajectories.
-                        let max_length = evidence
-                            .evidences()
-                            .iter()
-                            .flat_map(|e| e.evidences())
-                            .map(|e| e.len())
-                            .max()
-                            .unwrap_or(0);
-                        // Sample the seeds to parallelize the sampling.
-                        let seeds: Vec<_> = (0..evidence.evidences().len())
-                            .map(|_| rng.next_u64())
-                            .collect();
-                        // For each (seed, evidence) ...
-                        seeds
-                            .into_par_iter()
-                            .zip(evidence.par_iter())
-                            .map(|(s, e)| {
-                                // Initialize a new random number generator.
-                                let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
-                                // Initialize a new sampler.
-                                let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
-                                // Perform multiple imputation.
-                                let trjs = importance.par_sample_n_by_length(max_length, 10)?;
-                                // Get the one with the highest weight.
-                                trjs.values()
-                                    .iter()
-                                    .max_by(|a, b| {
-                                        a.weight()
-                                            .partial_cmp(&b.weight())
-                                            .unwrap_or(std::cmp::Ordering::Equal)
-                                    })
-                                    .cloned()
-                                    .ok_or_else(|| {
-                                        BackendError::Model("No trajectories sampled".into())
-                                    })
-                            })
-                            .collect()
-                    };
+                let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> Result<CatWtdTrjs> {
+                    // Reference the random number generator.
+                    let mut rng = rng.borrow_mut();
+                    // Get the maximum length of the trajectories.
+                    let max_length = evidence
+                        .evidences()
+                        .iter()
+                        .flat_map(|e| e.evidences())
+                        .map(|e| e.len())
+                        .max()
+                        .unwrap_or(0);
+                    // Sample the seeds to parallelize the sampling.
+                    let seeds: Vec<_> = (0..evidence.evidences().len())
+                        .map(|_| rng.next_u64())
+                        .collect();
+                    // For each (seed, evidence) ...
+                    seeds
+                        .into_par_iter()
+                        .zip(evidence.par_iter())
+                        .map(|(s, e)| {
+                            // Initialize a new random number generator.
+                            let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                            // Initialize a new sampler.
+                            let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                            // Perform multiple imputation.
+                            let trjs = importance.par_sample_n_by_length(max_length, 10)?;
+                            // Get the one with the highest weight.
+                            trjs.values()
+                                .iter()
+                                .max_by(|a, b| {
+                                    a.weight()
+                                        .partial_cmp(&b.weight())
+                                        .unwrap_or(std::cmp::Ordering::Equal)
+                                })
+                                .cloned()
+                                .ok_or_else(|| {
+                                    BackendError::MissingData("No trajectories sampled".into())
+                                })
+                        })
+                        .collect()
+                };
 
                 // Define the maximization step.
-                let m_step =
-                    |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> BackendResult<CatCTBN> {
-                        // Initialize the parameter estimator.
-                        let estimator = BE::new(expectation).with_prior((1, 1.));
-                        // Fit the model using the parameter estimator.
-                        estimator.par_fit(prev_model.graph().clone())
-                    };
+                let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> Result<CatCTBN> {
+                    // Initialize the parameter estimator.
+                    let estimator = BE::new(expectation).with_prior((1, 1.));
+                    // Fit the model using the parameter estimator.
+                    estimator.par_fit(prev_model.graph().clone())
+                };
 
                 // Define the stopping criteria.
-                let stop = |prev_model: &CatCTBN,
-                            curr_model: &CatCTBN,
-                            counter: usize|
-                 -> BackendResult<bool> {
-                    // Check if the models are equal or the counter is greater than the limit.
-                    Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
-                };
+                let stop =
+                    |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> Result<bool> {
+                        // Check if the models are equal or the counter is greater than the limit.
+                        Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2)
+                            || counter >= max_iter)
+                    };
 
                 // Create a new EM.
                 let em = EMBuilder::new(prev_model, evidence)
@@ -222,7 +219,7 @@ pub fn sem<'a>(
                     .with_stop(&stop)
                     .build()
                     .map_err(|e| {
-                        BackendError::Model(format!("Failed to build EM algorithm: {}", e))
+                        BackendError::Stats(format!("Failed to build EM algorithm: {}", e))
                     })?;
 
                 // Fit the model.
@@ -232,13 +229,12 @@ pub fn sem<'a>(
             // Define the structure learning step.
             let sl_step = |_prev_model: &CatCTBN,
                            em: &EMOutput<CatCTBN, CatWtdTrjs>|
-             -> BackendResult<CatCTBN> {
+             -> Result<CatCTBN> {
                 // Initialize the parameter estimator.
-                let estimator =
-                    BE::new(em.expectations.last().ok_or_else(|| {
-                        BackendError::Model("No expectations in EM output".into())
-                    })?)
-                    .with_prior((1, 1.));
+                let estimator = BE::new(em.expectations.last().ok_or_else(|| {
+                    BackendError::MissingData("No expectations in EM output".into())
+                })?)
+                .with_prior((1, 1.));
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Learn the graph.
@@ -246,11 +242,11 @@ pub fn sem<'a>(
                     "ctpc" => {
                         // Initialize the F test.
                         let f_test = FTest::new(&cache, f_test).map_err(|e| {
-                            BackendError::Model(format!("Failed to initialize F-test: {}", e))
+                            BackendError::Stats(format!("Failed to initialize F-test: {}", e))
                         })?;
                         // Initialize the chi-squared test.
                         let chi_sq_test = ChiSquaredTest::new(&cache, c_test).map_err(|e| {
-                            BackendError::Model(format!(
+                            BackendError::Stats(format!(
                                 "Failed to initialize Chi-squared test: {}",
                                 e
                             ))
@@ -258,15 +254,18 @@ pub fn sem<'a>(
                         // Initialize the CTPC algorithm.
                         let ctpc =
                             CTPC::new(&initial_graph, &f_test, &chi_sq_test).map_err(|e| {
-                                BackendError::Model(format!("Failed to initialize CTPC: {}", e))
+                                BackendError::Stats(format!("Failed to initialize CTPC: {}", e))
                             })?;
                         // Set prior knowledge.
                         let ctpc = ctpc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::Model(format!("Failed to set prior knowledge: {}", e))
+                            BackendError::IllegalArgument(format!(
+                                "Failed to set prior knowledge: {}",
+                                e
+                            ))
                         })?;
                         // Fit the new structure using CTPC.
                         ctpc.par_fit().map_err(|e| {
-                            BackendError::Model(format!("Failed to fit structure with CTPC: {}", e))
+                            BackendError::Stats(format!("Failed to fit structure with CTPC: {}", e))
                         })?
                     }
                     "cthc" => {
@@ -275,23 +274,26 @@ pub fn sem<'a>(
                         // Initialize the CTHC algorithm and set the maximum number of parents.
                         let cthc = CTHC::new(&initial_graph, &bic)
                             .map_err(|e| {
-                                BackendError::Model(format!("Failed to initialize CTHC: {}", e))
+                                BackendError::Stats(format!("Failed to initialize CTHC: {}", e))
                             })?
                             .with_max_parents(max_parents);
                         // Set prior knowledge.
                         let cthc = cthc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::Model(format!("Failed to set prior knowledge: {}", e))
+                            BackendError::IllegalArgument(format!(
+                                "Failed to set prior knowledge: {}",
+                                e
+                            ))
                         })?;
                         // Fit the new structure using CTHC.
                         cthc.par_fit().map_err(|e| {
-                            BackendError::Model(format!("Failed to fit structure with CTHC: {}", e))
+                            BackendError::Stats(format!("Failed to fit structure with CTHC: {}", e))
                         })?
                     }
                     _ => {
-                        return Err(BackendError::Model(format!(
+                        return Err(BackendError::IllegalArgument(format!(
                             "Failed to get the structure learning algorithm: \n\
-                    \t expected:   'ctpc' or 'cthc', \n\
-                    \t found:      '{}'",
+                            \t expected:   'ctpc' or 'cthc', \n\
+                            \t found:      '{}'",
                             algorithm
                         )));
                     }
@@ -301,13 +303,11 @@ pub fn sem<'a>(
             };
 
             // Define the stopping criteria.
-            let sem_stop = |prev_model: &CatCTBN,
-                            curr_model: &CatCTBN,
-                            counter: usize|
-             -> BackendResult<bool> {
-                // Check if the models are equal or the counter is greater than the limit.
-                Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
-            };
+            let sem_stop =
+                |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> Result<bool> {
+                    // Check if the models are equal or the counter is greater than the limit.
+                    Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
+                };
 
             // Create a new SEM.
             let sem = EMBuilder::new(&initial_model, evidence)
@@ -316,12 +316,12 @@ pub fn sem<'a>(
                 .with_stop(&sem_stop)
                 .build()
                 .map_err(|e| {
-                    BackendError::Model(format!("Failed to build the SEM algorithm: {}", e))
+                    BackendError::Stats(format!("Failed to build the SEM algorithm: {}", e))
                 })?;
 
             // Fit the model.
             sem.fit().map_err(|e| {
-                BackendError::Model(format!("Failed to fit the model using SEM: {}", e))
+                BackendError::Stats(format!("Failed to fit the model using SEM: {}", e))
             })
         })
         .map_err(|e| crate::error::Error::new_err(e.to_string()))?;

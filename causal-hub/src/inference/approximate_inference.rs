@@ -107,7 +107,8 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     pub fn with_sample_size(mut self, n: usize) -> Result<Self> {
         // Assert the sample size is positive.
         if n == 0 {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "n".into(),
                 "Sample size must be positive.".into(),
             ));
         }
@@ -186,19 +187,17 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
+            for &i in x.union(z) {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
             }
 
             // Get the sample size.
@@ -225,19 +224,17 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
+            for &i in x.union(z) {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
             }
 
             // Get the sample size.
@@ -268,19 +265,17 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
+            for &i in x.union(z) {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
             }
 
             // Get the sample size.
@@ -317,19 +312,17 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
+            for &i in x.union(z) {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
             }
 
             // Get the sample size.

@@ -50,8 +50,9 @@ where
     pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {
         // Assert the model and the evidences have the same labels.
         if model.labels() != evidence.labels() {
-            return Err(Error::Model(
-                "The model and the evidences must have the same variables.".into(),
+            return Err(Error::LabelMismatch(
+                "model labels".to_string(),
+                "evidence labels".to_string(),
             ));
         }
 

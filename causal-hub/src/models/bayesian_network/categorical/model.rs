@@ -144,7 +144,10 @@ impl BN for CatBN {
             .into_iter()
             .map(|x| {
                 if x.labels().len() != 1 {
-                    return Err(Error::Model("CPD must contain exactly one label.".into()));
+                    return Err(Error::InvalidParameter(
+                        "cpd".to_string(),
+                        "CPD must contain exactly one label.".to_string(),
+                    ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
             })
@@ -154,8 +157,9 @@ impl BN for CatBN {
 
         // Assert same number of graph labels and CPDs.
         if !graph.labels().iter().eq(cpds.keys()) {
-            return Err(Error::Model(
-                "Graph labels and distributions labels must be the same.".into(),
+            return Err(Error::LabelMismatch(
+                "graph labels".to_string(),
+                "distributions labels".to_string(),
             ));
         }
 
@@ -171,9 +175,10 @@ impl BN for CatBN {
                     if let Some(existing_states) = states.get(l) {
                         // Check if the states are the same.
                         if existing_states != s {
-                            return Err(Error::Model(format!(
-                                "States of `{l}` must be the same across CPDs.",
-                            )));
+                            return Err(Error::InvalidParameter(
+                                "cpds".to_string(),
+                                format!("States of `{l}` must be the same across CPDs."),
+                            ));
                         }
                     } else {
                         // Insert the states into the map.
@@ -199,19 +204,15 @@ impl BN for CatBN {
             let pa_j = cpds[&labels[i]].conditioning_labels();
             // Assert they are the same.
             if pa_i != pa_j {
-                return Err(Error::Model(format!(
-                    "Graph parents labels and CPD conditioning labels must be the same:\n\
-                \t expected:    {:?} ,\n\
-                \t found:       {:?} .",
-                    pa_i, pa_j
-                )));
+                return Err(Error::LabelMismatch(
+                    format!("{pa_i:?}"),
+                    format!("{pa_j:?}"),
+                ));
             }
         }
 
         // Assert the graph is acyclic.
-        let topological_order = graph
-            .topological_order()
-            .ok_or_else(|| Error::Model("Graph must be acyclic.".into()))?;
+        let topological_order = graph.topological_order().ok_or(Error::NotADag)?;
 
         Ok(Self {
             name: None,
@@ -268,14 +269,18 @@ impl BN for CatBN {
         if let Some(name) = &name
             && name.is_empty()
         {
-            return Err(Error::Model("Name cannot be an empty string.".into()));
+            return Err(Error::InvalidParameter(
+                "name".to_string(),
+                "cannot be empty".to_string(),
+            ));
         }
         // Assert description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
-            return Err(Error::Model(
-                "Description cannot be an empty string.".into(),
+            return Err(Error::InvalidParameter(
+                "description".to_string(),
+                "cannot be empty".to_string(),
             ));
         }
 

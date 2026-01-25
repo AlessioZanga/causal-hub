@@ -46,9 +46,7 @@ impl BE<'_, CatTable, usize> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states
-                    .get_index(i)
-                    .ok_or_else(|| Error::Dataset(format!("Index {} out of bounds", i)))?;
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -56,9 +54,7 @@ impl BE<'_, CatTable, usize> {
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states
-                    .get_index(i)
-                    .ok_or_else(|| Error::Dataset(format!("Index {} out of bounds", i)))?;
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;

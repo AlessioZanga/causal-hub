@@ -44,36 +44,38 @@ impl GaussCPDP {
     pub fn new(a: Array2<f64>, b: Array1<f64>, s: Array2<f64>) -> Result<Self> {
         // Assert the dimensions are correct.
         if a.nrows() != b.len() {
-            return Err(Error::Model(
-                "Coefficient matrix rows must match intercept vector size.".into(),
+            return Err(Error::IncompatibleShape(
+                a.nrows().to_string(),
+                b.len().to_string(),
             ));
         }
         if a.nrows() != s.nrows() {
-            return Err(Error::Model(
-                "Coefficient matrix rows must match covariance matrix size.".into(),
+            return Err(Error::IncompatibleShape(
+                a.nrows().to_string(),
+                s.nrows().to_string(),
             ));
         }
         if !s.is_square() {
-            return Err(Error::Model("Covariance matrix must be square.".into()));
+            return Err(Error::Shape("Covariance matrix must be square.".into()));
         }
         // Assert values are finite.
         if !a.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Model(
+            return Err(Error::Linalg(
                 "Coefficient matrix must have finite values.".into(),
             ));
         }
         if !b.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Model(
+            return Err(Error::Linalg(
                 "Intercept vector must have finite values.".into(),
             ));
         }
         if !s.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Model(
+            return Err(Error::Linalg(
                 "Covariance matrix must have finite values.".into(),
             ));
         }
         if s != s.t() {
-            return Err(Error::Model("Covariance matrix must be symmetric.".into()));
+            return Err(Error::Linalg("Covariance matrix must be symmetric.".into()));
         }
 
         Ok(Self { a, b, s })
@@ -309,34 +311,40 @@ impl GaussCPD {
     ) -> Result<Self> {
         // Assert labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::Model(
-                "Labels and conditioning labels must be disjoint.".into(),
+            return Err(Error::SetsNotDisjoint(
+                "labels".to_string(),
+                "conditioning labels".to_string(),
             ));
         }
         // Assert parameters dimensions match labels and conditioning labels lengths.
         if parameters.a.nrows() != labels.len() {
-            return Err(Error::Model(
-                "Coefficient matrix rows must match labels length.".into(),
+            return Err(Error::IncompatibleShape(
+                parameters.a.nrows().to_string(),
+                labels.len().to_string(),
             ));
         }
         if parameters.a.ncols() != conditioning_labels.len() {
-            return Err(Error::Model(
-                "Coefficient matrix columns must match conditioning labels length.".into(),
+            return Err(Error::IncompatibleShape(
+                parameters.a.ncols().to_string(),
+                conditioning_labels.len().to_string(),
             ));
         }
         if parameters.b.len() != labels.len() {
-            return Err(Error::Model(
-                "Intercept vector size must match labels length.".into(),
+            return Err(Error::IncompatibleShape(
+                parameters.b.len().to_string(),
+                labels.len().to_string(),
             ));
         }
         if parameters.s.nrows() != labels.len() {
-            return Err(Error::Model(
-                "Covariance matrix rows must match labels length.".into(),
+            return Err(Error::IncompatibleShape(
+                parameters.s.nrows().to_string(),
+                labels.len().to_string(),
             ));
         }
         if parameters.s.ncols() != labels.len() {
-            return Err(Error::Model(
-                "Covariance matrix columns must match labels length.".into(),
+            return Err(Error::IncompatibleShape(
+                parameters.s.ncols().to_string(),
+                labels.len().to_string(),
             ));
         }
 
@@ -598,23 +606,11 @@ impl CPD for GaussCPD {
 
         // Assert X matches number of variables.
         if x.len() != n {
-            return Err(Error::Model(format!(
-                "Vector X must match number of variables: \n\
-                \t expected:    |X| == {} , \n\
-                \t found:       |X| == {} .",
-                n,
-                x.len(),
-            )));
+            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
         }
         // Assert Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::Model(format!(
-                "Vector Z must match number of conditioning variables: \n\
-                \t expected:    |Z| == {} , \n\
-                \t found:       |Z| == {} .",
-                m,
-                z.len(),
-            )));
+            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
 
         // Get parameters.
@@ -676,13 +672,7 @@ impl CPD for GaussCPD {
 
         // Assert Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::Model(format!(
-                "Vector Z must match number of conditioning variables: \n\
-                \t expected:    |Z| == {} , \n\
-                \t found:       |Z| == {} .",
-                m,
-                z.len(),
-            )));
+            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
 
         // Get parameters.

@@ -52,13 +52,13 @@ impl CatCIMS {
         assert_eq!(
             n_xz.shape()[0],
             t_xz.shape()[0],
-            "The first dimension of the conditional counts must match \n
+            "The first dimension of the conditional counts must match \n\
             the first dimension of the conditional times."
         );
         assert_eq!(
             n_xz.shape()[1],
             t_xz.shape()[1],
-            "The second dimension of the conditional counts must match \n
+            "The second dimension of the conditional counts must match \n\
             the second dimension of the conditional times."
         );
         assert!(

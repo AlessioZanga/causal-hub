@@ -47,9 +47,10 @@ impl CatWtdTrj {
     pub fn new(trajectory: CatTrj, weight: f64) -> Result<Self> {
         // Check that the weight is in the range [0, 1].
         if !(0.0..=1.0).contains(&weight) {
-            return Err(Error::Dataset(format!(
-                "Weight must be in the range [0, 1], but got {weight}."
-            )));
+            return Err(Error::InvalidParameter(
+                "weight".to_string(),
+                format!("must be in the range [0, 1], but got {weight}"),
+            ));
         }
 
         Ok(Self { trajectory, weight })
@@ -182,8 +183,9 @@ impl CatWtdTrjs {
             .windows(2)
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
-            return Err(Error::Dataset(
-                "All trajectories must have the same labels.".to_string(),
+            return Err(Error::IncompatibleShape(
+                "labels".into(),
+                "all trajectories".into(),
             ));
         }
         // Check if every trajectory has the same states.
@@ -191,8 +193,9 @@ impl CatWtdTrjs {
             .windows(2)
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
-            return Err(Error::Dataset(
-                "All trajectories must have the same states.".to_string(),
+            return Err(Error::IncompatibleShape(
+                "states".into(),
+                "all trajectories".into(),
             ));
         }
         // Check if every trajectory has the same shape.
@@ -200,15 +203,16 @@ impl CatWtdTrjs {
             .windows(2)
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
-            return Err(Error::Dataset(
-                "All trajectories must have the same shape.".to_string(),
+            return Err(Error::IncompatibleShape(
+                "shape".into(),
+                "all trajectories".into(),
             ));
         }
 
         // Get the labels, states and shape from the first trajectory.
         let trj = values
             .first()
-            .ok_or_else(|| Error::Dataset("No trajectory in the dataset.".to_string()))?;
+            .ok_or_else(|| Error::EmptySet("trajectories".into()))?;
         let labels = trj.labels().clone();
         let states = trj.states().clone();
         let shape = trj.shape().clone();
