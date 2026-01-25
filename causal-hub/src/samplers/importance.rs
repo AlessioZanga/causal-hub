@@ -465,10 +465,8 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 // Return the certain evidence.
                 Ok(Some(e))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .flatten()
-            .collect();
+            .filter_map(|x| x.transpose())
+            .collect::<Result<_>>()?;
 
         // Collect the certain evidence.
         CatTrjEv::new(self.evidence.states().clone(), certain_evidence)

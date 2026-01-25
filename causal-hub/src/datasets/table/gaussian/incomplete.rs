@@ -158,12 +158,10 @@ impl GaussIncTable {
             .map(|&j| {
                 self.labels
                     .get_index(j)
+                    .cloned()
                     .ok_or_else(|| Error::Dataset(format!("Index {j} not found in labels.")))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .cloned()
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Return the complete dataset.
         GaussTable::new(new_labels, new_values)
@@ -203,12 +201,10 @@ impl Dataset for GaussIncTable {
             .map(|&i| {
                 self.labels
                     .get_index(i)
+                    .cloned()
                     .ok_or_else(|| Error::Dataset(format!("Index {i} not found in labels.")))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .cloned()
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));

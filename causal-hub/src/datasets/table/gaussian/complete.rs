@@ -117,12 +117,10 @@ impl Dataset for GaussTable {
             .map(|&i| {
                 self.labels
                     .get_index(i)
+                    .cloned()
                     .ok_or_else(|| Error::Dataset(format!("Index {i} not found in labels.")))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .cloned()
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
@@ -180,7 +178,7 @@ impl CsvIO for GaussTable {
                     })
                     .collect::<Result<Vec<_>>>()
             })
-            .collect::<Result<Vec<Vec<_>>>>()?
+            .collect::<Result<Vec<_>>>()?
             .into_iter()
             .flatten()
             .collect();

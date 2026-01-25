@@ -405,12 +405,10 @@ impl IncDataset for CatIncTable {
             .map(|&j| {
                 self.states
                     .get_index(j)
+                    .map(|(label, state)| (label.clone(), state.clone()))
                     .ok_or_else(|| Error::Dataset(format!("Index {j} not found in states.")))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .map(|(label, state)| (label.clone(), state.clone()))
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Return new complete dataset.
         Self::Complete::new(new_states, new_values)

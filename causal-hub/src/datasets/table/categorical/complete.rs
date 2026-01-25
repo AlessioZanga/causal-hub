@@ -255,12 +255,10 @@ impl Dataset for CatTable {
             .map(|&i| {
                 self.states
                     .get_index(i)
+                    .map(|(label, states)| (label.clone(), states.clone()))
                     .ok_or_else(|| Error::Dataset(format!("Index {i} not found in states.")))
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .map(|(label, states)| (label.clone(), states.clone()))
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));

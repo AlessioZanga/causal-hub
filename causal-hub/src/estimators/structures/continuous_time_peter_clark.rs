@@ -519,10 +519,8 @@ where
                             // Otherwise, keep the parent.
                             Ok(Some(j))
                         })
-                        .collect::<Result<Vec<_>>>()?
-                        .into_iter()
-                        .flatten()
-                        .collect();
+                        .filter_map(|x| x.transpose())
+                        .collect::<Result<_>>()?;
                     // Increment the counter.
                     k += 1;
                 }
