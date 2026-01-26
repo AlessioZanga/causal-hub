@@ -1,7 +1,10 @@
 mod categorical;
 pub use categorical::*;
 
-use crate::{models::graphs::DiGraph, types::Map};
+use crate::{
+    models::graphs::DiGraph,
+    types::{Map, Result},
+};
 
 /// A trait for continuous time Bayesian networks (CTBNs).
 pub trait CTBN {
@@ -28,13 +31,20 @@ pub trait CTBN {
     /// The distribution of the initial state (i.e. initial distribution) is uniform.
     /// See `with_initial_distribution` to specify the initial distribution.
     ///
+    /// # Errors
+    ///
+    /// * If the number of CIMs does not match the number of vertices in the graph.
+    /// * If the labels of the CIMs do not match the labels of the graph.
+    /// * If the conditioning labels of the CIMs do not match the parents of the vertices in the graph.
+    ///
     /// # Returns
     ///
     /// A new CTBN instance.
     ///
-    fn new<I>(graph: DiGraph, cims: I) -> Self
+    fn new<I>(graph: DiGraph, cims: I) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CIM>;
+        I: IntoIterator<Item = Self::CIM>,
+        Self: Sized;
 
     /// Returns the initial distribution.
     ///
@@ -52,7 +62,7 @@ pub trait CTBN {
     ///
     fn graph(&self) -> &DiGraph;
 
-    /// Returns the a map labels-distributions.
+    /// Returns a map labels-distributions.
     ///
     /// # Returns
     ///
@@ -77,10 +87,13 @@ pub trait CTBN {
     /// * `graph` - The underlying graph.
     /// * `cims` - The conditional intensity matrices.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * Panics if `name` is an empty string.
-    /// * Panics if `description` is an empty string.
+    /// * If `name` is an empty string.
+    /// * If `description` is an empty string.
+    /// * If the number of CIMs does not match the number of vertices in the graph.
+    /// * If the labels of the CIMs do not match the labels of the graph.
+    /// * If the conditioning labels of the CIMs do not match the parents of the vertices in the graph.
     ///
     /// # Returns
     ///
@@ -92,7 +105,8 @@ pub trait CTBN {
         initial_distribution: Self::InitialDistribution,
         graph: DiGraph,
         cims: I,
-    ) -> Self
+    ) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CIM>;
+        I: IntoIterator<Item = Self::CIM>,
+        Self: Sized;
 }

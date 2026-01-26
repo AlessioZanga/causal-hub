@@ -5,7 +5,7 @@ mod trajectory;
 use itertools::Either;
 pub use trajectory::*;
 
-use crate::types::{Map, Set};
+use crate::types::{Map, Result, Set};
 
 /// A trait for dataset.
 pub trait Dataset {
@@ -38,11 +38,18 @@ pub trait Dataset {
     ///
     /// * `x` - Set of variables to select.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A dataset restricted to the specified variables.
     ///
-    fn select(&self, x: &Set<usize>) -> Self;
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 /// An enum representing different methods for handling missing data.
@@ -87,6 +94,11 @@ pub trait IncDataset: Dataset + Sized {
     /// * `x` - An optional set of variables to consider for missing data handling.
     /// * `pr` - An optional missing mechanism specification.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// Either a complete or weighted dataset.
@@ -96,15 +108,19 @@ pub trait IncDataset: Dataset + Sized {
         m: &MissingMethod,
         x: Option<&Set<usize>>,
         pr: Option<&Map<usize, Set<usize>>>,
-    ) -> Either<Self::Complete, Self::Weighted>;
+    ) -> Result<Either<Self::Complete, Self::Weighted>>;
 
     /// Perform list-wise (LW) deletion to handle missing data.
+    ///
+    /// # Errors
+    ///
+    /// * If the dataset is empty after LW deletion.
     ///
     /// # Returns
     ///
     /// A complete dataset obtained via LW deletion.
     ///
-    fn lw_deletion(&self) -> Self::Complete;
+    fn lw_deletion(&self) -> Result<Self::Complete>;
 
     /// Perform pair-wise (PW) deletion to handle missing data for the specified columns.
     ///
@@ -112,11 +128,16 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// * `x` - A set of column indices for PW deletion.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A complete dataset restricted to the specified columns via PW deletion.
     ///
-    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete;
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete>;
 
     /// Perform inverse probability weighting (IPW) deletion to handle missing data for the specified columns.
     ///
@@ -125,11 +146,16 @@ pub trait IncDataset: Dataset + Sized {
     /// * `x` - A set of column indices for IPW deletion.
     /// * `pr` - The missing data indicators.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A weighted dataset restricted to the specified columns via IPW deletion.
     ///
-    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted>;
 
     /// Perform augmented inverse probability weighting (AIPW) deletion to handle missing data for the specified columns.
     ///
@@ -138,9 +164,14 @@ pub trait IncDataset: Dataset + Sized {
     /// * `x` - A set of column indices for AIPW deletion.
     /// * `pr` - The missing data indicators.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A weighted dataset restricted to the specified columns via AIPW deletion.
     ///
-    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted;
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted>;
 }

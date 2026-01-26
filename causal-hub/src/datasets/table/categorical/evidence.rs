@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::CatTrjEvT,
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// Categorical evidence type.
@@ -111,7 +111,7 @@ impl CatEv {
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I>(mut states: States, values: I) -> Self
+    pub fn new<I>(mut states: States, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatEvT>,
     {
@@ -119,19 +119,25 @@ impl CatEv {
         use CatEvT as E;
 
         // Get the sorted labels.
-        let mut labels = states.keys().cloned().collect();
+        let mut labels: Labels = states.keys().cloned().collect();
         // Get the shape of the states.
         let mut shape = Array::from_iter(states.values().map(Set::len));
-        // Allocate evidences.
-        let mut evidences = vec![None; states.len()];
-
         // Fill the evidences.
-        values.into_iter().for_each(|e| {
-            // Get the event of the evidence.
-            let event = e.event();
-            // Push the value into the variable events.
-            evidences[event] = Some(e);
-        });
+        let mut evidences = values.into_iter().try_fold(
+            vec![None; states.len()],
+            |mut evidences, e| -> Result<_> {
+                // Get the event of the evidence.
+                let event = e.event();
+                // Check if event is in bounds.
+                if event >= evidences.len() {
+                    return Err(Error::VertexOutOfBounds(event));
+                }
+                // Push the value into the variable events.
+                evidences[event] = Some(e);
+
+                Ok(evidences)
+            },
+        )?;
 
         // Sort states, if necessary.
         if !states.keys().is_sorted() || !states.values().all(|x| x.iter().is_sorted()) {
@@ -145,15 +151,15 @@ impl CatEv {
             let mut new_evidences = vec![None; states.len()];
 
             // Iterate over the values and insert them into the events map using sorted indices.
-            evidences.into_iter().flatten().for_each(|e| {
+            for e in evidences.into_iter().flatten() {
                 // Get the event and states of the evidence.
                 let (event, states) = states
                     .get_index(e.event())
-                    .expect("Failed to get label of evidence.");
+                    .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
                 // Sort the event index.
                 let (event, _, new_states) = new_states
                     .get_full(event)
-                    .expect("Failed to get full state.");
+                    .ok_or_else(|| Error::MissingLabel(event.clone()))?;
 
                 // Sort the variable states.
                 let e = match e {
@@ -161,7 +167,7 @@ impl CatEv {
                         // Sort the variable states.
                         let state = new_states
                             .get_index_of(&states[state])
-                            .expect("Failed to get index of state.");
+                            .ok_or_else(|| Error::MissingState(states[state].clone()))?;
                         // Construct the sorted evidence.
                         E::CertainPositive { event, state }
                     }
@@ -172,9 +178,9 @@ impl CatEv {
                             .map(|&state| {
                                 new_states
                                     .get_index_of(&states[state])
-                                    .expect("Failed to get index of state.")
+                                    .ok_or_else(|| Error::MissingState(states[state].clone()))
                             })
-                            .collect();
+                            .collect::<Result<_>>()?;
                         // Construct the sorted evidence.
                         E::CertainNegative { event, not_states }
                     }
@@ -182,14 +188,14 @@ impl CatEv {
                         // Allocate new variable states.
                         let mut new_p_states = Array::zeros(p_states.len());
                         // Sort the variable states.
-                        p_states.indexed_iter().for_each(|(i, &p)| {
+                        for (i, &p) in p_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&states[i])
-                                .expect("Failed to get index of state.");
+                                .ok_or_else(|| Error::MissingState(states[i].clone()))?;
                             // Assign probability to sorted index.
                             new_p_states[state] = p;
-                        });
+                        }
                         // Substitute the sorted states.
                         let p_states = new_p_states;
                         // Construct the sorted evidence.
@@ -199,14 +205,14 @@ impl CatEv {
                         // Allocate new variable states.
                         let mut new_p_not_states = Array::zeros(p_not_states.len());
                         // Sort the variable states.
-                        p_not_states.indexed_iter().for_each(|(i, &p)| {
+                        for (i, &p) in p_not_states.indexed_iter() {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&states[i])
-                                .expect("Failed to get index of state.");
+                                .ok_or_else(|| Error::MissingState(states[i].clone()))?;
                             // Assign probability to sorted index.
                             new_p_not_states[state] = p;
-                        });
+                        }
                         // Substitute the sorted states.
                         let p_not_states = new_p_not_states;
                         // Construct the sorted evidence.
@@ -219,7 +225,7 @@ impl CatEv {
 
                 // Push the value into the variable events.
                 new_evidences[event] = Some(e);
-            });
+            }
 
             // Update the states.
             states = new_states;
@@ -233,56 +239,56 @@ impl CatEv {
 
         // For each variable ...
         for (i, e) in evidences.iter_mut().enumerate() {
-            // Assert states distributions have the correct size.
-            assert!(
-                e.as_ref().is_none_or(|e| match e {
-                    E::CertainPositive { .. } => true,
-                    E::CertainNegative { .. } => true,
+            if let Some(e) = e.as_ref() {
+                match e {
+                    E::CertainPositive { .. } => {}
+                    E::CertainNegative { .. } => {}
                     E::UncertainPositive { p_states, .. } => {
-                        p_states.len() == shape[i]
+                        if p_states.len() != shape[i] {
+                            return Err(Error::IncompatibleShape(
+                                p_states.len().to_string(),
+                                shape[i].to_string(),
+                            ));
+                        }
+                        if !p_states.iter().all(|&x| x >= 0.) {
+                            return Err(Error::Probability(
+                                "Evidence states distributions must be non-negative.".to_string(),
+                            ));
+                        }
+                        if !relative_eq!(p_states.sum(), 1.) {
+                            return Err(Error::Probability(
+                                "Evidence states distributions must sum to 1.".to_string(),
+                            ));
+                        }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
-                        p_not_states.len() == shape[i]
+                        if p_not_states.len() != shape[i] {
+                            return Err(Error::IncompatibleShape(
+                                p_not_states.len().to_string(),
+                                shape[i].to_string(),
+                            ));
+                        }
+                        if !p_not_states.iter().all(|&x| x >= 0.) {
+                            return Err(Error::Probability(
+                                "Evidence states distributions must be non-negative.".to_string(),
+                            ));
+                        }
+                        if !relative_eq!(p_not_states.sum(), 1.) {
+                            return Err(Error::Probability(
+                                "Evidence states distributions must sum to 1.".to_string(),
+                            ));
+                        }
                     }
-                }),
-                "Evidence states distributions must have the correct size."
-            );
-            // Assert states distributions are not negative.
-            assert!(
-                e.as_ref().is_none_or(|e| match e {
-                    E::CertainPositive { .. } => true,
-                    E::CertainNegative { .. } => true,
-                    E::UncertainPositive { p_states, .. } => {
-                        p_states.iter().all(|&x| x >= 0.)
-                    }
-                    E::UncertainNegative { p_not_states, .. } => {
-                        p_not_states.iter().all(|&x| x >= 0.)
-                    }
-                }),
-                "Evidence states distributions must be non-negative."
-            );
-            // Assert states distributions sum to 1.
-            assert!(
-                e.as_ref().is_none_or(|e| match e {
-                    E::CertainPositive { .. } => true,
-                    E::CertainNegative { .. } => true,
-                    E::UncertainPositive { p_states, .. } => {
-                        relative_eq!(p_states.sum(), 1.)
-                    }
-                    E::UncertainNegative { p_not_states, .. } => {
-                        relative_eq!(p_not_states.sum(), 1.)
-                    }
-                }),
-                "Evidence states distributions must sum to 1."
-            );
+                }
+            }
         }
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             evidences,
-        }
+        })
     }
 
     /// The states of the evidence.

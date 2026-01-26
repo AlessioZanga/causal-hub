@@ -4,7 +4,7 @@ use crate::{
     inference::{BNInference, BackdoorCriterion, Modelled, ParBNInference},
     models::{BN, CatBN, GaussBN, Labelled, Phi},
     set,
-    types::Set,
+    types::{Error, Result, Set},
 };
 
 /// A causal inference engine.
@@ -41,17 +41,17 @@ where
     /// * `x` - The cause variables.
     /// * `y` - The effect variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If `X` is empty.
-    /// * If `Y` is empty.
-    /// * If `X` and `Y` are not disjoint.
+    /// * `EmptySet` if `X` is empty.
+    /// * `EmptySet` if `Y` is empty.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
+    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
         self.cace_estimate(x, y, &set![])
     }
 
@@ -63,19 +63,24 @@ where
     /// * `y` - The effect variables.
     /// * `z` - The conditioning variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If `X` is empty.
-    /// * If `Y` is empty.
-    /// * If `X` and `Y` are not disjoint.
-    /// * If `X` and `Z` are not disjoint.
-    /// * If `Y` and `Z` are not disjoint.
+    /// * `EmptySet` if `X` is empty.
+    /// * `EmptySet` if `Y` is empty.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint.
+    /// * `SetsNotDisjoint` if `X` and `Z` are not disjoint.
+    /// * `SetsNotDisjoint` if `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///
     /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
     ///
-    fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<T::CPD>;
+    fn cace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Option<T::CPD>>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -84,65 +89,75 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + BNInference<$type>,
     {
-        fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<<$type as BN>::CPD> {
+        fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::EmptySet("X".into()));
+            }
             // Assert Y is not empty.
-            assert!(!y.is_empty(), "Variables Y must not be empty.");
+            if y.is_empty() {
+                return Err(Error::EmptySet("Y".into()));
+            }
             // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(y), "Variables X and Y must be disjoint.");
+            if !x.is_disjoint(y) {
+                return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+            }
             // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(z), "Variables Y and Z must be disjoint.");
+            if !y.is_disjoint(z) {
+                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
+            }
 
             /* Effect Identification */
 
             // Get the model.
             let m = self.engine.model();
             // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None);
+            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
 
             /* Effect Estimation */
 
             // Match on the backdoor adjustment set.
             match z_s {
                 // If no backdoor adjustment set exists, return None.
-                None => None,
+                None => Ok(None),
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X)) as P(Y | X).
-                    Some(self.engine.estimate(y, x))
+                    Ok(Some(self.engine.estimate(y, x)?))
                 }
                 // If the backdoor adjustment set is equal to Z ...
                 Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Some(self.engine.estimate(y, &(x | z)))
+                    Ok(Some(self.engine.estimate(y, &(x | z))?))
                 }
                 // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s));
-                    let p_s = self.engine.estimate(s, &set![]);
+                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s))?;
+                    let p_s = self.engine.estimate(s, &set![])?;
                     // Convert to potentials for aligned multiplication.
-                    let p_y_x_z_s = p_y_x_z_s.into_phi();
-                    let p_s = p_s.into_phi();
+                    let p_y_x_z_s = p_y_x_z_s.into_phi()?;
+                    let p_s = p_s.into_phi()?;
                     // Compute P(Y | X, Z, S) * P(S) using potentials.
                     let p_y_s_do_x_z = &p_y_x_z_s * &p_s;
                     // Map BN indices to the potential indices.
-                    let s = p_y_s_do_x_z.indices_from(s, m.labels());
+                    let s = p_y_s_do_x_z.indices_from(s, m.labels())?;
                     // Marginalize over S.
-                    let p_y_do_x_z = p_y_s_do_x_z.marginalize(&s);
+                    let p_y_do_x_z = p_y_s_do_x_z.marginalize(&s)?;
                     // Map BN indices to the potential indices.
-                    let x = p_y_do_x_z.indices_from(x, m.labels());
-                    let y = p_y_do_x_z.indices_from(y, m.labels());
-                    let z = p_y_do_x_z.indices_from(z, m.labels());
+                    let x = p_y_do_x_z.indices_from(x, m.labels())?;
+                    let y = p_y_do_x_z.indices_from(y, m.labels())?;
+                    let z = p_y_do_x_z.indices_from(z, m.labels())?;
                     // Convert back to CPD.
-                    let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z));
+                    let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z))?;
                     // Return the result.
-                    Some(p_y_do_x_z)
+                    Ok(Some(p_y_do_x_z))
                 }
             }
         }
@@ -162,17 +177,17 @@ where
     /// * `x` - The cause variables.
     /// * `y` - The effect variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If `X` is empty.
-    /// * If `Y` is empty.
-    /// * If `X` and `Y` are not disjoint.
+    /// * `IllegalArgument` if `X` is empty.
+    /// * `IllegalArgument` if `Y` is empty.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
     /// The estimated average causal effect of `X` on `Y`.
     ///
-    fn par_ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Option<T::CPD> {
+    fn par_ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
         self.par_cace_estimate(x, y, &set![])
     }
 
@@ -184,19 +199,24 @@ where
     /// * `y` - The effect variables.
     /// * `z` - The conditioning variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If `X` is empty.
-    /// * If `Y` is empty.
-    /// * If `X` and `Y` are not disjoint.
-    /// * If `X` and `Z` are not disjoint.
-    /// * If `Y` and `Z` are not disjoint.
+    /// * `IllegalArgument` if `X` is empty.
+    /// * `IllegalArgument` if `Y` is empty.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    /// * `IllegalArgument` if `X` and `Z` are not disjoint.
+    /// * `IllegalArgument` if `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///
     /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
     ///
-    fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<T::CPD>;
+    fn par_cace_estimate(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+    ) -> Result<Option<T::CPD>>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -205,65 +225,75 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + ParBNInference<$type>,
     {
-        fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Option<<$type as BN>::CPD> {
+        fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Assert X is not empty.
-            assert!(!x.is_empty(), "Variables X must not be empty.");
+            if x.is_empty() {
+                return Err(Error::EmptySet("X".into()));
+            }
             // Assert Y is not empty.
-            assert!(!y.is_empty(), "Variables Y must not be empty.");
+            if y.is_empty() {
+                return Err(Error::EmptySet("Y".into()));
+            }
             // Assert X and Y are disjoint.
-            assert!(x.is_disjoint(y), "Variables X and Y must be disjoint.");
+            if !x.is_disjoint(y) {
+                return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
+            }
             // Assert X and Z are disjoint.
-            assert!(x.is_disjoint(z), "Variables X and Z must be disjoint.");
+            if !x.is_disjoint(z) {
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+            }
             // Assert Y and Z are disjoint.
-            assert!(y.is_disjoint(z), "Variables Y and Z must be disjoint.");
+            if !y.is_disjoint(z) {
+                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
+            }
 
             /* Effect Identification */
 
             // Get the model.
             let m = self.engine.model();
             // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None);
+            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
 
             /* Effect Estimation */
 
             // Match on the backdoor adjustment set.
             match z_s {
                 // If no backdoor adjustment set exists, return None.
-                None => None,
+                None => Ok(None),
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X)) as P(Y | X).
-                    Some(self.engine.par_estimate(y, x))
+                    Ok(Some(self.engine.par_estimate(y, x)?))
                 }
                 // If the backdoor adjustment set is equal to Z ...
                 Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Some(self.engine.par_estimate(y, &(x | z)))
+                    Ok(Some(self.engine.par_estimate(y, &(x | z))?))
                 }
                 // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s));
-                    let p_s = self.engine.par_estimate(s, &set![]);
+                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s))?;
+                    let p_s = self.engine.par_estimate(s, &set![])?;
                     // Convert to potentials for aligned multiplication.
-                    let p_y_x_z_s = p_y_x_z_s.into_phi();
-                    let p_s = p_s.into_phi();
+                    let p_y_x_z_s = p_y_x_z_s.into_phi()?;
+                    let p_s = p_s.into_phi()?;
                     // Compute P(Y | X, Z, S) * P(S) using potentials.
                     let p_y_s_do_x_z = &p_y_x_z_s * &p_s;
                     // Map BN indices to the potential indices.
-                    let s = p_y_s_do_x_z.indices_from(s, m.labels());
+                    let s = p_y_s_do_x_z.indices_from(s, m.labels())?;
                     // Marginalize over S.
-                    let p_y_do_x_z = p_y_s_do_x_z.marginalize(&s);
+                    let p_y_do_x_z = p_y_s_do_x_z.marginalize(&s)?;
                     // Map BN indices to the potential indices.
-                    let x = p_y_do_x_z.indices_from(x, m.labels());
-                    let y = p_y_do_x_z.indices_from(y, m.labels());
-                    let z = p_y_do_x_z.indices_from(z, m.labels());
+                    let x = p_y_do_x_z.indices_from(x, m.labels())?;
+                    let y = p_y_do_x_z.indices_from(y, m.labels())?;
+                    let z = p_y_do_x_z.indices_from(z, m.labels())?;
                     // Convert back to CPD.
-                    let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z));
+                    let p_y_do_x_z = p_y_do_x_z.into_cpd(&y, &(&x | &z))?;
                     // Return the result.
-                    Some(p_y_do_x_z)
+                    Ok(Some(p_y_do_x_z))
                 }
             }
         }

@@ -11,7 +11,7 @@ use crate::{
     inference::TopologicalOrder,
     models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
     set,
-    types::{Labels, Map},
+    types::{Error, Labels, Map, Result},
 };
 
 /// A Gaussian Bayesian network.
@@ -99,60 +99,65 @@ impl BN for GaussBN {
     type Samples = GaussTable;
     type WeightedSamples = GaussWtdTable;
 
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CPD>,
     {
         // Collect the CPDs into a map.
         let mut cpds: Map<_, _> = cpds
             .into_iter()
-            // Assert CPD contains exactly one label.
-            // TODO: Refactor code and remove this assumption.
-            .inspect(|x| {
-                assert_eq!(x.labels().len(), 1, "CPD must contain exactly one label.");
+            .map(|x| {
+                if x.labels().len() != 1 {
+                    return Err(Error::InvalidParameter(
+                        "cpd".to_string(),
+                        "CPD must contain exactly one label.".to_string(),
+                    ));
+                }
+                Ok((x.labels()[0].to_owned(), x))
             })
-            .map(|x| (x.labels()[0].to_owned(), x))
-            .collect();
+            .collect::<Result<_>>()?;
         // Sort the CPDs by their labels.
         cpds.sort_keys();
 
         // Assert same number of graph labels and CPDs.
-        assert!(
-            graph.labels().iter().eq(cpds.keys()),
-            "Graph labels and distributions labels must be the same."
-        );
+        if !graph.labels().iter().eq(cpds.keys()) {
+            return Err(Error::LabelMismatch(
+                "graph labels".to_string(),
+                "distributions labels".to_string(),
+            ));
+        }
 
         // Get the labels of the variables.
         let labels: Labels = graph.labels().clone();
 
         // Check if all vertices have the same labels as their parents.
-        graph.vertices().iter().for_each(|&i| {
+        graph.vertices().into_iter().try_for_each(|i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
             // Assert they are the same.
-            assert_eq!(
-                pa_i, pa_j,
-                "Graph parents labels and CPD conditioning labels must be the same:\n\
-                \t expected:    {:?} ,\n\
-                \t found:       {:?} .",
-                pa_i, pa_j
-            );
-        });
+            if pa_i != pa_j {
+                return Err(Error::LabelMismatch(
+                    format!("{pa_i:?}"),
+                    format!("{pa_j:?}"),
+                ));
+            }
+            Ok(())
+        })?;
 
         // Assert the graph is acyclic.
-        let topological_order = graph.topological_order().expect("Graph must be acyclic.");
+        let topological_order = graph.topological_order().ok_or(Error::NotADag)?;
 
-        Self {
+        Ok(Self {
             name: None,
             description: None,
             labels,
             graph,
             cpds,
             topological_order,
-        }
+        })
     }
 
     #[inline]
@@ -190,35 +195,42 @@ impl BN for GaussBN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self>
     where
         I: IntoIterator<Item = Self::CPD>,
     {
         // Assert name is not empty string.
-        if let Some(name) = &name {
-            assert!(!name.is_empty(), "Name cannot be an empty string.");
+        if let Some(name) = &name
+            && name.is_empty()
+        {
+            return Err(Error::InvalidParameter(
+                "name".to_string(),
+                "cannot be empty".to_string(),
+            ));
         }
         // Assert description is not empty string.
-        if let Some(description) = &description {
-            assert!(
-                !description.is_empty(),
-                "Description cannot be an empty string."
-            );
+        if let Some(description) = &description
+            && description.is_empty()
+        {
+            return Err(Error::InvalidParameter(
+                "description".to_string(),
+                "cannot be empty".to_string(),
+            ));
         }
 
         // Construct the BN.
-        let mut bn = Self::new(graph, cpds);
+        let mut bn = Self::new(graph, cpds)?;
 
         // Set the optional fields.
         bn.name = name;
         bn.description = description;
 
-        bn
+        Ok(bn)
     }
 }
 
 impl Serialize for GaussBN {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -256,7 +268,7 @@ impl Serialize for GaussBN {
 }
 
 impl<'de> Deserialize<'de> for GaussBN {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -279,7 +291,7 @@ impl<'de> Deserialize<'de> for GaussBN {
                 formatter.write_str("struct GaussBN")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<GaussBN, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<GaussBN, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -339,7 +351,8 @@ impl<'de> Deserialize<'de> for GaussBN {
                 // Set helper types.
                 let cpds: Vec<_> = cpds;
 
-                Ok(GaussBN::with_optionals(name, description, graph, cpds))
+                GaussBN::with_optionals(name, description, graph, cpds)
+                    .map_err(serde::de::Error::custom)
             }
         }
 

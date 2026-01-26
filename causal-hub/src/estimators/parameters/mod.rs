@@ -17,7 +17,7 @@ use rayon::prelude::*;
 use crate::{
     models::{BN, CIM, CPD, CTBN, DiGraph, Graph},
     set,
-    types::Set,
+    types::{Result, Set},
 };
 
 /// A trait for sufficient statistics estimators.
@@ -29,11 +29,18 @@ pub trait CSSEstimator<T> {
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The sufficient statistics.
     ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for sufficient statistics estimators in parallel.
@@ -45,11 +52,18 @@ pub trait ParCSSEstimator<T> {
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The sufficient statistics.
     ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for conditional probability distribution estimators.
@@ -64,11 +78,18 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CPD.
     ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for conditional probability distribution estimators in parallel.
@@ -83,11 +104,18 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CPD.
     ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for Bayesian network estimators.
@@ -98,11 +126,15 @@ pub trait BNEstimator<T> {
     ///
     /// * `graph` - The graph to fit the estimator to.
     ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
+    ///
     /// # Returns
     ///
     /// The estimated Bayesian network.
     ///
-    fn fit(&self, graph: DiGraph) -> T;
+    fn fit(&self, graph: DiGraph) -> Result<T>;
 }
 
 /// Blanket implement for all BN estimators with a corresponding CPD estimator.
@@ -112,16 +144,16 @@ where
     T::CPD: CPD,
     E: CPDEstimator<T::CPD>,
 {
-    fn fit(&self, graph: DiGraph) -> T {
+    fn fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.
         let cpds: Vec<_> = graph
             .vertices()
             .into_iter()
             .map(|i| {
                 let i = set![i];
-                self.fit(&i, &graph.parents(&i))
+                self.fit(&i, &graph.parents(&i)?)
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
     }
@@ -135,11 +167,15 @@ pub trait ParBNEstimator<T> {
     ///
     /// * `graph` - The graph to fit the estimator to.
     ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
+    ///
     /// # Returns
     ///
     /// The estimated Bayesian network.
     ///
-    fn par_fit(&self, graph: DiGraph) -> T;
+    fn par_fit(&self, graph: DiGraph) -> Result<T>;
 }
 
 /// Blanket implement for all BN estimators with a corresponding CPD estimator.
@@ -149,16 +185,16 @@ where
     T::CPD: CPD + Send,
     E: ParCPDEstimator<T::CPD> + Sync,
 {
-    fn par_fit(&self, graph: DiGraph) -> T {
+    fn par_fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.
         let cpds: Vec<_> = graph
             .vertices()
             .into_par_iter()
             .map(|i| {
                 let i = set![i];
-                self.par_fit(&i, &graph.parents(&i))
+                self.par_fit(&i, &graph.parents(&i)?)
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
         T::new(graph, cpds)
     }
@@ -176,11 +212,18 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CIM.
     ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for conditional intensity matrix estimators in parallel.
@@ -195,11 +238,18 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CIM.
     ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> T;
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
 }
 
 /// A trait for CTBN estimators.
@@ -210,11 +260,15 @@ pub trait CTBNEstimator<T> {
     ///
     /// * `graph` - The graph to fit the estimator to.
     ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
+    ///
     /// # Returns
     ///
     /// The estimated CTBN.
     ///
-    fn fit(&self, graph: DiGraph) -> T;
+    fn fit(&self, graph: DiGraph) -> Result<T>;
 }
 
 /// Blanket implement for all CTBN estimators with a corresponding CIM estimator.
@@ -224,16 +278,16 @@ where
     T::CIM: CIM,
     E: CIMEstimator<T::CIM>,
 {
-    fn fit(&self, graph: DiGraph) -> T {
+    fn fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.
         let cims: Vec<_> = graph
             .vertices()
             .into_iter()
             .map(|i| {
                 let i = set![i];
-                self.fit(&i, &graph.parents(&i))
+                self.fit(&i, &graph.parents(&i)?)
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)
     }
@@ -247,11 +301,15 @@ pub trait ParCTBNEstimator<T> {
     ///
     /// * `graph` - The graph to fit the estimator to.
     ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
+    ///
     /// # Returns
     ///
     /// The estimated CTBN.
     ///
-    fn par_fit(&self, graph: DiGraph) -> T;
+    fn par_fit(&self, graph: DiGraph) -> Result<T>;
 }
 
 /// Blanket implement for all CTBN estimators with a corresponding CIM estimator.
@@ -261,16 +319,16 @@ where
     T::CIM: CIM + Send,
     E: ParCIMEstimator<T::CIM> + Sync,
 {
-    fn par_fit(&self, graph: DiGraph) -> T {
+    fn par_fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.
         let cims: Vec<_> = graph
             .vertices()
             .into_par_iter()
             .map(|i| {
                 let i = set![i];
-                self.par_fit(&i, &graph.parents(&i))
+                self.par_fit(&i, &graph.parents(&i)?)
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.
         T::new(graph, cims)
     }

@@ -15,7 +15,10 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{
+    error::{Error, to_pyerr},
+    impl_from_into_lock,
+};
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
@@ -50,8 +53,7 @@ impl PyCatTrj {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -59,11 +61,11 @@ impl PyCatTrj {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect()
     }
 
     /// Returns the values of the trajectory.
@@ -151,7 +153,11 @@ impl PyCatTrj {
         // Extract the time column as a PyArray1<f64>.
         let time = time.cast::<PyArray1<f64>>()?.to_owned_array();
         // Remove the "time" column from the columns vector.
-        columns.remove(columns.iter().position(|x| x == "time").unwrap());
+        let time_idx = columns
+            .iter()
+            .position(|x| x == "time")
+            .ok_or_else(|| Error::new_err("'time' column not found in DataFrame".to_string()))?;
+        columns.remove(time_idx);
         // Decrement the shape of the data frame.
         shape.1 -= 1;
 
@@ -202,25 +208,30 @@ impl PyCatTrj {
                 // Extract the column as a PyArray1<PyObject>.
                 let column = column.cast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
-                let column = column.map(|x| {
-                    // Get the value.
-                    let x = x.extract::<String>(py).unwrap();
-                    // Map the value to CatType.
-                    states.get_index_of(&x).unwrap() as CatType
-                });
+                let column: Result<Vec<CatType>, PyErr> = column
+                    .iter()
+                    .map(|x| {
+                        // Get the value.
+                        let x = x.extract::<String>(py)?;
+                        // Map the value to CatType.
+                        let idx = states.get_index_of(&x).ok_or_else(|| {
+                            Error::new_err(format!("State '{}' not found in states", x))
+                        })?;
+                        Ok(idx as CatType)
+                    })
+                    .collect();
+                let column = column?;
                 // Extract the column from the data frame.
-                value.assign(&column);
+                value.assign(&Array1::from_vec(column));
 
                 Ok::<_, PyErr>(())
             },
         )?;
 
         // Construct the categorical trajectory.
-        let inner = CatTrj::new(states, values, time);
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrj::new(states, values, time)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the categorical trajectory to a Pandas DataFrame.
@@ -303,8 +314,7 @@ impl PyCatTrjs {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -312,11 +322,11 @@ impl PyCatTrjs {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect()
     }
 
     /// Return the trajectories.
@@ -359,17 +369,13 @@ impl PyCatTrjs {
         // Convert the iterable to a Vec<PyAny>.
         let dfs: Vec<PyCatTrj> = dfs
             .try_iter()?
-            .map(|df| PyCatTrj::from_pandas(_cls, py, &df.unwrap()))
+            .map(|df| PyCatTrj::from_pandas(_cls, py, &df?))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
 
         // Create a new CatTrjs with the given parameters.
-        let inner = CatTrjs::new(dfs);
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrjs::new(dfs).map(Into::into).map_err(to_pyerr)
     }
 
     /// Converts the categorical trajectories to a list of Pandas DataFrames.

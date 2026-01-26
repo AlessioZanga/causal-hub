@@ -11,7 +11,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a Gaussian conditional probability distribution.
 #[gen_stub_pyclass]
@@ -70,14 +70,11 @@ impl PyGaussCPD {
         // Get the parameters.
         let parameters = lock.parameters();
         // Add the coefficients matrix.
-        dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))
-            .expect("Failed to set coefficients.");
+        dict.set_item("coefficients", parameters.coefficients().to_pyarray(py))?;
         // Add the intercept vector.
-        dict.set_item("intercept", parameters.intercept().to_pyarray(py))
-            .expect("Failed to set intercept.");
+        dict.set_item("intercept", parameters.intercept().to_pyarray(py))?;
         // Add the covariance matrix.
-        dict.set_item("covariance", parameters.covariance().to_pyarray(py))
-            .expect("Failed to set covariance.");
+        dict.set_item("covariance", parameters.covariance().to_pyarray(py))?;
         // Return the dictionary.
         Ok(dict)
     }
@@ -101,42 +98,39 @@ impl PyGaussCPD {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.lock().sample_statistics().map(|s| {
-            // Allocate the dictionary.
-            let dict = PyDict::new(py);
-            // Add the response mean vector.
-            dict.set_item(
-                "sample_response_mean",
-                s.sample_response_mean().to_pyarray(py),
-            )
-            .expect("Failed to set sample response mean.");
-            // Add the design mean vector.
-            dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))
-                .expect("Failed to set sample design mean.");
-            // Add the response covariance matrix.
-            dict.set_item(
-                "sample_response_covariance",
-                s.sample_response_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample response covariance.");
-            // Add the cross covariance matrix.
-            dict.set_item(
-                "sample_cross_covariance",
-                s.sample_cross_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample cross covariance.");
-            // Add the design covariance matrix.
-            dict.set_item(
-                "sample_design_covariance",
-                s.sample_design_covariance().to_pyarray(py),
-            )
-            .expect("Failed to set sample design covariance.");
-            // Add the sample size.
-            dict.set_item("sample_size", s.sample_size())
-                .expect("Failed to set sample size.");
-            // Return the dictionary.
-            dict
-        }))
+        self.lock()
+            .sample_statistics()
+            .map(|s| {
+                // Allocate the dictionary.
+                let dict = PyDict::new(py);
+                // Add the response mean vector.
+                dict.set_item(
+                    "sample_response_mean",
+                    s.sample_response_mean().to_pyarray(py),
+                )?;
+                // Add the design mean vector.
+                dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))?;
+                // Add the response covariance matrix.
+                dict.set_item(
+                    "sample_response_covariance",
+                    s.sample_response_covariance().to_pyarray(py),
+                )?;
+                // Add the cross covariance matrix.
+                dict.set_item(
+                    "sample_cross_covariance",
+                    s.sample_cross_covariance().to_pyarray(py),
+                )?;
+                // Add the design covariance matrix.
+                dict.set_item(
+                    "sample_design_covariance",
+                    s.sample_design_covariance().to_pyarray(py),
+                )?;
+                // Add the sample size.
+                dict.set_item("sample_size", s.sample_size())?;
+                // Return the dictionary.
+                Ok(dict)
+            })
+            .transpose()
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.
@@ -164,9 +158,9 @@ impl PyGaussCPD {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(GaussCPD::from_json_string(json))),
-        })
+        GaussCPD::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -177,7 +171,7 @@ impl PyGaussCPD {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -194,9 +188,9 @@ impl PyGaussCPD {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(GaussCPD::from_json_file(path))),
-        })
+        GaussCPD::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -207,7 +201,6 @@ impl PyGaussCPD {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

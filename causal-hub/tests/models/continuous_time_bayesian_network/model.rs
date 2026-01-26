@@ -5,21 +5,22 @@ mod tests {
         labels,
         models::{BN, CIM, CPD, CTBN, Graph, Labelled},
         states,
+        types::Result,
     };
     use ndarray::prelude::*;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Initialize the model.
-        let model = load_eating();
+        let model = load_eating()?;
 
         // Check the labels.
         assert_eq!(model.labels(), &labels!["Eating", "FullStomach", "Hungry"]);
         // Check the graph structure.
         assert_eq!(model.graph().vertices().len(), 3);
-        assert!(model.graph().has_edge(0, 1));
-        assert!(model.graph().has_edge(1, 2));
-        assert!(model.graph().has_edge(2, 0));
+        assert!(model.graph().has_edge(0, 1)?);
+        assert!(model.graph().has_edge(1, 2)?);
+        assert!(model.graph().has_edge(2, 0)?);
         // Check the distributions.
         assert_eq!(model.cims().len(), 3);
         assert_eq!(model.cims()[0].labels(), &labels!["Eating"]);
@@ -145,5 +146,7 @@ mod tests {
         assert_eq!(initial_distribution.parameters_size(), 3);
         // Check the topological order.
         assert_eq!(initial_distribution.topological_order(), &[0, 1, 2]);
+
+        Ok(())
     }
 }

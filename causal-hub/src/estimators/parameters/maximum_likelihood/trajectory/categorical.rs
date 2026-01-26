@@ -5,21 +5,27 @@ use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{CIMEstimator, CSSEstimator, MLE, ParCIMEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS},
-    types::{Set, States},
+    types::{Error, Result, Set, States},
 };
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
-    fn fit(states: &States, x: &Set<usize>, z: &Set<usize>, sample_statistics: CatCIMS) -> CatCIM {
+    fn fit(
+        states: &States,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        sample_statistics: CatCIMS,
+    ) -> Result<CatCIM> {
         // Get the conditional counts and times.
         let n_xz = sample_statistics.sample_conditional_counts();
         let t_xz = sample_statistics.sample_conditional_times();
 
         // Assert the conditional times counts are not zero.
-        assert!(
-            t_xz.iter().all(|&x| x > 0.),
-            "Failed to get non-zero conditional times."
-        );
+        if !t_xz.iter().all(|&x| x > 0.) {
+            return Err(Error::Stats(
+                "Failed to get non-zero conditional times.".into(),
+            ));
+        }
 
         // Insert axis to align the dimensions.
         let t_xz = &t_xz.clone().insert_axis(Axis(2));
@@ -79,18 +85,22 @@ impl MLE<'_, CatTrj> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states
+                    .get_index(i)
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states
+                    .get_index(i)
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Wrap the sufficient statistics in an option.
         let sample_statistics = Some(sample_statistics);
@@ -112,7 +122,7 @@ impl MLE<'_, CatTrj> {
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CIMEstimator<CatCIM> for MLE<'_, $type> {
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
@@ -123,7 +133,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
             MLE::<'_, CatTrj>::fit(states, x, z, sample_statistics)
         }
@@ -135,7 +145,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCIMEstimator<CatCIM> for MLE<'_, $type> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
@@ -146,7 +156,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = sample_statistics.par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
             MLE::<'_, CatTrj>::fit(states, x, z, sample_statistics)
         }

@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTrj, CatType, Dataset},
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A multivariate weighted trajectory.
@@ -14,8 +14,10 @@ pub struct CatWtdTrj {
     weight: f64,
 }
 
-impl From<(CatTrj, f64)> for CatWtdTrj {
-    fn from((trajectory, weight): (CatTrj, f64)) -> Self {
+impl TryFrom<(CatTrj, f64)> for CatWtdTrj {
+    type Error = Error;
+
+    fn try_from((trajectory, weight): (CatTrj, f64)) -> Result<Self> {
         Self::new(trajectory, weight)
     }
 }
@@ -42,14 +44,16 @@ impl CatWtdTrj {
     ///
     /// A new categorical weighted trajectory.
     ///
-    pub fn new(trajectory: CatTrj, weight: f64) -> Self {
-        // Assert that the weight is in the range [0, 1].
-        assert!(
-            (0.0..=1.0).contains(&weight),
-            "Weight must be in the range [0, 1], but got {weight}."
-        );
+    pub fn new(trajectory: CatTrj, weight: f64) -> Result<Self> {
+        // Check that the weight is in the range [0, 1].
+        if !(0.0..=1.0).contains(&weight) {
+            return Err(Error::InvalidParameter(
+                "weight".to_string(),
+                format!("must be in the range [0, 1], but got {weight}"),
+            ));
+        }
 
-        Self { trajectory, weight }
+        Ok(Self { trajectory, weight })
     }
 
     /// Returns the trajectory.
@@ -128,9 +132,9 @@ impl Dataset for CatWtdTrj {
         self.weight * (self.trajectory.values().nrows() as f64)
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let trajectory = self.trajectory.select(x);
+        let trajectory = self.trajectory.select(x)?;
         // Select the weights.
         let weight = self.weight;
         // Return the new weighted dataset.
@@ -167,47 +171,58 @@ impl CatWtdTrjs {
     ///
     /// A new instance of `CategoricalTrajectories`.
     ///
-    pub fn new<I>(values: I) -> Self
+    pub fn new<I>(values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatWtdTrj>,
     {
         // Collect the trajectories into a vector.
         let values: Vec<_> = values.into_iter().collect();
 
-        // Assert every trajectory has the same labels.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
-            "All trajectories must have the same labels."
-        );
-        // Assert every trajectory has the same states.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].states().eq(trjs[1].states())),
-            "All trajectories must have the same states."
-        );
-        // Assert every trajectory has the same shape.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
-            "All trajectories must have the same shape."
-        );
+        // Check if every trajectory has the same labels.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
+        {
+            return Err(Error::IncompatibleShape(
+                "labels".into(),
+                "all trajectories".into(),
+            ));
+        }
+        // Check if every trajectory has the same states.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].states().eq(trjs[1].states()))
+        {
+            return Err(Error::IncompatibleShape(
+                "states".into(),
+                "all trajectories".into(),
+            ));
+        }
+        // Check if every trajectory has the same shape.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
+        {
+            return Err(Error::IncompatibleShape(
+                "shape".into(),
+                "all trajectories".into(),
+            ));
+        }
 
         // Get the labels, states and shape from the first trajectory.
-        let trj = values.first().expect("No trajectory in the dataset.");
+        let trj = values
+            .first()
+            .ok_or_else(|| Error::EmptySet("trajectories".into()))?;
         let labels = trj.labels().clone();
         let states = trj.states().clone();
         let shape = trj.shape().clone();
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             values,
-        }
+        })
     }
 
     /// Returns the states of the trajectories.
@@ -236,14 +251,35 @@ impl CatWtdTrjs {
 impl FromIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter)
+        Self::new(iter).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatWtdTrjs from iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
 impl FromParallelIterator<CatWtdTrj> for CatWtdTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatWtdTrj>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+        let collected = iter.into_par_iter().collect::<Vec<_>>();
+        Self::new(collected).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatWtdTrjs from parallel iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
@@ -287,8 +323,13 @@ impl Dataset for CatWtdTrjs {
         self.values.iter().map(Dataset::sample_size).sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Return the new collection of selected trajectories.
-        Self::new(self.values.iter().map(|trj| trj.select(x)))
+        Self::new(
+            self.values
+                .iter()
+                .map(|trj| trj.select(x))
+                .collect::<Result<Vec<_>>>()?,
+        )
     }
 }

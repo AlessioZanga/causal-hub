@@ -5,7 +5,7 @@ mod undirected;
 use ndarray::prelude::*;
 pub use undirected::*;
 
-use crate::types::{Labels, Set};
+use crate::types::{Labels, Result, Set};
 
 /// A trait for graphs.
 pub trait Graph {
@@ -19,7 +19,7 @@ pub trait Graph {
     ///
     /// * Labels will be sorted in alphabetical order.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the labels are not unique.
     ///
@@ -27,10 +27,11 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn empty<I, V>(labels: I) -> Self
+    fn empty<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
-        V: AsRef<str>;
+        V: AsRef<str>,
+        Self: Sized;
 
     /// Creates a complete graph with the given labels.
     ///
@@ -43,7 +44,7 @@ pub trait Graph {
     /// * Labels will be sorted in alphabetical order.
     /// * No self-loops are created.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the labels are not unique.
     ///
@@ -51,10 +52,11 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn complete<I, V>(labels: I) -> Self
+    fn complete<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
-        V: AsRef<str>;
+        V: AsRef<str>,
+        Self: Sized;
 
     /// Returns the iterator of vertices in the graph.
     ///
@@ -91,7 +93,7 @@ pub trait Graph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any of the vertices are out of bounds.
     ///
@@ -99,7 +101,7 @@ pub trait Graph {
     ///
     /// `true` if there is an edge between `x` and `y`, `false` otherwise.
     ///
-    fn has_edge(&self, x: usize, y: usize) -> bool;
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool>;
 
     /// Adds an edge between vertices `x` and `y`.
     ///
@@ -108,7 +110,7 @@ pub trait Graph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any of the vertices are out of bounds.
     ///
@@ -116,7 +118,7 @@ pub trait Graph {
     ///
     /// `true` if the edge was added, `false` if it already existed.
     ///
-    fn add_edge(&mut self, x: usize, y: usize) -> bool;
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool>;
 
     /// Deletes the edge between vertices `x` and `y`.
     ///
@@ -125,7 +127,7 @@ pub trait Graph {
     /// * `x` - The first vertex.
     /// * `y` - The second vertex.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any of the vertices are out of bounds.
     ///
@@ -133,7 +135,7 @@ pub trait Graph {
     ///
     /// `true` if the edge was deleted, `false` if it did not exist.
     ///
-    fn del_edge(&mut self, x: usize, y: usize) -> bool;
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool>;
 
     /// Creates a graph from an adjacency matrix and labels.
     ///

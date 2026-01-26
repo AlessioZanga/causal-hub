@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
 use rand::{Rng, SeedableRng, seq::SliceRandom};
@@ -10,7 +8,7 @@ use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
     estimators::{BE, CIMEstimator, ParCIMEstimator},
     models::{CatCIM, Labelled},
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 // TODO: This must be refactored to be stateless.
@@ -27,11 +25,28 @@ pub struct RAWE<'a, R, E, D> {
     dataset: Option<D>,
 }
 
-impl<R, E, D> Deref for RAWE<'_, R, E, D> {
-    type Target = D;
-
-    fn deref(&self) -> &Self::Target {
-        self.dataset.as_ref().unwrap()
+impl<R, E, D> RAWE<'_, R, E, D> {
+    /// Returns a reference to the dataset.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the dataset if it has been initialized.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the dataset has not been initialized.
+    /// The dataset is guaranteed to be initialized after calling `new()` or `par_new()`.
+    #[inline]
+    pub fn dataset(&self) -> &D {
+        match &self.dataset {
+            Some(d) => d,
+            None => {
+                // This should never happen if used correctly.
+                // Log an error before panicking to aid debugging.
+                log::error!("RAWE dataset accessed before initialization");
+                panic!("RAWE dataset must be initialized before use")
+            }
+        }
     }
 }
 
@@ -41,7 +56,15 @@ where
 {
     #[inline]
     fn labels(&self) -> &Labels {
-        self.dataset.as_ref().unwrap().labels()
+        // Dataset is guaranteed to be Some after construction via par_new or new.
+        match &self.dataset {
+            Some(d) => d.labels(),
+            None => {
+                // This should never happen if used correctly.
+                log::error!("RAWE labels accessed before dataset initialization");
+                panic!("RAWE dataset must be initialized before accessing labels")
+            }
+        }
     }
 }
 
@@ -56,7 +79,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// A new `RAWE` instance.
     ///
-    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Self {
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjEv) -> Result<Self> {
         // Initialize the estimator.
         let mut estimator = Self {
             rng,
@@ -65,14 +88,14 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         };
 
         // Fill the evidence with the raw estimator.
-        estimator.dataset = Some(estimator.par_fill());
+        estimator.dataset = Some(estimator.par_fill()?);
 
-        estimator
+        Ok(estimator)
     }
 
     /// Sample uncertain evidence.
-    /// TODO: Taken from importance sampling, deduplicate.
-    fn sample_evidence(&mut self) -> CatTrjEv {
+    // TODO: Taken from importance sampling, deduplicate.
+    fn sample_evidence(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -84,14 +107,19 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .iter()
             // Map (label, [evidence]) to (label, evidence) pairs.
             .flatten()
-            .flat_map(|e| {
+            .map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositiveInterval { p_states, .. } => {
                         // Construct the sampler.
-                        let state = WeightedIndex::new(p_states).unwrap();
+                        let state = WeightedIndex::new(p_states).map_err(|e| {
+                            Error::InvalidParameter(
+                                "p_states".into(),
+                                format!("Invalid state distribution: {e}"),
+                            )
+                        })?;
                         // Sample the state.
                         let state = state.sample(self.rng);
                         // Return the sample.
@@ -129,8 +157,9 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                 };
 
                 // Return the certain evidence.
-                Some(e)
-            });
+                Ok(e)
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
         CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
@@ -146,7 +175,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// A new `CatTrj` instance.
     ///
-    fn par_fill(&mut self) -> CatTrj {
+    fn par_fill(&mut self) -> Result<CatTrj> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Set missing placeholder.
@@ -164,7 +193,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             .flatten()
             .map(|e| e.end_time())
             // Get the maximum time.
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             // Unwrap the maximum time.
             .unwrap_or(0.);
 
@@ -179,7 +208,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             // Add initial and ending time.
             .chain([0., end_time])
             // Sort the times.
-            .sorted_by(|a, b| a.partial_cmp(b).unwrap())
+            .sorted_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             // Deduplicate the times to aggregate the events.
             .dedup()
             .collect();
@@ -188,7 +217,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         let mut events = Array2::from_elem((times.len(), states.len()), M);
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence();
+        let evidence = self.sample_evidence()?;
 
         // Set the states of the events given the evidence.
         Zip::from(&times)
@@ -225,7 +254,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             })
             .collect();
         // If no evidence is present, fill it randomly.
-        for i in no_evidence {
+        no_evidence.into_iter().for_each(|i| {
             // Sample a state uniformly at random.
             let random_state = Array::from_iter({
                 let random_state = || self.rng.random_range(0..(states[i].len() as CatType));
@@ -233,20 +262,23 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             });
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
-        }
+        });
 
         // Fill the unknown states by propagating the known states.
         events
             .axis_iter_mut(Axis(1))
             .into_par_iter()
-            .for_each(|mut event| {
+            .try_for_each(|mut event| -> Result<()> {
                 // Set the first known state position.
                 let mut first_known = 0;
                 // Check if the first state is known.
                 if event[first_known] == M {
                     // If the first state is unknown, get the first known state.
                     // NOTE: Safe unwrap since we know at least one state is present.
-                    first_known = event.iter().position(|e| *e != M).unwrap();
+                    first_known = event
+                        .iter()
+                        .position(|e| *e != M)
+                        .ok_or(Error::MissingState("No known state found in event".into()))?;
                     // Get the event to fill with.
                     let e = event[first_known];
                     // Backward fill the unknown states.
@@ -276,7 +308,9 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     // Set the last known state position as the last unknown state position.
                     last_known = last_unknown;
                 }
-            });
+
+                Ok(())
+            })?;
 
         // Initialize the events and times with first event and time, if any.
         let mut new_events: Vec<_> = events
@@ -335,7 +369,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         // Reshape the events to the number of events and states.
         let events = Array::from_iter(new_events.into_iter().flatten())
             .into_shape_with_order((new_times.len(), states.len()))
-            .expect("Failed to reshape events.");
+            .map_err(Error::NdarrayShape)?;
         // Reshape the times to the number of events.
         let times = Array::from_iter(new_times);
 
@@ -355,7 +389,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     ///
     /// A new `RAWE` instance.
     ///
-    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Self {
+    pub fn par_new(rng: &'a mut R, evidence: &'a CatTrjsEv) -> Result<Self> {
         // Get evidence.
         let _evidence = evidence.evidences();
         // Sample seed for parallel sampling.
@@ -369,44 +403,56 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
                     // Create a new random number generator with the seed.
                     let mut rng = R::seed_from_u64(seed);
                     // Fill the evidence with the raw estimator.
-                    RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)
+                    RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)?
                         .dataset
-                        .unwrap()
+                        .ok_or_else(|| Error::MissingData("Dataset not generated.".into()))
                 })
-                .collect(),
+                .collect::<Result<_>>()?,
         );
 
-        Self {
+        Ok(Self {
             rng,
             evidence,
             dataset,
-        }
+        })
     }
 }
 
 impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .fit(x, z)
     }
 }
 
 impl<R: Rng + SeedableRng> ParCIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
-        BE::new(self.dataset.as_ref().unwrap())
-            .with_prior((1, 1.))
-            .par_fit(x, z)
+        BE::new(
+            self.dataset
+                .as_ref()
+                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+        )
+        .with_prior((1, 1.))
+        .par_fit(x, z)
     }
 }

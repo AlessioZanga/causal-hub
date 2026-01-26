@@ -14,7 +14,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a categorical conditional intensity matrix (CIM).
 #[gen_stub_pyclass]
@@ -55,8 +55,7 @@ impl PyCatCIM {
     ///     A reference to the states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -64,11 +63,11 @@ impl PyCatCIM {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the shape of the conditioned variable.
@@ -104,8 +103,7 @@ impl PyCatCIM {
         &'a self,
         py: Python<'a>,
     ) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .conditioning_states()
             .iter()
             .map(|(label, states)| {
@@ -113,11 +111,11 @@ impl PyCatCIM {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the shape of the conditioning variables.
@@ -161,27 +159,27 @@ impl PyCatCIM {
     ///     A dictionary containing the sample statistics used to fit the distribution, if any.
     ///
     pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
-        Ok(self.lock().sample_statistics().map(|s| {
-            // Allocate the dictionary.
-            let dict = PyDict::new(py);
-            // Add the conditional counts.
-            dict.set_item(
-                "sample_conditional_counts",
-                s.sample_conditional_counts().to_pyarray(py),
-            )
-            .expect("Failed to set sample conditional counts.");
-            // Add the conditional times.
-            dict.set_item(
-                "sample_conditional_times",
-                s.sample_conditional_times().to_pyarray(py),
-            )
-            .expect("Failed to set sample conditional times.");
-            // Add the sample size.
-            dict.set_item("sample_size", s.sample_size())
-                .expect("Failed to set sample size.");
-            // Return the dictionary.
-            dict
-        }))
+        self.lock()
+            .sample_statistics()
+            .map(|s| {
+                // Allocate the dictionary.
+                let dict = PyDict::new(py);
+                // Add the conditional counts.
+                dict.set_item(
+                    "sample_conditional_counts",
+                    s.sample_conditional_counts().to_pyarray(py),
+                )?;
+                // Add the conditional times.
+                dict.set_item(
+                    "sample_conditional_times",
+                    s.sample_conditional_times().to_pyarray(py),
+                )?;
+                // Add the sample size.
+                dict.set_item("sample_size", s.sample_size())?;
+                // Return the dictionary.
+                Ok(dict)
+            })
+            .transpose()
     }
 
     /// Returns the sample log-likelihood given the distribution, if any.
@@ -209,9 +207,9 @@ impl PyCatCIM {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatCIM::from_json_string(json))),
-        })
+        CatCIM::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -222,7 +220,7 @@ impl PyCatCIM {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -239,9 +237,9 @@ impl PyCatCIM {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatCIM::from_json_file(path))),
-        })
+        CatCIM::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -252,7 +250,6 @@ impl PyCatCIM {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

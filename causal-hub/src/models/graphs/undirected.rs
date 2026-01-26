@@ -8,7 +8,7 @@ use serde::{
 use crate::{
     impl_json_io,
     models::{Graph, Labelled},
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A struct representing an undirected graph using an adjacency matrix.
@@ -19,13 +19,22 @@ pub struct UnGraph {
 }
 
 impl UnGraph {
+    /// Check if a vertex is within bounds.
+    #[inline]
+    fn check_vertex(&self, x: usize) -> Result<()> {
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        Ok(())
+    }
+
     /// Returns the neighbors of a vertex.
     ///
     /// # Arguments
     ///
     /// * `x` - The vertex for which to find the neighbors.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the vertex is out of bounds.
     ///
@@ -33,21 +42,19 @@ impl UnGraph {
     ///
     /// The neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn neighbors(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Check if the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
 
         // Iterate over all vertices and filter the ones that are neighbors.
         let mut neighbors: Set<_> = x
-            .into_iter()
+            .iter()
             .flat_map(|&v| {
                 self.adjacency_matrix
                     .row(v)
                     .into_iter()
                     .enumerate()
-                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+                    .filter_map(|(y, &has_edge)| has_edge.then_some(y))
             })
             .collect();
 
@@ -55,7 +62,7 @@ impl UnGraph {
         neighbors.sort();
 
         // Return the neighbors.
-        neighbors
+        Ok(neighbors)
     }
 }
 
@@ -66,7 +73,7 @@ impl Labelled for UnGraph {
 }
 
 impl Graph for UnGraph {
-    fn empty<I, V>(labels: I) -> Self
+    fn empty<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
@@ -80,8 +87,10 @@ impl Graph for UnGraph {
             .map(|x| x.as_ref().to_owned())
             .collect();
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
+        // Check for duplicate labels.
+        if labels.len() != n {
+            return Err(Error::NonUniqueLabels);
+        }
 
         // Sort the labels.
         labels.sort();
@@ -89,41 +98,25 @@ impl Graph for UnGraph {
         // Initialize the adjacency matrix with `false` values.
         let adjacency_matrix: Array2<_> = Array::from_elem((n, n), false);
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
-    fn complete<I, V>(labels: I) -> Self
+    fn complete<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
     {
-        // Initialize labels counter.
-        let mut n = 0;
-        // Collect the labels.
-        let mut labels: Labels = labels
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|x| x.as_ref().to_owned())
-            .collect();
+        // Construct the empty graph.
+        let mut g = Self::empty(labels)?;
+        // Fill the adjacency matrix with `true` values.
+        g.adjacency_matrix.fill(true);
+        // Remove the self-loops.
+        g.adjacency_matrix.diag_mut().fill(false);
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
-
-        // Sort the labels.
-        labels.sort();
-
-        // Initialize the adjacency matrix with `true` values.
-        let mut adjacency_matrix: Array2<_> = Array::from_elem((n, n), true);
-        // Set the diagonal to `false` to avoid self-loops.
-        adjacency_matrix.diag_mut().fill(false);
-
-        Self {
-            labels,
-            adjacency_matrix,
-        }
+        Ok(g)
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -141,55 +134,51 @@ impl Graph for UnGraph {
             .indexed_iter()
             .filter_map(|((x, y), &has_edge)| {
                 // Since the graph is undirected, we only need to check one direction.
-                if has_edge && x <= y {
-                    Some((x, y))
-                } else {
-                    None
-                }
+                (has_edge && x <= y).then_some((x, y))
             })
             .collect()
     }
 
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
-        self.adjacency_matrix[[x, y]]
+        Ok(self.adjacency_matrix[[x, y]])
     }
 
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
         self.adjacency_matrix[[y, x]] = true;
 
-        true
+        Ok(true)
     }
 
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
         self.adjacency_matrix[[y, x]] = false;
 
-        true
+        Ok(true)
     }
 
     fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {
@@ -223,21 +212,21 @@ impl Graph for UnGraph {
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the rows.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .row_mut(i)
                     .assign(&adjacency_matrix.row(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the columns.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .column_mut(i)
                     .assign(&adjacency_matrix.column(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
         }
@@ -256,21 +245,20 @@ impl Graph for UnGraph {
 }
 
 impl Serialize for UnGraph {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         // Convert adjacency matrix to a flat format.
-        let edges: Vec<_> = self
+        let edges = self
             .edges()
             .into_iter()
             .map(|(x, y)| {
-                (
-                    self.index_to_label(x).to_owned(),
-                    self.index_to_label(y).to_owned(),
-                )
+                let x = self.index_to_label(x).map_err(serde::ser::Error::custom)?;
+                let y = self.index_to_label(y).map_err(serde::ser::Error::custom)?;
+                Ok((x.to_owned(), y.to_owned()))
             })
-            .collect();
+            .collect::<std::result::Result<Vec<_>, S::Error>>()?;
 
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(3))?;
@@ -288,7 +276,7 @@ impl Serialize for UnGraph {
 }
 
 impl<'de> Deserialize<'de> for UnGraph {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -309,7 +297,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 formatter.write_str("struct UnGraph")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<UnGraph, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<UnGraph, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -357,7 +345,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 let edges: Vec<(String, String)> = edges;
                 let shape = (labels.len(), labels.len());
                 let mut adjacency_matrix = Array2::from_elem(shape, false);
-                for (x, y) in edges {
+                edges.into_iter().try_for_each(|(x, y)| {
                     let x = labels
                         .get_index_of(&x)
                         .ok_or_else(|| E::custom(format!("Vertex `{x}` label does not exist")))?;
@@ -365,7 +353,8 @@ impl<'de> Deserialize<'de> for UnGraph {
                         .get_index_of(&y)
                         .ok_or_else(|| E::custom(format!("Vertex `{y}` label does not exist")))?;
                     adjacency_matrix[(x, y)] = true;
-                }
+                    Ok(())
+                })?;
 
                 Ok(UnGraph::from_adjacency_matrix(labels, adjacency_matrix))
             }

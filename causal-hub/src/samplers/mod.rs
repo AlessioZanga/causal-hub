@@ -4,7 +4,10 @@ pub use forward::*;
 mod importance;
 pub use importance::*;
 
-use crate::models::{BN, CTBN};
+use crate::{
+    models::{BN, CTBN},
+    types::Result,
+};
 
 /// A trait for sampling from a Bayesian network.
 pub trait BNSampler<T>
@@ -22,7 +25,7 @@ where
     ///
     /// A single sample from the Bayesian network.
     ///
-    fn sample(&self) -> Self::Sample;
+    fn sample(&self) -> Result<Self::Sample>;
 
     /// Sample from a Bayesian network.
     ///
@@ -34,7 +37,7 @@ where
     ///
     /// A dataset containing the samples.
     ///
-    fn sample_n(&self, n: usize) -> Self::Samples;
+    fn sample_n(&self, n: usize) -> Result<Self::Samples>;
 }
 
 /// A trait for parallel sampling from a Bayesian network.
@@ -55,7 +58,7 @@ where
     ///
     /// A dataset containing the samples.
     ///
-    fn par_sample_n(&self, n: usize) -> Self::Samples;
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples>;
 }
 
 /// A trait for sampling from a CTBN.
@@ -74,15 +77,15 @@ where
     ///
     /// * `max_length` - The length of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `max_length` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length(&self, max_length: usize) -> Self::Sample;
+    fn sample_by_length(&self, max_length: usize) -> Result<Self::Sample>;
 
     /// Sample a single trajectory with a given time from a CTBN.
     ///
@@ -90,15 +93,15 @@ where
     ///
     /// * `max_time` - The ending time of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `max_time` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_time(&self, max_time: f64) -> Self::Sample;
+    fn sample_by_time(&self, max_time: f64) -> Result<Self::Sample>;
 
     /// Sample a single trajectory with a given length or time from a CTBN.
     ///
@@ -107,18 +110,18 @@ where
     /// * `max_length` - The length of the trajectory.
     /// * `max_time` - The ending time of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A trajectory containing the sampled events.
     ///
-    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Self::Sample;
+    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Result<Self::Sample>;
 
     /// Sample multiple trajectories with a given length from a CTBN.
     ///
@@ -127,18 +130,15 @@ where
     /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_length` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples;
+    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples>;
 
     /// Sample multiple trajectories with a given time from a CTBN.
     ///
@@ -147,18 +147,15 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples;
+    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples>;
 
     /// Sample multiple trajectories with a given length or time from a CTBN.
     ///
@@ -168,13 +165,12 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -185,7 +181,7 @@ where
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples;
+    ) -> Result<Self::Samples>;
 }
 
 /// A trait for parallel sampling from a CTBN.
@@ -203,18 +199,15 @@ where
     /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_length` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples;
+    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples>;
 
     /// Sample multiple trajectories with a given time from a CTBN in parallel.
     ///
@@ -223,18 +216,15 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
     /// A collection of trajectories containing the sampled events.
     ///
-    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples;
+    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples>;
 
     /// Sample multiple trajectories with a given length or time from a CTBN in parallel.
     ///
@@ -244,13 +234,12 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -261,5 +250,5 @@ where
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples;
+    ) -> Result<Self::Samples>;
 }

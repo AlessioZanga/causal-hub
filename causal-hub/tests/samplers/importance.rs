@@ -8,17 +8,18 @@ mod tests {
             datasets::{CatTrjEv, CatTrjEvT as E, Dataset},
             models::Labelled,
             samplers::{ImportanceSampler, ParCTBNSampler},
+            types::{Error, Result},
         };
         use ndarray::prelude::*;
         use rand::SeedableRng;
         use rand_xoshiro::Xoshiro256PlusPlus;
 
         #[test]
-        fn importance_sampling_by_length() {
+        fn importance_sampling_by_length() -> Result<()> {
             // Initialize RNG.
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             // Initialize the model.
-            let model = load_eating();
+            let model = load_eating()?;
 
             // Initialize evidence.
             let evidence = CatTrjEv::new(
@@ -49,20 +50,26 @@ mod tests {
                         end_time: 0.5,
                     },
                 ],
-            );
+            )?;
 
             // Initialize sampler.
-            let importance = ImportanceSampler::new(&mut rng, &model, &evidence);
+            let importance = ImportanceSampler::new(&mut rng, &model, &evidence)?;
             // Sample from CTBN.
-            let weighted_trajectory = importance.par_sample_n_by_length(10, 10);
+            let weighted_trajectory = importance.par_sample_n_by_length(10, 10)?;
 
             // Get trajectory.
-            let trajectory = weighted_trajectory.into_iter().next().unwrap().trajectory();
+            let trajectory = weighted_trajectory
+                .into_iter()
+                .next()
+                .ok_or(Error::IllegalArgument("No trajectory".into()))?
+                .trajectory();
 
             // Check labels.
             assert!(trajectory.labels().eq(model.labels()));
             // Check sample size.
             assert_eq!(trajectory.sample_size(), 10.);
+
+            Ok(())
         }
     }
 }

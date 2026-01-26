@@ -14,7 +14,7 @@ use std::fmt::Debug;
 
 pub use graphs::*;
 
-use crate::types::{Labels, Set};
+use crate::types::{Error, Labels, Result, Set};
 
 /// A trait for models with labelled variables.
 pub trait Labelled {
@@ -32,19 +32,19 @@ pub trait Labelled {
     ///
     /// * `x` - The label of the variable.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If the label is not in the map.
+    /// * If the label is not found.
     ///
     /// # Returns
     ///
     /// The index of the variable.
     ///
     #[inline]
-    fn label_to_index(&self, x: &str) -> usize {
+    fn label_to_index(&self, x: &str) -> Result<usize> {
         self.labels()
             .get_index_of(x)
-            .unwrap_or_else(|| panic!("Variable `{x}` label does not exist."))
+            .ok_or_else(|| Error::MissingLabel(x.to_string()))
     }
 
     /// Return the label for a given variable index.
@@ -53,7 +53,7 @@ pub trait Labelled {
     ///
     /// * `x` - The index of the variable.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     ///
@@ -62,10 +62,11 @@ pub trait Labelled {
     /// The label of the variable.
     ///
     #[inline]
-    fn index_to_label(&self, x: usize) -> &str {
+    fn index_to_label(&self, x: usize) -> Result<&str> {
         self.labels()
             .get_index(x)
-            .unwrap_or_else(|| panic!("Variable `{x}` is out of bounds."))
+            .map(|x| x.as_str())
+            .ok_or_else(|| Error::VertexOutOfBounds(x))
     }
 
     /// Maps an index from this model to another model with the same label.
@@ -75,7 +76,7 @@ pub trait Labelled {
     /// * `x` - The index in this model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     /// * If the label does not exist in the other model.
@@ -85,13 +86,13 @@ pub trait Labelled {
     /// The index in the other model.
     ///
     #[inline]
-    fn index_to(&self, x: usize, other: &Labels) -> usize {
+    fn index_to(&self, x: usize, other: &Labels) -> Result<usize> {
         // Get the label of the variable in this model.
-        let label = self.index_to_label(x);
+        let label = self.index_to_label(x)?;
         // Get the index of the variable in the other model.
-        other.get_index_of(label).unwrap_or_else(|| {
-            panic!("Variable `{label}` label does not exist in the other model.")
-        })
+        other
+            .get_index_of(label)
+            .ok_or_else(|| Error::MissingLabel(label.to_string()))
     }
 
     /// Maps a set of indices from this model to another model with the same labels.
@@ -101,7 +102,7 @@ pub trait Labelled {
     /// * `x` - The set of indices in this model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any index is out of bounds.
     /// * If any label does not exist in the other model.
@@ -111,7 +112,7 @@ pub trait Labelled {
     /// The set of indices in the other model.
     ///
     #[inline]
-    fn indices_to(&self, x: &Set<usize>, other: &Labels) -> Set<usize> {
+    fn indices_to(&self, x: &Set<usize>, other: &Labels) -> Result<Set<usize>> {
         x.iter().map(|&x| self.index_to(x, other)).collect()
     }
 
@@ -122,7 +123,7 @@ pub trait Labelled {
     /// * `x` - The index in the other model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     /// * If the label does not exist in this model.
@@ -132,15 +133,15 @@ pub trait Labelled {
     /// The index in this model.
     ///
     #[inline]
-    fn index_from(&self, x: usize, other: &Labels) -> usize {
+    fn index_from(&self, x: usize, other: &Labels) -> Result<usize> {
         // Get the label of the variable in the other model.
         let label = other
             .get_index(x)
-            .unwrap_or_else(|| panic!("Variable `{x}` is out of bounds in the other model."));
+            .ok_or_else(|| Error::VertexOutOfBounds(x))?;
         // Get the index of the variable in this model.
         self.labels()
             .get_index_of(label)
-            .unwrap_or_else(|| panic!("Variable `{label}` label does not exist."))
+            .ok_or_else(|| Error::MissingLabel(label.clone()))
     }
 
     /// Maps a set of indices from another model to this model with the same labels.
@@ -150,7 +151,7 @@ pub trait Labelled {
     /// * `x` - The set of indices in the other model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any index is out of bounds.
     /// * If any label does not exist in this model.
@@ -160,7 +161,7 @@ pub trait Labelled {
     /// The set of indices in this model.
     ///
     #[inline]
-    fn indices_from(&self, x: &Set<usize>, other: &Labels) -> Set<usize> {
+    fn indices_from(&self, x: &Set<usize>, other: &Labels) -> Result<Set<usize>> {
         x.iter().map(|&x| self.index_from(x, other)).collect()
     }
 }
@@ -234,11 +235,16 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// * `x` - The value of the conditioned variables.
     /// * `z` - The value of the conditioning variables.
     ///
+    /// # Errors
+    ///
+    /// * If the value of the conditioned variables is out of bounds.
+    /// * If the value of the conditioning variables is out of bounds.
+    ///
     /// # Returns
     ///
     /// The probability P(X = x | Z = z).
     ///
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64;
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64>;
 
     /// Samples from the conditional distribution P(X | Z = z).
     ///
@@ -247,11 +253,15 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// * `rng` - A mutable reference to a random number generator.
     /// * `z` - The value of the conditioning variables.
     ///
+    /// # Errors
+    ///
+    /// * If the value of the conditioning variables is out of bounds.
+    ///
     /// # Returns
     ///
     /// A sample from P(X | Z = z).
     ///
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support;
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support>;
 }
 
 /// A trait for conditional intensity matrices.
@@ -348,7 +358,7 @@ pub trait Phi:
     ///
     /// A new potential instance.
     ///
-    fn condition(&self, e: &Self::Evidence) -> Self;
+    fn condition(&self, e: &Self::Evidence) -> Result<Self>;
 
     /// Marginalizes the potential over a set of variables.
     ///
@@ -360,7 +370,7 @@ pub trait Phi:
     ///
     /// A new potential instance.
     ///
-    fn marginalize(&self, x: &Set<usize>) -> Self;
+    fn marginalize(&self, x: &Set<usize>) -> Result<Self>;
 
     /// Normalizes the potential.
     ///
@@ -368,7 +378,7 @@ pub trait Phi:
     ///
     /// The normalized potential.
     ///
-    fn normalize(&self) -> Self;
+    fn normalize(&self) -> Result<Self>;
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
     ///
@@ -380,7 +390,7 @@ pub trait Phi:
     ///
     /// The corresponding potential.
     ///
-    fn from_cpd(cpd: Self::CPD) -> Self;
+    fn from_cpd(cpd: Self::CPD) -> Result<Self>;
 
     /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
     ///
@@ -393,5 +403,5 @@ pub trait Phi:
     ///
     /// The corresponding CPD.
     ///
-    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD;
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD>;
 }

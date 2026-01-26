@@ -18,7 +18,7 @@ use crate::{
     models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::{EPSILON, Set},
+    types::{EPSILON, Error, Result, Set},
 };
 
 /// A struct for sampling using importance sampling.
@@ -47,28 +47,29 @@ where
     /// Return a new `ImportanceSampler` instance.
     ///
     #[inline]
-    pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Self {
+    pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {
+        // Assert the model and the evidences have the same labels.
+        if model.labels() != evidence.labels() {
+            return Err(Error::LabelMismatch(
+                "model labels".to_string(),
+                "evidence labels".to_string(),
+            ));
+        }
+
         // Wrap the RNG in a RefCell to allow interior mutability.
         let rng = RefCell::new(rng);
 
-        // Assert the model and the evidences have the same labels.
-        assert_eq!(
-            model.labels(),
-            evidence.labels(),
-            "The model and the evidences must have the same variables."
-        );
-
-        Self {
+        Ok(Self {
             rng,
             model,
             evidence,
-        }
+        })
     }
 }
 
 impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
     /// Sample uncertain evidence.
-    fn sample_evidence<T: Rng>(&self, rng: &mut T) -> CatEv {
+    fn sample_evidence<T: Rng>(&self, rng: &mut T) -> Result<CatEv> {
         // Get shortened variable type.
         use CatEvT as E;
 
@@ -79,42 +80,44 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
             .evidences()
             .iter()
             // Filter empty evidences.
-            .filter_map(|e| {
-                e.as_ref().map(|e| {
-                    // Get the event index.
-                    let event = e.event();
-                    // Sample the evidence.
-                    match e {
-                        E::UncertainPositive { p_states, .. } => {
-                            // Construct the sampler.
-                            let state = WeightedIndex::new(p_states).unwrap();
-                            // Sample the state.
-                            let state = state.sample(rng);
-                            // Return the sample.
-                            E::CertainPositive { event, state }
-                        }
-                        E::UncertainNegative { p_not_states, .. } => {
-                            // Allocate the not states.
-                            let mut not_states: Set<_> = (0..p_not_states.len()).collect();
-                            // Repeat until only a subset of the not states are sampled.
-                            while not_states.len() == p_not_states.len() {
-                                // Sample the not states.
-                                not_states = p_not_states
-                                    .indexed_iter()
-                                    // For each (state, p_not_state) pair ...
-                                    .filter_map(|(i, &p_i)| {
-                                        // ... with p_i probability, retain the state.
-                                        Some(i).filter(|_| rng.random_bool(p_i))
-                                    })
-                                    .collect();
-                            }
-                            // Return the sample and weight.
-                            E::CertainNegative { event, not_states }
-                        }
-                        _ => e.clone(), // Due to evidence sampling.
+            .filter_map(|e| e.as_ref())
+            .map(|e| {
+                // Get the event index.
+                let event = e.event();
+                // Sample the evidence.
+                Ok(match e {
+                    E::UncertainPositive { p_states, .. } => {
+                        // Construct the sampler.
+                        let state = WeightedIndex::new(p_states).map_err(|e| {
+                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                        })?;
+                        // Sample the state.
+                        let state = state.sample(rng);
+                        // Return the sample.
+                        E::CertainPositive { event, state }
                     }
+                    E::UncertainNegative { p_not_states, .. } => {
+                        // Allocate the not states.
+                        let mut not_states: Set<_> = (0..p_not_states.len()).collect();
+                        // Repeat until only a subset of the not states are sampled.
+                        while not_states.len() == p_not_states.len() {
+                            // Sample the not states.
+                            not_states = p_not_states
+                                .indexed_iter()
+                                // For each (state, p_not_state) pair ...
+                                .filter_map(|(i, &p_i)| {
+                                    // ... with p_i probability, retain the state.
+                                    Some(i).filter(|_| rng.random_bool(p_i))
+                                })
+                                .collect();
+                        }
+                        // Return the sample and weight.
+                        E::CertainNegative { event, not_states }
+                    }
+                    _ => e.clone(), // Due to evidence sampling.
                 })
-            });
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // Collect the certain evidence.
         CatEv::new(self.evidence.states().clone(), certain_evidence)
@@ -125,17 +128,16 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
     type Sample = CatWtdSample;
     type Samples = CatWtdTable;
 
-    fn sample(&self) -> Self::Sample {
+    fn sample(&self) -> Result<Self::Sample> {
         // Get shortened variable type.
         use CatEvT as E;
 
         // Assert the model and the evidences have the same states.
-        // TODO: Move this assertion to the constructor.
-        assert_eq!(
-            self.model.states(),
-            self.evidence.states(),
-            "The model and the evidences must have the same states."
-        );
+        if self.model.states() != self.evidence.states() {
+            return Err(Error::IllegalArgument(
+                "The model and the evidences must have the same states.".into(),
+            ));
+        }
 
         // Get a mutable reference to the RNG.
         let mut rng = self.rng.borrow_mut();
@@ -145,17 +147,17 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         let mut weight = 1.;
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(&mut rng);
+        let evidence = self.sample_evidence(&mut *rng)?;
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&i| {
+        for &i in self.model.topological_order() {
             // Get the evidence of the vertex.
             let e_i = &evidence.evidences()[i];
 
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z] as usize);
             let pa_i = cpd_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -186,20 +188,23 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                         // Normalize the probabilities.
                         p_i /= p_i.sum();
                         // Construct the sampler.
-                        let s_i = WeightedIndex::new(&p_i).unwrap();
+                        let s_i = WeightedIndex::new(&p_i).map_err(|e| {
+                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                        })?;
                         // Sample the state.
-                        let s_i = s_i.sample(&mut rng) as CatType;
+                        let s_i = s_i.sample(&mut *rng) as CatType;
                         // Return the sample and weight.
                         (s_i, w_i)
                     }
-                    _ => unreachable!(), // Due to evidence sampling.
+                    _ => return Err(Error::Unreachable("Invalid evidence type".into())),
                 },
                 // If there is no evidence, sample as usual.
                 None => {
                     // Construct the sampler.
-                    let s_i = WeightedIndex::new(&p_i).unwrap();
+                    let s_i = WeightedIndex::new(&p_i)
+                        .map_err(|e| Error::RandDistr(format!("Invalid probabilities: {}", e)))?;
                     // Sample the state.
-                    let s_i = s_i.sample(&mut rng) as CatType;
+                    let s_i = s_i.sample(&mut *rng) as CatType;
                     // Return the sample and weight.
                     (s_i, 1.)
                 }
@@ -209,12 +214,12 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             sample[i] = s_i;
             // Update the weight.
             weight *= w_i;
-        });
+        }
 
-        (sample, weight)
+        Ok((sample, weight))
     }
 
-    fn sample_n(&self, n: usize) -> Self::Samples {
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the samples.
         let mut samples = Array2::zeros((n, self.model.labels().len()));
         // Allocate the weights.
@@ -225,17 +230,19 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
             .rows_mut()
             .into_iter()
             .zip(weights.iter_mut())
-            .for_each(|(mut sample, weight)| {
+            .try_for_each(|(mut sample, weight)| -> Result<_> {
                 // Sample a weighted sample.
-                let (s_i, w_i) = self.sample();
+                let (s_i, w_i) = self.sample()?;
                 // Assign the sample.
                 sample.assign(&s_i);
                 // Assign the weight.
                 *weight = w_i;
-            });
+
+                Ok(())
+            })?;
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        let samples = CatTable::new(self.model.states().clone(), samples)?;
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -246,7 +253,7 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
     type Sample = GaussWtdSample;
     type Samples = GaussWtdTable;
 
-    fn sample(&self) -> Self::Sample {
+    fn sample(&self) -> Result<Self::Sample> {
         // Get shortened variable type.
         use GaussEvT as E;
 
@@ -258,14 +265,14 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
         let mut weight = 1.;
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&i| {
+        for &i in self.model.topological_order() {
             // Get the evidence of the vertex.
             let e_i = &self.evidence.evidences()[i];
 
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
 
             // Get the evidence of the vertex.
@@ -276,7 +283,7 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
                         // Get the state.
                         let s_i = *value;
                         // Get the probability.
-                        let p_i = cpd_i.pf(&array![s_i], &pa_i);
+                        let p_i = cpd_i.pf(&array![s_i], &pa_i)?;
                         // Return the state and its weight.
                         (s_i, p_i)
                     }
@@ -284,7 +291,7 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
                 // If there is no evidence, sample as usual.
                 None => {
                     // Sample from the distribution.
-                    let s_i = cpd_i.sample(&mut rng, &pa_i)[0];
+                    let s_i = cpd_i.sample(&mut *rng, &pa_i)?[0];
                     // Return the sample and weight.
                     (s_i, 1.)
                 }
@@ -294,11 +301,12 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
             sample[i] = s_i;
             // Update the weight.
             weight *= w_i;
-        });
+        }
 
-        (sample, weight)
+        Ok((sample, weight))
     }
-    fn sample_n(&self, n: usize) -> Self::Samples {
+
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the samples.
         let mut samples = Array2::zeros((n, self.model.labels().len()));
         // Allocate the weights.
@@ -309,17 +317,19 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
             .rows_mut()
             .into_iter()
             .zip(weights.iter_mut())
-            .for_each(|(mut sample, weight)| {
+            .try_for_each(|(mut sample, weight)| -> Result<_> {
                 // Sample a weighted sample.
-                let (s_i, w_i) = self.sample();
+                let (s_i, w_i) = self.sample()?;
                 // Assign the sample.
                 sample.assign(&s_i);
                 // Assign the weight.
                 *weight = w_i;
-            });
+
+                Ok(())
+            })?;
 
         // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        let samples = GaussTable::new(self.model.labels().clone(), samples)?;
 
         // Return the weighted samples.
         GaussWtdTable::new(samples, weights)
@@ -329,7 +339,7 @@ impl<R: Rng> BNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
 impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
     type Samples = CatWtdTable;
 
-    fn par_sample_n(&self, n: usize) -> Self::Samples {
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the samples.
         let mut samples: Array2<CatType> = Array::zeros((n, self.model.labels().len()));
         // Allocate the weights.
@@ -344,21 +354,22 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
             .into_par_iter()
             .zip(samples.axis_iter_mut(Axis(0)))
             .zip(weights.axis_iter_mut(Axis(0)))
-            .for_each(|((seed, mut sample), mut weight)| {
+            .try_for_each(|((seed, mut sample), mut weight)| -> Result<()> {
                 // Create a new RNG with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the RNG.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample a weighted sample.
-                let (s_i, w_i) = sampler.sample();
+                let (s_i, w_i) = sampler.sample()?;
                 // Assign the sample.
                 sample.assign(&s_i);
                 // Assign the weight.
                 weight.fill(w_i);
-            });
+                Ok(())
+            })?;
 
         // Construct the samples.
-        let samples = CatTable::new(self.model.states().clone(), samples);
+        let samples = CatTable::new(self.model.states().clone(), samples)?;
 
         // Return the weighted samples.
         CatWtdTable::new(samples, weights)
@@ -368,7 +379,7 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ImportanceSampler<'_, R, CatB
 impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, GaussBN, GaussEv> {
     type Samples = GaussWtdTable;
 
-    fn par_sample_n(&self, n: usize) -> Self::Samples {
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the samples.
         let mut samples: Array2<GaussType> = Array::zeros((n, self.model.labels().len()));
         // Allocate the weights.
@@ -383,21 +394,22 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, Ga
             .into_par_iter()
             .zip(samples.axis_iter_mut(Axis(0)))
             .zip(weights.axis_iter_mut(Axis(0)))
-            .for_each(|((seed, mut sample), mut weight)| {
+            .try_for_each(|((seed, mut sample), mut weight)| -> Result<()> {
                 // Create a new RNG with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the RNG.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample a weighted sample.
-                let (s_i, w_i) = sampler.sample();
+                let (s_i, w_i) = sampler.sample()?;
                 // Assign the sample.
                 sample.assign(&s_i);
                 // Assign the weight.
                 weight.fill(w_i);
-            });
+                Ok(())
+            })?;
 
         // Construct the samples.
-        let samples = GaussTable::new(self.model.labels().clone(), samples);
+        let samples = GaussTable::new(self.model.labels().clone(), samples)?;
 
         // Return the weighted samples.
         GaussWtdTable::new(samples, weights)
@@ -406,26 +418,27 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ImportanceSampler<'_, R, Ga
 
 impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
     /// Sample uncertain evidence.
-    fn sample_evidence<T: Rng>(&self, rng: &mut T) -> CatTrjEv {
+    fn sample_evidence<T: Rng>(&self, rng: &mut T) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
         // Sample the evidence for each variable.
-        let certain_evidence = self
+        let certain_evidence: Vec<_> = self
             .evidence
             // Flatten the evidence.
             .evidences()
             .iter()
-            // Map (label, [evidence]) to (label, evidence) pairs.
             .flatten()
-            .flat_map(|e| {
+            .map(|e| {
                 // Get the variable index, starting time, and ending time.
                 let (event, start_time, end_time) = (e.event(), e.start_time(), e.end_time());
                 // Sample the evidence.
                 let e = match e {
                     E::UncertainPositiveInterval { p_states, .. } => {
                         // Construct the sampler.
-                        let state = WeightedIndex::new(p_states).unwrap();
+                        let state = WeightedIndex::new(p_states).map_err(|e| {
+                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                        })?;
                         // Sample the state.
                         let state = state.sample(rng);
                         // Return the sample.
@@ -463,8 +476,10 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 };
 
                 // Return the certain evidence.
-                Some(e)
-            });
+                Ok(Some(e))
+            })
+            .filter_map(|x| x.transpose())
+            .collect::<Result<_>>()?;
 
         // Collect the certain evidence.
         CatTrjEv::new(self.evidence.states().clone(), certain_evidence)
@@ -478,7 +493,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         event: &CatSample,
         i: usize,
         t: f64,
-    ) -> f64 {
+    ) -> Result<f64> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -494,7 +509,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
 
         // If there is certain positive evidence return the time until the end.
         if let Some(e) = e {
-            return e.end_time() - t;
+            return Ok(e.end_time() - t);
         }
 
         // Cast the state to usize.
@@ -502,7 +517,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
-        let pa_i = self.model.graph().parents(&set![i]);
+        let pa_i = self.model.graph().parents(&set![i])?;
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -527,11 +542,11 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
             //  1. The lower bound is 0.
             //  2. The upper bound is the time until the conflict.
             //  3. The rate is the negative of the transition rate.
-            return -1. / q_i_x * f64::ln(1. - u * (1. - f64::exp(-q_i_x * t_c)));
+            return Ok(-1. / q_i_x * f64::ln(1. - u * (1. - f64::exp(-q_i_x * t_c))));
         }
 
         // If there is no conflict, initialize the exponential distribution.
-        let exp_i_x = Exp::new(q_i_x).unwrap();
+        let exp_i_x = Exp::new(q_i_x).map_err(|e| Error::RandDistr(format!("{}", e)))?;
         // Sample the transition time.
         let t_i = exp_i_x.sample(rng);
 
@@ -548,11 +563,11 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         // If there is compliance ...
         if let Some(e) = e {
             // Get the time until the compliance.
-            return e.start_time() - t;
+            return Ok(e.start_time() - t);
         }
 
         // Otherwise, return the transition time.
-        t_i
+        Ok(t_i)
     }
 
     fn update_weight(
@@ -578,7 +593,8 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                 // Get the CIM.
                 let cim_j = &self.model.cims()[j];
                 // Compute the index on the parents to condition on.
-                let pa_j = self.model.graph().parents(&set![j]);
+                // Note: parents() can fail but we're in an inner map, use unwrap_or_default
+                let pa_j = self.model.graph().parents(&set![j]).unwrap_or_default();
                 let pa_j = pa_j.iter().map(|&z| event[z] as usize);
                 let pa_j = cim_j.conditioning_multi_index().ravel(pa_j);
                 // Get the distribution of the vertex.
@@ -644,35 +660,39 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
     type Samples = CatWtdTrjs;
 
     #[inline]
-    fn sample_by_length(&self, max_length: usize) -> Self::Sample {
+    fn sample_by_length(&self, max_length: usize) -> Result<Self::Sample> {
         // Delegate to generic function.
         self.sample_by_length_or_time(max_length, f64::MAX)
     }
 
     #[inline]
-    fn sample_by_time(&self, max_time: f64) -> Self::Sample {
+    fn sample_by_time(&self, max_time: f64) -> Result<Self::Sample> {
         // Delegate to generic function.
         self.sample_by_length_or_time(usize::MAX, max_time)
     }
 
-    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Self::Sample {
+    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Result<Self::Sample> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
         // Assert the model and the evidences have the same states.
-        // TODO: Move this assertion to the constructor.
-        assert_eq!(
-            self.model.states(),
-            self.evidence.states(),
-            "The model and the evidences must have the same states."
-        );
+        if self.model.states() != self.evidence.states() {
+            return Err(Error::IllegalArgument(
+                "The model and the evidences must have the same states.".into(),
+            ));
+        }
         // Assert length is positive.
-        assert!(
-            max_length > 0,
-            "The maximum length of the trajectory must be strictly positive."
-        );
+        if max_length == 0 {
+            return Err(Error::IllegalArgument(
+                "The maximum length of the trajectory must be strictly positive.".into(),
+            ));
+        }
         // Assert time is positive.
-        assert!(max_time > 0., "The maximum time must be positive.");
+        if max_time <= 0. {
+            return Err(Error::IllegalArgument(
+                "The maximum time must be positive.".into(),
+            ));
+        }
 
         // Get a mutable reference to the RNG.
         let mut rng = self.rng.borrow_mut();
@@ -682,18 +702,18 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         let mut sample_times = Vec::new();
 
         // Reduce the uncertain evidences to certain evidences.
-        let evidence = self.sample_evidence(&mut rng);
+        let evidence = self.sample_evidence(&mut *rng)?;
 
         // Sample the initial states with given initial evidence.
         let (mut event, mut weight) = {
             // Get the initial state distribution.
             let initial_d = self.model.initial_distribution();
             // Get the initial evidence.
-            let initial_e = &evidence.initial_evidence();
+            let initial_e = evidence.initial_evidence()?;
             // Initialize the sampler for the initial state.
-            let initial = ImportanceSampler::new(&mut rng, initial_d, initial_e);
+            let initial = ImportanceSampler::new(&mut *rng, initial_d, &initial_e)?;
             // Sample the initial state.
-            initial.sample()
+            initial.sample()?
         };
 
         // Append the initial state to the trajectory.
@@ -702,11 +722,13 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
 
         // Sample the transition time.
         let mut times: Array1<_> = (0..event.len())
-            .map(|i| self.sample_time(&mut rng, &evidence, &event, i, 0.))
-            .collect();
+            .map(|i| self.sample_time(&mut *rng, &evidence, &event, i, 0.))
+            .collect::<Result<_>>()?;
 
         // Get the variable that transitions first.
-        let mut i = times.argmin().unwrap();
+        let mut i = times
+            .argmin()
+            .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
         // Update the weight.
         weight *= self.update_weight(&evidence, &event, i, 0., times[i]);
         // Set global time.
@@ -731,12 +753,12 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 _ => false,
             }) {
                 // Sample the transition time.
-                times[i] = time + self.sample_time(&mut rng, &evidence, &event, i, time);
+                times[i] = time + self.sample_time(&mut *rng, &evidence, &event, i, time)?;
             } else {
                 // Get the CIM.
                 let cim_i = &self.model.cims()[i];
                 // Compute the index on the parents to condition on.
-                let pa_i = self.model.graph().parents(&set![i]);
+                let pa_i = self.model.graph().parents(&set![i])?;
                 let pa_i = pa_i.iter().map(|&z| event[z] as usize);
                 let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
                 // Get the distribution of the vertex.
@@ -756,7 +778,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                         Some(E::CertainPositiveInterval { state, .. }) => {
                             (*state as CatType, q_i_zx[*state])
                         }
-                        _ => unreachable!(), // Due to previous checks.
+                        _ => return Err(Error::Unreachable("Invalid evidence type".into())),
                     }
                 } else {
                     //
@@ -776,21 +798,25 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                             // Normalize the probabilities.
                             q_i_zx /= q_i_zx.sum();
                             // Construct the sampler.
-                            let s_i = WeightedIndex::new(&q_i_zx).unwrap();
+                            let s_i = WeightedIndex::new(&q_i_zx).map_err(|e| {
+                                Error::RandDistr(format!("Invalid probabilities: {}", e))
+                            })?;
                             // Sample the state.
-                            let s_i = s_i.sample(&mut rng) as CatType;
+                            let s_i = s_i.sample(&mut *rng) as CatType;
                             // Return the sample and weight.
                             (s_i, w_i)
                         }
                         None => {
                             // Initialize a weighted index sampler.
-                            let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
+                            let s_i_zx = WeightedIndex::new(&q_i_zx).map_err(|e| {
+                                Error::RandDistr(format!("Invalid probabilities: {}", e))
+                            })?;
                             // Sample the next event.
-                            let s_i = s_i_zx.sample(&mut rng) as CatType;
+                            let s_i = s_i_zx.sample(&mut *rng) as CatType;
                             // Return the sample and weight.
                             (s_i, 1.)
                         }
-                        _ => unreachable!(), // Due to previous checks.
+                        _ => return Err(Error::Unreachable("Invalid evidence type".into())),
                     }
                 };
 
@@ -803,18 +829,18 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                 sample_events.push(event.clone());
                 sample_times.push(time);
                 // Update the transition times for { X } U Ch(X).
-                std::iter::once(i)
-                    .chain(self.model.graph().children(&set![i]))
-                    .for_each(|j| {
-                        // Sample the transition time.
-                        times[j] = time + self.sample_time(&mut rng, &evidence, &event, j, time);
-                    });
+                for j in std::iter::once(i).chain(self.model.graph().children(&set![i])?) {
+                    // Sample the transition time.
+                    times[j] = time + self.sample_time(&mut *rng, &evidence, &event, j, time)?;
+                }
             }
 
             // Add a small epsilon to avoid zero transition times.
             times += EPSILON;
             // Get the variable to transition first.
-            i = times.argmin().unwrap();
+            i = times
+                .argmin()
+                .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
             // Update the weight.
             weight *= self.update_weight(&evidence, &event, i, time, times[i].min(max_time));
             // Update the global time.
@@ -828,24 +854,24 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .expect("Failed to convert events to 2D array.");
+            .map_err(|e: ndarray::ShapeError| Error::Shape(e.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
         // Construct the trajectory.
-        let trajectory = CatTrj::new(states, sample_events, sample_times);
+        let trajectory = CatTrj::new(states, sample_events, sample_times)?;
 
         // Return the trajectory and its weight.
-        (trajectory, weight).into()
+        CatWtdTrj::new(trajectory, weight)
     }
 
     #[inline]
-    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples {
+    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples> {
         (0..n).map(|_| self.sample_by_length(max_length)).collect()
     }
 
     #[inline]
-    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples {
+    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples> {
         (0..n).map(|_| self.sample_by_time(max_time)).collect()
     }
 
@@ -855,7 +881,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples {
+    ) -> Result<Self::Samples> {
         (0..n)
             .map(|_| self.sample_by_length_or_time(max_length, max_time))
             .collect()
@@ -866,12 +892,12 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, 
     type Samples = CatWtdTrjs;
 
     #[inline]
-    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples {
+    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples> {
         self.par_sample_n_by_length_or_time(max_length, f64::MAX, n)
     }
 
     #[inline]
-    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples {
+    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples> {
         self.par_sample_n_by_length_or_time(usize::MAX, max_time, n)
     }
 
@@ -880,7 +906,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, 
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples {
+    ) -> Result<Self::Samples> {
         // Get a mutable reference to the RNG.
         let rng = self.rng.borrow_mut();
         // Generate a random seed for each trajectory.
@@ -892,7 +918,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ImportanceSampler<'_, R, 
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence);
+                let sampler = ImportanceSampler::new(&mut rng, self.model, self.evidence)?;
                 // Sample the trajectory.
                 sampler.sample_by_length_or_time(max_length, max_time)
             })

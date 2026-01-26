@@ -1,82 +1,96 @@
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+    use causal_hub::{
+        assets::load_asia,
+        datasets::{CatEv, CatEvT},
+        inference::{ApproximateInference, BNInference, ParBNInference},
+        models::{CatCPD, Labelled},
+        set, states,
+        types::{Error, Result},
+    };
+    use ndarray::prelude::*;
+    use rand::prelude::*;
+    use rand_xoshiro::Xoshiro256PlusPlus;
+
     mod categorical {
+        use super::*;
+
         mod bayesian_network {
-            use approx::assert_relative_eq;
-            use causal_hub::{
-                assets::load_asia,
-                datasets::{CatEv, CatEvT},
-                inference::{ApproximateInference, BNInference, ParBNInference},
-                models::{CatCPD, Labelled},
-                set, states,
-            };
-            use ndarray::prelude::*;
-            use rand::prelude::*;
-            use rand_xoshiro::Xoshiro256PlusPlus;
+            use super::*;
 
             #[test]
-            #[should_panic(expected = "Variables X must not be empty.")]
-            fn estimate_empty_x() {
+            fn estimate_empty_x() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![], &set![]);
+                assert!(engine.estimate(&set![], &set![]).is_err());
+
+                Ok(())
             }
+
             #[test]
-            #[should_panic(expected = "Variables X and Z must be disjoint.")]
-            fn estimate_non_disjoint_xz() {
+            fn estimate_non_disjoint_xz() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]);
+                assert!(engine.estimate(&set![0], &set![0]).is_err());
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be in the model.")]
-            fn estimate_x_not_in_model() {
+            fn estimate_x_not_in_model() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![10], &set![]);
+                assert!(engine.estimate(&set![10], &set![]).is_err());
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Sample size must be positive.")]
-            fn estimate_zero_sample_size() {
+            fn estimate_zero_sample_size() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
-                let _ = ApproximateInference::new(&mut rng, &model).with_sample_size(0);
+                assert!(
+                    ApproximateInference::new(&mut rng, &model)
+                        .with_sample_size(0)
+                        .is_err()
+                );
+
+                Ok(())
             }
 
             #[test]
-            fn estimate_with_sample_size() {
+            fn estimate_with_sample_size() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000)?;
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -85,23 +99,25 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+
+                Ok(())
             }
 
             #[test]
-            fn estimate_without_evidence() {
+            fn estimate_without_evidence() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -110,37 +126,45 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+
+                Ok(())
             }
 
             #[test]
-            fn estimate_with_evidence() {
+            fn estimate_with_evidence() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the evidence.
                 let evidence = CatEv::new(
                     model.states().clone(),
                     [
                         CatEvT::CertainPositive {
-                            event: model.labels().get_index_of("lung").unwrap(), // lung
-                            state: 1,                                            // yes
+                            event: model
+                                .labels()
+                                .get_index_of("lung")
+                                .ok_or(Error::IllegalArgument("missing".into()))?, // lung
+                            state: 1, // yes
                         },
                         CatEvT::CertainPositive {
-                            event: model.labels().get_index_of("tub").unwrap(), // tub
-                            state: 0,                                           // no
+                            event: model
+                                .labels()
+                                .get_index_of("tub")
+                                .ok_or(Error::IllegalArgument("missing".into()))?, // tub
+                            state: 0, // no
                         },
                     ],
-                );
+                )?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![]);
+                let pred_query = engine.estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -149,65 +173,70 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Variables X must not be empty.")]
-            fn par_estimate_empty_x() {
+            fn par_estimate_empty_x() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![], &set![]);
+                assert!(engine.par_estimate(&set![], &set![]).is_err());
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be disjoint.")]
-            fn par_estimate_non_disjoint_xz() {
+            fn par_estimate_non_disjoint_xz() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.estimate(&set![0], &set![0]);
+                assert!(engine.estimate(&set![0], &set![0]).is_err());
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Variables X and Z must be in the model.")]
-            fn par_estimate_x_not_in_model() {
+            fn par_estimate_x_not_in_model() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let _ = engine.par_estimate(&set![10], &set![]);
+                assert!(engine.par_estimate(&set![10], &set![]).is_err());
+
+                Ok(())
             }
 
             #[test]
-            fn par_estimate_with_sample_size() {
+            fn par_estimate_with_sample_size() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000);
+                let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000)?;
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -216,23 +245,25 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+
+                Ok(())
             }
 
             #[test]
-            fn par_estimate_without_evidence() {
+            fn par_estimate_without_evidence() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -241,37 +272,39 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.99, 0.01]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+
+                Ok(())
             }
 
             #[test]
-            fn par_estimate_with_evidence() {
+            fn par_estimate_with_evidence() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_asia();
+                let model = load_asia()?;
                 // Initialize the evidence.
                 let evidence = CatEv::new(
                     model.states().clone(),
                     [
                         CatEvT::CertainPositive {
-                            event: model.label_to_index("lung"), // lung
-                            state: 1,                            // yes
+                            event: model.label_to_index("lung")?, // lung
+                            state: 1,                             // yes
                         },
                         CatEvT::CertainPositive {
-                            event: model.label_to_index("tub"), // tub
-                            state: 0,                           // no
+                            event: model.label_to_index("tub")?, // tub
+                            state: 0,                            // no
                         },
                     ],
-                );
+                )?;
                 // Initialize the inference engine.
                 let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![]);
+                let pred_query = engine.par_estimate(&set![0], &set![])?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -280,10 +313,12 @@ mod tests {
                     states![],
                     // Theta
                     array![[0.9757204131016298, 0.024279586898370155]],
-                );
+                )?;
 
                 // Assert that the estimation is correct.
                 assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
+
+                Ok(())
             }
         }
     }

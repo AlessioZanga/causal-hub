@@ -1,4 +1,7 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
 use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Either;
@@ -12,7 +15,7 @@ use crate::{
     io::CsvIO,
     labels,
     models::Labelled,
-    types::{Labels, Map, Set},
+    types::{Error, Labels, Map, Result, Set},
 };
 
 /// A struct representing an incomplete gaussian dataset.
@@ -32,17 +35,14 @@ impl Labelled for GaussIncTable {
 
 impl GaussIncTable {
     /// Creates a new gaussian incomplete tabular data instance.
-    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Self {
+    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Result<Self> {
         // Check if the number of variables is equal to the number of columns.
-        assert_eq!(
-            labels.len(),
-            values.ncols(),
-            "Number of variables must be equal to the number of columns: \n\
-            \t expected:    |labels| == |values.columns()| , \n\
-            \t found:       |labels| == {} and |values.columns()| == {} .",
-            labels.len(),
-            values.ncols()
-        );
+        if labels.len() != values.ncols() {
+            return Err(Error::IncompatibleShape(
+                labels.len().to_string(),
+                values.ncols().to_string(),
+            ));
+        }
 
         // Check that the labels are sorted.
         if !labels.is_sorted() {
@@ -65,17 +65,17 @@ impl GaussIncTable {
         // Create the missing mask.
         let missing_mask = values.mapv(|x| x.is_nan());
         // Initialize the missing table.
-        let missing = MissingTable::new(labels.clone(), missing_mask);
+        let missing = MissingTable::new(labels.clone(), missing_mask)?;
 
-        Self {
+        Ok(Self {
             labels,
             values,
             missing,
-        }
+        })
     }
 
     /// List-wise deletion missing handler.
-    fn lw_deletion(&self) -> GaussTable {
+    fn lw_deletion(&self) -> Result<GaussTable> {
         // Allocate new values.
         let mut new_values = Array::zeros((
             self.missing.complete_rows_count(), //
@@ -101,7 +101,7 @@ impl GaussIncTable {
     }
 
     /// Pair-wise deletion missing handler.
-    fn pw_deletion(&self, x: &Set<usize>) -> GaussTable {
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<GaussTable> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = labels![];
@@ -109,17 +109,13 @@ impl GaussIncTable {
             return GaussTable::new(s, v);
         }
 
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in PW deletion: \n\
-                \t expected:    index < |values.columns()| , \n\
-                \t found:       index == {} and |values.columns()| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
 
         // Clone the indices.
         let mut cols: Vec<usize> = x.iter().cloned().collect();
@@ -151,9 +147,13 @@ impl GaussIncTable {
         // Select the labels for the specified columns.
         let new_labels = cols
             .iter()
-            .map(|&j| self.labels.get_index(j).unwrap())
-            .cloned()
-            .collect();
+            .map(|&j| {
+                self.labels
+                    .get_index(j)
+                    .cloned()
+                    .ok_or_else(|| Error::VertexOutOfBounds(j))
+            })
+            .collect::<Result<_>>()?;
 
         // Return the complete dataset.
         GaussTable::new(new_labels, new_values)
@@ -173,25 +173,25 @@ impl Dataset for GaussIncTable {
         self.values.nrows() as f64
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in variables selection: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
 
         // Select the labels.
         let labels: Labels = x
             .iter()
-            .map(|&i| self.labels.get_index(i).unwrap())
-            .cloned()
-            .collect();
+            .map(|&i| {
+                self.labels
+                    .get_index(i)
+                    .cloned()
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
@@ -224,96 +224,111 @@ impl IncDataset for GaussIncTable {
         m: &MM,
         x: Option<&Set<usize>>,
         _pr: Option<&Map<usize, Set<usize>>>,
-    ) -> Either<Self::Complete, Self::Weighted> {
+    ) -> Result<Either<Self::Complete, Self::Weighted>> {
         // Apply the missing method with the provided arguments.
         match (m, x) {
-            (MM::LW, _) => Either::Left(self.lw_deletion()),
-            (MM::PW, Some(x)) => Either::Left(self.pw_deletion(x)),
-            _ => panic!(
-                "Invalid arguments for applying missing method:\n
-                \t missing method:      '{m:?}' , \n\
-                \t selected variables:  '{x:?}' ."
-            ),
+            (MM::LW, _) => self.lw_deletion().map(Either::Left),
+            (MM::PW, Some(x)) => self.pw_deletion(x).map(Either::Left),
+            (MM::IPW, _) | (MM::AIPW, _) => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!("{:?} deletion not implemented for Gaussian data yet.", m),
+            )),
+            _ => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!(
+                    "Invalid arguments for applying missing method:\n\
+                    \t missing method:      '{m:?}' , \n\
+                    \t selected variables:  '{x:?}' .",
+                ),
+            )),
         }
     }
 
-    fn lw_deletion(&self) -> Self::Complete {
+    fn lw_deletion(&self) -> Result<Self::Complete> {
         self.lw_deletion()
     }
 
-    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete {
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
         self.pw_deletion(x)
     }
 
-    fn ipw_deletion(&self, _x: &Set<usize>, _pr: &Map<usize, Set<usize>>) -> Self::Weighted {
-        unimplemented!("IPW deletion not implemented for Gaussian data yet.")
+    fn ipw_deletion(
+        &self,
+        _x: &Set<usize>,
+        _pr: &Map<usize, Set<usize>>,
+    ) -> Result<Self::Weighted> {
+        Err(Error::InvalidParameter(
+            "missing_method".to_string(),
+            "IPW deletion not implemented for Gaussian data yet.".to_string(),
+        ))
     }
 
-    fn aipw_deletion(&self, _x: &Set<usize>, _pr: &Map<usize, Set<usize>>) -> Self::Weighted {
-        unimplemented!("AIPW deletion not implemented for Gaussian data yet.")
+    fn aipw_deletion(
+        &self,
+        _x: &Set<usize>,
+        _pr: &Map<usize, Set<usize>>,
+    ) -> Result<Self::Weighted> {
+        Err(Error::InvalidParameter(
+            "missing_method".to_string(),
+            "AIPW deletion not implemented for Gaussian data yet.".to_string(),
+        ))
     }
 }
 
 impl CsvIO for GaussIncTable {
-    fn from_csv_reader<R: Read>(reader: R) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
-        // Assert that the reader has headers.
-        assert!(reader.has_headers(), "Reader must have headers.");
+        // Check if the reader has headers.
+        if !reader.has_headers() {
+            return Err(Error::MissingHeader);
+        }
 
         // Read the headers.
         let labels: Labels = reader
-            .headers()
-            .expect("Failed to read the headers.")
+            .headers()?
             .into_iter()
             .map(|x| x.to_owned())
             .collect();
 
         // Read the records.
-        let values: Array1<_> = reader
-            .into_records()
-            .enumerate()
-            .flat_map(|(i, row)| {
-                // Get the record row.
-                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
-                // Get the record values and convert to indices.
-                let row: Vec<_> = row
-                    .into_iter()
-                    .enumerate()
-                    .map(|(_, x)| {
-                        // Cast the value.
-                        x.parse::<GaussType>().unwrap_or(Self::MISSING)
-                    })
-                    .collect();
-                // Collect the values.
-                row
-            })
-            .collect();
+        let values: Vec<GaussType> =
+            reader
+                .into_records()
+                .try_fold(Vec::new(), |mut values, row| -> Result<_> {
+                    // Get the record row.
+                    let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                    // Extend the values.
+                    values.extend(
+                        row.iter()
+                            .map(|x| x.parse::<GaussType>().unwrap_or(Self::MISSING)),
+                    );
+                    Ok(values)
+                })?;
+
+        // Convert values to an array.
+        let values = Array1::from_vec(values);
 
         // Get the number of rows and columns.
         let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
+        let values = values.into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
         Self::new(labels, values)
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) {
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
         // Create the CSV writer.
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
         // Write the headers.
-        writer
-            .write_record(self.labels.iter())
-            .expect("Failed to write CSV headers.");
+        writer.write_record(self.labels.iter())?;
 
         // Write the records.
-        self.values.rows().into_iter().for_each(|row| {
+        for row in self.values.rows() {
             // Map the row values to strings.
             let record = row.iter().map(|&x| {
                 if x.is_nan() {
@@ -323,9 +338,9 @@ impl CsvIO for GaussIncTable {
                 }
             });
             // Write the record.
-            writer
-                .write_record(record)
-                .expect("Failed to write CSV record.");
-        });
+            writer.write_record(record)?;
+        }
+
+        Ok(())
     }
 }

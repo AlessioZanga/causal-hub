@@ -15,7 +15,7 @@ use crate::{
     models::{BN, CIM, CPD, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
     samplers::{BNSampler, CTBNSampler, ParBNSampler, ParCTBNSampler},
     set,
-    types::EPSILON,
+    types::{EPSILON, Error, Result},
 };
 
 /// A forward sampler.
@@ -38,11 +38,11 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
     /// Return a new `ForwardSampler` instance.
     ///
     #[inline]
-    pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
+    pub fn new(rng: &'a mut R, model: &'a M) -> Result<Self> {
         // Wrap the RNG in a RefCell to allow interior mutability.
         let rng = RefCell::new(rng);
 
-        Self { rng, model }
+        Ok(Self { rng, model })
     }
 }
 
@@ -50,35 +50,40 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
     type Sample = <CatBN as BN>::Sample;
     type Samples = <CatBN as BN>::Samples;
 
-    fn sample(&self) -> Self::Sample {
+    fn sample(&self) -> Result<Self::Sample> {
         // Get a mutable reference to the RNG.
         let mut rng = self.rng.borrow_mut();
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&i| {
+        for &i in self.model.topological_order() {
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Sample from the distribution.
-            sample[i] = cpd_i.sample(&mut rng, &pa_i)[0];
-        });
+            sample[i] = cpd_i.sample(&mut rng, &pa_i)?[0];
+        }
 
-        sample
+        Ok(sample)
     }
 
-    fn sample_n(&self, n: usize) -> Self::Samples {
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the dataset.
         let mut dataset = Array::zeros((n, self.model.labels().len()));
 
-        // For each sample ...
-        dataset.rows_mut().into_iter().for_each(|mut row| {
-            // Sample from the distribution.
-            row.assign(&self.sample());
-        });
+        // For each sample, sample from the distribution using iterators.
+        dataset
+            .rows_mut()
+            .into_iter()
+            .try_for_each(|mut row| -> Result<_> {
+                // Sample from the distribution.
+                row.assign(&self.sample()?);
+
+                Ok(())
+            })?;
 
         // Construct the dataset.
         CatTable::new(self.model.states().clone(), dataset)
@@ -88,7 +93,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
 impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
     type Samples = <CatBN as BN>::Samples;
 
-    fn par_sample_n(&self, n: usize) -> Self::Samples {
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Get a mutable reference to the RNG.
         let rng = self.rng.borrow_mut();
         // Generate a random seed for each sample.
@@ -101,14 +106,16 @@ impl<R: Rng + SeedableRng> ParBNSampler<CatBN> for ForwardSampler<'_, R, CatBN> 
         seeds
             .into_par_iter()
             .zip(samples.axis_iter_mut(Axis(0)))
-            .for_each(|(seed, mut row)| {
+            .try_for_each(|(seed, mut row)| -> Result<()> {
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample from the distribution.
-                row.assign(&sampler.sample());
-            });
+                row.assign(&sampler.sample()?);
+
+                Ok(())
+            })?;
 
         // Construct the dataset.
         CatTable::new(self.model.states().clone(), samples)
@@ -119,35 +126,40 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
     type Sample = <GaussBN as BN>::Sample;
     type Samples = <GaussBN as BN>::Samples;
 
-    fn sample(&self) -> Self::Sample {
+    fn sample(&self) -> Result<Self::Sample> {
         // Get a mutable reference to the RNG.
         let mut rng = self.rng.borrow_mut();
         // Allocate the sample.
         let mut sample = Array::zeros(self.model.labels().len());
 
         // For each vertex in the topological order ...
-        self.model.topological_order().iter().for_each(|&i| {
+        for &i in self.model.topological_order() {
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Get the parents.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Compute the value of the variable.
-            sample[i] = cpd_i.sample(&mut rng, &pa_i)[0];
-        });
+            sample[i] = cpd_i.sample(&mut rng, &pa_i)?[0];
+        }
 
-        sample
+        Ok(sample)
     }
 
-    fn sample_n(&self, n: usize) -> Self::Samples {
+    fn sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Allocate the samples.
         let mut samples = Array::zeros((n, self.model.labels().len()));
 
-        // For each sample ...
-        samples.rows_mut().into_iter().for_each(|mut row| {
-            // Sample from the distribution.
-            row.assign(&self.sample());
-        });
+        // For each sample, sample from the distribution using iterators.
+        samples
+            .rows_mut()
+            .into_iter()
+            .try_for_each(|mut row| -> Result<_> {
+                // Sample from the distribution.
+                row.assign(&self.sample()?);
+
+                Ok(())
+            })?;
 
         // Construct the dataset.
         GaussTable::new(self.model.labels().clone(), samples)
@@ -157,7 +169,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
 impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
     type Samples = <GaussBN as BN>::Samples;
 
-    fn par_sample_n(&self, n: usize) -> Self::Samples {
+    fn par_sample_n(&self, n: usize) -> Result<Self::Samples> {
         // Get a mutable reference to the RNG.
         let rng = self.rng.borrow_mut();
         // Generate a random seed for each sample.
@@ -170,14 +182,15 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
         seeds
             .into_par_iter()
             .zip(samples.axis_iter_mut(Axis(0)))
-            .for_each(|(seed, mut row)| {
+            .try_for_each(|(seed, mut row)| -> Result<()> {
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample from the distribution.
-                row.assign(&sampler.sample());
-            });
+                row.assign(&sampler.sample()?);
+                Ok(())
+            })?;
 
         // Construct the dataset.
         GaussTable::new(self.model.labels().clone(), samples)
@@ -186,21 +199,22 @@ impl<R: Rng + SeedableRng> ParBNSampler<GaussBN> for ForwardSampler<'_, R, Gauss
 
 impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
     /// Sample transition time for variable X_i with state x_i.
-    fn sample_time(&self, event: &CatSample, i: usize) -> f64 {
+    fn sample_time(&self, event: &CatSample, i: usize) -> Result<f64> {
         // Cast the state to usize.
         let x = event[i] as usize;
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
-        let pa_i = self.model.graph().parents(&set![i]);
+        let pa_i = self.model.graph().parents(&set![i])?;
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
         // Initialize the exponential distribution.
-        let exp_i_x = Exp::new(q_i_x).unwrap();
+        let exp_i_x =
+            Exp::new(q_i_x).map_err(|e| Error::RandDistr(format!("Invalid lambda: {}", e)))?;
         // Sample the transition time.
-        exp_i_x.sample(&mut self.rng.borrow_mut())
+        Ok(exp_i_x.sample(&mut self.rng.borrow_mut()))
     }
 }
 
@@ -209,25 +223,30 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     type Samples = <CatCTBN as CTBN>::Trajectories;
 
     #[inline]
-    fn sample_by_length(&self, max_length: usize) -> Self::Sample {
+    fn sample_by_length(&self, max_length: usize) -> Result<Self::Sample> {
         // Delegate to generic function.
         self.sample_by_length_or_time(max_length, f64::MAX)
     }
 
     #[inline]
-    fn sample_by_time(&self, max_time: f64) -> Self::Sample {
+    fn sample_by_time(&self, max_time: f64) -> Result<Self::Sample> {
         // Delegate to generic function.
         self.sample_by_length_or_time(usize::MAX, max_time)
     }
 
-    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Self::Sample {
+    fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Result<Self::Sample> {
         // Assert length is positive.
-        assert!(
-            max_length > 0,
-            "The maximum length of the trajectory must be strictly positive."
-        );
+        if max_length == 0 {
+            return Err(Error::IllegalArgument(
+                "The maximum length of the trajectory must be strictly positive.".into(),
+            ));
+        }
         // Assert time is positive.
-        assert!(max_time > 0., "The maximum time must be positive.");
+        if max_time <= 0. {
+            return Err(Error::IllegalArgument(
+                "The maximum time must be positive.".into(),
+            ));
+        }
 
         // Allocate the trajectory components.
         let mut sample_events = Vec::new();
@@ -237,8 +256,8 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let mut event = {
             let mut rng = self.rng.borrow_mut();
             let initial = self.model.initial_distribution();
-            let initial = ForwardSampler::new(&mut rng, initial);
-            initial.sample()
+            let initial = ForwardSampler::new(&mut rng, initial)?;
+            initial.sample()?
         };
         // Append the initial state to the trajectory.
         sample_events.push(event.clone());
@@ -247,10 +266,12 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Sample the transition time.
         let mut times: Array1<_> = (0..event.len())
             .map(|i| self.sample_time(&event, i))
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Get the variable that transitions first.
-        let mut i = times.argmin().unwrap();
+        let mut i = times
+            .argmin()
+            .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
         // Set global time.
         let mut time = times[i];
 
@@ -263,7 +284,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Get the CIM.
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| event[z] as usize);
             let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -273,23 +294,24 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Normalize the probabilities.
             q_i_zx /= q_i_zx.sum();
             // Initialize a weighted index sampler.
-            let s_i_zx = WeightedIndex::new(&q_i_zx).unwrap();
+            let s_i_zx = WeightedIndex::new(&q_i_zx)
+                .map_err(|e| Error::RandDistr(format!("Invalid probabilities: {}", e)))?;
             // Sample the next event.
             event[i] = s_i_zx.sample(&mut self.rng.borrow_mut()) as CatType;
             // Append the event to the trajectory.
             sample_events.push(event.clone());
             sample_times.push(time);
             // Update the transition times for { X } U Ch(X).
-            std::iter::once(i)
-                .chain(self.model.graph().children(&set![i]))
-                .for_each(|j| {
-                    // Sample the transition time.
-                    times[j] = time + self.sample_time(&event, j);
-                });
+            for j in std::iter::once(i).chain(self.model.graph().children(&set![i])?) {
+                // Sample the transition time.
+                times[j] = time + self.sample_time(&event, j)?;
+            }
             // Add a small epsilon to avoid zero transition times.
             times += EPSILON;
             // Get the variable to transition first.
-            i = times.argmin().unwrap();
+            i = times
+                .argmin()
+                .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
             // Update the global time.
             time = times[i];
         }
@@ -301,7 +323,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .expect("Failed to convert events to 2D array.");
+            .map_err(|e| Error::Shape(e.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 
@@ -310,12 +332,12 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     }
 
     #[inline]
-    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples {
+    fn sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples> {
         (0..n).map(|_| self.sample_by_length(max_length)).collect()
     }
 
     #[inline]
-    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples {
+    fn sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples> {
         (0..n).map(|_| self.sample_by_time(max_time)).collect()
     }
 
@@ -325,7 +347,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples {
+    ) -> Result<Self::Samples> {
         (0..n)
             .map(|_| self.sample_by_length_or_time(max_length, max_time))
             .collect()
@@ -336,12 +358,12 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
     type Samples = <CatCTBN as CTBN>::Trajectories;
 
     #[inline]
-    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Self::Samples {
+    fn par_sample_n_by_length(&self, max_length: usize, n: usize) -> Result<Self::Samples> {
         self.par_sample_n_by_length_or_time(max_length, f64::MAX, n)
     }
 
     #[inline]
-    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Self::Samples {
+    fn par_sample_n_by_time(&self, max_time: f64, n: usize) -> Result<Self::Samples> {
         self.par_sample_n_by_length_or_time(usize::MAX, max_time, n)
     }
 
@@ -350,7 +372,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
         max_length: usize,
         max_time: f64,
         n: usize,
-    ) -> Self::Samples {
+    ) -> Result<Self::Samples> {
         // Get a mutable reference to the RNG.
         let rng = self.rng.borrow_mut();
         // Generate a random seed for each trajectory.
@@ -362,7 +384,7 @@ impl<R: Rng + SeedableRng> ParCTBNSampler<CatCTBN> for ForwardSampler<'_, R, Cat
                 // Create a new random number generator with the seed.
                 let mut rng = R::seed_from_u64(seed);
                 // Create a new sampler with the random number generator and model.
-                let sampler = ForwardSampler::new(&mut rng, self.model);
+                let sampler = ForwardSampler::new(&mut rng, self.model)?;
                 // Sample the trajectory.
                 sampler.sample_by_length_or_time(max_length, max_time)
             })

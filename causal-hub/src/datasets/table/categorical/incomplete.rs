@@ -1,8 +1,11 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
 use csv::{ReaderBuilder, WriterBuilder};
 use itertools::Either;
-use ndarray::{Zip, prelude::*};
+use ndarray::prelude::*;
 
 use crate::{
     datasets::{
@@ -12,7 +15,7 @@ use crate::{
     io::CsvIO,
     models::{CPD, Labelled},
     set, states,
-    types::{Labels, Map, Set, States},
+    types::{Error, Labels, Map, Result, Set, States},
 };
 
 /// A struct representing an incomplete categorical dataset.
@@ -34,54 +37,74 @@ impl Labelled for CatIncTable {
 
 impl CatIncTable {
     /// Creates a new categorical incomplete tabular data instance.
-    pub fn new(mut states: States, mut values: Array2<CatType>) -> Self {
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The variables states.
+    /// * `values` - The values of the variables.
+    ///
+    /// # Notes
+    ///
+    /// * Labels and states will be sorted in alphabetical order.
+    ///
+    /// # Errors
+    ///
+    /// * If the number of variable states is higher than `CatType::MAX`.
+    /// * If the number of variables is different from the number of values columns.
+    /// * If the variables values are not smaller than the number of states.
+    ///
+    /// # Panics
+    ///
+    /// * If the variable labels are not unique.
+    /// * If the variable states are not unique.
+    ///
+    /// # Returns
+    ///
+    /// A new categorical incomplete tabular data instance.
+    ///
+    pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self> {
         // Check if the number of states is less than `CatType::MAX`.
-        states.iter().for_each(|(label, state)| {
-            assert!(
-                state.len() <= CatType::MAX as usize,
-                "Variable '{label}' should have less than 256 states: \n\
-                \t expected:    |states| <  256 , \n\
-                \t found:       |states| == {} .",
-                state.len()
-            );
-        });
+        states.iter().try_for_each(|(label, state)| {
+            if state.len() > CatType::MAX as usize {
+                return Err(Error::InvalidParameter(
+                    label.to_string(),
+                    format!("should have less than 256 states, found {}", state.len()),
+                ));
+            }
+            Ok(())
+        })?;
         // Check if the number of variables is equal to the number of columns.
-        assert_eq!(
-            states.len(),
-            values.ncols(),
-            "Number of variables must be equal to the number of columns: \n\
-            \t expected:    |states| == |values.columns()| , \n\
-            \t found:       |states| == {} and |values.columns()| == {} .",
-            states.len(),
-            values.ncols()
-        );
+        if states.len() != values.ncols() {
+            return Err(Error::IncompatibleShape(
+                states.len().to_string(),
+                values.ncols().to_string(),
+            ));
+        }
         // Check if the maximum value of the values is less than the number of states.
-        values
-            .fold_axis(
-                Axis(0),
-                0,
-                // Find max while ignoring missing values.
-                |&a, &b| if a > b || b == Self::MISSING { a } else { b },
-            )
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, x)| {
-                assert!(
-                    x < states[i].len() as CatType,
-                    "Values of variable '{label}' must be less than the number of states: \n\
-                    \t expected: values[.., '{label}'] < |states['{label}']| , \n\
-                    \t found:    values[.., '{label}'] == {x} and |states['{label}']| == {} .",
-                    states[i].len(),
-                    label = states.get_index(i).unwrap().0,
-                );
-            });
+        let max_values = values.fold_axis(
+            Axis(0),
+            0,
+            // Find max while ignoring missing values.
+            |&a, &b| if a > b || b == Self::MISSING { a } else { b },
+        );
+        max_values.into_iter().enumerate().try_for_each(|(i, x)| {
+            if x >= states[i].len() as CatType {
+                return Err(Error::VertexOutOfBounds(x as usize));
+            }
+            Ok(())
+        })?;
 
         // Check that the labels are sorted.
         if !states.keys().is_sorted() {
             // Allocate indices to sort labels.
             let mut indices: Vec<usize> = (0..states.len()).collect();
             // Sort the indices by labels.
-            indices.sort_by_key(|&i| states.get_index(i).unwrap().0);
+            indices.sort_by(|&i, &j| {
+                states
+                    .get_index(i)
+                    .map(|(l, _)| l)
+                    .cmp(&states.get_index(j).map(|(l, _)| l))
+            });
             // Sort the states.
             states.sort_keys();
             // Allocate new values.
@@ -95,28 +118,35 @@ impl CatIncTable {
         }
 
         // For each variable ...
-        for (mut col, states) in values.columns_mut().into_iter().zip(states.values_mut()) {
-            // ... check if the states are sorted.
-            if !states.is_sorted() {
-                // Clone the states.
-                let mut new_states = states.clone();
-                // Sort the states.
-                new_states.sort();
-                // Map values to sorted states.
-                col.iter_mut().for_each(|value| {
-                    // If the value is not missing ...
-                    if *value != Self::MISSING {
-                        // ... map it to the new state index.
-                        *value = new_states
-                            .get_index_of(&states[*value as usize])
-                            .expect("Failed to get new state index.")
-                            as CatType;
-                    }
-                });
-                // Update the states.
-                *states = new_states;
-            }
-        }
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(states.values_mut())
+            .try_for_each(|(mut col, states)| -> Result<_> {
+                // ... check if the states are sorted.
+                if !states.is_sorted() {
+                    // Clone the states.
+                    let mut new_states = states.clone();
+                    // Sort the states.
+                    new_states.sort();
+                    // Map values to sorted states.
+                    col.iter_mut().try_for_each(|value| -> Result<_> {
+                        // If the value is not missing ...
+                        if *value != Self::MISSING {
+                            // ... map it to the new state index.
+                            *value = new_states
+                                .get_index_of(&states[*value as usize])
+                                .ok_or_else(|| {
+                                    Error::MissingState(states[*value as usize].clone())
+                                })? as CatType;
+                        }
+                        Ok(())
+                    })?;
+                    // Update the states.
+                    *states = new_states;
+                }
+                Ok(())
+            })?;
 
         // Get the labels of the variables.
         let labels: Labels = states.keys().cloned().collect();
@@ -126,15 +156,15 @@ impl CatIncTable {
         // Create the missing mask.
         let missing_mask = values.mapv(|x| x == Self::MISSING);
         // Initialize the missing table.
-        let missing = MissingTable::new(labels.clone(), missing_mask);
+        let missing = MissingTable::new(labels.clone(), missing_mask)?;
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             values,
             missing,
-        }
+        })
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -173,25 +203,25 @@ impl Dataset for CatIncTable {
         self.values.nrows() as f64
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in variables selection: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
 
         // Select the states.
         let states: States = x
             .iter()
-            .map(|&i| self.states.get_index(i).unwrap())
-            .map(|(label, states)| (label.clone(), states.clone()))
-            .collect();
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(label, state_set)| (label.clone(), state_set.clone()))
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
@@ -214,25 +244,25 @@ impl CatIncTable {
         d_u: &<Self as IncDataset>::Complete,
         u: &Set<usize>,
         pr: &Map<usize, Set<usize>>,
-    ) -> Array1<f64> {
+    ) -> Result<Array1<f64>> {
         // Get (`R_i`, `Pi_R_i`) associated to `U_i`.
-        let pr = u.iter().map(|&ri| (ri, &pr[ri]));
+        let pr_iter = u.iter().map(|&ri| (ri, &pr[ri]));
         // Filter out `R_i` with no parents.
-        let pr = pr.filter(|(_, pri)| !pri.is_empty());
+        let pr_iter = pr_iter.filter(|(_, pri)| !pri.is_empty());
 
         // Define function to compute the weights associated to each `R_i`.
-        let beta_i = |d_u: &CatTable, ri: usize, pri: &Set<usize>| -> Array1<f64> {
+        let beta_i = |d_u: &CatTable, ri: usize, pri: &Set<usize>| -> Result<Array1<f64>> {
             /* Compute P(Pi_R_i | R_Pi_R_i = 0) and P(Pi_R_i | R_i = 0, R_Pi_R_i = 0) */
 
             // Apply pairwise deletion.
-            let d_pri_rpri = self.pw_deletion(pri);
-            let d_pri_ri_rpri = self.pw_deletion(&(&set![ri] | pri));
+            let d_pri_rpri = self.pw_deletion(pri)?;
+            let d_pri_ri_rpri = self.pw_deletion(&(&set![ri] | pri))?;
             // Map the indices w.r.t. the new dataset.
-            let x_pri_rpri = d_pri_rpri.indices_from(pri, self.labels());
-            let x_pri_ri_rpri = d_pri_ri_rpri.indices_from(pri, self.labels());
+            let x_pri_rpri = d_pri_rpri.indices_from(pri, self.labels())?;
+            let x_pri_ri_rpri = d_pri_ri_rpri.indices_from(pri, self.labels())?;
             // Compute the distribution.
-            let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![]);
-            let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri).fit(&x_pri_ri_rpri, &set![]);
+            let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![])?;
+            let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri).fit(&x_pri_ri_rpri, &set![])?;
 
             /* Compute the weights. */
 
@@ -240,36 +270,35 @@ impl CatIncTable {
             let mut b_pri_rpri = Array::zeros(d_u.values().nrows());
             let mut b_pri_ri_rpri = b_pri_rpri.clone();
             // Fill the `R_i`-specific weights.
-            Zip::from(d_u.values().rows())
-                .and(b_pri_rpri.view_mut())
-                .and(b_pri_ri_rpri.view_mut())
-                .for_each(|d_u_j, b_pri_rpri_j, b_pri_ri_rpri_j| {
-                    // Get the parents values for the j-th rows.
-                    let pri_j = pri.iter().map(|&j| d_u_j[j]).collect();
-                    // Get the parents weights associated to each row.
-                    *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![]);
-                    *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![]);
-                });
+            for (d_u_j, (b_pri_rpri_j, b_pri_ri_rpri_j)) in d_u
+                .values()
+                .rows()
+                .into_iter()
+                .zip(b_pri_rpri.iter_mut().zip(b_pri_ri_rpri.iter_mut()))
+            {
+                // Get the parents values for the j-th rows.
+                let pri_j = pri.iter().map(|&j| d_u_j[j]).collect();
+                // Get the parents weights associated to each row.
+                *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![])?;
+                *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![])?;
+            }
             // Compute the `R_i`-specific weights.
-            b_pri_rpri / b_pri_ri_rpri
+            Ok(b_pri_rpri / b_pri_ri_rpri)
         };
 
         // Compute the weights associated to each `R_i`.
-        let pr = pr.map(|(ri, pri)| beta_i(d_u, ri, pri));
-        // Compute the product of the weights associated to each `R_i`.
-        let mut beta = pr.fold(
-            // Fold the weights.
-            Array::ones(d_u.values().nrows()),
-            |mut beta, beta_i| {
-                beta *= &beta_i;
-                beta
-            },
-        );
+        let mut beta = Array::ones(d_u.values().nrows());
+        for (ri, pri) in pr_iter {
+            let beta_i = beta_i(d_u, ri, pri)?;
+            beta *= &beta_i;
+        }
 
         // Rescale the weights.
-        beta *= (beta.len() as f64) / beta.sum();
+        if beta.sum() > 0. {
+            beta *= (beta.len() as f64) / beta.sum();
+        }
 
-        beta
+        Ok(beta)
     }
 }
 
@@ -290,23 +319,26 @@ impl IncDataset for CatIncTable {
         m: &MM,
         x: Option<&Set<usize>>,
         pr: Option<&Map<usize, Set<usize>>>,
-    ) -> Either<Self::Complete, Self::Weighted> {
+    ) -> Result<Either<Self::Complete, Self::Weighted>> {
         // Apply the missing method with the provided arguments.
         match (m, x, pr) {
-            (MM::LW, _, _) => Either::Left(self.lw_deletion()),
-            (MM::PW, Some(x), _) => Either::Left(self.pw_deletion(x)),
-            (MM::IPW, Some(x), Some(pr)) => Either::Right(self.ipw_deletion(x, pr)),
-            (MM::AIPW, Some(x), Some(pr)) => Either::Right(self.aipw_deletion(x, pr)),
-            _ => panic!(
-                "Invalid arguments for applying missing method:\n
-                \t missing method:      '{m:?}' , \n\
-                \t selected variables:  '{x:?}' , \n\
-                \t missing mechanism:   '{pr:?}' ."
-            ),
+            (MM::LW, _, _) => self.lw_deletion().map(Either::Left),
+            (MM::PW, Some(x), _) => self.pw_deletion(x).map(Either::Left),
+            (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
+            (MM::AIPW, Some(x), Some(pr)) => self.aipw_deletion(x, pr).map(Either::Right),
+            _ => Err(Error::InvalidParameter(
+                "missing_method".to_string(),
+                format!(
+                    "Invalid arguments for applying missing method:\n\
+                    \t missing method:      '{m:?}' , \n\
+                    \t selected variables:  '{x:?}' , \n\
+                    \t missing mechanism:   '{pr:?}' .",
+                ),
+            )),
         }
     }
 
-    fn lw_deletion(&self) -> Self::Complete {
+    fn lw_deletion(&self) -> Result<Self::Complete> {
         // Allocate new values.
         let mut new_values = Array::zeros((
             self.missing.complete_rows_count(), //
@@ -330,7 +362,7 @@ impl IncDataset for CatIncTable {
         Self::Complete::new(self.states.clone(), new_values)
     }
 
-    fn pw_deletion(&self, x: &Set<usize>) -> Self::Complete {
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = states![];
@@ -338,17 +370,13 @@ impl IncDataset for CatIncTable {
             return Self::Complete::new(s, v);
         }
 
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in PW deletion: \n\
-                \t expected:    index < |values.columns()| , \n\
-                \t found:       index == {} and |values.columns()| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
 
         // Clone the indices.
         let mut cols = x.clone();
@@ -381,64 +409,61 @@ impl IncDataset for CatIncTable {
         // Select the states for the specified columns.
         let new_states = cols
             .iter()
-            .map(|&j| self.states.get_index(j).unwrap())
-            .map(|(label, state)| (label.clone(), state.clone()))
-            .collect();
+            .map(|&j| {
+                self.states
+                    .get_index(j)
+                    .map(|(label, state)| (label.clone(), state.clone()))
+                    .ok_or_else(|| Error::VertexOutOfBounds(j))
+            })
+            .collect::<Result<_>>()?;
 
         // Return new complete dataset.
         Self::Complete::new(new_states, new_values)
     }
 
-    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted {
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = states![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
-            return Self::Weighted::new(Self::Complete::new(s, v), w);
+            return Self::Weighted::new(Self::Complete::new(s, v)?, w);
         }
 
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in IPW deletion: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
-        // Assert that the number of columns in the missing mechanism is valid.
-        assert_eq!(
-            pr.len(),
-            self.values.ncols(),
-            "Number of columns in the missing mechanism must be equal to the number of columns: \n\
-            \t expected:    |missing_mechanism.keys()| == |columns| , \n\
-            \t found:       |missing_mechanism.keys()| == {} and |columns| == {} .",
-            pr.len(),
-            self.values.ncols()
-        );
-        // Assert that the missing mechanism indices are valid.
-        pr.keys().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in IPW deletion missing mechanism: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
-        // Assert that the missing mechanism is sorted.
-        assert!(
-            pr.keys().is_sorted(),
-            "Missing mechanism keys must be sorted."
-        );
-        assert!(
-            pr.values().all(|pri| pri.iter().is_sorted()),
-            "Missing mechanism values must be sorted."
-        );
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+        // Check that the number of columns in the missing mechanism is valid.
+        if pr.len() != self.values.ncols() {
+            return Err(Error::IncompatibleShape(
+                pr.len().to_string(),
+                self.values.ncols().to_string(),
+            ));
+        }
+        // Check that the missing mechanism indices are valid.
+        pr.keys().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+        // Check that the missing mechanism is sorted.
+        if !pr.keys().is_sorted() {
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "keys must be sorted.".to_string(),
+            ));
+        }
+        if !pr.values().all(|pri| pri.iter().is_sorted()) {
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "values must be sorted.".to_string(),
+            ));
+        }
 
         // Compute U recursively from X and Pi_R following the IPW algorithm.
         let mut u = x.clone();
@@ -452,69 +477,62 @@ impl IncDataset for CatIncTable {
         u.sort();
 
         // Apply pairwise deletion.
-        let d_u = self.pw_deletion(&u);
+        let d_u = self.pw_deletion(&u)?;
         // Compute the weights w.r.t. pairwise deleted dataset.
-        let b_u = self.ipw_weights(&d_u, &u, pr);
+        let b_u = self.ipw_weights(&d_u, &u, pr)?;
 
         // Map the indices to the restricted dataset.
-        let x = d_u.indices_from(x, self.labels());
+        let x = d_u.indices_from(x, self.labels())?;
         // Since U is a superset of X, restrict U to X.
-        let d_x = d_u.select(&x);
+        let d_x = d_u.select(&x)?;
 
         // Return new weighted dataset.
         Self::Weighted::new(d_x, b_u)
     }
 
-    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Self::Weighted {
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = states![];
             let v = Array::default((0, 0));
             let w = Array::default(0);
-            return Self::Weighted::new(Self::Complete::new(s, v), w);
+            return Self::Weighted::new(Self::Complete::new(s, v)?, w);
         }
 
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in IPW deletion: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
-        // Assert that the number of columns in the missing mechanism is valid.
-        assert_eq!(
-            pr.len(),
-            self.values.ncols(),
-            "Number of columns in the missing mechanism must be equal to the number of columns: \n\
-            \t expected:    |missing_mechanism.keys()| == |columns| , \n\
-            \t found:       |missing_mechanism.keys()| == {} and |columns| == {} .",
-            pr.len(),
-            self.values.ncols()
-        );
-        // Assert that the missing mechanism indices are valid.
-        pr.keys().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in IPW deletion missing mechanism: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
-        // Assert that the missing mechanism is sorted.
-        assert!(
-            pr.keys().is_sorted(),
-            "Missing mechanism keys must be sorted."
-        );
-        assert!(
-            pr.values().all(|pri| pri.iter().is_sorted()),
-            "Missing mechanism values must be sorted."
-        );
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+        // Check that the number of columns in the missing mechanism is valid.
+        if pr.len() != self.values.ncols() {
+            return Err(Error::IncompatibleShape(
+                pr.len().to_string(),
+                self.values.ncols().to_string(),
+            ));
+        }
+        // Check that the missing mechanism indices are valid.
+        pr.keys().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+        // Check that the missing mechanism is sorted.
+        if !pr.keys().is_sorted() {
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "keys must be sorted.".to_string(),
+            ));
+        }
+        if !pr.values().all(|pri| pri.iter().is_sorted()) {
+            return Err(Error::InvalidParameter(
+                "missing_mechanism".to_string(),
+                "values must be sorted.".to_string(),
+            ));
+        }
 
         // Compute W recursively from X and Pi_R following the IPW algorithm.
         let mut w = x.clone();
@@ -530,7 +548,7 @@ impl IncDataset for CatIncTable {
         };
 
         // Otherwise, apply pairwise deletion w.r.t. X.
-        let d_x = self.pw_deletion(x);
+        let d_x = self.pw_deletion(x)?;
         let b_x = Array::ones(d_x.values().nrows()); // ... aIPW.
         // Return new weighted dataset.
         Self::Weighted::new(d_x, b_x)
@@ -538,17 +556,18 @@ impl IncDataset for CatIncTable {
 }
 
 impl CsvIO for CatIncTable {
-    fn from_csv_reader<R: Read>(reader: R) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
-        // Assert that the reader has headers.
-        assert!(reader.has_headers(), "Reader must have headers.");
+        // Check if the reader has headers.
+        if !reader.has_headers() {
+            return Err(Error::MissingHeader);
+        }
 
         // Read the headers.
         let labels: Labels = reader
-            .headers()
-            .expect("Failed to read the headers.")
+            .headers()?
             .into_iter()
             .map(|x| x.to_owned())
             .collect();
@@ -560,58 +579,50 @@ impl CsvIO for CatIncTable {
             .collect();
 
         // Read the records.
-        let values: Array1<_> = reader
-            .into_records()
-            .enumerate()
-            .flat_map(|(i, row)| {
-                // Get the record row.
-                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
-                // Get the record values and convert to indices.
-                let row: Vec<_> = row
-                    .into_iter()
-                    .zip(states.values_mut())
-                    .map(|(x, states)| {
+        let values: Vec<CatType> =
+            reader
+                .into_records()
+                .try_fold(Vec::new(), |mut values, row| -> Result<_> {
+                    // Get the record row.
+                    let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                    // Get the record values and convert to indices.
+                    values.extend(row.into_iter().zip(states.values_mut()).map(|(x, states)| {
                         // Check if the value is missing.
                         if x.is_empty() {
-                            return Self::MISSING;
+                            Self::MISSING
+                        } else {
+                            // Insert the value into the states, if not present.
+                            let (x, _) = states.insert_full(x.to_owned());
+                            // Cast the value.
+                            x as CatType
                         }
-                        // Insert the value into the states, if not present.
-                        let (x, _) = states.insert_full(x.to_owned());
-                        // Cast the value.
-                        x as CatType
-                    })
-                    .collect();
-                // Collect the values.
-                row
-            })
-            .collect();
+                    }));
+
+                    Ok(values)
+                })?;
 
         // Get the number of rows and columns.
         let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
+        let values = Array1::from_vec(values).into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
         Self::new(states, values)
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) {
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
         // Create the CSV writer.
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
         // Write the headers.
-        writer
-            .write_record(self.labels.iter())
-            .expect("Failed to write CSV headers.");
+        writer.write_record(self.labels.iter())?;
 
         // Create an empty string for missing values.
         let missing = String::new();
 
         // Write the records.
-        self.values.rows().into_iter().for_each(|row| {
+        for row in self.values.rows() {
             // Zip the row with the states.
             let record = row.iter().zip(self.states().values());
             // Map the row values to states.
@@ -624,9 +635,9 @@ impl CsvIO for CatIncTable {
                 &states[x as usize]
             });
             // Write the record.
-            writer
-                .write_record(record)
-                .expect("Failed to write CSV record.");
-        });
+            writer.write_record(record)?;
+        }
+
+        Ok(())
     }
 }

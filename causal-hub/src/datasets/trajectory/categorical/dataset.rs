@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use crate::{
     datasets::{CatTable, CatType, Dataset},
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A multivariate trajectory.
@@ -28,22 +28,28 @@ impl CatTrj {
     ///
     /// A new instance of `CatTrj`.
     ///
-    pub fn new(states: States, mut events: Array2<CatType>, mut times: Array1<f64>) -> Self {
+    pub fn new(
+        states: States,
+        mut events: Array2<CatType>,
+        mut times: Array1<f64>,
+    ) -> Result<Self> {
         // Assert the number of rows in values and times are equal.
-        assert_eq!(
-            events.nrows(),
-            times.len(),
-            "Trajectory events and times must have the same length."
-        );
+        if events.nrows() != times.len() {
+            return Err(Error::IncompatibleShape(
+                events.nrows().to_string(),
+                times.len().to_string(),
+            ));
+        }
         // Assert times must be positive and finite.
-        times.iter().for_each(|&t| {
-            assert!(
-                t.is_finite() && t >= 0.,
-                "Trajectory times must be finite and positive: \n\
-                \t expected: time >= 0 , \n\
-                \t found:    time == {t} ."
-            );
-        });
+        times.iter().try_for_each(|&t| {
+            if !t.is_finite() || t < 0. {
+                return Err(Error::InvalidParameter(
+                    "times".to_string(),
+                    format!("value must be finite and positive, found {t}"),
+                ));
+            }
+            Ok(())
+        })?;
 
         // Sort values by times.
         let mut sorted_idx: Vec<_> = (0..events.nrows()).collect();
@@ -86,40 +92,32 @@ impl CatTrj {
             // Get the length of the times array.
             let length = times.len();
             // Assert the number of unique times is equal to the length of the times array.
-            assert_eq!(
-                count, length,
-                "Trajectory times must be unique: \n\
-                \t expected: {count} deduplicated time-points, \n\
-                \t found:    {length} non-deduplicated time-points, \n\
-                \t for:      {times}."
-            );
+            if count != length {
+                return Err(Error::InvalidParameter(
+                    "times".to_string(),
+                    format!("must be unique, found {} duplicates", length - count),
+                ));
+            }
         }
 
         // Assert at max one state change per transition.
-        events
-            .rows()
-            .into_iter()
-            .zip(&times)
-            .tuple_windows()
-            .for_each(|((e_i, t_i), (e_j, t_j))| {
-                // Count the number of state changes.
-                let count = e_i.iter().zip(e_j).filter(|(a, b)| a != b).count();
-                // Assert there is one and only one state change.
-                assert!(
-                    count <= 1,
-                    "Trajectory events must contain at max one change per transition: \n\
-                    \t expected: count <= 1 state change, \n\
-                    \t found:    count == {count} state changes, \n\
-                    \t for:      {e_i} event with time {t_i}, \n\
-                    \t and:      {e_j} event with time {t_j}."
-                );
-            });
+        for ((e_i, _), (e_j, _)) in events.rows().into_iter().zip(&times).tuple_windows() {
+            // Count the number of state changes.
+            let count = e_i.iter().zip(e_j).filter(|(a, b)| a != b).count();
+            // Assert there is one and only one state change.
+            if count > 1 {
+                return Err(Error::InvalidParameter(
+                    "events".to_string(),
+                    format!("must contain at max one change per transition, found {count}"),
+                ));
+            }
+        }
 
         // Create a new categorical dataset instance.
-        let events = CatTable::new(states, events);
+        let events = CatTable::new(states, events)?;
 
         // Return a new trajectory instance.
-        Self { events, times }
+        Ok(Self { events, times })
     }
 
     /// Returns the states of the trajectory.
@@ -176,9 +174,9 @@ impl Dataset for CatTrj {
         self.events.values().nrows() as f64
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let events = self.events.select(x);
+        let events = self.events.select(x)?;
         // Get states and events.
         let states = events.states().clone();
         let events = events.values().clone();
@@ -217,34 +215,40 @@ impl CatTrjs {
     ///
     /// A new instance of `CategoricalTrajectories`.
     ///
-    pub fn new<I>(values: I) -> Self
+    pub fn new<I>(values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatTrj>,
     {
         // Collect the trajectories into a vector.
         let values: Vec<_> = values.into_iter().collect();
 
-        // Assert every trajectory has the same labels.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].labels().eq(trjs[1].labels())),
-            "All trajectories must have the same labels."
-        );
-        // Assert every trajectory has the same states.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].states().eq(trjs[1].states())),
-            "All trajectories must have the same states."
-        );
-        // Assert every trajectory has the same shape.
-        assert!(
-            values
-                .windows(2)
-                .all(|trjs| trjs[0].shape().eq(trjs[1].shape())),
-            "All trajectories must have the same shape."
-        );
+        // Check if every trajectory has the same labels.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
+        {
+            return Err(Error::ConstructionError(
+                "All trajectories must have the same labels.".to_string(),
+            ));
+        }
+        // Check if every trajectory has the same states.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].states().eq(trjs[1].states()))
+        {
+            return Err(Error::ConstructionError(
+                "All trajectories must have the same states.".to_string(),
+            ));
+        }
+        // Check if every trajectory has the same shape.
+        if !values
+            .windows(2)
+            .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
+        {
+            return Err(Error::ConstructionError(
+                "All trajectories must have the same shape.".to_string(),
+            ));
+        }
 
         // Get the labels, states and shape from the first trajectory.
         let (labels, states, shape) = match values.first() {
@@ -252,12 +256,12 @@ impl CatTrjs {
             Some(x) => (x.labels().clone(), x.states().clone(), x.shape().clone()),
         };
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             values,
-        }
+        })
     }
 
     /// Returns the states of the trajectories.
@@ -286,14 +290,35 @@ impl CatTrjs {
 impl FromIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_iter<I: IntoIterator<Item = CatTrj>>(iter: I) -> Self {
-        Self::new(iter)
+        Self::new(iter).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatTrjs from iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
 impl FromParallelIterator<CatTrj> for CatTrjs {
     #[inline]
     fn from_par_iter<I: IntoParallelIterator<Item = CatTrj>>(iter: I) -> Self {
-        Self::new(iter.into_par_iter().collect::<Vec<_>>())
+        let collected = iter.into_par_iter().collect::<Vec<_>>();
+        Self::new(collected).unwrap_or_else(|e| {
+            // Log the error since we can't propagate it through the trait.
+            log::error!("Failed to create CatTrjs from parallel iterator: {}", e);
+            // Return a minimal valid empty instance as fallback.
+            Self {
+                labels: Default::default(),
+                states: Default::default(),
+                values: vec![],
+                shape: Array1::zeros(2),
+            }
+        })
     }
 }
 
@@ -337,8 +362,13 @@ impl Dataset for CatTrjs {
         self.values.iter().map(Dataset::sample_size).sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Return the new collection of selected trajectories.
-        Self::new(self.values.iter().map(|trj| trj.select(x)))
+        Self::new(
+            self.values
+                .iter()
+                .map(|trj| trj.select(x))
+                .collect::<Result<Vec<_>>>()?,
+        )
     }
 }

@@ -12,7 +12,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian tabular dataset.
 #[gen_stub_pyclass]
@@ -141,11 +141,9 @@ impl PyGaussTable {
             })?;
 
         // Create the Gaussian tabular dataset.
-        let inner = GaussTable::new(columns, values);
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        GaussTable::new(columns, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

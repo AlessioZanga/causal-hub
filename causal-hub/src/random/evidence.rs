@@ -1,7 +1,10 @@
 use itertools::Itertools;
 use rand::{Rng, seq::index::sample};
 
-use crate::datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset};
+use crate::{
+    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
+    types::{Error, Result},
+};
 
 /// A struct representing a random evidence generator.
 pub struct RngEv<'a, R, D> {
@@ -19,18 +22,19 @@ impl<'a, R, D> RngEv<'a, R, D> {
     /// * `dataset` - A reference to the dataset.
     /// * `p` - The probability of selecting an evidence.
     ///
-    /// # Panics
-    ///
-    /// Panics if the probability is not in [0, 1].
-    ///
     /// # Returns
     ///
     /// A new `RngEv` instance.
-    pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Self {
-        // Assert that the probability is in [0, 1].
-        assert!((0.0..=1.0).contains(&p), "Probability must be in [0, 1]");
+    pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Result<Self> {
+        // Check that the probability is in [0, 1].
+        if !(0.0..=1.0).contains(&p) {
+            return Err(Error::InvalidParameter(
+                "p".to_string(),
+                "must be in [0, 1]".to_string(),
+            ));
+        }
 
-        Self { rng, dataset, p }
+        Ok(Self { rng, dataset, p })
     }
 }
 
@@ -41,7 +45,7 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
     ///
     /// A `CatTrjEv` instance containing the random evidence.
     ///
-    pub fn random(&mut self) -> CatTrjEv {
+    pub fn random(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -92,11 +96,16 @@ impl<R: Rng> RngEv<'_, R, CatTrjs> {
     ///
     /// A `CatTrjsEv` instance containing the random evidence.
     ///
-    pub fn random(&mut self) -> CatTrjsEv {
-        self.dataset
+    pub fn random(&mut self) -> Result<CatTrjsEv> {
+        let evidences = self
+            .dataset
             .values()
             .iter()
-            .map(|trj| RngEv::new(&mut self.rng, trj, self.p).random())
-            .collect()
+            .map(|trj| {
+                RngEv::new(&mut self.rng, trj, self.p).and_then(|mut rng_ev| rng_ev.random())
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        CatTrjsEv::new(evidences)
     }
 }

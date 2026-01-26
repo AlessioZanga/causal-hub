@@ -7,6 +7,7 @@ mod tests {
         labels,
         models::{CPD, Labelled},
         set, states,
+        types::{Error, Result},
     };
     use ndarray::prelude::*;
 
@@ -17,7 +18,7 @@ mod tests {
             use super::*;
 
             #[test]
-            fn fit() {
+            fn fit() -> Result<()> {
                 let states = states![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
@@ -31,12 +32,12 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
-                let distribution = estimator.fit(&set![0], &set![]);
+                let distribution = estimator.fit(&set![0], &set![])?;
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
                 assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -62,7 +63,9 @@ mod tests {
                     Some(5.)
                 );
                 assert_relative_eq!(
-                    distribution.sample_log_likelihood().unwrap(),
+                    distribution
+                        .sample_log_likelihood()
+                        .ok_or(Error::IllegalArgument("no ll".into()))?,
                     -4.780356732903302
                 );
 
@@ -80,7 +83,7 @@ mod tests {
                 );
 
                 // P(A | B, C)
-                let distribution = estimator.fit(&set![0], &set![1, 2]);
+                let distribution = estimator.fit(&set![0], &set![1, 2])?;
 
                 assert_eq!(distribution.labels(), &labels!["A"]);
                 assert_eq!(distribution.states(), &states![("A", ["no", "yes"])]);
@@ -109,7 +112,9 @@ mod tests {
                     Some(5.)
                 );
                 assert_relative_eq!(
-                    distribution.sample_log_likelihood().unwrap(),
+                    distribution
+                        .sample_log_likelihood()
+                        .ok_or(Error::IllegalArgument("no ll".into()))?,
                     -8.501216236893097
                 );
 
@@ -128,10 +133,12 @@ mod tests {
                         "---------------------------------------------\n",
                     )
                 );
+
+                Ok(())
             }
 
             #[test]
-            fn par_fit() {
+            fn par_fit() -> Result<()> {
                 let states = states![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
@@ -145,12 +152,12 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A)
-                let distribution = estimator.par_fit(&set![0], &set![]);
+                let distribution = estimator.par_fit(&set![0], &set![])?;
 
                 assert_relative_eq!(
                     distribution.parameters(),
@@ -159,11 +166,12 @@ mod tests {
                         [0.5714285714285714, 0.42857142857142855]
                     ]
                 );
+
+                Ok(())
             }
 
             #[test]
-            #[should_panic(expected = "Variables and conditioning variables must be disjoint.")]
-            fn unique_variables() {
+            fn unique_variables() -> Result<()> {
                 let states = states![
                     ("A", ["no", "yes"]),
                     ("B", ["no", "yes"]),
@@ -177,12 +185,19 @@ mod tests {
                     [0, 1, 1],
                     [1, 1, 1]
                 ];
-                let dataset = CatTable::new(states, values);
+                let dataset = CatTable::new(states, values)?;
 
                 let estimator = BE::new(&dataset).with_prior(1);
 
                 // P(A | A, C)
-                let _ = estimator.fit(&set![0], &set![0, 2]);
+                let res = estimator.fit(&set![0], &set![0, 2]);
+                assert!(res.is_err());
+                assert_eq!(
+                    res.unwrap_err().to_string(),
+                    "Illegal argument error: Variables and conditioning variables must be disjoint."
+                );
+
+                Ok(())
             }
         }
 
@@ -195,15 +210,15 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // P(X | Y)
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1])?;
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -236,7 +251,7 @@ mod tests {
                     // a = 10 / 6 = 5/3 = 1.666
                     // b = mu_Y - a * mu_X = 3.0 - (5/3) * 1.5 = 3 - 2.5 = 0.5.
                     // s = (S_YY - a * S_YX) / N_post = (21 - (5/3)*10) / 4 = (21 - 50/3)/4 = (13/3)/4 = 13/12 = 1.0833
-                    let d = estimator.fit(&set![1], &set![0]);
+                    let d = estimator.fit(&set![1], &set![0])?;
                     assert_relative_eq!(
                         d.parameters().coefficients(),
                         &array![[1.66666]],
@@ -248,19 +263,21 @@ mod tests {
                         &array![[1.08333]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn fit_informative_prior() {
+                fn fit_informative_prior() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     // Prior nu = 2.0
                     let estimator = BE::new(&dataset).with_prior(2.0);
 
                     // Fit P(X | Y)
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1])?;
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -301,18 +318,20 @@ mod tests {
                         &array![[0.49315]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn par_fit() {
+                fn par_fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // Fit P(X | Y) using parallel fit
-                    let d = estimator.par_fit(&set![0], &set![1]);
+                    let d = estimator.par_fit(&set![0], &set![1])?;
 
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
@@ -323,10 +342,12 @@ mod tests {
                         &array![[0.47619]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn fit_multivariate() {
+                fn fit_multivariate() -> Result<()> {
                     let labels = labels!["X1", "X2", "Z1", "Z2"];
                     let data = array![
                         [1.0, 0.0, 1.0, 0.0],
@@ -334,11 +355,11 @@ mod tests {
                         [0.0, 1.0, 1.0, 0.0],
                         [0.0, 0.0, 0.0, 1.0]
                     ];
-                    let dataset = GaussTable::new(labels.clone(), data);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
                     // P(X1, X2 | Z1, Z2)
-                    let d = estimator.fit(&set![0, 1], &set![2, 3]);
+                    let d = estimator.fit(&set![0, 1], &set![2, 3])?;
 
                     assert_eq!(d.labels(), &labels!["X1", "X2"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Z1", "Z2"]);
@@ -366,6 +387,8 @@ mod tests {
                         &array![[0.428571, 0.028571], [0.028571, 0.428571]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
             }
 
@@ -373,16 +396,16 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![[1.0, 2.0], [2.0, f64::NAN], [3.0, 6.0]];
-                    let dataset = GaussIncTable::new(labels.clone(), data);
+                    let dataset = GaussIncTable::new(labels.clone(), data)?;
 
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
                         .with_missing_method(Some(MissingMethod::LW), None);
 
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1])?;
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
@@ -408,10 +431,12 @@ mod tests {
                         &array![[0.41243]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
 
                 #[test]
-                fn fit_multivariate() {
+                fn fit_multivariate() -> Result<()> {
                     let labels = labels!["X1", "X2", "Z1", "Z2"];
                     let data = array![
                         [1.0, 0.0, 1.0, 0.0],
@@ -420,13 +445,13 @@ mod tests {
                         [0.0, 0.0, 0.0, 1.0],
                         [f64::NAN, 0.0, 0.0, 1.0] // Missing value, should be dropped
                     ];
-                    let dataset = GaussIncTable::new(labels.clone(), data);
+                    let dataset = GaussIncTable::new(labels.clone(), data)?;
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
                         .with_missing_method(Some(MissingMethod::LW), None);
 
                     // P(X1, X2 | Z1, Z2)
-                    let d = estimator.fit(&set![0, 1], &set![2, 3]);
+                    let d = estimator.fit(&set![0, 1], &set![2, 3])?;
 
                     assert_eq!(d.labels(), &labels!["X1", "X2"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Z1", "Z2"]);
@@ -449,6 +474,8 @@ mod tests {
                         &array![[0.428571, 0.028571], [0.028571, 0.428571]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
             }
 
@@ -456,7 +483,7 @@ mod tests {
                 use super::*;
 
                 #[test]
-                fn fit() {
+                fn fit() -> Result<()> {
                     let labels = labels!["X", "Y"];
                     let data = array![
                         [1.0, 2.0], // w=1
@@ -464,12 +491,12 @@ mod tests {
                         [3.0, 6.0]  // w=1
                     ];
                     let weights = array![1.0, 0.0, 1.0];
-                    let dataset = GaussTable::new(labels.clone(), data);
-                    let dataset = GaussWtdTable::new(dataset, weights);
+                    let dataset = GaussTable::new(labels.clone(), data)?;
+                    let dataset = GaussWtdTable::new(dataset, weights)?;
 
                     let estimator = BE::new(&dataset).with_prior(1.0);
 
-                    let d = estimator.fit(&set![0], &set![1]);
+                    let d = estimator.fit(&set![0], &set![1])?;
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
@@ -492,6 +519,8 @@ mod tests {
                         &array![[0.41243]],
                         epsilon = 1e-4
                     );
+
+                    Ok(())
                 }
             }
         }

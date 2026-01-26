@@ -6,7 +6,7 @@ use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{BE, CIMEstimator, CSSEstimator, ParCIMEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS},
-    types::{Set, States},
+    types::{Error, Result, Set, States},
 };
 
 impl BE<'_, CatTrj, (usize, f64)> {
@@ -17,13 +17,23 @@ impl BE<'_, CatTrj, (usize, f64)> {
         z: &Set<usize>,
         sample_statistics: CatCIMS,
         prior: (usize, f64),
-    ) -> CatCIM {
+    ) -> Result<CatCIM> {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
         // Assert alpha is positive.
-        assert!(alpha > 0, "Alpha must be positive.");
+        if alpha == 0 {
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be positive".into(),
+            ));
+        }
         // Assert tau is positive.
-        assert!(tau > 0.0, "Tau must be positive.");
+        if tau <= 0.0 {
+            return Err(Error::InvalidParameter(
+                "tau".into(),
+                "must be positive".into(),
+            ));
+        }
 
         // Get the conditional counts and times.
         let n_xz = sample_statistics.sample_conditional_counts();
@@ -78,18 +88,18 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Wrap the sufficient statistics in an option.
         let sample_statistics = Some(sample_statistics);
@@ -110,7 +120,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CIMEstimator<CatCIM> for BE<'_, $type, ()> {
         #[inline]
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Default to uniform prior.
             self.clone().with_prior((1, 1.)).fit(x, z)
         }
@@ -118,7 +128,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
     impl CIMEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), self.prior);
             // Set sufficient statistics estimator.
@@ -129,7 +139,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }
@@ -142,7 +152,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCIMEstimator<CatCIM> for BE<'_, $type, ()> {
         #[inline]
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Default to uniform prior.
             self.clone().with_prior((1, 1.)).fit(x, z)
         }
@@ -150,7 +160,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl ParCIMEstimator<CatCIM> for BE<'_, $type, (usize, f64)> {
         #[inline]
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIM {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get (states, prior).
             let (states, prior) = (self.dataset.states(), self.prior);
             // Set sufficient statistics estimator.
@@ -161,7 +171,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = sample_statistics.par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
             BE::<'_, CatTrj, _>::fit(states, x, z, sample_statistics, prior)
         }

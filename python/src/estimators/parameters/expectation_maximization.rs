@@ -6,6 +6,7 @@ use backend::{
     estimators::{BE, EMBuilder, ParCTBNEstimator, RAWE},
     models::{CTBN, CatCTBN, DiGraph},
     samplers::{ImportanceSampler, ParCTBNSampler},
+    types::{Error as BackendError, Result},
 };
 use log::debug;
 use pyo3::{
@@ -49,103 +50,124 @@ pub fn em<'a>(
     let graph: &DiGraph = &graph.lock();
 
     // Release the GIL to allow parallel execution.
-    let output = py.detach(|| {
-        // Initialize the random number generator.
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+    let output = py
+        .detach(|| -> Result<_> {
+            // Initialize the random number generator.
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
 
-        // Log the raw estimator initialization.
-        debug!("Initializing the raw estimator for the initial guess ...");
-        // Initialize a raw estimator for an initial guess.
-        let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
-        // Log the initial model fitting.
-        debug!("Fitting the initial model using the raw estimator ...");
-        // Set the initial model.
-        let model = raw.par_fit(graph.clone());
+            // Log the raw estimator initialization.
+            debug!("Initializing the raw estimator for the initial guess ...");
+            // Initialize a raw estimator for an initial guess.
+            let raw = RAWE::<'_, _, CatTrjsEv, CatTrjs>::par_new(&mut rng, evidence);
+            // Log the initial model fitting.
+            debug!("Fitting the initial model using the raw estimator ...");
+            // Set the initial model.
+            let model = raw
+                .map_err(|e| {
+                    BackendError::Stats(format!("Failed to initialize raw estimator: {}", e))
+                })?
+                .par_fit(graph.clone())
+                .map_err(|e| {
+                    BackendError::Stats(format!("Failed to fit the initial model: {}", e))
+                })?;
 
-        // Wrap the random number generator in a RefCell to allow mutable borrowing.
-        let rng = RefCell::new(rng);
+            // Wrap the random number generator in a RefCell to allow mutable borrowing.
+            let rng = RefCell::new(rng);
 
-        // Define the expectation step.
-        let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> CatWtdTrjs {
-            // Reference the random number generator.
-            let mut rng = rng.borrow_mut();
-            // Get the maximum length of the trajectories.
-            let max_length = evidence
-                .evidences()
-                .iter()
-                .flat_map(|e| e.evidences())
-                .map(|e| e.len())
-                .max()
-                .unwrap_or(0);
-            // Sample the seeds to parallelize the sampling.
-            let seeds: Vec<_> = (0..evidence.evidences().len())
-                .map(|_| rng.next_u64())
-                .collect();
-            // For each (seed, evidence) ...
-            seeds
-                .into_par_iter()
-                .zip(evidence.par_iter())
-                .map(|(s, e)| {
-                    // Initialize a new random number generator.
-                    let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
-                    // Initialize a new sampler.
-                    let importance = ImportanceSampler::new(&mut rng, prev_model, e);
-                    // Perform multiple imputation.
-                    let trjs = importance.par_sample_n_by_length(max_length, 10);
-                    // Get the one with the highest weight.
-                    trjs.values()
-                        .iter()
-                        .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
-                        .unwrap()
-                        .clone()
-                })
-                .collect()
-        };
+            // Define the expectation step.
+            let e_step = |prev_model: &CatCTBN, evidence: &CatTrjsEv| -> Result<CatWtdTrjs> {
+                // Reference the random number generator.
+                let mut rng = rng.borrow_mut();
+                // Get the maximum length of the trajectories.
+                let max_length = evidence
+                    .evidences()
+                    .iter()
+                    .flat_map(|e| e.evidences())
+                    .map(|e| e.len())
+                    .max()
+                    .unwrap_or(0);
+                // Sample the seeds to parallelize the sampling.
+                let seeds: Vec<_> = (0..evidence.evidences().len())
+                    .map(|_| rng.next_u64())
+                    .collect();
+                // For each (seed, evidence) ...
+                seeds
+                    .into_par_iter()
+                    .zip(evidence.par_iter())
+                    .map(|(s, e)| {
+                        // Initialize a new random number generator.
+                        let mut rng = Xoshiro256PlusPlus::seed_from_u64(s);
+                        // Initialize a new sampler.
+                        let importance = ImportanceSampler::new(&mut rng, prev_model, e)?;
+                        // Perform multiple imputation.
+                        let trjs = importance.par_sample_n_by_length(max_length, 10)?;
+                        // Get the one with the highest weight.
+                        trjs.values()
+                            .iter()
+                            .max_by(|a, b| {
+                                a.weight()
+                                    .partial_cmp(&b.weight())
+                                    .unwrap_or(std::cmp::Ordering::Equal)
+                            })
+                            .cloned()
+                            .ok_or_else(|| {
+                                BackendError::MissingData("No trajectories sampled".into())
+                            })
+                    })
+                    .collect()
+            };
 
-        // Define the maximization step.
-        let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> CatCTBN {
-            // Initialize the parameter estimator.
-            let estimator = BE::new(expectation).with_prior((1, 1.));
-            // Fit the model using the parameter estimator.
-            estimator.par_fit(prev_model.graph().clone())
-        };
+            // Define the maximization step.
+            let m_step = |prev_model: &CatCTBN, expectation: &CatWtdTrjs| -> Result<CatCTBN> {
+                // Initialize the parameter estimator.
+                let estimator = BE::new(expectation).with_prior((1, 1.));
+                // Fit the model using the parameter estimator.
+                estimator.par_fit(prev_model.graph().clone())
+            };
 
-        // Define the stopping criteria.
-        let stop = |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> bool {
-            // Check if the models are equal or the counter is greater than the limit.
-            relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter
-        };
+            // Define the stopping criteria.
+            let stop =
+                |prev_model: &CatCTBN, curr_model: &CatCTBN, counter: usize| -> Result<bool> {
+                    // Check if the models are equal or the counter is greater than the limit.
+                    Ok(relative_eq!(prev_model, curr_model, epsilon = 5e-2) || counter >= max_iter)
+                };
 
-        // Create a new EM.
-        let em = EMBuilder::new(&model, evidence)
-            .with_e_step(&e_step)
-            .with_m_step(&m_step)
-            .with_stop(&stop)
-            .build();
+            // Create a new EM.
+            let em = EMBuilder::new(&model, evidence)
+                .with_e_step(&e_step)
+                .with_m_step(&m_step)
+                .with_stop(&stop)
+                .build()
+                .map_err(|e| {
+                    BackendError::Stats(format!("Failed to build the EM algorithm: {}", e))
+                })?;
 
-        // Fit the model.
-        em.fit()
-    });
+            // Fit the model.
+            em.fit().map_err(|e| {
+                BackendError::Stats(format!("Failed to fit the model using EM: {}", e))
+            })
+        })
+        .map_err(crate::error::to_pyerr)?;
 
     // Convert each EM output.
     let result = PyDict::new(py);
     // Convert the models.
     let models = output.models.into_iter().map(Into::<PyCatCTBN>::into);
-    let models = PyList::new(py, models).unwrap();
-    result.set_item("models", models).unwrap();
+    let models = PyList::new(py, models)?;
+    result.set_item("models", models)?;
     // Convert the expectations.
     let expectations = output
         .expectations
         .into_iter()
         .map(Into::<PyCatWtdTrjs>::into);
-    let expectations = PyList::new(py, expectations).unwrap();
-    result.set_item("expectations", expectations).unwrap();
+    let expectations = PyList::new(py, expectations)?;
+    result.set_item("expectations", expectations)?;
     // Convert the last model.
     let last_model: PyCatCTBN = output.last_model.into();
-    result.set_item("last_model", last_model).unwrap();
+    result.set_item("last_model", last_model)?;
     // Set the number of iterations.
     let iterations = output.iterations;
-    result.set_item("iterations", iterations).unwrap();
+    result.set_item("iterations", iterations)?;
     // Return the converted EM output.
     Ok(result)
 }

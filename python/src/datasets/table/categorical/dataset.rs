@@ -15,7 +15,10 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{
+    error::{Error, to_pyerr},
+    impl_from_into_lock,
+};
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
@@ -50,8 +53,7 @@ impl PyCatTable {
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -59,11 +61,11 @@ impl PyCatTable {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// The values of the dataset.
@@ -179,12 +181,19 @@ impl PyCatTable {
                 // Extract the column as a PyArray1<PyObject>.
                 let column = column.cast::<PyArray1<Py<PyAny>>>()?.to_owned_array();
                 // Map the PyObject to String and convert it to CatType.
-                let column = column.map(|x| {
-                    // Get the value.
-                    let x = x.extract::<String>(py).unwrap();
-                    // Map the value to CatType.
-                    states.get_index_of(&x).unwrap() as CatType
-                });
+                let column: Result<Vec<_>, _> = column
+                    .iter()
+                    .map(|x| {
+                        // Get the value.
+                        let x = x.extract::<String>(py)?;
+                        // Map the value to CatType.
+                        states
+                            .get_index_of(&x)
+                            .ok_or_else(|| Error::new_err(format!("Unknown state: {}", x)))
+                            .map(|idx| idx as CatType)
+                    })
+                    .collect();
+                let column = Array1::from_vec(column?);
                 // Extract the column from the data frame.
                 value.assign(&column);
 
@@ -193,11 +202,9 @@ impl PyCatTable {
         )?;
 
         // Construct the dataset.
-        let inner = CatTable::new(states, values);
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

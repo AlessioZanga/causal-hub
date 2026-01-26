@@ -7,6 +7,7 @@ mod tests {
         estimators::{BNEstimator, MLE, ParCTBNEstimator},
         models::{BN, CTBN, CatBN, CatCTBN, GaussBN, Labelled},
         samplers::{BNSampler, CTBNSampler, ForwardSampler, ParCTBNSampler},
+        types::{Error, Result},
     };
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
@@ -18,15 +19,15 @@ mod tests {
             use super::*;
 
             #[test]
-            fn forward_sampling() {
+            fn forward_sampling() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_child();
+                let model = load_child()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
-                let dataset = forward.sample_n(10);
+                let dataset = forward.sample_n(10)?;
 
                 // Check labels.
                 assert!(dataset.labels().eq(model.labels()));
@@ -53,26 +54,30 @@ mod tests {
                         "-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
                     )
                 );
+
+                Ok(())
             }
 
             #[test]
-            fn forward_sampling_refit() {
+            fn forward_sampling_refit() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_cancer();
+                let model = load_cancer()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
-                let dataset = forward.sample_n(150_000);
+                let dataset = forward.sample_n(150_000)?;
 
                 // Initialize estimator.
                 let estimator = MLE::new(&dataset);
                 // Fit with generated dataset.
-                let fitted_model: CatBN = estimator.fit(model.graph().clone());
+                let fitted_model: CatBN = estimator.fit(model.graph().clone())?;
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-2);
+
+                Ok(())
             }
         }
 
@@ -80,23 +85,25 @@ mod tests {
             use super::*;
 
             #[test]
-            fn forward_sampling_refit() {
+            fn forward_sampling_refit() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Load BN.
-                let model = load_ecoli70();
+                let model = load_ecoli70()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from BN.
-                let dataset = forward.sample_n(5_000);
+                let dataset = forward.sample_n(5_000)?;
 
                 // Initialize estimator.
                 let estimator = MLE::new(&dataset);
                 // Fit with generated dataset.
-                let fitted_model: GaussBN = estimator.fit(model.graph().clone());
+                let fitted_model: GaussBN = estimator.fit(model.graph().clone())?;
 
                 // Check fitted CDPs.
                 assert_relative_eq!(model, fitted_model, epsilon = 1e-1);
+
+                Ok(())
             }
         }
     }
@@ -108,57 +115,70 @@ mod tests {
             use super::*;
 
             #[test]
-            fn forward_sampling_by_length() {
+            fn forward_sampling_by_length() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
-                let trajectory = forward.sample_by_length(10);
+                let trajectory = forward.sample_by_length(10)?;
 
                 // Check labels.
                 assert!(trajectory.labels().eq(model.labels()));
                 // Check sample size.
                 assert_eq!(trajectory.sample_size(), 10.);
+
+                Ok(())
             }
 
             #[test]
-            fn forward_sampling_by_time() {
+            fn forward_sampling_by_time() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
-                let trajectory = forward.sample_by_time(100.);
+                let trajectory = forward.sample_by_time(100.)?;
 
                 // Check labels.
                 assert!(trajectory.labels().eq(model.labels()));
                 // Check sample size.
-                assert!(*trajectory.times().iter().last().unwrap() < 100.);
+                assert!(
+                    *trajectory
+                        .times()
+                        .iter()
+                        .last()
+                        .ok_or(Error::IllegalArgument("No times".into()))?
+                        < 100.
+                );
+
+                Ok(())
             }
 
             #[test]
-            fn forward_sampling_refit() {
+            fn forward_sampling_refit() -> Result<()> {
                 // Initialize RNG.
                 let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
                 // Initialize the model.
-                let model = load_eating();
+                let model = load_eating()?;
                 // Initialize sampler.
-                let forward = ForwardSampler::new(&mut rng, &model);
+                let forward = ForwardSampler::new(&mut rng, &model)?;
                 // Sample from CTBN.
-                let trajectory = forward.par_sample_n_by_length(1_000, 1_000);
+                let trajectory = forward.par_sample_n_by_length(1_000, 1_000)?;
 
                 // Initialize estimator.
                 let estimator = MLE::new(&trajectory);
                 // Fit with generated dataset.
-                let fitted_model: CatCTBN = estimator.par_fit(model.graph().clone());
+                let fitted_model: CatCTBN = estimator.par_fit(model.graph().clone())?;
 
                 // Check fitted CIMs.
                 assert_relative_eq!(model, fitted_model, epsilon = 5e-2);
+
+                Ok(())
             }
         }
     }

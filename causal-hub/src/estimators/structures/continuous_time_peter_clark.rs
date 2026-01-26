@@ -8,7 +8,7 @@ use crate::{
     estimators::{CIMEstimator, PK},
     models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A trait for conditional independence testing.
@@ -25,7 +25,7 @@ pub trait CITest {
     ///
     /// `true` if X _||_ Y | Z, `false` otherwise.
     ///
-    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool;
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool>;
 }
 
 /// A struct representing the Chi-squared test.
@@ -42,20 +42,21 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     /// * `estimator` - A reference to the estimator.
     /// * `alpha` - The significance level.
     ///
-    /// # Panics
-    ///
-    /// Panics if the significance level is not in [0, 1].
-    ///
     /// # Returns
     ///
     /// A new `ChiSquaredTest` instance.
     ///
     #[inline]
-    pub fn new(estimator: &'a E, alpha: f64) -> Self {
+    pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Assert that the significance level is in [0, 1].
-        assert!((0.0..=1.0).contains(&alpha), "Alpha must be in [0, 1]");
+        if !(0.0..=1.0).contains(&alpha) {
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be in [0, 1]".into(),
+            ));
+        }
 
-        Self { estimator, alpha }
+        Ok(Self { estimator, alpha })
     }
 }
 
@@ -73,30 +74,38 @@ impl<E> CITest for ChiSquaredTest<'_, E>
 where
     E: CIMEstimator<CatCIM>,
 {
-    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
-        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+        if y.len() != 1 {
+            return Err(Error::InvalidParameter(
+                "y".into(),
+                "must contain exactly one label".into(),
+            ));
+        }
 
         // Compute the extended separation set.
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y[0]).unwrap_err();
+        let s_y = match z.binary_search(&y[0]) {
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
+            Err(i) => i,
+        };
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
-        let q_xz = self.estimator.fit(x, z);
-        let q_xs = self.estimator.fit(x, &s);
+        let q_xz = self.estimator.fit(x, z)?;
+        let q_xs = self.estimator.fit(x, &s)?;
         // Get the sufficient statistics for the sets.
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .unwrap();
+            .ok_or(Error::MissingSufficientStatistics)?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .unwrap();
+            .ok_or(Error::MissingSufficientStatistics)?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -104,7 +113,7 @@ where
         let (c_y, c_s) = (c_s[s_y], c_s.slice(s![(s_y + 1)..]).product());
 
         // For each combination of the extended parent set ...
-        (0..n_xs.shape()[0]).all(|j| {
+        for j in 0..n_xs.shape()[0] {
             // Compute the corresponding index for the separation set.
             let i = j % c_s + (j / (c_s * c_y)) * c_s;
             // Get the parameters of the chi-squared distribution.
@@ -123,22 +132,23 @@ where
             // Compute the chi-squared statistic.
             let chi_sq = chi_sq.sum_axis(Axis(1));
             // For each chi-squared statistic ...
-            chi_sq
-                .into_iter()
-                .zip(chi_sq_den.rows())
-                .map(|(c, d)| {
-                    // Count the non-zero degrees of freedom.
-                    let dof = d.mapv(|d| (d > 0.) as usize).sum();
-                    // Check if the degrees of freedom is at least 2.
-                    let dof = if dof >= 2 { dof } else { 2 };
-                    // Initialize the chi-squared distribution.
-                    let n = ChiSquared::new((dof - 1) as f64).unwrap();
-                    // Compute the p-value.
-                    n.cdf(c)
-                })
+            for (c, d) in chi_sq.into_iter().zip(chi_sq_den.rows()) {
+                // Count the non-zero degrees of freedom.
+                let dof = d.mapv(|d| (d > 0.) as usize).sum();
+                // Check if the degrees of freedom is at least 2.
+                let dof = if dof >= 2 { dof } else { 2 };
+                // Initialize the chi-squared distribution.
+                let n = ChiSquared::new((dof - 1) as f64)
+                    .map_err(|e| Error::Probability(e.to_string()))?;
+                // Compute the p-value.
+                let p_value = n.cdf(c);
                 // Check if the p-value is in the alpha range.
-                .all(|p_value| p_value < (1. - self.alpha))
-        })
+                if p_value >= (1. - self.alpha) {
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
     }
 }
 
@@ -156,20 +166,21 @@ impl<'a, E> FTest<'a, E> {
     /// * `estimator` - A reference to the estimator.
     /// * `alpha` - The significance level.
     ///
-    /// # Panics
-    ///
-    /// Panics if the significance level is not in [0, 1].
-    ///
     /// # Returns
     ///
     /// A new `FTest` instance.
     ///
     #[inline]
-    pub fn new(estimator: &'a E, alpha: f64) -> Self {
+    pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Assert that the significance level is in [0, 1].
-        assert!((0.0..=1.0).contains(&alpha), "Alpha must be in [0, 1]");
+        if !(0.0..=1.0).contains(&alpha) {
+            return Err(Error::InvalidParameter(
+                "alpha".into(),
+                "must be in [0, 1]".into(),
+            ));
+        }
 
-        Self { estimator, alpha }
+        Ok(Self { estimator, alpha })
     }
 }
 
@@ -187,10 +198,15 @@ impl<E> CITest for FTest<'_, E>
 where
     E: CIMEstimator<CatCIM>,
 {
-    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> bool {
+    fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
         // Assert Y contains exactly one label.
         // TODO: Refactor code and remove this assumption.
-        assert_eq!(y.len(), 1, "Y must contain exactly one label.");
+        if y.len() != 1 {
+            return Err(Error::InvalidParameter(
+                "y".into(),
+                "must contain exactly one label".into(),
+            ));
+        }
 
         // Compute the alpha range.
         let alpha = (self.alpha / 2.)..=(1. - self.alpha / 2.);
@@ -198,22 +214,25 @@ where
         // Compute the extended separation set.
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
-        let s_y = z.binary_search(&y[0]).unwrap_err();
+        let s_y = match z.binary_search(&y[0]) {
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
+            Err(i) => i,
+        };
         // Insert Y into the extended separation set in sorted order.
         s.shift_insert(s_y, y[0]);
 
         // Fit the intensity matrices.
-        let q_xz = self.estimator.fit(x, z);
-        let q_xs = self.estimator.fit(x, &s);
+        let q_xz = self.estimator.fit(x, z)?;
+        let q_xs = self.estimator.fit(x, &s)?;
         // Get the sufficient statistics for the sets.
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .unwrap();
+            .ok_or(Error::MissingSufficientStatistics)?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .unwrap();
+            .ok_or(Error::MissingSufficientStatistics)?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -221,7 +240,7 @@ where
         let (c_y, c_s) = (c_s[s_y], c_s.slice(s![(s_y + 1)..]).product());
 
         // For each combination of the extended parent set ...
-        (0..n_xs.shape()[0]).all(|j| {
+        for j in 0..n_xs.shape()[0] {
             // Compute the corresponding index for the separation set.
             let i = j % c_s + (j / (c_s * c_y)) * c_s;
             // Get the parameters of the Fisher-Snedecor distribution.
@@ -231,19 +250,34 @@ where
             let q_xz = q_xz.parameters().index_axis(Axis(0), i);
             let q_xs = q_xs.parameters().index_axis(Axis(0), j);
             // Perform the F-test.
-            Zip::from(&r_xz)
+            let all_passed = Zip::from(&r_xz)
                 .and(&r_xs)
                 .and(q_xz.diag())
                 .and(q_xs.diag())
-                .all(|&r_xz, &r_xs, &q_xz, &q_xs| {
-                    // Initialize the Fisher-Snedecor distribution.
-                    let f = FisherSnedecor::new(r_xz, r_xs).unwrap();
-                    // Compute the p-value.
-                    let p_value = f.cdf(q_xz / q_xs);
-                    // Check if the p-value is in the alpha range.
-                    alpha.contains(&p_value)
-                })
-        })
+                .fold(Ok(true), |acc, &r_xz, &r_xs, &q_xz, &q_xs| -> Result<_> {
+                    if let Ok(true) = acc {
+                        // Initialize the Fisher-Snedecor distribution.
+                        let f = FisherSnedecor::new(r_xz, r_xs)
+                            .map_err(|e| Error::Probability(e.to_string()))?;
+                        // Compute the p-value.
+                        let p_value = f.cdf(q_xz / q_xs);
+                        // Check if the p-value is in the alpha range.
+                        if alpha.contains(&p_value) {
+                            Ok(true)
+                        } else {
+                            Ok(false)
+                        }
+                    } else {
+                        acc
+                    }
+                })?;
+
+            if !all_passed {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
     }
 }
 
@@ -274,34 +308,28 @@ where
     /// A new `CTPC` instance.
     ///
     #[inline]
-    pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Self {
+    pub fn new(initial_graph: &'a DiGraph, null_time: &'a T, null_state: &'a S) -> Result<Self> {
         // Assert labels of the initial graph and the estimator are the same.
-        assert_eq!(
-            initial_graph.labels(),
-            null_time.labels(),
-            "Labels of initial graph and estimator must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-            initial_graph.labels(),
-            null_time.labels()
-        );
+        if initial_graph.labels() != null_time.labels() {
+            return Err(Error::LabelMismatch(
+                format!("{:?}", initial_graph.labels()),
+                format!("{:?}", null_time.labels()),
+            ));
+        }
         // Assert labels of the initial graph and the estimator are the same.
-        assert_eq!(
-            initial_graph.labels(),
-            null_state.labels(),
-            "Labels of initial graph and estimator must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-            initial_graph.labels(),
-            null_state.labels()
-        );
+        if initial_graph.labels() != null_state.labels() {
+            return Err(Error::LabelMismatch(
+                format!("{:?}", initial_graph.labels()),
+                format!("{:?}", null_state.labels()),
+            ));
+        }
 
-        Self {
+        Ok(Self {
             initial_graph,
             null_time,
             null_state,
             prior_knowledge: None,
-        }
+        })
     }
 
     /// Sets the prior knowledge for the algorithm.
@@ -315,42 +343,36 @@ where
     /// A mutable reference to the current instance.
     ///
     #[inline]
-    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Self {
+    pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
         // Assert labels of prior knowledge and initial graph are the same.
-        assert_eq!(
-            self.initial_graph.labels(),
-            prior_knowledge.labels(),
-            "Labels of initial graph and prior knowledge must be the same: \n\
-            \t expected:    {:?}, \n\
-            \t found:       {:?}.",
-            self.initial_graph.labels(),
-            prior_knowledge.labels()
-        );
+        if self.initial_graph.labels() != prior_knowledge.labels() {
+            return Err(Error::LabelMismatch(
+                format!("{:?}", self.initial_graph.labels()),
+                format!("{:?}", prior_knowledge.labels()),
+            ));
+        }
         // Assert prior knowledge is consistent with initial graph.
-        self.initial_graph
-            .vertices()
-            .into_iter()
-            .permutations(2)
-            .for_each(|edge| {
-                // Get the edge indices.
-                let (i, j) = (edge[0], edge[1]);
-                // Assert edge must be either present and not forbidden ...
-                if self.initial_graph.has_edge(i, j) {
-                    assert!(
-                        !prior_knowledge.is_forbidden(i, j),
+        for edge in self.initial_graph.vertices().into_iter().permutations(2) {
+            // Get the edge indices.
+            let (i, j) = (edge[0], edge[1]);
+            // Assert edge must be either present and not forbidden ...
+            if self.initial_graph.has_edge(i, j)? {
+                if prior_knowledge.is_forbidden(i, j) {
+                    return Err(Error::PriorKnowledgeConflict(format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
-                    );
-                // ... or absent and not required.
-                } else {
-                    assert!(
-                        !prior_knowledge.is_required(i, j),
-                        "Initial graph does not contain required edge ({i}, {j})."
-                    );
+                    )));
                 }
-            });
+            }
+            // ... or absent and not required.
+            else if prior_knowledge.is_required(i, j) {
+                return Err(Error::PriorKnowledgeConflict(format!(
+                    "Initial graph does not contain required edge ({i}, {j})."
+                )));
+            }
+        }
         // Set prior knowledge.
         self.prior_knowledge = Some(prior_knowledge);
-        self
+        Ok(self)
     }
 
     /// Execute the CTPC algorithm.
@@ -359,14 +381,14 @@ where
     ///
     /// The fitted graph.
     ///
-    pub fn fit(&self) -> DiGraph {
+    pub fn fit(&self) -> Result<DiGraph> {
         // Clone the initial graph.
         let mut graph = self.initial_graph.clone();
 
         // For each vertex in the graph ...
         for i in graph.vertices() {
             // Get the parents of the vertex.
-            let mut pa_i = graph.parents(&set![i]);
+            let mut pa_i = graph.parents(&set![i])?;
 
             // Initialize the counter.
             let mut k = 0;
@@ -374,47 +396,60 @@ where
             // While the counter is smaller than the number of parents ...
             while k < pa_i.len() {
                 // Initialize the set of vertices to remove, to ensure stability.
-                let mut not_pa_i = Vec::new();
 
-                // For each parent ...
-                for &j in &pa_i {
-                    // Check prior knowledge, if available.
-                    if let Some(pk) = self.prior_knowledge {
-                        // If the edge is required, skip the tests.
-                        // NOTE: Since CTPC only removes edges,
-                        //  it is sufficient to check for required edges.
-                        if pk.is_required(j, i) {
-                            // Log the skipped CIT.
-                            debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
-                            continue;
+                // For each parent, check if it is independent of the child given a subset of size k.
+                let not_pa_i: Vec<_> = pa_i
+                    .iter()
+                    .filter_map(|&j| {
+                        // Check prior knowledge, if available.
+                        if let Some(pk) = self.prior_knowledge {
+                            // If the edge is required, skip the tests.
+                            // NOTE: Since CTPC only removes edges,
+                            //  it is sufficient to check for required edges.
+                            if pk.is_required(j, i) {
+                                // Log the skipped CIT.
+                                debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
+                                return None;
+                            }
                         }
-                    }
-                    // Filter out the parent.
-                    let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
-                    // For any combination of size k of Pa(X_i) \ { X_j } ...
-                    for s_ij in pa_i_not_j.combinations(k).map(Set::from_iter) {
-                        // Log the current combination.
-                        debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
-                        // If X_i _||_ X_j | S_{X_i, X_j} ...
-                        if self.null_time.call(&set![i], &set![j], &s_ij)
-                            && self.null_state.call(&set![i], &set![j], &s_ij)
-                        {
-                            // Log the result of the CIT.
-                            debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
-                            // Add the parent to the set of vertices to remove.
-                            not_pa_i.push(j);
-                            // Break the outer loop.
-                            break;
-                        }
-                    }
-                }
+
+                        // Filter out the parent.
+                        let pa_i_not_j = pa_i.iter().filter(|&&z| z != j).cloned();
+                        // For any combination of size k of Pa(X_i) \ { X_j } ...
+                        pa_i_not_j
+                            .combinations(k)
+                            .map(Set::from_iter)
+                            .find_map(|s_ij| {
+                                // Log the current combination.
+                                debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
+                                // If X_i _||_ X_j | S_{X_i, X_j} ...
+                                match self.null_time.call(&set![i], &set![j], &s_ij) {
+                                    Ok(true) => {
+                                        match self.null_state.call(&set![i], &set![j], &s_ij) {
+                                            Ok(true) => {
+                                                // Log the result of the CIT.
+                                                debug!(
+                                                    "CIT for {i} _||_ {j} | {s_ij:?} ... PASSED"
+                                                );
+                                                Some(Ok(j))
+                                            }
+                                            Ok(false) => None,
+                                            Err(e) => Some(Err(e)),
+                                        }
+                                    }
+                                    Ok(false) => None,
+                                    Err(e) => Some(Err(e)),
+                                }
+                            })
+                    })
+                    .collect::<Result<_>>()?;
 
                 // Remove the vertices from the graph.
                 for &j in &not_pa_i {
                     // Remove the vertex from the parents.
                     pa_i.retain(|&x| x != j);
                     // Remove the edge from the graph.
-                    graph.del_edge(j, i);
+                    graph.del_edge(j, i)?;
                 }
 
                 // Increment the counter.
@@ -423,7 +458,7 @@ where
         }
 
         // Return the fitted graph.
-        graph
+        Ok(graph)
     }
 }
 
@@ -438,15 +473,15 @@ where
     ///
     /// The fitted graph.
     ///
-    pub fn par_fit(&self) -> DiGraph {
+    pub fn par_fit(&self) -> Result<DiGraph> {
         // For each vertex in the graph ...
         let parents: Vec<_> = self
             .initial_graph
             .vertices()
             .into_par_iter()
-            .map(|i| {
+            .map(|i| -> Result<Set<usize>> {
                 // Get the parents of the vertex.
-                let mut pa_i = self.initial_graph.parents(&set![i]);
+                let mut pa_i = self.initial_graph.parents(&set![i])?;
 
                 // Initialize the counter.
                 let mut k = 0;
@@ -456,7 +491,7 @@ where
                     // Filter the parents in parallel.
                     pa_i = pa_i
                         .par_iter()
-                        .filter_map(|&j| {
+                        .map(|&j| -> Result<Option<usize>> {
                             // Check prior knowledge, if available.
                             if let Some(pk) = self.prior_knowledge {
                                 // If the edge is required, skip the tests.
@@ -465,7 +500,7 @@ where
                                 if pk.is_required(j, i) {
                                     // Log the skipped CIT.
                                     debug!("CIT for {j} _||_ {i} | [*] ... SKIPPED");
-                                    return Some(j);
+                                    return Ok(Some(j));
                                 }
                             }
                             // Filter out the parent.
@@ -475,41 +510,42 @@ where
                                 // Log the current combination.
                                 debug!("CIT for {i} _||_ {j} | {s_ij:?} ...");
                                 // If X_i _||_ X_j | S_{X_i, X_j} ...
-                                if self.null_time.call(&set![i], &set![j], &s_ij)
-                                    && self.null_state.call(&set![i], &set![j], &s_ij)
+                                if self.null_time.call(&set![i], &set![j], &s_ij)?
+                                    && self.null_state.call(&set![i], &set![j], &s_ij)?
                                 {
                                     // Log the result of the CIT.
                                     debug!("CIT for {i} _||_ {j} | {s_ij:?} ... PASSED");
                                     // Add the parent to the set of vertices to remove.
-                                    return None;
+                                    return Ok(None);
                                 }
                             }
                             // Otherwise, keep the parent.
-                            Some(j)
+                            Ok(Some(j))
                         })
-                        .collect();
+                        .filter_map(|x| x.transpose())
+                        .collect::<Result<_>>()?;
                     // Increment the counter.
                     k += 1;
                 }
 
                 // Return the parents of the vertex.
-                pa_i
+                Ok(pa_i)
             })
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Initialize an empty graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels());
+        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
 
         // Set the parents of each vertex.
-        parents.into_iter().enumerate().for_each(|(i, pa_i)| {
+        parents.into_iter().enumerate().try_for_each(|(i, pa_i)| {
             // For each parent ...
-            pa_i.into_iter().for_each(|j| {
-                // Add the edge to the graph.
-                graph.add_edge(j, i);
+            pa_i.into_iter().try_for_each(|j| -> Result<_> {
+                graph.add_edge(j, i)?;
+                Ok(())
             })
-        });
+        })?;
 
         // Return the fitted graph.
-        graph
+        Ok(graph)
     }
 }

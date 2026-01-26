@@ -5,7 +5,7 @@ use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCPD, CatCPDS},
-    types::{Set, States},
+    types::{Error, Result, Set, States},
 };
 
 impl BE<'_, CatTable, usize> {
@@ -17,7 +17,7 @@ impl BE<'_, CatTable, usize> {
         z: &Set<usize>,
         sample_statistics: CatCPDS,
         prior: usize,
-    ) -> CatCPD {
+    ) -> Result<CatCPD> {
         // Get the conditional counts.
         let n_xz = sample_statistics.sample_conditional_counts();
         // Marginalize the counts.
@@ -26,7 +26,9 @@ impl BE<'_, CatTable, usize> {
         // Get the prior, as the alpha of the Dirichlet distribution.
         let alpha = prior;
         // Assert alpha is positive.
-        assert!(alpha > 0, "Alpha must be positive.");
+        if alpha == 0 {
+            return Err(Error::IllegalArgument("Alpha must be positive.".into()));
+        }
 
         // Cast alpha to floating point.
         let alpha = alpha as f64;
@@ -44,18 +46,18 @@ impl BE<'_, CatTable, usize> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
         // Get the labels of the conditioned variables.
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).unwrap();
-                (k.clone(), v.clone())
+                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                Ok((k.clone(), v.clone()))
             })
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Wrap the sample statistics in an option.
         let sample_statistics = Some(sample_statistics);
@@ -76,7 +78,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for BE<'_, $type, ()> {
         #[inline]
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Default to uniform prior.
             self.clone().with_prior(1).fit(x, z)
         }
@@ -84,7 +86,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl CPDEstimator<CatCPD> for BE<'_, $type, usize> {
         #[inline]
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Get (states, shape, prior).
             let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
             // Set sufficient statistics estimator.
@@ -95,7 +97,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z);
+            let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
         }
@@ -103,15 +105,15 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
 
     impl ParCPDEstimator<CatCPD> for BE<'_, $type, ()> {
         #[inline]
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Default to uniform prior.
-            self.clone().with_prior(1).fit(x, z)
+            self.clone().with_prior(1).par_fit(x, z)
         }
     }
 
     impl ParCPDEstimator<CatCPD> for BE<'_, $type, usize> {
         #[inline]
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPD {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPD> {
             // Get (states, shape, prior).
             let (states, shape, prior) = (self.dataset.states(), self.dataset.shape(), self.prior);
             // Set sufficient statistics estimator.
@@ -122,7 +124,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
                 self.missing_mechanism.clone()
             );
             // Compute sufficient statistics in parallel.
-            let sample_statistics = sample_statistics.par_fit(x, z);
+            let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
             BE::<'_, CatTable, _>::fit(states, shape, x, z, sample_statistics, prior)
         }

@@ -11,7 +11,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{datasets::PyMissingTable, impl_from_into_lock};
+use crate::{datasets::PyMissingTable, error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian incomplete tabular dataset.
 #[gen_stub_pyclass]
@@ -42,13 +42,12 @@ impl PyGaussIncTable {
     ///     A new Gaussian incomplete tabular dataset instance.
     ///
     #[new]
-    pub fn new(labels: Vec<String>, values: PyReadonlyArray2<GaussType>) -> Self {
+    pub fn new(labels: Vec<String>, values: PyReadonlyArray2<GaussType>) -> PyResult<Self> {
         let values = values.as_array().to_owned();
         let labels = labels.into_iter().collect();
-        let inner = GaussIncTable::new(labels, values);
-        Self {
-            inner: Arc::new(RwLock::new(inner)),
-        }
+        GaussIncTable::new(labels, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// The labels of the dataset.
@@ -130,7 +129,9 @@ impl PyGaussIncTable {
         let labels = labels.into_iter().collect();
 
         // Construct the gaussian incomplete tabular dataset.
-        Ok(GaussIncTable::new(labels, values).into())
+        GaussIncTable::new(labels, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

@@ -8,7 +8,7 @@ use ndarray_linalg::Determinant;
 use crate::{
     datasets::{GaussEv, GaussEvT},
     models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
-    types::{LN_2_PI, Labels, Set},
+    types::{Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
 
@@ -38,34 +38,48 @@ impl GaussPhiK {
     /// * Panics if the length of `h` does not match the size of `k`.
     /// * Panics if `k`, `h`, or `g` contain non-finite values.
     ///
-    /// # Results
+    /// # Returns
     ///
     /// A new Gaussian potential instance.
     ///
-    pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
+    pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Result<Self> {
         // Assert K is square.
-        assert!(k.is_square(), "Precision matrix must be square.");
+        if !k.is_square() {
+            return Err(Error::Shape("Precision matrix must be square.".into()));
+        }
         // Assert the length of h matches the size of K.
-        assert_eq!(
-            k.nrows(),
-            h.len(),
-            "Information vector length must match precision matrix size."
-        );
+        if k.nrows() != h.len() {
+            return Err(Error::IncompatibleShape(
+                k.nrows().to_string(),
+                h.len().to_string(),
+            ));
+        }
         // Assert K is finite.
-        assert!(
-            k.iter().all(|x| x.is_finite()),
-            "Precision matrix must be finite."
-        );
+        if !k.iter().all(|x| x.is_finite()) {
+            return Err(Error::Linalg("Precision matrix must be finite.".into()));
+        }
         // Assert K is symmetric.
-        assert_eq!(k, k.t(), "Precision matrix must be symmetric.");
+        if k != k.t() {
+            return Err(Error::Linalg("Precision matrix must be symmetric.".into()));
+        }
         // Assert h is finite.
-        assert!(
-            h.iter().all(|x| x.is_finite()),
-            "Information vector must be finite."
-        );
+        if !h.iter().all(|x| x.is_finite()) {
+            return Err(Error::Linalg("Information vector must be finite.".into()));
+        }
         // Assert g is finite.
-        assert!(g.is_finite(), "Log-normalization constant must be finite.");
+        if !g.is_finite() {
+            return Err(Error::Linalg(
+                "Log-normalization constant must be finite.".into(),
+            ));
+        }
 
+        Ok(Self { k, h, g })
+    }
+
+    /// Internal constructor that assumes parameters are already valid.
+    /// Only used within trait implementations where validation cannot fail.
+    #[inline]
+    fn from_valid_params(k: Array2<f64>, h: Array1<f64>, g: f64) -> Self {
         Self { k, h, g }
     }
 
@@ -233,8 +247,8 @@ impl MulAssign<&GaussPhi> for GaussPhi {
         let k = lhs_k + rhs_k;
         let h = lhs_h + rhs_h;
         let g = lhs_g + rhs_g;
-        // Assemble parameters.
-        let parameters = GaussPhiK::new(k, h, g);
+        // Assemble parameters. Since we're combining valid parameters, the result is valid.
+        let parameters = GaussPhiK::from_valid_params(k, h, g);
 
         // Update the labels.
         self.labels = labels;
@@ -295,8 +309,8 @@ impl DivAssign<&GaussPhi> for GaussPhi {
         let k_prime = lhs_k - rhs_k;
         let h_prime = lhs_h - rhs_h;
         let g_prime = lhs_g - rhs_g;
-        // Assemble parameters.
-        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
+        // Assemble parameters. Since we're combining valid parameters, the result is valid.
+        let parameters = GaussPhiK::from_valid_params(k_prime, h_prime, g_prime);
 
         // Update the labels.
         self.labels = labels;
@@ -337,18 +351,21 @@ impl Phi for GaussPhi {
         k + self.parameters.h.len() + 1
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Self {
+    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
         // Assert that the evidence labels match the potential labels.
-        assert_eq!(
-            e.labels(),
-            self.labels(),
-            "Failed to condition on evidence: \n\
-            \t expected:    evidence labels to match potential labels , \n\
-            \t found:       potential labels = {:?} , \n\
-            \t              evidence  labels = {:?} .",
-            self.labels(),
-            e.labels(),
-        );
+        if e.labels() != self.labels() {
+            return Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    evidence labels to match potential labels , \n\
+                    \t found:       potential labels = {:?} , \n\
+                    \t              evidence  labels = {:?} .",
+                    self.labels(),
+                    e.labels(),
+                ),
+            ));
+        }
 
         // Get the evidence and remove nones.
         let e = e.evidences().iter().flatten().cloned();
@@ -397,29 +414,25 @@ impl Phi for GaussPhi {
         };
 
         // Assemble the parameters.
-        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the conditioned potential.
         Self::new(labels, parameters)
     }
 
-    fn marginalize(&self, x: &Set<usize>) -> Self {
+    fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
         // Base case: if no variables to marginalize, return self.
         if x.is_empty() {
-            return self.clone();
+            return Ok(self.clone());
         }
 
         // Assert X is a subset of the variables.
-        x.iter().for_each(|&x| {
-            assert!(
-                x < self.labels.len(),
-                "Variable index out of bounds: \n\
-                \t expected:    x <  {} , \n\
-                \t found:       x == {} .",
-                self.labels.len(),
-                x,
-            );
-        });
+        x.iter().try_for_each(|&x| {
+            if x >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(x));
+            }
+            Ok(())
+        })?;
 
         // Get Z as V \ X.
         let v: Set<_> = Set::from_iter(0..self.labels.len());
@@ -440,7 +453,7 @@ impl Phi for GaussPhi {
             // Get K_xx from K and X.
             let k_xx = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
             // Compute the covariance as: S = (K_xx)^(-1)
-            k_xx.pinv()
+            k_xx.pinv()?
         };
         // Get K_zx from K, Z and X.
         let k_zx = Array::from_shape_fn((z.len(), x.len()), |(i, j)| k[[z[i], x[j]]]);
@@ -469,24 +482,26 @@ impl Phi for GaussPhi {
         let g_prime = {
             // Compute the log-normalization constant as: g' = g + 0.5 * (ln|2 pi (K_xx)^-1| + h_x^T * (K_xx)^-1 * h_x)
             let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
-            let (_, ln_det) = s_xx.sln_det().expect("Failed to compute the determinant.");
+            let (_, ln_det) = s_xx
+                .sln_det()
+                .map_err(|e| Error::Linalg(format!("Failed to compute the determinant: {e}")))?;
             g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
         };
 
         // Assemble the parameters.
-        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the marginalized potential.
         Self::new(labels_z, parameters)
     }
 
     #[inline]
-    fn normalize(&self) -> Self {
+    fn normalize(&self) -> Result<Self> {
         // The potential is already normalized.
-        self.clone()
+        Ok(self.clone())
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Self {
+    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
         // Merge labels and conditioning labels in this order.
         let mut labels = cpd.labels().clone();
         labels.extend(cpd.conditioning_labels().clone());
@@ -505,7 +520,7 @@ impl Phi for GaussPhi {
         // | K_xx  K_xz |
         // | K_zx  K_zz |
         //
-        let k_xx = s.pinv(); //                 Precision of X.
+        let k_xx = s.pinv()?; //                 Precision of X.
         let k_xz = -&k_xx.dot(a); //            Cross-precision of X and Z.
         let k_zx = -a.t().dot(&k_xx); //        Cross-precision of Z and X.
         let k_zz = a.t().dot(&k_xx).dot(a); //  Induced precision of Z.
@@ -538,28 +553,35 @@ impl Phi for GaussPhi {
         // Compute the log-normalization constant.
         let g_prime = {
             let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
-            let (_, ln_det) = s.sln_det().expect("Failed to compute the determinant.");
+            let (_, ln_det) = s
+                .sln_det()
+                .map_err(|e| Error::Linalg(format!("Failed to compute the determinant: {e}")))?;
             -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x))
         };
 
         // Construct the parameters.
-        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime);
+        let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the potential.
         Self::new(labels, parameters)
     }
 
-    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD {
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         // Assert that X and Z are disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::SetsNotDisjoint(
+                "variables".to_string(),
+                "conditioning variables".to_string(),
+            ));
+        }
         // Assert that X and Z cover all variables.
-        assert!(
-            (x | z).iter().sorted().cloned().eq(0..self.labels.len()),
-            "Variables and conditioning variables must cover all potential variables."
-        );
+        if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
+            return Err(Error::InvalidParameter(
+                "variables".to_string(),
+                "Variables and conditioning variables must cover all potential variables."
+                    .to_string(),
+            ));
+        }
 
         // Split labels into labels and conditioning labels.
         let labels_x: Labels = x.iter().map(|&i| self.labels[i].clone()).collect();
@@ -575,7 +597,7 @@ impl Phi for GaussPhi {
             // Get K_xx from K and X.
             let k_xx = Array::from_shape_fn((x.len(), x.len()), |(i, j)| k[[x[i], x[j]]]);
             // Compute the covariance as: S = (K_xx)^(-1)
-            k_xx.pinv()
+            k_xx.pinv()?
         };
         // Compute the coefficient matrix.
         let a = {
@@ -593,7 +615,7 @@ impl Phi for GaussPhi {
         };
 
         // Assemble the parameters.
-        let parameters = GaussCPDP::new(a, b, s);
+        let parameters = GaussCPDP::new(a, b, s)?;
 
         // Create the new CPD.
         GaussCPD::new(labels_x, labels_z, parameters)
@@ -612,49 +634,51 @@ impl GaussPhi {
     ///
     /// A new Gaussian potential instance.
     ///
-    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Self {
+    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Result<Self> {
         // Assert parameters shape matches labels length.
-        assert_eq!(
-            parameters.precision_matrix().nrows(),
-            labels.len(),
-            "Precision matrix rows must match labels length."
-        );
-        assert_eq!(
-            parameters.information_vector().len(),
-            labels.len(),
-            "Information vector length must match labels length."
-        );
+        if parameters.precision_matrix().nrows() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "precision_matrix".into(),
+                "Precision matrix rows must match labels length.".into(),
+            ));
+        }
+        if parameters.information_vector().len() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "information_vector".into(),
+                "Information vector length must match labels length.".into(),
+            ));
+        }
 
         // Sort labels if not sorted and permute parameters accordingly.
         if !labels.is_sorted() {
             // Get the new indices order w.r.t. sorted labels.
             let mut indices: Vec<_> = (0..labels.len()).collect();
-            indices.sort_by_key(|&i| labels.get_index(i).unwrap());
+            indices.sort_by(|&i, &j| labels.get_index(i).cmp(&labels.get_index(j)));
             // Sort the labels.
             labels.sort();
 
             // Clone the precision matrix.
             let mut k = parameters.k.clone();
             // Permute the precision matrix rows.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 k.row_mut(i).assign(&parameters.k.row(j));
-            }
+            });
             parameters.k = k.clone();
             // Permute the precision matrix columns.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 k.column_mut(i).assign(&parameters.k.column(j));
-            }
+            });
             parameters.k = k;
 
             // Clone the information vector.
             let mut h = parameters.h.clone();
             // Permute the information vector.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 h[i] = parameters.h[j];
-            }
+            });
             parameters.h = h;
         }
 
-        Self { labels, parameters }
+        Ok(Self { labels, parameters })
     }
 }

@@ -15,7 +15,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{datasets::PyMissingTable, impl_from_into_lock};
+use crate::{datasets::PyMissingTable, error::to_pyerr, impl_from_into_lock};
 
 /// A categorical incomplete tabular dataset.
 #[gen_stub_pyclass]
@@ -50,8 +50,7 @@ impl PyCatIncTable {
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -59,11 +58,11 @@ impl PyCatIncTable {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// The values of the dataset.
@@ -155,7 +154,9 @@ impl PyCatIncTable {
         }
 
         // Construct the categorical incomplete tabular dataset.
-        Ok(CatIncTable::new(states, values).into())
+        CatIncTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

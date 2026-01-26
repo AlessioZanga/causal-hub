@@ -7,7 +7,7 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatEvT},
     models::{CPD, CatCPD, Labelled, Phi},
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A categorical potential.
@@ -80,7 +80,12 @@ impl MulAssign<&CatPhi> for CatPhi {
 
         // Order LHS axes w.r.t. new states.
         let mut lhs_axes: Vec<_> = (0..self.states.len()).collect();
-        lhs_axes.sort_by_key(|&i| self.states.get_index(i).unwrap().0);
+        lhs_axes.sort_by(|&i, &j| {
+            self.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&self.states.get_index(j).map(|(l, _)| l))
+        });
         let mut lhs_parameters = self.parameters.clone().permuted_axes(lhs_axes);
         // Get the axes to insert for LHS broadcasting.
         let lhs_axes = states.keys().enumerate();
@@ -93,7 +98,12 @@ impl MulAssign<&CatPhi> for CatPhi {
 
         // Order RHS axes w.r.t. new states.
         let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
-        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        rhs_axes.sort_by(|&i, &j| {
+            rhs.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+        });
         let mut rhs_parameters = rhs.parameters.clone().permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
         let rhs_axes = states.keys().enumerate();
@@ -134,22 +144,25 @@ impl Mul<&CatPhi> for &CatPhi {
 impl DivAssign<&CatPhi> for CatPhi {
     fn div_assign(&mut self, rhs: &CatPhi) {
         // Assert that RHS states are a subset of LHS states.
-        assert!(
-            rhs.states.keys().all(|k| self.states.contains_key(k)),
-            "Failed to divide potentials: \n\
-            \t expected:    RHS states to be a subset of LHS states , \n\
-            \t found:       LHS states = {:?} , \n\
-            \t              RHS states = {:?} .",
-            self.states,
-            rhs.states,
-        );
+        if !rhs.states.keys().all(|k| self.states.contains_key(k)) {
+            panic!(
+                "Failed to divide potentials: RHS states must be a subset of LHS states, \
+                found LHS states = {:?}, RHS states = {:?}",
+                self.states, rhs.states,
+            );
+        }
 
         // Add a small constant to ensure 0 / 0 = 0.
         let rhs_parameters = &rhs.parameters + f64::MIN_POSITIVE;
 
         // Order RHS axes w.r.t. new states.
         let mut rhs_axes: Vec<_> = (0..rhs.states.len()).collect();
-        rhs_axes.sort_by_key(|&i| rhs.states.get_index(i).unwrap().0);
+        rhs_axes.sort_by(|&i, &j| {
+            rhs.states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&rhs.states.get_index(j).map(|(l, _)| l))
+        });
         let mut rhs_parameters = rhs_parameters.permuted_axes(rhs_axes);
         // Get the axes to insert for RHS broadcasting.
         let rhs_axes = self.states.keys().enumerate();
@@ -190,30 +203,34 @@ impl Phi for CatPhi {
         self.parameters.len()
     }
 
-    fn condition(&self, e: &Self::Evidence) -> Self {
-        // Assert that the evidence states match the potential states.
-        assert_eq!(
-            e.states(),
-            self.states(),
-            "Failed to condition on evidence: \n\
-            \t expected:    evidence states to match potential states , \n\
-            \t found:       potential states = {:?} , \n\
-            \t              evidence  states = {:?} .",
-            self.states(),
-            e.states(),
-        );
+    fn condition(&self, e: &Self::Evidence) -> Result<Self> {
+        // Check that the evidence states match the potential states.
+        if e.states() != self.states() {
+            return Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    evidence states to match potential states , \n\
+                    \t found:       potential states = {:?} , \n\
+                    \t              evidence  states = {:?} .",
+                    self.states(),
+                    e.states(),
+                ),
+            ));
+        }
 
         // Get the evidence and remove nones.
-        let e = e.evidences().iter().flatten().cloned();
-        // Assert that the evidence is certain and positive.
-        let e = e.map(|e| match e {
-            CatEvT::CertainPositive { event, state } => (event, state),
-            _ => panic!(
-                "Failed to condition on evidence: \n
-                \t expected:    CertainPositive , \n\
-                \t found:       {:?} .",
-                e
-            ),
+        let e = e.evidences().iter().flatten().map(|ev| match ev {
+            CatEvT::CertainPositive { event, state } => Ok((event, state)),
+            _ => Err(Error::InvalidParameter(
+                "evidence".to_string(),
+                format!(
+                    "Failed to condition on evidence: \n\
+                    \t expected:    CertainPositive , \n\
+                    \t found:       {:?} .",
+                    ev
+                ),
+            )),
         });
 
         // Get states and parameters.
@@ -221,32 +238,30 @@ impl Phi for CatPhi {
         let mut parameters = self.parameters.clone();
 
         // Condition in reverse order to avoid axis shifting.
-        e.rev().for_each(|(event, state)| {
+        e.rev().try_for_each(|e| -> Result<_> {
+            let (&event, &state) = e?;
             parameters.index_axis_inplace(Axis(event), state);
             states.shift_remove_index(event);
-        });
+            Ok(())
+        })?;
 
         // Return self.
         Self::new(states, parameters)
     }
 
-    fn marginalize(&self, x: &Set<usize>) -> Self {
+    fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
         // Base case: if no variables to marginalize, return self.
         if x.is_empty() {
-            return self.clone();
+            return Ok(self.clone());
         }
 
         // Assert X is a subset of the variables.
-        x.iter().for_each(|&x| {
-            assert!(
-                x < self.labels.len(),
-                "Variable index out of bounds: \n\
-                \t expected:    x <  {} , \n\
-                \t found:       x == {} .",
-                self.labels.len(),
-                x,
-            );
-        });
+        x.iter().try_for_each(|&x| {
+            if x >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(x));
+            }
+            Ok(())
+        })?;
 
         // Get the states and the parameters.
         let states = self.states.clone();
@@ -267,7 +282,7 @@ impl Phi for CatPhi {
     }
 
     #[inline]
-    fn normalize(&self) -> Self {
+    fn normalize(&self) -> Result<Self> {
         // Get the parameters.
         let mut parameters = self.parameters.clone();
         // Normalize the parameters.
@@ -276,7 +291,7 @@ impl Phi for CatPhi {
         Self::new(self.states.clone(), parameters)
     }
 
-    fn from_cpd(cpd: Self::CPD) -> Self {
+    fn from_cpd(cpd: Self::CPD) -> Result<Self> {
         // Merge conditioning states and states in this order.
         let mut states = cpd.conditioning_states().clone();
         states.extend(cpd.states().clone());
@@ -287,11 +302,16 @@ impl Phi for CatPhi {
         let parameters = parameters
             .into_dyn()
             .into_shape_with_order(shape)
-            .expect("Failed to reshape parameters.");
+            .map_err(Error::NdarrayShape)?;
 
         // Get the new axes order w.r.t. sorted labels.
         let mut axes: Vec<_> = (0..states.len()).collect();
-        axes.sort_by_key(|&i| states.get_index(i).unwrap().0);
+        axes.sort_by(|&i, &j| {
+            states
+                .get_index(i)
+                .map(|(l, _)| l)
+                .cmp(&states.get_index(j).map(|(l, _)| l))
+        });
         // Sort the states by labels.
         states.sort_keys();
         // Swap axes to match the new order.
@@ -301,17 +321,19 @@ impl Phi for CatPhi {
         Self::new(states, parameters)
     }
 
-    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Self::CPD {
+    fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         // Assert that X and Z are disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must be disjoint.".into(),
+            ));
+        }
         // Assert that X and Z cover all variables.
-        assert!(
-            (x | z).iter().sorted().cloned().eq(0..self.labels.len()),
-            "Variables and conditioning variables must cover all potential variables."
-        );
+        if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must cover all potential variables.".into(),
+            ));
+        }
 
         // Split states into states and conditioning states.
         let states_x: States = x
@@ -320,18 +342,18 @@ impl Phi for CatPhi {
                 self.states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .unwrap()
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
             })
-            .collect();
+            .collect::<Result<_>>()?;
         let states_z: States = z
             .iter()
             .map(|&i| {
                 self.states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .unwrap()
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
             })
-            .collect();
+            .collect::<Result<_>>()?;
 
         // Get new axes order.
         let axes: Vec<_> = z.iter().chain(x).cloned().collect();
@@ -345,7 +367,7 @@ impl Phi for CatPhi {
         // Reshape the parameters to the new 2D shape.
         let mut parameters = parameters
             .into_shape_clone(shape)
-            .expect("Failed to reshape parameters.");
+            .map_err(|e| Error::Shape(format!("Failed to reshape parameters: {}", e)))?;
 
         // Normalize the parameters.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
@@ -367,27 +389,37 @@ impl CatPhi {
     ///
     /// A new categorical potential instance.
     ///
-    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Self {
+    pub fn new(mut states: States, mut parameters: ArrayD<f64>) -> Result<Self> {
         // Get labels.
         let mut labels: Labels = states.keys().cloned().collect();
         // Get shape.
         let mut shape = Array::from_iter(states.values().map(Set::len));
-        // Assert parameters shape matches states shape.
-        assert_eq!(
-            parameters.shape(),
-            shape.as_slice().unwrap(),
-            "Parameters shape does not match states shape: \n\
-            \t expected:    {:?} , \n\
-            \t found:       {:?} .",
-            shape,
-            parameters.shape(),
-        );
+        // Validate parameters shape matches states shape.
+        let shape_slice = shape.as_slice().ok_or_else(|| {
+            Error::Shape(
+                "Failed to convert shape array to slice: shape is not contiguous".to_string(),
+            )
+        })?;
+        if parameters.shape() != shape_slice {
+            return Err(Error::Shape(format!(
+                "Parameters shape does not match states shape: \n\
+                \t expected:    {:?} , \n\
+                \t found:       {:?} .",
+                shape_slice,
+                parameters.shape(),
+            )));
+        }
 
         // Sort states if not sorted and permute parameters accordingly.
         if !states.keys().is_sorted() {
             // Get the new axes order w.r.t. sorted labels.
             let mut axes: Vec<_> = (0..states.len()).collect();
-            axes.sort_by_key(|&i| states.get_index(i).unwrap().0);
+            axes.sort_by(|&i, &j| {
+                states
+                    .get_index(i)
+                    .map(|(l, _)| l)
+                    .cmp(&states.get_index(j).map(|(l, _)| l))
+            });
             // Sort the states by labels.
             states.sort_keys();
             // Permute the parameters to match the new order.
@@ -398,12 +430,12 @@ impl CatPhi {
             shape = states.values().map(Set::len).collect();
         }
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
             parameters,
-        }
+        })
     }
 
     /// States of the potential.

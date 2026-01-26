@@ -25,6 +25,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::{PyDataset, PyGaussTable},
+    error::to_pyerr,
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyDiGraph, PyGaussCPD},
@@ -76,7 +77,7 @@ impl PyGaussBN {
         // Convert Vec<PyGaussCPD> to Vec<GaussCPD>.
         let cpds = cpds.into_iter().map(|x: PyGaussCPD| x.into());
         // Create a new GaussBN with the given parameters.
-        Ok(GaussBN::new(graph, cpds).into())
+        GaussBN::new(graph, cpds).map(Into::into).map_err(to_pyerr)
     }
 
     /// Returns the name of the model, if any.
@@ -172,7 +173,7 @@ impl PyGaussBN {
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
-    ///         - `alpha`: The prior of the Bayesian estimator (float64).
+    /// - `alpha`: The prior of the Bayesian estimator (float64).
     ///
     /// Returns
     /// -------
@@ -235,7 +236,8 @@ impl PyGaussBN {
                 } else {
                     // Execute sequentially.
                     estimator.fit(graph)
-                };
+                }
+                .map_err(to_pyerr)?;
                 // Return the fitted model.
                 Ok(model.into())
             }};
@@ -280,7 +282,7 @@ impl PyGaussBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*lock);
+        let sampler = ForwardSampler::new(&mut rng, &*lock).map_err(to_pyerr)?;
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -288,7 +290,8 @@ impl PyGaussBN {
         } else {
             // Sample sequentially.
             sampler.sample_n(n)
-        };
+        }
+        .map_err(to_pyerr)?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -378,7 +381,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.into())
+        estimate.map(Into::into).map_err(to_pyerr)
     }
 
     /// Estimate a conditional causal effect (CACE).
@@ -403,6 +406,7 @@ impl PyGaussBN {
     /// GaussCPD | None
     ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
+    #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (x, y, z, method="be", seed=31, parallel=true))]
     pub fn do_estimate(
         &self,
@@ -467,7 +471,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.map(|e| e.into()))
+        estimate.map(|e| e.map(Into::into)).map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.
@@ -484,9 +488,9 @@ impl PyGaussBN {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(GaussBN::from_json_string(json))),
-        })
+        GaussBN::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -497,7 +501,7 @@ impl PyGaussBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -514,9 +518,9 @@ impl PyGaussBN {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(GaussBN::from_json_file(path))),
-        })
+        GaussBN::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -527,7 +531,6 @@ impl PyGaussBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

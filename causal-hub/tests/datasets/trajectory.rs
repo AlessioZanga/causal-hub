@@ -5,6 +5,7 @@ mod tests {
         labels,
         models::Labelled,
         states,
+        types::Result,
     };
     use ndarray::prelude::*;
 
@@ -15,7 +16,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn new_trajectory() {
+        fn new_trajectory() -> Result<()> {
             // Set the states.
             let states = states![
                 ("A", ["0", "1", "2"]), //
@@ -34,7 +35,7 @@ mod tests {
             // Set the times.
             let times = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
             // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            let trj = CatTrj::new(states, events, times)?;
 
             // Check the labels.
             assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
@@ -64,10 +65,12 @@ mod tests {
                 trj.times(),
                 &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5] //
             );
+
+            Ok(())
         }
 
         #[test]
-        fn new_trajectory_unordered_states() {
+        fn new_trajectory_unordered_states() -> Result<()> {
             // Set the states.
             let states = states![
                 ("B", ["0", "1"]),      //
@@ -86,7 +89,7 @@ mod tests {
             // Set the times.
             let times = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
             // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            let trj = CatTrj::new(states, events, times)?;
 
             // Check the labels.
             assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
@@ -116,10 +119,12 @@ mod tests {
                 trj.times(),
                 &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5] //
             );
+
+            Ok(())
         }
 
         #[test]
-        fn new_trajectory_unordered_times() {
+        fn new_trajectory_unordered_times() -> Result<()> {
             // Set the states.
             let states = states![
                 ("B", ["0", "1"]),      //
@@ -138,7 +143,7 @@ mod tests {
             // Set the times.
             let times = array![0.1, 0.2, 0.3, 0.4, 0.5, 0.0];
             // Construct a new trajectory.
-            let trj = CatTrj::new(states, events, times);
+            let trj = CatTrj::new(states, events, times)?;
 
             // Check the labels.
             assert_eq!(trj.labels(), &labels!["A", "B", "C"]);
@@ -168,10 +173,12 @@ mod tests {
                 &array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5], //
                 trj.times()
             );
+
+            Ok(())
         }
 
         #[test]
-        fn new_trajectories() {
+        fn new_trajectories() -> Result<()> {
             // Initialize the first trajectory.
             let trj_0 = CatTrj::new(
                 states![
@@ -186,7 +193,7 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )?;
             // Initialize the second trajectory.
             let trj_1 = CatTrj::new(
                 states![
@@ -201,9 +208,9 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )?;
             // Construct a new set of trajectories.
-            let trjs = CatTrjs::new([trj_0, trj_1]);
+            let trjs = CatTrjs::new([trj_0, trj_1])?;
 
             // Check the labels.
             assert_eq!(&labels!["A", "B"], trjs.labels());
@@ -247,10 +254,12 @@ mod tests {
                 &array![0., 1., 2., 3., 4.], //
                 trjs.values()[1].times()
             );
+
+            Ok(())
         }
 
         #[test]
-        fn new_trajectories_unordered_states() {
+        fn new_trajectories_unordered_states() -> Result<()> {
             // Initialize the first trajectory.
             let trj_0 = CatTrj::new(
                 states![
@@ -265,7 +274,7 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )?;
             // Initialize the second trajectory.
             let trj_1 = CatTrj::new(
                 states![
@@ -280,10 +289,10 @@ mod tests {
                     [2, 2]  //
                 ],
                 array![0., 1., 2., 3., 4.],
-            );
+            )?;
 
             // Construct a new set of trajectories.
-            let trjs = CatTrjs::new([trj_0, trj_1]);
+            let trjs = CatTrjs::new([trj_0, trj_1])?;
 
             // Check the labels.
             assert_eq!(&labels!["A", "B"], trjs.labels());
@@ -327,10 +336,12 @@ mod tests {
                 &array![0., 1., 2., 3., 4.], //
                 trjs.values()[1].times()
             );
+
+            Ok(())
         }
 
         #[test]
-        fn new_evidence() {
+        fn new_evidence() -> Result<()> {
             // Initialize the model.
             let states = states![
                 ("B", ["0", "1"]),      //
@@ -367,7 +378,9 @@ mod tests {
                         end_time: 0.5,
                     },
                 ],
-            );
+            )?;
+
+            Ok(())
         }
     }
 }

@@ -13,7 +13,7 @@ use crate::{
     datasets::CatSample,
     impl_json_io,
     models::{CIM, Labelled},
-    types::{EPSILON, Labels, Set, States},
+    types::{EPSILON, Error, Labels, Result, Set, States},
     utils::MI,
 };
 
@@ -42,39 +42,45 @@ impl CatCIMS {
     /// A new sample (sufficient) statistics for the categorical CIM.
     ///
     #[inline]
-    pub fn new(n_xz: Array3<f64>, t_xz: Array2<f64>, n: f64) -> Self {
+    pub fn new(n_xz: Array3<f64>, t_xz: Array2<f64>, n: f64) -> Result<Self> {
         // Assert the dimensions are correct.
-        assert_eq!(
-            n_xz.shape()[1],
-            n_xz.shape()[2],
-            "The second and third dimensions of the conditional counts must be equal."
-        );
-        assert_eq!(
-            n_xz.shape()[0],
-            t_xz.shape()[0],
-            "The first dimension of the conditional counts must match \n
-            the first dimension of the conditional times."
-        );
-        assert_eq!(
-            n_xz.shape()[1],
-            t_xz.shape()[1],
-            "The second dimension of the conditional counts must match \n
-            the second dimension of the conditional times."
-        );
-        assert!(
-            n_xz.iter().all(|&x| x.is_finite() && x >= 0.),
-            "Conditional counts must be finite and non-negative."
-        );
-        assert!(
-            t_xz.iter().all(|&x| x.is_finite() && x >= 0.),
-            "Conditional times must be finite and non-negative."
-        );
-        assert!(
-            n.is_finite() && n >= 0.,
-            "Sample size must be finite and non-negative."
-        );
+        if n_xz.shape()[1] != n_xz.shape()[2] {
+            return Err(Error::Shape(
+                "The second and third dimensions of the conditional counts must be equal.".into(),
+            ));
+        }
+        if n_xz.shape()[0] != t_xz.shape()[0] {
+            return Err(Error::IncompatibleShape(
+                "n_xz".into(),
+                "The first dimension of the conditional counts must match the first dimension of the conditional times.".into(),
+            ));
+        }
+        if n_xz.shape()[1] != t_xz.shape()[1] {
+            return Err(Error::IncompatibleShape(
+                "n_xz".into(),
+                "The second dimension of the conditional counts must match the second dimension of the conditional times.".into(),
+            ));
+        }
+        if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
+            return Err(Error::InvalidParameter(
+                "n_xz".into(),
+                "Conditional counts must be finite and non-negative.".into(),
+            ));
+        }
+        if !t_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
+            return Err(Error::InvalidParameter(
+                "t_xz".into(),
+                "Conditional times must be finite and non-negative.".into(),
+            ));
+        }
+        if !n.is_finite() || n < 0. {
+            return Err(Error::InvalidParameter(
+                "n".into(),
+                "Sample size must be finite and non-negative.".into(),
+            ));
+        }
 
-        Self { n_xz, t_xz, n }
+        Ok(Self { n_xz, t_xz, n })
     }
 
     /// Returns the sample conditional counts |Z| x |X| x |X|.
@@ -130,7 +136,7 @@ impl Add for CatCIMS {
 }
 
 impl Serialize for CatCIMS {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -169,7 +175,7 @@ impl Serialize for CatCIMS {
 }
 
 impl<'de> Deserialize<'de> for CatCIMS {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -191,7 +197,7 @@ impl<'de> Deserialize<'de> for CatCIMS {
                 formatter.write_str("struct CatCIMS")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatCIMS, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatCIMS, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -253,11 +259,12 @@ impl<'de> Deserialize<'de> for CatCIMS {
                         .map_err(|_| E::custom("Invalid sample conditional times shape"))?
                 };
 
-                Ok(CatCIMS::new(
+                CatCIMS::new(
                     sample_conditional_counts,
                     sample_conditional_times,
                     sample_size,
-                ))
+                )
+                .map_err(|e| E::custom(e.to_string()))
             }
         }
 
@@ -300,7 +307,7 @@ impl CatCIM {
     /// * `states` - The variables states.
     /// * `parameters` - The intensity matrices of the states.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the labels and conditioning labels are not disjoint.
     /// * If the product of the shape of the states does not match the length of the second and third axis.
@@ -311,81 +318,106 @@ impl CatCIM {
     ///
     /// A new `CatCIM` instance.
     ///
-    pub fn new(states: States, conditioning_states: States, parameters: Array3<f64>) -> Self {
+    pub fn new(
+        states: States,
+        conditioning_states: States,
+        parameters: Array3<f64>,
+    ) -> Result<Self> {
         // Get the labels of the variables.
         let labels: Set<_> = states.keys().cloned().collect();
         // Get the labels of the variables.
         let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
         // Assert labels and conditioning labels are disjoint.
-        assert!(
-            labels.is_disjoint(&conditioning_labels),
-            "Labels and conditioning labels must be disjoint."
-        );
+        if !labels.is_disjoint(&conditioning_labels) {
+            return Err(Error::SetsNotDisjoint(
+                format!("{:?}", labels),
+                format!("{:?}", conditioning_labels),
+            ));
+        }
 
         // Get the states shape.
         let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
-        assert!(
-            parameters.is_empty() || parameters.shape()[1] == shape.product(),
-            "Product of the number of states must match the number of columns: \n\
-            \t expected:    parameters.shape[1] == {} , \n\
-            \t found:       parameters.shape[1] == {} .",
-            shape.product(),
-            parameters.shape()[1],
-        );
+        if !parameters.is_empty() && parameters.shape()[1] != shape.product() {
+            return Err(Error::IncompatibleShape(
+                "parameters".into(),
+                format!(
+                    "Product of the number of states must match the number of columns: expected {} but found {}.",
+                    shape.product(),
+                    parameters.shape()[1],
+                ),
+            ));
+        }
 
         // Check that the product of the shape matches the number of columns.
-        assert!(
-            parameters.is_empty() || parameters.shape()[2] == shape.product(),
-            "Product of the number of states must match the number of columns: \n\
-            \t expected:    parameters.shape[2] == {} , \n\
-            \t found:       parameters.shape[2] == {} .",
-            shape.product(),
-            parameters.shape()[2],
-        );
+        if !parameters.is_empty() && parameters.shape()[2] != shape.product() {
+            return Err(Error::IncompatibleShape(
+                "parameters".into(),
+                format!(
+                    "Product of the number of states must match the third axis: expected {} but found {}.",
+                    shape.product(),
+                    parameters.shape()[2],
+                ),
+            ));
+        }
 
         // Get the shape of the set of states.
         let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
-        assert!(
-            parameters.is_empty() || parameters.shape()[0] == conditioning_shape.product(),
-            "Product of the number of conditioning states must match the number of rows: \n\
-            \t expected:    parameters.shape[0] == {} , \n\
-            \t found:       parameters.shape[0] == {} .",
-            conditioning_shape.product(),
-            parameters.shape()[0],
-        );
+        if !parameters.is_empty() && parameters.shape()[0] != conditioning_shape.product() {
+            return Err(Error::IncompatibleShape(
+                "parameters".into(),
+                format!(
+                    "Product of the number of conditioning states must match the number of rows: expected {} but found {}.",
+                    conditioning_shape.product(),
+                    parameters.shape()[0],
+                ),
+            ));
+        }
 
         // Check parameters validity.
-        parameters.outer_iter().for_each(|q| {
+        parameters.outer_iter().try_for_each(|q| {
             // Assert Q is square.
-            assert!(q.is_square(), "Q must be square.");
+            if !q.is_square() {
+                return Err(Error::Shape("Q must be square.".into()));
+            }
             // Assert Q has finite values.
-            assert!(
-                q.iter().all(|&x| x.is_finite()),
-                "Q must have finite values."
-            );
+            if !q.iter().all(|&x| x.is_finite()) {
+                return Err(Error::InvalidParameter(
+                    "parameters".into(),
+                    "Q must have finite values.".into(),
+                ));
+            }
             // Assert Q has non-positive diagonal.
-            assert!(
-                q.diag().iter().all(|&x| x <= 0.),
-                "Q diagonal must be non-positive."
-            );
+            if !q.diag().iter().all(|&x| x <= 0.) {
+                return Err(Error::InvalidParameter(
+                    "parameters".into(),
+                    "Q diagonal must be non-positive.".into(),
+                ));
+            }
             // Assert Q has non-negative off-diagonal.
-            assert!(
-                q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.),
-                "Q off-diagonal must be non-negative."
-            );
+            if !q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.) {
+                return Err(Error::InvalidParameter(
+                    "parameters".into(),
+                    "Q off-diagonal must be non-negative.".into(),
+                ));
+            }
             // Assert Q rows sum to zero.
-            assert!(
-                q.rows()
-                    .into_iter()
-                    .all(|x| relative_eq!(x.sum(), 0., epsilon = EPSILON)),
-                "Q rows must sum to zero."
-            );
-        });
+            if !q
+                .rows()
+                .into_iter()
+                .all(|x| relative_eq!(x.sum(), 0., epsilon = EPSILON))
+            {
+                return Err(Error::InvalidParameter(
+                    "parameters".into(),
+                    "Q rows must sum to zero.".into(),
+                ));
+            }
+            Ok(())
+        })?;
 
         // Make parameters mutable.
         let mut parameters = parameters;
@@ -513,7 +545,7 @@ impl CatCIM {
         // Compute the parameters size.
         let parameters_size = s[0] * s[1] * s[2].saturating_sub(1);
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
@@ -526,7 +558,7 @@ impl CatCIM {
             parameters_size,
             sample_statistics: None,
             sample_log_likelihood: None,
-        }
+        })
     }
 
     /// Returns the states of the conditioned variable.
@@ -604,9 +636,9 @@ impl CatCIM {
     /// * `sample_statistics` - The sample statistics used to fit the distribution, if any.
     /// * `sample_log_likelihood` - The sample log-likelihood given the distribution, if any.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// See `new` method for panics.
+    /// See `new` method for errors.
     ///
     /// # Returns
     ///
@@ -618,33 +650,38 @@ impl CatCIM {
         parameters: Array3<f64>,
         sample_statistics: Option<CatCIMS>,
         sample_log_likelihood: Option<f64>,
-    ) -> Self {
+    ) -> Result<Self> {
         // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
         if let Some(sample_statistics) = &sample_statistics {
             // Get the sample conditional counts.
             let sample_conditional_counts = &sample_statistics.n_xz;
             // Assert the sample conditional counts have the same shape as parameters.
-            assert!(
-                sample_conditional_counts.shape() == parameters.shape(),
-                "Sample conditional counts must have the same shape as parameters: \n\
-                \t expected:    sample_conditional_counts.shape() == {:?} , \n\
-                \t found:       sample_conditional_counts.shape() == {:?} .",
-                parameters.shape(),
-                sample_conditional_counts.shape(),
-            );
+            if sample_conditional_counts.shape() != parameters.shape() {
+                return Err(Error::IncompatibleShape(
+                    "sample_statistics".into(),
+                    format!(
+                        "Sample conditional counts must have the same shape as parameters: expected {:?} but found {:?}.",
+                        parameters.shape(),
+                        sample_conditional_counts.shape(),
+                    ),
+                ));
+            }
         }
         // Assert the sample log-likelihood is finite.
-        if let Some(sample_log_likelihood) = &sample_log_likelihood {
-            assert!(
-                sample_log_likelihood.is_finite(),
-                "Sample log-likelihood must be finite: \n\
-                \t expected: sample_ll is finite, \n\
-                \t found:    sample_ll is {sample_log_likelihood} ."
-            )
+        if let Some(sample_log_likelihood) = &sample_log_likelihood
+            && !sample_log_likelihood.is_finite()
+        {
+            return Err(Error::InvalidParameter(
+                "sample_log_likelihood".into(),
+                format!(
+                    "Sample log-likelihood must be finite, found: {}.",
+                    sample_log_likelihood
+                ),
+            ));
         }
 
         // Construct the CIM.
-        let mut cim = Self::new(states, conditioning_states, parameters);
+        let mut cim = Self::new(states, conditioning_states, parameters)?;
 
         // FIXME: Check labels alignment with optional fields.
 
@@ -652,7 +689,7 @@ impl CatCIM {
         cim.sample_statistics = sample_statistics;
         cim.sample_log_likelihood = sample_log_likelihood;
 
-        cim
+        Ok(cim)
     }
 }
 
@@ -754,7 +791,7 @@ impl CIM for CatCIM {
 }
 
 impl Serialize for CatCIM {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -799,7 +836,7 @@ impl Serialize for CatCIM {
 }
 
 impl<'de> Deserialize<'de> for CatCIM {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -823,7 +860,7 @@ impl<'de> Deserialize<'de> for CatCIM {
                 formatter.write_str("struct CatCIM")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatCIM, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatCIM, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -901,13 +938,14 @@ impl<'de> Deserialize<'de> for CatCIM {
                     .into_shape_with_order(shape)
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
-                Ok(CatCIM::with_optionals(
+                CatCIM::with_optionals(
                     states,
                     conditioning_states,
                     parameters,
                     sample_statistics,
                     sample_log_likelihood,
-                ))
+                )
+                .map_err(|e| E::custom(e.to_string()))
             }
         }
 

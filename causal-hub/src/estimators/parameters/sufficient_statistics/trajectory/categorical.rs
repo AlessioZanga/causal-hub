@@ -7,17 +7,18 @@ use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs, Dataset},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::CatCIMS,
-    types::Set,
+    types::{Error, Result, Set},
     utils::MI,
 };
 
 impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
         // Assert variables and conditioning variables must be disjoint..
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+        if !x.is_disjoint(z) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must be disjoint.".into(),
+            ));
+        }
 
         // Get the shape.
         let shape = self.dataset.shape();
@@ -64,11 +65,11 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
 }
 
 impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
         // Get the weight of the trajectory.
         let w = self.dataset.weight();
         // Compute the unweighted sufficient statistics.
-        let s = SSE::new(self.dataset.trajectory()).fit(x, z);
+        let s = SSE::new(self.dataset.trajectory()).fit(x, z)?;
         // Destructure the sufficient statistics.
         let n_xz = s.sample_conditional_counts();
         let t_xz = s.sample_conditional_times();
@@ -82,7 +83,7 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
     impl CSSEstimator<CatCIMS> for SSE<'_, $type> {
-        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
+        fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
             // Get the shape.
             let shape = self.dataset.shape();
 
@@ -98,18 +99,18 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 Array2::zeros((s_z, s_x)),
                 // Initialize the sample size.
                 0.,
-            );
+            )?;
 
             // Iterate over the trajectories.
             self.dataset
                 .into_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold(s, |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z))
+                .try_fold(s, |s_a, trj_b| Ok(s_a + SSE::new(trj_b).fit(x, z)?))
         }
     }
 
     impl ParCSSEstimator<CatCIMS> for SSE<'_, $type> {
-        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCIMS {
+        fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
             // Get the shape.
             let shape = self.dataset.shape();
 
@@ -125,19 +126,19 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 Array2::zeros((s_z, s_x)),
                 // Initialize the sample size.
                 0.,
-            );
+            )?;
 
             // Iterate over the trajectories in parallel.
             self.dataset
                 .par_iter()
                 // Sum the sufficient statistics of each trajectory.
-                .fold(
+                .try_fold(
                     || s.clone(),
-                    |s_a, trj_b| s_a + SSE::new(trj_b).fit(x, z),
+                    |s_a, trj_b| Ok(s_a + SSE::new(trj_b).fit(x, z)?),
                 )
-                .reduce(
+                .try_reduce(
                     || s.clone(),
-                    |s_a, s_b| s_a + s_b
+                    |s_a, s_b| Ok(s_a + s_b)
                 )
         }
     }
