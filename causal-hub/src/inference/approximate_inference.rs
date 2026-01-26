@@ -194,11 +194,12 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            for &i in x.union(z) {
+            x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
                     return Err(Error::VertexOutOfBounds(i));
                 }
-            }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -231,11 +232,12 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            for &i in x.union(z) {
+            x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
                     return Err(Error::VertexOutOfBounds(i));
                 }
-            }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -272,11 +274,12 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            for &i in x.union(z) {
+            x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
                     return Err(Error::VertexOutOfBounds(i));
                 }
-            }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -319,11 +322,12 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            for &i in x.union(z) {
+            x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
                     return Err(Error::VertexOutOfBounds(i));
                 }
-            }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);

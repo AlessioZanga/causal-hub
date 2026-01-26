@@ -417,7 +417,7 @@ impl Phi for GaussPhi {
         let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the conditioned potential.
-        Ok(Self::new(labels, parameters))
+        Self::new(labels, parameters)
     }
 
     fn marginalize(&self, x: &Set<usize>) -> Result<Self> {
@@ -427,11 +427,12 @@ impl Phi for GaussPhi {
         }
 
         // Assert X is a subset of the variables.
-        for &x in x.iter() {
+        x.iter().try_for_each(|&x| {
             if x >= self.labels.len() {
                 return Err(Error::VertexOutOfBounds(x));
             }
-        }
+            Ok(())
+        })?;
 
         // Get Z as V \ X.
         let v: Set<_> = Set::from_iter(0..self.labels.len());
@@ -491,7 +492,7 @@ impl Phi for GaussPhi {
         let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the marginalized potential.
-        Ok(Self::new(labels_z, parameters))
+        Self::new(labels_z, parameters)
     }
 
     #[inline]
@@ -562,7 +563,7 @@ impl Phi for GaussPhi {
         let parameters = GaussPhiK::new(k_prime, h_prime, g_prime)?;
 
         // Return the potential.
-        Ok(Self::new(labels, parameters))
+        Self::new(labels, parameters)
     }
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
@@ -633,18 +634,20 @@ impl GaussPhi {
     ///
     /// A new Gaussian potential instance.
     ///
-    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Self {
+    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Result<Self> {
         // Assert parameters shape matches labels length.
-        assert_eq!(
-            parameters.precision_matrix().nrows(),
-            labels.len(),
-            "Precision matrix rows must match labels length."
-        );
-        assert_eq!(
-            parameters.information_vector().len(),
-            labels.len(),
-            "Information vector length must match labels length."
-        );
+        if parameters.precision_matrix().nrows() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "precision_matrix".into(),
+                "Precision matrix rows must match labels length.".into(),
+            ));
+        }
+        if parameters.information_vector().len() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "information_vector".into(),
+                "Information vector length must match labels length.".into(),
+            ));
+        }
 
         // Sort labels if not sorted and permute parameters accordingly.
         if !labels.is_sorted() {
@@ -657,25 +660,25 @@ impl GaussPhi {
             // Clone the precision matrix.
             let mut k = parameters.k.clone();
             // Permute the precision matrix rows.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 k.row_mut(i).assign(&parameters.k.row(j));
-            }
+            });
             parameters.k = k.clone();
             // Permute the precision matrix columns.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 k.column_mut(i).assign(&parameters.k.column(j));
-            }
+            });
             parameters.k = k;
 
             // Clone the information vector.
             let mut h = parameters.h.clone();
             // Permute the information vector.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 h[i] = parameters.h[j];
-            }
+            });
             parameters.h = h;
         }
 
-        Self { labels, parameters }
+        Ok(Self { labels, parameters })
     }
 }

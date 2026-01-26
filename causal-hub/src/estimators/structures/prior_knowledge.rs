@@ -82,13 +82,13 @@ impl PK {
         let mut adjacency_matrix = Array::from_elem((n, n), PKS::Unknown);
 
         // Set the forbidden edges to `Forbidden`.
-        for (i, j) in forbidden {
+        forbidden.into_iter().for_each(|(i, j)| {
             // Set the edge to `Forbidden`.
             adjacency_matrix[[i, j]] = PKS::Forbidden;
-        }
+        });
 
         // Set the required edges to `Required`.
-        for (i, j) in required {
+        required.into_iter().try_for_each(|(i, j)| {
             // Assert that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
                 return Err(Error::PriorKnowledgeConflict(format!(
@@ -100,7 +100,8 @@ impl PK {
             }
             // Set the edge to `Required`.
             adjacency_matrix[[i, j]] = PKS::Required;
-        }
+            Ok(())
+        })?;
 
         // Collect the tiered edges.
         let temporal_order: Vec<Vec<_>> = temporal_order
@@ -108,24 +109,30 @@ impl PK {
             .map(|tier| tier.into_iter().collect())
             .collect();
         // Edges from a vertex in a higher tier to a vertex in a lower tier are forbidden.
-        for (t, tier) in temporal_order.iter().enumerate() {
-            // Get the vertices in previous tiers.
-            let previous_tiers = temporal_order[..t].iter().flatten();
-            // For each vertex in the current tier, set edges to previous tiers as forbidden.
-            for (&i, &j) in tier.iter().cartesian_product(previous_tiers) {
-                // Assert that the edge is not required.
-                if adjacency_matrix[[i, j]].is_required() {
-                    return Err(Error::PriorKnowledgeConflict(format!(
-                        "Edge ({i}, {j}) is already set to a 'Required' state: \n\
-                        \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
-                        \t found:       ({i}, {j}) set to '{}'.",
-                        adjacency_matrix[[i, j]]
-                    )));
-                }
-                // Set the edge to `Forbidden`.
-                adjacency_matrix[[i, j]] = PKS::Forbidden;
-            }
-        }
+        temporal_order
+            .iter()
+            .enumerate()
+            .try_for_each(|(t, tier)| {
+                // Get the vertices in previous tiers.
+                let previous_tiers = temporal_order[..t].iter().flatten();
+                // For each vertex in the current tier, set edges to previous tiers as forbidden.
+                tier.iter()
+                    .cartesian_product(previous_tiers)
+                    .try_for_each(|(&i, &j)| {
+                        // Assert that the edge is not required.
+                        if adjacency_matrix[[i, j]].is_required() {
+                            return Err(Error::PriorKnowledgeConflict(format!(
+                                "Edge ({i}, {j}) is already set to a 'Required' state: \n\
+                            \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
+                            \t found:       ({i}, {j}) set to '{}'.",
+                                adjacency_matrix[[i, j]]
+                            )));
+                        }
+                        // Set the edge to `Forbidden`.
+                        adjacency_matrix[[i, j]] = PKS::Forbidden;
+                        Ok(())
+                    })
+            })?;
 
         Ok(Self {
             labels,

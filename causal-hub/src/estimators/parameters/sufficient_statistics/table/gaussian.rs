@@ -18,17 +18,17 @@ impl SSE<'_, GaussTable> {
             let m_xx = Array::zeros((x.len(), x.len()));
             let m_xz = Array::zeros((x.len(), z.len()));
             let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
         };
 
         // Initialize the chunk buffers.
         d.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
-            .try_for_each(|d| {
+            .try_for_each(|d| -> Result<_> {
                 // Select the columns of the variables.
                 let mut d_x = Array::zeros((d.nrows(), x.len()));
-                for (i, &j) in x.iter().enumerate() {
+                x.iter().enumerate().for_each(|(i, &j)| {
                     d_x.column_mut(i).assign(&d.column(j));
-                }
+                });
                 // Compute the mean.
                 let mu_x = d_x
                     .mean_axis(Axis(0))
@@ -36,9 +36,9 @@ impl SSE<'_, GaussTable> {
 
                 // Select the columns of the conditioning variables.
                 let mut d_z = Array::zeros((d.nrows(), z.len()));
-                for (i, &j) in z.iter().enumerate() {
+                z.iter().enumerate().for_each(|(i, &j)| {
                     d_z.column_mut(i).assign(&d.column(j));
-                }
+                });
                 // Compute the mean.
                 let mu_z = d_z
                     .mean_axis(Axis(0))
@@ -53,9 +53,9 @@ impl SSE<'_, GaussTable> {
                 let n = d.nrows() as f64;
 
                 // Accumulate the sufficient statistics.
-                s += GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n);
+                s += GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?;
 
-                Ok::<(), crate::types::Error>(())
+                Ok(())
             })?;
 
         // Return the sufficient statistics.
@@ -97,7 +97,7 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
             let m_xx = Array::zeros((x.len(), x.len()));
             let m_xz = Array::zeros((x.len(), z.len()));
             let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
         };
 
         // Get the values.
@@ -130,29 +130,29 @@ impl SSE<'_, GaussWtdTable> {
             let m_xx = Array::zeros((x.len(), x.len()));
             let m_xz = Array::zeros((x.len(), z.len()));
             let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
         };
 
         // Initialize the chunk buffers.
         d.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
             .zip(norm_w.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH))
-            .try_for_each(|(d, w)| {
+            .try_for_each(|(d, w)| -> Result<_> {
                 // Compute the root weights for centering.
                 let sqrt_w = w.mapv(f64::sqrt);
 
                 // Select the columns of the variables.
                 let mut d_x = Array::zeros((d.nrows(), x.len()));
-                for (i, &j) in x.iter().enumerate() {
+                x.iter().enumerate().for_each(|(i, &j)| {
                     azip!((c_i in &mut d_x.column_mut(i), c_j in d.column(j), w in &sqrt_w.column(0)) *c_i = c_j * w);
-                }
+                });
                 // Compute the weighted mean.
                 let mu_x = (&d_x * &sqrt_w).sum_axis(Axis(0));
 
                 // Select the columns of the conditioning variables.
                 let mut d_z = Array::zeros((d.nrows(), z.len()));
-                for (i, &j) in z.iter().enumerate() {
+                z.iter().enumerate().for_each(|(i, &j)| {
                     azip!((c_i in &mut d_z.column_mut(i), c_j in d.column(j), w in &sqrt_w.column(0)) *c_i = c_j * w);
-                }
+                });
                 // Compute the weighted mean.
                 let mu_z = (&d_z * &sqrt_w).sum_axis(Axis(0));
 
@@ -167,9 +167,9 @@ impl SSE<'_, GaussWtdTable> {
 
                 // Accumulate the sufficient statistics.
                 if w_sum > 0. {
-                    s += GaussCPDS::new(mu_x / w_sum, mu_z / w_sum, m_xx, m_xz, m_zz, n);
+                    s += GaussCPDS::new(mu_x / w_sum, mu_z / w_sum, m_xx, m_xz, m_zz, n)?;
                 }
-                Ok::<_, Error>(())
+                Ok(())
             })?;
 
         // Return the sufficient statistics.
@@ -221,7 +221,7 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
             let m_xx = Array::zeros((x.len(), x.len()));
             let m_xz = Array::zeros((x.len(), z.len()));
             let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)
+            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
         };
 
         // Get the values.

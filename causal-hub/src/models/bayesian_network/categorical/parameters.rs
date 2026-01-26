@@ -44,18 +44,22 @@ impl CatCPDS {
     /// A new sample (sufficient) statistics instance.
     ///
     #[inline]
-    pub fn new(n_xz: Array2<f64>, n: f64) -> Self {
+    pub fn new(n_xz: Array2<f64>, n: f64) -> Result<Self> {
         // Assert the counts are finite and non-negative.
-        assert!(
-            n_xz.iter().all(|&x| x.is_finite() && x >= 0.),
-            "Counts must be finite and non-negative."
-        );
-        assert!(
-            n.is_finite() && n >= 0.,
-            "Sample size must be finite and non-negative."
-        );
+        if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
+            return Err(Error::InvalidParameter(
+                "n_xz".into(),
+                "Counts must be finite and non-negative.".into(),
+            ));
+        }
+        if !n.is_finite() || n < 0. {
+            return Err(Error::InvalidParameter(
+                "n".into(),
+                "Sample size must be finite and non-negative.".into(),
+            ));
+        }
 
-        Self { n_xz, n }
+        Ok(Self { n_xz, n })
     }
 
     /// Returns the sample conditional counts |Z| x |X|.
@@ -182,7 +186,8 @@ impl<'de> Deserialize<'de> for CatCPDS {
                         .map_err(|_| E::custom("Invalid sample conditional counts shape"))?
                 };
 
-                Ok(CatCPDS::new(sample_conditional_counts, sample_size))
+                CatCPDS::new(sample_conditional_counts, sample_size)
+                    .map_err(|e| E::custom(e.to_string()))
             }
         }
 
@@ -274,14 +279,19 @@ impl CatCPD {
         }
 
         // Check parameters validity.
-        for (i, &x) in parameters.sum_axis(Axis(1)).iter().enumerate() {
-            if !relative_eq!(x, 1.0, epsilon = EPSILON) {
-                return Err(Error::Probability(format!(
-                    "Failed to sum probability to one: {}.",
-                    parameters.row(i)
-                )));
-            }
-        }
+        parameters
+            .sum_axis(Axis(1))
+            .iter()
+            .enumerate()
+            .try_for_each(|(i, &x)| {
+                if !relative_eq!(x, 1.0, epsilon = EPSILON) {
+                    return Err(Error::Probability(format!(
+                        "Failed to sum probability to one: {}.",
+                        parameters.row(i)
+                    )));
+                }
+                Ok(())
+            })?;
 
         // Make parameters mutable.
         let mut parameters = parameters;

@@ -60,7 +60,7 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
         // Compute the sample size.
         let n = n_xz.sum();
 
-        Ok(CatCIMS::new(n_xz, t_xz, n))
+        CatCIMS::new(n_xz, t_xz, n)
     }
 }
 
@@ -75,7 +75,7 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
         let t_xz = s.sample_conditional_times();
         let n = s.sample_size();
         // Apply the weight to the sufficient statistics.
-        Ok(CatCIMS::new(n_xz * w, t_xz * w, n * w))
+        CatCIMS::new(n_xz * w, t_xz * w, n * w)
     }
 }
 
@@ -99,7 +99,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 Array2::zeros((s_z, s_x)),
                 // Initialize the sample size.
                 0.,
-            );
+            )?;
 
             // Iterate over the trajectories.
             self.dataset
@@ -126,7 +126,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
                 Array2::zeros((s_z, s_x)),
                 // Initialize the sample size.
                 0.,
-            );
+            )?;
 
             // Iterate over the trajectories in parallel.
             self.dataset

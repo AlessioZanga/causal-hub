@@ -89,7 +89,7 @@ pub fn sem<'a>(
                         // Set the parents of the initial graph to max_parents.
                         for i in 0..initial_graph.vertices().len() {
                             // Get the parents.
-                            let pa_i = initial_graph.parents(&set![i]);
+                            let pa_i = initial_graph.parents(&set![i])?;
                             // Check the maximum number of parents.
                             if pa_i.len() > max_parents + 1 {
                                 // Convert to a mutable vector.
@@ -324,7 +324,7 @@ pub fn sem<'a>(
                 BackendError::Stats(format!("Failed to fit the model using SEM: {}", e))
             })
         })
-        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        .map_err(crate::error::to_pyerr)?;
 
     // Convert the output to a Python object.
     let result = PyDict::new(py);

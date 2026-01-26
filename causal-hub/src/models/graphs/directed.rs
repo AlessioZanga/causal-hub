@@ -11,7 +11,7 @@ use crate::{
     impl_json_io,
     models::{Graph, Labelled},
     set,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A struct representing a directed graph using an adjacency matrix.
@@ -28,7 +28,7 @@ impl DiGraph {
     ///
     /// * `x` - The set of vertices for which to find the parents.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any vertex is out of bounds.
     ///
@@ -36,11 +36,14 @@ impl DiGraph {
     ///
     /// The parents of the vertices.
     ///
-    pub fn parents(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn parents(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| {
+            if v >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(v));
+            }
+            Ok(())
+        })?;
 
         // Iterate over all vertices and filter the ones that are parents.
         let mut parents: Set<_> = x
@@ -58,7 +61,7 @@ impl DiGraph {
         parents.sort();
 
         // Return the parents.
-        parents
+        Ok(parents)
     }
 
     /// Returns the ancestors of a set of vertices.
@@ -67,7 +70,7 @@ impl DiGraph {
     ///
     /// * `x` - The set of vertices for which to find the ancestors.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any vertex is out of bounds.
     ///
@@ -75,11 +78,14 @@ impl DiGraph {
     ///
     /// The ancestors of the vertices.
     ///
-    pub fn ancestors(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn ancestors(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| {
+            if v >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(v));
+            }
+            Ok(())
+        })?;
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
@@ -91,7 +97,7 @@ impl DiGraph {
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each incoming edge ...
-            for z in self.parents(&set![y]) {
+            for z in self.parents(&set![y])? {
                 // If there is an edge from z to y and z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -106,7 +112,7 @@ impl DiGraph {
         visited.sort();
 
         // Return the visited set.
-        visited
+        Ok(visited)
     }
 
     /// Returns the children of a set of vertices.
@@ -115,7 +121,7 @@ impl DiGraph {
     ///
     /// * `x` - The set of vertices for which to find the children.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any vertex is out of bounds.
     ///
@@ -123,11 +129,14 @@ impl DiGraph {
     ///
     /// The children of the vertices.
     ///
-    pub fn children(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn children(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Check if the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| {
+            if v >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(v));
+            }
+            Ok(())
+        })?;
 
         // Iterate over all vertices and filter the ones that are children.
         let mut children: Set<_> = x
@@ -145,7 +154,7 @@ impl DiGraph {
         children.sort();
 
         // Return the children.
-        children
+        Ok(children)
     }
 
     /// Returns the descendants of a set of vertices.
@@ -154,7 +163,7 @@ impl DiGraph {
     ///
     /// * `x` - The set of vertices for which to find the descendants.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any vertex is out of bounds.
     ///
@@ -162,11 +171,14 @@ impl DiGraph {
     ///
     /// The descendants of the vertices.
     ///
-    pub fn descendants(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn descendants(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| {
+            if v >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(v));
+            }
+            Ok(())
+        })?;
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
@@ -178,7 +190,7 @@ impl DiGraph {
         // While there are vertices to visit ...
         while let Some(y) = stack.pop_back() {
             // For each outgoing edge ...
-            for z in self.children(&set![y]) {
+            for z in self.children(&set![y])? {
                 // If z has not been visited ...
                 if !visited.contains(&z) {
                     // Mark z as visited.
@@ -193,7 +205,7 @@ impl DiGraph {
         visited.sort();
 
         // Return the visited set.
-        visited
+        Ok(visited)
     }
 }
 
@@ -346,21 +358,21 @@ impl Graph for DiGraph {
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the rows.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .row_mut(i)
                     .assign(&adjacency_matrix.row(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the columns.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .column_mut(i)
                     .assign(&adjacency_matrix.column(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
         }
@@ -379,7 +391,7 @@ impl Graph for DiGraph {
 }
 
 impl Serialize for DiGraph {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -410,7 +422,7 @@ impl Serialize for DiGraph {
 }
 
 impl<'de> Deserialize<'de> for DiGraph {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -431,7 +443,7 @@ impl<'de> Deserialize<'de> for DiGraph {
                 formatter.write_str("struct DiGraph")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<DiGraph, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<DiGraph, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -479,7 +491,7 @@ impl<'de> Deserialize<'de> for DiGraph {
                 let edges: Vec<(String, String)> = edges;
                 let shape = (labels.len(), labels.len());
                 let mut adjacency_matrix = Array2::from_elem(shape, false);
-                for (x, y) in edges {
+                edges.into_iter().try_for_each(|(x, y)| {
                     let x = labels
                         .get_index_of(&x)
                         .ok_or_else(|| E::custom(format!("Vertex `{x}` label does not exist")))?;
@@ -487,7 +499,8 @@ impl<'de> Deserialize<'de> for DiGraph {
                         .get_index_of(&y)
                         .ok_or_else(|| E::custom(format!("Vertex `{y}` label does not exist")))?;
                     adjacency_matrix[(x, y)] = true;
-                }
+                    Ok(())
+                })?;
 
                 Ok(DiGraph::from_adjacency_matrix(labels, adjacency_matrix))
             }

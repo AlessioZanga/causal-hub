@@ -40,14 +40,16 @@ impl TopologicalOrder for DiGraph {
             // Add the vertex to the order.
             order.push(i);
             // For each neighbor, reduce its in-degree.
-            self.children(&set![i]).into_iter().for_each(|y| {
-                // Decrement the in-degree of the child.
-                in_degree[y] -= 1;
-                // If the in-degree becomes 0, add it to the queue.
-                if in_degree[y] == 0 {
-                    to_be_visited.push_back(y);
+            if let Ok(children) = self.children(&set![i]) {
+                for y in children {
+                    // Decrement the in-degree of the child.
+                    in_degree[y] -= 1;
+                    // If the in-degree becomes 0, add it to the queue.
+                    if in_degree[y] == 0 {
+                        to_be_visited.push_back(y);
+                    }
                 }
-            });
+            }
         }
 
         // Check if the order contains all vertices.

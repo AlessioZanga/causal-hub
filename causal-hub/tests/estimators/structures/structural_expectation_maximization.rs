@@ -56,7 +56,7 @@ mod tests {
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]]
                     ],
-                ),
+                )?,
                 CatCIM::new(
                     // P(Eating | FullStomach, Hungry)
                     states![("Eating", ["no", "yes"])],
@@ -67,7 +67,7 @@ mod tests {
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]]
                     ],
-                ),
+                )?,
                 CatCIM::new(
                     // P(FullStomach | Eating, Hungry)
                     states![("FullStomach", ["no", "yes"])],
@@ -78,7 +78,7 @@ mod tests {
                         [[-E, E], [E, -E]],
                         [[-E, E], [E, -E]]
                     ],
-                ),
+                )?,
             ];
             // Set the initial model.
             let initial_model = CatCTBN::new(initial_graph.clone(), initial_cims)?;

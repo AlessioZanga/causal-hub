@@ -223,21 +223,21 @@ impl Graph for UnGraph {
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the rows.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .row_mut(i)
                     .assign(&adjacency_matrix.row(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
             // Allocate a new adjacency matrix.
             let mut new_adjacency_matrix = adjacency_matrix.clone();
             // Fill the columns.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_adjacency_matrix
                     .column_mut(i)
                     .assign(&adjacency_matrix.column(j));
-            }
+            });
             // Update the adjacency matrix.
             adjacency_matrix = new_adjacency_matrix;
         }
@@ -356,7 +356,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 let edges: Vec<(String, String)> = edges;
                 let shape = (labels.len(), labels.len());
                 let mut adjacency_matrix = Array2::from_elem(shape, false);
-                for (x, y) in edges {
+                edges.into_iter().try_for_each(|(x, y)| {
                     let x = labels
                         .get_index_of(&x)
                         .ok_or_else(|| E::custom(format!("Vertex `{x}` label does not exist")))?;
@@ -364,7 +364,8 @@ impl<'de> Deserialize<'de> for UnGraph {
                         .get_index_of(&y)
                         .ok_or_else(|| E::custom(format!("Vertex `{y}` label does not exist")))?;
                     adjacency_matrix[(x, y)] = true;
-                }
+                    Ok(())
+                })?;
 
                 Ok(UnGraph::from_adjacency_matrix(labels, adjacency_matrix))
             }

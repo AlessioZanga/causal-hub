@@ -61,7 +61,7 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Sample from the distribution.
             sample[i] = cpd_i.sample(&mut rng, &pa_i)?[0];
@@ -74,11 +74,16 @@ impl<R: Rng> BNSampler<CatBN> for ForwardSampler<'_, R, CatBN> {
         // Allocate the dataset.
         let mut dataset = Array::zeros((n, self.model.labels().len()));
 
-        // For each sample ...
-        for mut row in dataset.rows_mut() {
-            // Sample from the distribution.
-            row.assign(&self.sample()?);
-        }
+        // For each sample, sample from the distribution using iterators.
+        dataset
+            .rows_mut()
+            .into_iter()
+            .try_for_each(|mut row| -> Result<_> {
+                // Sample from the distribution.
+                row.assign(&self.sample()?);
+
+                Ok(())
+            })?;
 
         // Construct the dataset.
         CatTable::new(self.model.states().clone(), dataset)
@@ -132,7 +137,7 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
             // Get the CPD.
             let cpd_i = &self.model.cpds()[i];
             // Get the parents.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| sample[z]).collect();
             // Compute the value of the variable.
             sample[i] = cpd_i.sample(&mut rng, &pa_i)?[0];
@@ -145,11 +150,16 @@ impl<R: Rng> BNSampler<GaussBN> for ForwardSampler<'_, R, GaussBN> {
         // Allocate the samples.
         let mut samples = Array::zeros((n, self.model.labels().len()));
 
-        // For each sample ...
-        for mut row in samples.rows_mut() {
-            // Sample from the distribution.
-            row.assign(&self.sample()?);
-        }
+        // For each sample, sample from the distribution using iterators.
+        samples
+            .rows_mut()
+            .into_iter()
+            .try_for_each(|mut row| -> Result<_> {
+                // Sample from the distribution.
+                row.assign(&self.sample()?);
+
+                Ok(())
+            })?;
 
         // Construct the dataset.
         GaussTable::new(self.model.labels().clone(), samples)
@@ -195,7 +205,7 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         // Get the CIM.
         let cim_i = &self.model.cims()[i];
         // Compute the index on the parents to condition on.
-        let pa_i = self.model.graph().parents(&set![i]);
+        let pa_i = self.model.graph().parents(&set![i])?;
         let pa_i = pa_i.iter().map(|&z| event[z] as usize);
         let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
         // Get the distribution of the vertex.
@@ -274,7 +284,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Get the CIM.
             let cim_i = &self.model.cims()[i];
             // Compute the index on the parents to condition on.
-            let pa_i = self.model.graph().parents(&set![i]);
+            let pa_i = self.model.graph().parents(&set![i])?;
             let pa_i = pa_i.iter().map(|&z| event[z] as usize);
             let pa_i = cim_i.conditioning_multi_index().ravel(pa_i);
             // Get the distribution of the vertex.
@@ -292,7 +302,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             sample_events.push(event.clone());
             sample_times.push(time);
             // Update the transition times for { X } U Ch(X).
-            for j in std::iter::once(i).chain(self.model.graph().children(&set![i])) {
+            for j in std::iter::once(i).chain(self.model.graph().children(&set![i])?) {
                 // Sample the transition time.
                 times[j] = time + self.sample_time(&event, j)?;
             }

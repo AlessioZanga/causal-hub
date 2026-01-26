@@ -147,7 +147,7 @@ pub fn em<'a>(
                 BackendError::Stats(format!("Failed to fit the model using EM: {}", e))
             })
         })
-        .map_err(|e| crate::error::Error::new_err(e.to_string()))?;
+        .map_err(crate::error::to_pyerr)?;
 
     // Convert each EM output.
     let result = PyDict::new(py);

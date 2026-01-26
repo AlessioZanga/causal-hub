@@ -137,7 +137,7 @@ impl BifParser {
 
         // Construct the graph.
         let mut graph = DiGraph::empty(states.keys());
-        for p in &cpds {
+        cpds.iter().try_for_each(|p| {
             // Assert the CPD has a single variable in the BIF file.
             if p.labels().len() != 1 {
                 return Err(Error::Parsing(format!(
@@ -153,15 +153,16 @@ impl BifParser {
                 .ok_or_else(|| Error::Parsing(format!("Failed to get index of label '{x}'.")))?;
 
             // Get parent indices.
-            for z in p.conditioning_labels() {
+            p.conditioning_labels().iter().try_for_each(|z| {
                 // Get parent index.
                 let z_idx = graph.labels().get_index_of(z).ok_or_else(|| {
                     Error::Parsing(format!("Failed to get index of label '{z}'."))
                 })?;
                 // Add edge from parent to child.
                 graph.add_edge(z_idx, x_idx);
-            }
-        }
+                Ok(())
+            })
+        })?;
 
         // Construct the Bayesian network.
         CatBN::with_optionals(name, description, graph, cpds)
@@ -196,13 +197,14 @@ fn build_ast(pair: Pair<Rule>) -> Result<Network> {
     let mut variables = vec![];
     let mut probabilities = vec![];
 
-    for item in pair {
+    pair.try_for_each(|item| -> Result<_> {
         match item.as_rule() {
             Rule::variable => variables.push(parse_variable(item)?),
             Rule::probability => probabilities.push(parse_probability(item)?),
             _ => {}
         }
-    }
+        Ok(())
+    })?;
 
     Ok(Network {
         name,

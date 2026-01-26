@@ -3,6 +3,7 @@ mod tests {
     use causal_hub::{
         models::{DiGraph, Graph, Labelled},
         set,
+        types::Result,
     };
 
     const LABELS: [&str; 5] = ["A", "B", "C", "D", "E"];
@@ -78,81 +79,81 @@ mod tests {
     }
 
     #[test]
-    fn parents() {
+    fn parents() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec());
         assert!(graph.add_edge(1, 0));
         assert!(graph.add_edge(2, 0));
         assert!(graph.add_edge(3, 0));
-        assert_eq!(graph.parents(&set![0]), set![1, 2, 3]);
-        assert_eq!(graph.parents(&set![1]), set![]);
-        assert_eq!(graph.parents(&set![4]), set![]);
+        assert_eq!(graph.parents(&set![0])?, set![1, 2, 3]);
+        assert_eq!(graph.parents(&set![1])?, set![]);
+        assert_eq!(graph.parents(&set![4])?, set![]);
+        Ok(())
     }
 
     #[test]
-    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn parents_out_of_bounds() {
         let graph = DiGraph::empty(LABELS.to_vec());
-        graph.parents(&set![5]);
+        assert!(graph.parents(&set![5]).is_err());
     }
 
     #[test]
-    fn ancestors() {
+    fn ancestors() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec());
         assert!(graph.add_edge(1, 0));
         assert!(graph.add_edge(2, 0));
         assert!(graph.add_edge(3, 1));
         assert!(graph.add_edge(4, 2));
-        assert_eq!(graph.ancestors(&set![0]), set![1, 2, 4, 3]);
-        assert_eq!(graph.ancestors(&set![1]), set![3]);
-        assert_eq!(graph.ancestors(&set![2]), set![4]);
-        assert_eq!(graph.ancestors(&set![3]), set![]);
-        assert_eq!(graph.ancestors(&set![4]), set![]);
+        assert_eq!(graph.ancestors(&set![0])?, set![1, 2, 4, 3]);
+        assert_eq!(graph.ancestors(&set![1])?, set![3]);
+        assert_eq!(graph.ancestors(&set![2])?, set![4]);
+        assert_eq!(graph.ancestors(&set![3])?, set![]);
+        assert_eq!(graph.ancestors(&set![4])?, set![]);
+        Ok(())
     }
 
     #[test]
-    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn ancestors_out_of_bounds() {
         let graph = DiGraph::empty(LABELS.to_vec());
-        graph.ancestors(&set![5]);
+        assert!(graph.ancestors(&set![5]).is_err());
     }
 
     #[test]
-    fn children() {
+    fn children() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec());
         assert!(graph.add_edge(0, 1));
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(0, 3));
-        assert_eq!(graph.children(&set![0]), set![1, 2, 3]);
-        assert_eq!(graph.children(&set![1]), set![]);
-        assert_eq!(graph.children(&set![4]), set![]);
+        assert_eq!(graph.children(&set![0])?, set![1, 2, 3]);
+        assert_eq!(graph.children(&set![1])?, set![]);
+        assert_eq!(graph.children(&set![4])?, set![]);
+        Ok(())
     }
 
     #[test]
-    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn children_out_of_bounds() {
         let graph = DiGraph::empty(LABELS.to_vec());
-        graph.children(&set![5]);
+        assert!(graph.children(&set![5]).is_err());
     }
 
     #[test]
-    fn descendants() {
+    fn descendants() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec());
         assert!(graph.add_edge(0, 1));
         assert!(graph.add_edge(0, 2));
         assert!(graph.add_edge(1, 3));
         assert!(graph.add_edge(2, 4));
-        assert_eq!(graph.descendants(&set![0]), set![1, 2, 4, 3]);
-        assert_eq!(graph.descendants(&set![1]), set![3]);
-        assert_eq!(graph.descendants(&set![2]), set![4]);
-        assert_eq!(graph.descendants(&set![3]), set![]);
-        assert_eq!(graph.descendants(&set![4]), set![]);
+        assert_eq!(graph.descendants(&set![0])?, set![1, 2, 4, 3]);
+        assert_eq!(graph.descendants(&set![1])?, set![3]);
+        assert_eq!(graph.descendants(&set![2])?, set![4]);
+        assert_eq!(graph.descendants(&set![3])?, set![]);
+        assert_eq!(graph.descendants(&set![4])?, set![]);
+        Ok(())
     }
 
     #[test]
-    #[should_panic(expected = "Vertex `5` is out of bounds")]
     fn descendants_out_of_bounds() {
         let graph = DiGraph::empty(LABELS.to_vec());
-        graph.descendants(&set![5]);
+        assert!(graph.descendants(&set![5]).is_err());
     }
 
     #[test]

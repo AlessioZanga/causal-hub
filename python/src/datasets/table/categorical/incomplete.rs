@@ -15,7 +15,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{datasets::PyMissingTable, error::Error, impl_from_into_lock};
+use crate::{datasets::PyMissingTable, error::to_pyerr, impl_from_into_lock};
 
 /// A categorical incomplete tabular dataset.
 #[gen_stub_pyclass]
@@ -154,9 +154,7 @@ impl PyCatIncTable {
         }
 
         // Construct the categorical incomplete tabular dataset.
-        Ok(CatIncTable::new(states, values)
-            .map_err(|e| Error::new_err(e.to_string()))?
-            .into())
+        Ok(CatIncTable::new(states, values).map_err(to_pyerr)?.into())
     }
 
     /// Converts the dataset to a Pandas DataFrame.

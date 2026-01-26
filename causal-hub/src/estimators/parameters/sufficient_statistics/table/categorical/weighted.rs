@@ -50,7 +50,7 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         let n = n_xz.sum();
 
         // Return the sufficient statistics.
-        Ok(CatCPDS::new(n_xz, n))
+        CatCPDS::new(n_xz, n)
     }
 }
 
@@ -109,6 +109,6 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         let n = n_xz.sum();
 
         // Return the sufficient statistics.
-        Ok(CatCPDS::new(n_xz, n))
+        CatCPDS::new(n_xz, n)
     }
 }

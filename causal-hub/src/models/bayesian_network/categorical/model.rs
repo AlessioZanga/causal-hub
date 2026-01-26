@@ -166,7 +166,7 @@ impl BN for CatBN {
         // Allocate the states of the variables.
         let mut states: States = Default::default();
         // Insert the states of the variables into the map to check if they are the same.
-        for cpd in cpds.values() {
+        cpds.values().try_for_each(|cpd| {
             cpd.states()
                 .iter()
                 .chain(cpd.conditioning_states())
@@ -185,8 +185,8 @@ impl BN for CatBN {
                         states.insert(l.to_owned(), s.clone());
                     }
                     Ok(())
-                })?;
-        }
+                })
+        })?;
         // Sort the states of the variables.
         states.sort_keys();
 
@@ -196,9 +196,9 @@ impl BN for CatBN {
         let shape: Array1<usize> = states.values().map(|s| s.len()).collect();
 
         // Check if all vertices have the same labels as their parents.
-        for i in graph.vertices() {
+        graph.vertices().into_iter().try_for_each(|i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones.
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
@@ -209,7 +209,8 @@ impl BN for CatBN {
                     format!("{pa_j:?}"),
                 ));
             }
-        }
+            Ok(())
+        })?;
 
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().ok_or(Error::NotADag)?;

@@ -11,7 +11,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{error::Error, impl_from_into_lock};
+use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a Gaussian conditional probability distribution.
 #[gen_stub_pyclass]
@@ -160,7 +160,7 @@ impl PyGaussCPD {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                GaussCPD::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
+                GaussCPD::from_json_string(json).map_err(to_pyerr)?,
             )),
         })
     }
@@ -173,9 +173,7 @@ impl PyGaussCPD {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        self.lock()
-            .to_json_string()
-            .map_err(|e| Error::new_err(e.to_string()))
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -194,7 +192,7 @@ impl PyGaussCPD {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                GaussCPD::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
+                GaussCPD::from_json_file(path).map_err(to_pyerr)?,
             )),
         })
     }
@@ -207,9 +205,7 @@ impl PyGaussCPD {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock()
-            .to_json_file(path)
-            .map_err(|e| Error::new_err(e.to_string()))?;
+        self.lock().to_json_file(path).map_err(to_pyerr)?;
         Ok(())
     }
 }

@@ -39,14 +39,15 @@ impl CatIncTable {
     /// Creates a new categorical incomplete tabular data instance.
     pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self> {
         // Check if the number of states is less than `CatType::MAX`.
-        for (label, state) in &states {
+        states.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
                     label.to_string(),
                     format!("should have less than 256 states, found {}", state.len()),
                 ));
             }
-        }
+            Ok(())
+        })?;
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
@@ -61,11 +62,12 @@ impl CatIncTable {
             // Find max while ignoring missing values.
             |&a, &b| if a > b || b == Self::MISSING { a } else { b },
         );
-        for (i, x) in max_values.into_iter().enumerate() {
+        max_values.into_iter().enumerate().try_for_each(|(i, x)| {
             if x >= states[i].len() as CatType {
                 return Err(Error::VertexOutOfBounds(x as usize));
             }
-        }
+            Ok(())
+        })?;
 
         // Check that the labels are sorted.
         if !states.keys().is_sorted() {
@@ -95,7 +97,7 @@ impl CatIncTable {
             .columns_mut()
             .into_iter()
             .zip(states.values_mut())
-            .try_for_each(|(mut col, states)| {
+            .try_for_each(|(mut col, states)| -> Result<_> {
                 // ... check if the states are sorted.
                 if !states.is_sorted() {
                     // Clone the states.
@@ -103,7 +105,7 @@ impl CatIncTable {
                     // Sort the states.
                     new_states.sort();
                     // Map values to sorted states.
-                    col.iter_mut().try_for_each(|value| {
+                    col.iter_mut().try_for_each(|value| -> Result<_> {
                         // If the value is not missing ...
                         if *value != Self::MISSING {
                             // ... map it to the new state index.
@@ -113,12 +115,12 @@ impl CatIncTable {
                                     Error::MissingState(states[*value as usize].clone())
                                 })? as CatType;
                         }
-                        Ok::<_, Error>(())
+                        Ok(())
                     })?;
                     // Update the states.
                     *states = new_states;
                 }
-                Ok::<_, Error>(())
+                Ok(())
             })?;
 
         // Get the labels of the variables.
@@ -178,21 +180,23 @@ impl Dataset for CatIncTable {
 
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
 
         // Select the states.
-        let mut states: States = Default::default();
-        for &i in x.iter() {
-            let (label, state_set) = self
-                .states
-                .get_index(i)
-                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
-            states.insert(label.clone(), state_set.clone());
-        }
+        let states: States = x
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(label, state_set)| (label.clone(), state_set.clone()))
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
@@ -342,11 +346,12 @@ impl IncDataset for CatIncTable {
         }
 
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
 
         // Clone the indices.
         let mut cols = x.clone();
@@ -401,11 +406,12 @@ impl IncDataset for CatIncTable {
         }
 
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
             return Err(Error::IncompatibleShape(
@@ -414,11 +420,12 @@ impl IncDataset for CatIncTable {
             ));
         }
         // Check that the missing mechanism indices are valid.
-        for &i in pr.keys() {
+        pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
             return Err(Error::InvalidParameter(
@@ -468,11 +475,12 @@ impl IncDataset for CatIncTable {
         }
 
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
             return Err(Error::IncompatibleShape(
@@ -481,11 +489,12 @@ impl IncDataset for CatIncTable {
             ));
         }
         // Check that the missing mechanism indices are valid.
-        for &i in pr.keys() {
+        pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
             return Err(Error::InvalidParameter(
@@ -548,7 +557,7 @@ impl CsvIO for CatIncTable {
         let values: Vec<CatType> =
             reader
                 .into_records()
-                .try_fold(Vec::new(), |mut values, row| {
+                .try_fold(Vec::new(), |mut values, row| -> Result<_> {
                     // Get the record row.
                     let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
                     // Get the record values and convert to indices.
@@ -564,7 +573,7 @@ impl CsvIO for CatIncTable {
                         }
                     }));
 
-                    Ok::<_, Error>(values)
+                    Ok(values)
                 })?;
 
         // Get the number of rows and columns.

@@ -107,24 +107,27 @@ pub(crate) mod digraph {
         }
 
         // Convert X to set, while checking for out of bounds.
-        for &x in x {
+        x.iter().try_for_each(|&x| {
             if !g.has_vertex(x) {
                 return Err(Error::VertexOutOfBounds(x));
             }
-        }
+            Ok(())
+        })?;
         // Convert Y to set, while checking for out of bounds.
-        for &y in y {
+        y.iter().try_for_each(|&y| {
             if !g.has_vertex(y) {
                 return Err(Error::VertexOutOfBounds(y));
             }
-        }
+            Ok(())
+        })?;
         // Convert Z to set, while checking for out of bounds.
         if let Some(z) = z {
-            for &z in z {
+            z.iter().try_for_each(|&z| {
                 if !g.has_vertex(z) {
                     return Err(Error::VertexOutOfBounds(z));
                 }
-            }
+                Ok(())
+            })?;
         }
 
         // Assert X is non-empty.
@@ -189,14 +192,14 @@ pub(crate) mod digraph {
 
         // Initialize the queue.
         let mut queue: VecDeque<(bool, usize)> = Default::default();
-        // For each vertex in X ...
-        for &w in x {
+        // For each vertex in X, add backward/forward edges to the queue.
+        for &w in x.iter() {
             // If the vertex has predecessors, add it to the queue as a backward edge.
-            if !g.parents(&set![w]).is_empty() {
+            if !g.parents(&set![w])?.is_empty() {
                 queue.push_back((false, w));
             }
             // If the vertex has successors, add it to the queue as a forward edge.
-            if !g.children(&set![w]).is_empty() {
+            if !g.children(&set![w])?.is_empty() {
                 queue.push_back((true, w));
             }
         }
@@ -207,15 +210,12 @@ pub(crate) mod digraph {
         // For each element in the queue ...
         while let Some((e, v)) = queue.pop_front() {
             // Get the predecessors and successors of the vertex.
-            let pa_v = g.parents(&set![v]).into_iter().map(|n| (false, n));
-            let ch_v = g.children(&set![v]).into_iter().map(|n| (true, n));
+            let pa_v = g.parents(&set![v])?.into_iter().map(|n| (false, n));
+            let ch_v = g.children(&set![v])?.into_iter().map(|n| (true, n));
 
             // Create pairs of (forward, vertex) for predecessors and successors.
-            let f_n_pairs = pa_v.chain(ch_v);
-
-            // For each pair ...
-            for (f, n) in f_n_pairs {
-                // If the pair has not been processed and passes the condition ...
+            // Filter and add unvisited pairs that pass the condition.
+            for (f, n) in pa_v.chain(ch_v) {
                 if !visited.contains(&(f, n)) && _pass(e, v, f, n) {
                     // Add it to the queue and mark it as processed.
                     queue.push_back((f, n));
@@ -246,7 +246,7 @@ pub(crate) mod digraph {
             backward_deque.extend(x.iter().cloned());
 
             // Compute the ancestors of X and Z.
-            let ancestors_or_z = &self.ancestors(z) | &(z | x);
+            let ancestors_or_z = &self.ancestors(z)? | &(z | x);
 
             // While there are vertices to visit in the forward or backward deques ...
             while !forward_deque.is_empty() || !backward_deque.is_empty() {
@@ -263,17 +263,15 @@ pub(crate) mod digraph {
                         continue;
                     }
                     // Add all predecessors of the W to the backward deque.
-                    for pred in self.parents(&set![w]) {
-                        if !backward_visited.contains(&pred) {
-                            backward_deque.push_back(pred);
-                        }
-                    }
+                    self.parents(&set![w])?
+                        .into_iter()
+                        .filter(|pred| !backward_visited.contains(pred))
+                        .for_each(|pred| backward_deque.push_back(pred));
                     // Add all successors of the W to the forward deque.
-                    for succ in self.children(&set![w]) {
-                        if !forward_visited.contains(&succ) {
-                            forward_deque.push_back(succ);
-                        }
-                    }
+                    self.children(&set![w])?
+                        .into_iter()
+                        .filter(|succ| !forward_visited.contains(succ))
+                        .for_each(|succ| forward_deque.push_back(succ));
                 }
 
                 // If there are vertices in the forward deque ...
@@ -286,19 +284,17 @@ pub(crate) mod digraph {
                     }
                     // If the W is an ancestor or in Z, add its predecessors to the backward deque.
                     if ancestors_or_z.contains(&w) {
-                        for pred in self.parents(&set![w]) {
-                            if !backward_visited.contains(&pred) {
-                                backward_deque.push_back(pred);
-                            }
-                        }
+                        self.parents(&set![w])?
+                            .into_iter()
+                            .filter(|pred| !backward_visited.contains(pred))
+                            .for_each(|pred| backward_deque.push_back(pred));
                     }
                     // If the W is not in Z, add its successors to the forward deque.
                     if !z.contains(&w) {
-                        for succ in self.children(&set![w]) {
-                            if !forward_visited.contains(&succ) {
-                                forward_deque.push_back(succ);
-                            }
-                        }
+                        self.children(&set![w])?
+                            .into_iter()
+                            .filter(|succ| !forward_visited.contains(succ))
+                            .for_each(|succ| forward_deque.push_back(succ));
                     }
                 }
             }
@@ -326,7 +322,7 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
-            let an_x_y_w = &self.ancestors(&x_y_w) | &x_y_w;
+            let an_x_y_w = &self.ancestors(&x_y_w)? | &x_y_w;
 
             // a) Check that Z is a separator.
             let x_closure = _reachable(self, x, &an_x_y_w, z)?;
@@ -371,7 +367,7 @@ pub(crate) mod digraph {
 
             // Compute the ancestors of X and Y.
             let x_y_w = &(x | y) | w;
-            let an_x_y_w = &self.ancestors(&x_y_w) | &x_y_w;
+            let an_x_y_w = &self.ancestors(&x_y_w)? | &x_y_w;
 
             // Initialize the restricted set with the intersection of X, Y, and included.
             let z = v & &(&an_x_y_w - &(x | y));

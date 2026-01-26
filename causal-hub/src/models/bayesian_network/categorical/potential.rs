@@ -144,15 +144,13 @@ impl Mul<&CatPhi> for &CatPhi {
 impl DivAssign<&CatPhi> for CatPhi {
     fn div_assign(&mut self, rhs: &CatPhi) {
         // Assert that RHS states are a subset of LHS states.
-        assert!(
-            rhs.states.keys().all(|k| self.states.contains_key(k)),
-            "Failed to divide potentials: \n\
-            \t expected:    RHS states to be a subset of LHS states , \n\
-            \t found:       LHS states = {:?} , \n\
-            \t              RHS states = {:?} .",
-            self.states,
-            rhs.states,
-        );
+        if !rhs.states.keys().all(|k| self.states.contains_key(k)) {
+            panic!(
+                "Failed to divide potentials: RHS states must be a subset of LHS states, \
+                found LHS states = {:?}, RHS states = {:?}",
+                self.states, rhs.states,
+            );
+        }
 
         // Add a small constant to ensure 0 / 0 = 0.
         let rhs_parameters = &rhs.parameters + f64::MIN_POSITIVE;
@@ -258,16 +256,12 @@ impl Phi for CatPhi {
         }
 
         // Assert X is a subset of the variables.
-        x.iter().for_each(|&x| {
-            assert!(
-                x < self.labels.len(),
-                "Variable index out of bounds: \n\
-                \t expected:    x <  {} , \n\
-                \t found:       x == {} .",
-                self.labels.len(),
-                x,
-            );
-        });
+        x.iter().try_for_each(|&x| {
+            if x >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(x));
+            }
+            Ok(())
+        })?;
 
         // Get the states and the parameters.
         let states = self.states.clone();
@@ -335,28 +329,31 @@ impl Phi for CatPhi {
             ));
         }
         // Assert that X and Z cover all variables.
-        assert!(
-            (x | z).iter().sorted().cloned().eq(0..self.labels.len()),
-            "Variables and conditioning variables must cover all potential variables."
-        );
+        if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
+            return Err(Error::IllegalArgument(
+                "Variables and conditioning variables must cover all potential variables.".into(),
+            ));
+        }
 
         // Split states into states and conditioning states.
-        let mut states_x: States = Default::default();
-        for &i in x.iter() {
-            let (k, v) = self
-                .states
-                .get_index(i)
-                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
-            states_x.insert(k.clone(), v.clone());
-        }
-        let mut states_z: States = Default::default();
-        for &i in z.iter() {
-            let (k, v) = self
-                .states
-                .get_index(i)
-                .ok_or_else(|| Error::VertexOutOfBounds(i))?;
-            states_z.insert(k.clone(), v.clone());
-        }
+        let states_x: States = x
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
+        let states_z: States = z
+            .iter()
+            .map(|&i| {
+                self.states
+                    .get_index(i)
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
 
         // Get new axes order.
         let axes: Vec<_> = z.iter().chain(x).cloned().collect();

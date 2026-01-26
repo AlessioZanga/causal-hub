@@ -7,6 +7,8 @@ use serde::{
     ser::SerializeMap,
 };
 
+use crate::types::Error;
+
 /// Sample (sufficient) statistics for a Gaussian CPD.
 #[derive(Clone, Debug)]
 pub struct GaussCPDS {
@@ -59,69 +61,88 @@ impl GaussCPDS {
         m_xz: Array2<f64>,
         m_zz: Array2<f64>,
         n: f64,
-    ) -> Self {
+    ) -> std::result::Result<Self, Error> {
         // Assert the dimensions are correct.
-        assert_eq!(
-            mu_x.len(),
-            m_xx.nrows(),
-            "Response mean vector length must match response covariance matrix size."
-        );
-        assert_eq!(
-            mu_z.len(),
-            m_zz.nrows(),
-            "Design mean vector length must match design covariance matrix size."
-        );
-        assert!(
-            m_xx.is_square(),
-            "Response covariance matrix must be square."
-        );
-        assert_eq!(
-            m_xz.nrows(),
-            m_xx.nrows(),
-            "Cross-covariance matrix must have the same \n\
-            number of rows as the response covariance matrix."
-        );
-        assert_eq!(
-            m_xz.ncols(),
-            m_zz.nrows(),
-            "Cross-covariance matrix must have the same \n\
-            number of columns as the design covariance matrix."
-        );
-        assert!(m_zz.is_square(), "Design covariance matrix must be square.");
+        if mu_x.len() != m_xx.nrows() {
+            return Err(Error::IncompatibleShape(
+                "mu_x".into(),
+                "Response mean vector length must match response covariance matrix size.".into(),
+            ));
+        }
+        if mu_z.len() != m_zz.nrows() {
+            return Err(Error::IncompatibleShape(
+                "mu_z".into(),
+                "Design mean vector length must match design covariance matrix size.".into(),
+            ));
+        }
+        if !m_xx.is_square() {
+            return Err(Error::Shape(
+                "Response covariance matrix must be square.".into(),
+            ));
+        }
+        if m_xz.nrows() != m_xx.nrows() {
+            return Err(Error::IncompatibleShape(
+                "m_xz".into(),
+                "Cross-covariance matrix must have the same number of rows as the response covariance matrix.".into(),
+            ));
+        }
+        if m_xz.ncols() != m_zz.nrows() {
+            return Err(Error::IncompatibleShape(
+                "m_xz".into(),
+                "Cross-covariance matrix must have the same number of columns as the design covariance matrix.".into(),
+            ));
+        }
+        if !m_zz.is_square() {
+            return Err(Error::Shape(
+                "Design covariance matrix must be square.".into(),
+            ));
+        }
         // Assert values are finite.
-        assert!(
-            mu_x.iter().all(|&x| x.is_finite()),
-            "Response mean vector must have finite values."
-        );
-        assert!(
-            mu_z.iter().all(|&x| x.is_finite()),
-            "Design mean vector must have finite values."
-        );
-        assert!(
-            m_xx.iter().all(|&x| x.is_finite()),
-            "Response covariance matrix must have finite values."
-        );
-        assert!(
-            m_xz.iter().all(|&x| x.is_finite()),
-            "Cross-covariance matrix must have finite values."
-        );
-        assert!(
-            m_zz.iter().all(|&x| x.is_finite()),
-            "Design covariance matrix must have finite values."
-        );
-        assert!(
-            n.is_finite() && n >= 0.0,
-            "Sample size must be non-negative."
-        );
+        if !mu_x.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter(
+                "mu_x".into(),
+                "Response mean vector must have finite values.".into(),
+            ));
+        }
+        if !mu_z.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter(
+                "mu_z".into(),
+                "Design mean vector must have finite values.".into(),
+            ));
+        }
+        if !m_xx.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter(
+                "m_xx".into(),
+                "Response covariance matrix must have finite values.".into(),
+            ));
+        }
+        if !m_xz.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter(
+                "m_xz".into(),
+                "Cross-covariance matrix must have finite values.".into(),
+            ));
+        }
+        if !m_zz.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter(
+                "m_zz".into(),
+                "Design covariance matrix must have finite values.".into(),
+            ));
+        }
+        if !n.is_finite() || n < 0.0 {
+            return Err(Error::InvalidParameter(
+                "n".into(),
+                "Sample size must be finite and non-negative.".into(),
+            ));
+        }
 
-        Self {
+        Ok(Self {
             mu_x,
             mu_z,
             m_xx,
             m_xz,
             m_zz,
             n,
-        }
+        })
     }
 
     /// Returns the response mean vector |X|.
@@ -399,14 +420,15 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                         .map_err(|_| E::custom("Invalid sample design covariance shape"))?
                 };
 
-                Ok(GaussCPDS::new(
+                GaussCPDS::new(
                     sample_response_mean,
                     sample_design_mean,
                     sample_response_covariance,
                     sample_cross_covariance,
                     sample_design_covariance,
                     sample_size,
-                ))
+                )
+                .map_err(|e| E::custom(e.to_string()))
             }
         }
 

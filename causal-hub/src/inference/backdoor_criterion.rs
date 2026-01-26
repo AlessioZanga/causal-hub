@@ -97,7 +97,7 @@ mod digraph {
     //     * possible causal path in a directed graph is a directed path from X to Y,
     //     * proper path is a directed path from X to Y that does not contain any vertex in X.
     //
-    fn _proper_causal_path(g: &DiGraph, x: &Set<usize>, y: &Set<usize>) -> Set<usize> {
+    fn _proper_causal_path(g: &DiGraph, x: &Set<usize>, y: &Set<usize>) -> Result<Set<usize>> {
         // Initialize the PCP set.
         let mut pcp = set![];
 
@@ -110,7 +110,7 @@ mod digraph {
             // While there are vertices to visit ...
             while let Some(z) = stack.pop() {
                 // For each child of the current node ...
-                for w in g.children(&set![z]) {
+                for w in g.children(&set![z])? {
                     // Skip if W is in X or already visited.
                     if x.contains(&w) || visited.contains(&w) {
                         continue;
@@ -135,7 +135,7 @@ mod digraph {
             }
         }
 
-        pcp
+        Ok(pcp)
     }
 
     // Returns the proper backdoor graph:
@@ -146,11 +146,11 @@ mod digraph {
         // Clone the graph.
         let mut g_pdb = g.clone();
         // Remove all the edge from X to PCP(X, Y).
-        for &i in x {
-            for &j in pcp {
+        x.iter()
+            .flat_map(|&i| pcp.iter().map(move |&j| (i, j)))
+            .for_each(|(i, j)| {
                 g_pdb.del_edge(i, j);
-            }
-        }
+            });
         // Return the modified graph.
         g_pdb
     }
@@ -169,9 +169,9 @@ mod digraph {
             //
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // a) Check if Z is a subset of V \ pDe(PCP(X, Y)).
             if !z.is_subset(&(&self.vertices() - &pde)) {
                 return Ok(false);
@@ -214,9 +214,9 @@ mod digraph {
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // Constraint the restricted vertices.
             let v_prime = &(v - &pde);
 
@@ -252,9 +252,9 @@ mod digraph {
             // G^PDB under the constraint V' = V \ pDe(PCP(X, Y)).
 
             // Compute the proper causal path.
-            let pcp = _proper_causal_path(self, x, y);
+            let pcp = _proper_causal_path(self, x, y)?;
             // Compute the descendants of the proper causal path.
-            let pde = self.descendants(&pcp);
+            let pde = self.descendants(&pcp)?;
             // Constraint the restricted vertices.
             let v_prime = &(v - &pde);
 
@@ -271,7 +271,7 @@ mod digraph {
         use super::*;
 
         #[test]
-        fn proper_causal_path() {
+        fn proper_causal_path() -> Result<()> {
             let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
             graph.add_edge(0, 1);
             graph.add_edge(0, 2);
@@ -281,9 +281,10 @@ mod digraph {
             graph.add_edge(3, 4);
 
             assert_eq!(
-                _proper_causal_path(&graph, &set![0], &set![3]),
+                _proper_causal_path(&graph, &set![0], &set![3])?,
                 set![1, 2, 3]
             );
+            Ok(())
         }
     }
 }

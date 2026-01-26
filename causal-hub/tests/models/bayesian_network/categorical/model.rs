@@ -188,7 +188,7 @@ mod tests {
         assert!(res.is_err());
         assert_eq!(
             res.unwrap_err().to_string(),
-            "Model error: Graph parents labels and CPD conditioning labels must be the same:\n\t expected:    {\"A\"} ,\n\t found:       {\"A\", \"B\"} ."
+            "Labels mismatch: {\"A\"} != {\"A\", \"B\"}"
         );
 
         Ok(())

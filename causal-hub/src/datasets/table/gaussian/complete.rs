@@ -193,14 +193,17 @@ impl CsvIO for GaussTable {
         writer.write_record(self.labels.iter())?;
 
         // Write the records.
-        self.values.rows().into_iter().try_for_each(|row| {
-            // Map the row values to strings.
-            let record = row.iter().map(|x| x.to_string());
-            // Write the record.
-            writer.write_record(record)?;
+        self.values
+            .rows()
+            .into_iter()
+            .try_for_each(|row| -> Result<_> {
+                // Map the row values to strings.
+                let record = row.iter().map(|x| x.to_string());
+                // Write the record.
+                writer.write_record(record)?;
 
-            Ok::<_, Error>(())
-        })?;
+                Ok(())
+            })?;
 
         Ok(())
     }

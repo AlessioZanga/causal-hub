@@ -254,7 +254,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             })
             .collect();
         // If no evidence is present, fill it randomly.
-        for i in no_evidence {
+        no_evidence.into_iter().for_each(|i| {
             // Sample a state uniformly at random.
             let random_state = Array::from_iter({
                 let random_state = || self.rng.random_range(0..(states[i].len() as CatType));
@@ -262,7 +262,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             });
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
-        }
+        });
 
         // Fill the unknown states by propagating the known states.
         events

@@ -70,14 +70,15 @@ impl CatTable {
         );
 
         // Check if the number of states is less than `CatType::MAX`.
-        for (label, state) in &states {
+        states.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
                     format!("states[{label}]"),
                     format!("should have less than 256 states, found {}", state.len()),
                 ));
             }
-        }
+            Ok(())
+        })?;
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
@@ -86,23 +87,24 @@ impl CatTable {
             ));
         }
         // Check if the maximum value of the values is less than the number of states.
-        for (i, x) in values
+        values
             .fold_axis(Axis(0), 0, |&a, &b| if a > b { a } else { b })
             .into_iter()
             .enumerate()
-        {
-            let (label, states) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+            .try_for_each(|(i, x)| {
+                let (label, states) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
 
-            if x >= states.len() as CatType {
-                return Err(Error::InvalidParameter(
-                    format!("values[.., '{label}']"),
-                    format!(
-                        "must be less than the number of states ({}), found {x}",
-                        states.len()
-                    ),
-                ));
-            }
-        }
+                if x >= states.len() as CatType {
+                    return Err(Error::InvalidParameter(
+                        format!("values[.., '{label}']"),
+                        format!(
+                            "must be less than the number of states ({}), found {x}",
+                            states.len()
+                        ),
+                    ));
+                }
+                Ok(())
+            })?;
 
         // Check that the labels are sorted.
         if !states.keys().is_sorted() {
@@ -124,24 +126,30 @@ impl CatTable {
         }
 
         // For each variable ...
-        for (mut col, states) in values.columns_mut().into_iter().zip(states.values_mut()) {
-            // ... check if the states are sorted.
-            if !states.is_sorted() {
-                // Clone the states.
-                let mut new_states = states.clone();
-                // Sort the states.
-                new_states.sort();
-                // Map values to sorted states.
-                for value in col.iter_mut() {
-                    *value = new_states
-                        .get_index_of(&states[*value as usize])
-                        .ok_or_else(|| Error::MissingState(states[*value as usize].clone()))?
-                        as CatType;
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(states.values_mut())
+            .try_for_each(|(mut col, states)| -> Result<_> {
+                // ... check if the states are sorted.
+                if !states.is_sorted() {
+                    // Clone the states.
+                    let mut new_states = states.clone();
+                    // Sort the states.
+                    new_states.sort();
+                    // Map values to sorted states.
+                    col.iter_mut().try_for_each(|value| -> Result<_> {
+                        *value = new_states
+                            .get_index_of(&states[*value as usize])
+                            .ok_or_else(|| Error::MissingState(states[*value as usize].clone()))?
+                            as CatType;
+                        Ok(())
+                    })?;
+                    // Update the states.
+                    *states = new_states;
                 }
-                // Update the states.
-                *states = new_states;
-            }
-        }
+                Ok(())
+            })?;
 
         // Get the labels of the variables.
         let labels = states.keys().cloned().collect();
@@ -230,11 +238,12 @@ impl Dataset for CatTable {
 
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
 
         // Select the states.
         let states: States = x
@@ -285,27 +294,26 @@ impl CsvIO for CatTable {
             .collect();
 
         // Read the records.
-        let values: Vec<CatType> =
-            reader
-                .into_records()
-                .enumerate()
-                .try_fold(Vec::new(), |mut values, (i, row)| {
-                    // Get the record row.
-                    let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
-                    // Zip the row with the states.
-                    for (j, (x, states)) in row.into_iter().zip(states.values_mut()).enumerate() {
-                        // Check if the value is empty.
-                        if x.is_empty() {
-                            return Err(Error::MissingValue(i + 1, j + 1));
-                        }
-                        // Insert the value into the states, if not present.
-                        let (idx, _) = states.insert_full(x.to_owned());
-                        // Collect the value.
-                        values.push(idx as CatType);
+        let values: Vec<CatType> = reader.into_records().enumerate().try_fold(
+            Vec::new(),
+            |mut values, (i, row)| -> Result<_> {
+                // Get the record row.
+                let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
+                // Zip the row with the states.
+                for (j, (x, states)) in row.into_iter().zip(states.values_mut()).enumerate() {
+                    // Check if the value is empty.
+                    if x.is_empty() {
+                        return Err(Error::MissingValue(i + 1, j + 1));
                     }
+                    // Insert the value into the states, if not present.
+                    let (idx, _) = states.insert_full(x.to_owned());
+                    // Collect the value.
+                    values.push(idx as CatType);
+                }
 
-                    Ok::<_, Error>(values)
-                })?;
+                Ok(values)
+            },
+        )?;
 
         // Convert the values to an array.
         let values = Array1::from_vec(values);

@@ -25,7 +25,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
     datasets::{PyDataset, PyGaussTable},
-    error::Error,
+    error::to_pyerr,
     estimators::PyBNEstimator,
     impl_from_into_lock, indices_from, kwarg,
     models::{PyDiGraph, PyGaussCPD},
@@ -77,9 +77,7 @@ impl PyGaussBN {
         // Convert Vec<PyGaussCPD> to Vec<GaussCPD>.
         let cpds = cpds.into_iter().map(|x: PyGaussCPD| x.into());
         // Create a new GaussBN with the given parameters.
-        Ok(GaussBN::new(graph, cpds)
-            .map_err(|e| Error::new_err(e.to_string()))?
-            .into())
+        Ok(GaussBN::new(graph, cpds).map_err(to_pyerr)?.into())
     }
 
     /// Returns the name of the model, if any.
@@ -239,7 +237,7 @@ impl PyGaussBN {
                     // Execute sequentially.
                     estimator.fit(graph)
                 }
-                .map_err(|e| Error::new_err(e.to_string()))?;
+                .map_err(to_pyerr)?;
                 // Return the fitted model.
                 Ok(model.into())
             }};
@@ -284,8 +282,7 @@ impl PyGaussBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler =
-            ForwardSampler::new(&mut rng, &*lock).map_err(|e| Error::new_err(e.to_string()))?;
+        let sampler = ForwardSampler::new(&mut rng, &*lock).map_err(to_pyerr)?;
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -294,7 +291,7 @@ impl PyGaussBN {
             // Sample sequentially.
             sampler.sample_n(n)
         }
-        .map_err(|e| Error::new_err(e.to_string()))?;
+        .map_err(to_pyerr)?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -384,7 +381,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.map_err(|e| Error::new_err(e.to_string()))?.into())
+        Ok(estimate.map_err(to_pyerr)?.into())
     }
 
     /// Estimate a conditional causal effect (CACE).
@@ -474,9 +471,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate
-            .map_err(|e| Error::new_err(e.to_string()))?
-            .map(|e| e.into()))
+        Ok(estimate.map_err(to_pyerr)?.map(|e| e.into()))
     }
 
     /// Read instance from a JSON string.
@@ -495,7 +490,7 @@ impl PyGaussBN {
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                GaussBN::from_json_string(json).map_err(|e| Error::new_err(e.to_string()))?,
+                GaussBN::from_json_string(json).map_err(to_pyerr)?,
             )),
         })
     }
@@ -508,9 +503,7 @@ impl PyGaussBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        self.lock()
-            .to_json_string()
-            .map_err(|e| Error::new_err(e.to_string()))
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -529,7 +522,7 @@ impl PyGaussBN {
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
         Ok(Self {
             inner: Arc::new(RwLock::new(
-                GaussBN::from_json_file(path).map_err(|e| Error::new_err(e.to_string()))?,
+                GaussBN::from_json_file(path).map_err(to_pyerr)?,
             )),
         })
     }
@@ -542,9 +535,7 @@ impl PyGaussBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock()
-            .to_json_file(path)
-            .map_err(|e| Error::new_err(e.to_string()))?;
+        self.lock().to_json_file(path).map_err(to_pyerr)?;
         Ok(())
     }
 }

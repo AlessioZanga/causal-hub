@@ -110,11 +110,12 @@ impl GaussIncTable {
         }
 
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
 
         // Clone the indices.
         let mut cols: Vec<usize> = x.iter().cloned().collect();
@@ -174,11 +175,12 @@ impl Dataset for GaussIncTable {
 
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
-        for &i in x {
+        x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
                 return Err(Error::VertexOutOfBounds(i));
             }
-        }
+            Ok(())
+        })?;
 
         // Select the labels.
         let labels: Labels = x
@@ -294,7 +296,7 @@ impl CsvIO for GaussIncTable {
         let values: Vec<GaussType> =
             reader
                 .into_records()
-                .try_fold(Vec::new(), |mut values, row| {
+                .try_fold(Vec::new(), |mut values, row| -> Result<_> {
                     // Get the record row.
                     let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
                     // Extend the values.
@@ -302,7 +304,7 @@ impl CsvIO for GaussIncTable {
                         row.iter()
                             .map(|x| x.parse::<GaussType>().unwrap_or(Self::MISSING)),
                     );
-                    Ok::<_, Error>(values)
+                    Ok(values)
                 })?;
 
         // Convert values to an array.

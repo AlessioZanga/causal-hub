@@ -155,7 +155,7 @@ mod tests {
                     .into_iter()
                     .map(|i| {
                         let i = set![i];
-                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i))
+                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i)?)
                     })
                     .collect::<Result<_>>()?;
                 // Set the initial model.

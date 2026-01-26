@@ -361,23 +361,23 @@ impl GaussCPD {
             let mut new_b = parameters.b.clone();
             let mut new_s = parameters.s.clone();
             // Reorder rows of A.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_a.row_mut(i).assign(&parameters.a.row(j));
-            }
+            });
             // Reorder b.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_b[i] = parameters.b[j];
-            }
+            });
             // Reorder rows of S.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_s.row_mut(i).assign(&parameters.s.row(j));
-            }
+            });
             // Allocate a temporary copy of S to reorder columns.
             let _s = new_s.clone();
             // Reorder columns of S.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_s.column_mut(i).assign(&_s.column(j));
-            }
+            });
             // Update parameters.
             parameters.a = new_a;
             parameters.b = new_b;
@@ -395,9 +395,9 @@ impl GaussCPD {
             // Reorder the parameters.
             let mut new_a = parameters.a.clone();
             // Reorder columns of A.
-            for (i, &j) in indices.iter().enumerate() {
+            indices.iter().enumerate().for_each(|(i, &j)| {
                 new_a.column_mut(i).assign(&parameters.a.column(j));
-            }
+            });
             // Update parameters.
             parameters.a = new_a;
         }

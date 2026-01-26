@@ -52,9 +52,7 @@ impl BE<'_, GaussTable, f64> {
         // S_xx.
         let mut s_xx_post = s_xx.clone();
         // Add nu * I to diagonal.
-        for i in 0..s_xx_post.nrows() {
-            s_xx_post[[i, i]] += nu;
-        }
+        s_xx_post.diag_mut().iter_mut().for_each(|d| *d += nu);
         // Add mean adjustment.
         s_xx_post = s_xx_post
             + f * &mu_x
@@ -64,9 +62,7 @@ impl BE<'_, GaussTable, f64> {
 
         // S_zz.
         let mut s_zz_post = s_zz.clone();
-        for i in 0..s_zz_post.nrows() {
-            s_zz_post[[i, i]] += nu;
-        }
+        s_zz_post.diag_mut().iter_mut().for_each(|d| *d += nu);
         s_zz_post = s_zz_post
             + f * &mu_z
                 .view()

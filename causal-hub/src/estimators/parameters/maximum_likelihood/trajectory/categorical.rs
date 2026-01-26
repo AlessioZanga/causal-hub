@@ -108,13 +108,13 @@ impl MLE<'_, CatTrj> {
         let sample_log_likelihood = Some(sample_log_likelihood);
 
         // Construct the CIM.
-        Ok(CatCIM::with_optionals(
+        CatCIM::with_optionals(
             states,
             conditioning_states,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        ))
+        )
     }
 }
 

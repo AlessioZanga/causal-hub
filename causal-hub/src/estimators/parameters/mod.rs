@@ -119,7 +119,7 @@ where
             .into_iter()
             .map(|i| {
                 let i = set![i];
-                self.fit(&i, &graph.parents(&i))
+                self.fit(&i, &graph.parents(&i)?)
             })
             .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
@@ -156,7 +156,7 @@ where
             .into_par_iter()
             .map(|i| {
                 let i = set![i];
-                self.par_fit(&i, &graph.parents(&i))
+                self.par_fit(&i, &graph.parents(&i)?)
             })
             .collect::<Result<_>>()?;
         // Construct the BN with the graph and the parameters.
@@ -231,7 +231,7 @@ where
             .into_iter()
             .map(|i| {
                 let i = set![i];
-                self.fit(&i, &graph.parents(&i))
+                self.fit(&i, &graph.parents(&i)?)
             })
             .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.
@@ -268,7 +268,7 @@ where
             .into_par_iter()
             .map(|i| {
                 let i = set![i];
-                self.par_fit(&i, &graph.parents(&i))
+                self.par_fit(&i, &graph.parents(&i)?)
             })
             .collect::<Result<_>>()?;
         // Construct the CTBN with the graph and the parameters.

@@ -27,7 +27,7 @@ mod tests {
         // Set the parameters.
         let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
         // Initialize the potential.
-        let phi = GaussPhi::new(l.clone(), parameters);
+        let phi = GaussPhi::new(l.clone(), parameters)?;
 
         // Condition the potential on variable "B" (index 1) being 0.5.
         let e = GaussEv::new(
@@ -45,7 +45,7 @@ mod tests {
         let true_h = array![0.48735, 0.4806];
         let true_g = -0.221275;
         let true_parameters = GaussPhiK::new(true_k, true_h, true_g)?;
-        let true_phi = GaussPhi::new(true_l, true_parameters);
+        let true_phi = GaussPhi::new(true_l, true_parameters)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -70,7 +70,7 @@ mod tests {
         // Set the parameters.
         let parameters = GaussPhiK::new(k.clone(), h.clone(), g)?;
         // Initialize the potential.
-        let phi = GaussPhi::new(labels.clone(), parameters);
+        let phi = GaussPhi::new(labels.clone(), parameters)?;
         // Marginalize out variable "B" (index 1).
         let pred_phi = phi.marginalize(&set![1])?;
 
@@ -83,7 +83,7 @@ mod tests {
         let true_h = array![0.15805721792439062, 0.27363888483433074];
         let true_g = 0.7651092782321709;
         let true_parameters = GaussPhiK::new(true_k, true_h, true_g)?;
-        let true_phi = GaussPhi::new(true_labels, true_parameters);
+        let true_phi = GaussPhi::new(true_labels, true_parameters)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -139,8 +139,8 @@ mod tests {
             1.,
         )?;
         // Initialize the potential.
-        let phi_1 = GaussPhi::new(l_1, p_1);
-        let phi_2 = GaussPhi::new(l_2, p_2);
+        let phi_1 = GaussPhi::new(l_1, p_1)?;
+        let phi_2 = GaussPhi::new(l_2, p_2)?;
 
         // Multiply the potentials.
         let pred_phi = &phi_1 * &phi_2;
@@ -156,7 +156,7 @@ mod tests {
             array![1., 4., -1.],
             -2.,
         )?;
-        let true_phi = GaussPhi::new(true_l, true_p);
+        let true_phi = GaussPhi::new(true_l, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -192,8 +192,8 @@ mod tests {
             1.,
         )?;
         // Initialize the potential.
-        let phi_1 = GaussPhi::new(l_1, p_1);
-        let phi_2 = GaussPhi::new(l_2, p_2);
+        let phi_1 = GaussPhi::new(l_1, p_1)?;
+        let phi_2 = GaussPhi::new(l_2, p_2)?;
 
         // Multiply the potentials.
         let pred_phi = &phi_1 / &phi_2;
@@ -209,7 +209,7 @@ mod tests {
             array![1., -6., 1.],
             -4.,
         )?;
-        let true_phi = GaussPhi::new(true_l, true_p);
+        let true_phi = GaussPhi::new(true_l, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);
@@ -248,7 +248,7 @@ mod tests {
         let true_h = array![0.5, -1.5, 0.5];
         let true_g = -2.112085713764618;
         let true_p = GaussPhiK::new(true_k, true_h, true_g)?;
-        let true_phi = GaussPhi::new(true_l, true_p);
+        let true_phi = GaussPhi::new(true_l, true_p)?;
 
         // Compare the potentials.
         assert_relative_eq!(true_phi, pred_phi);

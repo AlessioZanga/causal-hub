@@ -131,9 +131,9 @@ impl BN for GaussBN {
         let labels: Labels = graph.labels().clone();
 
         // Check if all vertices have the same labels as their parents.
-        for i in graph.vertices() {
+        graph.vertices().into_iter().try_for_each(|i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect();
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
@@ -144,7 +144,8 @@ impl BN for GaussBN {
                     format!("{pa_j:?}"),
                 ));
             }
-        }
+            Ok(())
+        })?;
 
         // Assert the graph is acyclic.
         let topological_order = graph.topological_order().ok_or(Error::NotADag)?;

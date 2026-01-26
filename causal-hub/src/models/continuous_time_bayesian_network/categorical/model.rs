@@ -167,7 +167,7 @@ impl CTBN for CatCTBN {
         // Allocate the states of the variables.
         let mut states: States = Default::default();
         // Insert the states of the variables into the map to check if they are the same.
-        for cim in cims.values() {
+        cims.values().try_for_each(|cim| {
             cim.states()
                 .iter()
                 .chain(cim.conditioning_states())
@@ -186,8 +186,8 @@ impl CTBN for CatCTBN {
                         states.insert(l.to_owned(), s.clone());
                     }
                     Ok(())
-                })?;
-        }
+                })
+        })?;
         // Sort the states of the variables.
         states.sort_keys();
 
@@ -205,9 +205,9 @@ impl CTBN for CatCTBN {
         }
 
         // Check if all vertices have the same labels as their parents.
-        for i in graph.vertices() {
+        graph.vertices().iter().try_for_each(|&i| {
             // Get the parents of the vertex.
-            let pa_i = graph.parents(&set![i]).into_iter();
+            let pa_i = graph.parents(&set![i])?.into_iter();
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones
             // Get the conditioning labels of the CIM.
             let pa_j = cims[&labels[i]].conditioning_labels();
@@ -218,7 +218,8 @@ impl CTBN for CatCTBN {
                     format!("{pa_j:?}"),
                 ));
             }
-        }
+            Ok(())
+        })?;
 
         // Initialize an empty graph for the uniform initial distribution.
         let initial_graph = DiGraph::empty(graph.labels());

@@ -254,7 +254,7 @@ where
                 .and(&r_xs)
                 .and(q_xz.diag())
                 .and(q_xs.diag())
-                .fold(Ok::<_, Error>(true), |acc, &r_xz, &r_xs, &q_xz, &q_xs| {
+                .fold(Ok(true), |acc, &r_xz, &r_xs, &q_xz, &q_xs| -> Result<_> {
                     if let Ok(true) = acc {
                         // Initialize the Fisher-Snedecor distribution.
                         let f = FisherSnedecor::new(r_xz, r_xs)
@@ -388,7 +388,7 @@ where
         // For each vertex in the graph ...
         for i in graph.vertices() {
             // Get the parents of the vertex.
-            let mut pa_i = graph.parents(&set![i]);
+            let mut pa_i = graph.parents(&set![i])?;
 
             // Initialize the counter.
             let mut k = 0;
@@ -479,9 +479,9 @@ where
             .initial_graph
             .vertices()
             .into_par_iter()
-            .map(|i| {
+            .map(|i| -> Result<Set<usize>> {
                 // Get the parents of the vertex.
-                let mut pa_i = self.initial_graph.parents(&set![i]);
+                let mut pa_i = self.initial_graph.parents(&set![i])?;
 
                 // Initialize the counter.
                 let mut k = 0;

@@ -207,9 +207,9 @@ mod tests {
                         // Map to a set.
                         let x = set![x];
                         // Get the parents of the vertex.
-                        let pa_x = graph.parents(&x);
+                        let pa_x = graph.parents(&x)?;
                         // Get the descendants of the vertex.
-                        let de_x = graph.descendants(&x);
+                        let de_x = graph.descendants(&x)?;
                         // Get the non-descendants of the vertex: V - De(x) - Pa(x) - {x}.
                         let non_de_x = &(&(&v - &de_x) - &pa_x) - &x;
                         assert!(non_de_x.is_empty() || graph.is_separator_set(&x, &non_de_x, &pa_x)?);

@@ -15,7 +15,10 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::{error::Error, impl_from_into_lock};
+use crate::{
+    error::{Error, to_pyerr},
+    impl_from_into_lock,
+};
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
@@ -226,7 +229,7 @@ impl PyCatTrj {
         )?;
 
         // Construct the categorical trajectory.
-        let inner = CatTrj::new(states, values, time).map_err(|e| Error::new_err(e.to_string()))?;
+        let inner = CatTrj::new(states, values, time).map_err(to_pyerr)?;
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 
@@ -374,7 +377,7 @@ impl PyCatTrjs {
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
 
         // Create a new CatTrjs with the given parameters.
-        let inner = CatTrjs::new(dfs).map_err(|e| Error::new_err(e.to_string()))?;
+        let inner = CatTrjs::new(dfs).map_err(to_pyerr)?;
         // Wrap the dataset in an Arc<RwLock>.
         let inner = Arc::new(RwLock::new(inner));
 

@@ -105,13 +105,13 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let sample_statistics = Some(sample_statistics);
 
         // Construct the CIM.
-        Ok(CatCIM::with_optionals(
+        CatCIM::with_optionals(
             states,
             conditioning_states,
             parameters,
             sample_statistics,
             sample_log_likelihood,
-        ))
+        )
     }
 }
 

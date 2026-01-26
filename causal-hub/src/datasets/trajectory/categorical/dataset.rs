@@ -41,14 +41,15 @@ impl CatTrj {
             ));
         }
         // Assert times must be positive and finite.
-        for &t in &times {
+        times.iter().try_for_each(|&t| {
             if !t.is_finite() || t < 0. {
                 return Err(Error::InvalidParameter(
                     "times".to_string(),
                     format!("value must be finite and positive, found {t}"),
                 ));
             }
-        }
+            Ok(())
+        })?;
 
         // Sort values by times.
         let mut sorted_idx: Vec<_> = (0..events.nrows()).collect();
