@@ -25,7 +25,7 @@ impl MI {
     {
         // Collect the multi index.
         let shape: Array1<_> = shape.into_iter().collect();
-        // Compute cumulative product in reverse order (row-major strides) using fold.
+        // Compute cumulative product in reverse order (row-major strides) using scan.
         let mut strides: Vec<_> = shape
             .iter()
             .rev()
@@ -38,7 +38,7 @@ impl MI {
         // Reverse the strides to match the original order.
         strides.reverse();
         // Convert strides to array.
-        let strides = Array::from_vec(strides);
+        let strides = Array1::from(strides);
 
         Self { shape, strides }
     }
@@ -92,7 +92,7 @@ impl MI {
             .iter()
             .map(|&stride| {
                 let value = remaining_index / stride;
-                remaining_index -= value * stride;
+                remaining_index %= stride;
                 value
             })
             .collect()

@@ -77,16 +77,8 @@ impl MissingTable {
         }
 
         // Compute missing counts.
-        let missing_count_by_cols = missing_mask.rows().into_iter().fold(
-            // Map to numeric one at a time to save memory.
-            Array::zeros(missing_mask.ncols()),
-            |acc, row| acc + row.mapv(|x| x as usize),
-        );
-        let missing_count_by_rows = missing_mask.columns().into_iter().fold(
-            // Map to numeric one at a time to save memory.
-            Array::zeros(missing_mask.nrows()),
-            |acc, col| acc + col.mapv(|x| x as usize),
-        );
+        let missing_count_by_cols = missing_mask.mapv(|x| x as usize).sum_axis(Axis(0));
+        let missing_count_by_rows = missing_mask.mapv(|x| x as usize).sum_axis(Axis(1));
         let missing_count = missing_count_by_cols.sum();
 
         // Compute missing mask by cols and rows.

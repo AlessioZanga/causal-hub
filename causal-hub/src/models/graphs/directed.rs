@@ -22,6 +22,15 @@ pub struct DiGraph {
 }
 
 impl DiGraph {
+    /// Check if a vertex is within bounds.
+    #[inline]
+    fn check_vertex(&self, x: usize) -> Result<()> {
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        Ok(())
+    }
+
     /// Returns the parents of a set of vertices.
     ///
     /// # Arguments
@@ -38,22 +47,17 @@ impl DiGraph {
     ///
     pub fn parents(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().try_for_each(|&v| {
-            if v >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(v));
-            }
-            Ok(())
-        })?;
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
 
         // Iterate over all vertices and filter the ones that are parents.
         let mut parents: Set<_> = x
-            .into_iter()
+            .iter()
             .flat_map(|&v| {
                 self.adjacency_matrix
                     .column(v)
                     .into_iter()
                     .enumerate()
-                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+                    .filter_map(|(y, &has_edge)| has_edge.then_some(y))
             })
             .collect();
 
@@ -80,12 +84,7 @@ impl DiGraph {
     ///
     pub fn ancestors(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().try_for_each(|&v| {
-            if v >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(v));
-            }
-            Ok(())
-        })?;
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
@@ -131,22 +130,17 @@ impl DiGraph {
     ///
     pub fn children(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Check if the vertices are within bounds.
-        x.iter().try_for_each(|&v| {
-            if v >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(v));
-            }
-            Ok(())
-        })?;
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
 
         // Iterate over all vertices and filter the ones that are children.
         let mut children: Set<_> = x
-            .into_iter()
+            .iter()
             .flat_map(|&v| {
                 self.adjacency_matrix
                     .row(v)
                     .into_iter()
                     .enumerate()
-                    .filter_map(|(y, &has_edge)| if has_edge { Some(y) } else { None })
+                    .filter_map(|(y, &has_edge)| has_edge.then_some(y))
             })
             .collect();
 
@@ -173,12 +167,7 @@ impl DiGraph {
     ///
     pub fn descendants(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Assert the vertices are within bounds.
-        x.iter().try_for_each(|&v| {
-            if v >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(v));
-            }
-            Ok(())
-        })?;
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
 
         // Initialize a stack and a visited set.
         let mut stack = VecDeque::new();
@@ -252,32 +241,14 @@ impl Graph for DiGraph {
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
     {
-        // Initialize labels counter.
-        let mut n = 0;
-        // Collect the labels.
-        let mut labels: Labels = labels
-            .into_iter()
-            .inspect(|_| n += 1)
-            .map(|x| x.as_ref().to_owned())
-            .collect();
+        // Construct the empty graph.
+        let mut g = Self::empty(labels)?;
+        // Fill the adjacency matrix with `true` values.
+        g.adjacency_matrix.fill(true);
+        // Remove the self-loops.
+        g.adjacency_matrix.diag_mut().fill(false);
 
-        // Check for duplicate labels.
-        if labels.len() != n {
-            return Err(Error::NonUniqueLabels);
-        }
-
-        // Sort the labels.
-        labels.sort();
-
-        // Initialize the adjacency matrix with `true` values.
-        let mut adjacency_matrix: Array2<_> = Array::from_elem((n, n), true);
-        // Set the diagonal to `false` to avoid self-loops.
-        adjacency_matrix.diag_mut().fill(false);
-
-        Ok(Self {
-            labels,
-            adjacency_matrix,
-        })
+        Ok(g)
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -293,30 +264,22 @@ impl Graph for DiGraph {
         // Iterate over the adjacency matrix and collect the edges.
         self.adjacency_matrix
             .indexed_iter()
-            .filter_map(|((x, y), &has_edge)| if has_edge { Some((x, y)) } else { None })
+            .filter_map(|(idx, &has_edge)| has_edge.then_some(idx))
             .collect()
     }
 
     fn has_edge(&self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        if x >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(x));
-        }
-        if y >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(y));
-        }
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
         Ok(self.adjacency_matrix[[x, y]])
     }
 
     fn add_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        if x >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(x));
-        }
-        if y >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(y));
-        }
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
@@ -331,12 +294,8 @@ impl Graph for DiGraph {
 
     fn del_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        if x >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(x));
-        }
-        if y >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(y));
-        }
+        self.check_vertex(x)?;
+        self.check_vertex(y)?;
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {

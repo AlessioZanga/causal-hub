@@ -142,9 +142,12 @@ impl CatTable {
                     new_states.sort();
                     // Map values to sorted states.
                     col.iter_mut().try_for_each(|value| -> Result<_> {
+                        // Get the state.
+                        let state = &states[*value as usize];
+                        // Map the value to the sorted states.
                         *value = new_states
-                            .get_index_of(&states[*value as usize])
-                            .ok_or_else(|| Error::MissingState(states[*value as usize].clone()))?
+                            .get_index_of(state)
+                            .ok_or_else(|| Error::MissingState(state.clone()))?
                             as CatType;
                         Ok(())
                     })?;
