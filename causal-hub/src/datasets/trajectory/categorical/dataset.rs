@@ -33,14 +33,14 @@ impl CatTrj {
         mut events: Array2<CatType>,
         mut times: Array1<f64>,
     ) -> Result<Self> {
-        // Assert the number of rows in values and times are equal.
+        // Check the number of rows in values and times are equal.
         if events.nrows() != times.len() {
             return Err(Error::IncompatibleShape(
                 events.nrows().to_string(),
                 times.len().to_string(),
             ));
         }
-        // Assert times must be positive and finite.
+        // Check times must be positive and finite.
         times.iter().try_for_each(|&t| {
             if !t.is_finite() || t < 0. {
                 return Err(Error::InvalidParameter(
@@ -85,13 +85,13 @@ impl CatTrj {
             events = new_events;
         }
 
-        // Assert no duplicate times.
+        // Check no duplicate times.
         {
             // Count the number of unique times.
             let count = times.iter().dedup().count();
             // Get the length of the times array.
             let length = times.len();
-            // Assert the number of unique times is equal to the length of the times array.
+            // Check the number of unique times is equal to the length of the times array.
             if count != length {
                 return Err(Error::InvalidParameter(
                     "times".to_string(),
@@ -100,11 +100,11 @@ impl CatTrj {
             }
         }
 
-        // Assert at max one state change per transition.
+        // Check at max one state change per transition.
         for ((e_i, _), (e_j, _)) in events.rows().into_iter().zip(&times).tuple_windows() {
             // Count the number of state changes.
             let count = e_i.iter().zip(e_j).filter(|(a, b)| a != b).count();
-            // Assert there is one and only one state change.
+            // Check there is one and only one state change.
             if count > 1 {
                 return Err(Error::InvalidParameter(
                     "events".to_string(),

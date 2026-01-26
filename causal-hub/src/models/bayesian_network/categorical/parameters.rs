@@ -45,7 +45,7 @@ impl CatCPDS {
     ///
     #[inline]
     pub fn new(n_xz: Array2<f64>, n: f64) -> Result<Self> {
-        // Assert the counts are finite and non-negative.
+        // Check the counts are finite and non-negative.
         if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
             return Err(Error::InvalidParameter(
                 "n_xz".into(),
@@ -248,7 +248,7 @@ impl CatCPD {
         // Get the labels of the variables.
         let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
-        // Assert labels and conditioning labels are disjoint.
+        // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
             return Err(Error::SetsNotDisjoint(
                 "labels".to_string(),
@@ -551,7 +551,7 @@ impl CatCPD {
         if let Some(sample_statistics) = &sample_statistics {
             // Get the sample conditional counts.
             let sample_conditional_counts = &sample_statistics.n_xz;
-            // Assert the sample conditional counts have the same shape as parameters.
+            // Check the sample conditional counts have the same shape as parameters.
             if sample_conditional_counts.shape() != parameters.shape() {
                 return Err(Error::IncompatibleShape(
                     format!("{:?}", sample_conditional_counts.shape()),
@@ -559,7 +559,7 @@ impl CatCPD {
                 ));
             }
         }
-        // Assert the sample log-likelihood is finite and non-positive.
+        // Check the sample log-likelihood is finite and non-positive.
         if let Some(sample_log_likelihood) = &sample_log_likelihood
             && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
         {
@@ -716,11 +716,11 @@ impl CPD for CatCPD {
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert X matches number of variables.
+        // Check X matches number of variables.
         if x.len() != n {
             return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
         }
-        // Assert Z matches number of conditioning variables.
+        // Check Z matches number of conditioning variables.
         if z.len() != m {
             return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
@@ -768,7 +768,7 @@ impl CPD for CatCPD {
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert Z matches number of conditioning variables.
+        // Check Z matches number of conditioning variables.
         if z.len() != m {
             return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
@@ -821,7 +821,9 @@ impl CPD for CatCPD {
 impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // FIXME: This assumes `x` has a single element.
-        assert_eq!(self.labels().len(), 1);
+        if self.labels().len() != 1 {
+            return Err(std::fmt::Error);
+        }
 
         // Determine the maximum width for formatting based on the labels and states.
         let n = std::iter::once(&self.labels()[0])
@@ -1018,9 +1020,13 @@ impl<'de> Deserialize<'de> for CatCPD {
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "catcpd", "Invalid type for CatCPD.");
+                if type_ != "catcpd" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatCPD: expected 'catcpd', found '{type_}'"
+                    )));
+                }
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<f64>> = parameters;

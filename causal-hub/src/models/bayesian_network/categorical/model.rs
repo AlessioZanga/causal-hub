@@ -13,7 +13,7 @@ use crate::{
     io::{BifIO, BifParser},
     models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Map, Result, States},
+    types::{Error, Labels, Map, Result, Set, States},
 };
 
 /// A categorical Bayesian network.
@@ -155,7 +155,7 @@ impl BN for CatBN {
         // Sort the CPDs by their labels.
         cpds.sort_keys();
 
-        // Assert same number of graph labels and CPDs.
+        // Check same number of graph labels and CPDs.
         if !graph.labels().iter().eq(cpds.keys()) {
             return Err(Error::LabelMismatch(
                 "graph labels".to_string(),
@@ -202,7 +202,7 @@ impl BN for CatBN {
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones.
             // Get the conditioning labels of the CPD.
             let pa_j = cpds[&labels[i]].conditioning_labels();
-            // Assert they are the same.
+            // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
                     format!("{pa_i:?}"),
@@ -212,7 +212,7 @@ impl BN for CatBN {
             Ok(())
         })?;
 
-        // Assert the graph is acyclic.
+        // Check the graph is acyclic.
         let topological_order = graph.topological_order().ok_or(Error::NotADag)?;
 
         Ok(Self {
@@ -252,6 +252,13 @@ impl BN for CatBN {
         self.cpds.iter().map(|(_, x)| x.parameters_size()).sum()
     }
 
+    fn select(&self, _x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        todo!() // FIXME:
+    }
+
     #[inline]
     fn topological_order(&self) -> &[usize] {
         &self.topological_order
@@ -266,7 +273,7 @@ impl BN for CatBN {
     where
         I: IntoIterator<Item = Self::CPD>,
     {
-        // Assert name is not empty string.
+        // Check name is not empty string.
         if let Some(name) = &name
             && name.is_empty()
         {
@@ -275,7 +282,7 @@ impl BN for CatBN {
                 "cannot be empty".to_string(),
             ));
         }
-        // Assert description is not empty string.
+        // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
@@ -410,9 +417,13 @@ impl<'de> Deserialize<'de> for CatBN {
                 let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
                 let cpds = cpds.ok_or_else(|| E::missing_field("cpds"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "catbn", "Invalid type for CatBN.");
+                if type_ != "catbn" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatBN: expected 'catbn', found '{type_}'"
+                    )));
+                }
 
                 // Set helper types.
                 let cpds: Vec<_> = cpds;

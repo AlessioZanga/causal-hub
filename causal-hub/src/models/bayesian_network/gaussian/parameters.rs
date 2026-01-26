@@ -42,7 +42,7 @@ impl GaussCPDP {
     /// A new `GaussCPDP` instance.
     ///
     pub fn new(a: Array2<f64>, b: Array1<f64>, s: Array2<f64>) -> Result<Self> {
-        // Assert the dimensions are correct.
+        // Check the dimensions are correct.
         if a.nrows() != b.len() {
             return Err(Error::IncompatibleShape(
                 a.nrows().to_string(),
@@ -58,7 +58,7 @@ impl GaussCPDP {
         if !s.is_square() {
             return Err(Error::Shape("Covariance matrix must be square.".into()));
         }
-        // Assert values are finite.
+        // Check values are finite.
         if !a.iter().all(|&x| x.is_finite()) {
             return Err(Error::Linalg(
                 "Coefficient matrix must have finite values.".into(),
@@ -309,14 +309,14 @@ impl GaussCPD {
         mut conditioning_labels: Labels,
         mut parameters: GaussCPDP,
     ) -> Result<Self> {
-        // Assert labels and conditioning labels are disjoint.
+        // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
             return Err(Error::SetsNotDisjoint(
                 "labels".to_string(),
                 "conditioning labels".to_string(),
             ));
         }
-        // Assert parameters dimensions match labels and conditioning labels lengths.
+        // Check parameters dimensions match labels and conditioning labels lengths.
         if parameters.a.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
                 parameters.a.nrows().to_string(),
@@ -604,11 +604,11 @@ impl CPD for GaussCPD {
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert X matches number of variables.
+        // Check X matches number of variables.
         if x.len() != n {
             return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
         }
-        // Assert Z matches number of conditioning variables.
+        // Check Z matches number of conditioning variables.
         if z.len() != m {
             return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
@@ -670,7 +670,7 @@ impl CPD for GaussCPD {
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert Z matches number of conditioning variables.
+        // Check Z matches number of conditioning variables.
         if z.len() != m {
             return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
         }
@@ -851,9 +851,13 @@ impl<'de> Deserialize<'de> for GaussCPD {
                     conditioning_labels.ok_or_else(|| E::missing_field("conditioning_labels"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "gausscpd", "Invalid type for GaussCPD.");
+                if type_ != "gausscpd" {
+                    return Err(E::custom(format!(
+                        "Invalid type for GaussCPD: expected 'gausscpd', found '{type_}'"
+                    )));
+                }
 
                 GaussCPD::with_optionals(
                     labels,

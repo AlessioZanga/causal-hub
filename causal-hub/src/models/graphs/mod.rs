@@ -137,6 +137,25 @@ pub trait Graph {
     ///
     fn del_edge(&mut self, x: usize, y: usize) -> Result<bool>;
 
+    /// Restrict the graph to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A graph restricted to the specified variables.
+    ///
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized;
+
     /// Creates a graph from an adjacency matrix and labels.
     ///
     /// # Arguments
@@ -148,7 +167,9 @@ pub trait Graph {
     ///
     /// A new graph instance.
     ///
-    fn from_adjacency_matrix(labels: Labels, adjacency_matrix: Array2<bool>) -> Self;
+    fn from_adjacency_matrix(labels: Labels, adjacency_matrix: Array2<bool>) -> Result<Self>
+    where
+        Self: Sized;
 
     /// Converts the graph to an adjacency matrix.
     ///

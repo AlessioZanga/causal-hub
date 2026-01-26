@@ -105,7 +105,7 @@ impl PyCatTrjEv {
         // Import the pandas module.
         let pd = py.import("pandas")?;
 
-        // Assert that the object is a DataFrame.
+        // Check that the object is a DataFrame.
         assert!(
             df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",

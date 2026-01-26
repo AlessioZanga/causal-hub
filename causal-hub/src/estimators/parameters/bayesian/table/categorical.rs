@@ -25,7 +25,7 @@ impl BE<'_, CatTable, usize> {
 
         // Get the prior, as the alpha of the Dirichlet distribution.
         let alpha = prior;
-        // Assert alpha is positive.
+        // Check alpha is positive.
         if alpha == 0 {
             return Err(Error::IllegalArgument("Alpha must be positive.".into()));
         }

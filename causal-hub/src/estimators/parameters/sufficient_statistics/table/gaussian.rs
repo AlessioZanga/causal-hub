@@ -65,7 +65,7 @@ impl SSE<'_, GaussTable> {
 
 impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
-        // Assert variables and conditioning variables must be disjoint.
+        // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
                 format!("{:?}", x),
@@ -81,7 +81,7 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
 
 impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
-        // Assert variables and conditioning variables must be disjoint.
+        // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
                 format!("{:?}", x),
@@ -179,7 +179,7 @@ impl SSE<'_, GaussWtdTable> {
 
 impl CSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
-        // Assert variables and conditioning variables must be disjoint.
+        // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
                 format!("{:?}", x),
@@ -205,7 +205,7 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
 
 impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<GaussCPDS> {
-        // Assert variables and conditioning variables must be disjoint.
+        // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
                 format!("{:?}", x),

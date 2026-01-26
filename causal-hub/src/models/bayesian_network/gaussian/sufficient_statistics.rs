@@ -62,7 +62,7 @@ impl GaussCPDS {
         m_zz: Array2<f64>,
         n: f64,
     ) -> std::result::Result<Self, Error> {
-        // Assert the dimensions are correct.
+        // Check the dimensions are correct.
         if mu_x.len() != m_xx.nrows() {
             return Err(Error::IncompatibleShape(
                 "mu_x".into(),
@@ -97,7 +97,7 @@ impl GaussCPDS {
                 "Design covariance matrix must be square.".into(),
             ));
         }
-        // Assert values are finite.
+        // Check values are finite.
         if !mu_x.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
                 "mu_x".into(),

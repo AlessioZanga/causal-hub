@@ -20,7 +20,7 @@ impl MLE<'_, CatTrj> {
         let n_xz = sample_statistics.sample_conditional_counts();
         let t_xz = sample_statistics.sample_conditional_times();
 
-        // Assert the conditional times counts are not zero.
+        // Check the conditional times counts are not zero.
         if !t_xz.iter().all(|&x| x > 0.) {
             return Err(Error::Stats(
                 "Failed to get non-zero conditional times.".into(),

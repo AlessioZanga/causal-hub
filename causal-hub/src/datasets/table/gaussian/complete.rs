@@ -74,7 +74,7 @@ impl GaussTable {
             // Update values.
             values = new_values;
         }
-        // Assert values are finite.
+        // Check values are finite.
         if !values.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
                 "values".to_string(),

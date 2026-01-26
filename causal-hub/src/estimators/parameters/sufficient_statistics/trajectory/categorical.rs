@@ -13,7 +13,7 @@ use crate::{
 
 impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
-        // Assert variables and conditioning variables must be disjoint..
+        // Check variables and conditioning variables must be disjoint..
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
                 "Variables and conditioning variables must be disjoint.".into(),

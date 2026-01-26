@@ -6,7 +6,7 @@ pub use gaussian::*;
 
 use crate::{
     models::graphs::DiGraph,
-    types::{Map, Result},
+    types::{Map, Result, Set},
 };
 
 /// A trait for Bayesian networks.
@@ -83,6 +83,25 @@ pub trait BN {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+
+    /// Restrict the model to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A model restricted to the specified variables.
+    ///
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized;
 
     /// Returns the topological order of the graph.
     ///
