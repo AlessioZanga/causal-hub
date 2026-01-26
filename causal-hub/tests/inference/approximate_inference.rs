@@ -102,7 +102,7 @@ mod tests {
                 )?;
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
 
                 Ok(())
             }
@@ -129,7 +129,7 @@ mod tests {
                 )?;
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
 
                 Ok(())
             }
@@ -172,11 +172,11 @@ mod tests {
                     // Z
                     states![],
                     // Theta
-                    array![[0.99, 0.01]],
+                    array![[0.9786268013452195, 0.0213731986547805]],
                 )?;
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
 
                 Ok(())
             }
@@ -248,7 +248,7 @@ mod tests {
                 )?;
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
 
                 Ok(())
             }
@@ -275,7 +275,7 @@ mod tests {
                 )?;
 
                 // Assert that the estimation is correct.
-                assert_relative_eq!(pred_query, true_query, epsilon = 1e-2);
+                assert_relative_eq!(true_query, pred_query, epsilon = 1e-2);
 
                 Ok(())
             }

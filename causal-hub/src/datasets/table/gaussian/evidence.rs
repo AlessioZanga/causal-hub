@@ -1,7 +1,7 @@
 use crate::{
     datasets::GaussType,
     models::Labelled,
-    types::{Error, Labels, Result},
+    types::{Error, Labels, Result, Set},
 };
 
 /// Gaussian evidence type.
@@ -27,6 +27,18 @@ impl GaussEvT {
     pub const fn event(&self) -> usize {
         match self {
             Self::CertainPositive { event, .. } => *event,
+        }
+    }
+
+    /// Set the observed event of the evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The new observed event of the evidence.
+    ///
+    pub const fn set_event(&mut self, event: usize) {
+        match self {
+            Self::CertainPositive { event: e, .. } => *e = event,
         }
     }
 }
@@ -131,5 +143,59 @@ impl GaussEv {
     #[inline]
     pub const fn evidences(&self) -> &Vec<Option<GaussEvT>> {
         &self.evidences
+    }
+
+    /// Restrict the evidence to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// The evidence restricted to the specified variables.
+    ///
+    pub fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Check that the variables are in bounds.
+        x.iter().try_for_each(|&i| {
+            if i >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+
+        // Sort the indices.
+        let mut x = x.clone();
+        x.sort();
+
+        // Get the new labels.
+        let labels: Labels = x
+            .iter()
+            .map(|&i| {
+                self.labels
+                    .get_index(i)
+                    .cloned()
+                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
+
+        // Get the new values.
+        let evidences = x.into_iter().enumerate().filter_map(|(i, x)| {
+            self.evidences[x].clone().map(|mut e| {
+                e.set_event(i);
+                e
+            })
+        });
+
+        // Create the new evidence.
+        Self::new(labels, evidences)
     }
 }

@@ -252,11 +252,35 @@ impl BN for CatBN {
         self.cpds.iter().map(|(_, x)| x.parameters_size()).sum()
     }
 
-    fn select(&self, _x: &Set<usize>) -> Result<Self>
+    fn select(&self, x: &Set<usize>) -> Result<Self>
     where
         Self: Sized,
     {
-        todo!() // FIXME:
+        // Check that the variables are in bounds.
+        x.iter().try_for_each(|&i| {
+            if i >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+
+        // Sort the indices.
+        let mut x = x.clone();
+        x.sort();
+
+        // Construct the subgraph.
+        let graph = self.graph.select(&x)?;
+        // Select the CPDs.
+        let cpds = x.iter().map(|&i| self.cpds[i].clone());
+
+        // Construct the submodel.
+        Self::with_optionals(
+            // Clone the optionals.
+            self.name.clone(),
+            self.description.clone(),
+            graph,
+            cpds,
+        )
     }
 
     #[inline]

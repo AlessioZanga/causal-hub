@@ -8,6 +8,7 @@ use crate::{
     inference::Modelled,
     models::{BN, CatBN, GaussBN, Labelled},
     samplers::{BNSampler, ForwardSampler, ImportanceSampler, ParBNSampler},
+    set,
     types::{Error, Result, Set},
 };
 
@@ -206,8 +207,9 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            let x_z = x | z;
+            let an_x_z = self.model.graph().ancestors(&x_z)?;
+            let an_x_z = &an_x_z | &x_z;
             // Restrict the model to the ancestors.
             let an_x_z_model = self.model.select(&an_x_z)?;
             // Map the indices of X and Z to the restricted model.
@@ -249,8 +251,9 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            let x_z = x | z;
+            let an_x_z = self.model.graph().ancestors(&x_z)?;
+            let an_x_z = &an_x_z | &x_z;
             // Restrict the model to the ancestors.
             let an_x_z_model = self.model.select(&an_x_z)?;
             // Map the indices of X and Z to the restricted model.
@@ -295,27 +298,39 @@ macro_for!($type in [CatBN, GaussBN] {
             let n = self.sample_size(x, z);
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            // Get the evidence variables.
+            let e = self.evidence.map_or_else(
+                || set![],
+                |e| e.evidences()
+                    .iter()
+                    .flatten()
+                    .map(|e| e.event())
+                    .collect()
+            );
+            // Get the ancestors of the X U Z U E set.
+            let x_z_e = &(x | z) | &e;
+            let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
+            let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
+            let an_x_z_e_model = self.model.select(&an_x_z_e)?;
+            // Restrict the evidence to the restricted model.
+            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
+            let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
+            let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
             // Check if evidence is actually provided.
-            match self.evidence {
+            match evidence {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::new(&mut rng, &an_x_z_model, evidence)?;
+                    let sampler = ImportanceSampler::new(&mut rng, &an_x_z_e_model, &evidence)?;
                     // Generate n samples from the model.
                     let dataset = sampler.sample_n(n)?;
                     // Fit the CPD.
                     BE::new(&dataset).fit(&an_x, &an_z)
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_model)
+                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
                     .with_sample_size(n)?
                     .estimate(&an_x, &an_z),
             }
@@ -348,20 +363,32 @@ macro_for!($type in [CatBN, GaussBN] {
             let n = self.sample_size(x, z);
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            // Get the evidence variables.
+            let e = self.evidence.map_or_else(
+                || set![],
+                |e| e.evidences()
+                    .iter()
+                    .flatten()
+                    .map(|e| e.event())
+                    .collect()
+            );
+            // Get the ancestors of the X U Z U E set.
+            let x_z_e = &(x | z) | &e;
+            let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
+            let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
+            let an_x_z_e_model = self.model.select(&an_x_z_e)?;
+            // Restrict the evidence to the restricted model.
+            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
+            let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
+            let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
             // Check if evidence is actually provided.
-            match self.evidence {
+            match evidence {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::new(&mut rng, &an_x_z_model, evidence)?;
+                    let sampler = ImportanceSampler::new(&mut rng, &an_x_z_e_model, &evidence)?;
                     // Generate n samples from the model.
                     let dataset = sampler.sample_n(n)?;
                     // Fit the CPD.
@@ -373,7 +400,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     }
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_model)
+                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
                     .with_sample_size(n)?
                     .estimate(&an_x, &an_z),
             }
@@ -435,8 +462,9 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            let x_z = x | z;
+            let an_x_z = self.model.graph().ancestors(&x_z)?;
+            let an_x_z = &an_x_z | &x_z;
             // Restrict the model to the ancestors.
             let an_x_z_model = self.model.select(&an_x_z)?;
             // Map the indices of X and Z to the restricted model.
@@ -478,8 +506,9 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            let x_z = x | z;
+            let an_x_z = self.model.graph().ancestors(&x_z)?;
+            let an_x_z = &an_x_z | &x_z;
             // Restrict the model to the ancestors.
             let an_x_z_model = self.model.select(&an_x_z)?;
             // Map the indices of X and Z to the restricted model.
@@ -524,27 +553,39 @@ macro_for!($type in [CatBN, GaussBN] {
             let n = self.sample_size(x, z);
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
-                        // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            // Get the evidence variables.
+            let e = self.evidence.map_or_else(
+                || set![],
+                |e| e.evidences()
+                    .iter()
+                    .flatten()
+                    .map(|e| e.event())
+                    .collect()
+            );
+            // Get the ancestors of the X U Z U E set.
+            let x_z_e = &(x | z) | &e;
+            let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
+            let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
+            let an_x_z_e_model = self.model.select(&an_x_z_e)?;
+            // Restrict the evidence to the restricted model.
+            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
+            let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
+            let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
             // Check if evidence is actually provided.
-            match self.evidence {
+            match evidence {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, &an_x_z_model, evidence)?;
+                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, &an_x_z_e_model, &evidence)?;
                     // Generate n samples from the model.
                     let dataset = sampler.par_sample_n(n)?;
                     // Fit the CPD.
                     BE::new(&dataset).par_fit(&an_x, &an_z)
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_model)
+                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
                     .with_sample_size(n)?
                     .estimate(&an_x, &an_z),
             }
@@ -577,20 +618,32 @@ macro_for!($type in [CatBN, GaussBN] {
             let n = self.sample_size(x, z);
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let an_x_z = x.union(z).cloned().collect();
-            let an_x_z = self.model.graph().ancestors(&an_x_z)?;
+            // Get the evidence variables.
+            let e = self.evidence.map_or_else(
+                || set![],
+                |e| e.evidences()
+                    .iter()
+                    .flatten()
+                    .map(|e| e.event())
+                    .collect()
+            );
+            // Get the ancestors of the X U Z U E set.
+            let x_z_e = &(x | z) | &e;
+            let an_x_z_e = self.model.graph().ancestors(&x_z_e)?;
+            let an_x_z_e = &an_x_z_e | &x_z_e;
             // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
+            let an_x_z_e_model = self.model.select(&an_x_z_e)?;
+            // Restrict the evidence to the restricted model.
+            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
+            let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
+            let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
             // Check if evidence is actually provided.
-            match self.evidence {
+            match evidence {
                 // Get the evidence.
                 Some(evidence) => {
                     // Initialize the sampler.
-                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, &an_x_z_model, evidence)?;
+                    let sampler = ImportanceSampler::<R, _, _>::new(&mut rng, &an_x_z_e_model, &evidence)?;
                     // Generate n samples from the model.
                     let dataset = sampler.par_sample_n(n)?;
                     // Fit the CPD.
@@ -602,7 +655,7 @@ macro_for!($type in [CatBN, GaussBN] {
                     }
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_model)
+                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
                     .with_sample_size(n)?
                     .estimate(&an_x, &an_z),
             }
