@@ -130,7 +130,7 @@ pub trait BNInference<T>
 where
     T: BN,
 {
-    /// Estimate the values of `x` conditioned on `z` using `n` samples.
+    /// Estimate the values of `x` conditioned on `z`.
     ///
     /// # Arguments
     ///
@@ -367,7 +367,7 @@ pub trait ParBNInference<T>
 where
     T: BN,
 {
-    /// Estimate the values of `x` conditioned on `z` using `n` samples, in parallel.
+    /// Estimate the values of `x` conditioned on `z`, in parallel.
     ///
     /// # Arguments
     ///
@@ -376,9 +376,9 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `x` is empty.
-    /// * `IllegalArgument` if `x` and `z` are not disjoint.
-    /// * `IllegalArgument` if `x` or `z` are not in the model.
+    /// * `EmptySet` if `x` is empty.
+    /// * `SetsNotDisjoint` if `x` and `z` are not disjoint.
+    /// * `VertexOutOfBounds` if `x` or `z` are not in the model.
     ///
     /// # Returns
     ///
@@ -396,20 +396,19 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
-            }
+            x.union(z).try_for_each(|&i| {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);
@@ -435,20 +434,19 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Assert X is not empty.
             if x.is_empty() {
-                return Err(Error::IllegalArgument("Variables X must not be empty.".into()));
+                return Err(Error::EmptySet("X".into()));
             }
             // Assert X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be disjoint.".into(),
-                ));
+                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
             // Assert X and Z are in the model.
-            if !x.union(z).all(|&i| i < self.model.labels().len()) {
-                return Err(Error::IllegalArgument(
-                    "Variables X and Z must be in the model.".into(),
-                ));
-            }
+            x.union(z).try_for_each(|&i| {
+                if i >= self.model.labels().len() {
+                    return Err(Error::VertexOutOfBounds(i));
+                }
+                Ok(())
+            })?;
 
             // Get the sample size.
             let n = self.sample_size(x, z);

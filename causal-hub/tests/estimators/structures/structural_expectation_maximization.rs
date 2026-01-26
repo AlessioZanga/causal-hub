@@ -6,13 +6,13 @@ mod tests {
         use approx::relative_eq;
         use causal_hub::{
             assets::load_eating,
-            datasets::{CatTrjsEv, CatWtdTrjs, Dataset},
+            datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
             random::RngEv,
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             states,
-            types::{Cache, Result},
+            types::{Cache, Error, Result},
         };
         use ndarray::prelude::*;
         use rand::{RngCore, SeedableRng};
@@ -40,7 +40,7 @@ mod tests {
             let evidence = generator.random()?;
 
             // Set the initial graph.
-            let initial_graph = DiGraph::complete(model.labels());
+            let initial_graph = DiGraph::complete(model.labels())?;
 
             // Set uniform CIMs.
             const E: f64 = 10.;
@@ -116,12 +116,18 @@ mod tests {
                         Ok(trjs
                             .values()
                             .iter()
-                            .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
-                            .unwrap()
+                            .max_by(|a, b| {
+                                a.weight()
+                                    .partial_cmp(&b.weight())
+                                    .unwrap_or(std::cmp::Ordering::Equal)
+                            })
+                            .ok_or(Error::IllegalArgument("Empty trajectories".into()))?
                             .clone())
                     })
                     // Reject trajectories with low weight.
-                    .filter(|trj| trj.as_ref().map_or(true, |t| t.weight() >= 1e-3))
+                    .filter(|trj: &Result<CatWtdTrj>| {
+                        trj.as_ref().map_or(true, |t| t.weight() >= 1e-3)
+                    })
                     .collect()
             };
 

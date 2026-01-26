@@ -16,9 +16,9 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
-    /// * `IllegalArgument` if `X` and `Y` are empty sets.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
     ///
     /// # Returns
     ///
@@ -38,10 +38,10 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
-    /// * `IllegalArgument` if `X` and `Y` are empty sets.
-    /// * `IllegalArgument` if not `W` <= `Z` <= `V`.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
+    /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
+    /// * `SubsetMismatch` if not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
@@ -65,10 +65,10 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint sets.
-    /// * `IllegalArgument` if `X` or `Y` are empty sets.
-    /// * `IllegalArgument` if not `W` <= `V`.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
+    /// * `SubsetMismatch` if not `W` <= `V`.
     ///
     /// # Returns
     ///
@@ -142,17 +142,18 @@ mod digraph {
     //
     //     G^PDB = G \ { X -> PCP(X, Y) }
     //
-    fn _proper_backdoor_graph(g: &DiGraph, x: &Set<usize>, pcp: &Set<usize>) -> DiGraph {
+    fn _proper_backdoor_graph(g: &DiGraph, x: &Set<usize>, pcp: &Set<usize>) -> Result<DiGraph> {
         // Clone the graph.
         let mut g_pdb = g.clone();
         // Remove all the edge from X to PCP(X, Y).
         x.iter()
             .flat_map(|&i| pcp.iter().map(move |&j| (i, j)))
-            .for_each(|(i, j)| {
-                g_pdb.del_edge(i, j);
-            });
+            .try_for_each(|(i, j)| -> Result<_> {
+                g_pdb.del_edge(i, j)?;
+                Ok(())
+            })?;
         // Return the modified graph.
-        g_pdb
+        Ok(g_pdb)
     }
 
     impl BackdoorCriterion for DiGraph {
@@ -178,7 +179,7 @@ mod digraph {
             }
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp)?;
             // b) Check if Z separates X from Y in G^PDB.
             if !g_pdb.is_separator_set(x, y, z)? {
                 return Ok(false);
@@ -221,7 +222,7 @@ mod digraph {
             let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp)?;
 
             // Check if Z is a minimal separator in G^PDB under the constraint V'.
             g_pdb.is_minimal_separator_set(x, y, z, Some(w), Some(v_prime))
@@ -259,7 +260,7 @@ mod digraph {
             let v_prime = &(v - &pde);
 
             // Compute the proper backdoor graph.
-            let g_pdb = _proper_backdoor_graph(self, x, &pcp);
+            let g_pdb = _proper_backdoor_graph(self, x, &pcp)?;
 
             // Find a minimal separator in G^PDB under the constraint V'.
             g_pdb.find_minimal_separator_set(x, y, Some(w), Some(v_prime))
@@ -272,13 +273,13 @@ mod digraph {
 
         #[test]
         fn proper_causal_path() -> Result<()> {
-            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"]);
-            graph.add_edge(0, 1);
-            graph.add_edge(0, 2);
-            graph.add_edge(1, 2);
-            graph.add_edge(1, 3);
-            graph.add_edge(2, 3);
-            graph.add_edge(3, 4);
+            let mut graph = DiGraph::empty(vec!["A", "B", "C", "D", "E"])?;
+            graph.add_edge(0, 1)?;
+            graph.add_edge(0, 2)?;
+            graph.add_edge(1, 2)?;
+            graph.add_edge(1, 3)?;
+            graph.add_edge(2, 3)?;
+            graph.add_edge(3, 4)?;
 
             assert_eq!(
                 _proper_causal_path(&graph, &set![0], &set![3])?,

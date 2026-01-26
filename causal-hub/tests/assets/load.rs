@@ -48,14 +48,14 @@ mod tests {
 
                 // Check graph structure.
                 assert_eq!(model.graph().vertices().len(), 8);
-                assert!(model.graph().has_edge(0, 6));
-                assert!(model.graph().has_edge(1, 2));
-                assert!(model.graph().has_edge(3, 2));
-                assert!(model.graph().has_edge(3, 7));
-                assert!(model.graph().has_edge(4, 3));
-                assert!(model.graph().has_edge(5, 1));
-                assert!(model.graph().has_edge(5, 4));
-                assert!(model.graph().has_edge(6, 3));
+                assert!(model.graph().has_edge(0, 6)?);
+                assert!(model.graph().has_edge(1, 2)?);
+                assert!(model.graph().has_edge(3, 2)?);
+                assert!(model.graph().has_edge(3, 7)?);
+                assert!(model.graph().has_edge(4, 3)?);
+                assert!(model.graph().has_edge(5, 1)?);
+                assert!(model.graph().has_edge(5, 4)?);
+                assert!(model.graph().has_edge(6, 3)?);
 
                 // Check CPDs.
                 assert_eq!(model.cpds()[0].labels()[0], "asia");

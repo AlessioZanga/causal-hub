@@ -154,7 +154,9 @@ impl PyCatIncTable {
         }
 
         // Construct the categorical incomplete tabular dataset.
-        Ok(CatIncTable::new(states, values).map_err(to_pyerr)?.into())
+        CatIncTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

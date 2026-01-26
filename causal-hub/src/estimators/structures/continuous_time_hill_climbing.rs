@@ -163,7 +163,7 @@ where
             // Get the edge indices.
             let (i, j) = (edge[0], edge[1]);
             // Assert edge must be either present and not forbidden ...
-            if self.initial_graph.has_edge(i, j) {
+            if self.initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
                     return Err(Error::PriorKnowledgeConflict(format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
@@ -189,7 +189,7 @@ where
     ///
     pub fn fit(&self) -> Result<DiGraph> {
         // Clone the initial graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels());
+        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
 
         // For each vertex in the graph ...
         for i in self.initial_graph.vertices() {
@@ -265,7 +265,7 @@ where
             // Set the current parent set.
             for j in curr_pa {
                 // Add an edge from vertex `j` to vertex `i`.
-                graph.add_edge(j, i);
+                graph.add_edge(j, i)?;
             }
         }
 
@@ -382,13 +382,13 @@ where
             .collect::<Result<_>>()?;
 
         // Clone the initial graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels());
+        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
 
         // Set the current parent set.
         for (i, curr_pa) in parents.into_iter().enumerate() {
             for j in curr_pa {
                 // Add an edge from vertex `j` to vertex `i`.
-                graph.add_edge(j, i);
+                graph.add_edge(j, i)?;
             }
         }
 

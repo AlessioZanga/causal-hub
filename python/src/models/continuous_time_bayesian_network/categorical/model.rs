@@ -73,7 +73,7 @@ impl PyCatCTBN {
         // Convert Vec<PyCatCPD> to Vec<CatCIM>.
         let cims = cims.into_iter().map(|x: PyCatCIM| x.into());
         // Create a new CatCTBN with the given parameters.
-        Ok(CatCTBN::new(graph, cims).map_err(to_pyerr)?.into())
+        CatCTBN::new(graph, cims).map(Into::into).map_err(to_pyerr)
     }
 
     /// Returns the name of the model, if any.
@@ -324,11 +324,9 @@ impl PyCatCTBN {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                CatCTBN::from_json_string(json).map_err(to_pyerr)?,
-            )),
-        })
+        CatCTBN::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -356,11 +354,9 @@ impl PyCatCTBN {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                CatCTBN::from_json_file(path).map_err(to_pyerr)?,
-            )),
-        })
+        CatCTBN::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -371,7 +367,6 @@ impl PyCatCTBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path).map_err(to_pyerr)?;
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

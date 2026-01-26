@@ -11,7 +11,7 @@ mod tests {
         random::RngEv,
         samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
         set,
-        types::Result,
+        types::{Error, Result},
     };
     use rand::{RngCore, SeedableRng};
     use rand_xoshiro::Xoshiro256PlusPlus;
@@ -194,8 +194,12 @@ mod tests {
                             Ok(trjs
                                 .values()
                                 .iter()
-                                .max_by(|a, b| a.weight().partial_cmp(&b.weight()).unwrap())
-                                .unwrap()
+                                .max_by(|a, b| {
+                                    a.weight()
+                                        .partial_cmp(&b.weight())
+                                        .unwrap_or(std::cmp::Ordering::Equal)
+                                })
+                                .ok_or(Error::IllegalArgument("Empty trajectories".into()))?
                                 .clone())
                         })
                         .collect()

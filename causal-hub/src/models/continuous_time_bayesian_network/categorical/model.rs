@@ -98,8 +98,8 @@ impl AbsDiffEq for CatCTBN {
                 .cims
                 .iter()
                 .zip(&other.cims)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.abs_diff_eq(other_cpd, epsilon)
+                .all(|((label, cim), (other_label, other_cim))| {
+                    label.eq(other_label) && cim.abs_diff_eq(other_cim, epsilon)
                 })
     }
 }
@@ -124,8 +124,8 @@ impl RelativeEq for CatCTBN {
                 .cims
                 .iter()
                 .zip(&other.cims)
-                .all(|((label, cpd), (other_label, other_cpd))| {
-                    label.eq(other_label) && cpd.relative_eq(other_cpd, epsilon, max_relative)
+                .all(|((label, cim), (other_label, other_cim))| {
+                    label.eq(other_label) && cim.relative_eq(other_cim, epsilon, max_relative)
                 })
     }
 }
@@ -148,20 +148,20 @@ impl CTBN for CatCTBN {
     where
         I: IntoIterator<Item = Self::CIM>,
     {
-        // Collect the CPDs into a map.
+        // Collect the CIMs into a map.
         let mut cims: Map<_, _> = cims
             .into_iter()
             .map(|x| {
                 if x.labels().len() != 1 {
                     return Err(Error::InvalidParameter(
-                        "cpd".to_string(),
-                        "CPD must contain exactly one label.".to_string(),
+                        "cim".to_string(),
+                        "CIM must contain exactly one label.".to_string(),
                     ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
             })
             .collect::<Result<_>>()?;
-        // Sort the CPDs by their labels.
+        // Sort the CIMs by their labels.
         cims.sort_keys();
 
         // Allocate the states of the variables.
@@ -222,7 +222,7 @@ impl CTBN for CatCTBN {
         })?;
 
         // Initialize an empty graph for the uniform initial distribution.
-        let initial_graph = DiGraph::empty(graph.labels());
+        let initial_graph = DiGraph::empty(graph.labels())?;
         // Initialize the CPDs as uniform distributions.
         let initial_cpds: Vec<_> = cims
             .values()

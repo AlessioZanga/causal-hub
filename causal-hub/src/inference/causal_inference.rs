@@ -43,9 +43,9 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    /// * `EmptySet` if `X` is empty.
+    /// * `EmptySet` if `Y` is empty.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
@@ -65,11 +65,11 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
-    /// * `IllegalArgument` if `X` and `Z` are not disjoint.
-    /// * `IllegalArgument` if `Y` and `Z` are not disjoint.
+    /// * `EmptySet` if `X` is empty.
+    /// * `EmptySet` if `Y` is empty.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint.
+    /// * `SetsNotDisjoint` if `X` and `Z` are not disjoint.
+    /// * `SetsNotDisjoint` if `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///

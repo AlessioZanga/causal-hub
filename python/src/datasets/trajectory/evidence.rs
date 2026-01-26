@@ -245,11 +245,9 @@ impl PyCatTrjEv {
             .collect::<PyResult<_>>()?;
 
         // Construct the evidence.
-        let inner = CatTrjEv::new(states, evidence).map_err(to_pyerr)?;
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrjEv::new(states, evidence)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 }
 
@@ -341,10 +339,6 @@ impl PyCatTrjsEv {
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
 
         // Create a new CatTrjsEv with the given parameters.
-        let inner = CatTrjsEv::new(dfs).map_err(to_pyerr)?;
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrjsEv::new(dfs).map(Into::into).map_err(to_pyerr)
     }
 }

@@ -356,7 +356,7 @@ where
             // Get the edge indices.
             let (i, j) = (edge[0], edge[1]);
             // Assert edge must be either present and not forbidden ...
-            if self.initial_graph.has_edge(i, j) {
+            if self.initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
                     return Err(Error::PriorKnowledgeConflict(format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
@@ -449,7 +449,7 @@ where
                     // Remove the vertex from the parents.
                     pa_i.retain(|&x| x != j);
                     // Remove the edge from the graph.
-                    graph.del_edge(j, i);
+                    graph.del_edge(j, i)?;
                 }
 
                 // Increment the counter.
@@ -534,16 +534,16 @@ where
             .collect::<Result<_>>()?;
 
         // Initialize an empty graph.
-        let mut graph = DiGraph::empty(self.initial_graph.labels());
+        let mut graph = DiGraph::empty(self.initial_graph.labels())?;
 
         // Set the parents of each vertex.
-        parents.into_iter().enumerate().for_each(|(i, pa_i)| {
+        parents.into_iter().enumerate().try_for_each(|(i, pa_i)| {
             // For each parent ...
-            pa_i.into_iter().for_each(|j| {
-                // Add the edge to the graph.
-                graph.add_edge(j, i);
+            pa_i.into_iter().try_for_each(|j| -> Result<_> {
+                graph.add_edge(j, i)?;
+                Ok(())
             })
-        });
+        })?;
 
         // Return the fitted graph.
         Ok(graph)

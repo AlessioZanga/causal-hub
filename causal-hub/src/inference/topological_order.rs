@@ -14,7 +14,7 @@ pub trait TopologicalOrder {
     /// # Returns
     ///
     /// A vector of vertex indices in topological order,
-    /// or `None` if the order does not exists.
+    /// or `None` if the order does not exist.
     ///
     fn topological_order(&self) -> Option<Vec<usize>>;
 }

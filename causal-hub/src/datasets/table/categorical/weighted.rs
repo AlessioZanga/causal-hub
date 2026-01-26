@@ -31,6 +31,11 @@ impl CatWtdTable {
     /// * `dataset` - The categorical dataset.
     /// * `weights` - The weights of the samples.
     ///
+    /// # Errors
+    ///
+    /// * If the number of weights is different from the number of samples.
+    /// * If any weight is not finite.
+    ///
     /// # Returns
     ///
     /// A new categorical weighted dataset instance.

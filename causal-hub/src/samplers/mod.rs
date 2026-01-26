@@ -77,9 +77,9 @@ where
     ///
     /// * `max_length` - The length of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `max_length` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -93,9 +93,9 @@ where
     ///
     /// * `max_time` - The ending time of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `max_time` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -110,11 +110,11 @@ where
     /// * `max_length` - The length of the trajectory.
     /// * `max_time` - The ending time of the trajectory.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
     ///
     /// # Returns
@@ -130,12 +130,9 @@ where
     /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_length` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -150,12 +147,9 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -171,13 +165,12 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///
@@ -206,12 +199,9 @@ where
     /// * `max_length` - The length of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_length` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -226,12 +216,9 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
-    ///
-    /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
+    /// Returns `IllegalArgument` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -247,13 +234,12 @@ where
     /// * `max_time` - The ending time of the trajectories.
     /// * `n` - The number of trajectories to generate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if:
+    /// Returns `IllegalArgument` if:
     ///
-    /// * `max_length` is zero or negative.
+    /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
-    /// * `n` is zero or negative.
     ///
     /// # Returns
     ///

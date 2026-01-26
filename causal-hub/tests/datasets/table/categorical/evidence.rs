@@ -180,7 +180,7 @@ fn test_new_unsorted_uncertain() -> Result<()> {
 }
 
 #[test]
-fn test_invalid_size_uncertain_positive() {
+fn test_invalid_size_uncertain_positive() -> Result<()> {
     let mut states = States::default();
     states.insert(
         "X".to_string(),
@@ -193,10 +193,12 @@ fn test_invalid_size_uncertain_positive() {
     }];
 
     assert!(CatEv::new(states, values).is_err());
+
+    Ok(())
 }
 
 #[test]
-fn test_negative_probability() {
+fn test_negative_probability() -> Result<()> {
     let mut states = States::default();
     states.insert(
         "X".to_string(),
@@ -209,10 +211,12 @@ fn test_negative_probability() {
     }];
 
     assert!(CatEv::new(states, values).is_err());
+
+    Ok(())
 }
 
 #[test]
-fn test_sum_probability() {
+fn test_sum_probability() -> Result<()> {
     let mut states = States::default();
     states.insert(
         "X".to_string(),
@@ -225,4 +229,6 @@ fn test_sum_probability() {
     }];
 
     assert!(CatEv::new(states, values).is_err());
+
+    Ok(())
 }

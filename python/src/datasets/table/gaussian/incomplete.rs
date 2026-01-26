@@ -45,10 +45,9 @@ impl PyGaussIncTable {
     pub fn new(labels: Vec<String>, values: PyReadonlyArray2<GaussType>) -> PyResult<Self> {
         let values = values.as_array().to_owned();
         let labels = labels.into_iter().collect();
-        let inner = GaussIncTable::new(labels, values).map_err(to_pyerr)?;
-        Ok(Self {
-            inner: Arc::new(RwLock::new(inner)),
-        })
+        GaussIncTable::new(labels, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// The labels of the dataset.
@@ -130,7 +129,9 @@ impl PyGaussIncTable {
         let labels = labels.into_iter().collect();
 
         // Construct the gaussian incomplete tabular dataset.
-        Ok(GaussIncTable::new(labels, values).map_err(to_pyerr)?.into())
+        GaussIncTable::new(labels, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

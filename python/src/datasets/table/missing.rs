@@ -46,7 +46,9 @@ impl PyMissingTable {
         let mask = mask.as_array().to_owned();
         // Construct the labels.
         let labels = labels.into_iter().collect();
-        Ok(MissingTable::new(labels, mask).map_err(to_pyerr)?.into())
+        MissingTable::new(labels, mask)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// The labels of the dataset.

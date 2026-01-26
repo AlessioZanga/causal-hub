@@ -216,7 +216,7 @@ impl Labelled for DiGraph {
 }
 
 impl Graph for DiGraph {
-    fn empty<I, V>(labels: I) -> Self
+    fn empty<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
@@ -230,8 +230,10 @@ impl Graph for DiGraph {
             .map(|x| x.as_ref().to_owned())
             .collect();
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
+        // Check for duplicate labels.
+        if labels.len() != n {
+            return Err(Error::NonUniqueLabels);
+        }
 
         // Sort the labels.
         labels.sort();
@@ -239,13 +241,13 @@ impl Graph for DiGraph {
         // Initialize the adjacency matrix with `false` values.
         let adjacency_matrix: Array2<_> = Array::from_elem((n, n), false);
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
-    fn complete<I, V>(labels: I) -> Self
+    fn complete<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
@@ -259,8 +261,10 @@ impl Graph for DiGraph {
             .map(|x| x.as_ref().to_owned())
             .collect();
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
+        // Check for duplicate labels.
+        if labels.len() != n {
+            return Err(Error::NonUniqueLabels);
+        }
 
         // Sort the labels.
         labels.sort();
@@ -270,10 +274,10 @@ impl Graph for DiGraph {
         // Set the diagonal to `false` to avoid self-loops.
         adjacency_matrix.diag_mut().fill(false);
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -293,44 +297,56 @@ impl Graph for DiGraph {
             .collect()
     }
 
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
-        self.adjacency_matrix[[x, y]]
+        Ok(self.adjacency_matrix[[x, y]])
     }
 
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
 
-        true
+        Ok(true)
     }
 
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
 
-        true
+        Ok(true)
     }
 
     fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {

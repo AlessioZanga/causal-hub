@@ -32,7 +32,7 @@ mod tests {
         let chi_sq_test = ChiSquaredTest::new(&cache, 0.01)?;
 
         // Set the initial graph.
-        let initial_graph = DiGraph::complete(dataset.labels());
+        let initial_graph = DiGraph::complete(dataset.labels())?;
         // Initialize the CTPC algorithm.
         let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)?;
         // Run the CTPC algorithm.
@@ -66,7 +66,7 @@ mod tests {
         let chi_sq_test = ChiSquaredTest::new(&cache, 0.01)?;
 
         // Set the initial graph.
-        let initial_graph = DiGraph::complete(dataset.labels());
+        let initial_graph = DiGraph::complete(dataset.labels())?;
         // Initialize the CTPC algorithm.
         let ctpc = CTPC::new(&initial_graph, &f_test, &chi_sq_test)?;
         // Run the CTPC algorithm.

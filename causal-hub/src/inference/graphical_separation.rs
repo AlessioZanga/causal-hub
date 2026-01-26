@@ -18,9 +18,9 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
-    /// * `IllegalArgument` if `X` and `Y` are empty sets.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
     ///
     /// # Returns
     ///
@@ -40,10 +40,10 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-    /// * `IllegalArgument` if `X`, `Y` or `Z` are not disjoint sets.
-    /// * `IllegalArgument` if `X` and `Y` are empty sets.
-    /// * `IllegalArgument` if not `W` <= `Z` <= `V`.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
+    /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
+    /// * `SubsetMismatch` if not `W` <= `Z` <= `V`.
     ///
     /// # Returns
     ///
@@ -67,10 +67,10 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint sets.
-    /// * `IllegalArgument` if `X` or `Y` are empty sets.
-    /// * `IllegalArgument` if not `W` <= `V`.
+    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
+    /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint sets.
+    /// * `EmptySet` if `X` or `Y` are empty sets.
+    /// * `SubsetMismatch` if not `W` <= `V`.
     ///
     /// # Returns
     ///

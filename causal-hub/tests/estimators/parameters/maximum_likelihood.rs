@@ -617,10 +617,10 @@ mod tests {
                     );
                     let dataset = CatTable::from_csv_string(csv)?;
 
-                    let mut graph = DiGraph::empty(["A", "B", "C"]);
-                    graph.add_edge(0, 1);
-                    graph.add_edge(0, 2);
-                    graph.add_edge(1, 2);
+                    let mut graph = DiGraph::empty(["A", "B", "C"])?;
+                    graph.add_edge(0, 1)?;
+                    graph.add_edge(0, 2)?;
+                    graph.add_edge(1, 2)?;
 
                     let estimator = MLE::new(&dataset);
 

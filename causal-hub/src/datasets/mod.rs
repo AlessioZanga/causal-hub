@@ -38,6 +38,11 @@ pub trait Dataset {
     ///
     /// * `x` - Set of variables to select.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A dataset restricted to the specified variables.
@@ -89,6 +94,11 @@ pub trait IncDataset: Dataset + Sized {
     /// * `x` - An optional set of variables to consider for missing data handling.
     /// * `pr` - An optional missing mechanism specification.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// Either a complete or weighted dataset.
@@ -102,6 +112,10 @@ pub trait IncDataset: Dataset + Sized {
 
     /// Perform list-wise (LW) deletion to handle missing data.
     ///
+    /// # Errors
+    ///
+    /// * If the dataset is empty after LW deletion.
+    ///
     /// # Returns
     ///
     /// A complete dataset obtained via LW deletion.
@@ -113,6 +127,11 @@ pub trait IncDataset: Dataset + Sized {
     /// # Arguments
     ///
     /// * `x` - A set of column indices for PW deletion.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
     ///
     /// # Returns
     ///
@@ -127,6 +146,11 @@ pub trait IncDataset: Dataset + Sized {
     /// * `x` - A set of column indices for IPW deletion.
     /// * `pr` - The missing data indicators.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
     /// # Returns
     ///
     /// A weighted dataset restricted to the specified columns via IPW deletion.
@@ -139,6 +163,11 @@ pub trait IncDataset: Dataset + Sized {
     ///
     /// * `x` - A set of column indices for AIPW deletion.
     /// * `pr` - The missing data indicators.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
     ///
     /// # Returns
     ///

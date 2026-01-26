@@ -58,7 +58,7 @@ mod tests {
                 }
 
                 #[test]
-                fn from_csv_reader_malformed_record() {
+                fn from_csv_reader_malformed_record() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "no,no,no\n",
@@ -67,10 +67,12 @@ mod tests {
                         "yes,yes,yes"
                     );
                     assert!(CatTable::from_csv_string(csv).is_err());
+
+                    Ok(())
                 }
 
                 #[test]
-                fn from_csv_reader_missing_value() {
+                fn from_csv_reader_missing_value() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "no,no,no\n",
@@ -79,6 +81,8 @@ mod tests {
                         "yes,yes,yes"
                     );
                     assert!(CatTable::from_csv_string(csv).is_err());
+
+                    Ok(())
                 }
 
                 #[test]
@@ -134,7 +138,7 @@ mod tests {
                 }
 
                 #[test]
-                fn from_csv_reader_malformed_record() {
+                fn from_csv_reader_malformed_record() -> Result<()> {
                     let csv = concat!(
                         "A,B,C\n",
                         "no,no,no\n",
@@ -143,6 +147,8 @@ mod tests {
                         "yes,yes,yes"
                     );
                     assert!(CatIncTable::from_csv_string(csv).is_err());
+
+                    Ok(())
                 }
 
                 #[test]
@@ -190,7 +196,7 @@ mod tests {
             }
 
             #[test]
-            fn from_csv_reader_malformed_record() {
+            fn from_csv_reader_malformed_record() -> Result<()> {
                 let csv = concat!(
                     "X,Y,Z\n", //
                     "1,2,3\n", //
@@ -198,10 +204,12 @@ mod tests {
                     "7,8,9\n"
                 );
                 assert!(GaussTable::from_csv_string(csv).is_err());
+
+                Ok(())
             }
 
             #[test]
-            fn from_csv_reader_missing_value() {
+            fn from_csv_reader_missing_value() -> Result<()> {
                 let csv = concat!(
                     "X,Y,Z\n", //
                     "1,2,3\n", //
@@ -209,6 +217,8 @@ mod tests {
                     "7,8,9\n"
                 );
                 assert!(GaussTable::from_csv_string(csv).is_err());
+
+                Ok(())
             }
 
             #[test]

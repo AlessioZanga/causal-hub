@@ -207,11 +207,9 @@ impl PyCatCIM {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                CatCIM::from_json_string(json).map_err(to_pyerr)?,
-            )),
-        })
+        CatCIM::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -239,9 +237,9 @@ impl PyCatCIM {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatCIM::from_json_file(path).map_err(to_pyerr)?)),
-        })
+        CatCIM::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -252,7 +250,6 @@ impl PyCatCIM {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path).map_err(to_pyerr)?;
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

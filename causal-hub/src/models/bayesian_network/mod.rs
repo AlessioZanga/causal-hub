@@ -29,6 +29,12 @@ pub trait BN {
     /// * `graph` - The underlying graph.
     /// * `cpds` - The conditional probability distributions.
     ///
+    /// # Errors
+    ///
+    /// * If the number of CPDs does not match the number of vertices in the graph.
+    /// * If the labels of the CPDs do not match the labels of the graph.
+    /// * If the conditioning labels of the CPDs do not match the parents of the vertices in the graph.
+    ///
     /// # Returns
     ///
     /// A new Bayesian network instance.
@@ -62,7 +68,7 @@ pub trait BN {
     ///
     fn graph(&self) -> &DiGraph;
 
-    /// Returns the a map labels-distributions.
+    /// Returns a map labels-distributions.
     ///
     /// # Returns
     ///
@@ -94,6 +100,12 @@ pub trait BN {
     /// * `description` - The description of the model.
     /// * `graph` - The underlying graph.
     /// * `cpds` - The conditional probability distributions.
+    ///
+    /// # Errors
+    ///
+    /// * If the number of CPDs does not match the number of vertices in the graph.
+    /// * If the labels of the CPDs do not match the labels of the graph.
+    /// * If the conditioning labels of the CPDs do not match the parents of the vertices in the graph.
     ///
     /// # Returns
     ///

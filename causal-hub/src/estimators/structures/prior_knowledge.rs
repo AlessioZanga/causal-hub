@@ -58,6 +58,12 @@ impl PK {
     /// * `required` - An iterator over required edges.
     /// * `temporal_order` - An iterator over tiers of vertices, where each tier is an iterator of vertex indices.
     ///
+    /// # Errors
+    ///
+    /// * If the labels are not sorted.
+    /// * If any of the vertices in the forbidden, required, or temporal order are out of bounds.
+    /// * If any edge is set to both forbidden and required.
+    ///
     /// # Returns
     ///
     /// A new instance of prior knowledge.
@@ -74,7 +80,10 @@ impl PK {
         K: IntoIterator<Item = L>,
         L: IntoIterator<Item = usize>,
     {
-        // FIXME: Check labels sorted.
+        // Check if the labels are sorted.
+        if !labels.iter().is_sorted() {
+            return Err(Error::IllegalArgument("Labels must be sorted".into()));
+        }
 
         // Get the number of labels.
         let n = labels.len();
@@ -82,13 +91,22 @@ impl PK {
         let mut adjacency_matrix = Array::from_elem((n, n), PKS::Unknown);
 
         // Set the forbidden edges to `Forbidden`.
-        forbidden.into_iter().for_each(|(i, j)| {
+        forbidden.into_iter().try_for_each(|(i, j)| {
+            // Check if the vertices are within bounds.
+            if i >= n || j >= n {
+                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+            }
             // Set the edge to `Forbidden`.
             adjacency_matrix[[i, j]] = PKS::Forbidden;
-        });
+            Ok(())
+        })?;
 
         // Set the required edges to `Required`.
         required.into_iter().try_for_each(|(i, j)| {
+            // Check if the vertices are within bounds.
+            if i >= n || j >= n {
+                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+            }
             // Assert that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
                 return Err(Error::PriorKnowledgeConflict(format!(
@@ -106,8 +124,18 @@ impl PK {
         // Collect the tiered edges.
         let temporal_order: Vec<Vec<_>> = temporal_order
             .into_iter()
-            .map(|tier| tier.into_iter().collect())
-            .collect();
+            .map(|tier| {
+                let tier: Vec<_> = tier.into_iter().collect();
+                // Check if the vertices are within bounds.
+                tier.iter().try_for_each(|&i| {
+                    if i >= n {
+                        return Err(Error::VertexOutOfBounds(i));
+                    }
+                    Ok(())
+                })?;
+                Ok(tier)
+            })
+            .collect::<Result<_>>()?;
         // Edges from a vertex in a higher tier to a vertex in a lower tier are forbidden.
         temporal_order
             .iter()

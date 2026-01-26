@@ -29,6 +29,13 @@ pub trait CSSEstimator<T> {
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The sufficient statistics.
@@ -44,6 +51,13 @@ pub trait ParCSSEstimator<T> {
     ///
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
     ///
     /// # Returns
     ///
@@ -64,6 +78,13 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CPD.
@@ -83,6 +104,13 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CPD.
@@ -97,6 +125,10 @@ pub trait BNEstimator<T> {
     /// # Arguments
     ///
     /// * `graph` - The graph to fit the estimator to.
+    ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
     ///
     /// # Returns
     ///
@@ -134,6 +166,10 @@ pub trait ParBNEstimator<T> {
     /// # Arguments
     ///
     /// * `graph` - The graph to fit the estimator to.
+    ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
     ///
     /// # Returns
     ///
@@ -176,6 +212,13 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CIM.
@@ -195,6 +238,13 @@ where
     /// * `x` - The variable to fit the estimator to.
     /// * `z` - The variables to condition on.
     ///
+    /// # Errors
+    ///
+    /// * If the set of variables to fit the estimator to is empty.
+    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
+    /// * If the set of variables to condition on is not a subset of the dataset variables.
+    /// * If the sets of variables are not disjoint.
+    ///
     /// # Returns
     ///
     /// The estimated CIM.
@@ -209,6 +259,10 @@ pub trait CTBNEstimator<T> {
     /// # Arguments
     ///
     /// * `graph` - The graph to fit the estimator to.
+    ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
     ///
     /// # Returns
     ///
@@ -246,6 +300,10 @@ pub trait ParCTBNEstimator<T> {
     /// # Arguments
     ///
     /// * `graph` - The graph to fit the estimator to.
+    ///
+    /// # Errors
+    ///
+    /// * If the graph labels are not a subset of the dataset variables.
     ///
     /// # Returns
     ///

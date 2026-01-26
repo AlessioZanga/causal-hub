@@ -77,7 +77,7 @@ impl PyGaussBN {
         // Convert Vec<PyGaussCPD> to Vec<GaussCPD>.
         let cpds = cpds.into_iter().map(|x: PyGaussCPD| x.into());
         // Create a new GaussBN with the given parameters.
-        Ok(GaussBN::new(graph, cpds).map_err(to_pyerr)?.into())
+        GaussBN::new(graph, cpds).map(Into::into).map_err(to_pyerr)
     }
 
     /// Returns the name of the model, if any.
@@ -381,7 +381,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.map_err(to_pyerr)?.into())
+        estimate.map(Into::into).map_err(to_pyerr)
     }
 
     /// Estimate a conditional causal effect (CACE).
@@ -471,7 +471,7 @@ impl PyGaussBN {
             }
         };
         // Return the dataset.
-        Ok(estimate.map_err(to_pyerr)?.map(|e| e.into()))
+        estimate.map(|e| e.map(Into::into)).map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.
@@ -488,11 +488,9 @@ impl PyGaussBN {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                GaussBN::from_json_string(json).map_err(to_pyerr)?,
-            )),
-        })
+        GaussBN::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -520,11 +518,9 @@ impl PyGaussBN {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                GaussBN::from_json_file(path).map_err(to_pyerr)?,
-            )),
-        })
+        GaussBN::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -535,7 +531,6 @@ impl PyGaussBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path).map_err(to_pyerr)?;
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

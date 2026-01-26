@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn new_non_unique_labels() {
+    fn new_non_unique_labels() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
@@ -130,10 +130,12 @@ mod tests {
             [1, 0, 1, 0]
         ];
         assert!(CatTable::new(states, values).is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn new_too_many_states() {
+    fn new_too_many_states() -> Result<()> {
         let too_many_states: Vec<_> = (0..256).map(|i| i.to_owned()).collect();
         let too_many_states: Set<_> = too_many_states.iter().map(|s| s.to_string()).collect();
         let mut states = states![("B", ["no", "yes"]), ("C", ["yes", "no"]),];
@@ -146,10 +148,12 @@ mod tests {
             [1, 0, 1]
         ];
         assert!(CatTable::new(states, values).is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn new_wrong_variables_and_columns() {
+    fn new_wrong_variables_and_columns() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
@@ -162,10 +166,12 @@ mod tests {
             [1, 0]
         ];
         assert!(CatTable::new(states, values).is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn new_wrong_values() {
+    fn new_wrong_values() -> Result<()> {
         let states = states![
             ("B", ["no", "yes"]),
             ("C", ["yes", "no"]),
@@ -178,6 +184,8 @@ mod tests {
             [1, 0, 1]
         ];
         assert!(CatTable::new(states, values).is_err());
+
+        Ok(())
     }
 
     #[test]

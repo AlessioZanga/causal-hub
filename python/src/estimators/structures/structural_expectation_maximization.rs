@@ -76,11 +76,11 @@ pub fn sem<'a>(
                     // Log the graph initialization.
                     debug!("Setting initial graph for CTPC algorithm to a complete graph ...");
                     // Set the initial graph to a complete graph.
-                    let mut initial_graph = DiGraph::complete(evidence.labels());
+                    let mut initial_graph = DiGraph::complete(evidence.labels())?;
                     // Apply the prior knowledge to the initial graph.
                     for (i, j) in prior_knowledge.forbidden_edges() {
                         // Remove the edge if it is forbidden.
-                        initial_graph.del_edge(i, j);
+                        initial_graph.del_edge(i, j)?;
                     }
                     // Check if the number of vertices is less than or equal to the maximum number of parents.
                     if initial_graph.vertices().len() > max_parents + 1 {
@@ -99,7 +99,7 @@ pub fn sem<'a>(
                                 // Remove the excess parents.
                                 for j in pa_i.split_off(max_parents) {
                                     // Remove the edge.
-                                    initial_graph.del_edge(j, i);
+                                    initial_graph.del_edge(j, i)?;
                                 }
                             }
                         }
@@ -111,11 +111,11 @@ pub fn sem<'a>(
                     // Log the graph initialization.
                     debug!("Setting initial graph for CTHC algorithm to an empty graph ...");
                     // Set the initial graph to an empty graph.
-                    let mut initial_graph = DiGraph::empty(evidence.labels());
+                    let mut initial_graph = DiGraph::empty(evidence.labels())?;
                     // Apply the prior knowledge to the initial graph.
                     for (i, j) in prior_knowledge.required_edges() {
                         // Add the edge if it is required.
-                        initial_graph.add_edge(i, j);
+                        initial_graph.add_edge(i, j)?;
                     }
                     // Return the initial graph.
                     initial_graph

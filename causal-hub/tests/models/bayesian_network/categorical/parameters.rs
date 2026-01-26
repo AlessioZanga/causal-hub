@@ -30,19 +30,23 @@ mod tests {
     }
 
     #[test]
-    fn unique_labels() {
+    fn unique_labels() -> Result<()> {
         let x = states![("A", ["no", "yes"])];
         let z = states![("A", ["no", "yes"])];
         let p = array![[0.1, 0.9], [0.2, 0.8]];
         assert!(CatCPD::new(x, z, p).is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn empty_labels() {
+    fn empty_labels() -> Result<()> {
         let x = states![];
         let z = states![];
         let p = array![[]];
         assert!(CatCPD::new(x, z, p).is_err());
+
+        Ok(())
     }
 
     #[test]

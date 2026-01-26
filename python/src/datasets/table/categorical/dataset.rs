@@ -202,11 +202,9 @@ impl PyCatTable {
         )?;
 
         // Construct the dataset.
-        let inner = CatTable::new(states, values).map_err(to_pyerr)?;
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.

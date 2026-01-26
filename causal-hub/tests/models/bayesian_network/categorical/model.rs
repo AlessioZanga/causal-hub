@@ -11,10 +11,10 @@ mod tests {
     #[test]
     fn new() -> Result<()> {
         // Initialize the graph.
-        let mut graph = DiGraph::empty(["A", "B", "C"]);
-        graph.add_edge(0, 1); // A -> B
-        graph.add_edge(0, 2); // A -> C
-        graph.add_edge(1, 2); // B -> C
+        let mut graph = DiGraph::empty(["A", "B", "C"])?;
+        graph.add_edge(0, 1)?; // A -> B
+        graph.add_edge(0, 2)?; // A -> C
+        graph.add_edge(1, 2)?; // B -> C
 
         // Initialize the distributions.
         let cpds = [
@@ -53,9 +53,9 @@ mod tests {
 
         // Check the graph structure.
         assert_eq!(model.graph().vertices().len(), 3);
-        assert!(model.graph().has_edge(0, 1));
-        assert!(model.graph().has_edge(0, 2));
-        assert!(model.graph().has_edge(1, 2));
+        assert!(model.graph().has_edge(0, 1)?);
+        assert!(model.graph().has_edge(0, 2)?);
+        assert!(model.graph().has_edge(1, 2)?);
 
         // Check the distributions.
         assert_eq!(model.cpds().len(), 3);
@@ -96,11 +96,11 @@ mod tests {
 
     #[test]
     fn unique_labels() -> Result<()> {
-        let mut graph = DiGraph::empty(["A", "B", "C"]);
+        let mut graph = DiGraph::empty(["A", "B", "C"])?;
 
-        graph.add_edge(0, 1);
-        graph.add_edge(0, 2);
-        graph.add_edge(1, 2);
+        graph.add_edge(0, 1)?;
+        graph.add_edge(0, 2)?;
+        graph.add_edge(1, 2)?;
 
         let cpds = [
             CatCPD::new(
@@ -124,11 +124,11 @@ mod tests {
 
     #[test]
     fn missing_distribution() -> Result<()> {
-        let mut graph = DiGraph::empty(["A", "B", "C"]);
+        let mut graph = DiGraph::empty(["A", "B", "C"])?;
 
-        graph.add_edge(0, 1);
-        graph.add_edge(0, 2);
-        graph.add_edge(1, 2);
+        graph.add_edge(0, 1)?;
+        graph.add_edge(0, 2)?;
+        graph.add_edge(1, 2)?;
 
         let cpds = [
             CatCPD::new(
@@ -158,10 +158,10 @@ mod tests {
 
     #[test]
     fn same_parents() -> Result<()> {
-        let mut graph = DiGraph::empty(["A", "B", "C"]);
+        let mut graph = DiGraph::empty(["A", "B", "C"])?;
 
-        graph.add_edge(0, 1);
-        graph.add_edge(0, 2);
+        graph.add_edge(0, 1)?;
+        graph.add_edge(0, 2)?;
 
         let cpds = [
             CatCPD::new(

@@ -136,7 +136,7 @@ impl BifParser {
         let cpds = cpds?;
 
         // Construct the graph.
-        let mut graph = DiGraph::empty(states.keys());
+        let mut graph = DiGraph::empty(states.keys())?;
         cpds.iter().try_for_each(|p| {
             // Assert the CPD has a single variable in the BIF file.
             if p.labels().len() != 1 {
@@ -159,7 +159,7 @@ impl BifParser {
                     Error::Parsing(format!("Failed to get index of label '{z}'."))
                 })?;
                 // Add edge from parent to child.
-                graph.add_edge(z_idx, x_idx);
+                graph.add_edge(z_idx, x_idx)?;
                 Ok(())
             })
         })?;

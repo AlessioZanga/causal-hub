@@ -56,9 +56,12 @@ pub enum Error {
     /// An error related to lock poisoning.
     #[error("Lock poisoning error: {0}")]
     Poison(String),
-    /// An error indicating that a vertex index is out of bounds.
-    #[error("Vertex index {0} is out of bounds")]
+    /// Vertex is out of bounds.
+    #[error("Vertex `{0}` is out of bounds")]
     VertexOutOfBounds(usize),
+    /// Labels must be unique.
+    #[error("Labels must be unique.")]
+    NonUniqueLabels,
     /// An error indicating that a set cannot be empty.
     #[error("Set {0} must not be empty")]
     EmptySet(String),

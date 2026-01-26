@@ -94,7 +94,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     }
 
     /// Sample uncertain evidence.
-    /// TODO: Taken from importance sampling, deduplicate.
+    // TODO: Taken from importance sampling, deduplicate.
     fn sample_evidence(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;

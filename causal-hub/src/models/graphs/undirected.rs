@@ -8,7 +8,7 @@ use serde::{
 use crate::{
     impl_json_io,
     models::{Graph, Labelled},
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A struct representing an undirected graph using an adjacency matrix.
@@ -25,7 +25,7 @@ impl UnGraph {
     ///
     /// * `x` - The vertex for which to find the neighbors.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the vertex is out of bounds.
     ///
@@ -33,11 +33,14 @@ impl UnGraph {
     ///
     /// The neighbors of the vertex.
     ///
-    pub fn neighbors(&self, x: &Set<usize>) -> Set<usize> {
+    pub fn neighbors(&self, x: &Set<usize>) -> Result<Set<usize>> {
         // Check if the vertices are within bounds.
-        x.iter().for_each(|&v| {
-            assert!(v < self.labels.len(), "Vertex `{v}` is out of bounds");
-        });
+        x.iter().try_for_each(|&v| {
+            if v >= self.labels.len() {
+                return Err(Error::VertexOutOfBounds(v));
+            }
+            Ok(())
+        })?;
 
         // Iterate over all vertices and filter the ones that are neighbors.
         let mut neighbors: Set<_> = x
@@ -55,7 +58,7 @@ impl UnGraph {
         neighbors.sort();
 
         // Return the neighbors.
-        neighbors
+        Ok(neighbors)
     }
 }
 
@@ -66,7 +69,7 @@ impl Labelled for UnGraph {
 }
 
 impl Graph for UnGraph {
-    fn empty<I, V>(labels: I) -> Self
+    fn empty<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
@@ -80,8 +83,10 @@ impl Graph for UnGraph {
             .map(|x| x.as_ref().to_owned())
             .collect();
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
+        // Check for duplicate labels.
+        if labels.len() != n {
+            return Err(Error::NonUniqueLabels);
+        }
 
         // Sort the labels.
         labels.sort();
@@ -89,13 +94,13 @@ impl Graph for UnGraph {
         // Initialize the adjacency matrix with `false` values.
         let adjacency_matrix: Array2<_> = Array::from_elem((n, n), false);
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
-    fn complete<I, V>(labels: I) -> Self
+    fn complete<I, V>(labels: I) -> Result<Self>
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
@@ -109,8 +114,10 @@ impl Graph for UnGraph {
             .map(|x| x.as_ref().to_owned())
             .collect();
 
-        // Assert no duplicate labels.
-        assert_eq!(labels.len(), n, "Labels must be unique.");
+        // Check for duplicate labels.
+        if labels.len() != n {
+            return Err(Error::NonUniqueLabels);
+        }
 
         // Sort the labels.
         labels.sort();
@@ -120,10 +127,10 @@ impl Graph for UnGraph {
         // Set the diagonal to `false` to avoid self-loops.
         adjacency_matrix.diag_mut().fill(false);
 
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
     fn vertices(&self) -> Set<usize> {
@@ -150,46 +157,58 @@ impl Graph for UnGraph {
             .collect()
     }
 
-    fn has_edge(&self, x: usize, y: usize) -> bool {
+    fn has_edge(&self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
-        self.adjacency_matrix[[x, y]]
+        Ok(self.adjacency_matrix[[x, y]])
     }
 
-    fn add_edge(&mut self, x: usize, y: usize) -> bool {
+    fn add_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
         // Check if the edge already exists.
         if self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Add the edge.
         self.adjacency_matrix[[x, y]] = true;
         self.adjacency_matrix[[y, x]] = true;
 
-        true
+        Ok(true)
     }
 
-    fn del_edge(&mut self, x: usize, y: usize) -> bool {
+    fn del_edge(&mut self, x: usize, y: usize) -> Result<bool> {
         // Check if the vertices are within bounds.
-        assert!(x < self.labels.len(), "Vertex `{x}` is out of bounds");
-        assert!(y < self.labels.len(), "Vertex `{y}` is out of bounds");
+        if x >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(x));
+        }
+        if y >= self.labels.len() {
+            return Err(Error::VertexOutOfBounds(y));
+        }
 
         // Check if the edge exists.
         if !self.adjacency_matrix[[x, y]] {
-            return false;
+            return Ok(false);
         }
 
         // Delete the edge.
         self.adjacency_matrix[[x, y]] = false;
         self.adjacency_matrix[[y, x]] = false;
 
-        true
+        Ok(true)
     }
 
     fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {
@@ -256,7 +275,7 @@ impl Graph for UnGraph {
 }
 
 impl Serialize for UnGraph {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -287,7 +306,7 @@ impl Serialize for UnGraph {
 }
 
 impl<'de> Deserialize<'de> for UnGraph {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -308,7 +327,7 @@ impl<'de> Deserialize<'de> for UnGraph {
                 formatter.write_str("struct UnGraph")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<UnGraph, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<UnGraph, V::Error>
             where
                 V: MapAccess<'de>,
             {

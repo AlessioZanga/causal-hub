@@ -58,7 +58,7 @@ impl PyDiGraph {
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;
         // Create a new DiGraph with the labels.
-        Ok(DiGraph::empty(vertices).into())
+        DiGraph::empty(vertices).map(Into::into).map_err(to_pyerr)
     }
 
     /// Creates a complete directed graph with the given vertices.
@@ -83,7 +83,9 @@ impl PyDiGraph {
             .map(|x| x?.extract::<String>())
             .collect::<PyResult<_>>()?;
         // Create a new DiGraph with the labels.
-        Ok(DiGraph::complete(vertices).into())
+        DiGraph::complete(vertices)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Returns the vertices of the graph.
@@ -162,7 +164,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x).map_err(to_pyerr)?;
         let y = lock.label_to_index(y).map_err(to_pyerr)?;
         // Check if the edge exists in the graph.
-        Ok(lock.has_edge(x, y))
+        lock.has_edge(x, y).map_err(to_pyerr)
     }
 
     /// Adds an edge between vertices `x` and `y`.
@@ -186,7 +188,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x).map_err(to_pyerr)?;
         let y = lock.label_to_index(y).map_err(to_pyerr)?;
         // Add the edge to the graph.
-        Ok(lock.add_edge(x, y))
+        lock.add_edge(x, y).map_err(to_pyerr)
     }
 
     /// Deletes the edge between vertices `x` and `y`.
@@ -210,7 +212,7 @@ impl PyDiGraph {
         let x = lock.label_to_index(x).map_err(to_pyerr)?;
         let y = lock.label_to_index(y).map_err(to_pyerr)?;
         // Delete the edge from the graph.
-        Ok(lock.del_edge(x, y))
+        lock.del_edge(x, y).map_err(to_pyerr)
     }
 
     /// Returns the parents of a vertex `x`.
@@ -679,7 +681,7 @@ impl PyDiGraph {
             .collect::<PyResult<_>>()?;
 
         // Get the adjacency matrix from the NetworkX graph.
-        let mut graph = DiGraph::empty(labels);
+        let mut graph = DiGraph::empty(labels).map_err(to_pyerr)?;
         // Iterate over the edges and add them to the graph.
         for edge in g.getattr("edges")?.try_iter()? {
             // Extract the edge as a tuple of strings.
@@ -688,7 +690,7 @@ impl PyDiGraph {
             let x = graph.label_to_index(&x).map_err(to_pyerr)?;
             let y = graph.label_to_index(&y).map_err(to_pyerr)?;
             // Add the edge to the graph.
-            graph.add_edge(x, y);
+            graph.add_edge(x, y).map_err(to_pyerr)?;
         }
 
         // Create a new DiGraph from the adjacency matrix.
@@ -741,11 +743,9 @@ impl PyDiGraph {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                DiGraph::from_json_string(json).map_err(to_pyerr)?,
-            )),
-        })
+        DiGraph::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -773,11 +773,9 @@ impl PyDiGraph {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(
-                DiGraph::from_json_file(path).map_err(to_pyerr)?,
-            )),
-        })
+        DiGraph::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.

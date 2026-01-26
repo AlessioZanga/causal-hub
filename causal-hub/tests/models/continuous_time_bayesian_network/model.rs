@@ -18,9 +18,9 @@ mod tests {
         assert_eq!(model.labels(), &labels!["Eating", "FullStomach", "Hungry"]);
         // Check the graph structure.
         assert_eq!(model.graph().vertices().len(), 3);
-        assert!(model.graph().has_edge(0, 1));
-        assert!(model.graph().has_edge(1, 2));
-        assert!(model.graph().has_edge(2, 0));
+        assert!(model.graph().has_edge(0, 1)?);
+        assert!(model.graph().has_edge(1, 2)?);
+        assert!(model.graph().has_edge(2, 0)?);
         // Check the distributions.
         assert_eq!(model.cims().len(), 3);
         assert_eq!(model.cims()[0].labels(), &labels!["Eating"]);

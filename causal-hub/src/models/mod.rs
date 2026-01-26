@@ -32,9 +32,9 @@ pub trait Labelled {
     ///
     /// * `x` - The label of the variable.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * If the label is not in the map.
+    /// * If the label is not found.
     ///
     /// # Returns
     ///
@@ -53,7 +53,7 @@ pub trait Labelled {
     ///
     /// * `x` - The index of the variable.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     ///
@@ -76,7 +76,7 @@ pub trait Labelled {
     /// * `x` - The index in this model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     /// * If the label does not exist in the other model.
@@ -102,7 +102,7 @@ pub trait Labelled {
     /// * `x` - The set of indices in this model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If any index is out of bounds.
     /// * If any label does not exist in the other model.
@@ -123,7 +123,7 @@ pub trait Labelled {
     /// * `x` - The index in the other model.
     /// * `other` - The labels of the other model.
     ///
-    /// # Panics
+    /// # Errors
     ///
     /// * If the index is out of bounds.
     /// * If the label does not exist in this model.
@@ -150,6 +150,11 @@ pub trait Labelled {
     ///
     /// * `x` - The set of indices in the other model.
     /// * `other` - The labels of the other model.
+    ///
+    /// # Errors
+    ///
+    /// * If any index is out of bounds.
+    /// * If any label does not exist in this model.
     ///
     /// # Returns
     ///
@@ -230,6 +235,11 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// * `x` - The value of the conditioned variables.
     /// * `z` - The value of the conditioning variables.
     ///
+    /// # Errors
+    ///
+    /// * If the value of the conditioned variables is out of bounds.
+    /// * If the value of the conditioning variables is out of bounds.
+    ///
     /// # Returns
     ///
     /// The probability P(X = x | Z = z).
@@ -242,6 +252,10 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// * `rng` - A mutable reference to a random number generator.
     /// * `z` - The value of the conditioning variables.
+    ///
+    /// # Errors
+    ///
+    /// * If the value of the conditioning variables is out of bounds.
     ///
     /// # Returns
     ///

@@ -229,11 +229,9 @@ impl PyCatTrj {
         )?;
 
         // Construct the categorical trajectory.
-        let inner = CatTrj::new(states, values, time).map_err(to_pyerr)?;
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrj::new(states, values, time)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the categorical trajectory to a Pandas DataFrame.
@@ -377,11 +375,7 @@ impl PyCatTrjs {
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
 
         // Create a new CatTrjs with the given parameters.
-        let inner = CatTrjs::new(dfs).map_err(to_pyerr)?;
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
-
-        Ok(Self { inner })
+        CatTrjs::new(dfs).map(Into::into).map_err(to_pyerr)
     }
 
     /// Converts the categorical trajectories to a list of Pandas DataFrames.

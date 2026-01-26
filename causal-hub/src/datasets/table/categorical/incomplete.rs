@@ -37,6 +37,31 @@ impl Labelled for CatIncTable {
 
 impl CatIncTable {
     /// Creates a new categorical incomplete tabular data instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `states` - The variables states.
+    /// * `values` - The values of the variables.
+    ///
+    /// # Notes
+    ///
+    /// * Labels and states will be sorted in alphabetical order.
+    ///
+    /// # Errors
+    ///
+    /// * If the number of variable states is higher than `CatType::MAX`.
+    /// * If the number of variables is different from the number of values columns.
+    /// * If the variables values are not smaller than the number of states.
+    ///
+    /// # Panics
+    ///
+    /// * If the variable labels are not unique.
+    /// * If the variable states are not unique.
+    ///
+    /// # Returns
+    ///
+    /// A new categorical incomplete tabular data instance.
+    ///
     pub fn new(mut states: States, mut values: Array2<CatType>) -> Result<Self> {
         // Check if the number of states is less than `CatType::MAX`.
         states.iter().try_for_each(|(label, state)| {
