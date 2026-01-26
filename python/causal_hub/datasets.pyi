@@ -279,10 +279,10 @@ class CatTrjEv:
             A Pandas DataFrame containing the trajectory evidence data.
             The data frame must contain the following columns:
 
-        - `event`: The event type (str),
-        - `state`: The state of the event (str),
-        - `start_time`: The start time of the event (float64),
-        - `end_time`: The end time of the event (float64).
+                - `event`: The event type (str),
+                - `state`: The state of the event (str),
+                - `start_time`: The start time of the event (float64),
+                - `end_time`: The end time of the event (float64).
 
         with_states: dict[str, Iterable[str]] | None
             An optional dictionary mapping event labels to their possible states.
@@ -397,10 +397,10 @@ class CatTrjsEv:
             An iterable of Pandas DataFrames containing the trajectory evidence data.
             The data frames must contain the following columns:
 
-        - `event`: The event type (str),
-        - `state`: The state of the event (str),
-        - `start_time`: The start time of the event (float64),
-        - `end_time`: The end time of the event (float64).
+                - `event`: The event type (str),
+                - `state`: The state of the event (str),
+                - `start_time`: The start time of the event (float64),
+                - `end_time`: The end time of the event (float64).
 
         with_states: dict[str, Iterable[str]] | None
             An optional dictionary mapping event labels to their possible states.

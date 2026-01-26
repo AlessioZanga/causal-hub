@@ -19,7 +19,7 @@ csv.workspace = true
 dry.workspace = true
 fxhash.workspace = true
 indexmap.workspace = true
-jsonschema = { version = "^0.40", default-features = false }
+jsonschema = { version = "^0.38", default-features = false }
 itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.17", features = ["approx", "rayon", "serde"] }
