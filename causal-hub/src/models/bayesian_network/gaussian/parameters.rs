@@ -74,7 +74,7 @@ impl GaussCPDP {
                 "Covariance matrix must have finite values.".into(),
             ));
         }
-        if s != s.t() {
+        if !s.abs_diff_eq(&s.t(), EPSILON) {
             return Err(Error::Linalg("Covariance matrix must be symmetric.".into()));
         }
 

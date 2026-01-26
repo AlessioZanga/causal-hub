@@ -97,6 +97,9 @@ impl BE<'_, GaussTable, f64> {
             (a, b, s)
         };
 
+        // Symmetrize the covariance matrix to avoid numerical issues.
+        let s = (&s + &s.t()) / 2.;
+
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
         let (_, ln_det) = s

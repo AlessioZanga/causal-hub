@@ -15,10 +15,10 @@ impl SSE<'_, GaussTable> {
             let n = 0.;
             let mu_x = Array::zeros(x.len());
             let mu_z = Array::zeros(z.len());
-            let m_xx = Array::zeros((x.len(), x.len()));
-            let m_xz = Array::zeros((x.len(), z.len()));
-            let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
+            let s_xx = Array::zeros((x.len(), x.len()));
+            let s_xz = Array::zeros((x.len(), z.len()));
+            let s_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)?
         };
 
         // Initialize the chunk buffers.
@@ -44,16 +44,20 @@ impl SSE<'_, GaussTable> {
                     .mean_axis(Axis(0))
                     .ok_or(Error::MissingSufficientStatistics)?;
 
-                // Compute the second moment statistics.
-                let m_xx = d_x.t().dot(&d_x);
-                let m_xz = d_x.t().dot(&d_z);
-                let m_zz = d_z.t().dot(&d_z);
+                // Center the variables.
+                d_x -= &mu_x;
+                d_z -= &mu_z;
+
+                // Compute the centered second moment statistics.
+                let s_xx = d_x.t().dot(&d_x);
+                let s_xz = d_x.t().dot(&d_z);
+                let s_zz = d_z.t().dot(&d_z);
 
                 // Get the sample size.
                 let n = d.nrows() as f64;
 
                 // Accumulate the sufficient statistics.
-                s += GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?;
+                s += GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)?;
 
                 Ok(())
             })?;
@@ -94,10 +98,10 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
             let n = 0.;
             let mu_x = Array::zeros(x.len());
             let mu_z = Array::zeros(z.len());
-            let m_xx = Array::zeros((x.len(), x.len()));
-            let m_xz = Array::zeros((x.len(), z.len()));
-            let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
+            let s_xx = Array::zeros((x.len(), x.len()));
+            let s_xz = Array::zeros((x.len(), z.len()));
+            let s_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)?
         };
 
         // Get the values.
@@ -127,10 +131,10 @@ impl SSE<'_, GaussWtdTable> {
             let n = 0.;
             let mu_x = Array::zeros(x.len());
             let mu_z = Array::zeros(z.len());
-            let m_xx = Array::zeros((x.len(), x.len()));
-            let m_xz = Array::zeros((x.len(), z.len()));
-            let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
+            let s_xx = Array::zeros((x.len(), x.len()));
+            let s_xz = Array::zeros((x.len(), z.len()));
+            let s_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)?
         };
 
         // Initialize the chunk buffers.
@@ -156,18 +160,30 @@ impl SSE<'_, GaussWtdTable> {
                 // Compute the weighted mean.
                 let mu_z = (&d_z * &sqrt_w).sum_axis(Axis(0));
 
-                // Compute the weighted second moment statistics.
-                let m_xx = d_x.t().dot(&d_x) * sum_w;
-                let m_xz = d_x.t().dot(&d_z) * sum_w;
-                let m_zz = d_z.t().dot(&d_z) * sum_w;
-
                 // Get the sample (mass) size.
                 let w_sum = w.sum();
                 let n = w_sum * sum_w;
 
                 // Accumulate the sufficient statistics.
                 if w_sum > 0. {
-                    s += GaussCPDS::new(mu_x / w_sum, mu_z / w_sum, m_xx, m_xz, m_zz, n)?;
+                    // Compute the mean.
+                    let mean_x = &mu_x / w_sum;
+                    let mean_z = &mu_z / w_sum;
+
+                    // Compute the centering factor.
+                    let c_x = &sqrt_w * &mean_x.view().insert_axis(Axis(0));
+                    let c_z = &sqrt_w * &mean_z.view().insert_axis(Axis(0));
+
+                    // Center the variables.
+                    d_x -= &c_x;
+                    d_z -= &c_z;
+
+                    // Compute the weighted centered second moment statistics.
+                    let s_xx = d_x.t().dot(&d_x) * sum_w;
+                    let s_xz = d_x.t().dot(&d_z) * sum_w;
+                    let s_zz = d_z.t().dot(&d_z) * sum_w;
+
+                    s += GaussCPDS::new(mean_x, mean_z, s_xx, s_xz, s_zz, n)?;
                 }
                 Ok(())
             })?;
@@ -218,10 +234,10 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
             let n = 0.;
             let mu_x = Array::zeros(x.len());
             let mu_z = Array::zeros(z.len());
-            let m_xx = Array::zeros((x.len(), x.len()));
-            let m_xz = Array::zeros((x.len(), z.len()));
-            let m_zz = Array::zeros((z.len(), z.len()));
-            GaussCPDS::new(mu_x, mu_z, m_xx, m_xz, m_zz, n)?
+            let s_xx = Array::zeros((x.len(), x.len()));
+            let s_xz = Array::zeros((x.len(), z.len()));
+            let s_zz = Array::zeros((z.len(), z.len()));
+            GaussCPDS::new(mu_x, mu_z, s_xx, s_xz, s_zz, n)?
         };
 
         // Get the values.
