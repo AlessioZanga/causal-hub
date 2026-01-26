@@ -117,7 +117,7 @@ class CatBN:
         **kwargs: dict | None
             Optional keyword arguments:
 
-                - `alpha`: The prior of the Bayesian estimator (float64).
+        - `alpha`: The prior of the Bayesian estimator (float64).
 
         Returns
         -------
@@ -755,7 +755,7 @@ class CatCTBN:
         **kwargs: dict | None
             Optional keyword arguments:
 
-                - `alpha`: The prior of the Bayesian estimator (int, float64).
+        - `alpha`: The prior of the Bayesian estimator (int, float64).
 
         Returns
         -------
@@ -1053,9 +1053,9 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-            * `X`, `Y` or `Z` are not disjoint sets.
-            * `X` and `Y` are empty sets.
+        * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+        * `X`, `Y` or `Z` are not disjoint sets.
+        * `X` and `Y` are empty sets.
 
         Returns
         -------
@@ -1091,10 +1091,10 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-            * `X`, `Y` or `Z` are not disjoint sets.
-            * `X` and `Y` are empty sets.
-            * Not `W` <= `Z` <= `V`.
+        * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+        * `X`, `Y` or `Z` are not disjoint sets.
+        * `X` and `Y` are empty sets.
+        * Not `W` <= `Z` <= `V`.
 
         Returns
         -------
@@ -1127,10 +1127,10 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-            * `X` and `Y` are not disjoint sets.
-            * `X` or `Y` are empty sets.
-            * Not `W` <= `V`.
+        * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+        * `X` and `Y` are not disjoint sets.
+        * `X` or `Y` are empty sets.
+        * Not `W` <= `V`.
 
         Returns
         -------
@@ -1157,9 +1157,9 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
-            * `X`, `Y` or `Z` are not disjoint sets.
-            * `X` and `Y` are empty sets.
+        * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+        * `X`, `Y` or `Z` are not disjoint sets.
+        * `X` and `Y` are empty sets.
 
         Returns
         -------
@@ -1195,10 +1195,10 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
-            * `X`, `Y` or `Z` are not disjoint sets.
-            * `X` and `Y` are empty sets.
-            * Not `W` <= `Z` <= `V`.
+        * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
+        * `X`, `Y` or `Z` are not disjoint sets.
+        * `X` and `Y` are empty sets.
+        * Not `W` <= `Z` <= `V`.
 
         Returns
         -------
@@ -1231,10 +1231,10 @@ class DiGraph:
         ----------
         Raises an exception if:
 
-            * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
-            * `X` and `Y` are not disjoint sets.
-            * `X` or `Y` are empty sets.
-            * Not `W` <= `V`.
+        * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
+        * `X` and `Y` are not disjoint sets.
+        * `X` or `Y` are empty sets.
+        * Not `W` <= `V`.
 
         Returns
         -------
@@ -1429,7 +1429,7 @@ class GaussBN:
         **kwargs: dict | None
             Optional keyword arguments:
 
-                - `alpha`: The prior of the Bayesian estimator (float64).
+        - `alpha`: The prior of the Bayesian estimator (float64).
 
         Returns
         -------
