@@ -107,7 +107,7 @@ impl PK {
             if i >= n || j >= n {
                 return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
             }
-            // Assert that the edge is set to unknown.
+            // Check that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
                 return Err(Error::PriorKnowledgeConflict(format!(
                     "Edge ({i}, {j}) is already set to a non-unknown state: \n\
@@ -147,7 +147,7 @@ impl PK {
                 tier.iter()
                     .cartesian_product(previous_tiers)
                     .try_for_each(|(&i, &j)| {
-                        // Assert that the edge is not required.
+                        // Check that the edge is not required.
                         if adjacency_matrix[[i, j]].is_required() {
                             return Err(Error::PriorKnowledgeConflict(format!(
                                 "Edge ({i}, {j}) is already set to a 'Required' state: \n\

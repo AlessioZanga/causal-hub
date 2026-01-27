@@ -4,5 +4,6 @@ mod estimators;
 mod inference;
 mod io;
 mod models;
+mod random;
 mod samplers;
 mod utils;

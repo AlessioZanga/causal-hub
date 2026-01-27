@@ -90,7 +90,7 @@ pub(crate) mod digraph {
     use super::*;
     use crate::inference::TopologicalOrder;
 
-    /// Asserts the validity of the sets and returns them as `Set<usize>`.
+    /// Checks the validity of the sets and returns them as `Set<usize>`.
     pub(crate) fn _assert(
         g: &DiGraph,
         x: &Set<usize>,
@@ -99,7 +99,7 @@ pub(crate) mod digraph {
         w: Option<&Set<usize>>,
         v: Option<&Set<usize>>,
     ) -> Result<()> {
-        // Assert the included set is a subset of the restricted set.
+        // Check the included set is a subset of the restricted set.
         if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref())
             && !w.is_subset(v)
         {
@@ -130,37 +130,37 @@ pub(crate) mod digraph {
             })?;
         }
 
-        // Assert X is non-empty.
+        // Check X is non-empty.
         if x.is_empty() {
             return Err(Error::EmptySet("X".into()));
         }
-        // Assert Y is non-empty.
+        // Check Y is non-empty.
         if y.is_empty() {
             return Err(Error::EmptySet("Y".into()));
         }
 
-        // Assert X and Y are disjoint.
+        // Check X and Y are disjoint.
         if !x.is_disjoint(y) {
             return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
         }
 
         // If Z is provided, convert it to a set.
         if let Some(z) = &z {
-            // Assert X and Z are disjoint.
+            // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
                 return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
             }
-            // Assert Y and Z are disjoint.
+            // Check Y and Z are disjoint.
             if !y.is_disjoint(z) {
                 return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
             }
-            // Assert Z includes.
+            // Check Z includes.
             if let Some(w) = w
                 && !z.is_superset(w)
             {
                 return Err(Error::SubsetMismatch("W".into(), "Z".into()));
             }
-            // Assert Z is restricted.
+            // Check Z is restricted.
             if let Some(v) = v
                 && !z.is_subset(v)
             {
@@ -176,7 +176,7 @@ pub(crate) mod digraph {
         an_x: &Set<usize>,
         z: &Set<usize>,
     ) -> Result<Set<usize>> {
-        // Assert the graph is a DAG.
+        // Check the graph is a DAG.
         if g.topological_order().is_none() {
             return Err(Error::NotADag);
         }

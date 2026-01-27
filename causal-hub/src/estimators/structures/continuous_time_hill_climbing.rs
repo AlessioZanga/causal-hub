@@ -107,7 +107,7 @@ where
     ///
     #[inline]
     pub fn new(initial_graph: &'a DiGraph, score: &'a S) -> Result<Self> {
-        // Assert labels of the initial graph and the estimator are the same.
+        // Check labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != score.labels() {
             return Err(Error::LabelMismatch(
                 format!("{:?}", initial_graph.labels()),
@@ -151,18 +151,18 @@ where
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
-        // Assert labels of prior knowledge and initial graph are the same.
+        // Check labels of prior knowledge and initial graph are the same.
         if self.initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
                 format!("{:?}", self.initial_graph.labels()),
                 format!("{:?}", prior_knowledge.labels()),
             ));
         }
-        // Assert prior knowledge is consistent with initial graph.
+        // Check prior knowledge is consistent with initial graph.
         for edge in self.initial_graph.vertices().into_iter().permutations(2) {
             // Get the edge indices.
             let (i, j) = (edge[0], edge[1]);
-            // Assert edge must be either present and not forbidden ...
+            // Check edge must be either present and not forbidden ...
             if self.initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
                     return Err(Error::PriorKnowledgeConflict(format!(

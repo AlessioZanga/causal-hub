@@ -282,7 +282,7 @@ impl PyCatCTBN {
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyCatTrjs> {
-        // Assert at least one of max_len or max_time is set.
+        // Check at least one of max_len or max_time is set.
         if max_len.is_none() && max_time.is_none() {
             return Err(PyErr::new::<PyValueError, _>(
                 "At least one of 'max_len' or 'max_time' must be set.",

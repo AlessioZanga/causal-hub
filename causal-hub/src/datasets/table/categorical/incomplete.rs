@@ -218,7 +218,7 @@ impl Dataset for CatIncTable {
             .map(|&i| {
                 self.states
                     .get_index(i)
-                    .map(|(label, state_set)| (label.clone(), state_set.clone()))
+                    .map(|(label, states)| (label.clone(), states.clone()))
                     .ok_or_else(|| Error::VertexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;

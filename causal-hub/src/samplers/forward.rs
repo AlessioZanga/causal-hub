@@ -235,13 +235,13 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
     }
 
     fn sample_by_length_or_time(&self, max_length: usize, max_time: f64) -> Result<Self::Sample> {
-        // Assert length is positive.
+        // Check length is positive.
         if max_length == 0 {
             return Err(Error::IllegalArgument(
                 "The maximum length of the trajectory must be strictly positive.".into(),
             ));
         }
-        // Assert time is positive.
+        // Check time is positive.
         if max_time <= 0. {
             return Err(Error::IllegalArgument(
                 "The maximum time must be positive.".into(),

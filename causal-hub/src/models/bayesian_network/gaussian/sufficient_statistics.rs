@@ -16,12 +16,12 @@ pub struct GaussCPDS {
     mu_x: Array1<f64>,
     /// Design mean vector |Z|.
     mu_z: Array1<f64>,
-    /// Response second moment matrix (sum of outer products) |X| x |X|.
-    m_xx: Array2<f64>,
-    /// Cross second moment matrix (sum of outer products) |X| x |Z|.
-    m_xz: Array2<f64>,
-    /// Design second moment matrix (sum of outer products) |Z| x |Z|.
-    m_zz: Array2<f64>,
+    /// Response scatter matrix (sum of centered outer products) |X| x |X|.
+    s_xx: Array2<f64>,
+    /// Cross scatter matrix (sum of centered outer products) |X| x |Z|.
+    s_xz: Array2<f64>,
+    /// Design scatter matrix (sum of centered outer products) |Z| x |Z|.
+    s_zz: Array2<f64>,
     /// Sample size.
     n: f64,
 }
@@ -33,20 +33,20 @@ impl GaussCPDS {
     ///
     /// * `mu_x` - Response mean vector |X|.
     /// * `mu_z` - Design mean vector |Z|.
-    /// * `m_xx` - Response second moment matrix (uncentered) |X| x |X|.
-    /// * `m_xz` - Cross second moment matrix (uncentered) |X| x |Z|.
-    /// * `m_zz` - Design second moment matrix (uncentered) |Z| x |Z|.
+    /// * `s_xx` - Response scatter matrix (centered) |X| x |X|.
+    /// * `s_xz` - Cross scatter matrix (centered) |X| x |Z|.
+    /// * `s_zz` - Design scatter matrix (centered) |Z| x |Z|.
     /// * `n` - Sample size.
     ///
     /// # Panics
     ///
-    /// * Panics if `mu_x` length does not match `m_xx` size.
-    /// * Panics if `mu_z` length does not match `m_zz` size.
-    /// * Panics if `m_xx` is not square.
-    /// * Panics if the number of rows of `m_xz` does not match the size of `m_xx`.
-    /// * Panics if the number of columns of `m_xz` does not match the size of `m_zz`.
-    /// * Panics if `m_zz` is not square.
-    /// * Panics if any of the values in `mu_x`, `mu_z`, `m_xx`, `m_xz`, or `m_zz` are not finite.
+    /// * Panics if `mu_x` length does not match `s_xx` size.
+    /// * Panics if `mu_z` length does not match `s_zz` size.
+    /// * Panics if `s_xx` is not square.
+    /// * Panics if the number of rows of `s_xz` does not match the size of `s_xx`.
+    /// * Panics if the number of columns of `s_xz` does not match the size of `s_zz`.
+    /// * Panics if `s_zz` is not square.
+    /// * Panics if any of the values in `mu_x`, `mu_z`, `s_xx`, `s_xz`, or `s_zz` are not finite.
     /// * Panics if `n` is not finite or is negative.
     ///
     /// # Returns
@@ -57,47 +57,47 @@ impl GaussCPDS {
     pub fn new(
         mu_x: Array1<f64>,
         mu_z: Array1<f64>,
-        m_xx: Array2<f64>,
-        m_xz: Array2<f64>,
-        m_zz: Array2<f64>,
+        s_xx: Array2<f64>,
+        s_xz: Array2<f64>,
+        s_zz: Array2<f64>,
         n: f64,
     ) -> std::result::Result<Self, Error> {
-        // Assert the dimensions are correct.
-        if mu_x.len() != m_xx.nrows() {
+        // Check the dimensions are correct.
+        if mu_x.len() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
                 "mu_x".into(),
                 "Response mean vector length must match response covariance matrix size.".into(),
             ));
         }
-        if mu_z.len() != m_zz.nrows() {
+        if mu_z.len() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
                 "mu_z".into(),
                 "Design mean vector length must match design covariance matrix size.".into(),
             ));
         }
-        if !m_xx.is_square() {
+        if !s_xx.is_square() {
             return Err(Error::Shape(
                 "Response covariance matrix must be square.".into(),
             ));
         }
-        if m_xz.nrows() != m_xx.nrows() {
+        if s_xz.nrows() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
-                "m_xz".into(),
+                "s_xz".into(),
                 "Cross-covariance matrix must have the same number of rows as the response covariance matrix.".into(),
             ));
         }
-        if m_xz.ncols() != m_zz.nrows() {
+        if s_xz.ncols() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
-                "m_xz".into(),
+                "s_xz".into(),
                 "Cross-covariance matrix must have the same number of columns as the design covariance matrix.".into(),
             ));
         }
-        if !m_zz.is_square() {
+        if !s_zz.is_square() {
             return Err(Error::Shape(
                 "Design covariance matrix must be square.".into(),
             ));
         }
-        // Assert values are finite.
+        // Check values are finite.
         if !mu_x.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
                 "mu_x".into(),
@@ -110,21 +110,21 @@ impl GaussCPDS {
                 "Design mean vector must have finite values.".into(),
             ));
         }
-        if !m_xx.iter().all(|&x| x.is_finite()) {
+        if !s_xx.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "m_xx".into(),
+                "s_xx".into(),
                 "Response covariance matrix must have finite values.".into(),
             ));
         }
-        if !m_xz.iter().all(|&x| x.is_finite()) {
+        if !s_xz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "m_xz".into(),
+                "s_xz".into(),
                 "Cross-covariance matrix must have finite values.".into(),
             ));
         }
-        if !m_zz.iter().all(|&x| x.is_finite()) {
+        if !s_zz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "m_zz".into(),
+                "s_zz".into(),
                 "Design covariance matrix must have finite values.".into(),
             ));
         }
@@ -138,9 +138,9 @@ impl GaussCPDS {
         Ok(Self {
             mu_x,
             mu_z,
-            m_xx,
-            m_xz,
-            m_zz,
+            s_xx,
+            s_xz,
+            s_zz,
             n,
         })
     }
@@ -175,11 +175,7 @@ impl GaussCPDS {
     ///
     #[inline]
     pub fn sample_response_covariance(&self) -> Array2<f64> {
-        // Compute the centering factor.
-        let col_mu_x = self.mu_x.view().insert_axis(Axis(1));
-        let row_mu_x = self.mu_x.view().insert_axis(Axis(0));
-        // Apply centering.
-        &self.m_xx - self.n * &col_mu_x.dot(&row_mu_x)
+        self.s_xx.clone()
     }
 
     /// Returns the cross-scatter matrix (sum of squared deviations) |X| x |Z|.
@@ -190,11 +186,7 @@ impl GaussCPDS {
     ///
     #[inline]
     pub fn sample_cross_covariance(&self) -> Array2<f64> {
-        // Compute the centering factor.
-        let col_mu_x = self.mu_x.view().insert_axis(Axis(1));
-        let row_mu_z = self.mu_z.view().insert_axis(Axis(0));
-        // Apply centering.
-        &self.m_xz - self.n * &col_mu_x.dot(&row_mu_z)
+        self.s_xz.clone()
     }
 
     /// Returns the design scatter matrix (sum of squared deviations) |Z| x |Z|.
@@ -205,11 +197,7 @@ impl GaussCPDS {
     ///
     #[inline]
     pub fn sample_design_covariance(&self) -> Array2<f64> {
-        // Compute the centering factor.
-        let col_mu_z = self.mu_z.view().insert_axis(Axis(1));
-        let row_mu_z = self.mu_z.view().insert_axis(Axis(0));
-        // Apply centering.
-        &self.m_zz - self.n * &col_mu_z.dot(&row_mu_z)
+        self.s_zz.clone()
     }
 
     /// Returns the sample size.
@@ -226,18 +214,55 @@ impl GaussCPDS {
 
 impl AddAssign for GaussCPDS {
     fn add_assign(&mut self, other: Self) {
+        // If the other set is empty, do nothing.
+        if other.n == 0. {
+            return;
+        }
+
+        // If the current set is empty, replace it with the other.
+        if self.n == 0. {
+            *self = other;
+            return;
+        }
+
         // Compute the total sample sizes.
         let n = self.n + other.n;
+        // Compute the delta.
+        let d_mu_x = &other.mu_x - &self.mu_x;
+        let d_mu_z = &other.mu_z - &self.mu_z;
+
         // Update the response mean vector.
         self.mu_x = (self.n * &self.mu_x + other.n * &other.mu_x) / n;
         // Update the design mean vector.
         self.mu_z = (self.n * &self.mu_z + other.n * &other.mu_z) / n;
+
+        // Compute the scaling factor.
+        let scaling = self.n * other.n / n;
         // Update the response covariance matrix.
-        self.m_xx = &self.m_xx + &other.m_xx;
+        self.s_xx = &self.s_xx
+            + &other.s_xx
+            + scaling
+                * d_mu_x
+                    .view()
+                    .insert_axis(Axis(1))
+                    .dot(&d_mu_x.view().insert_axis(Axis(0)));
         // Update the cross-covariance matrix.
-        self.m_xz = &self.m_xz + &other.m_xz;
+        self.s_xz = &self.s_xz
+            + &other.s_xz
+            + scaling
+                * d_mu_x
+                    .view()
+                    .insert_axis(Axis(1))
+                    .dot(&d_mu_z.view().insert_axis(Axis(0)));
         // Update the design covariance matrix.
-        self.m_zz = &self.m_zz + &other.m_zz;
+        self.s_zz = &self.s_zz
+            + &other.s_zz
+            + scaling
+                * d_mu_z
+                    .view()
+                    .insert_axis(Axis(1))
+                    .dot(&d_mu_z.view().insert_axis(Axis(0)));
+
         // Update the sample size.
         self.n = n;
     }
@@ -273,19 +298,19 @@ impl Serialize for GaussCPDS {
 
         // Convert the sample response covariance to a flat format.
         let sample_response_covariance: Vec<_> =
-            self.m_xx.rows().into_iter().map(|x| x.to_vec()).collect();
+            self.s_xx.rows().into_iter().map(|x| x.to_vec()).collect();
         // Serialize sample response covariance.
         map.serialize_entry("sample_response_covariance", &sample_response_covariance)?;
 
         // Convert the sample cross covariance to a flat format.
         let sample_cross_covariance: Vec<_> =
-            self.m_xz.rows().into_iter().map(|x| x.to_vec()).collect();
+            self.s_xz.rows().into_iter().map(|x| x.to_vec()).collect();
         // Serialize sample cross covariance.
         map.serialize_entry("sample_cross_covariance", &sample_cross_covariance)?;
 
         // Convert the sample design covariance to a flat format.
         let sample_design_covariance: Vec<_> =
-            self.m_zz.rows().into_iter().map(|x| x.to_vec()).collect();
+            self.s_zz.rows().into_iter().map(|x| x.to_vec()).collect();
         // Serialize sample design covariance.
         map.serialize_entry("sample_design_covariance", &sample_design_covariance)?;
 

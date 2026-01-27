@@ -18,7 +18,7 @@ impl BE<'_, GaussTable, f64> {
         sample_statistics: GaussCPDS,
         prior: f64,
     ) -> Result<GaussCPD> {
-        // Assert likelihood of prior.
+        // Check likelihood of prior.
         if prior < 0.0 {
             return Err(Error::InvalidParameter(
                 "prior".to_string(),
@@ -96,6 +96,9 @@ impl BE<'_, GaussTable, f64> {
             // Return the parameters.
             (a, b, s)
         };
+
+        // Symmetrize the covariance matrix to avoid numerical issues.
+        let s = (&s + &s.t()) / 2.;
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;

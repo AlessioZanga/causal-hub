@@ -48,7 +48,7 @@ where
     ///
     #[inline]
     pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {
-        // Assert the model and the evidences have the same labels.
+        // Check the model and the evidences have the same labels.
         if model.labels() != evidence.labels() {
             return Err(Error::LabelMismatch(
                 "model labels".to_string(),
@@ -132,7 +132,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         // Get shortened variable type.
         use CatEvT as E;
 
-        // Assert the model and the evidences have the same states.
+        // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
             return Err(Error::IllegalArgument(
                 "The model and the evidences must have the same states.".into(),
@@ -675,19 +675,19 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Get shortened variable type.
         use CatTrjEvT as E;
 
-        // Assert the model and the evidences have the same states.
+        // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
             return Err(Error::IllegalArgument(
                 "The model and the evidences must have the same states.".into(),
             ));
         }
-        // Assert length is positive.
+        // Check length is positive.
         if max_length == 0 {
             return Err(Error::IllegalArgument(
                 "The maximum length of the trajectory must be strictly positive.".into(),
             ));
         }
-        // Assert time is positive.
+        // Check time is positive.
         if max_time <= 0. {
             return Err(Error::IllegalArgument(
                 "The maximum time must be positive.".into(),

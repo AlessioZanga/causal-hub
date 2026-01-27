@@ -43,30 +43,30 @@ impl GaussPhiK {
     /// A new Gaussian potential instance.
     ///
     pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Result<Self> {
-        // Assert K is square.
+        // Check K is square.
         if !k.is_square() {
             return Err(Error::Shape("Precision matrix must be square.".into()));
         }
-        // Assert the length of h matches the size of K.
+        // Check the length of h matches the size of K.
         if k.nrows() != h.len() {
             return Err(Error::IncompatibleShape(
                 k.nrows().to_string(),
                 h.len().to_string(),
             ));
         }
-        // Assert K is finite.
+        // Check K is finite.
         if !k.iter().all(|x| x.is_finite()) {
             return Err(Error::Linalg("Precision matrix must be finite.".into()));
         }
-        // Assert K is symmetric.
+        // Check K is symmetric.
         if k != k.t() {
             return Err(Error::Linalg("Precision matrix must be symmetric.".into()));
         }
-        // Assert h is finite.
+        // Check h is finite.
         if !h.iter().all(|x| x.is_finite()) {
             return Err(Error::Linalg("Information vector must be finite.".into()));
         }
-        // Assert g is finite.
+        // Check g is finite.
         if !g.is_finite() {
             return Err(Error::Linalg(
                 "Log-normalization constant must be finite.".into(),
@@ -352,7 +352,7 @@ impl Phi for GaussPhi {
     }
 
     fn condition(&self, e: &Self::Evidence) -> Result<Self> {
-        // Assert that the evidence labels match the potential labels.
+        // Check that the evidence labels match the potential labels.
         if e.labels() != self.labels() {
             return Err(Error::InvalidParameter(
                 "evidence".to_string(),
@@ -369,7 +369,7 @@ impl Phi for GaussPhi {
 
         // Get the evidence and remove nones.
         let e = e.evidences().iter().flatten().cloned();
-        // Assert that the evidence is certain and positive.
+        // Check that the evidence is certain and positive.
         let e = e.map(|e| match e {
             GaussEvT::CertainPositive { event, value } => (event, value),
             /* _ => panic! NOTE: No other variant so far. */
@@ -426,7 +426,7 @@ impl Phi for GaussPhi {
             return Ok(self.clone());
         }
 
-        // Assert X is a subset of the variables.
+        // Check X is a subset of the variables.
         x.iter().try_for_each(|&x| {
             if x >= self.labels.len() {
                 return Err(Error::VertexOutOfBounds(x));
@@ -567,14 +567,14 @@ impl Phi for GaussPhi {
     }
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
-        // Assert that X and Z are disjoint.
+        // Check that X and Z are disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
                 "variables".to_string(),
                 "conditioning variables".to_string(),
             ));
         }
-        // Assert that X and Z cover all variables.
+        // Check that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
             return Err(Error::InvalidParameter(
                 "variables".to_string(),
@@ -635,7 +635,7 @@ impl GaussPhi {
     /// A new Gaussian potential instance.
     ///
     pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Result<Self> {
-        // Assert parameters shape matches labels length.
+        // Check parameters shape matches labels length.
         if parameters.precision_matrix().nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
                 "precision_matrix".into(),

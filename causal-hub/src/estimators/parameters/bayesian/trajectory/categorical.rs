@@ -20,14 +20,14 @@ impl BE<'_, CatTrj, (usize, f64)> {
     ) -> Result<CatCIM> {
         // Get the prior, as the alpha of Dirichlet and tau of Gamma.
         let (alpha, tau) = prior;
-        // Assert alpha is positive.
+        // Check alpha is positive.
         if alpha == 0 {
             return Err(Error::InvalidParameter(
                 "alpha".into(),
                 "must be positive".into(),
             ));
         }
-        // Assert tau is positive.
+        // Check tau is positive.
         if tau <= 0.0 {
             return Err(Error::InvalidParameter(
                 "tau".into(),

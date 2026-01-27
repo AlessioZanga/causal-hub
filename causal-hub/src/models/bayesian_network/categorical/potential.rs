@@ -143,7 +143,7 @@ impl Mul<&CatPhi> for &CatPhi {
 
 impl DivAssign<&CatPhi> for CatPhi {
     fn div_assign(&mut self, rhs: &CatPhi) {
-        // Assert that RHS states are a subset of LHS states.
+        // Check that RHS states are a subset of LHS states.
         if !rhs.states.keys().all(|k| self.states.contains_key(k)) {
             panic!(
                 "Failed to divide potentials: RHS states must be a subset of LHS states, \
@@ -255,7 +255,7 @@ impl Phi for CatPhi {
             return Ok(self.clone());
         }
 
-        // Assert X is a subset of the variables.
+        // Check X is a subset of the variables.
         x.iter().try_for_each(|&x| {
             if x >= self.labels.len() {
                 return Err(Error::VertexOutOfBounds(x));
@@ -322,13 +322,13 @@ impl Phi for CatPhi {
     }
 
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
-        // Assert that X and Z are disjoint.
+        // Check that X and Z are disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
                 "Variables and conditioning variables must be disjoint.".into(),
             ));
         }
-        // Assert that X and Z cover all variables.
+        // Check that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
             return Err(Error::IllegalArgument(
                 "Variables and conditioning variables must cover all potential variables.".into(),

@@ -196,7 +196,7 @@ impl CTBN for CatCTBN {
         // Get the shape of the variables.
         let shape = Array::from_iter(states.values().map(Set::len));
 
-        // Assert same number of graph labels and CIMs.
+        // Check same number of graph labels and CIMs.
         if !graph.labels().iter().eq(cims.keys()) {
             return Err(Error::LabelMismatch(
                 "graph labels".to_string(),
@@ -211,7 +211,7 @@ impl CTBN for CatCTBN {
             let pa_i: &Labels = &pa_i.map(|j| labels[j].to_owned()).collect(); // FIXME: Use references to avoid clones
             // Get the conditioning labels of the CIM.
             let pa_j = cims[&labels[i]].conditioning_labels();
-            // Assert they are the same.
+            // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
                     format!("{pa_i:?}"),
@@ -287,7 +287,7 @@ impl CTBN for CatCTBN {
     where
         I: IntoIterator<Item = Self::CIM>,
     {
-        // Assert name is not empty string.
+        // Check name is not empty string.
         if let Some(name) = &name
             && name.is_empty()
         {
@@ -296,7 +296,7 @@ impl CTBN for CatCTBN {
                 "cannot be empty".to_string(),
             ));
         }
-        // Assert description is not empty string.
+        // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
@@ -309,14 +309,14 @@ impl CTBN for CatCTBN {
         // Construct the categorical CTBN.
         let mut ctbn = Self::new(graph, cims)?;
 
-        // Assert the initial distribution has same labels.
+        // Check the initial distribution has same labels.
         if !initial_distribution.labels().eq(ctbn.labels()) {
             return Err(Error::LabelMismatch(
                 "initial distribution labels".to_string(),
                 "cims labels".to_string(),
             ));
         }
-        // Assert the initial distribution has same states.
+        // Check the initial distribution has same states.
         if !initial_distribution
             .cpds()
             .into_iter()
@@ -463,9 +463,13 @@ impl<'de> Deserialize<'de> for CatCTBN {
                 let graph = graph.ok_or_else(|| E::missing_field("graph"))?;
                 let cims = cims.ok_or_else(|| E::missing_field("cims"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "catctbn", "Invalid type for CatCTBN.");
+                if type_ != "catctbn" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatCTBN: expected 'catctbn', found '{type_}'"
+                    )));
+                }
 
                 // Set helper types.
                 let cims: Vec<_> = cims;

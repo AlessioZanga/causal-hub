@@ -43,7 +43,7 @@ impl CatCIMS {
     ///
     #[inline]
     pub fn new(n_xz: Array3<f64>, t_xz: Array2<f64>, n: f64) -> Result<Self> {
-        // Assert the dimensions are correct.
+        // Check the dimensions are correct.
         if n_xz.shape()[1] != n_xz.shape()[2] {
             return Err(Error::Shape(
                 "The second and third dimensions of the conditional counts must be equal.".into(),
@@ -328,7 +328,7 @@ impl CatCIM {
         // Get the labels of the variables.
         let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
-        // Assert labels and conditioning labels are disjoint.
+        // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
             return Err(Error::SetsNotDisjoint(
                 format!("{:?}", labels),
@@ -380,32 +380,32 @@ impl CatCIM {
 
         // Check parameters validity.
         parameters.outer_iter().try_for_each(|q| {
-            // Assert Q is square.
+            // Check Q is square.
             if !q.is_square() {
                 return Err(Error::Shape("Q must be square.".into()));
             }
-            // Assert Q has finite values.
+            // Check Q has finite values.
             if !q.iter().all(|&x| x.is_finite()) {
                 return Err(Error::InvalidParameter(
                     "parameters".into(),
                     "Q must have finite values.".into(),
                 ));
             }
-            // Assert Q has non-positive diagonal.
+            // Check Q has non-positive diagonal.
             if !q.diag().iter().all(|&x| x <= 0.) {
                 return Err(Error::InvalidParameter(
                     "parameters".into(),
                     "Q diagonal must be non-positive.".into(),
                 ));
             }
-            // Assert Q has non-negative off-diagonal.
+            // Check Q has non-negative off-diagonal.
             if !q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.) {
                 return Err(Error::InvalidParameter(
                     "parameters".into(),
                     "Q off-diagonal must be non-negative.".into(),
                 ));
             }
-            // Assert Q rows sum to zero.
+            // Check Q rows sum to zero.
             if !q
                 .rows()
                 .into_iter()
@@ -651,11 +651,11 @@ impl CatCIM {
         sample_statistics: Option<CatCIMS>,
         sample_log_likelihood: Option<f64>,
     ) -> Result<Self> {
-        // Assert the sample conditional counts are finite and non-negative, with same shape as parameters.
+        // Check the sample conditional counts are finite and non-negative, with same shape as parameters.
         if let Some(sample_statistics) = &sample_statistics {
             // Get the sample conditional counts.
             let sample_conditional_counts = &sample_statistics.n_xz;
-            // Assert the sample conditional counts have the same shape as parameters.
+            // Check the sample conditional counts have the same shape as parameters.
             if sample_conditional_counts.shape() != parameters.shape() {
                 return Err(Error::IncompatibleShape(
                     "sample_statistics".into(),
@@ -667,7 +667,7 @@ impl CatCIM {
                 ));
             }
         }
-        // Assert the sample log-likelihood is finite.
+        // Check the sample log-likelihood is finite.
         if let Some(sample_log_likelihood) = &sample_log_likelihood
             && !sample_log_likelihood.is_finite()
         {
@@ -922,9 +922,13 @@ impl<'de> Deserialize<'de> for CatCIM {
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "catcim", "Invalid type for CatCIM.");
+                if type_ != "catcim" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatCIM: expected 'catcim', found '{type_}'"
+                    )));
+                }
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<Vec<f64>>> = parameters;

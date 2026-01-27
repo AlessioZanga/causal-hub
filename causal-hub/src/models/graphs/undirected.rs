@@ -181,25 +181,55 @@ impl Graph for UnGraph {
         Ok(true)
     }
 
-    fn from_adjacency_matrix(mut labels: Labels, mut adjacency_matrix: Array2<bool>) -> Self {
-        // Assert labels and adjacency matrix dimensions match.
-        assert_eq!(
-            labels.len(),
-            adjacency_matrix.nrows(),
-            "Number of labels must match the number of rows in the adjacency matrix."
-        );
-        // Assert adjacency matrix must be square.
-        assert_eq!(
-            adjacency_matrix.nrows(),
-            adjacency_matrix.ncols(),
-            "Adjacency matrix must be square."
-        );
-        // Assert the adjacency matrix is symmetric.
-        assert_eq!(
-            adjacency_matrix,
-            adjacency_matrix.t(),
-            "Adjacency matrix must be symmetric."
-        );
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Check if the vertices are within bounds.
+        x.iter().try_for_each(|&v| self.check_vertex(v))?;
+
+        // Clone and sort the vertices.
+        let mut x = x.clone();
+        x.sort();
+
+        // Allocate the new labels.
+        let labels: Labels = x.iter().map(|&v| self.labels[v].clone()).collect();
+        // Allocate the new adjacency matrix.
+        let mut adjacency_matrix: Array2<bool> = Array::from_elem((x.len(), x.len()), false);
+        // Fill the new adjacency matrix.
+        for (i, &v_i) in x.iter().enumerate() {
+            for (j, &v_j) in x.iter().enumerate() {
+                adjacency_matrix[[i, j]] = self.adjacency_matrix[[v_i, v_j]];
+            }
+        }
+
+        Self::from_adjacency_matrix(labels, adjacency_matrix)
+    }
+
+    fn from_adjacency_matrix(
+        mut labels: Labels,
+        mut adjacency_matrix: Array2<bool>,
+    ) -> Result<Self> {
+        // Check labels and adjacency matrix dimensions match.
+        if labels.len() != adjacency_matrix.nrows() {
+            return Err(Error::IncompatibleShape(
+                labels.len().to_string(),
+                adjacency_matrix.nrows().to_string(),
+            ));
+        }
+        // Check adjacency matrix must be square.
+        if adjacency_matrix.nrows() != adjacency_matrix.ncols() {
+            return Err(Error::IncompatibleShape(
+                adjacency_matrix.nrows().to_string(),
+                adjacency_matrix.ncols().to_string(),
+            ));
+        }
+        // Check the adjacency matrix is symmetric.
+        if adjacency_matrix != adjacency_matrix.t() {
+            return Err(Error::IllegalArgument(
+                "Adjacency matrix must be symmetric.".into(),
+            ));
+        }
 
         // Check if the labels are sorted.
         if !labels.is_sorted() {
@@ -232,10 +262,10 @@ impl Graph for UnGraph {
         }
 
         // Create a new graph instance.
-        Self {
+        Ok(Self {
             labels,
             adjacency_matrix,
-        }
+        })
     }
 
     #[inline]
@@ -336,9 +366,13 @@ impl<'de> Deserialize<'de> for UnGraph {
                 let labels = labels.ok_or_else(|| E::missing_field("labels"))?;
                 let edges = edges.ok_or_else(|| E::missing_field("edges"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "ungraph", "Invalid type for UnGraph.");
+                if type_ != "ungraph" {
+                    return Err(E::custom(format!(
+                        "Invalid type for UnGraph: expected 'ungraph', found '{type_}'"
+                    )));
+                }
 
                 // Convert edges to an adjacency matrix.
                 let labels: Labels = labels;
@@ -356,7 +390,8 @@ impl<'de> Deserialize<'de> for UnGraph {
                     Ok(())
                 })?;
 
-                Ok(UnGraph::from_adjacency_matrix(labels, adjacency_matrix))
+                UnGraph::from_adjacency_matrix(labels, adjacency_matrix)
+                    .map_err(|e| E::custom(e.to_string()))
             }
         }
 

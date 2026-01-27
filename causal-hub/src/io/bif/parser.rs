@@ -138,7 +138,7 @@ impl BifParser {
         // Construct the graph.
         let mut graph = DiGraph::empty(states.keys())?;
         cpds.iter().try_for_each(|p| {
-            // Assert the CPD has a single variable in the BIF file.
+            // Check the CPD has a single variable in the BIF file.
             if p.labels().len() != 1 {
                 return Err(Error::Parsing(format!(
                     "CPD for '{}' must have exactly one target variable.",
