@@ -1,4 +1,7 @@
+use std::fmt::Write;
+
 use approx::{AbsDiffEq, RelativeEq};
+use itertools::Itertools;
 use ndarray::prelude::*;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
@@ -472,7 +475,77 @@ impl BifIO for CatBN {
     }
 
     fn to_bif_string(&self) -> Result<String> {
-        todo!() // FIXME:
+        let mut f = String::new();
+
+        // Write network name.
+        writeln!(
+            f,
+            "network {} {{",
+            self.name.as_deref().unwrap_or("Network")
+        )
+        .map_err(|e| Error::Parsing(e.to_string()))?;
+        // Write network description, if any.
+        if let Some(description) = &self.description {
+            writeln!(f, "  property description \"{}\";", description)
+                .map_err(|e| Error::Parsing(e.to_string()))?;
+        }
+        writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+
+        // Write variables.
+        for label in self.labels() {
+            writeln!(f, "variable {} {{", label).map_err(|e| Error::Parsing(e.to_string()))?;
+            let states = &self.states()[label];
+            let states_str = states.iter().map(|x| x.to_string()).join(", ");
+            writeln!(
+                f,
+                "  type discrete [ {} ] {{ {} }};",
+                states.len(),
+                states_str
+            )
+            .map_err(|e| Error::Parsing(e.to_string()))?;
+            writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+        }
+
+        // Write probabilities.
+        for (label, cpd) in &self.cpds {
+            let parents = cpd.conditioning_labels();
+            if parents.is_empty() {
+                writeln!(f, "probability ( {} ) {{", label)
+                    .map_err(|e| Error::Parsing(e.to_string()))?;
+            } else {
+                let parents_str = parents.iter().map(|x| x.to_string()).join(", ");
+                writeln!(f, "probability ( {} | {} ) {{", label, parents_str)
+                    .map_err(|e| Error::Parsing(e.to_string()))?;
+            }
+
+            if parents.is_empty() {
+                // Write flat table.
+                let values = cpd.parameters().iter().map(|x| x.to_string()).join(", ");
+                writeln!(f, "  table {};", values).map_err(|e| Error::Parsing(e.to_string()))?;
+            } else {
+                // Write conditional table.
+                let conditioning_states = cpd.conditioning_states();
+                let combinations = parents
+                    .iter()
+                    .map(|p| &conditioning_states[p])
+                    .multi_cartesian_product();
+
+                for (i, states) in combinations.enumerate() {
+                    let states_str = states.iter().map(|x| x.to_string()).join(", ");
+                    let probs_str = cpd
+                        .parameters()
+                        .row(i)
+                        .iter()
+                        .map(|x| x.to_string())
+                        .join(", ");
+                    writeln!(f, "  ({}) {};", states_str, probs_str)
+                        .map_err(|e| Error::Parsing(e.to_string()))?;
+                }
+            }
+            writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+        }
+
+        Ok(f)
     }
 
     fn from_bif_file(path: &str) -> Result<Self> {
