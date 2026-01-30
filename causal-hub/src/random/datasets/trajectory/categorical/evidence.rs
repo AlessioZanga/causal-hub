@@ -3,6 +3,7 @@ use rand::{Rng, seq::index::sample};
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
+    random::Random,
     types::{Error, Result},
 };
 
@@ -38,14 +39,14 @@ impl<'a, R, D> RngEv<'a, R, D> {
     }
 }
 
-impl<R: Rng> RngEv<'_, R, CatTrj> {
+impl<R: Rng> Random<Result<CatTrjEv>> for RngEv<'_, R, CatTrj> {
     /// Generates random evidence from the trajectory.
     ///
     /// # Returns
     ///
     /// A `CatTrjEv` instance containing the random evidence.
     ///
-    pub fn random(&mut self) -> Result<CatTrjEv> {
+    fn random(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -89,21 +90,19 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
     }
 }
 
-impl<R: Rng> RngEv<'_, R, CatTrjs> {
+impl<R: Rng> Random<Result<CatTrjsEv>> for RngEv<'_, R, CatTrjs> {
     /// Generates random evidence from the trajectories.
     ///
     /// # Returns
     ///
     /// A `CatTrjsEv` instance containing the random evidence.
     ///
-    pub fn random(&mut self) -> Result<CatTrjsEv> {
+    fn random(&mut self) -> Result<CatTrjsEv> {
         let evidences = self
             .dataset
             .values()
             .iter()
-            .map(|trj| {
-                RngEv::new(&mut self.rng, trj, self.p).and_then(|mut rng_ev| rng_ev.random())
-            })
+            .map(|trj| RngEv::<_, CatTrj>::new(self.rng, trj, self.p)?.random())
             .collect::<Result<Vec<_>>>()?;
 
         CatTrjsEv::new(evidences)

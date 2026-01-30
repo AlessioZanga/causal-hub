@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTrj, CatTrjEvT as E, CatTrjs, Dataset},
-        random::RngEv,
+        random::{Random, RngEv},
         states,
         types::Result,
     };

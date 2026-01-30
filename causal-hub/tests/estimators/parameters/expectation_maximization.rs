@@ -8,7 +8,7 @@ mod tests {
         datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
         estimators::{BE, CIMEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
         models::{CTBN, CatCTBN, Graph},
-        random::RngEv,
+        random::{Random, RngEv},
         samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
         set,
         types::{Error, Result},
