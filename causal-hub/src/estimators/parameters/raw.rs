@@ -1,7 +1,8 @@
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
+use ndarray_rand::RandomExt;
 use rand::{Rng, SeedableRng, seq::SliceRandom};
-use rand_distr::{Distribution, weighted::WeightedIndex};
+use rand_distr::{Distribution, Uniform, weighted::WeightedIndex};
 use rayon::prelude::*;
 
 use crate::{
@@ -254,15 +255,16 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             })
             .collect();
         // If no evidence is present, fill it randomly.
-        no_evidence.into_iter().for_each(|i| {
+        no_evidence.into_iter().try_for_each(|i| -> Result<()> {
             // Sample a state uniformly at random.
-            let random_state = Array::from_iter({
-                let random_state = || self.rng.random_range(0..(states[i].len() as CatType));
-                std::iter::repeat_with(random_state).take(events.nrows())
-            });
+            let dist = Uniform::new(0, states[i].len() as CatType)
+                .map_err(|e| Error::RandDistr(format!("Invalid uniform distribution: {}", e)))?;
+            let random_state = Array::random_using(events.nrows(), dist, &mut self.rng);
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
-        });
+
+            Ok(())
+        })?;
 
         // Fill the unknown states by propagating the known states.
         events

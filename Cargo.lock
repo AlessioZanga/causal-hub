@@ -220,6 +220,7 @@ dependencies = [
  "log",
  "ndarray",
  "ndarray-linalg",
+ "ndarray-rand",
  "ndarray-stats",
  "openblas-src",
  "paste",
@@ -1166,6 +1167,17 @@ dependencies = [
  "num-traits",
  "rand 0.8.5",
  "thiserror",
+]
+
+[[package]]
+name = "ndarray-rand"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "180f724d496e84764e8ecf28fbe1da74ef231ec4ba15be65a9100be8445d73e3"
+dependencies = [
+ "ndarray",
+ "rand 0.9.2",
+ "rand_distr",
 ]
 
 [[package]]

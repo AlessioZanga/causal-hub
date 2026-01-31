@@ -24,6 +24,7 @@ itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.17", features = ["approx", "rayon", "serde"] }
 ndarray-linalg = { version = "^0.18", default-features = false }
+ndarray-rand = "^0.16"
 ndarray-stats = "^0.7"
 paste.workspace = true
 pest = "^2.8"
