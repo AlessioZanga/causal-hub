@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
+        labels,
         models::{CPD, GaussCPD, Labelled},
         random::{Random, RngGaussCPD},
-        set,
         types::Result,
     };
     use rand::SeedableRng;
@@ -12,8 +12,8 @@ mod tests {
     #[test]
     fn new() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let labels = set!["X1".to_string(), "X2".to_string()];
-        let conditioning_labels = set!["Z1".to_string(), "Z2".to_string(), "Z3".to_string()];
+        let labels = labels!["X1", "X2"];
+        let conditioning_labels = labels!["Z1", "Z2", "Z3"];
         let s_a = 0.5;
         let s_b = 1.0;
         let e = 1e-2;
@@ -27,8 +27,8 @@ mod tests {
     #[test]
     fn random() -> Result<()> {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-        let labels = set!["X1".to_string(), "X2".to_string()];
-        let conditioning_labels = set!["Z1".to_string(), "Z2".to_string(), "Z3".to_string()];
+        let labels = labels!["X1", "X2"];
+        let conditioning_labels = labels!["Z1", "Z2", "Z3"];
         let s_a = 0.5;
         let s_b = 1.0;
         let e = 1e-2;
