@@ -191,11 +191,13 @@ mod tests {
 
                 // P(A | A, C)
                 let res = estimator.fit(&set![0], &set![0, 2]);
-                assert!(res.is_err());
-                assert_eq!(
-                    res.unwrap_err().to_string(),
-                    "Illegal argument error: Variables and conditioning variables must be disjoint."
-                );
+                match res {
+                    Err(err) => assert_eq!(
+                        err.to_string(),
+                        "Illegal argument error: Variables and conditioning variables must be disjoint."
+                    ),
+                    _ => panic!("Should be error"),
+                };
 
                 Ok(())
             }

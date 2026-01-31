@@ -73,9 +73,10 @@ mod tests {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
             let res = RngEv::new(&mut rng, &trj, -0.1);
-            assert!(res.is_err());
-            let err = res.err().unwrap();
-            assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]");
+            match res {
+                Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
+                _ => panic!("Should be error"),
+            };
             Ok(())
         }
 
@@ -84,9 +85,10 @@ mod tests {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
             let res = RngEv::new(&mut rng, &trj, 1.1);
-            assert!(res.is_err());
-            let err = res.err().unwrap();
-            assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]");
+            match res {
+                Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
+                _ => panic!("Should be error"),
+            };
             Ok(())
         }
 

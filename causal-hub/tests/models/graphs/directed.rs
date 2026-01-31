@@ -45,12 +45,10 @@ mod tests {
     #[test]
     fn has_edge_out_of_bounds_x() -> Result<()> {
         let graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.has_edge(5, 1);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.has_edge(5, 1) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -58,12 +56,10 @@ mod tests {
     #[test]
     fn has_edge_out_of_bounds_y() -> Result<()> {
         let graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.has_edge(1, 5);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.has_edge(1, 5) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -71,12 +67,10 @@ mod tests {
     #[test]
     fn add_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.add_edge(5, 1);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.add_edge(5, 1) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -84,12 +78,10 @@ mod tests {
     #[test]
     fn add_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.add_edge(1, 5);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.add_edge(1, 5) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -97,12 +89,10 @@ mod tests {
     #[test]
     fn del_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.del_edge(5, 1);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.del_edge(5, 1) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -110,12 +100,10 @@ mod tests {
     #[test]
     fn del_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = DiGraph::empty(LABELS.to_vec())?;
-        let result = graph.del_edge(1, 5);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "Vertex `5` is out of bounds"
-        );
+        match graph.del_edge(1, 5) {
+            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }
@@ -213,9 +201,10 @@ mod tests {
     #[test]
     fn unique_labels() -> Result<()> {
         let labels = vec!["A", "A", "B"];
-        let result = DiGraph::empty(labels);
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Labels must be unique.");
+        match DiGraph::empty(labels) {
+            Err(err) => assert_eq!(err.to_string(), "Labels must be unique."),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }

@@ -110,8 +110,10 @@ mod tests {
             }];
             let res = GaussEv::new(labels, values);
 
-            assert!(res.is_err());
-            assert!(res.unwrap_err().to_string().contains("out of bounds"));
+            match res {
+                Err(err) => assert!(err.to_string().contains("out of bounds")),
+                _ => panic!("Should be error"),
+            };
 
             Ok(())
         }
@@ -230,8 +232,10 @@ mod tests {
 
             let res = ev.select(&set![0, 1, 10]);
 
-            assert!(res.is_err());
-            assert!(res.unwrap_err().to_string().contains("out of bounds"));
+            match res {
+                Err(err) => assert!(err.to_string().contains("out of bounds")),
+                _ => panic!("Should be error"),
+            };
 
             Ok(())
         }
