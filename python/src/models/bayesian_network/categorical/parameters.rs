@@ -6,6 +6,8 @@ use std::{
 use backend::{
     io::JsonIO,
     models::{CPD, CatCPD, Labelled},
+    random::{Random, RngCatCPD},
+    types::States,
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
@@ -13,6 +15,8 @@ use pyo3::{
     types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{error::to_pyerr, impl_from_into_lock};
 
@@ -192,6 +196,59 @@ impl PyCatCPD {
     pub fn __repr__(&self) -> PyResult<String> {
         // Get the string representation of the CatCPD.
         Ok(self.lock().to_string())
+    }
+
+    /// Generates a random categorical conditional probability distribution.
+    ///
+    /// Parameters
+    /// ----------
+    /// states: dict[str, tuple[str, ...]]
+    ///     The states of the variable.
+    /// conditioning_states: dict[str, tuple[str, ...]]
+    ///     The states of the conditioning variables.
+    /// alpha: float, default=1.0
+    ///     The parameter of the Dirichlet distribution.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// CatCPD
+    ///     A random categorical conditional probability distribution.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (states, conditioning_states, alpha=1.0, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        states: &Bound<'_, PyDict>,
+        conditioning_states: &Bound<'_, PyDict>,
+        alpha: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyDict to a States.
+        let mut inner_states = States::default();
+        for (label, states) in states {
+            let label = label.extract::<String>()?;
+            let states = states.extract::<Vec<String>>()?;
+            inner_states.insert(label, states.into_iter().collect());
+        }
+
+        // Convert the PyDict to a States.
+        let mut inner_conditioning_states = States::default();
+        for (label, states) in conditioning_states {
+            let label = label.extract::<String>()?;
+            let states = states.extract::<Vec<String>>()?;
+            inner_conditioning_states.insert(label, states.into_iter().collect());
+        }
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngCatCPD and generate a random CPD.
+        RngCatCPD::new(&mut rng, &inner_states, &inner_conditioning_states, alpha)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.

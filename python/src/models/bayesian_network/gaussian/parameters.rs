@@ -3,6 +3,8 @@ use std::sync::{Arc, RwLock};
 use backend::{
     io::JsonIO,
     models::{CPD, GaussCPD, Labelled},
+    random::{Random, RngGaussCPD},
+    types::Labels,
 };
 use numpy::prelude::*;
 use pyo3::{
@@ -10,6 +12,8 @@ use pyo3::{
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{error::to_pyerr, impl_from_into_lock};
 
@@ -142,6 +146,60 @@ impl PyGaussCPD {
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.lock().sample_log_likelihood())
+    }
+
+    /// Generates a random Gaussian conditional probability distribution.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the target variables.
+    /// conditioning_labels: Iterable[str]
+    ///     The labels of the conditioning variables.
+    /// s_a: float, default=1.0
+    ///     The standard deviation of the regression coefficients.
+    /// s_b: float, default=1.0
+    ///     The standard deviation of the intercept.
+    /// e: float, default=1e-6
+    ///     A small positive constant for covariance regularization.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD
+    ///     A random Gaussian conditional probability distribution.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (labels, conditioning_labels, s_a=1.0, s_b=1.0, e=1e-6, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        conditioning_labels: &Bound<'_, PyAny>,
+        s_a: f64,
+        s_b: f64,
+        e: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyAny to a Labels.
+        let labels: Labels = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        // Convert the PyAny to a Labels.
+        let conditioning_labels: Labels = conditioning_labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngGaussCPD and generate a random CPD.
+        RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, e)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.

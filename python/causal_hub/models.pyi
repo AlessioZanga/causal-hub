@@ -210,6 +210,34 @@ class CatBN:
         """
 
     @classmethod
+    def random(
+        cls,
+        states: dict,
+        alpha: builtins.float = 1.0,
+        p: builtins.float = 0.1,
+        seed: builtins.int = 31,
+    ) -> CatBN:
+        r"""
+        Generates a random categorical Bayesian network.
+
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            The states of the variables.
+        alpha: float, default=1.0
+            The parameter of the Dirichlet distribution.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatBN
+            A random categorical Bayesian network.
+        """
+
+    @classmethod
     def from_bif_string(cls, bif: builtins.str) -> CatBN:
         r"""
         Read class from a BIF string.
@@ -582,6 +610,34 @@ class CatCPD:
     def __repr__(self) -> builtins.str:
         r"""
         Returns the string representation of the CatCPD.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        states: dict,
+        conditioning_states: dict,
+        alpha: builtins.float = 1.0,
+        seed: builtins.int = 31,
+    ) -> CatCPD:
+        r"""
+        Generates a random categorical conditional probability distribution.
+
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            The states of the variable.
+        conditioning_states: dict[str, tuple[str, ...]]
+            The states of the conditioning variables.
+        alpha: float, default=1.0
+            The parameter of the Dirichlet distribution.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatCPD
+            A random categorical conditional probability distribution.
         """
 
     @classmethod
@@ -1269,6 +1325,50 @@ class DiGraph:
         """
 
     @classmethod
+    def random(
+        cls, labels: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> DiGraph:
+        r"""
+        Generates a random directed graph.
+
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        DiGraph
+            A random directed graph.
+        """
+
+    @classmethod
+    def random_dag(
+        cls, vertices: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> DiGraph:
+        r"""
+        Generates a random directed acyclic graph.
+
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        DiGraph
+            A random directed acyclic graph.
+        """
+
+    @classmethod
     def from_json_string(cls, json: builtins.str) -> DiGraph:
         r"""
         Read instance from a JSON string.
@@ -1522,6 +1622,40 @@ class GaussBN:
         """
 
     @classmethod
+    def random(
+        cls,
+        labels: typing.Any,
+        s_a: builtins.float = 1.0,
+        s_b: builtins.float = 1.0,
+        e: builtins.float = 1e-06,
+        p: builtins.float = 0.1,
+        seed: builtins.int = 31,
+    ) -> GaussBN:
+        r"""
+        Generates a random Gaussian Bayesian network.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the variables.
+        s_a: float, default=1.0
+            The standard deviation of the regression coefficients.
+        s_b: float, default=1.0
+            The standard deviation of the intercept.
+        e: float, default=1e-6
+            A small positive constant for covariance regularization.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        GaussBN
+            A random Gaussian Bayesian network.
+        """
+
+    @classmethod
     def from_json_string(cls, json: builtins.str) -> GaussBN:
         r"""
         Read instance from a JSON string.
@@ -1638,6 +1772,40 @@ class GaussCPD:
         -------
         float | None
             The sample log-likelihood given the distribution, if any.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        labels: typing.Any,
+        conditioning_labels: typing.Any,
+        s_a: builtins.float = 1.0,
+        s_b: builtins.float = 1.0,
+        e: builtins.float = 1e-06,
+        seed: builtins.int = 31,
+    ) -> GaussCPD:
+        r"""
+        Generates a random Gaussian conditional probability distribution.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the target variables.
+        conditioning_labels: Iterable[str]
+            The labels of the conditioning variables.
+        s_a: float, default=1.0
+            The standard deviation of the regression coefficients.
+        s_b: float, default=1.0
+            The standard deviation of the intercept.
+        e: float, default=1e-6
+            A small positive constant for covariance regularization.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        GaussCPD
+            A random Gaussian conditional probability distribution.
         """
 
     @classmethod

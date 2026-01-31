@@ -294,6 +294,28 @@ class CatTrjEv:
             A new categorical trajectory evidence instance.
         """
 
+    @classmethod
+    def random(
+        cls, trj: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> CatTrjEv:
+        r"""
+        Generates a random categorical trajectory evidence.
+
+        Parameters
+        ----------
+        trj: CatTrj
+            The categorical trajectory to generate evidence for.
+        p: float, default=0.1
+            The probability of generating an evidence for each state.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatTrjEv
+            A random categorical trajectory evidence.
+        """
+
 @typing.final
 class CatTrjs:
     r"""
@@ -410,6 +432,28 @@ class CatTrjsEv:
         -------
         CatTrjsEv
             A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def random(
+        cls, trjs: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> CatTrjsEv:
+        r"""
+        Generates a random categorical trajectory evidences.
+
+        Parameters
+        ----------
+        trjs: CatTrjs
+            The categorical trajectories to generate evidence for.
+        p: float, default=0.1
+            The probability of generating an evidence for each state.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatTrjsEv
+            A random categorical trajectory evidences.
         """
 
 @typing.final

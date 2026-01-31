@@ -9,7 +9,7 @@ mod tests {
             datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
-            random::{Random, RngEv},
+            random::{Random, RngCatTrjEv},
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             states,
             types::{Cache, Error, Result},
@@ -35,7 +35,7 @@ mod tests {
             // Set the probability of the evidence.
             let p = 0.5;
             // Initialize the evidence generator.
-            let mut generator = RngEv::new(&mut rng, &trajectories, p)?;
+            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, p)?;
             // Sample the evidence from the fully-observed trajectories.
             let evidence = generator.random()?;
 

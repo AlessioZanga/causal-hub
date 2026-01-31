@@ -4,8 +4,9 @@ use std::{
 };
 
 use backend::{
-    datasets::{CatTrjEv, CatTrjEvT, CatTrjsEv},
+    datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
     models::Labelled,
+    random::{Random, RngCatTrjEv},
     types::{Set, States},
 };
 use numpy::{PyArray1, prelude::*};
@@ -14,8 +15,11 @@ use pyo3::{
     types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
+    datasets::{PyCatTrj, PyCatTrjs},
     error::{Error, to_pyerr},
     impl_from_into_lock,
 };
@@ -249,6 +253,43 @@ impl PyCatTrjEv {
             .map(Into::into)
             .map_err(to_pyerr)
     }
+
+    /// Generates a random categorical trajectory evidence.
+    ///
+    /// Parameters
+    /// ----------
+    /// trj: CatTrj
+    ///     The categorical trajectory to generate evidence for.
+    /// p: float, default=0.1
+    ///     The probability of generating an evidence for each state.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjEv
+    ///     A random categorical trajectory evidence.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (trj, p=0.1, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        trj: &Bound<'_, PyAny>,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert PyAny to CatTrj.
+        let trj: CatTrj = trj.extract::<PyCatTrj>()?.into();
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngCatTrjEv and generate a random evidence.
+        RngCatTrjEv::<_, CatTrj>::new(&mut rng, &trj, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
 }
 
 /// A collection of categorical trajectory evidences.
@@ -340,5 +381,42 @@ impl PyCatTrjsEv {
 
         // Create a new CatTrjsEv with the given parameters.
         CatTrjsEv::new(dfs).map(Into::into).map_err(to_pyerr)
+    }
+
+    /// Generates a random categorical trajectory evidences.
+    ///
+    /// Parameters
+    /// ----------
+    /// trjs: CatTrjs
+    ///     The categorical trajectories to generate evidence for.
+    /// p: float, default=0.1
+    ///     The probability of generating an evidence for each state.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjsEv
+    ///     A random categorical trajectory evidences.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (trjs, p=0.1, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        trjs: &Bound<'_, PyAny>,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert PyAny to CatTrjs.
+        let trjs: CatTrjs = trjs.extract::<PyCatTrjs>()?.into();
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngCatTrjEv and generate random evidences.
+        RngCatTrjEv::<_, CatTrjs>::new(&mut rng, &trjs, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 }

@@ -12,7 +12,9 @@ use backend::{
     },
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
+    random::{Random, RngCatBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
+    types::States,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -472,6 +474,51 @@ impl PyCatBN {
         };
         // Return the dataset.
         estimate.map(|e| e.map(Into::into)).map_err(to_pyerr)
+    }
+
+    /// Generates a random categorical Bayesian network.
+    ///
+    /// Parameters
+    /// ----------
+    /// states: dict[str, tuple[str, ...]]
+    ///     The states of the variables.
+    /// alpha: float, default=1.0
+    ///     The parameter of the Dirichlet distribution.
+    /// p: float, default=0.1
+    ///     The probability of generating an edge.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A random categorical Bayesian network.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (states, alpha=1.0, p=0.1, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        states: &Bound<'_, PyDict>,
+        alpha: f64,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyDict to a States.
+        let mut inner_states = States::default();
+        for (label, states) in states {
+            let label = label.extract::<String>()?;
+            let states = states.extract::<Vec<String>>()?;
+            inner_states.insert(label, states.into_iter().collect());
+        }
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngCatBN and generate a random BN.
+        RngCatBN::new(&mut rng, &inner_states, alpha, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read class from a BIF string.

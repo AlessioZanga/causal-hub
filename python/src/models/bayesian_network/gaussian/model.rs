@@ -12,7 +12,9 @@ use backend::{
     },
     io::JsonIO,
     models::{BN, DiGraph, GaussBN, Labelled},
+    random::{Random, RngGaussBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
+    types::Labels,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -472,6 +474,55 @@ impl PyGaussBN {
         };
         // Return the dataset.
         estimate.map(|e| e.map(Into::into)).map_err(to_pyerr)
+    }
+
+    /// Generates a random Gaussian Bayesian network.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the variables.
+    /// s_a: float, default=1.0
+    ///     The standard deviation of the regression coefficients.
+    /// s_b: float, default=1.0
+    ///     The standard deviation of the intercept.
+    /// e: float, default=1e-6
+    ///     A small positive constant for covariance regularization.
+    /// p: float, default=0.1
+    ///     The probability of generating an edge.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// GaussBN
+    ///     A random Gaussian Bayesian network.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (labels, s_a=1.0, s_b=1.0, e=1e-6, p=0.1, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        s_a: f64,
+        s_b: f64,
+        e: f64,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyAny to a Labels.
+        let labels: Labels = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngGaussBN and generate a random BN.
+        RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.

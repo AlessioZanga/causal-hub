@@ -8,14 +8,14 @@ use crate::{
 };
 
 /// A struct representing a random evidence generator.
-pub struct RngEv<'a, R, D> {
+pub struct RngCatTrjEv<'a, R, D> {
     rng: &'a mut R,
     dataset: &'a D,
     p: f64,
 }
 
-impl<'a, R, D> RngEv<'a, R, D> {
-    /// Creates a new `RngEv` instance.
+impl<'a, R, D> RngCatTrjEv<'a, R, D> {
+    /// Creates a new `RngCatTrjEv` instance.
     ///
     /// # Arguments
     ///
@@ -25,7 +25,7 @@ impl<'a, R, D> RngEv<'a, R, D> {
     ///
     /// # Returns
     ///
-    /// A new `RngEv` instance.
+    /// A new `RngCatTrjEv` instance.
     pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Result<Self> {
         // Check that the probability is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
@@ -39,7 +39,7 @@ impl<'a, R, D> RngEv<'a, R, D> {
     }
 }
 
-impl<R: Rng> Random<Result<CatTrjEv>> for RngEv<'_, R, CatTrj> {
+impl<R: Rng> Random<Result<CatTrjEv>> for RngCatTrjEv<'_, R, CatTrj> {
     /// Generates random evidence from the trajectory.
     ///
     /// # Returns
@@ -90,7 +90,7 @@ impl<R: Rng> Random<Result<CatTrjEv>> for RngEv<'_, R, CatTrj> {
     }
 }
 
-impl<R: Rng> Random<Result<CatTrjsEv>> for RngEv<'_, R, CatTrjs> {
+impl<R: Rng> Random<Result<CatTrjsEv>> for RngCatTrjEv<'_, R, CatTrjs> {
     /// Generates random evidence from the trajectories.
     ///
     /// # Returns
@@ -102,7 +102,7 @@ impl<R: Rng> Random<Result<CatTrjsEv>> for RngEv<'_, R, CatTrjs> {
             .dataset
             .values()
             .iter()
-            .map(|trj| RngEv::<_, CatTrj>::new(self.rng, trj, self.p)?.random())
+            .map(|trj| RngCatTrjEv::<_, CatTrj>::new(self.rng, trj, self.p)?.random())
             .collect::<Result<Vec<_>>>()?;
 
         CatTrjsEv::new(evidences)

@@ -2,7 +2,7 @@
 mod tests {
     use causal_hub::{
         datasets::{CatTrj, CatTrjEvT as E, CatTrjs, Dataset},
-        random::{Random, RngEv},
+        random::{Random, RngCatTrjEv},
         states,
         types::Result,
     };
@@ -45,7 +45,7 @@ mod tests {
         fn new_with_valid_probability_zero() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let rng_ev = RngEv::new(&mut rng, &trj, 0.0);
+            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.0);
             assert!(rng_ev.is_ok());
             Ok(())
         }
@@ -54,7 +54,7 @@ mod tests {
         fn new_with_valid_probability_one() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let rng_ev = RngEv::new(&mut rng, &trj, 1.0);
+            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 1.0);
             assert!(rng_ev.is_ok());
             Ok(())
         }
@@ -63,7 +63,7 @@ mod tests {
         fn new_with_valid_probability_half() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let rng_ev = RngEv::new(&mut rng, &trj, 0.5);
+            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.5);
             assert!(rng_ev.is_ok());
             Ok(())
         }
@@ -72,7 +72,7 @@ mod tests {
         fn new_with_invalid_probability_negative() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let res = RngEv::new(&mut rng, &trj, -0.1);
+            let res = RngCatTrjEv::new(&mut rng, &trj, -0.1);
             match res {
                 Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
                 _ => panic!("Should be error"),
@@ -84,7 +84,7 @@ mod tests {
         fn new_with_invalid_probability_greater_than_one() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let res = RngEv::new(&mut rng, &trj, 1.1);
+            let res = RngCatTrjEv::new(&mut rng, &trj, 1.1);
             match res {
                 Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
                 _ => panic!("Should be error"),
@@ -96,7 +96,7 @@ mod tests {
         fn new_with_invalid_probability_large() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let res = RngEv::new(&mut rng, &trj, 100.0);
+            let res = RngCatTrjEv::new(&mut rng, &trj, 100.0);
             assert!(res.is_err());
             Ok(())
         }
@@ -109,7 +109,7 @@ mod tests {
         fn random_with_probability_zero() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let mut rng_ev = RngEv::new(&mut rng, &trj, 0.0)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.0)?;
             let evidence = rng_ev.random()?;
 
             // With p=0.0, no evidence should be selected.
@@ -122,7 +122,7 @@ mod tests {
         fn random_with_probability_one() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let mut rng_ev = RngEv::new(&mut rng, &trj, 1.0)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trj, 1.0)?;
             let evidence = rng_ev.random()?;
 
             // With p=1.0, some evidence should be selected.
@@ -159,8 +159,8 @@ mod tests {
             let mut rng2 = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
 
-            let mut rng_ev1 = RngEv::new(&mut rng1, &trj, 0.5)?;
-            let mut rng_ev2 = RngEv::new(&mut rng2, &trj, 0.5)?;
+            let mut rng_ev1 = RngCatTrjEv::new(&mut rng1, &trj, 0.5)?;
+            let mut rng_ev2 = RngCatTrjEv::new(&mut rng2, &trj, 0.5)?;
 
             let evidence1 = rng_ev1.random()?;
             let evidence2 = rng_ev2.random()?;
@@ -176,13 +176,13 @@ mod tests {
         fn random_multiple_calls() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let mut rng_ev = RngEv::new(&mut rng, &trj, 0.8)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.8)?;
 
             // Call random.
             let evidence1 = rng_ev.random()?;
 
             // Create a new generator with the same (now advanced) rng.
-            let mut rng_ev2 = RngEv::new(&mut rng, &trj, 0.8)?;
+            let mut rng_ev2 = RngCatTrjEv::new(&mut rng, &trj, 0.8)?;
             let evidence2 = rng_ev2.random()?;
 
             // Both should return valid evidence (may or may not be equal).
@@ -204,7 +204,7 @@ mod tests {
         fn new_with_multiple_trajectories() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trjs = create_sample_trajectories()?;
-            let rng_ev = RngEv::new(&mut rng, &trjs, 0.5);
+            let rng_ev = RngCatTrjEv::new(&mut rng, &trjs, 0.5);
             assert!(rng_ev.is_ok());
             Ok(())
         }
@@ -213,7 +213,7 @@ mod tests {
         fn random_with_probability_zero() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trjs = create_sample_trajectories()?;
-            let mut rng_ev = RngEv::new(&mut rng, &trjs, 0.0)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trjs, 0.0)?;
             let evidences = rng_ev.random()?;
 
             // With p=0.0, no evidence should be selected from each trajectory.
@@ -230,7 +230,7 @@ mod tests {
         fn random_with_probability_one() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trjs = create_sample_trajectories()?;
-            let mut rng_ev = RngEv::new(&mut rng, &trjs, 1.0)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trjs, 1.0)?;
             let evidences = rng_ev.random()?;
 
             // With p=1.0, some evidence should be selected from each trajectory.
@@ -250,7 +250,7 @@ mod tests {
             let trjs = create_sample_trajectories()?;
             let n_trajectories = trjs.values().len();
 
-            let mut rng_ev = RngEv::new(&mut rng, &trjs, 0.7)?;
+            let mut rng_ev = RngCatTrjEv::new(&mut rng, &trjs, 0.7)?;
             let evidences = rng_ev.random()?;
 
             // Should have the same number of evidence sets as trajectories.
@@ -264,8 +264,8 @@ mod tests {
             let mut rng2 = Xoshiro256PlusPlus::seed_from_u64(123);
             let trjs = create_sample_trajectories()?;
 
-            let mut rng_ev1 = RngEv::new(&mut rng1, &trjs, 0.6)?;
-            let mut rng_ev2 = RngEv::new(&mut rng2, &trjs, 0.6)?;
+            let mut rng_ev1 = RngCatTrjEv::new(&mut rng1, &trjs, 0.6)?;
+            let mut rng_ev2 = RngCatTrjEv::new(&mut rng2, &trjs, 0.6)?;
 
             let evidences1 = rng_ev1.random()?;
             let evidences2 = rng_ev2.random()?;
