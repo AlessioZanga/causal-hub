@@ -9,13 +9,13 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{
-        Dataset, GaussTable, GaussType, GaussWtdTable, IncDataset, MissingMethod as MM,
-        MissingTable,
+        Dataset, GaussTable, GaussType, GaussWtdTable, IncDataset, MissingMechanism,
+        MissingMethod as MM, MissingTable,
     },
     io::CsvIO,
     labels,
     models::Labelled,
-    types::{Error, Labels, Map, Result, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A struct representing an incomplete gaussian dataset.
@@ -223,7 +223,7 @@ impl IncDataset for GaussIncTable {
         &self,
         m: &MM,
         x: Option<&Set<usize>>,
-        _pr: Option<&Map<usize, Set<usize>>>,
+        _pr: Option<&MissingMechanism>,
     ) -> Result<Either<Self::Complete, Self::Weighted>> {
         // Apply the missing method with the provided arguments.
         match (m, x) {
@@ -252,22 +252,14 @@ impl IncDataset for GaussIncTable {
         self.pw_deletion(x)
     }
 
-    fn ipw_deletion(
-        &self,
-        _x: &Set<usize>,
-        _pr: &Map<usize, Set<usize>>,
-    ) -> Result<Self::Weighted> {
+    fn ipw_deletion(&self, _x: &Set<usize>, _pr: &MissingMechanism) -> Result<Self::Weighted> {
         Err(Error::InvalidParameter(
             "missing_method".to_string(),
             "IPW deletion not implemented for Gaussian data yet.".to_string(),
         ))
     }
 
-    fn aipw_deletion(
-        &self,
-        _x: &Set<usize>,
-        _pr: &Map<usize, Set<usize>>,
-    ) -> Result<Self::Weighted> {
+    fn aipw_deletion(&self, _x: &Set<usize>, _pr: &MissingMechanism) -> Result<Self::Weighted> {
         Err(Error::InvalidParameter(
             "missing_method".to_string(),
             "AIPW deletion not implemented for Gaussian data yet.".to_string(),

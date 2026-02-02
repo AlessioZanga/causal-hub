@@ -2,7 +2,7 @@
 mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
-        datasets::{CatIncTable, CatTable, Dataset, IncDataset},
+        datasets::{CatIncTable, CatTable, Dataset, IncDataset, MissingMechanism},
         labels, map,
         models::Labelled,
         set, states,
@@ -516,7 +516,10 @@ mod tests {
         let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Set the Pi_R.
-        let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
+        let pr = MissingMechanism::new(
+            dataset.labels().clone(),
+            map![(0, set![]), (1, set![0]), (2, set![0, 1])],
+        )?;
 
         // Set W.
         let w = set![];
@@ -681,7 +684,10 @@ mod tests {
         let dataset = CatIncTable::new(states.clone(), values.clone())?;
 
         // Set the Pi_R.
-        let pr = map![(0, set![]), (1, set![0]), (2, set![0, 1])];
+        let pr = MissingMechanism::new(
+            dataset.labels().clone(),
+            map![(0, set![]), (1, set![0]), (2, set![0, 1])],
+        )?;
 
         // Set W.
         let w = set![];

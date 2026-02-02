@@ -1,11 +1,157 @@
+use std::{
+    fmt::{Display, Formatter},
+    ops::Index,
+};
+
 use itertools::{Either, Itertools};
 use ndarray::prelude::*;
 use ndarray_stats::CorrelationExt;
+use serde::{Deserialize, Serialize};
 
 use crate::{
+    datasets::Dataset,
     models::Labelled,
-    types::{Error, Labels, Result, Set},
+    types::{Error, Labels, Map, Result, Set},
 };
+
+/// A struct representing the missing data indicators.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
+pub struct MissingMechanism {
+    labels: Labels,
+    pr: Map<usize, Set<usize>>,
+}
+
+impl MissingMechanism {
+    /// Create a new missing mechanism.
+    pub fn new(labels: Labels, pr: Map<usize, Set<usize>>) -> Result<Self> {
+        // Check if all indices are within bounds.
+        let n = labels.len();
+        for (&x, ys) in &pr {
+            if x >= n {
+                return Err(Error::VertexOutOfBounds(x));
+            }
+            for &y in ys {
+                if y >= n {
+                    return Err(Error::VertexOutOfBounds(y));
+                }
+            }
+        }
+
+        Ok(Self { labels, pr })
+    }
+
+    /// Returns the number of missing variables.
+    pub fn len(&self) -> usize {
+        self.pr.len()
+    }
+
+    /// Checks if the missing mechanism is empty.
+    pub fn is_empty(&self) -> bool {
+        self.pr.is_empty()
+    }
+
+    /// Returns the missing variables.
+    pub fn keys(&self) -> impl Iterator<Item = &usize> {
+        self.pr.keys()
+    }
+
+    /// Returns the causes of missingness.
+    pub fn values(&self) -> impl Iterator<Item = &Set<usize>> {
+        self.pr.values()
+    }
+
+    /// Checks if a variable is missing.
+    pub fn contains_key(&self, x: &usize) -> bool {
+        self.pr.contains_key(x)
+    }
+
+    /// Returns the causes of missingness for a given variable.
+    pub fn get(&self, x: &usize) -> Option<&Set<usize>> {
+        self.pr.get(x)
+    }
+
+    /// Inserts a missing variable and its causes.
+    pub fn insert(&mut self, x: usize, y: Set<usize>) -> Option<Set<usize>> {
+        self.pr.insert(x, y)
+    }
+}
+
+impl Labelled for MissingMechanism {
+    #[inline]
+    fn labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
+impl Index<usize> for MissingMechanism {
+    type Output = Set<usize>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.pr[&index]
+    }
+}
+
+impl FromIterator<(usize, Set<usize>)> for MissingMechanism {
+    fn from_iter<I: IntoIterator<Item = (usize, Set<usize>)>>(iter: I) -> Self {
+        Self {
+            labels: Labels::default(),
+            pr: Map::from_iter(iter),
+        }
+    }
+}
+
+impl IntoIterator for MissingMechanism {
+    type Item = (usize, Set<usize>);
+    type IntoIter = indexmap::map::IntoIter<usize, Set<usize>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.pr.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a MissingMechanism {
+    type Item = (&'a usize, &'a Set<usize>);
+    type IntoIter = indexmap::map::Iter<'a, usize, Set<usize>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.pr.iter()
+    }
+}
+
+/// An enum representing different methods for handling missing data.
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug)]
+pub enum MissingMethod {
+    /// List-wise deletion missing handling method.
+    LW,
+    /// Pair-wise deletion missing handling method.
+    PW,
+    /// Inverse probability weighting missing handling method.
+    IPW,
+    /// Augmented inverse probability weighting missing handling method.
+    AIPW,
+}
+
+/// Missing mechanism t types.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub enum MissingType {
+    /// Missing Completely At Random.
+    MCAR,
+    /// Missing At Random.
+    MAR,
+    /// Missing Not At Random.
+    MNAR,
+}
+
+impl Display for MissingType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MCAR => write!(f, "MCAR"),
+            Self::MAR => write!(f, "MAR"),
+            Self::MNAR => write!(f, "MNAR"),
+        }
+    }
+}
 
 /// A struct for missing information in a tabular dataset.
 #[derive(Clone, Debug)]
@@ -306,4 +452,114 @@ impl MissingTable {
     pub const fn complete_rows_count(&self) -> usize {
         self.complete_rows_count
     }
+}
+
+/// A trait for incomplete datasets.
+pub trait IncDataset: Dataset + Sized {
+    /// The type of the missing data indicator.
+    type Missing;
+    /// The value of the missing data indicator.
+    const MISSING: Self::Missing;
+
+    /// The type of the complete dataset.
+    type Complete;
+    /// The type of the weighted dataset.
+    type Weighted;
+
+    /// Get the missing information.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the missing information.
+    ///
+    fn missing(&self) -> &MissingTable;
+
+    /// Apply a missing data handling method to the dataset.
+    ///
+    /// # Arguments
+    ///
+    /// * `m` - The missing data handling method to apply.
+    /// * `x` - An optional set of variables to consider for missing data handling.
+    /// * `pr` - An optional missing mechanism specification.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// Either a complete or weighted dataset.
+    ///
+    fn apply_missing_method(
+        &self,
+        m: &MissingMethod,
+        x: Option<&Set<usize>>,
+        pr: Option<&MissingMechanism>,
+    ) -> Result<Either<Self::Complete, Self::Weighted>>;
+
+    /// Perform list-wise (LW) deletion to handle missing data.
+    ///
+    /// # Errors
+    ///
+    /// * If the dataset is empty after LW deletion.
+    ///
+    /// # Returns
+    ///
+    /// A complete dataset obtained via LW deletion.
+    ///
+    fn lw_deletion(&self) -> Result<Self::Complete>;
+
+    /// Perform pair-wise (PW) deletion to handle missing data for the specified columns.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - A set of column indices for PW deletion.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A complete dataset restricted to the specified columns via PW deletion.
+    ///
+    fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete>;
+
+    /// Perform inverse probability weighting (IPW) deletion to handle missing data for the specified columns.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - A set of column indices for IPW deletion.
+    /// * `pr` - The missing data indicators.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A weighted dataset restricted to the specified columns via IPW deletion.
+    ///
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted>;
+
+    /// Perform augmented inverse probability weighting (AIPW) deletion to handle missing data for the specified columns.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - A set of column indices for AIPW deletion.
+    /// * `pr` - The missing data indicators.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables to consider for missing data handling is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A weighted dataset restricted to the specified columns via AIPW deletion.
+    ///
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted>;
 }

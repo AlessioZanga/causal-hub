@@ -13,6 +13,9 @@ pub use graphical_separation::*;
 mod topological_order;
 pub use topological_order::*;
 
+mod v_structures;
+pub use v_structures::*;
+
 /// A trait to provide access to the underlying model.
 pub trait Modelled<T> {
     /// Get the model.

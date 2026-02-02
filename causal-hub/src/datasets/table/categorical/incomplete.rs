@@ -9,13 +9,14 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{
-        CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMethod as MM, MissingTable,
+        CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMechanism, MissingMethod as MM,
+        MissingTable,
     },
     estimators::{BE, CPDEstimator},
     io::CsvIO,
     models::{CPD, Labelled},
     set, states,
-    types::{Error, Labels, Map, Result, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A struct representing an incomplete categorical dataset.
@@ -243,7 +244,7 @@ impl CatIncTable {
         &self,
         d_u: &<Self as IncDataset>::Complete,
         u: &Set<usize>,
-        pr: &Map<usize, Set<usize>>,
+        pr: &MissingMechanism,
     ) -> Result<Array1<f64>> {
         // Get (`R_i`, `Pi_R_i`) associated to `U_i`.
         let pr_iter = u.iter().map(|&ri| (ri, &pr[ri]));
@@ -318,7 +319,7 @@ impl IncDataset for CatIncTable {
         &self,
         m: &MM,
         x: Option<&Set<usize>>,
-        pr: Option<&Map<usize, Set<usize>>>,
+        pr: Option<&MissingMechanism>,
     ) -> Result<Either<Self::Complete, Self::Weighted>> {
         // Apply the missing method with the provided arguments.
         match (m, x, pr) {
@@ -421,7 +422,7 @@ impl IncDataset for CatIncTable {
         Self::Complete::new(new_states, new_values)
     }
 
-    fn ipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted> {
+    fn ipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = states![];
@@ -490,7 +491,7 @@ impl IncDataset for CatIncTable {
         Self::Weighted::new(d_x, b_u)
     }
 
-    fn aipw_deletion(&self, x: &Set<usize>, pr: &Map<usize, Set<usize>>) -> Result<Self::Weighted> {
+    fn aipw_deletion(&self, x: &Set<usize>, pr: &MissingMechanism) -> Result<Self::Weighted> {
         // If no columns are specified, return an empty dataset.
         if x.is_empty() {
             let s = states![];

@@ -2,9 +2,9 @@ mod table;
 mod trajectory;
 
 use crate::{
-    datasets::MissingMethod,
+    datasets::{MissingMechanism, MissingMethod},
     models::Labelled,
-    types::{Labels, Map, Set},
+    types::Labels,
 };
 
 /// A struct representing a sufficient statistics estimator.
@@ -12,7 +12,7 @@ use crate::{
 pub struct SSE<'a, D> {
     dataset: &'a D,
     missing_method: Option<MissingMethod>,
-    missing_mechanism: Option<Map<usize, Set<usize>>>,
+    missing_mechanism: Option<MissingMechanism>,
 }
 
 impl<'a, D> SSE<'a, D> {
@@ -46,7 +46,7 @@ impl<'a, D> SSE<'a, D> {
     pub fn with_missing_method(
         mut self,
         missing_method: Option<MissingMethod>,
-        missing_mechanism: Option<Map<usize, Set<usize>>>,
+        missing_mechanism: Option<MissingMechanism>,
     ) -> Self {
         self.missing_method = missing_method;
         self.missing_mechanism = missing_mechanism;

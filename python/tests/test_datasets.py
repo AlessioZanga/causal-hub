@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from causal_hub.datasets import (
     CatIncTable,
     CatTable,
@@ -8,6 +9,7 @@ from causal_hub.datasets import (
     CatTrjs,
     GaussIncTable,
     GaussTable,
+    MissingMechanism,
     MissingTable,
 )
 
@@ -470,3 +472,56 @@ def test_gaussian_incomplete_table() -> None:
     # Check missing.
     missing = table.missing()
     assert missing.missing_count() == 7
+
+
+def test_missing_mechanism_creation() -> None:
+    labels = ["X", "Y", "Z"]
+    # Variable 0 (X) is missing due to variable 1 (Y) and 2 (Z)
+    # Variable 1 (Y) is missing due to variable 2 (Z)
+    pr = {0: {1, 2}, 1: {2}}
+
+    mechanism = MissingMechanism(labels, pr)
+
+    assert mechanism.labels() == labels
+    assert len(mechanism) == 2
+    assert not mechanism.is_empty()
+    assert set(mechanism.keys()) == {0, 1}
+
+    values = mechanism.values()
+    assert len(values) == 2
+    assert {1, 2} in values
+    assert {2} in values
+
+    assert mechanism.contains_key(0)
+    assert mechanism.contains_key(1)
+    assert not mechanism.contains_key(2)
+
+    assert mechanism.get(0) == {1, 2}
+    assert mechanism.get(1) == {2}
+    assert mechanism.get(2) is None
+
+
+def test_missing_mechanism_insert() -> None:
+    labels = ["X", "Y", "Z"]
+    pr = {0: {1}}
+    mechanism = MissingMechanism(labels, pr)
+
+    assert len(mechanism) == 1
+    assert mechanism.get(0) == {1}
+
+    prev = mechanism.insert(1, {2})
+    assert prev is None
+    assert len(mechanism) == 2
+    assert mechanism.get(1) == {2}
+
+    prev = mechanism.insert(0, {1, 2})
+    assert prev == {1}
+    assert mechanism.get(0) == {1, 2}
+
+
+def test_missing_mechanism_error() -> None:
+    labels = ["X", "Y"]
+    # Index 2 is out of bounds
+    pr = {0: {2}}
+    with pytest.raises(Exception):
+        MissingMechanism(labels, pr)

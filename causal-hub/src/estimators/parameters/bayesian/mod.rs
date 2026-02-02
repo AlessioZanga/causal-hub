@@ -2,9 +2,9 @@ mod table;
 mod trajectory;
 
 use crate::{
-    datasets::MissingMethod,
+    datasets::{MissingMechanism, MissingMethod},
     models::Labelled,
-    types::{Labels, Map, Set},
+    types::Labels,
 };
 
 /// A struct representing a Bayesian estimator.
@@ -12,7 +12,7 @@ use crate::{
 pub struct BE<'a, D, T> {
     dataset: &'a D,
     missing_method: Option<MissingMethod>,
-    missing_mechanism: Option<Map<usize, Set<usize>>>,
+    missing_mechanism: Option<MissingMechanism>,
     prior: T,
 }
 
@@ -54,7 +54,7 @@ impl<'a, D, T> BE<'a, D, T> {
     pub fn with_missing_method(
         mut self,
         missing_method: Option<MissingMethod>,
-        missing_mechanism: Option<Map<usize, Set<usize>>>,
+        missing_mechanism: Option<MissingMechanism>,
     ) -> Self {
         self.missing_method = missing_method;
         self.missing_mechanism = missing_mechanism;

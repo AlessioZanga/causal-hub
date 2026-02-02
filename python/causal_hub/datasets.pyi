@@ -7,6 +7,7 @@ import typing
 
 import numpy
 import numpy.typing
+from causal_hub.models import DiGraph
 
 @typing.final
 class CatIncTable:
@@ -706,6 +707,160 @@ class GaussTable:
         """
 
 @typing.final
+class MissingMechanism:
+    r"""
+    A struct representing the missing data indicators.
+    """
+
+    def __new__(
+        cls,
+        labels: typing.Sequence[builtins.str],
+        pr: typing.Mapping[builtins.int, builtins.set[builtins.int]],
+    ) -> MissingMechanism:
+        r"""
+        Create a new missing mechanism.
+
+        Parameters
+        ----------
+        labels: list[str]
+            A list of strings containing the labels of the variables.
+        pr: dict[int, set[int]]
+            A dictionary mapping missing variable indices to sets of indices that cause missingness.
+
+        Returns
+        -------
+        MissingMechanism
+            A new missing mechanism instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the variables.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the variables.
+        """
+
+    def __len__(self) -> builtins.int:
+        r"""
+        Returns the number of missing variables.
+
+        Returns
+        -------
+        int
+            The number of missing variables.
+        """
+
+    def is_empty(self) -> builtins.bool:
+        r"""
+        Checks if the missing mechanism is empty.
+
+        Returns
+        -------
+        bool
+            True if the missing mechanism is empty, False otherwise.
+        """
+
+    def keys(self) -> builtins.list[builtins.int]:
+        r"""
+        Returns the missing variables.
+
+        Returns
+        -------
+        list[int]
+            A list of indices of the missing variables.
+        """
+
+    def values(self) -> builtins.list[builtins.set[builtins.int]]:
+        r"""
+        Returns the causes of missingness for each missing variable.
+
+        Returns
+        -------
+        list[set[int]]
+            A list of sets of indices that cause missingness for each missing variable.
+        """
+
+    def contains_key(self, x: builtins.int) -> builtins.bool:
+        r"""
+        Checks if a variable is missing.
+
+        Parameters
+        ----------
+        x: int
+            The index of the variable to check.
+
+        Returns
+        -------
+        bool
+            True if the variable is missing, False otherwise.
+        """
+
+    def get(self, x: builtins.int) -> typing.Optional[builtins.set[builtins.int]]:
+        r"""
+        Returns the causes of missingness for a given variable.
+
+        Parameters
+        ----------
+        x: int
+            The index of the variable to get the causes of missingness for.
+
+        Returns
+        -------
+        set[int] | None
+            A set of indices that cause missingness for the variable, or None if the variable is not missing.
+        """
+
+    def insert(
+        self, x: builtins.int, y: builtins.set[builtins.int]
+    ) -> typing.Optional[builtins.set[builtins.int]]:
+        r"""
+        Inserts a missing variable and its causes.
+
+        Parameters
+        ----------
+        x: int
+            The index of the missing variable.
+        y: set[int]
+            A set of indices that cause missingness for the variable.
+
+        Returns
+        -------
+        set[int] | None
+            The previous causes of missingness for the variable, or None if the variable was not missing.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        graph: DiGraph,
+        missing_type: MissingType,
+        p: builtins.float,
+        seed: builtins.int = 31,
+    ) -> MissingMechanism:
+        r"""
+        Generates a random missing mechanism.
+
+        Parameters
+        ----------
+        graph: DiGraph
+            The graph on which to generate the missingness mechanism.
+        missing_type: MissingType
+            The type of missingness mechanism to generate.
+        p: float
+            The ratio of missing variables.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        MissingMechanism
+            A random missing mechanism.
+        """
+
+@typing.final
 class MissingTable:
     r"""
     A struct for missing information in a tabular dataset.
@@ -911,4 +1066,23 @@ class Dataset(enum.Enum):
     GaussianIncomplete = ...
     r"""
     A Gaussian incomplete tabular dataset.
+    """
+
+@typing.final
+class MissingType(enum.Enum):
+    r"""
+    Missing mechanism types.
+    """
+
+    MCAR = ...
+    r"""
+    Missing Completely At Random.
+    """
+    MAR = ...
+    r"""
+    Missing At Random.
+    """
+    MNAR = ...
+    r"""
+    Missing Not At Random.
     """

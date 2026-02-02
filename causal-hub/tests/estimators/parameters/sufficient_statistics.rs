@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod tests {
     use causal_hub::{
-        datasets::{CatIncTable, GaussIncTable, GaussTable, IncDataset, MissingMethod},
+        datasets::{
+            CatIncTable, GaussIncTable, GaussTable, IncDataset, MissingMechanism, MissingMethod,
+        },
         estimators::{CSSEstimator, SSE},
         labels,
         models::{CatCPDS, GaussCPDS, Labelled},
         set, states,
-        types::{Error, Map, Result},
+        types::{Error, Result},
     };
     use ndarray::prelude::*;
 
@@ -36,7 +38,8 @@ mod tests {
             let d = CatIncTable::new(states, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
-            let mut missing_mechanism = Map::default();
+            let mut missing_mechanism =
+                MissingMechanism::new(d.labels().clone(), Default::default())?;
             missing_mechanism.insert(0, set![1]);
             missing_mechanism.insert(1, set![]);
 
@@ -91,7 +94,8 @@ mod tests {
             let d = CatIncTable::new(states, values)?;
 
             // Define missing mechanism. R_X (idx 0) depends on Y (idx 1). R_Y (idx 1) depends on nothing.
-            let mut missing_mechanism = Map::default();
+            let mut missing_mechanism =
+                MissingMechanism::new(d.labels().clone(), Default::default())?;
             missing_mechanism.insert(0, set![1]);
             missing_mechanism.insert(1, set![]);
 

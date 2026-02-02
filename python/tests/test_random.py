@@ -1,6 +1,13 @@
 import networkx as nx
 import pandas as pd
-from causal_hub.datasets import CatTrj, CatTrjEv, CatTrjs, CatTrjsEv
+from causal_hub.datasets import (
+    CatTrj,
+    CatTrjEv,
+    CatTrjs,
+    CatTrjsEv,
+    MissingMechanism,
+    MissingType,
+)
 from causal_hub.models import CatBN, CatCPD, DiGraph, GaussBN, GaussCPD
 
 
@@ -142,3 +149,25 @@ def test_cat_trjs_ev_random() -> None:
 
     # Check the labels.
     assert evidences.labels() == trjs.labels(), "Wrong labels in the evidence."
+
+
+def test_missing_mechanism_random() -> None:
+    labels = ["X", "Y", "Z"]
+    graph = DiGraph.empty(labels)
+    graph.add_edge("X", "Y")
+    graph.add_edge("Y", "Z")
+
+    # Random MCAR
+    mechanism = MissingMechanism.random(graph, MissingType.MCAR, 0.5, seed=42)
+    assert isinstance(mechanism, MissingMechanism)
+    assert mechanism.labels() == labels
+
+    # Random MAR
+    mechanism = MissingMechanism.random(graph, MissingType.MAR, 0.5, seed=42)
+    assert isinstance(mechanism, MissingMechanism)
+    assert mechanism.labels() == labels
+
+    # Random MNAR
+    mechanism = MissingMechanism.random(graph, MissingType.MNAR, 0.5, seed=42)
+    assert isinstance(mechanism, MissingMechanism)
+    assert mechanism.labels() == labels
