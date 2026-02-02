@@ -40,12 +40,6 @@ impl<'a, R, D> RngCatTrjEv<'a, R, D> {
 }
 
 impl<R: Rng> Random<Result<CatTrjEv>> for RngCatTrjEv<'_, R, CatTrj> {
-    /// Generates random evidence from the trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A `CatTrjEv` instance containing the random evidence.
-    ///
     fn random(&mut self) -> Result<CatTrjEv> {
         // Get shortened variable type.
         use CatTrjEvT as E;
@@ -91,12 +85,6 @@ impl<R: Rng> Random<Result<CatTrjEv>> for RngCatTrjEv<'_, R, CatTrj> {
 }
 
 impl<R: Rng> Random<Result<CatTrjsEv>> for RngCatTrjEv<'_, R, CatTrjs> {
-    /// Generates random evidence from the trajectories.
-    ///
-    /// # Returns
-    ///
-    /// A `CatTrjsEv` instance containing the random evidence.
-    ///
     fn random(&mut self) -> Result<CatTrjsEv> {
         let evidences = self
             .dataset
