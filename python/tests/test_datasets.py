@@ -509,13 +509,11 @@ def test_missing_mechanism_insert() -> None:
     assert len(mechanism) == 1
     assert mechanism.get(0) == {1}
 
-    prev = mechanism.insert(1, {2})
-    assert prev is None
+    mechanism.insert(1, {2})
     assert len(mechanism) == 2
     assert mechanism.get(1) == {2}
 
-    prev = mechanism.insert(0, {1, 2})
-    assert prev == {1}
+    mechanism.insert(0, {1, 2})
     assert mechanism.get(0) == {1, 2}
 
 

@@ -44,8 +44,8 @@ mod tests {
             missing_mechanism.insert(1, set![]);
 
             // Create estimator with IPW.
-            let sse =
-                SSE::new(&d).with_missing_method(Some(MissingMethod::IPW), Some(missing_mechanism));
+            let sse = SSE::new(&d)
+                .with_missing_method(Some(MissingMethod::IPW), Some(missing_mechanism))?;
 
             // Fit P(X | Y). X (0), Y (1).
             let x = set![0];
@@ -101,7 +101,7 @@ mod tests {
 
             // Create estimator with AIPW.
             let sse = SSE::new(&d)
-                .with_missing_method(Some(MissingMethod::AIPW), Some(missing_mechanism));
+                .with_missing_method(Some(MissingMethod::AIPW), Some(missing_mechanism))?;
 
             let x = set![0];
             let z = set![1];
@@ -186,7 +186,7 @@ mod tests {
             // [0, 1]
             // [1, 1]
 
-            let sse = SSE::new(&d).with_missing_method(Some(MissingMethod::PW), None);
+            let sse = SSE::new(&d).with_missing_method(Some(MissingMethod::PW), None)?;
 
             let x_idx = d
                 .labels()

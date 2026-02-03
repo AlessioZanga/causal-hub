@@ -265,7 +265,8 @@ impl CatIncTable {
             let p_pri_rpri = BE::new(&d_pri_rpri).fit(&x_pri_rpri, &set![])?;
             let p_pri_ri_rpri = BE::new(&d_pri_ri_rpri).fit(&x_pri_ri_rpri, &set![])?;
 
-            /* Compute the weights. */
+            // Map indices of pri w.r.t d_u.
+            let x_pri_u = d_u.indices_from(pri, self.labels())?;
 
             // Allocate the `R_i`-specific weights.
             let mut b_pri_rpri = Array::zeros(d_u.values().nrows());
@@ -278,7 +279,7 @@ impl CatIncTable {
                 .zip(b_pri_rpri.iter_mut().zip(b_pri_ri_rpri.iter_mut()))
             {
                 // Get the parents values for the j-th rows.
-                let pri_j = pri.iter().map(|&j| d_u_j[j]).collect();
+                let pri_j = x_pri_u.iter().map(|&j| d_u_j[j]).collect();
                 // Get the parents weights associated to each row.
                 *b_pri_rpri_j = p_pri_rpri.pf(&pri_j, &array![])?;
                 *b_pri_ri_rpri_j = p_pri_ri_rpri.pf(&pri_j, &array![])?;

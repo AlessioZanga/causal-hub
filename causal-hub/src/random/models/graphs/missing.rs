@@ -16,7 +16,7 @@ use crate::{
 pub struct RngMissingMechanism<'a, R> {
     rng: &'a mut R,
     graph: &'a DiGraph,
-    missing_type: MissingType,
+    missing: MissingType,
     p: f64,
 }
 
@@ -27,19 +27,14 @@ impl<'a, R> RngMissingMechanism<'a, R> {
     ///
     /// * `rng` - A mutable reference to a random number generator.
     /// * `graph` - The graph on which to generate the missingness mechanism.
-    /// * `missing_type` - The type of missingness mechanism to generate.
+    /// * `missing` - The type of missingness mechanism to generate.
     /// * `p` - The ratio of missing variables.
     ///
     /// # Returns
     ///
     /// A new `RngMissingMechanism` instance.
     ///
-    pub fn new(
-        rng: &'a mut R,
-        graph: &'a DiGraph,
-        missing_type: MissingType,
-        p: f64,
-    ) -> Result<Self> {
+    pub fn new(rng: &'a mut R, graph: &'a DiGraph, missing: MissingType, p: f64) -> Result<Self> {
         // Check if the ratio of missing variables is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
             return Err(Error::InvalidParameter(
@@ -51,7 +46,7 @@ impl<'a, R> RngMissingMechanism<'a, R> {
         Ok(Self {
             rng,
             graph,
-            missing_type,
+            missing,
             p,
         })
     }
@@ -243,7 +238,7 @@ impl<R: Rng> Random for RngMissingMechanism<'_, R> {
 
     fn random(&mut self) -> Self::Output {
         // Generate the missingness mechanism based on the specified type.
-        match self.missing_type {
+        match self.missing {
             MissingType::MCAR => self.random_mcar(),
             MissingType::MAR => self.random_mar(),
             MissingType::MNAR => self.random_mnar(),

@@ -4,7 +4,7 @@ mod trajectory;
 use crate::{
     datasets::{MissingMechanism, MissingMethod},
     models::Labelled,
-    types::Labels,
+    types::{Error, Labels, Result},
 };
 
 /// A struct representing a Bayesian estimator.
@@ -55,10 +55,27 @@ impl<'a, D, T> BE<'a, D, T> {
         mut self,
         missing_method: Option<MissingMethod>,
         missing_mechanism: Option<MissingMechanism>,
-    ) -> Self {
+    ) -> Result<Self> {
+        // Validate missing method and mechanism.
+        match (missing_method, &missing_mechanism) {
+            (Some(MissingMethod::LW) | Some(MissingMethod::PW), Some(_)) => {
+                return Err(Error::InvalidParameter(
+                    "missing_mechanism".to_string(),
+                    "must be None if missing_method is LW or PW".to_string(),
+                ));
+            }
+            (Some(MissingMethod::IPW) | Some(MissingMethod::AIPW), None) => {
+                return Err(Error::InvalidParameter(
+                    "missing_mechanism".to_string(),
+                    "must be provided if missing_method is IPW or AIPW".to_string(),
+                ));
+            }
+            _ => {}
+        }
+
         self.missing_method = missing_method;
         self.missing_mechanism = missing_mechanism;
-        self
+        Ok(self)
     }
 
     /// Sets the prior distribution.

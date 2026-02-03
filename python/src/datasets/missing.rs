@@ -4,7 +4,7 @@ use std::{
 };
 
 use backend::{
-    datasets::{MissingMechanism, MissingType as MissingType_},
+    datasets::{MissingMechanism, MissingMethod, MissingType as MissingType_},
     models::Labelled,
     random::{Random, RngMissingMechanism},
 };
@@ -44,6 +44,44 @@ impl From<PyMissingType> for MissingType_ {
             PyMissingType::MCAR => Self::MCAR,
             PyMissingType::MAR => Self::MAR,
             PyMissingType::MNAR => Self::MNAR,
+        }
+    }
+}
+
+/// Missing data handling method.
+#[gen_stub_pyclass_enum]
+#[pyclass(name = "MissingMethod", module = "causal_hub.datasets")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PyMissingMethod {
+    /// List-wise deletion.
+    LW,
+    /// Pair-wise deletion.
+    PW,
+    /// Inverse probability weighting.
+    IPW,
+    /// Augmented inverse probability weighting.
+    AIPW,
+}
+
+impl From<MissingMethod> for PyMissingMethod {
+    fn from(value: MissingMethod) -> Self {
+        match value {
+            MissingMethod::LW => Self::LW,
+            MissingMethod::PW => Self::PW,
+            MissingMethod::IPW => Self::IPW,
+            MissingMethod::AIPW => Self::AIPW,
+            _ => panic!("Unsupported missing method"),
+        }
+    }
+}
+
+impl From<PyMissingMethod> for MissingMethod {
+    fn from(value: PyMissingMethod) -> Self {
+        match value {
+            PyMissingMethod::LW => Self::LW,
+            PyMissingMethod::PW => Self::PW,
+            PyMissingMethod::IPW => Self::IPW,
+            PyMissingMethod::AIPW => Self::AIPW,
         }
     }
 }
@@ -190,15 +228,8 @@ impl PyMissingMechanism {
     /// y: set[int]
     ///     A set of indices that cause missingness for the variable.
     ///
-    /// Returns
-    /// -------
-    /// set[int] | None
-    ///     The previous causes of missingness for the variable, or None if the variable was not missing.
-    ///
-    pub fn insert(&mut self, x: usize, y: BTreeSet<usize>) -> Option<BTreeSet<usize>> {
-        self.lock_mut()
-            .insert(x, y.into_iter().collect())
-            .map(|v| v.into_iter().collect())
+    pub fn insert(&mut self, x: usize, y: BTreeSet<usize>) {
+        self.lock_mut().insert(x, y.into_iter().collect());
     }
 
     /// Generates a random missing mechanism.
@@ -207,7 +238,7 @@ impl PyMissingMechanism {
     /// ----------
     /// graph: DiGraph
     ///     The graph on which to generate the missingness mechanism.
-    /// missing_type: MissingType
+    /// missing: MissingType
     ///     The type of missingness mechanism to generate.
     /// p: float
     ///     The ratio of missing variables.
@@ -220,11 +251,11 @@ impl PyMissingMechanism {
     ///     A random missing mechanism.
     ///
     #[classmethod]
-    #[pyo3(signature = (graph, missing_type, p, seed=31))]
+    #[pyo3(signature = (graph, missing, p, seed=31))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         graph: &Bound<'_, PyDiGraph>,
-        missing_type: PyMissingType,
+        missing: PyMissingType,
         p: f64,
         seed: u64,
     ) -> PyResult<Self> {
@@ -235,10 +266,10 @@ impl PyMissingMechanism {
         let graph = graph.borrow();
         let graph = graph.lock();
         // Convert the missing type.
-        let missing_type = missing_type.into();
+        let missing = missing.into();
 
         // Create a new RngMissingMechanism and generate a random missing mechanism.
-        RngMissingMechanism::new(&mut rng, &graph, missing_type, p)
+        RngMissingMechanism::new(&mut rng, &graph, missing, p)
             .and_then(|mut x| x.random())
             .map(Into::into)
             .map_err(to_pyerr)

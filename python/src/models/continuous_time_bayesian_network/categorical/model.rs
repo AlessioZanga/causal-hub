@@ -20,9 +20,9 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyCatTrjs,
+    datasets::{PyCatTrjs, PyMissingMechanism, PyMissingMethod},
     error::to_pyerr,
-    estimators::PyCTBNEstimator,
+    estimators::{PyCTBNEstimator, PyEstimatorMethod},
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
@@ -173,8 +173,8 @@ impl PyCatCTBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// method: str
-    ///     The method to use for fitting (default is `mle`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for fitting (default is `EstimatorMethod.MLE`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
@@ -191,44 +191,54 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        method="mle",
+        estimator=None,
+        missing_method=None,
+        missing_mechanism=None,
         parallel=true,
         **kwargs
     ))]
+    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the dataset and the graph.
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::MLE);
         // Initialize the estimator.
-        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match method {
+        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator {
             // Initialize the maximum likelihood estimator.
-            "mle" => Box::new(MLE::new(&dataset)),
+            PyEstimatorMethod::MLE => Box::new(
+                MLE::new(&dataset)
+                    .with_missing_method(
+                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                    )
+                    .map_err(to_pyerr)?,
+            ),
             // Initialize the Bayesian estimator.
-            "be" => {
+            PyEstimatorMethod::BE => {
                 // Initialize the Bayesian estimator.
-                let estimator = BE::new(&dataset);
+                let estimator = BE::new(&dataset)
+                    .with_missing_method(
+                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                    )
+                    .map_err(to_pyerr)?;
                 // Set the prior `alpha`, if any.
                 match kwarg!(kwargs, "alpha", (usize, f64)) {
                     None => Box::new(estimator),
                     Some(alpha) => Box::new(estimator.with_prior(alpha)),
                 }
-            }
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
             }
         };
         // Fit the model.

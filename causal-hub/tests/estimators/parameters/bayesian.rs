@@ -405,7 +405,7 @@ mod tests {
 
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
-                        .with_missing_method(Some(MissingMethod::LW), None);
+                        .with_missing_method(Some(MissingMethod::LW), None)?;
 
                     let d = estimator.fit(&set![0], &set![1])?;
                     assert_eq!(d.labels(), &labels!["X"]);
@@ -450,7 +450,7 @@ mod tests {
                     let dataset = GaussIncTable::new(labels.clone(), data)?;
                     let estimator = BE::new(&dataset)
                         .with_prior(1.0)
-                        .with_missing_method(Some(MissingMethod::LW), None);
+                        .with_missing_method(Some(MissingMethod::LW), None)?;
 
                     // P(X1, X2 | Z1, Z2)
                     let d = estimator.fit(&set![0, 1], &set![2, 3])?;

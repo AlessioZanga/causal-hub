@@ -898,7 +898,7 @@ class MissingMechanism:
     def random(
         cls,
         graph: DiGraph,
-        missing_type: MissingType,
+        missing: MissingType,
         p: builtins.float,
         seed: builtins.int = 31,
     ) -> MissingMechanism:
@@ -909,7 +909,7 @@ class MissingMechanism:
         ----------
         graph: DiGraph
             The graph on which to generate the missingness mechanism.
-        missing_type: MissingType
+        missing: MissingType
             The type of missingness mechanism to generate.
         p: float
             The ratio of missing variables.
@@ -1128,6 +1128,29 @@ class Dataset(enum.Enum):
     GaussianIncomplete = ...
     r"""
     A Gaussian incomplete tabular dataset.
+    """
+
+@typing.final
+class MissingMethod(enum.Enum):
+    r"""
+    Missing data handling method.
+    """
+
+    LW = ...
+    r"""
+    List-wise deletion.
+    """
+    PW = ...
+    r"""
+    Pair-wise deletion.
+    """
+    IPW = ...
+    r"""
+    Inverse probability weighting.
+    """
+    AIPW = ...
+    r"""
+    Augmented inverse probability weighting.
     """
 
 @typing.final

@@ -100,6 +100,7 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyMissingMechanism>()?;
             m.add_class::<crate::datasets::PyMissingTable>()?;
             m.add_class::<crate::datasets::PyMissingType>()?;
+            m.add_class::<crate::datasets::PyMissingMethod>()?;
             m.add_class::<crate::datasets::PyCatTrj>()?;
             m.add_class::<crate::datasets::PyCatTrjs>()?;
             m.add_class::<crate::datasets::PyCatTrjEv>()?;
@@ -128,6 +129,7 @@ mod causal_hub {
             m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
             m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
             m.add_class::<crate::estimators::PyPK>()?;
+            m.add_class::<crate::estimators::PyEstimatorMethod>()?;
 
             Ok(())
         }

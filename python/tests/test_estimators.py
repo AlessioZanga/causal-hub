@@ -1,7 +1,18 @@
 import numpy as np
 import pandas as pd
-from causal_hub.datasets import CatTable, CatTrjs, CatTrjsEv, GaussTable
-from causal_hub.estimators import PK, em, sem
+import pytest
+from causal_hub.datasets import (
+    CatIncTable,
+    CatTable,
+    CatTrjs,
+    CatTrjsEv,
+    GaussIncTable,
+    GaussTable,
+    MissingMechanism,
+    MissingMethod,
+    MissingType,
+)
+from causal_hub.estimators import PK, EstimatorMethod, em, sem
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
@@ -25,7 +36,7 @@ def test_cat_bn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit Model
-    model = CatBN.fit(dataset, graph, method="mle")
+    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     assert isinstance(model, CatBN)
     assert set(model.labels()) == {"A", "B"}
@@ -55,7 +66,7 @@ def test_gauss_bn_fit() -> None:
     graph.add_edge("X", "Y")
 
     # 3. Fit
-    model = GaussBN.fit(dataset, graph, method="mle")
+    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     assert isinstance(model, GaussBN)
 
@@ -110,7 +121,7 @@ def test_cat_ctbn_fit() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit
-    model = CatCTBN.fit(dataset, graph, method="mle")
+    model = CatCTBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
     assert isinstance(model, CatCTBN)
 
 
@@ -211,3 +222,123 @@ def test_prior_knowledge() -> None:
     pk = PK(labels, forbidden, required, temporal_order)
 
     assert pk is not None
+
+
+@pytest.mark.parametrize(
+    "missing_type", [MissingType.MCAR, MissingType.MAR, MissingType.MNAR]
+)
+@pytest.mark.parametrize(
+    "missing_method",
+    [MissingMethod.LW, MissingMethod.PW, MissingMethod.IPW, MissingMethod.AIPW],
+)
+def test_cat_bn_missing_data_flow(missing_method, missing_type):
+    """Test CatBN with all missing methods and mechanisms."""
+    states = {"X": ["0", "1"], "Y": ["0", "1"], "Z": ["0", "1"]}
+    model = CatBN.random(states, p=0.5, seed=42)
+    graph = model.graph()
+
+    cat_table = model.sample(500, seed=42)
+    mechanism = MissingMechanism.random(graph, missing_type, 1.0, seed=42)
+    inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
+
+    new_model = CatBN.fit(
+        inc_table,
+        graph,
+        missing_method=missing_method,
+        missing_mechanism=(
+            mechanism
+            if missing_method in [MissingMethod.IPW, MissingMethod.AIPW]
+            else None
+        ),
+    )
+    assert new_model is not None
+
+    est = new_model.estimate(
+        ["Y"],
+        ["X"],
+        missing_method=missing_method,
+        missing_mechanism=(
+            mechanism
+            if missing_method in [MissingMethod.IPW, MissingMethod.AIPW]
+            else None
+        ),
+    )
+    assert est is not None
+
+    new_model.do_estimate(
+        ["X"],
+        ["Y"],
+        [],
+        missing_method=missing_method,
+        missing_mechanism=(
+            mechanism
+            if missing_method in [MissingMethod.IPW, MissingMethod.AIPW]
+            else None
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "missing_type", [MissingType.MCAR, MissingType.MAR, MissingType.MNAR]
+)
+@pytest.mark.parametrize("missing_method", [MissingMethod.LW, MissingMethod.PW])
+def test_gauss_bn_missing_data_flow(missing_method, missing_type):
+    """Test GaussBN with LW and PW missing methods."""
+    labels = ["X", "Y", "Z"]
+    model = GaussBN.random(labels, p=0.5, seed=42)
+    labels = model.labels()
+    graph = model.graph()
+
+    gauss_table = model.sample(300, seed=42)
+    mechanism = MissingMechanism.random(graph, missing_type, 1.0, seed=42)
+    inc_table = GaussIncTable.random(gauss_table, mechanism, 0.1, 0.5, seed=42)
+
+    new_model = GaussBN.fit(
+        inc_table, graph, missing_method=missing_method, missing_mechanism=None
+    )
+    assert new_model is not None
+
+    est = new_model.estimate(
+        ["Y"], ["X"], missing_method=missing_method, missing_mechanism=None
+    )
+    assert est is not None
+
+    new_model.do_estimate(
+        ["X"], ["Y"], [], missing_method=missing_method, missing_mechanism=None
+    )
+
+
+@pytest.mark.parametrize("missing_method", [MissingMethod.IPW, MissingMethod.AIPW])
+def test_gauss_bn_missing_data_unimplemented(missing_method):
+    """Test that GaussBN raises Exception for IPW/AIPW currently."""
+    labels = ["X", "Y"]
+    model = GaussBN.random(labels, p=1.0, seed=42)
+    labels = model.labels()
+    graph = model.graph()
+    gauss_table = model.sample(10, seed=42)
+    mechanism = MissingMechanism.random(graph, MissingType.MCAR, 1.0, seed=42)
+    inc_table = GaussIncTable.random(gauss_table, mechanism, 0.1, 0.5, seed=42)
+
+    with pytest.raises(Exception):
+        GaussBN.fit(
+            inc_table, graph, missing_method=missing_method, missing_mechanism=mechanism
+        )
+
+
+def test_invalid_mechanism_validation():
+    """Test that passing a mechanism for LW/PW raises an error."""
+    states = {"X": ["0", "1"], "Y": ["0", "1"]}
+    model = CatBN.random(states, p=1.0, seed=42)
+    graph = model.graph()
+    cat_table = model.sample(10, seed=42)
+    mechanism = MissingMechanism.random(graph, MissingType.MCAR, 1.0, seed=42)
+    inc_table = CatIncTable.random(cat_table, mechanism, 0.1, 0.5, seed=42)
+
+    with pytest.raises(Exception) as excinfo:
+        CatBN.fit(
+            inc_table,
+            graph,
+            missing_method=MissingMethod.LW,
+            missing_mechanism=mechanism,
+        )
+    assert "must be None if missing_method is LW or PW" in str(excinfo.value)

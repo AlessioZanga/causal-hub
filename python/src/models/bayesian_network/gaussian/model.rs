@@ -26,9 +26,9 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::{PyDataset, PyGaussTable},
+    datasets::{PyDataset, PyGaussTable, PyMissingMechanism, PyMissingMethod},
     error::to_pyerr,
-    estimators::PyBNEstimator,
+    estimators::{PyBNEstimator, PyEstimatorMethod},
     impl_from_into_lock, indices_from, kwarg,
     models::{PyDiGraph, PyGaussCPD},
 };
@@ -168,8 +168,8 @@ impl PyGaussBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// method: str
-    ///     The method to use for fitting (default is `be`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
@@ -186,16 +186,21 @@ impl PyGaussBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        method="be",
+        estimator=None,
+        missing_method=None,
+        missing_mechanism=None,
         parallel=true,
         **kwargs
     ))]
+    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
@@ -207,28 +212,33 @@ impl PyGaussBN {
             ($type: ty, $dataset: expr) => {{
                 // Get the dataset.
                 let dataset: $type = $dataset.into();
+                // Get the estimator method.
+                let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
                 // Initialize the estimator.
-                let estimator: Box<dyn PyBNEstimator<GaussBN>> = match method {
+                let estimator: Box<dyn PyBNEstimator<GaussBN>> = match estimator {
                     // Initialize the maximum likelihood estimator.
-                    "mle" => Box::new(MLE::new(&dataset)),
+                    PyEstimatorMethod::MLE => Box::new(
+                        MLE::new(&dataset)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )
+                            .map_err(to_pyerr)?,
+                    ),
                     // Initialize the Bayesian estimator.
-                    "be" => {
+                    PyEstimatorMethod::BE => {
                         // Initialize the Bayesian estimator.
-                        let estimator = BE::new(&dataset);
+                        let estimator = BE::new(&dataset)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )
+                            .map_err(to_pyerr)?;
                         // Set the prior `alpha`, if any.
                         match kwarg!(kwargs, "alpha", f64) {
                             None => Box::new(estimator),
                             Some(alpha) => Box::new(estimator.with_prior(alpha)),
                         }
-                    }
-                    // Raise an error if the method is unknown.
-                    method => {
-                        return Err(PyErr::new::<PyValueError, _>(format!(
-                            "Unknown method: '{}', choose one of the following: \n\
-                            \t- 'mle' - Maximum likelihood estimator, \n\
-                            \t- 'be' - Bayesian estimator.",
-                            method
-                        )));
                     }
                 };
                 // Fit the model.
@@ -306,8 +316,12 @@ impl PyGaussBN {
     ///     A variable or an iterable of variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
-    /// method: str
-    ///     The method to use for estimation (default is `be`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -318,13 +332,16 @@ impl PyGaussBN {
     /// GaussCPD
     ///     A new conditional probability distribution.
     ///
-    #[pyo3(signature = (x, z, method = "be", seed=31, parallel=true))]
+    #[pyo3(signature = (x, z, estimator = None, missing_method=None, missing_mechanism=None, seed=31, parallel=true))]
+    #[allow(clippy::too_many_arguments)]
     pub fn estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyGaussCPD> {
@@ -337,49 +354,71 @@ impl PyGaussBN {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = match method {
+        let estimate = match estimator {
             // Initialize the maximum likelihood estimator.
-            "mle" => {
+            PyEstimatorMethod::MLE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
                     py.detach(move || {
                         engine
-                            .with_estimator(|d, x, z| MLE::new(d).par_fit(x, z))
+                            .with_estimator(|d, x, z| {
+                                MLE::new(d)
+                                    .with_missing_method(
+                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                    )?
+                                    .par_fit(x, z)
+                            })
                             .par_estimate(&x, &z)
                     })
                 } else {
                     // Execute sequentially.
                     engine
-                        .with_estimator(|d, x, z| MLE::new(d).fit(x, z))
+                        .with_estimator(|d, x, z| {
+                            MLE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .fit(x, z)
+                        })
                         .estimate(&x, &z)
                 }
             }
             // Initialize the Bayesian estimator.
-            "be" => {
+            PyEstimatorMethod::BE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
                     py.detach(move || {
                         engine
-                            .with_estimator(|d, x, z| BE::new(d).par_fit(x, z))
+                            .with_estimator(|d, x, z| {
+                                BE::new(d)
+                                    .with_missing_method(
+                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                    )?
+                                    .par_fit(x, z)
+                            })
                             .par_estimate(&x, &z)
                     })
                 } else {
                     // Execute sequentially.
                     engine
-                        .with_estimator(|d, x, z| BE::new(d).fit(x, z))
+                        .with_estimator(|d, x, z| {
+                            BE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .fit(x, z)
+                        })
                         .estimate(&x, &z)
                 }
-            }
-            _ => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
             }
         };
         // Return the dataset.
@@ -396,8 +435,12 @@ impl PyGaussBN {
     ///     An outcome variable or an iterable of outcome variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
-    /// method: str
-    ///     The method to use for estimation (default is `be`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -409,14 +452,16 @@ impl PyGaussBN {
     ///     A new conditional causal effect (CACE) distribution, if identifiable.
     ///
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (x, y, z, method="be", seed=31, parallel=true))]
+    #[pyo3(signature = (x, y, z, estimator=None, missing_method=None, missing_mechanism=None, seed=31, parallel=true))]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
     ) -> PyResult<Option<PyGaussCPD>> {
@@ -430,46 +475,67 @@ impl PyGaussBN {
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
         let engine = ApproximateInference::new(&mut rng, &*lock);
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = match method {
+        let estimate = match estimator {
             // Initialize the maximum likelihood estimator.
-            "mle" => {
+            PyEstimatorMethod::MLE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
                     py.detach(move || {
-                        let engine = engine.with_estimator(|d, x, z| MLE::new(d).par_fit(x, z));
+                        let engine = engine.with_estimator(|d, x, z| {
+                            MLE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .par_fit(x, z)
+                        });
                         CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
                     })
                 } else {
                     // Execute sequentially.
-                    let engine = engine.with_estimator(|d, x, z| MLE::new(d).fit(x, z));
+                    let engine = engine.with_estimator(|d, x, z| {
+                        MLE::new(d)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )?
+                            .fit(x, z)
+                    });
                     CausalInference::new(&engine).cace_estimate(&x, &y, &z)
                 }
             }
             // Initialize the Bayesian estimator.
-            "be" => {
+            PyEstimatorMethod::BE => {
                 // Estimate from the model.
                 if parallel {
                     // Release the GIL to allow parallel execution.
                     py.detach(move || {
-                        let engine = engine.with_estimator(|d, x, z| BE::new(d).par_fit(x, z));
+                        let engine = engine.with_estimator(|d, x, z| {
+                            BE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .par_fit(x, z)
+                        });
                         CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
                     })
                 } else {
                     // Execute sequentially.
-                    let engine = engine.with_estimator(|d, x, z| BE::new(d).fit(x, z));
+                    let engine = engine.with_estimator(|d, x, z| {
+                        BE::new(d)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )?
+                            .fit(x, z)
+                    });
                     CausalInference::new(&engine).cace_estimate(&x, &y, &z)
                 }
-            }
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
             }
         };
         // Return the dataset.

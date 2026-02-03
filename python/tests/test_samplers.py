@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from causal_hub.datasets import CatTable, CatTrjs, GaussTable
+from causal_hub.estimators import EstimatorMethod
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
@@ -18,7 +19,7 @@ def test_cat_bn_sample() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit Model
-    model = CatBN.fit(dataset, graph, method="mle")
+    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     # 4. Sample
     n_samples = 50
@@ -47,7 +48,7 @@ def test_gauss_bn_sample() -> None:
     graph.add_edge("X", "Y")
 
     # 3. Fit
-    model = GaussBN.fit(dataset, graph, method="mle")
+    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     # 4. Sample
     n_samples = 50
@@ -98,7 +99,7 @@ def test_cat_ctbn_sample() -> None:
     graph.add_edge("A", "B")
 
     # 3. Fit
-    model = CatCTBN.fit(dataset, graph, method="mle")
+    model = CatCTBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     # 4. Sample
     sampled = model.sample(n=2, max_time=5.0, seed=42)

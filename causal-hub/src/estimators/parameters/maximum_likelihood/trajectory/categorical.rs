@@ -131,7 +131,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
@@ -154,7 +154,7 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.

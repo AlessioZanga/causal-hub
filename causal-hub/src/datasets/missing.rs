@@ -23,7 +23,7 @@ pub struct MissingMechanism {
 
 impl MissingMechanism {
     /// Create a new missing mechanism.
-    pub fn new(labels: Labels, pr: Map<usize, Set<usize>>) -> Result<Self> {
+    pub fn new(labels: Labels, mut pr: Map<usize, Set<usize>>) -> Result<Self> {
         // Check if all indices are within bounds.
         let n = labels.len();
         for (&x, ys) in &pr {
@@ -36,6 +36,10 @@ impl MissingMechanism {
                 }
             }
         }
+
+        // Sort the missing mechanism.
+        pr.sort_keys();
+        pr.iter_mut().for_each(|(_, ys)| ys.sort());
 
         Ok(Self { labels, pr })
     }
@@ -55,7 +59,7 @@ impl MissingMechanism {
         self.pr.keys()
     }
 
-    /// Returns the causes of missingness.
+    /// Returns the missingness parents.
     pub fn values(&self) -> impl Iterator<Item = &Set<usize>> {
         self.pr.values()
     }
@@ -65,14 +69,17 @@ impl MissingMechanism {
         self.pr.contains_key(x)
     }
 
-    /// Returns the causes of missingness for a given variable.
+    /// Returns the missingness parents for a given variable.
     pub fn get(&self, x: &usize) -> Option<&Set<usize>> {
         self.pr.get(x)
     }
 
-    /// Inserts a missing variable and its causes.
-    pub fn insert(&mut self, x: usize, y: Set<usize>) -> Option<Set<usize>> {
-        self.pr.insert(x, y)
+    /// Inserts a missing variable and its missingness parents.
+    pub fn insert(&mut self, x: usize, mut y: Set<usize>) {
+        // Sort the missingness parents.
+        y.sort();
+        // Insert in sorted order.
+        self.pr.insert_sorted(x, y);
     }
 }
 
@@ -88,15 +95,6 @@ impl Index<usize> for MissingMechanism {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.pr[&index]
-    }
-}
-
-impl FromIterator<(usize, Set<usize>)> for MissingMechanism {
-    fn from_iter<I: IntoIterator<Item = (usize, Set<usize>)>>(iter: I) -> Self {
-        Self {
-            labels: Labels::default(),
-            pr: Map::from_iter(iter),
-        }
     }
 }
 

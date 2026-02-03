@@ -6,7 +6,15 @@ import typing
 
 import numpy
 import numpy.typing
-from causal_hub.datasets import CatTable, CatTrjs, Dataset, GaussTable
+from causal_hub.datasets import (
+    CatTable,
+    CatTrjs,
+    Dataset,
+    GaussTable,
+    MissingMechanism,
+    MissingMethod,
+)
+from causal_hub.estimators import EstimatorMethod
 
 @typing.final
 class CatBN:
@@ -97,7 +105,9 @@ class CatBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatBN:
@@ -110,8 +120,8 @@ class CatBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.BE`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -150,7 +160,9 @@ class CatBN:
         self,
         x: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> CatCPD:
@@ -163,8 +175,12 @@ class CatBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -181,7 +197,9 @@ class CatBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[CatCPD]:
@@ -196,8 +214,12 @@ class CatBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -791,7 +813,9 @@ class CatCTBN:
         cls,
         dataset: CatTrjs,
         graph: DiGraph,
-        method: builtins.str = "mle",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatCTBN:
@@ -804,8 +828,8 @@ class CatCTBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `mle`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.MLE`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -1299,32 +1323,6 @@ class DiGraph:
         """
 
     @classmethod
-    def from_networkx(cls, g: typing.Any) -> DiGraph:
-        r"""
-        Converts from a NetworkX DiGraph.
-
-        Parameters
-        ----------
-        g: networkx.DiGraph
-            A NetworkX DiGraph to convert from.
-
-        Returns
-        -------
-        DiGraph
-            A new instance.
-        """
-
-    def to_networkx(self) -> typing.Any:
-        r"""
-        Converts to a NetworkX DiGraph.
-
-        Returns
-        -------
-        networkx.DiGraph
-            A NetworkX DiGraph representation of the graph.
-        """
-
-    @classmethod
     def random(
         cls, labels: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
     ) -> DiGraph:
@@ -1366,6 +1364,32 @@ class DiGraph:
         -------
         DiGraph
             A random directed acyclic graph.
+        """
+
+    @classmethod
+    def from_networkx(cls, g: typing.Any) -> DiGraph:
+        r"""
+        Converts from a NetworkX DiGraph.
+
+        Parameters
+        ----------
+        g: networkx.DiGraph
+            A NetworkX DiGraph to convert from.
+
+        Returns
+        -------
+        DiGraph
+            A new instance.
+        """
+
+    def to_networkx(self) -> typing.Any:
+        r"""
+        Converts to a NetworkX DiGraph.
+
+        Returns
+        -------
+        networkx.DiGraph
+            A NetworkX DiGraph representation of the graph.
         """
 
     @classmethod
@@ -1509,7 +1533,9 @@ class GaussBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> GaussBN:
@@ -1522,8 +1548,8 @@ class GaussBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.BE`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -1562,7 +1588,9 @@ class GaussBN:
         self,
         x: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> GaussCPD:
@@ -1575,8 +1603,12 @@ class GaussBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -1593,7 +1625,9 @@ class GaussBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[GaussCPD]:
@@ -1608,8 +1642,12 @@ class GaussBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
