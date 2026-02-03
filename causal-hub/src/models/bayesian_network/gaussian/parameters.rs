@@ -455,8 +455,8 @@ impl GaussCPD {
     /// * `labels` - Labels of the variables.
     /// * `conditioning_labels` - Labels of the conditioning variables.
     /// * `parameters` - Parameters of the CPD.
-    /// * `sample_statistics` - Sample (sufficient) statistics, if any.
-    /// * `sample_log_likelihood` - Sample log-likelihood, if any.
+    /// * `sample_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `sample_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
     ///
     /// # Returns
     ///

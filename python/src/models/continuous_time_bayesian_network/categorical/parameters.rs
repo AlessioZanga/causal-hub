@@ -182,12 +182,12 @@ impl PyCatCIM {
             .transpose()
     }
 
-    /// Returns the sample log-likelihood given the distribution, if any.
+    /// Returns the (in-sample) log-likelihood given the distribution, if any.
     ///
     /// Returns
     /// -------
     /// float | None
-    ///     The sample log-likelihood given the distribution, if any.
+    ///     The (in-sample) log-likelihood given the distribution, if any.
     ///
     pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.lock().sample_log_likelihood())

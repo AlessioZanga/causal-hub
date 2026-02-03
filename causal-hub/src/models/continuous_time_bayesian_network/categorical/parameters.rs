@@ -634,7 +634,7 @@ impl CatCIM {
     /// * `states` - The variables states.
     /// * `parameters` - The intensity matrices of the states.
     /// * `sample_statistics` - The sample statistics used to fit the distribution, if any.
-    /// * `sample_log_likelihood` - The sample log-likelihood given the distribution, if any.
+    /// * `sample_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
     ///
     /// # Errors
     ///

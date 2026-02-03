@@ -531,7 +531,8 @@ impl CatCPD {
     ///
     /// * `states` - The variables states.
     /// * `parameters` - The probabilities of the states.
-    /// * `statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `sample_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `sample_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
     ///
     /// # Panics
     ///

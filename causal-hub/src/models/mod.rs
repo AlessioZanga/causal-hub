@@ -220,11 +220,11 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     fn sample_statistics(&self) -> Option<&Self::Statistics>;
 
-    /// Returns the log-likelihood of the fitted dataset, if any.
+    /// Returns the (in-sample) log-likelihood of the fitted dataset, if any.
     ///
     /// # Returns
     ///
-    /// An option containing the log-likelihood.
+    /// An option containing the (in-sample) log-likelihood.
     ///
     fn sample_log_likelihood(&self) -> Option<f64>;
 
@@ -305,11 +305,11 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     fn sample_statistics(&self) -> Option<&Self::Statistics>;
 
-    /// Returns the log-likelihood of the fitted dataset, if any.
+    /// Returns the (in-sample) log-likelihood of the fitted dataset, if any.
     ///
     /// # Returns
     ///
-    /// An option containing the log-likelihood.
+    /// An option containing the (in-sample) log-likelihood.
     ///
     fn sample_log_likelihood(&self) -> Option<f64>;
 }
