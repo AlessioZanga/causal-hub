@@ -73,91 +73,6 @@ impl GaussIncTable {
             missing,
         })
     }
-
-    /// List-wise deletion missing handler.
-    fn lw_deletion(&self) -> Result<GaussTable> {
-        // Allocate new values.
-        let mut new_values = Array::zeros((
-            self.missing.complete_rows_count(), //
-            self.values.ncols(),
-        ));
-
-        // Get complete rows.
-        let rows = self
-            .values
-            .rows()
-            .into_iter()
-            .filter(|row| row.iter().all(|&x| !x.is_nan()));
-
-        // Filter valid rows.
-        new_values
-            .rows_mut()
-            .into_iter()
-            .zip(rows)
-            .for_each(|(mut new_row, row)| new_row.assign(&row));
-
-        // Return the complete dataset.
-        GaussTable::new(self.labels.clone(), new_values)
-    }
-
-    /// Pair-wise deletion missing handler.
-    fn pw_deletion(&self, x: &Set<usize>) -> Result<GaussTable> {
-        // If no columns are specified, return an empty dataset.
-        if x.is_empty() {
-            let s = labels![];
-            let v = Array::default((0, 0));
-            return GaussTable::new(s, v);
-        }
-
-        // Check that the indices are valid.
-        x.iter().try_for_each(|&i| {
-            if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
-            }
-            Ok(())
-        })?;
-
-        // Clone the indices.
-        let mut cols: Vec<usize> = x.iter().cloned().collect();
-        // Sort the indices.
-        cols.sort();
-
-        // Get the indices of complete rows for the specified columns.
-        let rows: Vec<_> = self
-            .values
-            .rows()
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, row)| {
-                // Check if all specified columns are not missing.
-                if cols.iter().all(|&j| !row[j].is_nan()) {
-                    Some(i)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        // Collect the values for the specified rows and columns.
-        let new_values = Array::from_shape_fn(
-            (rows.len(), cols.len()), //
-            |(i, j)| self.values[[rows[i], cols[j]]],
-        );
-
-        // Select the labels for the specified columns.
-        let new_labels = cols
-            .iter()
-            .map(|&j| {
-                self.labels
-                    .get_index(j)
-                    .cloned()
-                    .ok_or_else(|| Error::VertexOutOfBounds(j))
-            })
-            .collect::<Result<_>>()?;
-
-        // Return the complete dataset.
-        GaussTable::new(new_labels, new_values)
-    }
 }
 
 impl Dataset for GaussIncTable {
@@ -245,25 +160,94 @@ impl IncDataset for GaussIncTable {
     }
 
     fn lw_deletion(&self) -> Result<Self::Complete> {
-        self.lw_deletion()
+        // Allocate new values.
+        let mut new_values = Array::zeros((
+            self.missing.complete_rows_count(), //
+            self.values.ncols(),
+        ));
+
+        // Get complete rows.
+        let rows = self
+            .values
+            .rows()
+            .into_iter()
+            .filter(|row| row.iter().all(|&x| !x.is_nan()));
+
+        // Filter valid rows.
+        new_values
+            .rows_mut()
+            .into_iter()
+            .zip(rows)
+            .for_each(|(mut new_row, row)| new_row.assign(&row));
+
+        // Return the complete dataset.
+        GaussTable::new(self.labels.clone(), new_values)
     }
 
     fn pw_deletion(&self, x: &Set<usize>) -> Result<Self::Complete> {
-        self.pw_deletion(x)
+        // If no columns are specified, return an empty dataset.
+        if x.is_empty() {
+            let s = labels![];
+            let v = Array::default((0, 0));
+            return GaussTable::new(s, v);
+        }
+
+        // Check that the indices are valid.
+        x.iter().try_for_each(|&i| {
+            if i >= self.values.ncols() {
+                return Err(Error::VertexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+
+        // Clone the indices.
+        let mut cols: Vec<usize> = x.iter().cloned().collect();
+        // Sort the indices.
+        cols.sort();
+
+        // Get the indices of complete rows for the specified columns.
+        let rows: Vec<_> = self
+            .values
+            .rows()
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, row)| {
+                // Check if all specified columns are not missing.
+                if cols.iter().all(|&j| !row[j].is_nan()) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Collect the values for the specified rows and columns.
+        let new_values = Array::from_shape_fn(
+            (rows.len(), cols.len()), //
+            |(i, j)| self.values[[rows[i], cols[j]]],
+        );
+
+        // Select the labels for the specified columns.
+        let new_labels = cols
+            .iter()
+            .map(|&j| {
+                self.labels
+                    .get_index(j)
+                    .cloned()
+                    .ok_or_else(|| Error::VertexOutOfBounds(j))
+            })
+            .collect::<Result<_>>()?;
+
+        // Return the complete dataset.
+        GaussTable::new(new_labels, new_values)
     }
 
     fn ipw_deletion(&self, _x: &Set<usize>, _pr: &MissingMechanism) -> Result<Self::Weighted> {
-        Err(Error::InvalidParameter(
-            "missing_method".to_string(),
-            "IPW deletion not implemented for Gaussian data yet.".to_string(),
-        ))
+        unimplemented!() // FIXME:
     }
 
     fn aipw_deletion(&self, _x: &Set<usize>, _pr: &MissingMechanism) -> Result<Self::Weighted> {
-        Err(Error::InvalidParameter(
-            "missing_method".to_string(),
-            "AIPW deletion not implemented for Gaussian data yet.".to_string(),
-        ))
+        unimplemented!() // FIXME:
     }
 }
 
