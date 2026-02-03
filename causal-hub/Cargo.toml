@@ -19,7 +19,7 @@ csv.workspace = true
 dry.workspace = true
 fxhash.workspace = true
 indexmap.workspace = true
-jsonschema = { version = "^0.38", default-features = false }
+jsonschema = { version = "^0.40", default-features = false }
 itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.17", features = ["approx", "rayon", "serde"] }
@@ -44,7 +44,7 @@ accelerate-src = { version = "^0.3", optional = true }
 openblas-src = { version = "^0.10", optional = true }
 
 [dev-dependencies]
-rand_xoshiro = "^0.7"
+rand_xoshiro.workspace = true
 criterion = { version = "^0.8", features = ["html_reports"] }
 tempfile = "^3.24"
 
