@@ -53,14 +53,11 @@ impl<'a, R: Rng> RngGaussIncTable<'a, R> {
             return Err(Error::InvalidParameter("p_min", "must be in [0, 1]"));
         }
         if !(0.0..=1.0).contains(&p_max) {
-            return Err(crate::types::Error::InvalidParameter(
-                "p_max",
-                "must be in [0, 1]",
-            ));
+            return Err(Error::InvalidParameter("p_max", "must be in [0, 1]"));
         }
         // Check that p_min is less than or equal to p_max.
         if p_min > p_max {
-            return Err(crate::types::Error::InvalidParameter(
+            return Err(Error::InvalidParameter(
                 "p_min",
                 "must be less than or equal to p_max",
             ));

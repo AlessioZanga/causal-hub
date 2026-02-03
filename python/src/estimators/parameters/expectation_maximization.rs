@@ -20,6 +20,7 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::{PyCatTrjsEv, PyCatWtdTrjs},
+    error::to_pyerr,
     models::{PyCatCTBN, PyDiGraph},
 };
 
@@ -145,7 +146,7 @@ pub fn em<'a>(
                 BackendError::Stats(&format!("Failed to fit the model using EM: {}", e))
             })
         })
-        .map_err(crate::error::to_pyerr)?;
+        .map_err(to_pyerr)?;
 
     // Convert each EM output.
     let result = PyDict::new(py);

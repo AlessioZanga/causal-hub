@@ -246,7 +246,7 @@ impl CatIncTable {
         pr: &MissingMechanism,
     ) -> Result<Array1<f64>> {
         // Get (`R_i`, `Pi_R_i`) associated to `U_i`.
-        let pr_iter = u.iter().map(|&ri| (ri, &pr[ri]));
+        let pr_iter = u.iter().filter_map(|&ri| pr.get(&ri).map(|pri| (ri, pri)));
         // Filter out `R_i` with no parents.
         let pr_iter = pr_iter.filter(|(_, pri)| !pri.is_empty());
 
@@ -438,13 +438,6 @@ impl IncDataset for CatIncTable {
             }
             Ok(())
         })?;
-        // Check that the number of columns in the missing mechanism is valid.
-        if pr.len() != self.values.ncols() {
-            return Err(Error::IncompatibleShape(
-                &pr.len().to_string(),
-                &self.values.ncols().to_string(),
-            ));
-        }
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
@@ -468,11 +461,15 @@ impl IncDataset for CatIncTable {
 
         // Compute U recursively from X and Pi_R following the IPW algorithm.
         let mut u = x.clone();
-        let mut pru: Set<_> = x.iter().flat_map(|&x| &pr[x]).copied().collect();
+        let mut pru: Set<_> = x
+            .iter()
+            .flat_map(|&x| pr.get(&x).cloned())
+            .flatten()
+            .collect();
         // Compute the transitive closure of the parents.
         while !pru.is_subset(&u) {
             u.extend(pru.drain(..));
-            pru.extend(u.iter().flat_map(|&u| &pr[u]).copied());
+            pru.extend(u.iter().flat_map(|&u| pr.get(&u).cloned()).flatten());
         }
         // Sort U.
         u.sort();
@@ -507,13 +504,6 @@ impl IncDataset for CatIncTable {
             }
             Ok(())
         })?;
-        // Check that the number of columns in the missing mechanism is valid.
-        if pr.len() != self.values.ncols() {
-            return Err(Error::IncompatibleShape(
-                &pr.len().to_string(),
-                &self.values.ncols().to_string(),
-            ));
-        }
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
@@ -537,7 +527,11 @@ impl IncDataset for CatIncTable {
 
         // Compute W recursively from X and Pi_R following the IPW algorithm.
         let mut w = x.clone();
-        let prw: Set<_> = x.iter().flat_map(|&x| &pr[x]).copied().collect();
+        let prw: Set<_> = x
+            .iter()
+            .flat_map(|x| pr.get(x).cloned())
+            .flatten()
+            .collect();
         // Sort W.
         w.sort();
 
