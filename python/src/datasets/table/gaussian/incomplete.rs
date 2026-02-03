@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use backend::{
     datasets::{Dataset, GaussIncTable, GaussType, IncDataset},
     models::Labelled,
+    random::{Random, RngGaussIncTable},
 };
 use numpy::{PyArray2, PyArrayMethods, PyReadonlyArray2, ToPyArray};
 use pyo3::{
@@ -10,8 +11,14 @@ use pyo3::{
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::{datasets::PyMissingTable, error::to_pyerr, impl_from_into_lock};
+use crate::{
+    datasets::{PyGaussTable, PyMissingMechanism, PyMissingTable},
+    error::to_pyerr,
+    impl_from_into_lock,
+};
 
 /// A Gaussian incomplete tabular dataset.
 #[gen_stub_pyclass]
@@ -92,6 +99,53 @@ impl PyGaussIncTable {
     ///
     pub fn missing(&self) -> PyResult<PyMissingTable> {
         Ok(self.lock().missing().clone().into())
+    }
+
+    /// Generates a random gaussian incomplete tabular dataset.
+    ///
+    /// Parameters
+    /// ----------
+    /// dataset : GaussTable
+    ///     A gaussian tabular dataset instance.
+    /// missing_mechanism : MissingMechanism
+    ///     A missing mechanism instance.
+    /// p_min : float
+    ///     The minimum probability of missingness.
+    /// p_max : float
+    ///     The maximum probability of missingness.
+    /// seed : int, optional
+    ///     The seed for the random number generator. Default is 31.
+    ///
+    /// Returns
+    /// -------
+    /// GaussIncTable
+    ///     A random gaussian incomplete tabular dataset instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dataset, missing_mechanism, p_min, p_max, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        dataset: &Bound<'_, PyGaussTable>,
+        missing_mechanism: &Bound<'_, PyMissingMechanism>,
+        p_min: f64,
+        p_max: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Get the inner dataset.
+        let dataset = dataset.borrow();
+        let dataset = dataset.lock();
+        // Get the inner missing mechanism.
+        let missing_mechanism = missing_mechanism.borrow();
+        let missing_mechanism = missing_mechanism.lock();
+
+        // Create a new RngGaussIncTable and generate a random gaussian incomplete tabular dataset.
+        RngGaussIncTable::new(&mut rng, &dataset, &missing_mechanism, p_min, p_max)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Constructs a new gaussian incomplete tabular dataset from a Pandas DataFrame.

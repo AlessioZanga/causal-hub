@@ -1,43 +1,102 @@
-use causal_hub::{
-    labels,
-    random::{Random, RngGaussBN},
-};
-use rand::prelude::*;
+#[cfg(test)]
+mod tests {
+    use causal_hub::{
+        labels,
+        models::{GaussBN, Labelled},
+        random::{Random, RngGaussBN},
+        types::{Error, Result},
+    };
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256PlusPlus;
 
-#[test]
-fn rng_gauss_bn_new() {
-    let mut rng = StdRng::seed_from_u64(42);
-    let labels = labels!["X1", "X2", "X3"];
-    let (s_a, s_b, e, p) = (1.0, 1.0, 1e-6, 0.5);
+    #[test]
+    fn new() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+        let (s_a, s_b, e, p) = (1.0, 1.0, 1e-6, 0.5);
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
-    assert!(rng_bn.is_ok());
+        let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
+        assert!(res.is_ok());
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, 0.0, s_b, e, p);
-    assert!(rng_bn.is_err());
+        Ok(())
+    }
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, 0.0, e, p);
-    assert!(rng_bn.is_err());
+    #[test]
+    fn new_invalid_s_a() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+        let (s_a, s_b, e, p) = (0.0, 1.0, 1e-6, 0.5);
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, 0.0, p);
-    assert!(rng_bn.is_err());
+        let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
+        assert!(matches!(
+            res,
+            Err(Error::InvalidParameter(ref p, ref m)) if p == "s_a" && m == "must be positive"
+        ));
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, -0.1);
-    assert!(rng_bn.is_err());
+        Ok(())
+    }
 
-    let rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, 1.1);
-    assert!(rng_bn.is_err());
-}
+    #[test]
+    fn new_invalid_s_b() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+        let (s_a, s_b, e, p) = (1.0, 0.0, 1e-6, 0.5);
 
-#[test]
-fn rng_gauss_bn_random() -> causal_hub::types::Result<()> {
-    let mut rng = StdRng::seed_from_u64(42);
-    let labels = labels!["X1", "X2", "X3"];
-    let (s_a, s_b, e, p) = (1.0, 1.0, 1e-6, 0.5);
+        let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
+        assert!(matches!(
+            res,
+            Err(Error::InvalidParameter(ref p, ref m)) if p == "s_b" && m == "must be positive"
+        ));
 
-    let mut rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p)?;
-    let bn = rng_bn.random();
-    assert!(bn.is_ok());
+        Ok(())
+    }
 
-    Ok(())
+    #[test]
+    fn new_invalid_e() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+        let (s_a, s_b, e, p) = (1.0, 1.0, 0.0, 0.5);
+
+        let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
+        assert!(matches!(
+            res,
+            Err(Error::InvalidParameter(ref p, ref m)) if p == "e" && m == "must be positive"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn new_invalid_p() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+
+        let res = RngGaussBN::new(&mut rng, &labels, 1.0, 1.0, 1e-6, -0.1);
+        assert!(matches!(
+            res,
+            Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+        ));
+
+        let res = RngGaussBN::new(&mut rng, &labels, 1.0, 1.0, 1e-6, 1.1);
+        assert!(matches!(
+            res,
+            Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn random() -> Result<()> {
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
+        let labels = labels!["X1", "X2", "X3"];
+        let (s_a, s_b, e, p) = (1.0, 1.0, 1e-6, 0.5);
+
+        let mut rng_bn = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p)?;
+        let bn: GaussBN = rng_bn.random()?;
+
+        assert_eq!(bn.labels(), &labels);
+
+        Ok(())
+    }
 }

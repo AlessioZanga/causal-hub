@@ -6,6 +6,7 @@ use std::{
 use backend::{
     datasets::{CatIncTable, CatType, Dataset, IncDataset},
     models::Labelled,
+    random::{Random, RngCatIncTable},
     types::States,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
@@ -14,8 +15,14 @@ use pyo3::{
     types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::{datasets::PyMissingTable, error::to_pyerr, impl_from_into_lock};
+use crate::{
+    datasets::{PyCatTable, PyMissingMechanism, PyMissingTable},
+    error::to_pyerr,
+    impl_from_into_lock,
+};
 
 /// A categorical incomplete tabular dataset.
 #[gen_stub_pyclass]
@@ -97,6 +104,53 @@ impl PyCatIncTable {
     ///
     pub fn missing(&self) -> PyResult<PyMissingTable> {
         Ok(self.lock().missing().clone().into())
+    }
+
+    /// Generates a random categorical incomplete tabular dataset.
+    ///
+    /// Parameters
+    /// ----------
+    /// dataset : CatTable
+    ///     A categorical tabular dataset instance.
+    /// missing_mechanism : MissingMechanism
+    ///     A missing mechanism instance.
+    /// p_min : float
+    ///     The minimum probability of missingness.
+    /// p_max : float
+    ///     The maximum probability of missingness.
+    /// seed : int, optional
+    ///     The seed for the random number generator. Default is 31.
+    ///
+    /// Returns
+    /// -------
+    /// CatIncTable
+    ///     A random categorical incomplete tabular dataset instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (dataset, missing_mechanism, p_min, p_max, seed=31))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        dataset: &Bound<'_, PyCatTable>,
+        missing_mechanism: &Bound<'_, PyMissingMechanism>,
+        p_min: f64,
+        p_max: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Get the inner dataset.
+        let dataset = dataset.borrow();
+        let dataset = dataset.lock();
+        // Get the inner missing mechanism.
+        let missing_mechanism = missing_mechanism.borrow();
+        let missing_mechanism = missing_mechanism.lock();
+
+        // Create a new RngCatIncTable and generate a random categorical incomplete tabular dataset.
+        RngCatIncTable::new(&mut rng, &dataset, &missing_mechanism, p_min, p_max)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Constructs a new categorical incomplete tabular dataset from a Pandas DataFrame.

@@ -1,10 +1,15 @@
 import networkx as nx
 import pandas as pd
+import pytest
 from causal_hub.datasets import (
+    CatIncTable,
+    CatTable,
     CatTrj,
     CatTrjEv,
     CatTrjs,
     CatTrjsEv,
+    GaussIncTable,
+    GaussTable,
     MissingMechanism,
     MissingType,
 )
@@ -90,6 +95,18 @@ def test_gauss_bn_random() -> None:
     # Check the vertices.
     assert sorted(bn.graph().vertices()) == sorted(labels), "Wrong vertices in the BN."
 
+    # Invalid Parameters
+    with pytest.raises(Exception):
+        GaussBN.random(labels, p=0.5, s_a=0.0, s_b=1.0, e=1e-6)
+    with pytest.raises(Exception):
+        GaussBN.random(labels, p=0.5, s_a=1.0, s_b=0.0, e=1e-6)
+    with pytest.raises(Exception):
+        GaussBN.random(labels, p=0.5, s_a=1.0, s_b=1.0, e=0.0)
+    with pytest.raises(Exception):
+        GaussBN.random(labels, p=-0.1, s_a=1.0, s_b=1.0, e=1e-6)
+    with pytest.raises(Exception):
+        GaussBN.random(labels, p=1.1, s_a=1.0, s_b=1.0, e=1e-6)
+
 
 def test_cat_trj_ev_random() -> None:
     """Test generating a random Categorical Trajectory Evidence."""
@@ -114,6 +131,12 @@ def test_cat_trj_ev_random() -> None:
 
     # Check the labels.
     assert evidence.labels() == trj.labels(), "Wrong labels in the evidence."
+
+    # Invalid Parameters
+    with pytest.raises(Exception):
+        CatTrjEv.random(trj, p=-0.1)
+    with pytest.raises(Exception):
+        CatTrjEv.random(trj, p=1.1)
 
 
 def test_cat_trjs_ev_random() -> None:
@@ -150,6 +173,12 @@ def test_cat_trjs_ev_random() -> None:
     # Check the labels.
     assert evidences.labels() == trjs.labels(), "Wrong labels in the evidence."
 
+    # Invalid Parameters
+    with pytest.raises(Exception):
+        CatTrjsEv.random(trjs, p=-0.1)
+    with pytest.raises(Exception):
+        CatTrjsEv.random(trjs, p=1.1)
+
 
 def test_missing_mechanism_random() -> None:
     labels = ["X", "Y", "Z"]
@@ -171,3 +200,64 @@ def test_missing_mechanism_random() -> None:
     mechanism = MissingMechanism.random(graph, MissingType.MNAR, 0.5, seed=42)
     assert isinstance(mechanism, MissingMechanism)
     assert mechanism.labels() == labels
+
+
+def test_cat_inc_table_random() -> None:
+    """Test generating a random Categorical Incomplete Table."""
+    df = pd.DataFrame(
+        {
+            "A": ["0", "1", "0", "1"],
+            "B": ["0", "1", "1", "0"],
+        }
+    ).astype("category")
+    dataset = CatTable.from_pandas(df)
+    graph = DiGraph.empty(dataset.labels())
+    graph.add_edge("A", "B")
+    mechanism = MissingMechanism.random(graph, MissingType.MAR, 0.5, seed=42)
+
+    # Valid Generation
+    sample = CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=0.2, seed=42)
+    assert sample.labels() == dataset.labels()
+    assert sample.states() == dataset.states()
+
+    # Invalid Parameters
+    with pytest.raises(Exception):
+        CatIncTable.random(dataset, mechanism, p_min=-0.1, p_max=0.2)
+    with pytest.raises(Exception):
+        CatIncTable.random(dataset, mechanism, p_min=1.1, p_max=0.2)
+    with pytest.raises(Exception):
+        CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=-0.1)
+    with pytest.raises(Exception):
+        CatIncTable.random(dataset, mechanism, p_min=0.1, p_max=1.2)
+    with pytest.raises(Exception):
+        CatIncTable.random(dataset, mechanism, p_min=0.5, p_max=0.2)
+
+
+def test_gauss_inc_table_random() -> None:
+    """Test generating a random Gaussian Incomplete Table."""
+    df = pd.DataFrame(
+        {
+            "A": [0.0, 1.0, 2.0, 3.0],
+            "B": [0.5, 1.5, 2.5, 3.5],
+        }
+    )
+    dataset = GaussTable.from_pandas(df)
+    graph = DiGraph.empty(dataset.labels())
+    graph.add_edge("A", "B")
+    mechanism = MissingMechanism.random(graph, MissingType.MAR, 0.5, seed=42)
+
+    # Valid Generation
+    sample = GaussIncTable.random(dataset, mechanism, p_min=0.1, p_max=0.2, seed=42)
+    assert sample.labels() == dataset.labels()
+
+    # Invalid Parameters
+    with pytest.raises(Exception):
+        GaussIncTable.random(dataset, mechanism, p_min=-0.1, p_max=0.2)
+    with pytest.raises(Exception):
+        GaussIncTable.random(dataset, mechanism, p_min=1.1, p_max=0.2)
+    with pytest.raises(Exception):
+        GaussIncTable.random(dataset, mechanism, p_min=0.1, p_max=-0.1)
+    with pytest.raises(Exception):
+        GaussIncTable.random(dataset, mechanism, p_min=0.1, p_max=1.2)
+    with pytest.raises(Exception):
+        GaussIncTable.random(dataset, mechanism, p_min=0.5, p_max=0.2)

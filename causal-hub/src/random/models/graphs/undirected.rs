@@ -40,8 +40,10 @@ impl<'a, R> RngUnGraph<'a, R> {
     }
 }
 
-impl<R: Rng> Random<Result<UnGraph>> for RngUnGraph<'_, R> {
-    fn random(&mut self) -> Result<UnGraph> {
+impl<R: Rng> Random for RngUnGraph<'_, R> {
+    type Output = Result<UnGraph>;
+
+    fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
         let mut g = UnGraph::empty(self.labels)?;
 

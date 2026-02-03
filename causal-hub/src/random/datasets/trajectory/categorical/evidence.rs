@@ -39,8 +39,10 @@ impl<'a, R, D> RngCatTrjEv<'a, R, D> {
     }
 }
 
-impl<R: Rng> Random<Result<CatTrjEv>> for RngCatTrjEv<'_, R, CatTrj> {
-    fn random(&mut self) -> Result<CatTrjEv> {
+impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrj> {
+    type Output = Result<CatTrjEv>;
+
+    fn random(&mut self) -> Self::Output {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -84,8 +86,10 @@ impl<R: Rng> Random<Result<CatTrjEv>> for RngCatTrjEv<'_, R, CatTrj> {
     }
 }
 
-impl<R: Rng> Random<Result<CatTrjsEv>> for RngCatTrjEv<'_, R, CatTrjs> {
-    fn random(&mut self) -> Result<CatTrjsEv> {
+impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrjs> {
+    type Output = Result<CatTrjsEv>;
+
+    fn random(&mut self) -> Self::Output {
         let evidences = self
             .dataset
             .values()

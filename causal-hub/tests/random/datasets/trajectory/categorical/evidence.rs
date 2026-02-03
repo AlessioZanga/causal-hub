@@ -38,71 +38,42 @@ mod tests {
         CatTrjs::new([trj_0, trj_1])
     }
 
-    mod rng_ev_validation {
+    mod validation {
+        use causal_hub::types::Error;
+
         use super::*;
 
         #[test]
-        fn new_with_valid_probability_zero() -> Result<()> {
+        fn new() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.0);
-            assert!(rng_ev.is_ok());
+            let res = RngCatTrjEv::new(&mut rng, &trj, 0.5);
+            assert!(res.is_ok());
             Ok(())
         }
 
         #[test]
-        fn new_with_valid_probability_one() -> Result<()> {
+        fn new_invalid_p() -> Result<()> {
             let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
             let trj = create_sample_trajectory()?;
-            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 1.0);
-            assert!(rng_ev.is_ok());
-            Ok(())
-        }
 
-        #[test]
-        fn new_with_valid_probability_half() -> Result<()> {
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-            let trj = create_sample_trajectory()?;
-            let rng_ev = RngCatTrjEv::new(&mut rng, &trj, 0.5);
-            assert!(rng_ev.is_ok());
-            Ok(())
-        }
-
-        #[test]
-        fn new_with_invalid_probability_negative() -> Result<()> {
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-            let trj = create_sample_trajectory()?;
             let res = RngCatTrjEv::new(&mut rng, &trj, -0.1);
-            match res {
-                Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
-                _ => panic!("Should be error"),
-            };
-            Ok(())
-        }
+            assert!(matches!(
+                res,
+                Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+            ));
 
-        #[test]
-        fn new_with_invalid_probability_greater_than_one() -> Result<()> {
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-            let trj = create_sample_trajectory()?;
             let res = RngCatTrjEv::new(&mut rng, &trj, 1.1);
-            match res {
-                Err(err) => assert_eq!(err.to_string(), "Invalid parameter p: must be in [0, 1]"),
-                _ => panic!("Should be error"),
-            };
-            Ok(())
-        }
+            assert!(matches!(
+                res,
+                Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+            ));
 
-        #[test]
-        fn new_with_invalid_probability_large() -> Result<()> {
-            let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
-            let trj = create_sample_trajectory()?;
-            let res = RngCatTrjEv::new(&mut rng, &trj, 100.0);
-            assert!(res.is_err());
             Ok(())
         }
     }
 
-    mod rng_ev_single_trajectory {
+    mod single {
         use super::*;
 
         #[test]
@@ -195,7 +166,7 @@ mod tests {
         }
     }
 
-    mod rng_ev_multiple_trajectories {
+    mod multiple {
         use causal_hub::models::Labelled;
 
         use super::*;

@@ -78,8 +78,10 @@ impl<'a, R: Rng> RngCatIncTable<'a, R> {
     }
 }
 
-impl<R: Rng> Random<Result<CatIncTable>> for RngCatIncTable<'_, R> {
-    fn random(&mut self) -> Result<CatIncTable> {
+impl<R: Rng> Random for RngCatIncTable<'_, R> {
+    type Output = Result<CatIncTable>;
+
+    fn random(&mut self) -> Self::Output {
         // Get the missing indicator.
         const M: CatType = CatIncTable::MISSING;
         // Get dataset states.

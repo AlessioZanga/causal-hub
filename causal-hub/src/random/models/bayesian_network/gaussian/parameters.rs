@@ -80,11 +80,13 @@ where
     }
 }
 
-impl<R> Random<Result<GaussCPDP>> for RngGaussCPDP<'_, R>
+impl<R> Random for RngGaussCPDP<'_, R>
 where
     R: Rng,
 {
-    fn random(&mut self) -> Result<GaussCPDP> {
+    type Output = Result<GaussCPDP>;
+
+    fn random(&mut self) -> Self::Output {
         // 1. Generate coefficient matrix A (x x z)
         let mut a = if self.x > 0 && self.z > 0 {
             let dist_a = Normal::new(0.0, self.s_a)
@@ -198,11 +200,13 @@ where
     }
 }
 
-impl<R> Random<Result<GaussCPD>> for RngGaussCPD<'_, R>
+impl<R> Random for RngGaussCPD<'_, R>
 where
     R: Rng,
 {
-    fn random(&mut self) -> Result<GaussCPD> {
+    type Output = Result<GaussCPD>;
+
+    fn random(&mut self) -> Self::Output {
         // Generate parameters
         let mut rng_params = RngGaussCPDP::new(
             self.rng,

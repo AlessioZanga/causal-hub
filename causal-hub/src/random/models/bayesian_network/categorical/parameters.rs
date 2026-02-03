@@ -64,18 +64,16 @@ where
     }
 }
 
-impl<R> Random<Result<CatCPD>> for RngCatCPD<'_, R>
+impl<R> Random for RngCatCPD<'_, R>
 where
     R: Rng,
 {
-    fn random(&mut self) -> Result<CatCPD> {
+    type Output = Result<CatCPD>;
+
+    fn random(&mut self) -> Self::Output {
         // Get the inner state sizes.
-        let m = self.states.values().map(|v| v.len()).product::<usize>();
-        let n = self
-            .conditioning_states
-            .values()
-            .map(|v| v.len())
-            .product::<usize>();
+        let m = self.states.values().map(|v| v.len()).product();
+        let n = self.conditioning_states.values().map(|v| v.len()).product();
 
         // Create the Gamma distribution.
         let gamma = Gamma::new(self.alpha, 1.0)

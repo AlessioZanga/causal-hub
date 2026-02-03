@@ -67,6 +67,37 @@ class CatIncTable:
         """
 
     @classmethod
+    def random(
+        cls,
+        dataset: CatTable,
+        missing_mechanism: MissingMechanism,
+        p_min: builtins.float,
+        p_max: builtins.float,
+        seed: builtins.int = 31,
+    ) -> CatIncTable:
+        r"""
+        Generates a random categorical incomplete tabular dataset.
+
+        Parameters
+        ----------
+        dataset : CatTable
+            A categorical tabular dataset instance.
+        missing_mechanism : MissingMechanism
+            A missing mechanism instance.
+        p_min : float
+            The minimum probability of missingness.
+        p_max : float
+            The maximum probability of missingness.
+        seed : int, optional
+            The seed for the random number generator. Default is 31.
+
+        Returns
+        -------
+        CatIncTable
+            A random categorical incomplete tabular dataset instance.
+        """
+
+    @classmethod
     def from_pandas(cls, df: typing.Any) -> CatIncTable:
         r"""
         Constructs a new categorical incomplete tabular dataset from a Pandas DataFrame.
@@ -614,6 +645,37 @@ class GaussIncTable:
         -------
         MissingTable
             The missing information of the dataset.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        dataset: GaussTable,
+        missing_mechanism: MissingMechanism,
+        p_min: builtins.float,
+        p_max: builtins.float,
+        seed: builtins.int = 31,
+    ) -> GaussIncTable:
+        r"""
+        Generates a random gaussian incomplete tabular dataset.
+
+        Parameters
+        ----------
+        dataset : GaussTable
+            A gaussian tabular dataset instance.
+        missing_mechanism : MissingMechanism
+            A missing mechanism instance.
+        p_min : float
+            The minimum probability of missingness.
+        p_max : float
+            The maximum probability of missingness.
+        seed : int, optional
+            The seed for the random number generator. Default is 31.
+
+        Returns
+        -------
+        GaussIncTable
+            A random gaussian incomplete tabular dataset instance.
         """
 
     @classmethod

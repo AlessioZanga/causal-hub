@@ -40,8 +40,10 @@ impl<'a, R> RngDiGraph<'a, R> {
     }
 }
 
-impl<R: Rng> Random<Result<DiGraph>> for RngDiGraph<'_, R> {
-    fn random(&mut self) -> Result<DiGraph> {
+impl<R: Rng> Random for RngDiGraph<'_, R> {
+    type Output = Result<DiGraph>;
+
+    fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
         let mut g = DiGraph::empty(self.labels)?;
 
@@ -97,8 +99,10 @@ impl<'a, R> RngDag<'a, R> {
     }
 }
 
-impl<R: Rng> Random<Result<DiGraph>> for RngDag<'_, R> {
-    fn random(&mut self) -> Result<DiGraph> {
+impl<R: Rng> Random for RngDag<'_, R> {
+    type Output = Result<DiGraph>;
+
+    fn random(&mut self) -> Self::Output {
         // Construct the empty graph.
         let mut g = DiGraph::empty(self.labels)?;
 

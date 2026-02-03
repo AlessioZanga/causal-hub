@@ -65,11 +65,13 @@ where
     }
 }
 
-impl<R> Random<Result<CatBN>> for RngCatBN<'_, R>
+impl<R> Random for RngCatBN<'_, R>
 where
     R: Rng,
 {
-    fn random(&mut self) -> Result<CatBN> {
+    type Output = Result<CatBN>;
+
+    fn random(&mut self) -> Self::Output {
         // Get the labels of the variables.
         let labels: Labels = self.states.keys().cloned().collect();
 
@@ -87,11 +89,13 @@ where
                 let mut states = States::default();
                 states.insert(x.clone(), self.states[x].clone());
                 // Get the states of the conditioning variables.
-                let mut conditioning_states = States::default();
-                conditioning_states.extend(pa_i.iter().map(|&j| {
-                    let y = &labels[j];
-                    (y.clone(), self.states[y].clone())
-                }));
+                let conditioning_states = pa_i
+                    .iter()
+                    .map(|&j| {
+                        let y = &labels[j];
+                        (y.clone(), self.states[y].clone())
+                    })
+                    .collect();
                 // Generate the random CPD.
                 RngCatCPD::new(self.rng, &states, &conditioning_states, self.alpha)?.random()
             })

@@ -93,11 +93,13 @@ where
     }
 }
 
-impl<R> Random<Result<GaussBN>> for RngGaussBN<'_, R>
+impl<R> Random for RngGaussBN<'_, R>
 where
     R: Rng,
 {
-    fn random(&mut self) -> Result<GaussBN> {
+    type Output = Result<GaussBN>;
+
+    fn random(&mut self) -> Self::Output {
         // Generate a random DAG.
         let graph = RngDag::new(self.rng, self.labels, self.p)?.random()?;
 
@@ -110,9 +112,9 @@ where
                 // Get the parents of the variable.
                 let pa_i = graph.parents(&set![i])?;
                 // Get the labels of the variable.
-                let labels: Labels = labels![x.clone()];
+                let labels = labels![x.clone()];
                 // Get the labels of the conditioning variables.
-                let conditioning_labels: Labels =
+                let conditioning_labels =
                     pa_i.into_iter().map(|j| self.labels[j].clone()).collect();
                 // Generate the random CPD.
                 RngGaussCPD::new(

@@ -238,8 +238,10 @@ impl<R: Rng> RngMissingMechanism<'_, R> {
     }
 }
 
-impl<R: Rng> Random<Result<MissingMechanism>> for RngMissingMechanism<'_, R> {
-    fn random(&mut self) -> Result<MissingMechanism> {
+impl<R: Rng> Random for RngMissingMechanism<'_, R> {
+    type Output = Result<MissingMechanism>;
+
+    fn random(&mut self) -> Self::Output {
         // Generate the missingness mechanism based on the specified type.
         match self.missing_type {
             MissingType::MCAR => self.random_mcar(),

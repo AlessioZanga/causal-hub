@@ -79,8 +79,10 @@ impl<'a, R: Rng> RngGaussIncTable<'a, R> {
     }
 }
 
-impl<R: Rng> Random<Result<GaussIncTable>> for RngGaussIncTable<'_, R> {
-    fn random(&mut self) -> Result<GaussIncTable> {
+impl<R: Rng> Random for RngGaussIncTable<'_, R> {
+    type Output = Result<GaussIncTable>;
+
+    fn random(&mut self) -> Self::Output {
         // Get the missing indicator.
         const M: GaussType = GaussIncTable::MISSING;
         // Get dataset labels.
