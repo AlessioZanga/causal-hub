@@ -76,8 +76,8 @@ impl CatTable {
         states.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
-                    format!("states[{label}]"),
-                    format!("should have less than 256 states, found {}", state.len()),
+                    &format!("states[{label}]"),
+                    &format!("should have less than 256 states, found {}", state.len()),
                 ));
             }
             Ok(())
@@ -85,8 +85,8 @@ impl CatTable {
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                format!("|states| = {}", states.len()),
-                format!("|cols| = {}", values.ncols()),
+                &format!("|states| = {}", states.len()),
+                &format!("|cols| = {}", values.ncols()),
             ));
         }
         // Check if the maximum value of the values is less than the number of states.
@@ -99,8 +99,8 @@ impl CatTable {
 
                 if x >= states.len() as CatType {
                     return Err(Error::InvalidParameter(
-                        format!("values[.., '{label}']"),
-                        format!(
+                        &format!("values[.., '{label}']"),
+                        &format!(
                             "must be less than the number of states ({}), found {x}",
                             states.len()
                         ),
@@ -147,7 +147,7 @@ impl CatTable {
                         // Map the value to the sorted states.
                         *value = new_states
                             .get_index_of(state)
-                            .ok_or_else(|| Error::MissingState(state.clone()))?
+                            .ok_or_else(|| Error::MissingState(state))?
                             as CatType;
                         Ok(())
                     })?;
@@ -283,7 +283,7 @@ impl CsvIO for CatTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::MissingHeader);
+            return Err(Error::MissingHeader());
         }
 
         // Read the headers.

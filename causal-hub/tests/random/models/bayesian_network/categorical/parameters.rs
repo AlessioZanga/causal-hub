@@ -31,7 +31,10 @@ mod tests {
 
         let res = RngCatCPD::new(&mut rng, &states, &conditioning_states, alpha);
         match res {
-            Err(err) => assert_eq!(err.to_string(), "Invalid parameter alpha: must be positive"),
+            Err(err) => assert_eq!(
+                err.kind.to_string(),
+                "Invalid parameter alpha: must be positive"
+            ),
             _ => panic!("Should be error"),
         };
 

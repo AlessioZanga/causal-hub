@@ -109,8 +109,8 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
         // Check the sample size is positive.
         if n == 0 {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be positive.".into(),
+                "n",
+                "Sample size must be positive.",
             ));
         }
         // Set the sample size.
@@ -188,11 +188,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -232,11 +232,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -280,11 +280,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -345,11 +345,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -443,11 +443,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -487,11 +487,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -535,11 +535,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
@@ -600,11 +600,11 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {

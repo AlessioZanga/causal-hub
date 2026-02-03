@@ -64,11 +64,11 @@ pub fn em<'a>(
             // Set the initial model.
             let model = raw
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to initialize raw estimator: {}", e))
+                    BackendError::Stats(&format!("Failed to initialize raw estimator: {}", e))
                 })?
                 .par_fit(graph.clone())
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to fit the initial model: {}", e))
+                    BackendError::Stats(&format!("Failed to fit the initial model: {}", e))
                 })?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
@@ -110,9 +110,7 @@ pub fn em<'a>(
                                     .unwrap_or(std::cmp::Ordering::Equal)
                             })
                             .cloned()
-                            .ok_or_else(|| {
-                                BackendError::MissingData("No trajectories sampled".into())
-                            })
+                            .ok_or_else(|| BackendError::MissingData("No trajectories sampled"))
                     })
                     .collect()
             };
@@ -139,12 +137,12 @@ pub fn em<'a>(
                 .with_stop(&stop)
                 .build()
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to build the EM algorithm: {}", e))
+                    BackendError::Stats(&format!("Failed to build the EM algorithm: {}", e))
                 })?;
 
             // Fit the model.
             em.fit().map_err(|e| {
-                BackendError::Stats(format!("Failed to fit the model using EM: {}", e))
+                BackendError::Stats(&format!("Failed to fit the model using EM: {}", e))
             })
         })
         .map_err(crate::error::to_pyerr)?;

@@ -44,7 +44,7 @@ pub trait Labelled {
     fn label_to_index(&self, x: &str) -> Result<usize> {
         self.labels()
             .get_index_of(x)
-            .ok_or_else(|| Error::MissingLabel(x.to_string()))
+            .ok_or_else(|| Error::MissingLabel(x))
     }
 
     /// Return the label for a given variable index.
@@ -92,7 +92,7 @@ pub trait Labelled {
         // Get the index of the variable in the other model.
         other
             .get_index_of(label)
-            .ok_or_else(|| Error::MissingLabel(label.to_string()))
+            .ok_or_else(|| Error::MissingLabel(label))
     }
 
     /// Maps a set of indices from this model to another model with the same labels.
@@ -141,7 +141,7 @@ pub trait Labelled {
         // Get the index of the variable in this model.
         self.labels()
             .get_index_of(label)
-            .ok_or_else(|| Error::MissingLabel(label.clone()))
+            .ok_or_else(|| Error::MissingLabel(label))
     }
 
     /// Maps a set of indices from another model to this model with the same labels.

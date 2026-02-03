@@ -12,7 +12,7 @@ mod tests {
         graph.add_edge(0, 1)?;
         graph.add_edge(1, 2)?;
 
-        let sorted = graph.topological_order().ok_or(Error::NotADag)?;
+        let sorted = graph.topological_order().ok_or(Error::NotADag())?;
         assert_eq!(sorted, [0, 1, 2]);
 
         Ok(())
@@ -26,7 +26,7 @@ mod tests {
         graph.add_edge(1, 3)?;
         graph.add_edge(2, 3)?;
 
-        let sorted = graph.topological_order().ok_or(Error::NotADag)?;
+        let sorted = graph.topological_order().ok_or(Error::NotADag())?;
         assert_eq!(sorted, [0, 1, 2, 3]);
 
         Ok(())
@@ -38,7 +38,7 @@ mod tests {
         graph.add_edge(0, 1)?;
         graph.add_edge(2, 3)?;
 
-        let sorted = graph.topological_order().ok_or(Error::NotADag)?;
+        let sorted = graph.topological_order().ok_or(Error::NotADag())?;
         assert_eq!(sorted, [0, 2, 1, 3]);
 
         Ok(())
@@ -48,7 +48,7 @@ mod tests {
     fn topological_order_single_vertex() -> Result<()> {
         let graph = DiGraph::empty(["A"])?;
 
-        let sorted = graph.topological_order().ok_or(Error::NotADag)?;
+        let sorted = graph.topological_order().ok_or(Error::NotADag())?;
         assert_eq!(sorted, [0]);
 
         Ok(())
@@ -59,7 +59,7 @@ mod tests {
         let labels: [String; 0] = [];
         let graph = DiGraph::empty(labels)?;
 
-        let sorted = graph.topological_order().ok_or(Error::NotADag)?;
+        let sorted = graph.topological_order().ok_or(Error::NotADag())?;
         assert!(sorted.is_empty());
 
         Ok(())

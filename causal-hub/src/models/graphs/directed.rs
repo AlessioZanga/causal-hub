@@ -221,7 +221,7 @@ impl Graph for DiGraph {
 
         // Check for duplicate labels.
         if labels.len() != n {
-            return Err(Error::NonUniqueLabels);
+            return Err(Error::NonUniqueLabels());
         }
 
         // Sort the labels.
@@ -340,15 +340,15 @@ impl Graph for DiGraph {
         // Check labels and adjacency matrix dimensions match.
         if labels.len() != adjacency_matrix.nrows() {
             return Err(Error::IncompatibleShape(
-                labels.len().to_string(),
-                adjacency_matrix.nrows().to_string(),
+                &labels.len().to_string(),
+                &adjacency_matrix.nrows().to_string(),
             ));
         }
         // Check adjacency matrix must be square.
         if adjacency_matrix.nrows() != adjacency_matrix.ncols() {
             return Err(Error::IncompatibleShape(
-                adjacency_matrix.nrows().to_string(),
-                adjacency_matrix.ncols().to_string(),
+                &adjacency_matrix.nrows().to_string(),
+                &adjacency_matrix.ncols().to_string(),
             ));
         }
 

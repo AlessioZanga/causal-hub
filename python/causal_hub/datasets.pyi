@@ -875,9 +875,7 @@ class MissingMechanism:
             A set of indices that cause missingness for the variable, or None if the variable is not missing.
         """
 
-    def insert(
-        self, x: builtins.int, y: builtins.set[builtins.int]
-    ) -> typing.Optional[builtins.set[builtins.int]]:
+    def insert(self, x: builtins.int, y: builtins.set[builtins.int]) -> None:
         r"""
         Inserts a missing variable and its causes.
 
@@ -887,11 +885,6 @@ class MissingMechanism:
             The index of the missing variable.
         y: set[int]
             A set of indices that cause missingness for the variable.
-
-        Returns
-        -------
-        set[int] | None
-            The previous causes of missingness for the variable, or None if the variable was not missing.
         """
 
     @classmethod

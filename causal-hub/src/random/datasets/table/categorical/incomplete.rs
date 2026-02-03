@@ -43,28 +43,22 @@ impl<'a, R: Rng> RngCatIncTable<'a, R> {
         // Check that dataset labels are equals to missing mechanism labels.
         if dataset.labels() != missing_mechanism.labels() {
             return Err(Error::InvalidParameter(
-                "missing_mechanism".to_string(),
-                "labels do not match dataset labels".to_string(),
+                "missing_mechanism",
+                "labels do not match dataset labels",
             ));
         }
         // Check that p_min and p_max are in [0, 1].
         if !(0.0..=1.0).contains(&p_min) {
-            return Err(Error::InvalidParameter(
-                "p_min".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p_min", "must be in [0, 1]"));
         }
         if !(0.0..=1.0).contains(&p_max) {
-            return Err(Error::InvalidParameter(
-                "p_max".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p_max", "must be in [0, 1]"));
         }
         // Check that p_min is less than or equal to p_max.
         if p_min > p_max {
             return Err(Error::InvalidParameter(
-                "p_min".to_string(),
-                "must be less than or equal to p_max".to_string(),
+                "p_min",
+                "must be less than or equal to p_max",
             ));
         }
 

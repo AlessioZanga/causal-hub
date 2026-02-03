@@ -148,14 +148,14 @@ mod tests {
                             event: model
                                 .labels()
                                 .get_index_of("lung")
-                                .ok_or(Error::IllegalArgument("missing".into()))?, // lung
+                                .ok_or(Error::IllegalArgument("missing"))?, // lung
                             state: 1, // yes
                         },
                         CatEvT::CertainPositive {
                             event: model
                                 .labels()
                                 .get_index_of("tub")
-                                .ok_or(Error::IllegalArgument("missing".into()))?, // tub
+                                .ok_or(Error::IllegalArgument("missing"))?, // tub
                             state: 0, // no
                         },
                     ],

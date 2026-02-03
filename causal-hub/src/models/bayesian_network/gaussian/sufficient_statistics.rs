@@ -65,73 +65,69 @@ impl GaussCPDS {
         // Check the dimensions are correct.
         if mu_x.len() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
-                "mu_x".into(),
-                "Response mean vector length must match response covariance matrix size.".into(),
+                "mu_x",
+                "Response mean vector length must match response covariance matrix size.",
             ));
         }
         if mu_z.len() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
-                "mu_z".into(),
-                "Design mean vector length must match design covariance matrix size.".into(),
+                "mu_z",
+                "Design mean vector length must match design covariance matrix size.",
             ));
         }
         if !s_xx.is_square() {
-            return Err(Error::Shape(
-                "Response covariance matrix must be square.".into(),
-            ));
+            return Err(Error::Shape("Response covariance matrix must be square."));
         }
         if s_xz.nrows() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
-                "s_xz".into(),
-                "Cross-covariance matrix must have the same number of rows as the response covariance matrix.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have the same number of rows as the response covariance matrix.",
             ));
         }
         if s_xz.ncols() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
-                "s_xz".into(),
-                "Cross-covariance matrix must have the same number of columns as the design covariance matrix.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have the same number of columns as the design covariance matrix.",
             ));
         }
         if !s_zz.is_square() {
-            return Err(Error::Shape(
-                "Design covariance matrix must be square.".into(),
-            ));
+            return Err(Error::Shape("Design covariance matrix must be square."));
         }
         // Check values are finite.
         if !mu_x.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "mu_x".into(),
-                "Response mean vector must have finite values.".into(),
+                "mu_x",
+                "Response mean vector must have finite values.",
             ));
         }
         if !mu_z.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "mu_z".into(),
-                "Design mean vector must have finite values.".into(),
+                "mu_z",
+                "Design mean vector must have finite values.",
             ));
         }
         if !s_xx.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_xx".into(),
-                "Response covariance matrix must have finite values.".into(),
+                "s_xx",
+                "Response covariance matrix must have finite values.",
             ));
         }
         if !s_xz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_xz".into(),
-                "Cross-covariance matrix must have finite values.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have finite values.",
             ));
         }
         if !s_zz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_zz".into(),
-                "Design covariance matrix must have finite values.".into(),
+                "s_zz",
+                "Design covariance matrix must have finite values.",
             ));
         }
         if !n.is_finite() || n < 0.0 {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be finite and non-negative.".into(),
+                "n",
+                "Sample size must be finite and non-negative.",
             ));
         }
 

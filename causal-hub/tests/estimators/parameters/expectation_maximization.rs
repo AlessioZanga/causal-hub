@@ -199,7 +199,7 @@ mod tests {
                                         .partial_cmp(&b.weight())
                                         .unwrap_or(std::cmp::Ordering::Equal)
                                 })
-                                .ok_or(Error::IllegalArgument("Empty trajectories".into()))?
+                                .ok_or(Error::IllegalArgument("Empty trajectories"))?
                                 .clone())
                         })
                         .collect()

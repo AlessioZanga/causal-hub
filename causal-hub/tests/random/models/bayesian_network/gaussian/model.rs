@@ -4,7 +4,7 @@ mod tests {
         labels,
         models::{GaussBN, Labelled},
         random::{Random, RngGaussBN},
-        types::{Error, Result},
+        types::{Error, ErrorKind, Result},
     };
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
@@ -30,7 +30,7 @@ mod tests {
         let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
         assert!(matches!(
             res,
-            Err(Error::InvalidParameter(ref p, ref m)) if p == "s_a" && m == "must be positive"
+            Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "s_a" && m == "must be positive"
         ));
 
         Ok(())
@@ -45,7 +45,7 @@ mod tests {
         let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
         assert!(matches!(
             res,
-            Err(Error::InvalidParameter(ref p, ref m)) if p == "s_b" && m == "must be positive"
+            Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "s_b" && m == "must be positive"
         ));
 
         Ok(())
@@ -60,7 +60,7 @@ mod tests {
         let res = RngGaussBN::new(&mut rng, &labels, s_a, s_b, e, p);
         assert!(matches!(
             res,
-            Err(Error::InvalidParameter(ref p, ref m)) if p == "e" && m == "must be positive"
+            Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "e" && m == "must be positive"
         ));
 
         Ok(())
@@ -74,13 +74,13 @@ mod tests {
         let res = RngGaussBN::new(&mut rng, &labels, 1.0, 1.0, 1e-6, -0.1);
         assert!(matches!(
             res,
-            Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+            Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
         ));
 
         let res = RngGaussBN::new(&mut rng, &labels, 1.0, 1.0, 1e-6, 1.1);
         assert!(matches!(
             res,
-            Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+            Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
         ));
 
         Ok(())

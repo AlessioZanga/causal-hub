@@ -46,37 +46,37 @@ impl CatCIMS {
         // Check the dimensions are correct.
         if n_xz.shape()[1] != n_xz.shape()[2] {
             return Err(Error::Shape(
-                "The second and third dimensions of the conditional counts must be equal.".into(),
+                "The second and third dimensions of the conditional counts must be equal.",
             ));
         }
         if n_xz.shape()[0] != t_xz.shape()[0] {
             return Err(Error::IncompatibleShape(
-                "n_xz".into(),
-                "The first dimension of the conditional counts must match the first dimension of the conditional times.".into(),
+                "n_xz",
+                "The first dimension of the conditional counts must match the first dimension of the conditional times.",
             ));
         }
         if n_xz.shape()[1] != t_xz.shape()[1] {
             return Err(Error::IncompatibleShape(
-                "n_xz".into(),
-                "The second dimension of the conditional counts must match the second dimension of the conditional times.".into(),
+                "n_xz",
+                "The second dimension of the conditional counts must match the second dimension of the conditional times.",
             ));
         }
         if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
             return Err(Error::InvalidParameter(
-                "n_xz".into(),
-                "Conditional counts must be finite and non-negative.".into(),
+                "n_xz",
+                "Conditional counts must be finite and non-negative.",
             ));
         }
         if !t_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
             return Err(Error::InvalidParameter(
-                "t_xz".into(),
-                "Conditional times must be finite and non-negative.".into(),
+                "t_xz",
+                "Conditional times must be finite and non-negative.",
             ));
         }
         if !n.is_finite() || n < 0. {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be finite and non-negative.".into(),
+                "n",
+                "Sample size must be finite and non-negative.",
             ));
         }
 
@@ -331,8 +331,8 @@ impl CatCIM {
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
             return Err(Error::SetsNotDisjoint(
-                format!("{:?}", labels),
-                format!("{:?}", conditioning_labels),
+                &format!("{:?}", labels),
+                &format!("{:?}", conditioning_labels),
             ));
         }
 
@@ -342,8 +342,8 @@ impl CatCIM {
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.shape()[1] != shape.product() {
             return Err(Error::IncompatibleShape(
-                "parameters".into(),
-                format!(
+                "parameters",
+                &format!(
                     "Product of the number of states must match the number of columns: expected {} but found {}.",
                     shape.product(),
                     parameters.shape()[1],
@@ -354,8 +354,8 @@ impl CatCIM {
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.shape()[2] != shape.product() {
             return Err(Error::IncompatibleShape(
-                "parameters".into(),
-                format!(
+                "parameters",
+                &format!(
                     "Product of the number of states must match the third axis: expected {} but found {}.",
                     shape.product(),
                     parameters.shape()[2],
@@ -369,8 +369,8 @@ impl CatCIM {
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.shape()[0] != conditioning_shape.product() {
             return Err(Error::IncompatibleShape(
-                "parameters".into(),
-                format!(
+                "parameters",
+                &format!(
                     "Product of the number of conditioning states must match the number of rows: expected {} but found {}.",
                     conditioning_shape.product(),
                     parameters.shape()[0],
@@ -382,27 +382,27 @@ impl CatCIM {
         parameters.outer_iter().try_for_each(|q| {
             // Check Q is square.
             if !q.is_square() {
-                return Err(Error::Shape("Q must be square.".into()));
+                return Err(Error::Shape("Q must be square."));
             }
             // Check Q has finite values.
             if !q.iter().all(|&x| x.is_finite()) {
                 return Err(Error::InvalidParameter(
-                    "parameters".into(),
-                    "Q must have finite values.".into(),
+                    "parameters",
+                    "Q must have finite values.",
                 ));
             }
             // Check Q has non-positive diagonal.
             if !q.diag().iter().all(|&x| x <= 0.) {
                 return Err(Error::InvalidParameter(
-                    "parameters".into(),
-                    "Q diagonal must be non-positive.".into(),
+                    "parameters",
+                    "Q diagonal must be non-positive.",
                 ));
             }
             // Check Q has non-negative off-diagonal.
             if !q.indexed_iter().all(|((i, j), &x)| i == j || x >= 0.) {
                 return Err(Error::InvalidParameter(
-                    "parameters".into(),
-                    "Q off-diagonal must be non-negative.".into(),
+                    "parameters",
+                    "Q off-diagonal must be non-negative.",
                 ));
             }
             // Check Q rows sum to zero.
@@ -412,8 +412,8 @@ impl CatCIM {
                 .all(|x| relative_eq!(x.sum(), 0., epsilon = EPSILON))
             {
                 return Err(Error::InvalidParameter(
-                    "parameters".into(),
-                    "Q rows must sum to zero.".into(),
+                    "parameters",
+                    "Q rows must sum to zero.",
                 ));
             }
             Ok(())
@@ -658,8 +658,8 @@ impl CatCIM {
             // Check the sample conditional counts have the same shape as parameters.
             if sample_conditional_counts.shape() != parameters.shape() {
                 return Err(Error::IncompatibleShape(
-                    "sample_statistics".into(),
-                    format!(
+                    "sample_statistics",
+                    &format!(
                         "Sample conditional counts must have the same shape as parameters: expected {:?} but found {:?}.",
                         parameters.shape(),
                         sample_conditional_counts.shape(),
@@ -672,8 +672,8 @@ impl CatCIM {
             && !sample_log_likelihood.is_finite()
         {
             return Err(Error::InvalidParameter(
-                "sample_log_likelihood".into(),
-                format!(
+                "sample_log_likelihood",
+                &format!(
                     "Sample log-likelihood must be finite, found: {}.",
                     sample_log_likelihood
                 ),

@@ -109,8 +109,8 @@ impl BN for GaussBN {
             .map(|x| {
                 if x.labels().len() != 1 {
                     return Err(Error::InvalidParameter(
-                        "cpd".to_string(),
-                        "CPD must contain exactly one label.".to_string(),
+                        "cpd",
+                        "CPD must contain exactly one label.",
                     ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
@@ -121,10 +121,7 @@ impl BN for GaussBN {
 
         // Check same number of graph labels and CPDs.
         if !graph.labels().iter().eq(cpds.keys()) {
-            return Err(Error::LabelMismatch(
-                "graph labels".to_string(),
-                "distributions labels".to_string(),
-            ));
+            return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
         // Get the labels of the variables.
@@ -140,15 +137,15 @@ impl BN for GaussBN {
             // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
-                    format!("{pa_i:?}"),
-                    format!("{pa_j:?}"),
+                    &format!("{pa_i:?}"),
+                    &format!("{pa_j:?}"),
                 ));
             }
             Ok(())
         })?;
 
         // Check the graph is acyclic.
-        let topological_order = graph.topological_order().ok_or(Error::NotADag)?;
+        let topological_order = graph.topological_order().ok_or(Error::NotADag())?;
 
         Ok(Self {
             name: None,
@@ -234,19 +231,13 @@ impl BN for GaussBN {
         if let Some(name) = &name
             && name.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "name".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("name", "cannot be empty"));
         }
         // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "description".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("description", "cannot be empty"));
         }
 
         // Construct the BN.

@@ -92,23 +92,23 @@ macro_for!($type in [CatBN, GaussBN] {
         fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check Y is not empty.
             if y.is_empty() {
-                return Err(Error::EmptySet("Y".into()));
+                return Err(Error::EmptySet("Y"));
             }
             // Check X and Y are disjoint.
             if !x.is_disjoint(y) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
+                return Err(Error::SetsNotDisjoint("X", "Y"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check Y and Z are disjoint.
             if !y.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("Y", "Z"));
             }
 
             /* Effect Identification */
@@ -228,23 +228,23 @@ macro_for!($type in [CatBN, GaussBN] {
         fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check Y is not empty.
             if y.is_empty() {
-                return Err(Error::EmptySet("Y".into()));
+                return Err(Error::EmptySet("Y"));
             }
             // Check X and Y are disjoint.
             if !x.is_disjoint(y) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
+                return Err(Error::SetsNotDisjoint("X", "Y"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check Y and Z are disjoint.
             if !y.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("Y", "Z"));
             }
 
             /* Effect Identification */

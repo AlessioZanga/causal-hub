@@ -51,22 +51,13 @@ where
     fn new(rng: &'a mut R, x: usize, z: usize, s_a: f64, s_b: f64, e: f64) -> Result<Self> {
         // Check parameters.
         if s_a <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "s_a".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("s_a", "must be positive"));
         }
         if s_b <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "s_b".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("s_b", "must be positive"));
         }
         if e <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "e".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("e", "must be positive"));
         }
 
         Ok(Self {
@@ -90,7 +81,7 @@ where
         // 1. Generate coefficient matrix A (x x z)
         let mut a = if self.x > 0 && self.z > 0 {
             let dist_a = Normal::new(0.0, self.s_a)
-                .map_err(|e| Error::InvalidParameter("s_a".to_string(), e.to_string()))?;
+                .map_err(|e| Error::InvalidParameter("s_a", &e.to_string()))?;
             Array2::random_using((self.x, self.z), dist_a, self.rng)
         } else {
             Array2::zeros((self.x, self.z))
@@ -100,7 +91,7 @@ where
         if self.x > 0 && self.z > 0 {
             let (_, s, _) = a
                 .svd(false, false)
-                .map_err(|e| Error::Linalg(format!("Failed to compute SVD: {e}")))?;
+                .map_err(|e| Error::Linalg(&format!("Failed to compute SVD: {e}")))?;
             let spectral_norm = s[0];
             if spectral_norm > 1.0 {
                 a /= spectral_norm;
@@ -110,7 +101,7 @@ where
         // 3. Generate intercept vector b (x)
         let b = if self.x > 0 {
             let dist_b = Normal::new(0.0, self.s_b)
-                .map_err(|e| Error::InvalidParameter("s_b".to_string(), e.to_string()))?;
+                .map_err(|e| Error::InvalidParameter("s_b", &e.to_string()))?;
             Array1::random_using(self.x, dist_b, self.rng)
         } else {
             Array1::zeros(self.x)
@@ -121,7 +112,7 @@ where
             let mut s;
             // Create the Normal distribution.
             let dist_m = Normal::new(0.0, 1.0)
-                .map_err(|e| Error::InvalidParameter("sigma".to_string(), e.to_string()))?;
+                .map_err(|e| Error::InvalidParameter("sigma", &e.to_string()))?;
             loop {
                 // Sample random matrix M (x x x)
                 let m = Array2::random_using((self.x, self.x), dist_m, self.rng);

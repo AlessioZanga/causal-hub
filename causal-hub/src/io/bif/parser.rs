@@ -46,11 +46,11 @@ impl BifParser {
     /// Read a BIF string and returns a `Network` object.
     pub fn parse_str(bif: &str) -> Result<CatBN> {
         let mut pairs = Self::parse(Rule::file, bif)
-            .map_err(|e| Error::Parsing(format!("Failed to parse BIF file: {}", e)))?;
+            .map_err(|e| Error::Parsing(&format!("Failed to parse BIF file: {}", e)))?;
 
         let network_pair = pairs
             .next()
-            .ok_or_else(|| Error::Parsing("Empty BIF file".into()))?;
+            .ok_or_else(|| Error::Parsing("Empty BIF file"))?;
         let network = build_ast(network_pair)?;
 
         // Get network properties.
@@ -81,7 +81,7 @@ impl BifParser {
                     p.label.clone(),
                     states
                         .get(&p.label)
-                        .ok_or_else(|| Error::Parsing(format!("Failed to get states for variable '{}'.", p.label)))?
+                        .ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", p.label)))?
                         .clone(),
                 )]);
                 // Get the conditioning variables of the CPD.
@@ -89,7 +89,7 @@ impl BifParser {
                     .parents
                     .iter()
                     .map(|x| {
-                        let states = states.get(x).ok_or_else(|| Error::Parsing(format!("Failed to get states for variable '{}'.", x)))?;
+                        let states = states.get(x).ok_or_else(|| Error::Parsing(&format!("Failed to get states for variable '{}'.", x)))?;
                         Ok((x.to_string(), states.iter().cloned().collect()))
                     })
                     .collect::<Result<_>>()?;
@@ -107,7 +107,7 @@ impl BifParser {
                             .cloned()
                             .multi_cartesian_product()
                             .map(|states| {
-                                entries.get(&states).ok_or_else(|| Error::Parsing(format!(
+                                entries.get(&states).ok_or_else(|| Error::Parsing(&format!(
                                     "Missing probability entry for configuration {:?}",
                                     states
                                 )))
@@ -123,7 +123,7 @@ impl BifParser {
                             .into_shape_with_order(shape)
                             .map_err(Error::NdarrayShape)?
                     }
-                    _ => return Err(Error::Parsing("Invalid probability definition: must have either table or entries, not both or none.".into())),
+                    _ => return Err(Error::Parsing("Invalid probability definition: must have either table or entries, not both or none.")),
                 };
 
                 // Normalize the parameters so that they sum exactly to 1 by row.
@@ -140,7 +140,7 @@ impl BifParser {
         cpds.iter().try_for_each(|p| {
             // Check the CPD has a single variable in the BIF file.
             if p.labels().len() != 1 {
-                return Err(Error::Parsing(format!(
+                return Err(Error::Parsing(&format!(
                     "CPD for '{}' must have exactly one target variable.",
                     p.labels().iter().next().unwrap_or(&String::from("?"))
                 )));
@@ -150,13 +150,13 @@ impl BifParser {
             let x_idx = graph
                 .labels()
                 .get_index_of(x)
-                .ok_or_else(|| Error::Parsing(format!("Failed to get index of label '{x}'.")))?;
+                .ok_or_else(|| Error::Parsing(&format!("Failed to get index of label '{x}'.")))?;
 
             // Get parent indices.
             p.conditioning_labels().iter().try_for_each(|z| {
                 // Get parent index.
                 let z_idx = graph.labels().get_index_of(z).ok_or_else(|| {
-                    Error::Parsing(format!("Failed to get index of label '{z}'."))
+                    Error::Parsing(&format!("Failed to get index of label '{z}'."))
                 })?;
                 // Add edge from parent to child.
                 graph.add_edge(z_idx, x_idx)?;
@@ -171,7 +171,7 @@ impl BifParser {
 
 fn build_ast(pair: Pair<Rule>) -> Result<Network> {
     if pair.as_rule() != Rule::file {
-        return Err(Error::Parsing(format!(
+        return Err(Error::Parsing(&format!(
             "Expected rule 'file', found '{:?}'",
             pair.as_rule()
         )));
@@ -180,13 +180,13 @@ fn build_ast(pair: Pair<Rule>) -> Result<Network> {
     let mut pair = pair.into_inner();
     let network_pair = pair
         .next()
-        .ok_or_else(|| Error::Parsing("Expected 'network' definition".into()))?;
+        .ok_or_else(|| Error::Parsing("Expected 'network' definition"))?;
 
     // Network definitions
     let mut inner = network_pair.into_inner();
     let name = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected network name".into()))?
+        .ok_or_else(|| Error::Parsing("Expected network name"))?
         .as_str()
         .to_string();
     let properties: Vec<_> = inner
@@ -218,12 +218,12 @@ fn parse_property(pair: Pair<Rule>) -> Result<Property> {
     let mut inner = pair.into_inner();
     let key = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected property key".into()))?
+        .ok_or_else(|| Error::Parsing("Expected property key"))?
         .as_str()
         .to_string();
     let value = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected property value".into()))?
+        .ok_or_else(|| Error::Parsing("Expected property value"))?
         .as_str()
         .to_string();
 
@@ -234,7 +234,7 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
     let mut inner = pair.into_inner();
     let label = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected variable label".into()))?
+        .ok_or_else(|| Error::Parsing("Expected variable label"))?
         .as_str()
         .to_string();
 
@@ -242,7 +242,7 @@ fn parse_variable(pair: Pair<Rule>) -> Result<Variable> {
     let _n = inner.next(); // n
     let values_pair = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected values block".into()))?;
+        .ok_or_else(|| Error::Parsing("Expected values block"))?;
     let states = values_pair
         .into_inner()
         .map(|v| v.as_str().to_string())
@@ -266,7 +266,7 @@ fn parse_probability(pair: Pair<Rule>) -> Result<Probability> {
     let mut inner = pair.into_inner();
     let label = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected probability label".into()))?
+        .ok_or_else(|| Error::Parsing("Expected probability label"))?
         .as_str()
         .to_string();
 
@@ -276,18 +276,18 @@ fn parse_probability(pair: Pair<Rule>) -> Result<Probability> {
 
     let mut next = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected parents or content".into()))?;
+        .ok_or_else(|| Error::Parsing("Expected parents or content"))?;
     if next.as_rule() == Rule::parents {
         parents = next
             .into_inner()
             .next()
-            .ok_or_else(|| Error::Parsing("Expected parent list".into()))?
+            .ok_or_else(|| Error::Parsing("Expected parent list"))?
             .into_inner()
             .map(|p| p.as_str().to_string())
             .collect();
         next = inner
             .next()
-            .ok_or_else(|| Error::Parsing("Expected probability content".into()))?;
+            .ok_or_else(|| Error::Parsing("Expected probability content"))?;
     }
 
     match next.as_rule() {
@@ -324,14 +324,14 @@ fn parse_entry(pair: Pair<Rule>) -> Result<(Vec<String>, Vec<f64>)> {
     let mut inner = pair.into_inner();
     let values = inner
         .next()
-        .ok_or_else(|| Error::Parsing("Expected entry values".into()))?
+        .ok_or_else(|| Error::Parsing("Expected entry values"))?
         .into_inner()
         .map(|v| v.as_str().to_string())
         .collect();
     let probs = parse_number_list(
         inner
             .next()
-            .ok_or_else(|| Error::Parsing("Expected entry probabilities".into()))?,
+            .ok_or_else(|| Error::Parsing("Expected entry probabilities"))?,
     )?;
     Ok((values, probs))
 }
@@ -341,7 +341,7 @@ fn parse_number_list(pair: Pair<Rule>) -> Result<Vec<f64>> {
         .map(|n| {
             n.as_str()
                 .parse::<f64>()
-                .map_err(|e| Error::Parsing(format!("Failed to parse number: {}", e)))
+                .map_err(|e| Error::Parsing(&format!("Failed to parse number: {}", e)))
         })
         .collect()
 }

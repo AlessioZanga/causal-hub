@@ -50,10 +50,7 @@ impl<'a, E> ChiSquaredTest<'a, E> {
     pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Check that the significance level is in [0, 1].
         if !(0.0..=1.0).contains(&alpha) {
-            return Err(Error::InvalidParameter(
-                "alpha".into(),
-                "must be in [0, 1]".into(),
-            ));
+            return Err(Error::InvalidParameter("alpha", "must be in [0, 1]"));
         }
 
         Ok(Self { estimator, alpha })
@@ -79,8 +76,8 @@ where
         // TODO: Refactor code and remove this assumption.
         if y.len() != 1 {
             return Err(Error::InvalidParameter(
-                "y".into(),
-                "must contain exactly one label".into(),
+                "y",
+                "must contain exactly one label",
             ));
         }
 
@@ -88,7 +85,7 @@ where
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
-            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
@@ -101,11 +98,11 @@ where
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics)?;
+            .ok_or(Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics)?;
+            .ok_or(Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -139,7 +136,7 @@ where
                 let dof = if dof >= 2 { dof } else { 2 };
                 // Initialize the chi-squared distribution.
                 let n = ChiSquared::new((dof - 1) as f64)
-                    .map_err(|e| Error::Probability(e.to_string()))?;
+                    .map_err(|e| Error::Probability(&e.to_string()))?;
                 // Compute the p-value.
                 let p_value = n.cdf(c);
                 // Check if the p-value is in the alpha range.
@@ -174,10 +171,7 @@ impl<'a, E> FTest<'a, E> {
     pub fn new(estimator: &'a E, alpha: f64) -> Result<Self> {
         // Check that the significance level is in [0, 1].
         if !(0.0..=1.0).contains(&alpha) {
-            return Err(Error::InvalidParameter(
-                "alpha".into(),
-                "must be in [0, 1]".into(),
-            ));
+            return Err(Error::InvalidParameter("alpha", "must be in [0, 1]"));
         }
 
         Ok(Self { estimator, alpha })
@@ -203,8 +197,8 @@ where
         // TODO: Refactor code and remove this assumption.
         if y.len() != 1 {
             return Err(Error::InvalidParameter(
-                "y".into(),
-                "must contain exactly one label".into(),
+                "y",
+                "must contain exactly one label",
             ));
         }
 
@@ -215,7 +209,7 @@ where
         let mut s = z.clone();
         // Get the ordered position of Y in the extended separation set.
         let s_y = match z.binary_search(&y[0]) {
-            Ok(_) => return Err(Error::SetsNotDisjoint("Y".into(), "Z".into())),
+            Ok(_) => return Err(Error::SetsNotDisjoint("Y", "Z")),
             Err(i) => i,
         };
         // Insert Y into the extended separation set in sorted order.
@@ -228,11 +222,11 @@ where
         let n_xz = q_xz
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics)?;
+            .ok_or(Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
             .sample_statistics()
             .map(|s| s.sample_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics)?;
+            .ok_or(Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -258,7 +252,7 @@ where
                     if let Ok(true) = acc {
                         // Initialize the Fisher-Snedecor distribution.
                         let f = FisherSnedecor::new(r_xz, r_xs)
-                            .map_err(|e| Error::Probability(e.to_string()))?;
+                            .map_err(|e| Error::Probability(&e.to_string()))?;
                         // Compute the p-value.
                         let p_value = f.cdf(q_xz / q_xs);
                         // Check if the p-value is in the alpha range.
@@ -312,15 +306,15 @@ where
         // Check labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != null_time.labels() {
             return Err(Error::LabelMismatch(
-                format!("{:?}", initial_graph.labels()),
-                format!("{:?}", null_time.labels()),
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", null_time.labels()),
             ));
         }
         // Check labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != null_state.labels() {
             return Err(Error::LabelMismatch(
-                format!("{:?}", initial_graph.labels()),
-                format!("{:?}", null_state.labels()),
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", null_state.labels()),
             ));
         }
 
@@ -347,8 +341,8 @@ where
         // Check labels of prior knowledge and initial graph are the same.
         if self.initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
-                format!("{:?}", self.initial_graph.labels()),
-                format!("{:?}", prior_knowledge.labels()),
+                &format!("{:?}", self.initial_graph.labels()),
+                &format!("{:?}", prior_knowledge.labels()),
             ));
         }
         // Check prior knowledge is consistent with initial graph.
@@ -358,14 +352,14 @@ where
             // Check edge must be either present and not forbidden ...
             if self.initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
-                    return Err(Error::PriorKnowledgeConflict(format!(
+                    return Err(Error::PriorKnowledgeConflict(&format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
                     )));
                 }
             }
             // ... or absent and not required.
             else if prior_knowledge.is_required(i, j) {
-                return Err(Error::PriorKnowledgeConflict(format!(
+                return Err(Error::PriorKnowledgeConflict(&format!(
                     "Initial graph does not contain required edge ({i}, {j})."
                 )));
             }

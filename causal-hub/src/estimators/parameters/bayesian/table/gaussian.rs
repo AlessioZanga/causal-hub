@@ -20,10 +20,7 @@ impl BE<'_, GaussTable, f64> {
     ) -> Result<GaussCPD> {
         // Check likelihood of prior.
         if prior < 0.0 {
-            return Err(Error::InvalidParameter(
-                "prior".to_string(),
-                "must be non-negative".to_string(),
-            ));
+            return Err(Error::InvalidParameter("prior", "must be non-negative"));
         }
 
         // Get the sample scatter matrices and size.
@@ -104,7 +101,7 @@ impl BE<'_, GaussTable, f64> {
         let p = x.len() as f64;
         let (_, ln_det) = s
             .sln_det()
-            .map_err(|e| Error::Linalg(format!("Failed to compute determinant of S: {e}")))?;
+            .map_err(|e| Error::Linalg(&format!("Failed to compute determinant of S: {e}")))?;
         // This is the likelihood of the posterior "samples".
         let sample_log_likelihood = -0.5 * n_post * (p * LN_2_PI + ln_det + p);
 

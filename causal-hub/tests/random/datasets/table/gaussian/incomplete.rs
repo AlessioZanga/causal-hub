@@ -6,7 +6,7 @@ mod tests {
         models::Labelled,
         random::{Random, RngGaussIncTable},
         set,
-        types::{Error, Result},
+        types::{Error, ErrorKind, Result},
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;
@@ -35,7 +35,13 @@ mod tests {
         let mechanism = MissingMechanism::new(labels!["A", "C"], map![(0, set![1])])?;
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, 0.1, 0.2);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         Ok(())
     }
@@ -49,10 +55,22 @@ mod tests {
         let mechanism = MissingMechanism::new(labels, map![(0, set![1])])?;
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, -0.1, 0.2);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, 1.1, 1.2);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         Ok(())
     }
@@ -66,10 +84,22 @@ mod tests {
         let mechanism = MissingMechanism::new(labels, map![(0, set![1])])?;
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, 0.1, -0.2);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, 0.1, 1.3);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         Ok(())
     }
@@ -83,7 +113,13 @@ mod tests {
         let mechanism = MissingMechanism::new(labels, map![(0, set![1])])?;
 
         let res = RngGaussIncTable::new(&mut rng, &dataset, &mechanism, 0.5, 0.2);
-        assert!(matches!(res, Err(Error::InvalidParameter(..))));
+        assert!(matches!(
+            res,
+            Err(Error {
+                kind: ErrorKind::InvalidParameter(..),
+                ..
+            })
+        ));
 
         Ok(())
     }

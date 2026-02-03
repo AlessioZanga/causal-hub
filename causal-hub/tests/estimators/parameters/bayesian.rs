@@ -65,7 +65,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .sample_log_likelihood()
-                        .ok_or(Error::IllegalArgument("no ll".into()))?,
+                        .ok_or(Error::IllegalArgument("no ll"))?,
                     -4.780356732903302
                 );
 
@@ -114,7 +114,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .sample_log_likelihood()
-                        .ok_or(Error::IllegalArgument("no ll".into()))?,
+                        .ok_or(Error::IllegalArgument("no ll"))?,
                     -8.501216236893097
                 );
 
@@ -193,7 +193,7 @@ mod tests {
                 let res = estimator.fit(&set![0], &set![0, 2]);
                 match res {
                     Err(err) => assert_eq!(
-                        err.to_string(),
+                        err.kind.to_string(),
                         "Illegal argument error: Variables and conditioning variables must be disjoint."
                     ),
                     _ => panic!("Should be error"),

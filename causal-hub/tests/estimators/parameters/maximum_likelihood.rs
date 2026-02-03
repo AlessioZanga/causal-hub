@@ -71,7 +71,7 @@ mod tests {
                     assert_relative_eq!(
                         distribution
                             .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .ok_or(Error::IllegalArgument("no ll"))?,
                         -3.365058335046282
                     );
 
@@ -121,7 +121,7 @@ mod tests {
                     assert_relative_eq!(
                         distribution
                             .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .ok_or(Error::IllegalArgument("no ll"))?,
                         -1.3862943611198906
                     );
 
@@ -278,7 +278,7 @@ mod tests {
                     assert_relative_eq!(
                         distribution
                             .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .ok_or(Error::IllegalArgument("no ll"))?,
                         -2.772588722239781
                     );
 
@@ -347,7 +347,7 @@ mod tests {
                     assert_relative_eq!(
                         distribution
                             .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .ok_or(Error::IllegalArgument("no ll"))?,
                         -2.772588722239781
                     );
 
@@ -655,7 +655,7 @@ mod tests {
                     assert_relative_eq!(
                         distribution
                             .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .ok_or(Error::IllegalArgument("no ll"))?,
                         -5.545177444479562
                     );
 

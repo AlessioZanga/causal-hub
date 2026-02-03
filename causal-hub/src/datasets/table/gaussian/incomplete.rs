@@ -39,8 +39,8 @@ impl GaussIncTable {
         // Check if the number of variables is equal to the number of columns.
         if labels.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                labels.len().to_string(),
-                values.ncols().to_string(),
+                &labels.len().to_string(),
+                &values.ncols().to_string(),
             ));
         }
 
@@ -145,12 +145,12 @@ impl IncDataset for GaussIncTable {
             (MM::LW, _) => self.lw_deletion().map(Either::Left),
             (MM::PW, Some(x)) => self.pw_deletion(x).map(Either::Left),
             (MM::IPW, _) | (MM::AIPW, _) => Err(Error::InvalidParameter(
-                "missing_method".to_string(),
-                format!("{:?} deletion not implemented for Gaussian data yet.", m),
+                "missing_method",
+                &format!("{:?} deletion not implemented for Gaussian data yet.", m),
             )),
             _ => Err(Error::InvalidParameter(
-                "missing_method".to_string(),
-                format!(
+                "missing_method",
+                &format!(
                     "Invalid arguments for applying missing method:\n\
                     \t missing method:      '{m:?}' , \n\
                     \t selected variables:  '{x:?}' .",
@@ -258,7 +258,7 @@ impl CsvIO for GaussIncTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::MissingHeader);
+            return Err(Error::MissingHeader());
         }
 
         // Read the headers.

@@ -55,7 +55,7 @@ impl MLE<'_, GaussTable> {
         let p = x.len() as f64;
         let (_, ln_det) = s
             .sln_det()
-            .map_err(|e| Error::Linalg(format!("Failed to compute determinant of S: {e}")))?;
+            .map_err(|e| Error::Linalg(&format!("Failed to compute determinant of S: {e}")))?;
         let sample_log_likelihood = -0.5 * n * (p * LN_2_PI + ln_det + p);
 
         // Construct the CPD parameters.

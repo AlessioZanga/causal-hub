@@ -22,7 +22,7 @@ impl MLE<'_, CatTable> {
 
         // Check the marginal counts are not zero.
         if !n_z.iter().all(|&x| x > 0.) {
-            return Err(Error::MissingSufficientStatistics);
+            return Err(Error::MissingSufficientStatistics());
         }
 
         // Compute the parameters by normalizing the counts.

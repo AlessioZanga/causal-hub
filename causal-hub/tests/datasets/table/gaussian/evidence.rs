@@ -111,7 +111,7 @@ mod tests {
             let res = GaussEv::new(labels, values);
 
             match res {
-                Err(err) => assert!(err.to_string().contains("out of bounds")),
+                Err(err) => assert!(err.kind.to_string().contains("out of bounds")),
                 _ => panic!("Should be error"),
             };
 
@@ -233,7 +233,7 @@ mod tests {
             let res = ev.select(&set![0, 1, 10]);
 
             match res {
-                Err(err) => assert!(err.to_string().contains("out of bounds")),
+                Err(err) => assert!(err.kind.to_string().contains("out of bounds")),
                 _ => panic!("Should be error"),
             };
 

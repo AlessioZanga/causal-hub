@@ -32,7 +32,7 @@ impl SSE<'_, GaussTable> {
                 // Compute the mean.
                 let mu_x = d_x
                     .mean_axis(Axis(0))
-                    .ok_or(Error::MissingSufficientStatistics)?;
+                    .ok_or(Error::MissingSufficientStatistics())?;
 
                 // Select the columns of the conditioning variables.
                 let mut d_z = Array::zeros((d.nrows(), z.len()));
@@ -42,7 +42,7 @@ impl SSE<'_, GaussTable> {
                 // Compute the mean.
                 let mu_z = d_z
                     .mean_axis(Axis(0))
-                    .ok_or(Error::MissingSufficientStatistics)?;
+                    .ok_or(Error::MissingSufficientStatistics())?;
 
                 // Center the variables.
                 d_x -= &mu_x;
@@ -72,8 +72,8 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
-                format!("{:?}", x),
-                format!("{:?}", z),
+                &format!("{:?}", x),
+                &format!("{:?}", z),
             ));
         }
         // Get the values.
@@ -88,8 +88,8 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
-                format!("{:?}", x),
-                format!("{:?}", z),
+                &format!("{:?}", x),
+                &format!("{:?}", z),
             ));
         }
 
@@ -198,8 +198,8 @@ impl CSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
-                format!("{:?}", x),
-                format!("{:?}", z),
+                &format!("{:?}", x),
+                &format!("{:?}", z),
             ));
         }
 
@@ -224,8 +224,8 @@ impl ParCSSEstimator<GaussCPDS> for SSE<'_, GaussWtdTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
-                format!("{:?}", x),
-                format!("{:?}", z),
+                &format!("{:?}", x),
+                &format!("{:?}", z),
             ));
         }
 

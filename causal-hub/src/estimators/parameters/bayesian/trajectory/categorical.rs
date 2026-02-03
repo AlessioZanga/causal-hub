@@ -22,17 +22,11 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let (alpha, tau) = prior;
         // Check alpha is positive.
         if alpha == 0 {
-            return Err(Error::InvalidParameter(
-                "alpha".into(),
-                "must be positive".into(),
-            ));
+            return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
         // Check tau is positive.
         if tau <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "tau".into(),
-                "must be positive".into(),
-            ));
+            return Err(Error::InvalidParameter("tau", "must be positive"));
         }
 
         // Get the conditional counts and times.

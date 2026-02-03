@@ -195,8 +195,8 @@ impl MissingTable {
         // Check if dimensions match.
         if labels.len() != missing_mask.ncols() {
             return Err(Error::IncompatibleShape(
-                format!("|labels| = {}", labels.len()),
-                format!("|cols| = {}", missing_mask.ncols()),
+                &format!("|labels| = {}", labels.len()),
+                &format!("|cols| = {}", missing_mask.ncols()),
             ));
         }
 
@@ -260,11 +260,11 @@ impl MissingTable {
         // Compute missing correlation.
         let missing_correlation = missing_mask_numeric
             .pearson_correlation()
-            .map_err(|e| Error::Stats(e.to_string()))?;
+            .map_err(|e| Error::Stats(&e.to_string()))?;
         // Compute missing covariance.
         let missing_covariance = missing_mask_numeric
             .cov(1.)
-            .map_err(|e| Error::Stats(e.to_string()))?;
+            .map_err(|e| Error::Stats(&e.to_string()))?;
 
         Ok(Self {
             labels,

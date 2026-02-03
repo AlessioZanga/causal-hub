@@ -68,8 +68,8 @@ impl CatIncTable {
         states.iter().try_for_each(|(label, state)| {
             if state.len() > CatType::MAX as usize {
                 return Err(Error::InvalidParameter(
-                    label.to_string(),
-                    format!("should have less than 256 states, found {}", state.len()),
+                    label,
+                    &format!("should have less than 256 states, found {}", state.len()),
                 ));
             }
             Ok(())
@@ -77,8 +77,8 @@ impl CatIncTable {
         // Check if the number of variables is equal to the number of columns.
         if states.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                states.len().to_string(),
-                values.ncols().to_string(),
+                &states.len().to_string(),
+                &values.ncols().to_string(),
             ));
         }
         // Check if the maximum value of the values is less than the number of states.
@@ -137,9 +137,8 @@ impl CatIncTable {
                             // ... map it to the new state index.
                             *value = new_states
                                 .get_index_of(&states[*value as usize])
-                                .ok_or_else(|| {
-                                    Error::MissingState(states[*value as usize].clone())
-                                })? as CatType;
+                                .ok_or_else(|| Error::MissingState(&states[*value as usize]))?
+                                as CatType;
                         }
                         Ok(())
                     })?;
@@ -329,8 +328,8 @@ impl IncDataset for CatIncTable {
             (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
             (MM::AIPW, Some(x), Some(pr)) => self.aipw_deletion(x, pr).map(Either::Right),
             _ => Err(Error::InvalidParameter(
-                "missing_method".to_string(),
-                format!(
+                "missing_method",
+                &format!(
                     "Invalid arguments for applying missing method:\n\
                     \t missing method:      '{m:?}' , \n\
                     \t selected variables:  '{x:?}' , \n\
@@ -442,8 +441,8 @@ impl IncDataset for CatIncTable {
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
             return Err(Error::IncompatibleShape(
-                pr.len().to_string(),
-                self.values.ncols().to_string(),
+                &pr.len().to_string(),
+                &self.values.ncols().to_string(),
             ));
         }
         // Check that the missing mechanism indices are valid.
@@ -456,14 +455,14 @@ impl IncDataset for CatIncTable {
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
             return Err(Error::InvalidParameter(
-                "missing_mechanism".to_string(),
-                "keys must be sorted.".to_string(),
+                "missing_mechanism",
+                "keys must be sorted.",
             ));
         }
         if !pr.values().all(|pri| pri.iter().is_sorted()) {
             return Err(Error::InvalidParameter(
-                "missing_mechanism".to_string(),
-                "values must be sorted.".to_string(),
+                "missing_mechanism",
+                "values must be sorted.",
             ));
         }
 
@@ -511,8 +510,8 @@ impl IncDataset for CatIncTable {
         // Check that the number of columns in the missing mechanism is valid.
         if pr.len() != self.values.ncols() {
             return Err(Error::IncompatibleShape(
-                pr.len().to_string(),
-                self.values.ncols().to_string(),
+                &pr.len().to_string(),
+                &self.values.ncols().to_string(),
             ));
         }
         // Check that the missing mechanism indices are valid.
@@ -525,14 +524,14 @@ impl IncDataset for CatIncTable {
         // Check that the missing mechanism is sorted.
         if !pr.keys().is_sorted() {
             return Err(Error::InvalidParameter(
-                "missing_mechanism".to_string(),
-                "keys must be sorted.".to_string(),
+                "missing_mechanism",
+                "keys must be sorted.",
             ));
         }
         if !pr.values().all(|pri| pri.iter().is_sorted()) {
             return Err(Error::InvalidParameter(
-                "missing_mechanism".to_string(),
-                "values must be sorted.".to_string(),
+                "missing_mechanism",
+                "values must be sorted.",
             ));
         }
 
@@ -564,7 +563,7 @@ impl CsvIO for CatIncTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::MissingHeader);
+            return Err(Error::MissingHeader());
         }
 
         // Read the headers.

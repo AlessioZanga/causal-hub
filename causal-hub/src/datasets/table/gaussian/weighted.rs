@@ -39,15 +39,15 @@ impl GaussWtdTable {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
             return Err(Error::IncompatibleShape(
-                dataset.values().nrows().to_string(),
-                weights.len().to_string(),
+                &dataset.values().nrows().to_string(),
+                &weights.len().to_string(),
             ));
         }
         // Check if any weight is in the range [0, 1].
         if !weights.iter().all(|&w| (0.0..=1.0).contains(&w)) {
             return Err(Error::InvalidParameter(
-                "weights".to_string(),
-                "must be in the range [0, 1]".to_string(),
+                "weights",
+                "must be in the range [0, 1]",
             ));
         }
 

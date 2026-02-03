@@ -39,7 +39,7 @@ mod tests {
     }
 
     mod validation {
-        use causal_hub::types::Error;
+        use causal_hub::types::{Error, ErrorKind};
 
         use super::*;
 
@@ -60,13 +60,13 @@ mod tests {
             let res = RngCatTrjEv::new(&mut rng, &trj, -0.1);
             assert!(matches!(
                 res,
-                Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
             ));
 
             let res = RngCatTrjEv::new(&mut rng, &trj, 1.1);
             assert!(matches!(
                 res,
-                Err(Error::InvalidParameter(ref p, ref m)) if p == "p" && m == "must be in [0, 1]"
+                Err(Error { kind: ErrorKind::InvalidParameter(ref p, ref m), .. }) if p == "p" && m == "must be in [0, 1]"
             ));
 
             Ok(())

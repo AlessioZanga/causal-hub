@@ -22,9 +22,7 @@ impl MLE<'_, CatTrj> {
 
         // Check the conditional times counts are not zero.
         if !t_xz.iter().all(|&x| x > 0.) {
-            return Err(Error::Stats(
-                "Failed to get non-zero conditional times.".into(),
-            ));
+            return Err(Error::Stats("Failed to get non-zero conditional times."));
         }
 
         // Insert axis to align the dimensions.

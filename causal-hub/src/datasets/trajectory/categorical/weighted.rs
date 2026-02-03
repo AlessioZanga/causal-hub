@@ -48,8 +48,8 @@ impl CatWtdTrj {
         // Check that the weight is in the range [0, 1].
         if !(0.0..=1.0).contains(&weight) {
             return Err(Error::InvalidParameter(
-                "weight".to_string(),
-                format!("must be in the range [0, 1], but got {weight}"),
+                "weight",
+                &format!("must be in the range [0, 1], but got {weight}"),
             ));
         }
 
@@ -183,36 +183,27 @@ impl CatWtdTrjs {
             .windows(2)
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
-            return Err(Error::IncompatibleShape(
-                "labels".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("labels", "all trajectories"));
         }
         // Check if every trajectory has the same states.
         if !values
             .windows(2)
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
-            return Err(Error::IncompatibleShape(
-                "states".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("states", "all trajectories"));
         }
         // Check if every trajectory has the same shape.
         if !values
             .windows(2)
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
-            return Err(Error::IncompatibleShape(
-                "shape".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("shape", "all trajectories"));
         }
 
         // Get the labels, states and shape from the first trajectory.
         let trj = values
             .first()
-            .ok_or_else(|| Error::EmptySet("trajectories".into()))?;
+            .ok_or_else(|| Error::EmptySet("trajectories"))?;
         let labels = trj.labels().clone();
         let states = trj.states().clone();
         let shape = trj.shape().clone();

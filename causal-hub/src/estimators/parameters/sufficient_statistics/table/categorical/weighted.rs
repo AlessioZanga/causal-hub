@@ -14,7 +14,7 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must be disjoint.".into(),
+                "Variables and conditioning variables must be disjoint.",
             ));
         }
 
@@ -59,7 +59,7 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must be disjoint.".into(),
+                "Variables and conditioning variables must be disjoint.",
             ));
         }
 

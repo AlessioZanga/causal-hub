@@ -16,7 +16,7 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
         // Check variables and conditioning variables must be disjoint..
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must be disjoint.".into(),
+                "Variables and conditioning variables must be disjoint.",
             ));
         }
 

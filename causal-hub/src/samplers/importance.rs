@@ -50,10 +50,7 @@ where
     pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {
         // Check the model and the evidences have the same labels.
         if model.labels() != evidence.labels() {
-            return Err(Error::LabelMismatch(
-                "model labels".to_string(),
-                "evidence labels".to_string(),
-            ));
+            return Err(Error::LabelMismatch("model labels", "evidence labels"));
         }
 
         // Wrap the RNG in a RefCell to allow interior mutability.
@@ -89,7 +86,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatBN, CatEv> {
                     E::UncertainPositive { p_states, .. } => {
                         // Construct the sampler.
                         let state = WeightedIndex::new(p_states).map_err(|e| {
-                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                            Error::RandDistr(&format!("Invalid probabilities: {}", e))
                         })?;
                         // Sample the state.
                         let state = state.sample(rng);
@@ -135,7 +132,7 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
         // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
             return Err(Error::IllegalArgument(
-                "The model and the evidences must have the same states.".into(),
+                "The model and the evidences must have the same states.",
             ));
         }
 
@@ -189,20 +186,20 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
                         p_i /= p_i.sum();
                         // Construct the sampler.
                         let s_i = WeightedIndex::new(&p_i).map_err(|e| {
-                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                            Error::RandDistr(&format!("Invalid probabilities: {}", e))
                         })?;
                         // Sample the state.
                         let s_i = s_i.sample(&mut *rng) as CatType;
                         // Return the sample and weight.
                         (s_i, w_i)
                     }
-                    _ => return Err(Error::Unreachable("Invalid evidence type".into())),
+                    _ => return Err(Error::Unreachable("Invalid evidence type")),
                 },
                 // If there is no evidence, sample as usual.
                 None => {
                     // Construct the sampler.
                     let s_i = WeightedIndex::new(&p_i)
-                        .map_err(|e| Error::RandDistr(format!("Invalid probabilities: {}", e)))?;
+                        .map_err(|e| Error::RandDistr(&format!("Invalid probabilities: {}", e)))?;
                     // Sample the state.
                     let s_i = s_i.sample(&mut *rng) as CatType;
                     // Return the sample and weight.
@@ -437,7 +434,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
                     E::UncertainPositiveInterval { p_states, .. } => {
                         // Construct the sampler.
                         let state = WeightedIndex::new(p_states).map_err(|e| {
-                            Error::RandDistr(format!("Invalid probabilities: {}", e))
+                            Error::RandDistr(&format!("Invalid probabilities: {}", e))
                         })?;
                         // Sample the state.
                         let state = state.sample(rng);
@@ -546,7 +543,7 @@ impl<R: Rng> ImportanceSampler<'_, R, CatCTBN, CatTrjEv> {
         }
 
         // If there is no conflict, initialize the exponential distribution.
-        let exp_i_x = Exp::new(q_i_x).map_err(|e| Error::RandDistr(format!("{}", e)))?;
+        let exp_i_x = Exp::new(q_i_x).map_err(|e| Error::RandDistr(&format!("{}", e)))?;
         // Sample the transition time.
         let t_i = exp_i_x.sample(rng);
 
@@ -678,20 +675,18 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
             return Err(Error::IllegalArgument(
-                "The model and the evidences must have the same states.".into(),
+                "The model and the evidences must have the same states.",
             ));
         }
         // Check length is positive.
         if max_length == 0 {
             return Err(Error::IllegalArgument(
-                "The maximum length of the trajectory must be strictly positive.".into(),
+                "The maximum length of the trajectory must be strictly positive.",
             ));
         }
         // Check time is positive.
         if max_time <= 0. {
-            return Err(Error::IllegalArgument(
-                "The maximum time must be positive.".into(),
-            ));
+            return Err(Error::IllegalArgument("The maximum time must be positive."));
         }
 
         // Get a mutable reference to the RNG.
@@ -728,7 +723,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         // Get the variable that transitions first.
         let mut i = times
             .argmin()
-            .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
+            .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
         // Update the weight.
         weight *= self.update_weight(&evidence, &event, i, 0., times[i]);
         // Set global time.
@@ -778,7 +773,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                         Some(E::CertainPositiveInterval { state, .. }) => {
                             (*state as CatType, q_i_zx[*state])
                         }
-                        _ => return Err(Error::Unreachable("Invalid evidence type".into())),
+                        _ => return Err(Error::Unreachable("Invalid evidence type")),
                     }
                 } else {
                     //
@@ -799,7 +794,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                             q_i_zx /= q_i_zx.sum();
                             // Construct the sampler.
                             let s_i = WeightedIndex::new(&q_i_zx).map_err(|e| {
-                                Error::RandDistr(format!("Invalid probabilities: {}", e))
+                                Error::RandDistr(&format!("Invalid probabilities: {}", e))
                             })?;
                             // Sample the state.
                             let s_i = s_i.sample(&mut *rng) as CatType;
@@ -809,14 +804,14 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
                         None => {
                             // Initialize a weighted index sampler.
                             let s_i_zx = WeightedIndex::new(&q_i_zx).map_err(|e| {
-                                Error::RandDistr(format!("Invalid probabilities: {}", e))
+                                Error::RandDistr(&format!("Invalid probabilities: {}", e))
                             })?;
                             // Sample the next event.
                             let s_i = s_i_zx.sample(&mut *rng) as CatType;
                             // Return the sample and weight.
                             (s_i, 1.)
                         }
-                        _ => return Err(Error::Unreachable("Invalid evidence type".into())),
+                        _ => return Err(Error::Unreachable("Invalid evidence type")),
                     }
                 };
 
@@ -840,7 +835,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
             // Get the variable to transition first.
             i = times
                 .argmin()
-                .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
+                .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
             // Update the weight.
             weight *= self.update_weight(&evidence, &event, i, time, times[i].min(max_time));
             // Update the global time.
@@ -854,7 +849,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .map_err(|e: ndarray::ShapeError| Error::Shape(e.to_string()))?;
+            .map_err(|e: ndarray::ShapeError| Error::Shape(&e.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 

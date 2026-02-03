@@ -48,7 +48,7 @@ mod tests {
             // Check that the ACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
                 epsilon = 1e-8
             );
 
@@ -95,7 +95,7 @@ mod tests {
             // Check that the ACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
                 epsilon = 1e-8
             );
 
@@ -133,7 +133,7 @@ mod tests {
             // Check that the ACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
                 epsilon = 1e-8
             );
 
@@ -174,7 +174,7 @@ mod tests {
             // Check that the ACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE".into()))?,
+                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
                 epsilon = 1e-8
             );
 
@@ -324,8 +324,7 @@ mod tests {
             // The ACE should exist because icdA is a parent of aceB.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -401,9 +400,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| {
-                causal_hub::types::Error::ConstructionError("ACE should exist".to_string())
-            })?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -471,8 +468,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -494,11 +490,11 @@ mod tests {
             let asn_a_col = cond_labels
                 .iter()
                 .position(|x| x == "asnA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let ygc_e_col = cond_labels
                 .iter()
                 .position(|x| x == "ygcE")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
 
             assert_relative_eq!(params.coefficients()[[0, asn_a_col]], 0.5228, epsilon = 0.2);
             assert_relative_eq!(
@@ -539,8 +535,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -562,19 +557,19 @@ mod tests {
             let glt_a_row = labels
                 .iter()
                 .position(|x| x == "gltA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let flg_d_row = labels
                 .iter()
                 .position(|x| x == "flgD")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let eut_g_col = cond_labels
                 .iter()
                 .position(|x| x == "eutG")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let suc_a_col = cond_labels
                 .iter()
                 .position(|x| x == "sucA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
 
             // Check numerical values. Graph: eutG -> sucA -> {gltA, flgD}
             // When we do(eutG, sucA), eutG has no direct effect on gltA/flgD.
@@ -644,8 +639,7 @@ mod tests {
             // The CACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -665,7 +659,7 @@ mod tests {
             let suc_a_col = cond_labels
                 .iter()
                 .position(|x| x == "sucA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             assert_relative_eq!(params.coefficients()[[0, suc_a_col]], 0.379, epsilon = 0.2);
             assert_relative_eq!(params.covariance()[[0, 0]], 0.6895, epsilon = 0.2);
 
@@ -699,8 +693,7 @@ mod tests {
             // The CACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -749,8 +742,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -799,8 +791,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -820,15 +811,15 @@ mod tests {
             let glt_a_row = labels
                 .iter()
                 .position(|x| x == "gltA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let flg_d_row = labels
                 .iter()
                 .position(|x| x == "flgD")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
             let suc_a_col = cond_labels
                 .iter()
                 .position(|x| x == "sucA")
-                .ok_or_else(|| Error::ConstructionError("Label not found".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Label not found"))?;
 
             // Check numerical values for the direct causal effects.
             // True values: ACE(sucA -> gltA) = 0.379, ACE(sucA -> flgD) = 0.6362
@@ -880,8 +871,7 @@ mod tests {
             // The CACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -984,8 +974,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 3);
@@ -1047,8 +1036,7 @@ mod tests {
             // The ACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace =
-                pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist".to_string()))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 3);

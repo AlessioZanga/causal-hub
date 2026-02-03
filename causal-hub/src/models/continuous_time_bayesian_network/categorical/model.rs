@@ -154,8 +154,8 @@ impl CTBN for CatCTBN {
             .map(|x| {
                 if x.labels().len() != 1 {
                     return Err(Error::InvalidParameter(
-                        "cim".to_string(),
-                        "CIM must contain exactly one label.".to_string(),
+                        "cim",
+                        "CIM must contain exactly one label.",
                     ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
@@ -177,8 +177,8 @@ impl CTBN for CatCTBN {
                         // Check if the states are the same.
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
-                                "cims".to_string(),
-                                format!("States of `{l}` must be the same across CIMs."),
+                                "cims",
+                                &format!("States of `{l}` must be the same across CIMs."),
                             ));
                         }
                     } else {
@@ -198,10 +198,7 @@ impl CTBN for CatCTBN {
 
         // Check same number of graph labels and CIMs.
         if !graph.labels().iter().eq(cims.keys()) {
-            return Err(Error::LabelMismatch(
-                "graph labels".to_string(),
-                "distributions labels".to_string(),
-            ));
+            return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
         // Check if all vertices have the same labels as their parents.
@@ -214,8 +211,8 @@ impl CTBN for CatCTBN {
             // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
-                    format!("{pa_i:?}"),
-                    format!("{pa_j:?}"),
+                    &format!("{pa_i:?}"),
+                    &format!("{pa_j:?}"),
                 ));
             }
             Ok(())
@@ -291,19 +288,13 @@ impl CTBN for CatCTBN {
         if let Some(name) = &name
             && name.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "name".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("name", "cannot be empty"));
         }
         // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "description".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("description", "cannot be empty"));
         }
 
         // Construct the categorical CTBN.
@@ -312,8 +303,8 @@ impl CTBN for CatCTBN {
         // Check the initial distribution has same labels.
         if !initial_distribution.labels().eq(ctbn.labels()) {
             return Err(Error::LabelMismatch(
-                "initial distribution labels".to_string(),
-                "cims labels".to_string(),
+                "initial distribution labels",
+                "cims labels",
             ));
         }
         // Check the initial distribution has same states.
@@ -324,8 +315,8 @@ impl CTBN for CatCTBN {
             .all(|((_, cpd), (_, cim))| cpd.states().eq(cim.states()))
         {
             return Err(Error::InvalidParameter(
-                "initial distribution".to_string(),
-                "Initial distribution states must be the same as the CIMs states.".to_string(),
+                "initial distribution",
+                "Initial distribution states must be the same as the CIMs states.",
             ));
         }
 

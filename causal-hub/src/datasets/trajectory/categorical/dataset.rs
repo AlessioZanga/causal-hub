@@ -36,16 +36,16 @@ impl CatTrj {
         // Check the number of rows in values and times are equal.
         if events.nrows() != times.len() {
             return Err(Error::IncompatibleShape(
-                events.nrows().to_string(),
-                times.len().to_string(),
+                &events.nrows().to_string(),
+                &times.len().to_string(),
             ));
         }
         // Check times must be positive and finite.
         times.iter().try_for_each(|&t| {
             if !t.is_finite() || t < 0. {
                 return Err(Error::InvalidParameter(
-                    "times".to_string(),
-                    format!("value must be finite and positive, found {t}"),
+                    "times",
+                    &format!("value must be finite and positive, found {t}"),
                 ));
             }
             Ok(())
@@ -94,8 +94,8 @@ impl CatTrj {
             // Check the number of unique times is equal to the length of the times array.
             if count != length {
                 return Err(Error::InvalidParameter(
-                    "times".to_string(),
-                    format!("must be unique, found {} duplicates", length - count),
+                    "times",
+                    &format!("must be unique, found {} duplicates", length - count),
                 ));
             }
         }
@@ -107,8 +107,8 @@ impl CatTrj {
             // Check there is one and only one state change.
             if count > 1 {
                 return Err(Error::InvalidParameter(
-                    "events".to_string(),
-                    format!("must contain at max one change per transition, found {count}"),
+                    "events",
+                    &format!("must contain at max one change per transition, found {count}"),
                 ));
             }
         }
@@ -228,7 +228,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same labels.".to_string(),
+                "All trajectories must have the same labels.",
             ));
         }
         // Check if every trajectory has the same states.
@@ -237,7 +237,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same states.".to_string(),
+                "All trajectories must have the same states.",
             ));
         }
         // Check if every trajectory has the same shape.
@@ -246,7 +246,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same shape.".to_string(),
+                "All trajectories must have the same shape.",
             ));
         }
 

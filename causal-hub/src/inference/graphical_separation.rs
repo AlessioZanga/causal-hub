@@ -103,7 +103,7 @@ pub(crate) mod digraph {
         if let (Some(w), Some(v)) = (w.as_ref(), v.as_ref())
             && !w.is_subset(v)
         {
-            return Err(Error::SubsetMismatch("W".into(), "V".into()));
+            return Err(Error::SubsetMismatch("W", "V"));
         }
 
         // Convert X to set, while checking for out of bounds.
@@ -132,39 +132,39 @@ pub(crate) mod digraph {
 
         // Check X is non-empty.
         if x.is_empty() {
-            return Err(Error::EmptySet("X".into()));
+            return Err(Error::EmptySet("X"));
         }
         // Check Y is non-empty.
         if y.is_empty() {
-            return Err(Error::EmptySet("Y".into()));
+            return Err(Error::EmptySet("Y"));
         }
 
         // Check X and Y are disjoint.
         if !x.is_disjoint(y) {
-            return Err(Error::SetsNotDisjoint("X".into(), "Y".into()));
+            return Err(Error::SetsNotDisjoint("X", "Y"));
         }
 
         // If Z is provided, convert it to a set.
         if let Some(z) = &z {
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check Y and Z are disjoint.
             if !y.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("Y".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("Y", "Z"));
             }
             // Check Z includes.
             if let Some(w) = w
                 && !z.is_superset(w)
             {
-                return Err(Error::SubsetMismatch("W".into(), "Z".into()));
+                return Err(Error::SubsetMismatch("W", "Z"));
             }
             // Check Z is restricted.
             if let Some(v) = v
                 && !z.is_subset(v)
             {
-                return Err(Error::SubsetMismatch("Z".into(), "V".into()));
+                return Err(Error::SubsetMismatch("Z", "V"));
             }
         }
         Ok(())
@@ -178,7 +178,7 @@ pub(crate) mod digraph {
     ) -> Result<Set<usize>> {
         // Check the graph is a DAG.
         if g.topological_order().is_none() {
-            return Err(Error::NotADag);
+            return Err(Error::NotADag());
         }
 
         // Check if the ball passes or not.

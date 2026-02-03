@@ -111,7 +111,7 @@ impl GaussEv {
                     // Sort the event index.
                     let event = new_labels
                         .get_index_of(event_name)
-                        .ok_or_else(|| Error::MissingLabel(event_name.clone()))?;
+                        .ok_or_else(|| Error::MissingLabel(event_name))?;
 
                     // Sort the variable events.
                     let e = match e {

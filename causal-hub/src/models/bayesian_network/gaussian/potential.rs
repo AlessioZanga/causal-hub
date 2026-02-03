@@ -45,32 +45,30 @@ impl GaussPhiK {
     pub fn new(k: Array2<f64>, h: Array1<f64>, g: f64) -> Result<Self> {
         // Check K is square.
         if !k.is_square() {
-            return Err(Error::Shape("Precision matrix must be square.".into()));
+            return Err(Error::Shape("Precision matrix must be square."));
         }
         // Check the length of h matches the size of K.
         if k.nrows() != h.len() {
             return Err(Error::IncompatibleShape(
-                k.nrows().to_string(),
-                h.len().to_string(),
+                &k.nrows().to_string(),
+                &h.len().to_string(),
             ));
         }
         // Check K is finite.
         if !k.iter().all(|x| x.is_finite()) {
-            return Err(Error::Linalg("Precision matrix must be finite.".into()));
+            return Err(Error::Linalg("Precision matrix must be finite."));
         }
         // Check K is symmetric.
         if k != k.t() {
-            return Err(Error::Linalg("Precision matrix must be symmetric.".into()));
+            return Err(Error::Linalg("Precision matrix must be symmetric."));
         }
         // Check h is finite.
         if !h.iter().all(|x| x.is_finite()) {
-            return Err(Error::Linalg("Information vector must be finite.".into()));
+            return Err(Error::Linalg("Information vector must be finite."));
         }
         // Check g is finite.
         if !g.is_finite() {
-            return Err(Error::Linalg(
-                "Log-normalization constant must be finite.".into(),
-            ));
+            return Err(Error::Linalg("Log-normalization constant must be finite."));
         }
 
         Ok(Self { k, h, g })
@@ -355,8 +353,8 @@ impl Phi for GaussPhi {
         // Check that the evidence labels match the potential labels.
         if e.labels() != self.labels() {
             return Err(Error::InvalidParameter(
-                "evidence".to_string(),
-                format!(
+                "evidence",
+                &format!(
                     "Failed to condition on evidence: \n\
                     \t expected:    evidence labels to match potential labels , \n\
                     \t found:       potential labels = {:?} , \n\
@@ -484,7 +482,7 @@ impl Phi for GaussPhi {
             let n_ln_2_pi = s_xx.nrows() as f64 * LN_2_PI;
             let (_, ln_det) = s_xx
                 .sln_det()
-                .map_err(|e| Error::Linalg(format!("Failed to compute the determinant: {e}")))?;
+                .map_err(|e| Error::Linalg(&format!("Failed to compute the determinant: {e}")))?;
             g + 0.5 * (n_ln_2_pi + ln_det + h_x.dot(&s_xx).dot(&h_x))
         };
 
@@ -555,7 +553,7 @@ impl Phi for GaussPhi {
             let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
             let (_, ln_det) = s
                 .sln_det()
-                .map_err(|e| Error::Linalg(format!("Failed to compute the determinant: {e}")))?;
+                .map_err(|e| Error::Linalg(&format!("Failed to compute the determinant: {e}")))?;
             -0.5 * (n_ln_2_pi + ln_det + b.dot(&h_x))
         };
 
@@ -570,16 +568,15 @@ impl Phi for GaussPhi {
         // Check that X and Z are disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::SetsNotDisjoint(
-                "variables".to_string(),
-                "conditioning variables".to_string(),
+                "variables",
+                "conditioning variables",
             ));
         }
         // Check that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
             return Err(Error::InvalidParameter(
-                "variables".to_string(),
-                "Variables and conditioning variables must cover all potential variables."
-                    .to_string(),
+                "variables",
+                "Variables and conditioning variables must cover all potential variables.",
             ));
         }
 
@@ -638,14 +635,14 @@ impl GaussPhi {
         // Check parameters shape matches labels length.
         if parameters.precision_matrix().nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                "precision_matrix".into(),
-                "Precision matrix rows must match labels length.".into(),
+                "precision_matrix",
+                "Precision matrix rows must match labels length.",
             ));
         }
         if parameters.information_vector().len() != labels.len() {
             return Err(Error::IncompatibleShape(
-                "information_vector".into(),
-                "Information vector length must match labels length.".into(),
+                "information_vector",
+                "Information vector length must match labels length.",
             ));
         }
 

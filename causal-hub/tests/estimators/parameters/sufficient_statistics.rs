@@ -191,11 +191,11 @@ mod tests {
             let x_idx = d
                 .labels()
                 .get_index_of("X")
-                .ok_or(Error::IllegalArgument("No X".into()))?;
+                .ok_or(Error::IllegalArgument("No X"))?;
             let y_idx = d
                 .labels()
                 .get_index_of("Y")
-                .ok_or(Error::IllegalArgument("No Y".into()))?;
+                .ok_or(Error::IllegalArgument("No Y"))?;
 
             let x = set![x_idx];
             let z = set![y_idx];

@@ -43,17 +43,11 @@ where
     pub fn new(rng: &'a mut R, states: &'a States, alpha: f64, p: f64) -> Result<Self> {
         // Check if alpha is positive.
         if alpha <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "alpha".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
         // Check if the probability is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
-            return Err(Error::InvalidParameter(
-                "p".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
         Ok(Self {

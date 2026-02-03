@@ -46,37 +46,31 @@ impl GaussCPDP {
         // Check the dimensions are correct.
         if a.nrows() != b.len() {
             return Err(Error::IncompatibleShape(
-                a.nrows().to_string(),
-                b.len().to_string(),
+                &a.nrows().to_string(),
+                &b.len().to_string(),
             ));
         }
         if a.nrows() != s.nrows() {
             return Err(Error::IncompatibleShape(
-                a.nrows().to_string(),
-                s.nrows().to_string(),
+                &a.nrows().to_string(),
+                &s.nrows().to_string(),
             ));
         }
         if !s.is_square() {
-            return Err(Error::Shape("Covariance matrix must be square.".into()));
+            return Err(Error::Shape("Covariance matrix must be square."));
         }
         // Check values are finite.
         if !a.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Coefficient matrix must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Coefficient matrix must have finite values."));
         }
         if !b.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Intercept vector must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Intercept vector must have finite values."));
         }
         if !s.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Covariance matrix must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Covariance matrix must have finite values."));
         }
         if !s.abs_diff_eq(&s.t(), EPSILON) {
-            return Err(Error::Linalg("Covariance matrix must be symmetric.".into()));
+            return Err(Error::Linalg("Covariance matrix must be symmetric."));
         }
 
         Ok(Self { a, b, s })
@@ -312,40 +306,37 @@ impl GaussCPD {
     ) -> Result<Self> {
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::SetsNotDisjoint(
-                "labels".to_string(),
-                "conditioning labels".to_string(),
-            ));
+            return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
         }
         // Check parameters dimensions match labels and conditioning labels lengths.
         if parameters.a.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.a.nrows().to_string(),
-                labels.len().to_string(),
+                &parameters.a.nrows().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.a.ncols() != conditioning_labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.a.ncols().to_string(),
-                conditioning_labels.len().to_string(),
+                &parameters.a.ncols().to_string(),
+                &conditioning_labels.len().to_string(),
             ));
         }
         if parameters.b.len() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.b.len().to_string(),
-                labels.len().to_string(),
+                &parameters.b.len().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.s.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.s.nrows().to_string(),
-                labels.len().to_string(),
+                &parameters.s.nrows().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.s.ncols() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.s.ncols().to_string(),
-                labels.len().to_string(),
+                &parameters.s.ncols().to_string(),
+                &labels.len().to_string(),
             ));
         }
 
@@ -607,11 +598,17 @@ impl CPD for GaussCPD {
 
         // Check X matches number of variables.
         if x.len() != n {
-            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &n.to_string(),
+                &x.len().to_string(),
+            ));
         }
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // Get parameters.
@@ -659,7 +656,7 @@ impl CPD for GaussCPD {
         let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
         let (_, ln_det) = s
             .sln_det()
-            .map_err(|e| Error::Linalg(format!("Failed to compute log-determinant: {}", e)))?;
+            .map_err(|e| Error::Linalg(&format!("Failed to compute log-determinant: {}", e)))?;
         let ln_pf = -0.5 * (n_ln_2_pi + ln_det + x_mu.dot(&k).dot(&x_mu));
         // Return probability density function.
         Ok(f64::exp(ln_pf))
@@ -673,7 +670,10 @@ impl CPD for GaussCPD {
 
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // Get parameters.
@@ -715,7 +715,7 @@ impl CPD for GaussCPD {
         let l = (s + EPSILON * Array::eye(s.nrows()))
             .cholesky_into(UPLO::Lower)
             .map_err(|e| {
-                Error::Linalg(format!("Failed to compute Cholesky decomposition: {}", e))
+                Error::Linalg(&format!("Failed to compute Cholesky decomposition: {}", e))
             })?;
         // Sample from standard normal.
         let e = Array::random_using(s.nrows(), StandardNormal, rng);

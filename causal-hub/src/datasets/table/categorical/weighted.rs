@@ -44,16 +44,13 @@ impl CatWtdTable {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
             return Err(Error::InvalidParameter(
-                "weights".into(),
-                "must have the same length as the dataset".into(),
+                "weights",
+                "must have the same length as the dataset",
             ));
         }
         // Check if any weight is finite.
         if !weights.iter().all(|&w| w.is_finite()) {
-            return Err(Error::InvalidParameter(
-                "weights".into(),
-                "must be finite".into(),
-            ));
+            return Err(Error::InvalidParameter("weights", "must be finite"));
         }
 
         Ok(Self { dataset, weights })

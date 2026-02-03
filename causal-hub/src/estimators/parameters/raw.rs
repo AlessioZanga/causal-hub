@@ -117,8 +117,8 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                         // Construct the sampler.
                         let state = WeightedIndex::new(p_states).map_err(|e| {
                             Error::InvalidParameter(
-                                "p_states".into(),
-                                format!("Invalid state distribution: {e}"),
+                                "p_states",
+                                &format!("Invalid state distribution: {e}"),
                             )
                         })?;
                         // Sample the state.
@@ -258,7 +258,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
         no_evidence.into_iter().try_for_each(|i| -> Result<()> {
             // Sample a state uniformly at random.
             let dist = Uniform::new(0, states[i].len() as CatType)
-                .map_err(|e| Error::RandDistr(format!("Invalid uniform distribution: {}", e)))?;
+                .map_err(|e| Error::RandDistr(&format!("Invalid uniform distribution: {}", e)))?;
             let random_state = Array::random_using(events.nrows(), dist, &mut self.rng);
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
@@ -280,7 +280,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     first_known = event
                         .iter()
                         .position(|e| *e != M)
-                        .ok_or(Error::MissingState("No known state found in event".into()))?;
+                        .ok_or(Error::MissingState("No known state found in event"))?;
                     // Get the event to fill with.
                     let e = event[first_known];
                     // Backward fill the unknown states.
@@ -407,7 +407,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
                     // Fill the evidence with the raw estimator.
                     RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)?
                         .dataset
-                        .ok_or_else(|| Error::MissingData("Dataset not generated.".into()))
+                        .ok_or_else(|| Error::MissingData("Dataset not generated."))
                 })
                 .collect::<Result<_>>()?,
         );
@@ -426,7 +426,7 @@ impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or(Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .fit(x, z)
@@ -439,7 +439,7 @@ impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTr
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or(Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .fit(x, z)
@@ -452,7 +452,7 @@ impl<R: Rng + SeedableRng> ParCIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, Ca
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or(Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .par_fit(x, z)

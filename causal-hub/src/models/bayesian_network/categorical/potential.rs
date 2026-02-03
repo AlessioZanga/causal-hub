@@ -207,8 +207,8 @@ impl Phi for CatPhi {
         // Check that the evidence states match the potential states.
         if e.states() != self.states() {
             return Err(Error::InvalidParameter(
-                "evidence".to_string(),
-                format!(
+                "evidence",
+                &format!(
                     "Failed to condition on evidence: \n\
                     \t expected:    evidence states to match potential states , \n\
                     \t found:       potential states = {:?} , \n\
@@ -223,8 +223,8 @@ impl Phi for CatPhi {
         let e = e.evidences().iter().flatten().map(|ev| match ev {
             CatEvT::CertainPositive { event, state } => Ok((event, state)),
             _ => Err(Error::InvalidParameter(
-                "evidence".to_string(),
-                format!(
+                "evidence",
+                &format!(
                     "Failed to condition on evidence: \n\
                     \t expected:    CertainPositive , \n\
                     \t found:       {:?} .",
@@ -325,13 +325,13 @@ impl Phi for CatPhi {
         // Check that X and Z are disjoint.
         if !x.is_disjoint(z) {
             return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must be disjoint.".into(),
+                "Variables and conditioning variables must be disjoint.",
             ));
         }
         // Check that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
             return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must cover all potential variables.".into(),
+                "Variables and conditioning variables must cover all potential variables.",
             ));
         }
 
@@ -367,7 +367,7 @@ impl Phi for CatPhi {
         // Reshape the parameters to the new 2D shape.
         let mut parameters = parameters
             .into_shape_clone(shape)
-            .map_err(|e| Error::Shape(format!("Failed to reshape parameters: {}", e)))?;
+            .map_err(|e| Error::Shape(&format!("Failed to reshape parameters: {}", e)))?;
 
         // Normalize the parameters.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
@@ -396,12 +396,10 @@ impl CatPhi {
         let mut shape = Array::from_iter(states.values().map(Set::len));
         // Validate parameters shape matches states shape.
         let shape_slice = shape.as_slice().ok_or_else(|| {
-            Error::Shape(
-                "Failed to convert shape array to slice: shape is not contiguous".to_string(),
-            )
+            Error::Shape("Failed to convert shape array to slice: shape is not contiguous")
         })?;
         if parameters.shape() != shape_slice {
-            return Err(Error::Shape(format!(
+            return Err(Error::Shape(&format!(
                 "Parameters shape does not match states shape: \n\
                 \t expected:    {:?} , \n\
                 \t found:       {:?} .",

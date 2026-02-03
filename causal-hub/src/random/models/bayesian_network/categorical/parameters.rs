@@ -49,10 +49,7 @@ where
     ) -> Result<Self> {
         // Check if alpha is positive.
         if alpha <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "alpha".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
 
         Ok(Self {
@@ -77,7 +74,7 @@ where
 
         // Create the Gamma distribution.
         let gamma = Gamma::new(self.alpha, 1.0)
-            .map_err(|e| Error::InvalidParameter("alpha".to_string(), e.to_string()))?;
+            .map_err(|e| Error::InvalidParameter("alpha", &e.to_string()))?;
 
         // Sample the parameters.
         let mut parameters = Array::random_using((n, m), gamma, self.rng);

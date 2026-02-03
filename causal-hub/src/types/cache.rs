@@ -67,7 +67,7 @@ macro_for!($type in [CPD, CIM] {
                 if let Some(value) = self
                     .cache
                     .read()
-                    .map_err(|e| Error::Poison(e.to_string()))?
+                    .map_err(|e| Error::Poison(&e.to_string()))?
                     .get(&key)
                 {
                     // If it is, return the value.
@@ -78,7 +78,7 @@ macro_for!($type in [CPD, CIM] {
                 // Insert the value into the cache.
                 self.cache
                     .write()
-                    .map_err(|e| Error::Poison(e.to_string()))?
+                    .map_err(|e| Error::Poison(&e.to_string()))?
                     .insert(key, value.clone());
                 // Return the value.
                 Ok(value)

@@ -52,7 +52,7 @@ mod tests {
     fn has_edge_out_of_bounds_x() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.has_edge(5, 1) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -63,7 +63,7 @@ mod tests {
     fn has_edge_out_of_bounds_y() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.has_edge(1, 5) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -74,7 +74,7 @@ mod tests {
     fn add_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.add_edge(5, 1) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -85,7 +85,7 @@ mod tests {
     fn add_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.add_edge(1, 5) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -96,7 +96,7 @@ mod tests {
     fn del_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.del_edge(5, 1) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -107,7 +107,7 @@ mod tests {
     fn del_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.del_edge(1, 5) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -131,7 +131,7 @@ mod tests {
     fn neighbors_out_of_bounds() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.neighbors(&set![5]) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -142,7 +142,7 @@ mod tests {
     fn unique_labels() -> Result<()> {
         let labels = vec!["A", "A", "B"];
         match UnGraph::empty(labels) {
-            Err(err) => assert_eq!(err.to_string(), "Labels must be unique."),
+            Err(err) => assert_eq!(err.kind.to_string(), "Labels must be unique."),
             _ => panic!("Should be error"),
         };
 
@@ -320,7 +320,7 @@ mod tests {
     fn select_subgraph_out_of_bounds() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.select(&set![0, 1, 10]) {
-            Err(err) => assert_eq!(err.to_string(), "Vertex `10` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `10` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -356,7 +356,7 @@ mod tests {
         ];
 
         match UnGraph::from_adjacency_matrix(labels, adjacency_matrix) {
-            Err(err) => assert!(err.to_string().contains("Incompatible shape")),
+            Err(err) => assert!(err.kind.to_string().contains("Incompatible shape")),
             _ => panic!("Should be error"),
         };
 
@@ -369,7 +369,7 @@ mod tests {
         let adjacency_matrix = array![[false, true, false], [true, false, true]];
 
         match UnGraph::from_adjacency_matrix(labels, adjacency_matrix) {
-            Err(err) => assert!(err.to_string().contains("Incompatible shape")),
+            Err(err) => assert!(err.kind.to_string().contains("Incompatible shape")),
             _ => panic!("Should be error"),
         };
 
@@ -386,7 +386,7 @@ mod tests {
         ];
 
         match UnGraph::from_adjacency_matrix(labels, adjacency_matrix) {
-            Err(err) => assert!(err.to_string().contains("must be symmetric")),
+            Err(err) => assert!(err.kind.to_string().contains("must be symmetric")),
             _ => panic!("Should be error"),
         };
 
@@ -493,7 +493,7 @@ mod tests {
     fn deserialize_unknown_vertex() -> Result<()> {
         let json = r#"{"labels": ["A", "B"], "edges": [["A", "C"]], "type": "ungraph"}"#;
         match UnGraph::from_json_string(json) {
-            Err(err) => assert!(err.to_string().contains("label does not exist")),
+            Err(err) => assert!(err.kind.to_string().contains("label does not exist")),
             _ => panic!("Should be error"),
         };
 

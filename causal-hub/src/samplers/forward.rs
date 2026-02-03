@@ -212,7 +212,7 @@ impl<R: Rng> ForwardSampler<'_, R, CatCTBN> {
         let q_i_x = -cim_i.parameters()[[pa_i, x, x]];
         // Initialize the exponential distribution.
         let exp_i_x =
-            Exp::new(q_i_x).map_err(|e| Error::RandDistr(format!("Invalid lambda: {}", e)))?;
+            Exp::new(q_i_x).map_err(|e| Error::RandDistr(&format!("Invalid lambda: {}", e)))?;
         // Sample the transition time.
         Ok(exp_i_x.sample(&mut self.rng.borrow_mut()))
     }
@@ -238,14 +238,12 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Check length is positive.
         if max_length == 0 {
             return Err(Error::IllegalArgument(
-                "The maximum length of the trajectory must be strictly positive.".into(),
+                "The maximum length of the trajectory must be strictly positive.",
             ));
         }
         // Check time is positive.
         if max_time <= 0. {
-            return Err(Error::IllegalArgument(
-                "The maximum time must be positive.".into(),
-            ));
+            return Err(Error::IllegalArgument("The maximum time must be positive."));
         }
 
         // Allocate the trajectory components.
@@ -271,7 +269,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         // Get the variable that transitions first.
         let mut i = times
             .argmin()
-            .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
+            .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
         // Set global time.
         let mut time = times[i];
 
@@ -295,7 +293,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             q_i_zx /= q_i_zx.sum();
             // Initialize a weighted index sampler.
             let s_i_zx = WeightedIndex::new(&q_i_zx)
-                .map_err(|e| Error::RandDistr(format!("Invalid probabilities: {}", e)))?;
+                .map_err(|e| Error::RandDistr(&format!("Invalid probabilities: {}", e)))?;
             // Sample the next event.
             event[i] = s_i_zx.sample(&mut self.rng.borrow_mut()) as CatType;
             // Append the event to the trajectory.
@@ -311,7 +309,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
             // Get the variable to transition first.
             i = times
                 .argmin()
-                .map_err(|e| Error::Stats(format!("Failed to find min time: {}", e)))?;
+                .map_err(|e| Error::Stats(&format!("Failed to find min time: {}", e)))?;
             // Update the global time.
             time = times[i];
         }
@@ -323,7 +321,7 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ForwardSampler<'_, R, CatCTBN> {
         let shape = (sample_events.len(), sample_events[0].len());
         let sample_events = Array::from_iter(sample_events.into_iter().flatten())
             .into_shape_with_order(shape)
-            .map_err(|e| Error::Shape(e.to_string()))?;
+            .map_err(|e| Error::Shape(&e.to_string()))?;
         // Convert the times to a 1D array.
         let sample_times = Array::from_iter(sample_times);
 

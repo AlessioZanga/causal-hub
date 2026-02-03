@@ -261,7 +261,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = CatTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
@@ -280,7 +280,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -304,7 +304,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = GaussTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["X", "Y", "Z"]);
@@ -323,7 +323,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -347,7 +347,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = CatIncTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["A", "B"]);
@@ -366,7 +366,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -430,7 +430,7 @@ mod tests {
             let path = temp_file
                 .path()
                 .to_str()
-                .ok_or_else(|| Error::ConstructionError("Invalid path".to_string()))?;
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to file and read back.
             dataset.to_csv_file(path)?;

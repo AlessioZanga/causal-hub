@@ -37,10 +37,7 @@ impl<'a, R> RngMissingMechanism<'a, R> {
     pub fn new(rng: &'a mut R, graph: &'a DiGraph, missing: MissingType, p: f64) -> Result<Self> {
         // Check if the ratio of missing variables is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
-            return Err(Error::InvalidParameter(
-                "p".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
         Ok(Self {

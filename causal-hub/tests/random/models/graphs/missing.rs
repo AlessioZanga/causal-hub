@@ -6,7 +6,7 @@ mod tests {
         models::{DiGraph, Graph},
         random::{Random, RngMissingMechanism},
         set,
-        types::{Error, Result},
+        types::{Error, ErrorKind, Result},
     };
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
@@ -24,7 +24,13 @@ mod tests {
         let labels = labels!("X", "Y");
         let pr = map![(2, set![1])];
         let mechanism = MissingMechanism::new(labels, pr);
-        assert!(matches!(mechanism, Err(Error::VertexOutOfBounds(2))));
+        assert!(matches!(
+            mechanism,
+            Err(Error {
+                kind: ErrorKind::VertexOutOfBounds(2),
+                ..
+            })
+        ));
     }
 
     #[test]
@@ -32,7 +38,13 @@ mod tests {
         let labels = labels!("X", "Y");
         let pr = map![(0, set![2])];
         let mechanism = MissingMechanism::new(labels, pr);
-        assert!(matches!(mechanism, Err(Error::VertexOutOfBounds(2))));
+        assert!(matches!(
+            mechanism,
+            Err(Error {
+                kind: ErrorKind::VertexOutOfBounds(2),
+                ..
+            })
+        ));
     }
 
     #[test]

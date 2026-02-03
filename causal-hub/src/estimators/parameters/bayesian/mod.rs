@@ -60,14 +60,14 @@ impl<'a, D, T> BE<'a, D, T> {
         match (missing_method, &missing_mechanism) {
             (Some(MissingMethod::LW) | Some(MissingMethod::PW), Some(_)) => {
                 return Err(Error::InvalidParameter(
-                    "missing_mechanism".to_string(),
-                    "must be None if missing_method is LW or PW".to_string(),
+                    "missing_mechanism",
+                    "must be None if missing_method is LW or PW",
                 ));
             }
             (Some(MissingMethod::IPW) | Some(MissingMethod::AIPW), None) => {
                 return Err(Error::InvalidParameter(
-                    "missing_mechanism".to_string(),
-                    "must be provided if missing_method is IPW or AIPW".to_string(),
+                    "missing_mechanism",
+                    "must be provided if missing_method is IPW or AIPW",
                 ));
             }
             _ => {}

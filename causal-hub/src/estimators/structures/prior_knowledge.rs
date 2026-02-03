@@ -82,7 +82,7 @@ impl PK {
     {
         // Check if the labels are sorted.
         if !labels.iter().is_sorted() {
-            return Err(Error::IllegalArgument("Labels must be sorted".into()));
+            return Err(Error::IllegalArgument("Labels must be sorted"));
         }
 
         // Get the number of labels.
@@ -109,7 +109,7 @@ impl PK {
             }
             // Check that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
-                return Err(Error::PriorKnowledgeConflict(format!(
+                return Err(Error::PriorKnowledgeConflict(&format!(
                     "Edge ({i}, {j}) is already set to a non-unknown state: \n\
                     \t expected:    ({i}, {j}) set to 'Unknown', \n\
                     \t found:       ({i}, {j}) set to '{}'.",
@@ -149,7 +149,7 @@ impl PK {
                     .try_for_each(|(&i, &j)| {
                         // Check that the edge is not required.
                         if adjacency_matrix[[i, j]].is_required() {
-                            return Err(Error::PriorKnowledgeConflict(format!(
+                            return Err(Error::PriorKnowledgeConflict(&format!(
                                 "Edge ({i}, {j}) is already set to a 'Required' state: \n\
                             \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
                             \t found:       ({i}, {j}) set to '{}'.",

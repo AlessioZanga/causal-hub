@@ -52,8 +52,8 @@ impl GaussTable {
         // Check if the number of labels matches the number of columns in values.
         if labels.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                labels.len().to_string(),
-                values.ncols().to_string(),
+                &labels.len().to_string(),
+                &values.ncols().to_string(),
             ));
         }
 
@@ -76,10 +76,7 @@ impl GaussTable {
         }
         // Check values are finite.
         if !values.iter().all(|&x| x.is_finite()) {
-            return Err(Error::InvalidParameter(
-                "values".to_string(),
-                "must be finite".to_string(),
-            ));
+            return Err(Error::InvalidParameter("values", "must be finite"));
         }
 
         Ok(Self { labels, values })
@@ -137,7 +134,7 @@ impl CsvIO for GaussTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::MissingHeader);
+            return Err(Error::MissingHeader());
         }
 
         // Read the headers.

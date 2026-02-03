@@ -48,14 +48,14 @@ impl CatCPDS {
         // Check the counts are finite and non-negative.
         if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
             return Err(Error::InvalidParameter(
-                "n_xz".into(),
-                "Counts must be finite and non-negative.".into(),
+                "n_xz",
+                "Counts must be finite and non-negative.",
             ));
         }
         if !n.is_finite() || n < 0. {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be finite and non-negative.".into(),
+                "n",
+                "Sample size must be finite and non-negative.",
             ));
         }
 
@@ -250,10 +250,7 @@ impl CatCPD {
 
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::SetsNotDisjoint(
-                "labels".to_string(),
-                "conditioning labels".to_string(),
-            ));
+            return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
         }
 
         // Get the states shape.
@@ -262,8 +259,8 @@ impl CatCPD {
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.ncols() != shape.product() {
             return Err(Error::IncompatibleShape(
-                shape.product().to_string(),
-                parameters.ncols().to_string(),
+                &shape.product().to_string(),
+                &parameters.ncols().to_string(),
             ));
         }
 
@@ -273,8 +270,8 @@ impl CatCPD {
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.nrows() != conditioning_shape.product() {
             return Err(Error::IncompatibleShape(
-                conditioning_shape.product().to_string(),
-                parameters.nrows().to_string(),
+                &conditioning_shape.product().to_string(),
+                &parameters.nrows().to_string(),
             ));
         }
 
@@ -285,7 +282,7 @@ impl CatCPD {
             .enumerate()
             .try_for_each(|(i, &x)| {
                 if !relative_eq!(x, 1.0, epsilon = EPSILON) {
-                    return Err(Error::Probability(format!(
+                    return Err(Error::Probability(&format!(
                         "Failed to sum probability to one: {}.",
                         parameters.row(i)
                     )));
@@ -555,8 +552,8 @@ impl CatCPD {
             // Check the sample conditional counts have the same shape as parameters.
             if sample_conditional_counts.shape() != parameters.shape() {
                 return Err(Error::IncompatibleShape(
-                    format!("{:?}", sample_conditional_counts.shape()),
-                    format!("{:?}", parameters.shape()),
+                    &format!("{:?}", sample_conditional_counts.shape()),
+                    &format!("{:?}", parameters.shape()),
                 ));
             }
         }
@@ -564,7 +561,7 @@ impl CatCPD {
         if let Some(sample_log_likelihood) = &sample_log_likelihood
             && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
         {
-            return Err(Error::Stats(format!(
+            return Err(Error::Stats(&format!(
                 "Sample log-likelihood must be finite and non-positive: \n\
                 \t expected: sample_ll <= 0 , \n\
                 \t found:    sample_ll == {sample_log_likelihood} ."
@@ -719,11 +716,17 @@ impl CPD for CatCPD {
 
         // Check X matches number of variables.
         if x.len() != n {
-            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &n.to_string(),
+                &x.len().to_string(),
+            ));
         }
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // No variables.
@@ -771,7 +774,10 @@ impl CPD for CatCPD {
 
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // No variables.
@@ -798,7 +804,7 @@ impl CPD for CatCPD {
         let p = self.parameters.row(z);
         // Construct the sampler.
         let s = WeightedIndex::new(&p)
-            .map_err(|e| Error::Probability(format!("Failed to create WeightedIndex: {e}")))?;
+            .map_err(|e| Error::Probability(&format!("Failed to create WeightedIndex: {e}")))?;
         // Sample from the distribution.
         let x = s.sample(rng);
 

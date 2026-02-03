@@ -167,7 +167,7 @@ mod tests {
                 let cpd = model
                     .cpds()
                     .get("HypDistrib")
-                    .ok_or(Error::MissingData("HypDistrib".into()))?;
+                    .ok_or(Error::MissingData("HypDistrib"))?;
 
                 // Check shape.
                 assert_eq!(cpd.shape(), array![2]);

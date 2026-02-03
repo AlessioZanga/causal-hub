@@ -57,29 +57,17 @@ where
     ) -> Result<Self> {
         // Check parameters.
         if s_a <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "s_a".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("s_a", "must be positive"));
         }
         if s_b <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "s_b".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("s_b", "must be positive"));
         }
         if e <= 0.0 {
-            return Err(Error::InvalidParameter(
-                "e".to_string(),
-                "must be positive".to_string(),
-            ));
+            return Err(Error::InvalidParameter("e", "must be positive"));
         }
         // Check if the probability is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
-            return Err(Error::InvalidParameter(
-                "p".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
         Ok(Self {
