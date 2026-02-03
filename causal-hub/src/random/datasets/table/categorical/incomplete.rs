@@ -1,7 +1,10 @@
+use ndarray::prelude::*;
+use ndarray_stats::QuantileExt;
 use rand::Rng;
+use rand_distr::Uniform;
 
 use crate::{
-    datasets::{CatIncTable, CatTable, MissingMechanism},
+    datasets::{CatIncTable, CatTable, CatType, Dataset, IncDataset, MissingMechanism},
     models::Labelled,
     random::Random,
     types::{Error, Result},
@@ -77,6 +80,62 @@ impl<'a, R: Rng> RngCatIncTable<'a, R> {
 
 impl<R: Rng> Random<Result<CatIncTable>> for RngCatIncTable<'_, R> {
     fn random(&mut self) -> Result<CatIncTable> {
-        todo!() // FIXME:
+        // Get the missing indicator.
+        const M: CatType = CatIncTable::MISSING;
+        // Get dataset states.
+        let states = self.dataset.states().clone();
+        // Get dataset values.
+        let mut values = self.dataset.values().clone();
+
+        // Define the uniform distributions for sampling.
+        let p_s = Uniform::new_inclusive(0., 1.)?;
+        let p_u = Uniform::new_inclusive(self.p_min, self.p_max)?;
+
+        // Iterate over the missing mechanism.
+        for (&x, pa_x) in self.missing_mechanism {
+            // Get mutable reference to the column X.
+            let mut c_x = values.column_mut(x);
+
+            // Check if the variable has no parents.
+            if pa_x.is_empty() {
+                // Sample a missingness probability.
+                let p_x = self.rng.sample(p_u);
+                // Modify the corresponding column.
+                c_x.iter_mut().for_each(|x| {
+                    if self.rng.sample(p_s) < p_x {
+                        *x = M;
+                    }
+                });
+                // Continue to the next variable.
+                continue;
+            }
+
+            // For each parent ...
+            for &z in pa_x {
+                // Get reference to the column Z.
+                let c_z = self.dataset.values().column(z);
+                // Get the mode of the parent via direct counting.
+                let mut m_z = Array::from_elem(CatType::MAX as usize, 0);
+                c_z.iter().for_each(|&z| m_z[z as usize] += 1);
+                let s_z = match m_z.argmax() {
+                    Ok(s_z) => s_z as CatType,
+                    // If the mode cannot be found, skip this parent.
+                    _ => continue,
+                };
+                // Modify the corresponding column.
+                azip!((x in &mut c_x, z in &c_z) {
+                    // Sample a missingness probability for X given parent Z.
+                    if
+                        (self.rng.sample(p_s) < self.p_max && *z == s_z) ||
+                        (self.rng.sample(p_s) < self.p_min && *z != s_z)
+                    {
+                        *x = M;
+                    }
+                });
+            }
+        }
+
+        // Return the incomplete dataset.
+        CatIncTable::new(states, values)
     }
 }

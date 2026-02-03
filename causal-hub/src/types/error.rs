@@ -26,6 +26,9 @@ pub enum Error {
     /// An error related to ndarray statistics.
     #[error(transparent)]
     NdarrayMinMax(#[from] ndarray_stats::errors::MinMaxError),
+    /// An error related to random distribution uniform sampling.
+    #[error(transparent)]
+    RandDistrUniform(#[from] rand_distr::uniform::Error),
     /// An error related to linear algebra operations.
     #[error("Linear Algebra error: {0}")]
     Linalg(String),

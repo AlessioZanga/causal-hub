@@ -222,6 +222,7 @@ dependencies = [
  "ndarray-linalg",
  "ndarray-rand",
  "ndarray-stats",
+ "noisy_float",
  "openblas-src",
  "paste",
  "pest",
