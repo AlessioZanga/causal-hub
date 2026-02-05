@@ -513,14 +513,13 @@ impl GaussCPD {
                 ));
             }
         }
-        // Check the sample log-likelihood is finite and non-positive.
+        // Check the sample log-likelihood is finite.
         if let Some(sample_log_likelihood) = &sample_log_likelihood
-            && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
+            && !sample_log_likelihood.is_finite()
         {
             return Err(Error::Stats(&format!(
-                "Sample log-likelihood must be finite and non-positive: \n\
-                \t expected: sample_ll <= 0 , \n\
-                \t found:    sample_ll == {sample_log_likelihood} ."
+                "Sample log-likelihood must be finite, found: {}.",
+                sample_log_likelihood
             )));
         }
 
