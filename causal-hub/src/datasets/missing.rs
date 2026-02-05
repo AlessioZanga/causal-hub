@@ -494,7 +494,34 @@ pub trait IncDataset: Dataset + Sized {
         m: &MissingMethod,
         x: Option<&Set<usize>>,
         pr: Option<&MissingMechanism>,
-    ) -> Result<Either<Self::Complete, Self::Weighted>>;
+    ) -> Result<Either<Self::Complete, Self::Weighted>> {
+        // Get short alias for missing method.
+        use MissingMethod as MM;
+        // Apply the missing method with the provided arguments.
+        match (m, x, pr) {
+            (MM::LW, _, _) => self.lw_deletion().map(Either::Left),
+            (MM::PW, Some(x), _) => self.pw_deletion(x).map(Either::Left),
+            (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
+            (MM::AIPW, Some(x), Some(pr)) => self.aipw_deletion(x, pr).map(Either::Right),
+            _ => Err(Error::InvalidParameter(
+                "missing_method",
+                &format!(
+                    "Invalid arguments for applying missing method:\n\
+                    \t missing method:      '{m:?}' , \n\
+                    \t selected variables:  '{x:?}' , \n\
+                    \t missing mechanism:   '{pr:?}' .",
+                ),
+            )),
+        }
+    }
+
+    /// Compute the weights to perform IPW.
+    fn ipw_weights(
+        &self,
+        d_u: &Self::Complete,
+        u: &Set<usize>,
+        pr: &MissingMechanism,
+    ) -> Result<Array1<f64>>;
 
     /// Perform list-wise (LW) deletion to handle missing data.
     ///

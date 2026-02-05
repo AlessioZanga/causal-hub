@@ -43,12 +43,9 @@ impl GaussWtdTable {
                 &weights.len().to_string(),
             ));
         }
-        // Check if any weight is in the range [0, 1].
-        if !weights.iter().all(|&w| (0.0..=1.0).contains(&w)) {
-            return Err(Error::InvalidParameter(
-                "weights",
-                "must be in the range [0, 1]",
-            ));
+        // Check that all weights are non-negative.
+        if !weights.iter().all(|&w| w >= 0.0) {
+            return Err(Error::InvalidParameter("weights", "must be non-negative"));
         }
 
         Ok(Self { dataset, weights })

@@ -4,13 +4,11 @@ use std::{
 };
 
 use csv::{ReaderBuilder, WriterBuilder};
-use itertools::Either;
 use ndarray::prelude::*;
 
 use crate::{
     datasets::{
-        CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMechanism, MissingMethod as MM,
-        MissingTable,
+        CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMechanism, MissingTable,
     },
     estimators::{BE, CPDEstimator},
     io::CsvIO,
@@ -237,11 +235,21 @@ impl Dataset for CatIncTable {
     }
 }
 
-impl CatIncTable {
-    /// Compute the weights to perform IPW.
+impl IncDataset for CatIncTable {
+    type Missing = CatType;
+    const MISSING: Self::Missing = CatType::MAX;
+
+    type Complete = CatTable;
+    type Weighted = CatWtdTable;
+
+    #[inline]
+    fn missing(&self) -> &MissingTable {
+        &self.missing
+    }
+
     fn ipw_weights(
         &self,
-        d_u: &<Self as IncDataset>::Complete,
+        d_u: &Self::Complete,
         u: &Set<usize>,
         pr: &MissingMechanism,
     ) -> Result<Array1<f64>> {
@@ -251,7 +259,7 @@ impl CatIncTable {
         let pr_iter = pr_iter.filter(|(_, pri)| !pri.is_empty());
 
         // Define function to compute the weights associated to each `R_i`.
-        let beta_i = |d_u: &CatTable, ri: usize, pri: &Set<usize>| -> Result<Array1<f64>> {
+        let beta_i = |d_u: &Self::Complete, ri: usize, pri: &Set<usize>| -> Result<Array1<f64>> {
             /* Compute P(Pi_R_i | R_Pi_R_i = 0) and P(Pi_R_i | R_i = 0, R_Pi_R_i = 0) */
 
             // Apply pairwise deletion.
@@ -300,43 +308,6 @@ impl CatIncTable {
         }
 
         Ok(beta)
-    }
-}
-
-impl IncDataset for CatIncTable {
-    type Missing = CatType;
-    const MISSING: Self::Missing = CatType::MAX;
-
-    type Complete = CatTable;
-    type Weighted = CatWtdTable;
-
-    #[inline]
-    fn missing(&self) -> &MissingTable {
-        &self.missing
-    }
-
-    fn apply_missing_method(
-        &self,
-        m: &MM,
-        x: Option<&Set<usize>>,
-        pr: Option<&MissingMechanism>,
-    ) -> Result<Either<Self::Complete, Self::Weighted>> {
-        // Apply the missing method with the provided arguments.
-        match (m, x, pr) {
-            (MM::LW, _, _) => self.lw_deletion().map(Either::Left),
-            (MM::PW, Some(x), _) => self.pw_deletion(x).map(Either::Left),
-            (MM::IPW, Some(x), Some(pr)) => self.ipw_deletion(x, pr).map(Either::Right),
-            (MM::AIPW, Some(x), Some(pr)) => self.aipw_deletion(x, pr).map(Either::Right),
-            _ => Err(Error::InvalidParameter(
-                "missing_method",
-                &format!(
-                    "Invalid arguments for applying missing method:\n\
-                    \t missing method:      '{m:?}' , \n\
-                    \t selected variables:  '{x:?}' , \n\
-                    \t missing mechanism:   '{pr:?}' .",
-                ),
-            )),
-        }
     }
 
     fn lw_deletion(&self) -> Result<Self::Complete> {
