@@ -546,6 +546,7 @@ impl CatCPD {
         sample_statistics: Option<CatCPDS>,
         sample_log_likelihood: Option<f64>,
     ) -> Result<Self> {
+        // Check the sample statistics, if any.
         if let Some(sample_statistics) = &sample_statistics {
             // Get the sample conditional counts.
             let sample_conditional_counts = &sample_statistics.n_xz;
@@ -570,8 +571,6 @@ impl CatCPD {
 
         // Construct the categorical CPD.
         let mut cpd = Self::new(state, conditioning_states, parameters)?;
-
-        // FIXME: Check labels alignment with optional fields.
 
         // Set the optionals.
         cpd.sample_statistics = sample_statistics;

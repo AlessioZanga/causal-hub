@@ -683,8 +683,6 @@ impl CatCIM {
         // Construct the CIM.
         let mut cim = Self::new(states, conditioning_states, parameters)?;
 
-        // FIXME: Check labels alignment with optional fields.
-
         // Set the sample statistics and log-likelihood.
         cim.sample_statistics = sample_statistics;
         cim.sample_log_likelihood = sample_log_likelihood;

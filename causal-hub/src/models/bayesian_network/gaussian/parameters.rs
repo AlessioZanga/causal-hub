@@ -460,12 +460,72 @@ impl GaussCPD {
         sample_statistics: Option<GaussCPDS>,
         sample_log_likelihood: Option<f64>,
     ) -> Result<Self> {
-        // FIXME: Check inputs.
+        // Check the sample statistics, if any.
+        if let Some(sample_statistics) = &sample_statistics {
+            // Get number of variables.
+            let x = labels.len();
+            // Get number of conditioning variables.
+            let z = conditioning_labels.len();
+
+            // Get the sample response mean.
+            let mu_x = sample_statistics.sample_response_mean();
+            // Check the length matches number of variables.
+            if mu_x.len() != x {
+                return Err(Error::IncompatibleShape(
+                    &mu_x.len().to_string(),
+                    &x.to_string(),
+                ));
+            }
+            // Get the sample design mean.
+            let mu_z = sample_statistics.sample_design_mean();
+            // Check the length matches number of conditioning variables.
+            if mu_z.len() != z {
+                return Err(Error::IncompatibleShape(
+                    &mu_z.len().to_string(),
+                    &z.to_string(),
+                ));
+            }
+            // Get the sample response covariance.
+            let s_xx = sample_statistics.sample_response_covariance();
+            // Check the shape matches number of variables.
+            if s_xx.nrows() != x || s_xx.ncols() != x {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_xx.nrows(), s_xx.ncols()),
+                    &format!("{}x{}", x, x),
+                ));
+            }
+            // Get the sample cross-covariance.
+            let s_xz = sample_statistics.sample_cross_covariance();
+            // Check the shape matches number of variables and conditioning variables.
+            if s_xz.nrows() != x || s_xz.ncols() != z {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_xz.nrows(), s_xz.ncols()),
+                    &format!("{}x{}", x, z),
+                ));
+            }
+            // Get the sample design covariance.
+            let s_zz = sample_statistics.sample_design_covariance();
+            // Check the shape matches number of conditioning variables.
+            if s_zz.nrows() != z || s_zz.ncols() != z {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_zz.nrows(), s_zz.ncols()),
+                    &format!("{}x{}", z, z),
+                ));
+            }
+        }
+        // Check the sample log-likelihood is finite and non-positive.
+        if let Some(sample_log_likelihood) = &sample_log_likelihood
+            && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
+        {
+            return Err(Error::Stats(&format!(
+                "Sample log-likelihood must be finite and non-positive: \n\
+                \t expected: sample_ll <= 0 , \n\
+                \t found:    sample_ll == {sample_log_likelihood} ."
+            )));
+        }
 
         // Create the CPD.
         let mut cpd = Self::new(labels, conditioning_labels, parameters)?;
-
-        // FIXME: Check labels alignment with optional fields.
 
         // Set the optional fields.
         cpd.sample_statistics = sample_statistics;
