@@ -275,10 +275,10 @@ pub struct GaussCPD {
     conditioning_labels: Labels,
     // Parameters.
     parameters: GaussCPDP,
-    // Sample (sufficient) statistics, if any.
-    sample_statistics: Option<GaussCPDS>,
-    // Sample log-likelihood, if any.
-    sample_log_likelihood: Option<f64>,
+    // Fitted sufficient statistics, if any.
+    fitted_statistics: Option<GaussCPDS>,
+    // Fitted log-likelihood, if any.
+    fitted_log_likelihood: Option<f64>,
 }
 
 impl GaussCPD {
@@ -398,8 +398,8 @@ impl GaussCPD {
             labels,
             conditioning_labels,
             parameters,
-            sample_statistics: None,
-            sample_log_likelihood: None,
+            fitted_statistics: None,
+            fitted_log_likelihood: None,
         })
     }
 
@@ -446,8 +446,8 @@ impl GaussCPD {
     /// * `labels` - Labels of the variables.
     /// * `conditioning_labels` - Labels of the conditioning variables.
     /// * `parameters` - Parameters of the CPD.
-    /// * `sample_statistics` - The sufficient statistics used to fit the distribution, if any.
-    /// * `sample_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
+    /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
     ///
     /// # Returns
     ///
@@ -457,18 +457,18 @@ impl GaussCPD {
         labels: Labels,
         conditioning_labels: Labels,
         parameters: GaussCPDP,
-        sample_statistics: Option<GaussCPDS>,
-        sample_log_likelihood: Option<f64>,
+        fitted_statistics: Option<GaussCPDS>,
+        fitted_log_likelihood: Option<f64>,
     ) -> Result<Self> {
-        // Check the sample statistics, if any.
-        if let Some(sample_statistics) = &sample_statistics {
+        // Check the fitted statistics, if any.
+        if let Some(fitted_statistics) = &fitted_statistics {
             // Get number of variables.
             let x = labels.len();
             // Get number of conditioning variables.
             let z = conditioning_labels.len();
 
-            // Get the sample response mean.
-            let mu_x = sample_statistics.sample_response_mean();
+            // Get the fitted response mean.
+            let mu_x = fitted_statistics.fitted_response_mean();
             // Check the length matches number of variables.
             if mu_x.len() != x {
                 return Err(Error::IncompatibleShape(
@@ -476,8 +476,8 @@ impl GaussCPD {
                     &x.to_string(),
                 ));
             }
-            // Get the sample design mean.
-            let mu_z = sample_statistics.sample_design_mean();
+            // Get the fitted design mean.
+            let mu_z = fitted_statistics.fitted_design_mean();
             // Check the length matches number of conditioning variables.
             if mu_z.len() != z {
                 return Err(Error::IncompatibleShape(
@@ -485,8 +485,8 @@ impl GaussCPD {
                     &z.to_string(),
                 ));
             }
-            // Get the sample response covariance.
-            let s_xx = sample_statistics.sample_response_covariance();
+            // Get the fitted response covariance.
+            let s_xx = fitted_statistics.fitted_response_covariance();
             // Check the shape matches number of variables.
             if s_xx.nrows() != x || s_xx.ncols() != x {
                 return Err(Error::IncompatibleShape(
@@ -494,8 +494,8 @@ impl GaussCPD {
                     &format!("{}x{}", x, x),
                 ));
             }
-            // Get the sample cross-covariance.
-            let s_xz = sample_statistics.sample_cross_covariance();
+            // Get the fitted cross-covariance.
+            let s_xz = fitted_statistics.fitted_cross_covariance();
             // Check the shape matches number of variables and conditioning variables.
             if s_xz.nrows() != x || s_xz.ncols() != z {
                 return Err(Error::IncompatibleShape(
@@ -503,8 +503,8 @@ impl GaussCPD {
                     &format!("{}x{}", x, z),
                 ));
             }
-            // Get the sample design covariance.
-            let s_zz = sample_statistics.sample_design_covariance();
+            // Get the fitted design covariance.
+            let s_zz = fitted_statistics.fitted_design_covariance();
             // Check the shape matches number of conditioning variables.
             if s_zz.nrows() != z || s_zz.ncols() != z {
                 return Err(Error::IncompatibleShape(
@@ -513,13 +513,13 @@ impl GaussCPD {
                 ));
             }
         }
-        // Check the sample log-likelihood is finite.
-        if let Some(sample_log_likelihood) = &sample_log_likelihood
-            && !sample_log_likelihood.is_finite()
+        // Check the fitted log-likelihood is finite.
+        if let Some(fitted_log_likelihood) = &fitted_log_likelihood
+            && !fitted_log_likelihood.is_finite()
         {
             return Err(Error::Stats(&format!(
-                "Sample log-likelihood must be finite, found: {}.",
-                sample_log_likelihood
+                "Fitted log-likelihood must be finite, found: {}.",
+                fitted_log_likelihood
             )));
         }
 
@@ -527,8 +527,8 @@ impl GaussCPD {
         let mut cpd = Self::new(labels, conditioning_labels, parameters)?;
 
         // Set the optional fields.
-        cpd.sample_statistics = sample_statistics;
-        cpd.sample_log_likelihood = sample_log_likelihood;
+        cpd.fitted_statistics = fitted_statistics;
+        cpd.fitted_log_likelihood = fitted_log_likelihood;
 
         Ok(cpd)
     }
@@ -640,13 +640,13 @@ impl CPD for GaussCPD {
     }
 
     #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
+        self.fitted_statistics.as_ref()
     }
 
     #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
+    fn fitted_log_likelihood(&self) -> Option<f64> {
+        self.fitted_log_likelihood
     }
 
     fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
@@ -791,8 +791,8 @@ impl Serialize for GaussCPD {
         // Count the elements to serialize.
         let mut size = 4;
         // Add optional fields, if any.
-        size += self.sample_statistics.is_some() as usize;
-        size += self.sample_log_likelihood.is_some() as usize;
+        size += self.fitted_statistics.is_some() as usize;
+        size += self.fitted_log_likelihood.is_some() as usize;
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
@@ -803,14 +803,14 @@ impl Serialize for GaussCPD {
         // Serialize parameters.
         map.serialize_entry("parameters", &self.parameters)?;
 
-        // Serialize sample statistics, if any.
-        if let Some(sample_statistics) = &self.sample_statistics {
-            map.serialize_entry("sample_statistics", sample_statistics)?;
+        // Serialize fitted statistics, if any.
+        if let Some(fitted_statistics) = &self.fitted_statistics {
+            map.serialize_entry("fitted_statistics", fitted_statistics)?;
         }
 
-        // Serialize sample log-likelihood, if any.
-        if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
-            map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
+        // Serialize fitted log-likelihood, if any.
+        if let Some(fitted_log_likelihood) = &self.fitted_log_likelihood {
+            map.serialize_entry("fitted_log_likelihood", fitted_log_likelihood)?;
         }
 
         // Serialize type.
@@ -832,8 +832,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
             Labels,
             ConditioningLabels,
             Parameters,
-            SampleStatistics,
-            SampleLogLikelihood,
+            FittedStatistics,
+            FittedLogLikelihood,
             Type,
         }
 
@@ -856,8 +856,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let mut labels = None;
                 let mut conditioning_labels = None;
                 let mut parameters = None;
-                let mut sample_statistics = None;
-                let mut sample_log_likelihood = None;
+                let mut fitted_statistics = None;
+                let mut fitted_log_likelihood = None;
                 let mut type_ = None;
 
                 // Parse the map.
@@ -881,17 +881,17 @@ impl<'de> Deserialize<'de> for GaussCPD {
                             }
                             parameters = Some(map.next_value()?);
                         }
-                        Field::SampleStatistics => {
-                            if sample_statistics.is_some() {
-                                return Err(E::duplicate_field("sample_statistics"));
+                        Field::FittedStatistics => {
+                            if fitted_statistics.is_some() {
+                                return Err(E::duplicate_field("fitted_statistics"));
                             }
-                            sample_statistics = Some(map.next_value()?);
+                            fitted_statistics = Some(map.next_value()?);
                         }
-                        Field::SampleLogLikelihood => {
-                            if sample_log_likelihood.is_some() {
-                                return Err(E::duplicate_field("sample_log_likelihood"));
+                        Field::FittedLogLikelihood => {
+                            if fitted_log_likelihood.is_some() {
+                                return Err(E::duplicate_field("fitted_log_likelihood"));
                             }
-                            sample_log_likelihood = Some(map.next_value()?);
+                            fitted_log_likelihood = Some(map.next_value()?);
                         }
                         Field::Type => {
                             if type_.is_some() {
@@ -920,8 +920,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
                     labels,
                     conditioning_labels,
                     parameters,
-                    sample_statistics,
-                    sample_log_likelihood,
+                    fitted_statistics,
+                    fitted_log_likelihood,
                 )
                 .map_err(E::custom)
             }
@@ -931,8 +931,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
             "labels",
             "conditioning_labels",
             "parameters",
-            "sample_statistics",
-            "sample_log_likelihood",
+            "fitted_statistics",
+            "fitted_log_likelihood",
             "type",
         ];
 

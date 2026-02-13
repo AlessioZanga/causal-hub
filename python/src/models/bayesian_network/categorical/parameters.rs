@@ -155,26 +155,26 @@ impl PyCatCPD {
         Ok(self.lock().parameters_size())
     }
 
-    /// Returns the sample statistics used to fit the distribution, if any.
+    /// Returns the fitted statistics used to fit the distribution, if any.
     ///
     /// Returns
     /// -------
     /// dict[str, ...] | None
-    ///     A dictionary containing the sample statistics used to fit the distribution, if any.
+    ///     A dictionary containing the fitted statistics used to fit the distribution, if any.
     ///
-    pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
+    pub fn fitted_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
         self.lock()
-            .sample_statistics()
+            .fitted_statistics()
             .map(|s| {
                 // Allocate the dictionary.
                 let dict = PyDict::new(py);
                 // Add the conditional counts.
                 dict.set_item(
-                    "sample_conditional_counts",
-                    s.sample_conditional_counts().to_pyarray(py),
+                    "fitted_conditional_counts",
+                    s.fitted_conditional_counts().to_pyarray(py),
                 )?;
                 // Add the sample size.
-                dict.set_item("sample_size", s.sample_size())?;
+                dict.set_item("fitted_size", s.fitted_size())?;
                 // Return the dictionary.
                 Ok(dict)
             })
@@ -188,8 +188,8 @@ impl PyCatCPD {
     /// float | None
     ///     The (in-sample) log-likelihood given the distribution, if any.
     ///
-    pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
-        Ok(self.lock().sample_log_likelihood())
+    pub fn fitted_log_likelihood(&self) -> PyResult<Option<f64>> {
+        Ok(self.lock().fitted_log_likelihood())
     }
 
     /// Returns the string representation of the CatCPD.

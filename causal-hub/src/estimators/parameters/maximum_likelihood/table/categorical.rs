@@ -16,7 +16,7 @@ impl MLE<'_, CatTable> {
         sample_statistics: CatCPDS,
     ) -> Result<CatCPD> {
         // Get the conditional counts.
-        let n_xz = sample_statistics.sample_conditional_counts();
+        let n_xz = sample_statistics.fitted_conditional_counts();
         // Marginalize the counts.
         let n_z = &n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
 

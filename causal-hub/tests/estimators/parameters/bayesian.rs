@@ -59,12 +59,12 @@ mod tests {
 
                 assert_eq!(distribution.parameters_size(), 1);
                 assert_eq!(
-                    distribution.sample_statistics().map(|s| s.sample_size()),
+                    distribution.fitted_statistics().map(|s| s.fitted_size()),
                     Some(5.)
                 );
                 assert_relative_eq!(
                     distribution
-                        .sample_log_likelihood()
+                        .fitted_log_likelihood()
                         .ok_or(Error::IllegalArgument("no ll"))?,
                     -4.780356732903302
                 );
@@ -108,12 +108,12 @@ mod tests {
 
                 assert_eq!(distribution.parameters_size(), 4);
                 assert_eq!(
-                    distribution.sample_statistics().map(|s| s.sample_size()),
+                    distribution.fitted_statistics().map(|s| s.fitted_size()),
                     Some(5.)
                 );
                 assert_relative_eq!(
                     distribution
-                        .sample_log_likelihood()
+                        .fitted_log_likelihood()
                         .ok_or(Error::IllegalArgument("no ll"))?,
                     -8.501216236893097
                 );
@@ -225,8 +225,8 @@ mod tests {
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
-                    // Verify sample_statistics reflects original data size
-                    assert_eq!(d.sample_statistics().map(|s| s.sample_size()), Some(3.));
+                    // Verify fitted_statistics reflects original data size
+                    assert_eq!(d.fitted_statistics().map(|s| s.fitted_size()), Some(3.));
 
                     // a = 10 / 21 approx 0.47619
                     assert_relative_eq!(
@@ -284,8 +284,8 @@ mod tests {
                     assert_eq!(d.labels(), &labels!["X"]);
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
-                    // Verify sample_statistics reflects original data size still
-                    assert_eq!(d.sample_statistics().map(|s| s.sample_size()), Some(3.));
+                    // Verify fitted_statistics reflects original data size still
+                    assert_eq!(d.fitted_statistics().map(|s| s.fitted_size()), Some(3.));
 
                     // Expected values with prior=2.0 (nu=2):
                     // n = 3, nu = 2, n_post = 5.
@@ -412,7 +412,7 @@ mod tests {
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
                     // SSE with LW should have dropped one row
-                    assert_eq!(d.sample_statistics().map(|s| s.sample_size()), Some(2.));
+                    assert_eq!(d.fitted_statistics().map(|s| s.fitted_size()), Some(2.));
 
                     // Matching the manual calculation for N=2 (LW case)
                     // a = 28/59 approx 0.47457
@@ -503,7 +503,7 @@ mod tests {
                     assert_eq!(d.conditioning_labels(), &labels!["Y"]);
 
                     // Effective sample size should be sum of weights = 2.0
-                    assert_eq!(d.sample_statistics().map(|s| s.sample_size()), Some(2.));
+                    assert_eq!(d.fitted_statistics().map(|s| s.fitted_size()), Some(2.));
 
                     // Should match incomplete case exactly
                     assert_relative_eq!(

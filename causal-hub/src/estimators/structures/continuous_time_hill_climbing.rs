@@ -66,12 +66,12 @@ where
         let q_xz = self.estimator.fit(x, z)?;
         // Get the sample size.
         let n = q_xz
-            .sample_statistics()
-            .map(|s| s.sample_size())
+            .fitted_statistics()
+            .map(|s| s.fitted_size())
             .ok_or(Error::MissingSufficientStatistics())?;
         // Get the log-likelihood.
         let ll = q_xz
-            .sample_log_likelihood()
+            .fitted_log_likelihood()
             .ok_or_else(|| Error::Probability("Failed to compute the log-likelihood."))?;
         // Get the number of parameters.
         let k = q_xz.parameters_size() as f64;

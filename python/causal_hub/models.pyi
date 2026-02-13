@@ -450,17 +450,17 @@ class CatCIM:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the (in-sample) log-likelihood given the distribution, if any.
 
@@ -609,17 +609,17 @@ class CatCPD:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the (in-sample) log-likelihood given the distribution, if any.
 
@@ -1792,17 +1792,17 @@ class GaussCPD:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
         Returns the (in-sample) log-likelihood given the distribution, if any.
 

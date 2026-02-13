@@ -14,11 +14,11 @@ impl MLE<'_, CatTrj> {
         states: &States,
         x: &Set<usize>,
         z: &Set<usize>,
-        sample_statistics: CatCIMS,
+        fitted_statistics: CatCIMS,
     ) -> Result<CatCIM> {
         // Get the conditional counts and times.
-        let n_xz = sample_statistics.sample_conditional_counts();
-        let t_xz = sample_statistics.sample_conditional_times();
+        let n_xz = fitted_statistics.fitted_conditional_counts();
+        let t_xz = fitted_statistics.fitted_conditional_times();
 
         // Check the conditional times counts are not zero.
         if !t_xz.iter().all(|&x| x > 0.) {
@@ -43,7 +43,7 @@ impl MLE<'_, CatTrj> {
         // Set epsilon to avoid ln(0).
         let eps = f64::MIN_POSITIVE;
         // Compute the sample log-likelihood, avoiding ln(0).
-        let sample_log_likelihood = {
+        let fitted_log_likelihood = {
             // Compute the sample log-likelihood.
             let ll_q_xz = {
                 // Sum counts, aligning the dimensions.
@@ -101,17 +101,17 @@ impl MLE<'_, CatTrj> {
             .collect::<Result<_>>()?;
 
         // Wrap the sufficient statistics in an option.
-        let sample_statistics = Some(sample_statistics);
+        let fitted_statistics = Some(fitted_statistics);
         // Wrap the sample log-likelihood in an option.
-        let sample_log_likelihood = Some(sample_log_likelihood);
+        let fitted_log_likelihood = Some(fitted_log_likelihood);
 
         // Construct the CIM.
         CatCIM::with_optionals(
             states,
             conditioning_states,
             parameters,
-            sample_statistics,
-            sample_log_likelihood,
+            fitted_statistics,
+            fitted_log_likelihood,
         )
     }
 }
@@ -124,16 +124,16 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
-            let sample_statistics = SSE::new(self.dataset);
+            let fitted_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
-            let sample_statistics = sample_statistics.with_missing_method(
+            let fitted_statistics = fitted_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
             )?;
             // Compute sufficient statistics.
-            let sample_statistics = sample_statistics.fit(x, z)?;
+            let fitted_statistics = fitted_statistics.fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit(states, x, z, sample_statistics)
+            MLE::<'_, CatTrj>::fit(states, x, z, fitted_statistics)
         }
     }
 
@@ -147,16 +147,16 @@ macro_for!($type in [CatTrjs, CatWtdTrjs] {
             // Get states.
             let states = self.dataset.states();
             // Set sufficient statistics estimator.
-            let sample_statistics = SSE::new(self.dataset);
+            let fitted_statistics = SSE::new(self.dataset);
             // Set missing handling method, if any.
-            let sample_statistics = sample_statistics.with_missing_method(
+            let fitted_statistics = fitted_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
             )?;
             // Compute sufficient statistics in parallel.
-            let sample_statistics = sample_statistics.par_fit(x, z)?;
+            let fitted_statistics = fitted_statistics.par_fit(x, z)?;
             // Fit the CIM given the sufficient statistics.
-            MLE::<'_, CatTrj>::fit(states, x, z, sample_statistics)
+            MLE::<'_, CatTrj>::fit(states, x, z, fitted_statistics)
         }
     }
 

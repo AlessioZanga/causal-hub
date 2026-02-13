@@ -19,12 +19,12 @@ impl MLE<'_, GaussTable> {
     ) -> Result<GaussCPD> {
         // Get the sample scatter matrices and size.
         let (mu_x, mu_z, s_xx, s_xz, s_zz, n) = (
-            sample_statistics.sample_response_mean(),
-            sample_statistics.sample_design_mean(),
-            sample_statistics.sample_response_covariance(),
-            sample_statistics.sample_cross_covariance(),
-            sample_statistics.sample_design_covariance(),
-            sample_statistics.sample_size(),
+            sample_statistics.fitted_response_mean(),
+            sample_statistics.fitted_design_mean(),
+            sample_statistics.fitted_response_covariance(),
+            sample_statistics.fitted_cross_covariance(),
+            sample_statistics.fitted_design_covariance(),
+            sample_statistics.fitted_size(),
         );
 
         // Compute the parameters in closed form.

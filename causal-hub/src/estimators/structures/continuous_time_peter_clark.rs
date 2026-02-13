@@ -96,12 +96,12 @@ where
         let q_xs = self.estimator.fit(x, &s)?;
         // Get the sufficient statistics for the sets.
         let n_xz = q_xz
-            .sample_statistics()
-            .map(|s| s.sample_conditional_counts())
+            .fitted_statistics()
+            .map(|s| s.fitted_conditional_counts())
             .ok_or(Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
-            .sample_statistics()
-            .map(|s| s.sample_conditional_counts())
+            .fitted_statistics()
+            .map(|s| s.fitted_conditional_counts())
             .ok_or(Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.
@@ -220,12 +220,12 @@ where
         let q_xs = self.estimator.fit(x, &s)?;
         // Get the sufficient statistics for the sets.
         let n_xz = q_xz
-            .sample_statistics()
-            .map(|s| s.sample_conditional_counts())
+            .fitted_statistics()
+            .map(|s| s.fitted_conditional_counts())
             .ok_or(Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
-            .sample_statistics()
-            .map(|s| s.sample_conditional_counts())
+            .fitted_statistics()
+            .map(|s| s.fitted_conditional_counts())
             .ok_or(Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.

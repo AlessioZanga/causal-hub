@@ -30,8 +30,8 @@ impl BE<'_, CatTrj, (usize, f64)> {
         }
 
         // Get the conditional counts and times.
-        let n_xz = sample_statistics.sample_conditional_counts();
-        let t_xz = sample_statistics.sample_conditional_times();
+        let n_xz = sample_statistics.fitted_conditional_counts();
+        let t_xz = sample_statistics.fitted_conditional_times();
 
         // Insert axis to align the dimensions.
         let t_xz = &t_xz.clone().insert_axis(Axis(2));

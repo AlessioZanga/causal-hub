@@ -54,7 +54,7 @@ mod tests {
             let cpd: CatCPDS = sse.fit(&x, &z)?;
 
             // Check sample size matches dataset samples
-            assert_eq!(cpd.sample_size(), 4.0);
+            assert_eq!(cpd.fitted_size(), 4.0);
 
             // Check conditional counts.
             // IPW Weights:
@@ -66,7 +66,7 @@ mod tests {
             // N_XZ = [[1.6, 0.8], [0.0, 1.6]]
             // Indexing: Row=Z (Y=0, Y=1), Col=X (X=0, X=1)
             let expected = array![[1.6, 0.8], [0.0, 1.6]];
-            assert_eq!(cpd.sample_conditional_counts(), &expected);
+            assert_eq!(cpd.fitted_conditional_counts(), &expected);
 
             Ok(())
         }
@@ -108,12 +108,12 @@ mod tests {
 
             let cpd: CatCPDS = sse.fit(&x, &z)?;
 
-            assert_eq!(cpd.sample_size(), 4.0);
+            assert_eq!(cpd.fitted_size(), 4.0);
 
             // Check conditional counts for AIPW.
             // AIPW is more complex to calculate by hand, but we verify it produces non-zero
             // valid counts for observed combinations.
-            let counts = cpd.sample_conditional_counts();
+            let counts = cpd.fitted_conditional_counts();
             assert!(counts[[0, 0]] > 0.0);
             assert!(counts[[0, 1]] > 0.0);
             assert_eq!(counts[[1, 0]], 0.0); // No observed samples for (0, 1)
@@ -143,14 +143,14 @@ mod tests {
             let cpd: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
-            assert_eq!(cpd.sample_size(), 4.0);
+            assert_eq!(cpd.fitted_size(), 4.0);
 
             // mu_X = (0+1+0+1)/4 = 0.5
             // mu_Y = (0+0+1+1)/4 = 0.5
 
             // Check means.
-            assert_eq!(cpd.sample_response_mean(), &array![0.5]);
-            assert_eq!(cpd.sample_design_mean(), &array![0.5]);
+            assert_eq!(cpd.fitted_response_mean(), &array![0.5]);
+            assert_eq!(cpd.fitted_design_mean(), &array![0.5]);
 
             Ok(())
         }
@@ -204,11 +204,11 @@ mod tests {
             let cpd: GaussCPDS = sse.fit(&x, &z)?;
 
             // Check sample size.
-            assert_eq!(cpd.sample_size(), 4.0);
+            assert_eq!(cpd.fitted_size(), 4.0);
 
             // Check means.
-            assert_eq!(cpd.sample_response_mean(), &array![0.5]);
-            assert_eq!(cpd.sample_design_mean(), &array![0.5]);
+            assert_eq!(cpd.fitted_response_mean(), &array![0.5]);
+            assert_eq!(cpd.fitted_design_mean(), &array![0.5]);
 
             Ok(())
         }
