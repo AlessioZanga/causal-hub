@@ -1,7 +1,6 @@
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
-use ndarray_rand::RandomExt;
-use rand::{Rng, SeedableRng, seq::SliceRandom};
+use rand::{Rng, RngExt, SeedableRng, seq::SliceRandom};
 use rand_distr::{Distribution, Uniform, weighted::WeightedIndex};
 use rayon::prelude::*;
 
@@ -259,7 +258,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             // Sample a state uniformly at random.
             let dist = Uniform::new(0, states[i].len() as CatType)
                 .map_err(|e| Error::RandDistr(&format!("Invalid uniform distribution: {}", e)))?;
-            let random_state = Array::random_using(events.nrows(), dist, &mut self.rng);
+            let random_state = Array1::from_shape_fn(events.nrows(), |_| self.rng.sample(dist));
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
 

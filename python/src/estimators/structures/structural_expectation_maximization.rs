@@ -17,7 +17,7 @@ use pyo3::{
     types::{PyDict, PyList},
 };
 use pyo3_stub_gen::derive::*;
-use rand::{RngCore, SeedableRng, seq::SliceRandom};
+use rand::{Rng, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 

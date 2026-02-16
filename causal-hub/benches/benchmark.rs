@@ -27,7 +27,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     // Compute the number of variables to usage.
     let n = std::cmp::max(3, model.labels().len() / 5);
     // Select the variables randomly.
-    let v: Vec<usize> = (0..model.labels().len()).choose_multiple(&mut rng, n);
+    let v: Vec<usize> = (0..model.labels().len()).sample(&mut rng, n);
     // Split the variables into X, Y, Z.
     let x: Set<usize> = set![v[0]];
     let y: Set<usize> = set![v[1]];

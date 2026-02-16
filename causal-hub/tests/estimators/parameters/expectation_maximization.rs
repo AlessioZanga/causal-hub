@@ -13,7 +13,7 @@ mod tests {
         set,
         types::{Error, Result},
     };
-    use rand::{RngCore, SeedableRng};
+    use rand::{Rng, SeedableRng};
     use rand_xoshiro::Xoshiro256PlusPlus;
     use rayon::prelude::*;
 

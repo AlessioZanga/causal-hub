@@ -1,7 +1,6 @@
 use ndarray::prelude::*;
 use ndarray_linalg::{Cholesky, SVD, UPLO};
-use ndarray_rand::RandomExt;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::Normal;
 
 use crate::{
@@ -82,7 +81,7 @@ where
         let mut a = if self.x > 0 && self.z > 0 {
             let dist_a = Normal::new(0.0, self.s_a)
                 .map_err(|e| Error::InvalidParameter("s_a", &e.to_string()))?;
-            Array2::random_using((self.x, self.z), dist_a, self.rng)
+            Array2::from_shape_fn((self.x, self.z), |_| self.rng.sample(dist_a))
         } else {
             Array2::zeros((self.x, self.z))
         };
@@ -102,7 +101,7 @@ where
         let b = if self.x > 0 {
             let dist_b = Normal::new(0.0, self.s_b)
                 .map_err(|e| Error::InvalidParameter("s_b", &e.to_string()))?;
-            Array1::random_using(self.x, dist_b, self.rng)
+            Array1::from_shape_fn(self.x, |_| self.rng.sample(dist_b))
         } else {
             Array1::zeros(self.x)
         };
@@ -115,7 +114,7 @@ where
                 .map_err(|e| Error::InvalidParameter("sigma", &e.to_string()))?;
             loop {
                 // Sample random matrix M (x x x)
-                let m = Array2::random_using((self.x, self.x), dist_m, self.rng);
+                let m = Array2::from_shape_fn((self.x, self.x), |_| self.rng.sample(dist_m));
 
                 // Compute Sigma = M * M^T
                 s = m.dot(&m.t());

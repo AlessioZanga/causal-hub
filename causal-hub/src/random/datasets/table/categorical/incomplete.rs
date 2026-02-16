@@ -1,6 +1,6 @@
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::Uniform;
 
 use crate::{

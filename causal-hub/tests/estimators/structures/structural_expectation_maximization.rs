@@ -15,7 +15,7 @@ mod tests {
             types::{Cache, Error, Result},
         };
         use ndarray::prelude::*;
-        use rand::{RngCore, SeedableRng};
+        use rand::{Rng, SeedableRng};
         use rand_xoshiro::Xoshiro256PlusPlus;
         use rayon::prelude::*;
 

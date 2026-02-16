@@ -62,7 +62,7 @@ impl<R: Rng> RngMissingMechanism<'_, R> {
         // Calculate the total number of missing variables.
         let n = (v.len() as f64 * self.p).round() as usize;
         // Randomly select n variables to be missing.
-        let m = v.into_iter().choose_multiple(self.rng, n);
+        let m = v.into_iter().sample(self.rng, n);
         // Create the missingness mechanism with empty cause sets.
         let pr = MissingMechanism::new(
             self.graph.labels().clone(),

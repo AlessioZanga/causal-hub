@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use rand::{Rng, seq::index::sample};
+use rand::{Rng, RngExt, seq::index::sample};
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},

@@ -26,7 +26,8 @@ indexmap = { version = "^2.11", features = ["rayon", "serde"] }
 itertools = "^0.14"
 log = "^0.4"
 paste = "^1.0"
-rand = "^0.9"
+rand = "^0.10"
+rand_distr = "^0.6"
+rand_xoshiro = "^0.8"
 rayon = "^1.11"
-rand_xoshiro = "^0.7"
 serde = { version = "^1.0", features = ["derive"] }

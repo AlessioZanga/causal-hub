@@ -1,8 +1,7 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use ndarray_linalg::{CholeskyInto, Determinant, UPLO};
-use ndarray_rand::RandomExt;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Distribution, StandardNormal};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
@@ -777,7 +776,7 @@ impl CPD for GaussCPD {
                 Error::Linalg(&format!("Failed to compute Cholesky decomposition: {}", e))
             })?;
         // Sample from standard normal.
-        let e = Array::random_using(s.nrows(), StandardNormal, rng);
+        let e = Array1::from_shape_fn(s.nrows(), |_| rng.sample(StandardNormal));
         // Compute the sample.
         Ok(l.dot(&e) + mu)
     }

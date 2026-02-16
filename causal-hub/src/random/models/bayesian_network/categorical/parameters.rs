@@ -1,6 +1,5 @@
 use ndarray::prelude::*;
-use ndarray_rand::RandomExt;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::Gamma;
 
 use crate::{
@@ -77,7 +76,7 @@ where
             .map_err(|e| Error::InvalidParameter("alpha", &e.to_string()))?;
 
         // Sample the parameters.
-        let mut parameters = Array::random_using((n, m), gamma, self.rng);
+        let mut parameters = Array::from_shape_fn((n, m), |_| self.rng.sample(gamma));
         // Normalize the parameters row-wise.
         parameters /= &parameters.sum_axis(Axis(1)).insert_axis(Axis(1));
 

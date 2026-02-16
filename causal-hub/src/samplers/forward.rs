@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use ndarray::prelude::*;
 use ndarray_stats::QuantileExt;
 use rand::{
-    Rng, SeedableRng,
+    Rng, RngExt, SeedableRng,
     distr::{Distribution, weighted::WeightedIndex},
 };
 use rand_distr::Exp;

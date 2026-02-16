@@ -24,14 +24,13 @@ itertools.workspace = true
 log.workspace = true
 ndarray = { version = "^0.17", features = ["approx", "rayon", "serde"] }
 ndarray-linalg = { version = "^0.18", default-features = false }
-ndarray-rand = "^0.16"
 ndarray-stats = "^0.7"
 noisy_float = "^0.2"
 paste.workspace = true
 pest = "^2.8"
 pest_derive = "^2.8"
 rand.workspace = true
-rand_distr = "^0.5"
+rand_distr.workspace = true
 rayon.workspace = true
 serde.workspace = true
 serde_json = "^1.0"

@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 use ndarray_stats::{Quantile1dExt, interpolate::Nearest};
 use noisy_float::prelude::*;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Uniform, num_traits::ToPrimitive};
 
 use crate::{

@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use rand::{Rng, seq::SliceRandom};
+use rand::{Rng, RngExt, seq::SliceRandom};
 
 use crate::{
     models::{DiGraph, Graph},
