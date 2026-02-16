@@ -18,7 +18,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn ace_estimate() -> Result<()> {
+        fn pace_estimate() -> Result<()> {
             // Load the model.
             let model = load_asia()?;
 
@@ -33,10 +33,10 @@ mod tests {
             let x = set![model.label_to_index("bronc")?];
             let y = set![model.label_to_index("dysp")?];
 
-            // Compute the ACE of "bronc" on "dysp".
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of "bronc" on "dysp".
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // Set the true ACE.
+            // Set the true PACE.
             let true_x = states![("bronc", ["no", "yes"])];
             let true_y = states![("dysp", ["no", "yes"])];
             let true_p = array![
@@ -45,24 +45,24 @@ mod tests {
             ];
             let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
-            // Check that the ACE is correct.
+            // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
+                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
                 epsilon = 1e-8
             );
 
-            // Compute the ACE of "dysp" on "bronc".
-            let pred_ace = engine.ace_estimate(&y, &x)?;
+            // Compute the PACE of "dysp" on "bronc".
+            let pred_ace = engine.pace_estimate(&y, &x)?;
 
-            // Check that the ACE does not exist.
+            // Check that the PACE does not exist.
             assert!(pred_ace.is_none());
 
             Ok(())
         }
 
         #[test]
-        fn cace_estimate() -> Result<()> {
+        fn cpace_estimate() -> Result<()> {
             // Load the model.
             let model = load_asia()?;
 
@@ -78,10 +78,10 @@ mod tests {
             let y = set![model.label_to_index("either")?];
             let z = set![model.label_to_index("asia")?];
 
-            // Compute the ACE of "smoke" on "either" conditionally on "asia".
-            let pred_ace = engine.cace_estimate(&x, &y, &z)?;
+            // Compute the PACE of "smoke" on "either" conditionally on "asia".
+            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
 
-            // Set the true ACE.
+            // Set the true PACE.
             let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
             let true_y = states![("either", ["no", "yes"])];
             let true_p = array![
@@ -92,10 +92,10 @@ mod tests {
             ];
             let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
-            // Check that the ACE is correct.
+            // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
+                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
                 epsilon = 1e-8
             );
 
@@ -103,7 +103,7 @@ mod tests {
         }
 
         #[test]
-        fn par_ace_estimate() -> Result<()> {
+        fn par_pace_estimate() -> Result<()> {
             // Load the model.
             let model = load_asia()?;
 
@@ -118,10 +118,10 @@ mod tests {
             let x = set![model.label_to_index("bronc")?];
             let y = set![model.label_to_index("dysp")?];
 
-            // Compute the ACE of "bronc" on "dysp".
-            let pred_ace = engine.par_ace_estimate(&x, &y)?;
+            // Compute the PACE of "bronc" on "dysp".
+            let pred_ace = engine.par_pace_estimate(&x, &y)?;
 
-            // Set the true ACE.
+            // Set the true PACE.
             let true_x = states![("bronc", ["no", "yes"])];
             let true_y = states![("dysp", ["no", "yes"])];
             let true_p = array![
@@ -130,10 +130,10 @@ mod tests {
             ];
             let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
-            // Check that the ACE is correct.
+            // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
+                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
                 epsilon = 1e-8
             );
 
@@ -141,7 +141,7 @@ mod tests {
         }
 
         #[test]
-        fn par_cace_estimate() -> Result<()> {
+        fn par_cpace_estimate() -> Result<()> {
             // Load the model.
             let model = load_asia()?;
 
@@ -157,10 +157,10 @@ mod tests {
             let y = set![model.label_to_index("either")?];
             let z = set![model.label_to_index("asia")?];
 
-            // Compute the ACE of "smoke" on "either" conditionally on "asia".
-            let pred_ace = engine.par_cace_estimate(&x, &y, &z)?;
+            // Compute the PACE of "smoke" on "either" conditionally on "asia".
+            let pred_ace = engine.par_cpace_estimate(&x, &y, &z)?;
 
-            // Set the true ACE.
+            // Set the true PACE.
             let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
             let true_y = states![("either", ["no", "yes"])];
             let true_p = array![
@@ -171,10 +171,10 @@ mod tests {
             ];
             let true_ace = CatCPD::new(true_y, true_x, true_p)?;
 
-            // Check that the ACE is correct.
+            // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No ACE"))?,
+                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
                 epsilon = 1e-8
             );
 
@@ -192,7 +192,7 @@ mod tests {
         // =========================================================================
 
         #[test]
-        fn ace_estimate_empty_x() -> Result<()> {
+        fn pace_estimate_empty_x() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -206,14 +206,14 @@ mod tests {
             // Set variables.
             let y = set![model.label_to_index("aceB")?];
 
-            // ACE with empty X should fail.
-            assert!(engine.ace_estimate(&set![], &y).is_err());
+            // PACE with empty X should fail.
+            assert!(engine.pace_estimate(&set![], &y).is_err());
 
             Ok(())
         }
 
         #[test]
-        fn ace_estimate_empty_y() -> Result<()> {
+        fn pace_estimate_empty_y() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -227,14 +227,14 @@ mod tests {
             // Set variables.
             let x = set![model.label_to_index("icdA")?];
 
-            // ACE with empty Y should fail.
-            assert!(engine.ace_estimate(&x, &set![]).is_err());
+            // PACE with empty Y should fail.
+            assert!(engine.pace_estimate(&x, &set![]).is_err());
 
             Ok(())
         }
 
         #[test]
-        fn ace_estimate_non_disjoint_xy() -> Result<()> {
+        fn pace_estimate_non_disjoint_xy() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -248,14 +248,14 @@ mod tests {
             // Set variables.
             let x = set![model.label_to_index("aceB")?];
 
-            // ACE with overlapping X and Y should fail.
-            assert!(engine.ace_estimate(&x, &x).is_err());
+            // PACE with overlapping X and Y should fail.
+            assert!(engine.pace_estimate(&x, &x).is_err());
 
             Ok(())
         }
 
         #[test]
-        fn cace_estimate_non_disjoint_xz() -> Result<()> {
+        fn cpace_estimate_non_disjoint_xz() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -270,14 +270,14 @@ mod tests {
             let x = set![model.label_to_index("icdA")?];
             let y = set![model.label_to_index("aceB")?];
 
-            // CACE with overlapping X and Z should fail.
-            assert!(engine.cace_estimate(&x, &y, &x).is_err());
+            // CPACE with overlapping X and Z should fail.
+            assert!(engine.cpace_estimate(&x, &y, &x).is_err());
 
             Ok(())
         }
 
         #[test]
-        fn cace_estimate_non_disjoint_yz() -> Result<()> {
+        fn cpace_estimate_non_disjoint_yz() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -292,18 +292,18 @@ mod tests {
             let x = set![model.label_to_index("icdA")?];
             let y = set![model.label_to_index("aceB")?];
 
-            // CACE with overlapping Y and Z should fail.
-            assert!(engine.cace_estimate(&x, &y, &y).is_err());
+            // CPACE with overlapping Y and Z should fail.
+            assert!(engine.cpace_estimate(&x, &y, &y).is_err());
 
             Ok(())
         }
 
         // =========================================================================
-        // Single variable ACE tests (1D X -> 1D Y)
+        // Single variable PACE tests (1D X -> 1D Y)
         // =========================================================================
 
         #[test]
-        fn ace_estimate_single_cause_single_effect() -> Result<()> {
+        fn pace_estimate_single_cause_single_effect() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -318,13 +318,13 @@ mod tests {
             let x = set![model.label_to_index("icdA")?];
             let y = set![model.label_to_index("aceB")?];
 
-            // Compute the ACE of icdA on aceB.
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of icdA on aceB.
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should exist because icdA is a parent of aceB.
+            // The PACE should exist because icdA is a parent of aceB.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -348,7 +348,7 @@ mod tests {
         }
 
         #[test]
-        fn ace_estimate_no_causal_effect() -> Result<()> {
+        fn pace_estimate_no_causal_effect() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -363,21 +363,21 @@ mod tests {
             let x = set![model.label_to_index("aceB")?];
             let y = set![model.label_to_index("icdA")?];
 
-            // Compute the ACE of aceB on icdA.
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of aceB on icdA.
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should not exist because aceB is not a cause of icdA.
+            // The PACE should not exist because aceB is not a cause of icdA.
             assert!(pred_ace.is_none());
 
             Ok(())
         }
 
         // =========================================================================
-        // Multi-variable ACE tests (higher dimensional)
+        // Multi-variable PACE tests (higher dimensional)
         // =========================================================================
 
         #[test]
-        fn ace_estimate_single_cause_two_effects() -> Result<()> {
+        fn pace_estimate_single_cause_two_effects() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -394,13 +394,13 @@ mod tests {
             let y2_idx = model.label_to_index("flgD")?;
             let y = set![y1_idx, y2_idx];
 
-            // Compute the ACE of sucA on (gltA, flgD).
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of sucA on (gltA, flgD).
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -421,8 +421,8 @@ mod tests {
 
             // Check numerical values against the true model parameters.
             // True values from ecoli70:
-            //   ACE(sucA -> gltA) = 0.379
-            //   ACE(sucA -> flgD) = 0.6362
+            //   PACE(sucA -> gltA) = 0.379
+            //   PACE(sucA -> flgD) = 0.6362
             assert_relative_eq!(params.coefficients()[[glt_a_row, 0]], 0.379, epsilon = 0.2);
             assert_relative_eq!(params.coefficients()[[flg_d_row, 0]], 0.6362, epsilon = 0.2);
 
@@ -445,7 +445,7 @@ mod tests {
         }
 
         #[test]
-        fn ace_estimate_two_causes_single_effect() -> Result<()> {
+        fn pace_estimate_two_causes_single_effect() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -462,13 +462,13 @@ mod tests {
             let x = set![x1_idx, x2_idx];
             let y = set![model.label_to_index("icdA")?];
 
-            // Compute the ACE of (asnA, ygcE) on icdA.
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of (asnA, ygcE) on icdA.
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -509,7 +509,7 @@ mod tests {
         }
 
         #[test]
-        fn ace_estimate_two_causes_two_effects() -> Result<()> {
+        fn pace_estimate_two_causes_two_effects() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -529,13 +529,13 @@ mod tests {
             let y2_idx = model.label_to_index("flgD")?;
             let y = set![y1_idx, y2_idx];
 
-            // Compute the ACE of (eutG, sucA) on (gltA, flgD).
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of (eutG, sucA) on (gltA, flgD).
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -573,7 +573,7 @@ mod tests {
 
             // Check numerical values. Graph: eutG -> sucA -> {gltA, flgD}
             // When we do(eutG, sucA), eutG has no direct effect on gltA/flgD.
-            // True values: ACE(sucA -> gltA) = 0.379, ACE(sucA -> flgD) = 0.6362
+            // True values: PACE(sucA -> gltA) = 0.379, PACE(sucA -> flgD) = 0.6362
             assert_relative_eq!(
                 params.coefficients()[[glt_a_row, eut_g_col]],
                 0.0,
@@ -613,11 +613,11 @@ mod tests {
         }
 
         // =========================================================================
-        // Conditional ACE (CACE) tests
+        // Conditional PACE (CPACE) tests
         // =========================================================================
 
         #[test]
-        fn cace_estimate_single_cause_single_effect_single_conditioning() -> Result<()> {
+        fn cpace_estimate_single_cause_single_effect_single_conditioning() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -633,13 +633,13 @@ mod tests {
             let y = set![model.label_to_index("gltA")?];
             let z = set![model.label_to_index("eutG")?];
 
-            // Compute the CACE of sucA on gltA given eutG.
-            let pred_ace = engine.cace_estimate(&x, &y, &z)?;
+            // Compute the CPACE of sucA on gltA given eutG.
+            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
 
-            // The CACE should exist.
+            // The CPACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -653,8 +653,8 @@ mod tests {
             assert_eq!(params.intercept().len(), 1);
             assert_eq!(params.covariance().shape(), &[1, 1]);
 
-            // Check numerical values. gltA depends only on sucA, so CACE equals ACE.
-            // True value: ACE(sucA -> gltA) = 0.379, variance = 0.6895
+            // Check numerical values. gltA depends only on sucA, so CPACE equals PACE.
+            // True value: PACE(sucA -> gltA) = 0.379, variance = 0.6895
             let cond_labels: Vec<_> = ace.conditioning_labels().iter().cloned().collect();
             let suc_a_col = cond_labels
                 .iter()
@@ -667,7 +667,7 @@ mod tests {
         }
 
         #[test]
-        fn cace_estimate_two_causes_two_effects_single_conditioning() -> Result<()> {
+        fn cpace_estimate_two_causes_two_effects_single_conditioning() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -687,13 +687,13 @@ mod tests {
             let y = set![y1_idx, y2_idx];
             let z = set![model.label_to_index("eutG")?];
 
-            // Compute the CACE of (asnA, cspG) on (lacA, lacY) given eutG.
-            let pred_ace = engine.cace_estimate(&x, &y, &z)?;
+            // Compute the CPACE of (asnA, cspG) on (lacA, lacY) given eutG.
+            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
 
-            // The CACE should exist.
+            // The CPACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -717,11 +717,11 @@ mod tests {
         }
 
         // =========================================================================
-        // Parallel ACE tests
+        // Parallel PACE tests
         // =========================================================================
 
         #[test]
-        fn par_ace_estimate_single_cause_single_effect() -> Result<()> {
+        fn par_pace_estimate_single_cause_single_effect() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -736,13 +736,13 @@ mod tests {
             let x = set![model.label_to_index("icdA")?];
             let y = set![model.label_to_index("aceB")?];
 
-            // Compute the ACE in parallel.
-            let pred_ace = engine.par_ace_estimate(&x, &y)?;
+            // Compute the PACE in parallel.
+            let pred_ace = engine.par_pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 1);
@@ -766,7 +766,7 @@ mod tests {
         }
 
         #[test]
-        fn par_ace_estimate_two_causes_two_effects() -> Result<()> {
+        fn par_pace_estimate_two_causes_two_effects() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -785,13 +785,13 @@ mod tests {
             let y2_idx = model.label_to_index("flgD")?;
             let y = set![y1_idx, y2_idx];
 
-            // Compute the ACE in parallel.
-            let pred_ace = engine.par_ace_estimate(&x, &y)?;
+            // Compute the PACE in parallel.
+            let pred_ace = engine.par_pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -822,7 +822,7 @@ mod tests {
                 .ok_or_else(|| Error::ConstructionError("Label not found"))?;
 
             // Check numerical values for the direct causal effects.
-            // True values: ACE(sucA -> gltA) = 0.379, ACE(sucA -> flgD) = 0.6362
+            // True values: PACE(sucA -> gltA) = 0.379, PACE(sucA -> flgD) = 0.6362
             assert_relative_eq!(
                 params.coefficients()[[glt_a_row, suc_a_col]],
                 0.379,
@@ -845,7 +845,7 @@ mod tests {
         }
 
         #[test]
-        fn par_cace_estimate_two_causes_two_effects_single_conditioning() -> Result<()> {
+        fn par_cpace_estimate_two_causes_two_effects_single_conditioning() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -865,13 +865,13 @@ mod tests {
             let y = set![y1_idx, y2_idx];
             let z = set![model.label_to_index("eutG")?];
 
-            // Compute the CACE in parallel.
-            let pred_ace = engine.par_cace_estimate(&x, &y, &z)?;
+            // Compute the CPACE in parallel.
+            let pred_ace = engine.par_cpace_estimate(&x, &y, &z)?;
 
-            // The CACE should exist.
+            // The CPACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 2);
@@ -892,7 +892,7 @@ mod tests {
         // =========================================================================
 
         #[test]
-        fn ace_estimate_vs_par_ace_estimate_consistency() -> Result<()> {
+        fn pace_estimate_vs_par_pace_estimate_consistency() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -908,13 +908,13 @@ mod tests {
             let engine_seq =
                 ApproximateInference::new(&mut rng_seq, &model).with_sample_size(5_000)?;
             let causal_seq = CausalInference::new(&engine_seq);
-            let pred_seq = causal_seq.ace_estimate(&x, &y)?;
+            let pred_seq = causal_seq.pace_estimate(&x, &y)?;
 
             // Parallel estimation.
             let engine_par =
                 ApproximateInference::new(&mut rng_par, &model).with_sample_size(5_000)?;
             let causal_par = CausalInference::new(&engine_par);
-            let pred_par = causal_par.par_ace_estimate(&x, &y)?;
+            let pred_par = causal_par.par_pace_estimate(&x, &y)?;
 
             // Both should have the same existence.
             assert_eq!(pred_seq.is_some(), pred_par.is_some());
@@ -947,7 +947,7 @@ mod tests {
         // =========================================================================
 
         #[test]
-        fn ace_estimate_three_causes_three_effects() -> Result<()> {
+        fn pace_estimate_three_causes_three_effects() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -968,13 +968,13 @@ mod tests {
             let y3_idx = model.label_to_index("lacZ")?;
             let y = set![y1_idx, y2_idx, y3_idx];
 
-            // Compute the ACE of (asnA, cspG, eutG) on (lacA, lacY, lacZ).
-            let pred_ace = engine.ace_estimate(&x, &y)?;
+            // Compute the PACE of (asnA, cspG, eutG) on (lacA, lacY, lacZ).
+            let pred_ace = engine.pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 3);
@@ -1009,7 +1009,7 @@ mod tests {
         }
 
         #[test]
-        fn par_ace_estimate_three_causes_three_effects() -> Result<()> {
+        fn par_pace_estimate_three_causes_three_effects() -> Result<()> {
             // Load the model.
             let model = load_ecoli70()?;
 
@@ -1030,13 +1030,13 @@ mod tests {
             let y3_idx = model.label_to_index("lacZ")?;
             let y = set![y1_idx, y2_idx, y3_idx];
 
-            // Compute the ACE in parallel.
-            let pred_ace = engine.par_ace_estimate(&x, &y)?;
+            // Compute the PACE in parallel.
+            let pred_ace = engine.par_pace_estimate(&x, &y)?;
 
-            // The ACE should exist.
+            // The PACE should exist.
             assert!(pred_ace.is_some());
 
-            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("ACE should exist"))?;
+            let ace = pred_ace.ok_or_else(|| Error::ConstructionError("PACE should exist"))?;
 
             // Check the CPD structure.
             assert_eq!(ace.labels().len(), 3);

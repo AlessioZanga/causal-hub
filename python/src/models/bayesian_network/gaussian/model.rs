@@ -425,7 +425,7 @@ impl PyGaussBN {
         estimate.map(Into::into).map_err(to_pyerr)
     }
 
-    /// Estimate a conditional causal effect (CACE).
+    /// Estimate a conditional population average causal effect (CPACE).
     ///
     /// Parameters
     /// ----------
@@ -449,7 +449,7 @@ impl PyGaussBN {
     /// Returns
     /// -------
     /// GaussCPD | None
-    ///     A new conditional causal effect (CACE) distribution, if identifiable.
+    ///     A new conditional population average causal effect (CPACE) distribution, if identifiable.
     ///
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (x, y, z, estimator=None, missing_method=None, missing_mechanism=None, seed=31, parallel=true))]
@@ -493,7 +493,7 @@ impl PyGaussBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z)
                     })
                 } else {
                     // Execute sequentially.
@@ -505,7 +505,7 @@ impl PyGaussBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z)
                 }
             }
             // Initialize the Bayesian estimator.
@@ -522,7 +522,7 @@ impl PyGaussBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cace_estimate(&x, &y, &z)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z)
                     })
                 } else {
                     // Execute sequentially.
@@ -534,7 +534,7 @@ impl PyGaussBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cace_estimate(&x, &y, &z)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z)
                 }
             }
         };

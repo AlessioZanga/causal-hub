@@ -122,14 +122,14 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
 
     // Causal Inference
     let engine = CausalInference::new(&engine);
-    // ACE(X -> Y).
-    group.bench_function("causal_inference (ace)", |b| {
-        b.iter(|| -> Result<_> { engine.ace_estimate(_b(&x), _b(&y)) })
+    // PACE(X -> Y).
+    group.bench_function("causal_inference (pace)", |b| {
+        b.iter(|| -> Result<_> { engine.pace_estimate(_b(&x), _b(&y)) })
     });
 
-    // CACE(X -> Y | Z).
-    group.bench_function("causal_inference (cace)", |b| {
-        b.iter(|| -> Result<_> { engine.cace_estimate(_b(&x), _b(&y), _b(&z)) })
+    // CPACE(X -> Y | Z).
+    group.bench_function("causal_inference (cpace)", |b| {
+        b.iter(|| -> Result<_> { engine.cpace_estimate(_b(&x), _b(&y), _b(&z)) })
     });
 
     group.finish();

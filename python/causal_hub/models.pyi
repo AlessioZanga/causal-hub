@@ -204,7 +204,7 @@ class CatBN:
         parallel: builtins.bool = True,
     ) -> typing.Optional[CatCPD]:
         r"""
-        Estimate a conditional causal effect (CACE).
+        Estimate a conditional population average causal effect (CPACE).
 
         Parameters
         ----------
@@ -228,7 +228,7 @@ class CatBN:
         Returns
         -------
         CatCPD | None
-            A new conditional causal effect (CACE) distribution, if identifiable.
+            A new conditional population average causal effect (CPACE) distribution, if identifiable.
         """
 
     @classmethod
@@ -1632,7 +1632,7 @@ class GaussBN:
         parallel: builtins.bool = True,
     ) -> typing.Optional[GaussCPD]:
         r"""
-        Estimate a conditional causal effect (CACE).
+        Estimate a conditional population average causal effect (CPACE).
 
         Parameters
         ----------
@@ -1656,7 +1656,7 @@ class GaussBN:
         Returns
         -------
         GaussCPD | None
-            A new conditional causal effect (CACE) distribution, if identifiable.
+            A new conditional population average causal effect (CPACE) distribution, if identifiable.
         """
 
     @classmethod

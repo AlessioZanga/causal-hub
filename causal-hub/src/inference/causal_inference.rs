@@ -34,7 +34,7 @@ pub trait BNCausalInference<T>
 where
     T: BN,
 {
-    /// Estimate the average causal effect of `X` on `Y` as E(Y | do(X)).
+    /// Estimate the population average causal effect of `X` on `Y` as E(Y | do(X)).
     ///
     /// # Arguments
     ///
@@ -49,13 +49,13 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated average causal effect of `X` on `Y`.
+    /// The estimated population average causal effect of `X` on `Y`.
     ///
-    fn ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
-        self.cace_estimate(x, y, &set![])
+    fn pace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
+        self.cpace_estimate(x, y, &set![])
     }
 
-    /// Estimate the conditional average causal effect of `X` on `Y` given `Z` as E(Y | do(X), Z).
+    /// Estimate the conditional population average causal effect of `X` on `Y` given `Z` as E(Y | do(X), Z).
     ///
     /// # Arguments
     ///
@@ -73,9 +73,9 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
+    /// The estimated conditional population average causal effect of `X` on `Y` given `Z`.
     ///
-    fn cace_estimate(
+    fn cpace_estimate(
         &self,
         x: &Set<usize>,
         y: &Set<usize>,
@@ -89,7 +89,7 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + BNInference<$type>,
     {
-        fn cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
+        fn cpace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Check X is not empty.
             if x.is_empty() {
                 return Err(Error::EmptySet("X"));
@@ -170,7 +170,7 @@ pub trait ParBNCausalInference<T>
 where
     T: BN,
 {
-    /// Estimate the average causal effect of `X` on `Y` as E(Y | do(X)) in parallel.
+    /// Estimate the population average causal effect of `X` on `Y` as E(Y | do(X)) in parallel.
     ///
     /// # Arguments
     ///
@@ -185,13 +185,13 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated average causal effect of `X` on `Y`.
+    /// The estimated population average causal effect of `X` on `Y`.
     ///
-    fn par_ace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
-        self.par_cace_estimate(x, y, &set![])
+    fn par_pace_estimate(&self, x: &Set<usize>, y: &Set<usize>) -> Result<Option<T::CPD>> {
+        self.par_cpace_estimate(x, y, &set![])
     }
 
-    /// Estimate the conditional average causal effect of `X` on `Y` given `Z` as E(Y | do(X), Z) in parallel.
+    /// Estimate the conditional population average causal effect of `X` on `Y` given `Z` as E(Y | do(X), Z) in parallel.
     ///
     /// # Arguments
     ///
@@ -209,9 +209,9 @@ where
     ///
     /// # Returns
     ///
-    /// The estimated conditional average causal effect of `X` on `Y` given `Z`.
+    /// The estimated conditional population average causal effect of `X` on `Y` given `Z`.
     ///
-    fn par_cace_estimate(
+    fn par_cpace_estimate(
         &self,
         x: &Set<usize>,
         y: &Set<usize>,
@@ -225,7 +225,7 @@ macro_for!($type in [CatBN, GaussBN] {
     where
         E: Modelled<$type> + ParBNInference<$type>,
     {
-        fn par_cace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
+        fn par_cpace_estimate(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<Option<<$type as BN>::CPD>> {
             // Check X is not empty.
             if x.is_empty() {
                 return Err(Error::EmptySet("X"));
