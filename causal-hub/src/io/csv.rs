@@ -11,7 +11,7 @@ pub trait CsvIO: Sized {
     ///
     /// # Arguments
     ///
-    /// * `reader` - The CSV reader to read from.
+    /// * `reader` - The reader to read from.
     ///
     /// # Returns
     ///
@@ -23,7 +23,7 @@ pub trait CsvIO: Sized {
     ///
     /// # Arguments
     ///
-    /// * `writer` - The CSV writer to write to.
+    /// * `writer` - The writer to write to.
     ///
     fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()>;
 

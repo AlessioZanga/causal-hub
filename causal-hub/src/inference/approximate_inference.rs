@@ -27,12 +27,12 @@ impl<'a, R, M> ApproximateInference<'a, R, M, (), ()> {
     ///
     /// # Arguments
     ///
-    /// * `rng` - A random number generator.
+    /// * `rng` - A mutable reference to a random number generator.
     /// * `model` - A reference to the model to sample from.
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance.
+    /// A new approximate inference instance.
     ///
     #[inline]
     pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
@@ -58,7 +58,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance with the estimator.
+    /// A new approximate inference instance with the estimator.
     ///
     pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T>
     where
@@ -81,7 +81,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance with evidence.
+    /// A new approximate inference instance with evidence.
     ///
     #[inline]
     pub fn with_evidence<T>(self, evidence: &'a T) -> ApproximateInference<'a, R, M, T, F> {
@@ -102,7 +102,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance with the specified sample size.
+    /// A new approximate inference instance with the specified sample size.
     ///
     #[inline]
     pub fn with_sample_size(mut self, n: usize) -> Result<Self> {

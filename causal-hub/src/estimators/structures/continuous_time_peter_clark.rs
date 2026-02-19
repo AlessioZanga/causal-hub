@@ -334,7 +334,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the current instance.
+    /// The modified instance.
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {

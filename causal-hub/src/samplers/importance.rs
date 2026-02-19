@@ -44,7 +44,7 @@ where
     ///
     /// # Returns
     ///
-    /// Return a new `ImportanceSampler` instance.
+    /// A new `ImportanceSampler` instance.
     ///
     #[inline]
     pub fn new(rng: &'a mut R, model: &'a M, evidence: &'a E) -> Result<Self> {

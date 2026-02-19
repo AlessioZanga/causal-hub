@@ -21,7 +21,7 @@ pub trait BifIO: Sized {
     ///
     /// # Returns
     ///
-    /// A string slice that holds the BIF data.
+    /// A string that holds the BIF data.
     ///
     fn to_bif_string(&self) -> Result<String>;
 

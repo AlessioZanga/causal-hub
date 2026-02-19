@@ -131,7 +131,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the current instance.
+    /// The modified instance.
     ///
     #[inline]
     pub const fn with_max_parents(mut self, max_parents: usize) -> Self {
@@ -147,7 +147,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the current instance.
+    /// The modified instance.
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {

@@ -28,15 +28,15 @@ impl UnGraph {
         Ok(())
     }
 
-    /// Returns the neighbors of a vertex.
+    /// Returns the neighbors of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the neighbors.
+    /// * `x` - The set of vertices for which to find the neighbors.
     ///
     /// # Errors
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///

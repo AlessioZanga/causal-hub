@@ -35,7 +35,7 @@ impl<'a, R, M> ForwardSampler<'a, R, M> {
     ///
     /// # Returns
     ///
-    /// Return a new `ForwardSampler` instance.
+    /// A new `ForwardSampler` instance.
     ///
     #[inline]
     pub fn new(rng: &'a mut R, model: &'a M) -> Result<Self> {
