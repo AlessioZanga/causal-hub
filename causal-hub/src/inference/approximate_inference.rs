@@ -340,7 +340,7 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
         fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
@@ -595,7 +595,7 @@ macro_for!($type in [CatBN, GaussBN] {
     impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
         fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.

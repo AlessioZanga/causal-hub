@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatType, Dataset},
+    datasets::{CatTable, CatTrjEv, CatTrjEvT, CatType, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -13,6 +13,33 @@ use crate::{
 pub struct CatTrj {
     events: CatTable,
     times: Array1<f64>,
+}
+/// Concrete iterator over trajectory evidences.
+pub struct CatTrjEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
+    time_bounds: std::vec::IntoIter<(f64, f64)>,
+    states: &'a States,
+}
+
+impl<'a> Iterator for CatTrjEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+        let (start_time, end_time) = self.time_bounds.next().unwrap_or((0.0, 0.0));
+
+        let evidences =
+            row.iter()
+                .enumerate()
+                .map(|(event, &state)| CatTrjEvT::CertainPositiveInterval {
+                    event,
+                    state: state as usize,
+                    start_time,
+                    end_time,
+                });
+
+        Some(CatTrjEv::new(self.states.clone(), evidences))
+    }
 }
 
 impl CatTrj {
@@ -163,10 +190,24 @@ impl Labelled for CatTrj {
 
 impl Dataset for CatTrj {
     type Values = Array2<CatType>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatTrjEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.events.values()
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        let mut end_times: Vec<f64> = self.times.iter().copied().skip(1).collect();
+        end_times.push(*self.times.last().unwrap_or(&0.0));
+        let time_bounds: Vec<(f64, f64)> = self.times.iter().copied().zip(end_times).collect();
+
+        CatTrjEvidenceIter {
+            rows: self.values().rows().into_iter(),
+            time_bounds: time_bounds.into_iter(),
+            states: self.states(),
+        }
     }
 
     #[inline]
@@ -349,12 +390,45 @@ impl Labelled for CatTrjs {
     }
 }
 
+/// Concrete iterator over trajectories evidences.
+pub struct CatTrjsEvidenceIter<'a> {
+    trajectories: std::slice::Iter<'a, CatTrj>,
+    current: Option<<CatTrj as Dataset>::EvidenceIter<'a>>,
+}
+
+impl<'a> Iterator for CatTrjsEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current.as_mut()
+                && let Some(item) = current.next()
+            {
+                return Some(item);
+            }
+
+            self.current = self.trajectories.next().map(Dataset::evidence_iter);
+
+            self.current.as_ref()?;
+        }
+    }
+}
+
 impl Dataset for CatTrjs {
     type Values = Vec<CatTrj>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatTrjsEvidenceIter {
+            trajectories: self.values.iter(),
+            current: None,
+        }
     }
 
     #[inline]

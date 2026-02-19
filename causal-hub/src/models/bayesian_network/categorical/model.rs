@@ -10,7 +10,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatEv, CatSample, CatTable, CatWtdTable},
+    datasets::{CatEv, CatIncTable, CatSample, CatTable, CatWtdTable},
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
@@ -136,7 +136,8 @@ impl BN for CatBN {
     type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
-    type WeightedSamples = CatWtdTable;
+    type IncSamples = CatIncTable;
+    type WtdSamples = CatWtdTable;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where

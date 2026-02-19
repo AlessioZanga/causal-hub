@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatSample, CatTable, Dataset},
+    datasets::{CatEv, CatSample, CatTable, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -92,10 +92,16 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
+    type Evidence = CatEv;
+    type EvidenceIter<'a> = <CatTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]

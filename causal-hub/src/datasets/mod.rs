@@ -7,12 +7,21 @@ pub use table::*;
 mod trajectory;
 pub use trajectory::*;
 
-use crate::types::{Result, Set};
+use crate::{
+    models::Labelled,
+    types::{Result, Set},
+};
 
 /// A trait for dataset.
-pub trait Dataset {
+pub trait Dataset: Labelled {
     /// The type of the values.
     type Values;
+    /// The type of the evidence,
+    type Evidence;
+    /// The type of the evidence iterator.
+    type EvidenceIter<'a>: Iterator<Item = Result<Self::Evidence>>
+    where
+        Self: 'a;
 
     /// The values of the dataset.
     ///
@@ -21,6 +30,14 @@ pub trait Dataset {
     /// A reference to the values.
     ///
     fn values(&self) -> &Self::Values;
+
+    /// An iterator over the evidence in the dataset.
+    ///
+    /// # Returns
+    ///
+    /// An iterator over the evidence in the dataset.
+    ///
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_>;
 
     /// The sample size.
     ///

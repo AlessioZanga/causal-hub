@@ -34,7 +34,7 @@ mod tests {
             let y = set![model.label_to_index("dysp")?];
 
             // Compute the PACE of "bronc" on "dysp".
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // Set the true PACE.
             let true_x = states![("bronc", ["no", "yes"])];
@@ -53,7 +53,7 @@ mod tests {
             );
 
             // Compute the PACE of "dysp" on "bronc".
-            let pred_ace = engine.pace_estimate(&y, &x)?;
+            let pred_ace = engine.pace_estimate(&y, &x, None)?;
 
             // Check that the PACE does not exist.
             assert!(pred_ace.is_none());
@@ -79,7 +79,7 @@ mod tests {
             let z = set![model.label_to_index("asia")?];
 
             // Compute the PACE of "smoke" on "either" conditionally on "asia".
-            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
+            let pred_ace = engine.cpace_estimate(&x, &y, &z, None)?;
 
             // Set the true PACE.
             let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
@@ -119,7 +119,7 @@ mod tests {
             let y = set![model.label_to_index("dysp")?];
 
             // Compute the PACE of "bronc" on "dysp".
-            let pred_ace = engine.par_pace_estimate(&x, &y)?;
+            let pred_ace = engine.par_pace_estimate(&x, &y, None)?;
 
             // Set the true PACE.
             let true_x = states![("bronc", ["no", "yes"])];
@@ -158,7 +158,7 @@ mod tests {
             let z = set![model.label_to_index("asia")?];
 
             // Compute the PACE of "smoke" on "either" conditionally on "asia".
-            let pred_ace = engine.par_cpace_estimate(&x, &y, &z)?;
+            let pred_ace = engine.par_cpace_estimate(&x, &y, &z, None)?;
 
             // Set the true PACE.
             let true_x = states![("asia", ["no", "yes"]), ("smoke", ["no", "yes"])];
@@ -207,7 +207,7 @@ mod tests {
             let y = set![model.label_to_index("aceB")?];
 
             // PACE with empty X should fail.
-            assert!(engine.pace_estimate(&set![], &y).is_err());
+            assert!(engine.pace_estimate(&set![], &y, None).is_err());
 
             Ok(())
         }
@@ -228,7 +228,7 @@ mod tests {
             let x = set![model.label_to_index("icdA")?];
 
             // PACE with empty Y should fail.
-            assert!(engine.pace_estimate(&x, &set![]).is_err());
+            assert!(engine.pace_estimate(&x, &set![], None).is_err());
 
             Ok(())
         }
@@ -249,7 +249,7 @@ mod tests {
             let x = set![model.label_to_index("aceB")?];
 
             // PACE with overlapping X and Y should fail.
-            assert!(engine.pace_estimate(&x, &x).is_err());
+            assert!(engine.pace_estimate(&x, &x, None).is_err());
 
             Ok(())
         }
@@ -271,7 +271,7 @@ mod tests {
             let y = set![model.label_to_index("aceB")?];
 
             // CPACE with overlapping X and Z should fail.
-            assert!(engine.cpace_estimate(&x, &y, &x).is_err());
+            assert!(engine.cpace_estimate(&x, &y, &x, None).is_err());
 
             Ok(())
         }
@@ -293,7 +293,7 @@ mod tests {
             let y = set![model.label_to_index("aceB")?];
 
             // CPACE with overlapping Y and Z should fail.
-            assert!(engine.cpace_estimate(&x, &y, &y).is_err());
+            assert!(engine.cpace_estimate(&x, &y, &y, None).is_err());
 
             Ok(())
         }
@@ -319,7 +319,7 @@ mod tests {
             let y = set![model.label_to_index("aceB")?];
 
             // Compute the PACE of icdA on aceB.
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should exist because icdA is a parent of aceB.
             assert!(pred_ace.is_some());
@@ -364,7 +364,7 @@ mod tests {
             let y = set![model.label_to_index("icdA")?];
 
             // Compute the PACE of aceB on icdA.
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should not exist because aceB is not a cause of icdA.
             assert!(pred_ace.is_none());
@@ -395,7 +395,7 @@ mod tests {
             let y = set![y1_idx, y2_idx];
 
             // Compute the PACE of sucA on (gltA, flgD).
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -463,7 +463,7 @@ mod tests {
             let y = set![model.label_to_index("icdA")?];
 
             // Compute the PACE of (asnA, ygcE) on icdA.
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -530,7 +530,7 @@ mod tests {
             let y = set![y1_idx, y2_idx];
 
             // Compute the PACE of (eutG, sucA) on (gltA, flgD).
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -634,7 +634,7 @@ mod tests {
             let z = set![model.label_to_index("eutG")?];
 
             // Compute the CPACE of sucA on gltA given eutG.
-            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
+            let pred_ace = engine.cpace_estimate(&x, &y, &z, None)?;
 
             // The CPACE should exist.
             assert!(pred_ace.is_some());
@@ -688,7 +688,7 @@ mod tests {
             let z = set![model.label_to_index("eutG")?];
 
             // Compute the CPACE of (asnA, cspG) on (lacA, lacY) given eutG.
-            let pred_ace = engine.cpace_estimate(&x, &y, &z)?;
+            let pred_ace = engine.cpace_estimate(&x, &y, &z, None)?;
 
             // The CPACE should exist.
             assert!(pred_ace.is_some());
@@ -737,7 +737,7 @@ mod tests {
             let y = set![model.label_to_index("aceB")?];
 
             // Compute the PACE in parallel.
-            let pred_ace = engine.par_pace_estimate(&x, &y)?;
+            let pred_ace = engine.par_pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -786,7 +786,7 @@ mod tests {
             let y = set![y1_idx, y2_idx];
 
             // Compute the PACE in parallel.
-            let pred_ace = engine.par_pace_estimate(&x, &y)?;
+            let pred_ace = engine.par_pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -866,7 +866,7 @@ mod tests {
             let z = set![model.label_to_index("eutG")?];
 
             // Compute the CPACE in parallel.
-            let pred_ace = engine.par_cpace_estimate(&x, &y, &z)?;
+            let pred_ace = engine.par_cpace_estimate(&x, &y, &z, None)?;
 
             // The CPACE should exist.
             assert!(pred_ace.is_some());
@@ -908,13 +908,13 @@ mod tests {
             let engine_seq =
                 ApproximateInference::new(&mut rng_seq, &model).with_sample_size(5_000)?;
             let causal_seq = CausalInference::new(&engine_seq);
-            let pred_seq = causal_seq.pace_estimate(&x, &y)?;
+            let pred_seq = causal_seq.pace_estimate(&x, &y, None)?;
 
             // Parallel estimation.
             let engine_par =
                 ApproximateInference::new(&mut rng_par, &model).with_sample_size(5_000)?;
             let causal_par = CausalInference::new(&engine_par);
-            let pred_par = causal_par.par_pace_estimate(&x, &y)?;
+            let pred_par = causal_par.par_pace_estimate(&x, &y, None)?;
 
             // Both should have the same existence.
             assert_eq!(pred_seq.is_some(), pred_par.is_some());
@@ -969,7 +969,7 @@ mod tests {
             let y = set![y1_idx, y2_idx, y3_idx];
 
             // Compute the PACE of (asnA, cspG, eutG) on (lacA, lacY, lacZ).
-            let pred_ace = engine.pace_estimate(&x, &y)?;
+            let pred_ace = engine.pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());
@@ -1031,7 +1031,7 @@ mod tests {
             let y = set![y1_idx, y2_idx, y3_idx];
 
             // Compute the PACE in parallel.
-            let pred_ace = engine.par_pace_estimate(&x, &y)?;
+            let pred_ace = engine.par_pace_estimate(&x, &y, None)?;
 
             // The PACE should exist.
             assert!(pred_ace.is_some());

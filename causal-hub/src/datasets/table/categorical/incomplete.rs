@@ -8,7 +8,8 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{
-        CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMechanism, MissingTable,
+        CatEv, CatEvT, CatTable, CatType, CatWtdTable, Dataset, IncDataset, MissingMechanism,
+        MissingTable,
     },
     estimators::{BE, CPDEstimator},
     io::CsvIO,
@@ -25,6 +26,30 @@ pub struct CatIncTable {
     shape: Array1<usize>,
     values: Array2<CatType>,
     missing: MissingTable,
+}
+
+/// Concrete iterator over incomplete categorical table evidences.
+pub struct CatIncTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
+    states: &'a States,
+    missing: CatType,
+}
+
+impl<'a> Iterator for CatIncTableEvidenceIter<'a> {
+    type Item = Result<CatEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row.iter().enumerate().filter_map(|(event, &state)| {
+            (state != self.missing).then_some(CatEvT::CertainPositive {
+                event,
+                state: state as usize,
+            })
+        });
+
+        Some(CatEv::new(self.states.clone(), evidences))
+    }
 }
 
 impl Labelled for CatIncTable {
@@ -190,10 +215,20 @@ impl CatIncTable {
 
 impl Dataset for CatIncTable {
     type Values = Array2<CatType>;
+    type Evidence = CatEv;
+    type EvidenceIter<'a> = CatIncTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatIncTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            states: &self.states,
+            missing: Self::MISSING,
+        }
     }
 
     #[inline]

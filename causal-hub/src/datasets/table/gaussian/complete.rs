@@ -7,7 +7,7 @@ use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::Dataset,
+    datasets::{Dataset, GaussEv, GaussEvT},
     io::CsvIO,
     models::Labelled,
     types::{Error, Labels, Result, Set},
@@ -23,6 +23,27 @@ pub type GaussSample = Array1<GaussType>;
 pub struct GaussTable {
     labels: Labels,
     values: Array2<GaussType>,
+}
+
+/// Concrete iterator over Gaussian table evidences.
+pub struct GaussTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, GaussType, Ix1>,
+    labels: &'a Labels,
+}
+
+impl<'a> Iterator for GaussTableEvidenceIter<'a> {
+    type Item = Result<GaussEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row
+            .iter()
+            .enumerate()
+            .map(|(event, &value)| GaussEvT::CertainPositive { event, value });
+
+        Some(GaussEv::new(self.labels.clone(), evidences))
+    }
 }
 
 impl Labelled for GaussTable {
@@ -85,10 +106,19 @@ impl GaussTable {
 
 impl Dataset for GaussTable {
     type Values = Array2<GaussType>;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = GaussTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        GaussTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            labels: &self.labels,
+        }
     }
 
     #[inline]

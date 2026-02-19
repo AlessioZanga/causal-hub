@@ -493,7 +493,7 @@ impl PyCatBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, None)
                     })
                 } else {
                     // Execute sequentially.
@@ -505,7 +505,7 @@ impl PyCatBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, None)
                 }
             }
             // Initialize the Bayesian estimator.
@@ -522,7 +522,7 @@ impl PyCatBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, None)
                     })
                 } else {
                     // Execute sequentially.
@@ -534,7 +534,7 @@ impl PyCatBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, None)
                 }
             }
         };

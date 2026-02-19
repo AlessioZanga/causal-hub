@@ -19,8 +19,10 @@ pub trait BN {
     type Sample;
     /// The type of the samples.
     type Samples;
+    /// The type of the incomplete samples.
+    type IncSamples;
     /// The type of the weighted samples.
-    type WeightedSamples;
+    type WtdSamples;
 
     /// Constructs a new Bayesian network.
     ///

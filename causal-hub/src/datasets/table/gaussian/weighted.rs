@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{Dataset, GaussSample, GaussTable},
+    datasets::{Dataset, GaussEv, GaussSample, GaussTable},
     models::Labelled,
     types::{Error, Labels, Result, Set},
 };
@@ -65,10 +65,16 @@ impl GaussWtdTable {
 
 impl Dataset for GaussWtdTable {
     type Values = GaussTable;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = <GaussTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]

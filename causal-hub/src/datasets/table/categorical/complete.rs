@@ -10,7 +10,7 @@ use log::debug;
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::Dataset,
+    datasets::{CatEv, CatEvT, Dataset},
     io::CsvIO,
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
@@ -28,6 +28,30 @@ pub struct CatTable {
     states: States,
     shape: Array1<usize>,
     values: Array2<CatType>,
+}
+
+/// Concrete iterator over categorical table evidences.
+pub struct CatTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
+    states: &'a States,
+}
+
+impl<'a> Iterator for CatTableEvidenceIter<'a> {
+    type Item = Result<CatEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row
+            .iter()
+            .enumerate()
+            .map(|(event, &state)| CatEvT::CertainPositive {
+                event,
+                state: state as usize,
+            });
+
+        Some(CatEv::new(self.states.clone(), evidences))
+    }
 }
 
 impl Labelled for CatTable {
@@ -231,10 +255,19 @@ impl Display for CatTable {
 
 impl Dataset for CatTable {
     type Values = Array2<CatType>;
+    type Evidence = CatEv;
+    type EvidenceIter<'a> = CatTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            states: &self.states,
+        }
     }
 
     #[inline]

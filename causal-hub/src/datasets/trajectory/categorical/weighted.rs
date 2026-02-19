@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, CatType, Dataset},
+    datasets::{CatTrj, CatTrjEv, CatType, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -69,7 +69,6 @@ impl CatWtdTrj {
 
     /// Returns the weight of the trajectory.
     ///
-    /// # Returns
     ///
     /// The weight of the trajectory.
     ///
@@ -121,10 +120,16 @@ impl Labelled for CatWtdTrj {
 
 impl Dataset for CatWtdTrj {
     type Values = Array2<CatType>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = <CatTrj as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.trajectory.values()
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.trajectory.evidence_iter()
     }
 
     #[inline]
@@ -149,6 +154,30 @@ pub struct CatWtdTrjs {
     states: States,
     shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
+}
+
+/// Concrete iterator over weighted trajectories evidences.
+pub struct CatWtdTrjsEvidenceIter<'a> {
+    trajectories: std::slice::Iter<'a, CatWtdTrj>,
+    current: Option<<CatWtdTrj as Dataset>::EvidenceIter<'a>>,
+}
+
+impl<'a> Iterator for CatWtdTrjsEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current.as_mut()
+                && let Some(item) = current.next()
+            {
+                return Some(item);
+            }
+
+            self.current = self.trajectories.next().map(Dataset::evidence_iter);
+
+            self.current.as_ref()?;
+        }
+    }
 }
 
 impl CatWtdTrjs {
@@ -303,10 +332,19 @@ impl Labelled for CatWtdTrjs {
 
 impl Dataset for CatWtdTrjs {
     type Values = Vec<CatWtdTrj>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatWtdTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatWtdTrjsEvidenceIter {
+            trajectories: self.values.iter(),
+            current: None,
+        }
     }
 
     #[inline]

@@ -8,7 +8,8 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{
-        Dataset, GaussTable, GaussType, GaussWtdTable, IncDataset, MissingMechanism, MissingTable,
+        Dataset, GaussEv, GaussEvT, GaussTable, GaussType, GaussWtdTable, IncDataset,
+        MissingMechanism, MissingTable,
     },
     estimators::{BE, CPDEstimator},
     io::CsvIO,
@@ -24,6 +25,26 @@ pub struct GaussIncTable {
     labels: Labels,
     values: Array2<GaussType>,
     missing: MissingTable,
+}
+
+/// Concrete iterator over incomplete Gaussian table evidences.
+pub struct GaussIncTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, GaussType, Ix1>,
+    labels: &'a Labels,
+}
+
+impl<'a> Iterator for GaussIncTableEvidenceIter<'a> {
+    type Item = Result<GaussEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row.iter().enumerate().filter_map(|(event, &value)| {
+            (!value.is_nan()).then_some(GaussEvT::CertainPositive { event, value })
+        });
+
+        Some(GaussEv::new(self.labels.clone(), evidences))
+    }
 }
 
 impl Labelled for GaussIncTable {
@@ -77,10 +98,19 @@ impl GaussIncTable {
 
 impl Dataset for GaussIncTable {
     type Values = Array2<GaussType>;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = GaussIncTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        GaussIncTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            labels: &self.labels,
+        }
     }
 
     #[inline]
