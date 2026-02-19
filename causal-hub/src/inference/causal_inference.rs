@@ -347,6 +347,70 @@ where
         z: &Set<usize>,
         w: Option<&T::Evidence>,
     ) -> Result<Option<T::CPD>>;
+
+    /// Estimate the sample average causal effect of `X` on `Y`
+    /// with evidence `W = w` from data `D` as E(Y | do(X), W = w) in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The cause variables.
+    /// * `y` - The effect variables.
+    /// * `d` - The data to use as evidence.
+    ///
+    /// # Errors
+    ///
+    /// * `IllegalArgument` if `X` is empty.
+    /// * `IllegalArgument` if `Y` is empty.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    ///
+    /// # Returns
+    ///
+    /// The estimated sample average causal effect of `X` on `Y`.
+    ///
+    #[inline]
+    fn par_sace_estimate<D>(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        d: D,
+    ) -> Result<Option<Vec<T::CPD>>>
+    where
+        D: Dataset<Evidence = T::Evidence>,
+    {
+        self.par_csace_estimate(x, y, &set![], d)
+    }
+
+    /// Estimate the conditional sample average causal effect of `X` on `Y`
+    /// given `Z` with evidence `W = w` from data `D` as E(Y | do(X), Z, W = w) in parallel.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The cause variables.
+    /// * `y` - The effect variables.
+    /// * `z` - The conditioning variables.
+    /// * `d` - The data to use as evidence.
+    ///
+    /// # Errors
+    ///
+    /// * `IllegalArgument` if `X` is empty.
+    /// * `IllegalArgument` if `Y` is empty.
+    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    /// * `IllegalArgument` if `X` and `Z` are not disjoint.
+    /// * `IllegalArgument` if `Y` and `Z` are not disjoint.
+    ///
+    /// # Returns
+    ///
+    /// The estimated conditional sample average causal effect of `X` on `Y` given `Z`.
+    ///
+    fn par_csace_estimate<D>(
+        &self,
+        x: &Set<usize>,
+        y: &Set<usize>,
+        z: &Set<usize>,
+        d: D,
+    ) -> Result<Option<Vec<T::CPD>>>
+    where
+        D: Dataset<Evidence = T::Evidence>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
@@ -437,6 +501,39 @@ macro_for!($type in [CatBN, GaussBN] {
                     Ok(Some(p_y_do_x_z))
                 }
             }
+        }
+
+        fn par_csace_estimate<D>(
+            &self,
+            x: &Set<usize>,
+            y: &Set<usize>,
+            z: &Set<usize>,
+            d: D,
+        ) -> Result<Option<Vec<<$type as BN>::CPD>>>
+        where
+            D: Dataset<Evidence = <$type as BN>::Evidence>,
+        {
+            // Check labels of the estimator model and the dataset are the same.
+            if self.engine.model().labels() != d.labels() {
+                return Err(Error::LabelMismatch(
+                    &format!("{:?}", self.engine.model().labels()),
+                    &format!("{:?}", d.labels()),
+                ));
+            }
+
+            // Exclude the variable in X, Y and Z.
+            let u = Set::from_iter(0..d.labels().len());
+            let u = &(&(&u - x) - y) - z;
+            // Restrict the data to the variables in U.
+            let d_prime = d.select(&u)?;
+
+            // For each evidence w in D ...
+            d_prime
+                .evidence_iter()
+                // ... estimate the CPACE with evidence W = w ...
+                .map(|w| w.and_then(|w| self.par_cpace_estimate(x, y, z, Some(&w))))
+                // ... and collect the results.
+                .collect()
         }
     }
 
