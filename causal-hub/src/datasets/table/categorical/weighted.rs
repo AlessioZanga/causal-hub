@@ -118,3 +118,11 @@ impl Dataset for CatWtdTable {
         Self::new(dataset, weights)
     }
 }
+
+impl From<CatTable> for CatWtdTable {
+    #[inline]
+    fn from(dataset: CatTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
+    }
+}

@@ -373,7 +373,7 @@ impl PyCatBN {
                                     )?
                                     .par_fit(x, z)
                             })
-                            .par_estimate(&x, &z)
+                            .par_estimate(&x, &z, None)
                     })
                 } else {
                     // Execute sequentially.
@@ -386,7 +386,7 @@ impl PyCatBN {
                                 )?
                                 .fit(x, z)
                         })
-                        .estimate(&x, &z)
+                        .estimate(&x, &z, None)
                 }
             }
             // Initialize the Bayesian estimator.
@@ -404,7 +404,7 @@ impl PyCatBN {
                                     )?
                                     .par_fit(x, z)
                             })
-                            .par_estimate(&x, &z)
+                            .par_estimate(&x, &z, None)
                     })
                 } else {
                     // Execute sequentially.
@@ -417,7 +417,7 @@ impl PyCatBN {
                                 )?
                                 .fit(x, z)
                         })
-                        .estimate(&x, &z)
+                        .estimate(&x, &z, None)
                 }
             }
         };

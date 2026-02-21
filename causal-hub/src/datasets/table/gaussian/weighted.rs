@@ -91,3 +91,11 @@ impl Dataset for GaussWtdTable {
         Self::new(dataset, weights)
     }
 }
+
+impl From<GaussTable> for GaussWtdTable {
+    #[inline]
+    fn from(dataset: GaussTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
+    }
+}

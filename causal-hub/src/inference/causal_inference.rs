@@ -213,20 +213,20 @@ macro_for!($type in [CatBN, GaussBN] {
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X)) as P(Y | X).
-                    Ok(Some(self.engine.estimate(y, x)?))
+                    Ok(Some(self.engine.estimate(y, x, w)?))
                 }
                 // If the backdoor adjustment set is equal to Z ...
                 Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Ok(Some(self.engine.estimate(y, &(x | z))?))
+                    Ok(Some(self.engine.estimate(y, &(x | z), w)?))
                 }
                 // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s))?;
-                    let p_s = self.engine.estimate(s, &set![])?;
+                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s), w)?;
+                    let p_s = self.engine.estimate(s, &set![], w)?;
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi()?;
                     let p_s = p_s.into_phi()?;
@@ -468,20 +468,20 @@ macro_for!($type in [CatBN, GaussBN] {
                 // If the backdoor adjustment set is empty ...
                 Some(z_s) if z_s.is_empty() => {
                     // ... estimate P(Y | do(X)) as P(Y | X).
-                    Ok(Some(self.engine.par_estimate(y, x)?))
+                    Ok(Some(self.engine.par_estimate(y, x, w)?))
                 }
                 // If the backdoor adjustment set is equal to Z ...
                 Some(z_s) if z_s.eq(z) => {
                     // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
-                    Ok(Some(self.engine.par_estimate(y, &(x | z))?))
+                    Ok(Some(self.engine.par_estimate(y, &(x | z), w)?))
                 }
                 // If the backdoor adjustment set is not equal to Z ...
                 Some(z_s) => {
                     // Get the S part.
                     let s = &(&z_s - z);
                     // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s))?;
-                    let p_s = self.engine.par_estimate(s, &set![])?;
+                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s), w)?;
+                    let p_s = self.engine.par_estimate(s, &set![], w)?;
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi()?;
                     let p_s = p_s.into_phi()?;

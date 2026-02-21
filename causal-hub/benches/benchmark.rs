@@ -117,7 +117,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(100)?;
 
     group.bench_function("approximate_inference", |b| {
-        b.iter(|| -> Result<_> { engine.estimate(_b(&x), _b(&z)) })
+        b.iter(|| -> Result<_> { engine.estimate(_b(&x), _b(&z), None) })
     });
 
     // Causal Inference
