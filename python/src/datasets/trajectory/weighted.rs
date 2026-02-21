@@ -15,7 +15,7 @@ use crate::{datasets::PyCatTrj, impl_from_into_lock};
 
 /// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
+#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
     inner: Arc<RwLock<CatWtdTrj>>,
@@ -97,7 +97,7 @@ impl PyCatWtdTrj {
 
 /// A collection of categorical trajectories with weights.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
+#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
     inner: Arc<RwLock<CatWtdTrjs>>,

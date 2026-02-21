@@ -12,7 +12,7 @@ use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct for missing information in a tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "MissingTable", module = "causal_hub.datasets")]
+#[pyclass(name = "MissingTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyMissingTable {
     inner: Arc<RwLock<MissingTable>>,

@@ -22,7 +22,7 @@ use crate::{
 
 /// A categorical evidence.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatEv", module = "causal_hub.datasets")]
+#[pyclass(name = "CatEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatEv {
     inner: Arc<RwLock<CatEv>>,

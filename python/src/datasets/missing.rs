@@ -17,7 +17,7 @@ use crate::{error::to_pyerr, impl_from_into_lock, models::PyDiGraph};
 
 /// Missing mechanism types.
 #[gen_stub_pyclass_enum]
-#[pyclass(name = "MissingType", module = "causal_hub.datasets")]
+#[pyclass(name = "MissingType", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PyMissingType {
     /// Missing Completely At Random.
@@ -50,7 +50,7 @@ impl From<PyMissingType> for MissingType_ {
 
 /// Missing data handling method.
 #[gen_stub_pyclass_enum]
-#[pyclass(name = "MissingMethod", module = "causal_hub.datasets")]
+#[pyclass(name = "MissingMethod", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PyMissingMethod {
     /// List-wise deletion.
@@ -88,7 +88,11 @@ impl From<PyMissingMethod> for MissingMethod {
 
 /// A struct representing the missing data indicators.
 #[gen_stub_pyclass]
-#[pyclass(name = "MissingMechanism", module = "causal_hub.datasets")]
+#[pyclass(
+    name = "MissingMechanism",
+    module = "causal_hub.datasets",
+    from_py_object
+)]
 #[derive(Clone, Debug)]
 pub struct PyMissingMechanism {
     inner: Arc<RwLock<MissingMechanism>>,

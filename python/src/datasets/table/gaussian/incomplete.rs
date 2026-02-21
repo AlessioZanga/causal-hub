@@ -22,7 +22,7 @@ use crate::{
 
 /// A Gaussian incomplete tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussIncTable", module = "causal_hub.datasets")]
+#[pyclass(name = "GaussIncTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyGaussIncTable {
     inner: Arc<RwLock<GaussIncTable>>,

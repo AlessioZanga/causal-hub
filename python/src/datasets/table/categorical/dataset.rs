@@ -22,7 +22,7 @@ use crate::{
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTable", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTable {
     inner: Arc<RwLock<CatTable>>,

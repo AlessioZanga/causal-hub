@@ -29,7 +29,7 @@ use crate::{
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCTBN", module = "causal_hub.models", eq)]
+#[pyclass(name = "CatCTBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatCTBN {
     inner: Arc<RwLock<CatCTBN>>,

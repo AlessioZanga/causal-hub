@@ -8,7 +8,11 @@ pub use structures::*;
 
 /// estimator methods.
 #[gen_stub_pyclass_enum]
-#[pyclass(name = "EstimatorMethod", module = "causal_hub.estimators")]
+#[pyclass(
+    name = "EstimatorMethod",
+    module = "causal_hub.estimators",
+    from_py_object
+)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PyEstimatorMethod {
     /// Maximum Likelihood Estimator.

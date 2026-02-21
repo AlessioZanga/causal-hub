@@ -16,7 +16,7 @@ use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussTable", module = "causal_hub.datasets")]
+#[pyclass(name = "GaussTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyGaussTable {
     inner: Arc<RwLock<GaussTable>>,

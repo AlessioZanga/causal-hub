@@ -22,7 +22,7 @@ use crate::{
 
 /// A categorical trajectory.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrj", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTrj", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTrj {
     inner: Arc<RwLock<CatTrj>>,
@@ -282,7 +282,7 @@ impl PyCatTrj {
 
 /// A collection of categorical trajectories.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjs", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTrjs", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjs {
     inner: Arc<RwLock<CatTrjs>>,

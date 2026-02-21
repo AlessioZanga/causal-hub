@@ -11,7 +11,7 @@ use crate::{
 
 /// A struct representing prior knowledge.
 #[gen_stub_pyclass]
-#[pyclass(name = "PK", module = "causal_hub.estimators", eq)]
+#[pyclass(name = "PK", module = "causal_hub.estimators", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyPK {
     inner: Arc<RwLock<PK>>,

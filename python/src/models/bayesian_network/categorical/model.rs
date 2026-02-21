@@ -35,7 +35,7 @@ use crate::{
 
 /// A categorical Bayesian network (BN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatBN", module = "causal_hub.models", eq)]
+#[pyclass(name = "CatBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatBN {
     inner: Arc<RwLock<CatBN>>,

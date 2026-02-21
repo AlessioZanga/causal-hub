@@ -26,7 +26,7 @@ use crate::{
 
 /// A categorical trajectory evidence.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjEv", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTrjEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjEv {
     inner: Arc<RwLock<CatTrjEv>>,
@@ -301,7 +301,7 @@ impl PyCatTrjEv {
 
 /// A collection of categorical trajectory evidences.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTrjsEv", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTrjsEv {
     inner: Arc<RwLock<CatTrjsEv>>,
