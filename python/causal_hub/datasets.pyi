@@ -10,6 +10,50 @@ import numpy.typing
 from causal_hub.models import DiGraph
 
 @typing.final
+class CatEv:
+    r"""
+    A categorical evidence.
+    """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the categorical evidence.
+
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical evidence.
+        """
+
+    def states(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        Returns the states of the categorical evidence.
+
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical evidence.
+        """
+
+    @classmethod
+    def from_dict(cls, evidence: dict, with_states: dict) -> CatEv:
+        r"""
+        Constructs a new categorical evidence from a dictionary.
+
+        Parameters
+        ----------
+        evidence: dict[str, str]
+            A dictionary mapping variable labels to observed states.
+        with_states: dict[str, Iterable[str]]
+            A dictionary mapping each variable to all its possible states.
+
+        Returns
+        -------
+        CatEv
+            A new categorical evidence instance.
+        """
+
+@typing.final
 class CatIncTable:
     r"""
     A categorical incomplete tabular dataset.
@@ -578,6 +622,42 @@ class CatWtdTrjs:
         -------
         list[CatWtdTrj]
             A vector of categorical trajectories.
+        """
+
+@typing.final
+class GaussEv:
+    r"""
+    A Gaussian evidence.
+    """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the gaussian evidence.
+
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the gaussian evidence.
+        """
+
+    @classmethod
+    def from_dict(
+        cls, evidence: dict, with_labels: typing.Optional[typing.Any] = None
+    ) -> GaussEv:
+        r"""
+        Constructs a new gaussian evidence from a dictionary.
+
+        Parameters
+        ----------
+        evidence: dict[str, float]
+            A dictionary mapping variable labels to observed values.
+        with_labels: Iterable[str] | None
+            Optional full labels ordering. If not provided, labels are inferred from `evidence` keys.
+
+        Returns
+        -------
+        GaussEv
+            A new gaussian evidence instance.
         """
 
 @typing.final

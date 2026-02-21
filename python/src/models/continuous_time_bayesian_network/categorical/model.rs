@@ -191,10 +191,10 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator=None,
-        missing_method=None,
-        missing_mechanism=None,
-        parallel=true,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        parallel = true,
         **kwargs
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -278,10 +278,10 @@ impl PyCatCTBN {
     ///
     #[pyo3(signature = (
         n,
-        max_len=None,
-        max_time=None,
-        seed=31,
-        parallel=true,
+        max_len = None,
+        max_time = None,
+        seed = 31,
+        parallel = true,
     ))]
     pub fn sample(
         &self,

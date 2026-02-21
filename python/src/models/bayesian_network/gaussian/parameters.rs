@@ -171,7 +171,14 @@ impl PyGaussCPD {
     ///     A random Gaussian conditional probability distribution.
     ///
     #[classmethod]
-    #[pyo3(signature = (labels, conditioning_labels, s_a=1.0, s_b=1.0, e=1e-6, seed=31))]
+    #[pyo3(signature = (
+        labels,
+        conditioning_labels,
+        s_a = 1.0,
+        s_b = 1.0,
+        e = 1e-6,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         labels: &Bound<'_, PyAny>,

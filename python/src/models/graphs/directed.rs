@@ -403,7 +403,13 @@ impl PyDiGraph {
     /// bool
     ///     `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
     ///
-    #[pyo3(signature = (x, y, z, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        v = None
+    ))]
     pub fn is_minimal_separator_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -452,7 +458,12 @@ impl PyDiGraph {
     /// list[str] | None
     ///     A minimal separator set, or `None` if no separator set exists.
     ///
-    #[pyo3(signature = (x, y, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        w = None,
+        v = None
+    ))]
     pub fn find_minimal_separator_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -560,7 +571,13 @@ impl PyDiGraph {
     /// bool
     ///     `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
     ///
-    #[pyo3(signature = (x, y, z, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        v = None
+    ))]
     pub fn is_minimal_backdoor_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -609,7 +626,12 @@ impl PyDiGraph {
     /// list[str] | None
     ///     A minimal backdoor set, or `None` if no backdoor set exists.
     ///
-    #[pyo3(signature = (x, y, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        w = None,
+        v = None
+    ))]
     pub fn find_minimal_backdoor_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -665,7 +687,11 @@ impl PyDiGraph {
     ///     A random directed graph.
     ///
     #[classmethod]
-    #[pyo3(signature = (labels, p=0.1, seed=31))]
+    #[pyo3(signature = (
+        labels,
+        p = 0.1,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         labels: &Bound<'_, PyAny>,
@@ -705,7 +731,11 @@ impl PyDiGraph {
     ///     A random directed acyclic graph.
     ///
     #[classmethod]
-    #[pyo3(signature = (vertices, p=0.1, seed=31))]
+    #[pyo3(signature = (
+        vertices,
+        p = 0.1,
+        seed = 31
+    ))]
     pub fn random_dag(
         _cls: &Bound<'_, PyType>,
         vertices: &Bound<'_, PyAny>,

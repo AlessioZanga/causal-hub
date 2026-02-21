@@ -612,3 +612,25 @@ def test_inference_accuracy(  # noqa: PLR0913
 
     print(f"Computed: {prob}, Expected: {expected}")
     assert abs(prob - expected) < tol
+
+
+def test_inference_with_evidence_dict() -> None:
+    """Test estimate/do_estimate with evidence dictionaries."""
+    bn = load_earthquake()
+
+    est = bn.estimate(
+        x=["MaryCalls"],
+        z=["Alarm"],
+        w={"Earthquake": "True"},
+        seed=42,
+    )
+    assert est is not None
+
+    with pytest.raises(Exception, match="Evidence W = w"):
+        bn.do_estimate(
+            x=["Alarm"],
+            y=["MaryCalls"],
+            z=[],
+            w={"Earthquake": "True"},
+            seed=42,
+        )

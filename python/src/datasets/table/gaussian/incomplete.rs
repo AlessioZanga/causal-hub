@@ -122,7 +122,13 @@ impl PyGaussIncTable {
     ///     A random gaussian incomplete tabular dataset instance.
     ///
     #[classmethod]
-    #[pyo3(signature = (dataset, missing_mechanism, p_min, p_max, seed=31))]
+    #[pyo3(signature = (
+        dataset,
+        missing_mechanism,
+        p_min,
+        p_max,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         dataset: &Bound<'_, PyGaussTable>,

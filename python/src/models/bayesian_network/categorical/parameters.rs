@@ -217,7 +217,12 @@ impl PyCatCPD {
     ///     A random categorical conditional probability distribution.
     ///
     #[classmethod]
-    #[pyo3(signature = (states, conditioning_states, alpha=1.0, seed=31))]
+    #[pyo3(signature = (
+        states,
+        conditioning_states,
+        alpha = 1.0,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         states: &Bound<'_, PyDict>,

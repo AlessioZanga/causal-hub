@@ -160,6 +160,7 @@ class CatBN:
         self,
         x: typing.Any,
         z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
         estimator: typing.Optional[EstimatorMethod] = None,
         missing_method: typing.Optional[MissingMethod] = None,
         missing_mechanism: typing.Optional[MissingMechanism] = None,
@@ -175,6 +176,8 @@ class CatBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        w: CatEv | dict[str, str] | None
+            Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
         missing_method: MissingMethod | None
@@ -197,6 +200,7 @@ class CatBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
         estimator: typing.Optional[EstimatorMethod] = None,
         missing_method: typing.Optional[MissingMethod] = None,
         missing_mechanism: typing.Optional[MissingMechanism] = None,
@@ -214,6 +218,8 @@ class CatBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        w: CatEv | dict[str, str] | None
+            Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
         missing_method: MissingMethod | None
@@ -1588,6 +1594,7 @@ class GaussBN:
         self,
         x: typing.Any,
         z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
         estimator: typing.Optional[EstimatorMethod] = None,
         missing_method: typing.Optional[MissingMethod] = None,
         missing_mechanism: typing.Optional[MissingMechanism] = None,
@@ -1603,6 +1610,8 @@ class GaussBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        w: GaussEv | dict[str, float] | None
+            Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
         missing_method: MissingMethod | None
@@ -1625,6 +1634,7 @@ class GaussBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
+        w: typing.Optional[typing.Any] = None,
         estimator: typing.Optional[EstimatorMethod] = None,
         missing_method: typing.Optional[MissingMethod] = None,
         missing_mechanism: typing.Optional[MissingMechanism] = None,
@@ -1642,6 +1652,8 @@ class GaussBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
+        w: GaussEv | dict[str, float] | None
+            Optional evidence to condition on during inference.
         estimator: EstimatorMethod | None
             The estimator to use for estimation (default is `EstimatorMethod.BE`).
         missing_method: MissingMethod | None

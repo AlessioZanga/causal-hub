@@ -2,11 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from causal_hub.datasets import (
+    CatEv,
     CatIncTable,
     CatTable,
     CatTrj,
     CatTrjEv,
     CatTrjs,
+    GaussEv,
     GaussIncTable,
     GaussTable,
     MissingMechanism,
@@ -84,6 +86,25 @@ def test_gaussian_table() -> None:
     )
     # Convert back to pandas DataFrame and check equality.
     pd.testing.assert_frame_equal(df, table.to_pandas())
+
+
+def test_categorical_evidence_from_dict() -> None:
+    """Test creation of categorical evidence from a dictionary."""
+    ev = CatEv.from_dict(
+        {"A": "a1", "C": "c0"},
+        with_states={"A": ["a0", "a1"], "B": ["b0", "b1"], "C": ["c0", "c1"]},
+    )
+
+    assert ev.labels() == ["A", "B", "C"], "Wrong evidence labels."
+    assert ev.states()["A"] == ("a0", "a1"), "Wrong A states."
+    assert ev.states()["C"] == ("c0", "c1"), "Wrong C states."
+
+
+def test_gaussian_evidence_from_dict() -> None:
+    """Test creation of gaussian evidence from a dictionary."""
+    ev = GaussEv.from_dict({"X": 1.0, "Z": -2.0}, with_labels=["X", "Y", "Z"])
+
+    assert ev.labels() == ["X", "Y", "Z"], "Wrong evidence labels."
 
 
 def test_categorical_trajectory() -> None:

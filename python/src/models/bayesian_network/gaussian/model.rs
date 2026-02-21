@@ -19,14 +19,14 @@ use backend::{
 use pyo3::{
     exceptions::PyValueError,
     prelude::*,
-    types::{PyDict, PyType},
+    types::{PyAnyMethods, PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::{PyDataset, PyGaussTable, PyMissingMechanism, PyMissingMethod},
+    datasets::{PyDataset, PyGaussEv, PyGaussTable, PyMissingMechanism, PyMissingMethod},
     error::to_pyerr,
     estimators::{PyBNEstimator, PyEstimatorMethod},
     impl_from_into_lock, indices_from, kwarg,
@@ -186,10 +186,10 @@ impl PyGaussBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        estimator=None,
-        missing_method=None,
-        missing_mechanism=None,
-        parallel=true,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        parallel = true,
         **kwargs
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -281,7 +281,11 @@ impl PyGaussBN {
     /// GaussTable
     ///     A new dataset containing the samples.
     ///
-    #[pyo3(signature = (n, seed=31, parallel=true))]
+    #[pyo3(signature = (
+        n,
+        seed = 31,
+        parallel = true
+    ))]
     pub fn sample(
         &self,
         py: Python<'_>,
@@ -316,6 +320,8 @@ impl PyGaussBN {
     ///     A variable or an iterable of variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// w: GaussEv | dict[str, float] | None
+    ///     Optional evidence to condition on during inference.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
     /// missing_method: MissingMethod | None
@@ -332,13 +338,23 @@ impl PyGaussBN {
     /// GaussCPD
     ///     A new conditional probability distribution.
     ///
-    #[pyo3(signature = (x, z, estimator = None, missing_method=None, missing_mechanism=None, seed=31, parallel=true))]
+    #[pyo3(signature = (
+        x,
+        z,
+        w = None,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        seed = 31,
+        parallel = true
+    ))]
     #[allow(clippy::too_many_arguments)]
     pub fn estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
         estimator: Option<PyEstimatorMethod>,
         missing_method: Option<PyMissingMethod>,
         missing_mechanism: Option<PyMissingMechanism>,
@@ -350,6 +366,10 @@ impl PyGaussBN {
         // Get the set of variables.
         let x = indices_from!(x, lock)?;
         let z = indices_from!(z, lock)?;
+        // Get the evidence.
+        let w = w
+            .map(|w| PyGaussEv::from_any(w, lock.labels()).map(Into::into))
+            .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
@@ -373,7 +393,7 @@ impl PyGaussBN {
                                     )?
                                     .par_fit(x, z)
                             })
-                            .par_estimate(&x, &z, None)
+                            .par_estimate(&x, &z, w.as_ref())
                     })
                 } else {
                     // Execute sequentially.
@@ -386,7 +406,7 @@ impl PyGaussBN {
                                 )?
                                 .fit(x, z)
                         })
-                        .estimate(&x, &z, None)
+                        .estimate(&x, &z, w.as_ref())
                 }
             }
             // Initialize the Bayesian estimator.
@@ -404,7 +424,7 @@ impl PyGaussBN {
                                     )?
                                     .par_fit(x, z)
                             })
-                            .par_estimate(&x, &z, None)
+                            .par_estimate(&x, &z, w.as_ref())
                     })
                 } else {
                     // Execute sequentially.
@@ -417,7 +437,7 @@ impl PyGaussBN {
                                 )?
                                 .fit(x, z)
                         })
-                        .estimate(&x, &z, None)
+                        .estimate(&x, &z, w.as_ref())
                 }
             }
         };
@@ -435,6 +455,8 @@ impl PyGaussBN {
     ///     An outcome variable or an iterable of outcome variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// w: GaussEv | dict[str, float] | None
+    ///     Optional evidence to condition on during inference.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
     /// missing_method: MissingMethod | None
@@ -452,13 +474,24 @@ impl PyGaussBN {
     ///     A new conditional population average causal effect (CPACE) distribution, if identifiable.
     ///
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (x, y, z, estimator=None, missing_method=None, missing_mechanism=None, seed=31, parallel=true))]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        seed = 31,
+        parallel = true
+    ))]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
         estimator: Option<PyEstimatorMethod>,
         missing_method: Option<PyMissingMethod>,
         missing_mechanism: Option<PyMissingMechanism>,
@@ -471,6 +504,10 @@ impl PyGaussBN {
         let x = indices_from!(x, lock)?;
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
+        // Get the evidence.
+        let w = w
+            .map(|w| PyGaussEv::from_any(w, lock.labels()).map(Into::into))
+            .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
@@ -493,7 +530,7 @@ impl PyGaussBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, None)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, w.as_ref())
                     })
                 } else {
                     // Execute sequentially.
@@ -505,7 +542,7 @@ impl PyGaussBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, None)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, w.as_ref())
                 }
             }
             // Initialize the Bayesian estimator.
@@ -522,7 +559,7 @@ impl PyGaussBN {
                                 )?
                                 .par_fit(x, z)
                         });
-                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, None)
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, w.as_ref())
                     })
                 } else {
                     // Execute sequentially.
@@ -534,7 +571,7 @@ impl PyGaussBN {
                             )?
                             .fit(x, z)
                     });
-                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, None)
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, w.as_ref())
                 }
             }
         };
@@ -565,7 +602,14 @@ impl PyGaussBN {
     ///     A random Gaussian Bayesian network.
     ///
     #[classmethod]
-    #[pyo3(signature = (labels, s_a=1.0, s_b=1.0, e=1e-6, p=0.1, seed=31))]
+    #[pyo3(signature = (
+        labels,
+        s_a = 1.0,
+        s_b = 1.0,
+        e = 1e-6,
+        p = 0.1,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         labels: &Bound<'_, PyAny>,

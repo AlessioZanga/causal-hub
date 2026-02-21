@@ -251,7 +251,12 @@ impl PyMissingMechanism {
     ///     A random missing mechanism.
     ///
     #[classmethod]
-    #[pyo3(signature = (graph, missing, p, seed=31))]
+    #[pyo3(signature = (
+        graph,
+        missing,
+        p,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         graph: &Bound<'_, PyDiGraph>,

@@ -96,7 +96,10 @@ impl PyCatTrjEv {
     ///     A new categorical trajectory evidence instance.
     ///
     #[classmethod]
-    #[pyo3(signature = (df, with_states = None))]
+    #[pyo3(signature = (
+        df,
+        with_states = None
+    ))]
     pub fn from_pandas(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
@@ -271,7 +274,11 @@ impl PyCatTrjEv {
     ///     A random categorical trajectory evidence.
     ///
     #[classmethod]
-    #[pyo3(signature = (trj, p=0.1, seed=31))]
+    #[pyo3(signature = (
+        trj,
+        p = 0.1,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         trj: &Bound<'_, PyAny>,
@@ -364,7 +371,10 @@ impl PyCatTrjsEv {
     ///     A new categorical trajectory evidence instance.
     ///
     #[classmethod]
-    #[pyo3(signature = (dfs, with_states = None))]
+    #[pyo3(signature = (
+        dfs,
+        with_states = None
+    ))]
     pub fn from_pandas(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
@@ -400,7 +410,11 @@ impl PyCatTrjsEv {
     ///     A random categorical trajectory evidences.
     ///
     #[classmethod]
-    #[pyo3(signature = (trjs, p=0.1, seed=31))]
+    #[pyo3(signature = (
+        trjs,
+        p = 0.1,
+        seed = 31
+    ))]
     pub fn random(
         _cls: &Bound<'_, PyType>,
         trjs: &Bound<'_, PyAny>,
