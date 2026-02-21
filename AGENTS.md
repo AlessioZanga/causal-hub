@@ -1,10 +1,10 @@
 # AGENTS.md
 
-## 1. Mission of Autonomous Agents
+## 1. Project Overview
 
-You are an automated contributor to **causal-hub**, a high-performance library for causal modeling, inference, and discovery.
+**causal-hub** is a high-performance library for causal modeling, inference, and discovery.
 
-**Your primary mission is to maintain the rigorous correctness and high performance of this hybrid Rust/Python system.**
+When contributing to this project, prioritize the correctness and performance of this hybrid Rust/Python system.
 
 ### Core Objectives
 
@@ -16,23 +16,23 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 2. Architectural Invariants (DO NOT VIOLATE)
+## 2. Architectural Invariants
 
 ### Layer Boundaries
 
-- **Backend (Rust):** Responsible for heavy lifting, algorithms, data structures, and memory safety.
-  - **Invariant:** Core logic **MUST** be implemented in Rust. Do not implement heavy loops or strictly numerical algorithms in Python.
-- **Frontend (Python):** Responsible for API accessibility, integration with the PyData ecosystem (`numpy`, `pandas`), and developer experience.
-  - **Invariant:** Python classes **MUST** mirror their underlying Rust structs without leaking unsafe pointers.
+- **Backend (Rust):** Heavy lifting, algorithms, data structures, and memory safety.
+  - Core logic belongs in Rust. Do not implement heavy loops or numerical algorithms in Python.
+- **Frontend (Python):** API accessibility, PyData integration (`numpy`, `pandas`), and developer experience.
+  - Python classes should mirror their underlying Rust structs without leaking unsafe pointers.
 - **Bridge (PyO3/Maturin):** The binding layer.
-  - **Invariant:** Data conversion (e.g., `PyArray` <-> `ndarray`) must be minimized or zero-copy where possible.
+  - Minimize data conversion (e.g., `PyArray` ↔ `ndarray`); prefer zero-copy where possible.
 
 ### Data Ownership & API Contracts
 
-- **Schema Parity:** The Rust structs in `causal-hub/src/models` and their Python wrappers in `python/src/models` represent a **hard synchronization contract**.
-  - *If you change a Rust struct, you MUST update the corresponding Python wrapper and type stub (`.pyi`).*
+- **Schema Parity:** Rust structs in `causal-hub/src/models` and their Python wrappers in `python/src/models` are a synchronization contract.
+  - Changing a Rust struct requires updating the corresponding Python wrapper and `.pyi` type stub.
 - **Safe Error Propagation:**
-  - **Invariant:** Rust code **MUST NOT PANIC** (`unwrap` / `expect` are forbidden). Errors must be propagated as `Result` and converted to Python Exceptions at the boundary.
+  - Rust code should not panic (`unwrap` / `expect` are forbidden in library code). Propagate errors as `Result` and convert to Python exceptions at the FFI boundary.
 
 ### State Management
 
@@ -50,30 +50,22 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 - **Update:** Upgrade Rust crates or Python dependencies within semantic versioning safety limits.
 - **Add Features:** Implement new Causal Discovery algorithms or Inference engines, following the trait-based architecture.
 
-### You may NOT (without explicit instructions)
+### Restricted Changes
 
-- Rewrite the build system (e.g., switch from `maturin` to `setuptools-rust`).
-- Introduce pure-Python implementations of core algorithms (except for trivial helpers).
-- Remove `openblas` dependency mechanisms.
-- Relax linter strictness (`clippy`, `ruff`, `pre-commit`).
+The following changes require explicit user approval. Do not perform them autonomously:
 
----
-
-## 4. Forbidden Changes (Without Explicit Justification)
-
-1. **Unsafe Rust Usage:**
-    - *Rule:* Do not use `unsafe` blocks unless absolutely necessary for FFI or performance-critical unchecked indexing, and *always* document safety invariants.
-2. **Breaking Type Stubs:**
-    - *Rule:* Never modify a Python method signature without updating the corresponding `.pyi` file.
-    - *Reasoning:* Breaks IDE autocomplete and static analysis for users.
-3. **Dependency Bloat:**
-    - *Rule:* Do not add heavy dependencies to `causal-hub/Cargo.toml` without justifying why the logic cannot be implemented with existing crates.
-4. **Ignoring Errors:**
-    - *Rule:* Do not use `let _ = ...` to swallow Results in Rust. Handle them or propagate them.
+- Rewriting the build system (e.g., switching from `maturin` to `setuptools-rust`).
+- Introducing pure-Python implementations of core algorithms (trivial helpers are fine).
+- Removing `openblas` dependency mechanisms.
+- Relaxing linter strictness (`clippy`, `ruff`, `pre-commit`).
+- Adding `unsafe` blocks (if unavoidable for FFI, document the safety invariants).
+- Modifying a Python method signature without updating the corresponding `.pyi` stub.
+- Adding heavy new dependencies to `causal-hub/Cargo.toml` without justification.
+- Using `let _ = ...` to swallow `Result` values in Rust—handle or propagate errors instead.
 
 ---
 
-## 5. Dependency Governance
+## 4. Dependency Governance
 
 - **Rust (Backend):**
   - Manage via `causal-hub/Cargo.toml`.
@@ -84,22 +76,20 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 6. Code Modification Protocol
+## 5. Code Modification Protocol
 
-1. **Analysis Phase:**
-    - Identify the full call stack: Python call -> PyO3 wrapper -> Rust implementation.
-    - If modifying a Model: Check `causal-hub/src/models`, `python/src/models`, and `python/causal_hub/*.pyi`.
-2. **Execution Phase:**
-    - Apply changes locally.
-    - **CRITICAL:** If a struct field is added, update the `#[pyclass]` definition and the `__init__` constructor validation.
-3. **Verification Phase:**
-    - Run Rust tests: `cargo test --workspace --features openblas-system`.
-    - Run Python tests: `pytest python/tests`.
-    - Run Linters: `pre-commit run --all-files`.
+Follow this workflow when making changes. Steps are guidelines—use judgment on scope:
+
+1. **Analyze:** Trace the relevant call path (Python call → PyO3 wrapper → Rust implementation). For model changes, check `causal-hub/src/models`, `python/src/models`, and `python/causal_hub/*.pyi`.
+2. **Apply:** Make the code changes. Remember: if a struct field is added, update the `#[pyclass]` definition and `__init__` constructor.
+3. **Verify (when appropriate):**
+    - Rust tests: `cargo test --workspace --features openblas-system`
+    - Python tests: `pytest python/tests`
+    - Linters: `pre-commit run --all-files`
 
 ---
 
-## 7. Feature Addition Protocol
+## 6. Feature Addition Protocol
 
 - **Rust Backend:**
   - New logic belongs in `causal-hub/src/`.
@@ -110,7 +100,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 8. Refactoring Rules
+## 7. Refactoring Rules
 
 - **Preserve Traits:** Do not break key traits like `DirectedGraph` or `Estimator` which facilitate polymorphism.
 - **Generics:** Maintain generic implementations over floating point types (`F: Float`) to support both `f32` and `f64`.
@@ -118,7 +108,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 9. Testing Obligations
+## 8. Testing Obligations
 
 - **Rust:**
   - `#[test]` functions for all new logic are mandatory.
@@ -129,7 +119,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 10. Performance & Scalability Constraints
+## 9. Performance & Scalability Constraints
 
 - **Memory:** Avoid cloning large vectors/matrices (`Vec`, `DMatrix`) unless necessary. Use views/slices.
 - **Parallelism:** Use `rayon` for data parallelism in heavy estimators, but ensure it doesn't conflict with BLAS threading configurations.
@@ -137,7 +127,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 11. Security & Safety Constraints
+## 10. Security & Safety Constraints
 
 - **Input Validation:**
   - Panic on invalid input is forbidden in `pub` functions. Return `Result`.
@@ -147,7 +137,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 12. Observability Rules
+## 11. Observability Rules
 
 - **Logging:**
   - Rust: Use `log` crate macros (`info!`, `warn!`, `debug!`).
@@ -157,7 +147,7 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 13. Documentation Synchronization
+## 12. Documentation Synchronization
 
 - **Rust Docs:** Update `///` documentation comments for any changed public API.
 - **Python Docs:** Update `"""Docstrings"""` in the PyO3 wrappers.
@@ -165,14 +155,14 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 14. Multi-Agent Coordination Rules
+## 13. Multi-Agent Coordination Rules
 
 - **Cross-Language Atomicity:** A PR that adds a feature to Rust but fails to expose it in Python (or vice-versa) is incomplete.
 - **Stub First:** Define the desired Python API signature (in `.pyi` or pseudo-code) *before* implementing the Rust binding logic.
 
 ---
 
-## 15. Change Risk Classification
+## 14. Change Risk Classification
 
 - **Low Risk:** Doc string updates, adding a helper function in `utils`, adding a test.
 - **Medium Risk:** Modifying an estimator's algorithm, updating a dependency version.
@@ -180,12 +170,12 @@ You are an automated contributor to **causal-hub**, a high-performance library f
 
 ---
 
-## 16. Stop Conditions
+## 15. Stop Conditions
 
-**HALT execution if:**
+**If any of the following occur, stop the current task and report the issue to the user before continuing:**
 
-1. `cargo check` or `cargo clippy` fails.
-2. You cannot identify where a Python class's underlying Rust struct is defined.
-3. You are tempted to use `unwrap()` to solve a type error.
-4. Pre-existing tests fail and you do not understand why.
-5. You are about to modify a lockfile (`Cargo.lock`) manually.
+1. `cargo check` or `cargo clippy` produces errors you cannot resolve.
+2. After a reasonable search, you cannot locate the Rust struct backing a Python class.
+3. You find yourself reaching for `unwrap()` to work around a type error.
+4. Pre-existing tests fail and the cause is unclear.
+5. A change would require manually editing `Cargo.lock`.
