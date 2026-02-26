@@ -192,45 +192,58 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("Y", "Z"));
             }
 
-            // FIXME: Handle evidence W = w.
-            if w.is_some() {
-                return Err(Error::Unreachable("Evidence W = w"));
+            // Get the variables from the evidence.
+            let w_ = &w.map_or(set![], |w| w.evidences().iter().filter_map(|e| e.clone().map(|e| e.event())).collect());
+
+            // Check (X or Y or Z) and W are disjoint.
+            if !x.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("X", "W"));
+            }
+            if !y.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("Y", "W"));
+            }
+            if !z.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("Z", "W"));
             }
 
             /* Effect Identification */
 
             // Get the model.
             let m = self.engine.model();
-            // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
+            // Get the union of Z and W.
+            let z_w = &(z | w_);
+            // Find a minimal backdoor adjustment set (Z \cup W) \cup S, if any.
+            let z_w_s = m.graph().find_minimal_backdoor_set(x, y, Some(z_w), None)?;
 
             /* Effect Estimation */
 
             // Match on the backdoor adjustment set.
-            match z_s {
+            match z_w_s {
                 // If no backdoor adjustment set exists, return None.
                 None => Ok(None),
                 // If the backdoor adjustment set is empty ...
-                Some(z_s) if z_s.is_empty() => {
-                    // ... estimate P(Y | do(X)) as P(Y | X).
+                Some(z_w_s) if z_w_s.is_empty() => {
+                    // ... estimate P(Y | do(X), W = w) as P(Y | X, W = w).
                     Ok(Some(self.engine.estimate(y, x, w)?))
                 }
-                // If the backdoor adjustment set is equal to Z ...
-                Some(z_s) if z_s.eq(z) => {
-                    // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
+                // If the backdoor adjustment set is equal to (Z \cup W) ...
+                Some(z_w_s) if z_w_s.eq(z_w) => {
+                    // ... estimate P(Y | do(X), Z, W = w) as P(Y | X, Z, W = w).
                     Ok(Some(self.engine.estimate(y, &(x | z), w)?))
                 }
-                // If the backdoor adjustment set is not equal to Z ...
-                Some(z_s) => {
+                // If the backdoor adjustment set is not equal to (Z \cup W) ...
+                Some(z_w_s) => {
                     // Get the S part.
-                    let s = &(&z_s - z);
-                    // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.estimate(y, &(x | &z_s), w)?;
-                    let p_s = self.engine.estimate(s, &set![], w)?;
+                    let s = &(&(&z_w_s - z) - w_);
+                    // Get the Z \cup S part.
+                    let z_s = &(&z_w_s - w_);
+                    // Estimate P(Y | X, Z, W = w, S) and P(S).
+                    let p_y_x_z_s = self.engine.estimate(y, &(x | z_s), w)?;
+                    let p_s = self.engine.estimate(s, &set![], None)?;
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi()?;
                     let p_s = p_s.into_phi()?;
-                    // Compute P(Y | X, Z, S) * P(S) using potentials.
+                    // Compute P(Y | X, Z, W = w, S) * P(S) using potentials.
                     let p_y_s_do_x_z = &p_y_x_z_s * &p_s;
                     // Map BN indices to the potential indices.
                     let s = p_y_s_do_x_z.indices_from(s, m.labels())?;
@@ -447,45 +460,56 @@ macro_for!($type in [CatBN, GaussBN] {
                 return Err(Error::SetsNotDisjoint("Y", "Z"));
             }
 
-            // FIXME: Handle evidence W = w.
-            if w.is_some() {
-                return Err(Error::Unreachable("Evidence W = w"));
+            // Get the variables from the evidence.
+            let w_ = &w.map_or(set![], |w| w.evidences().iter().filter_map(|e| e.clone().map(|e| e.event())).collect());
+
+            // Check (X or Y or Z) and W are disjoint.
+            if !x.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("X", "W"));
+            }
+            if !y.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("Y", "W"));
+            }
+            if !z.is_disjoint(w_) {
+                return Err(Error::SetsNotDisjoint("Z", "W"));
             }
 
             /* Effect Identification */
 
             // Get the model.
             let m = self.engine.model();
-            // Find a minimal backdoor adjustment set Z \cup S, if any.
-            let z_s = m.graph().find_minimal_backdoor_set(x, y, Some(z), None)?;
-
-            /* Effect Estimation */
+            // Get the union of Z and W.
+            let z_w = &(z | w_);
+            // Find a minimal backdoor adjustment set (Z \cup W) \cup S, if any.
+            let z_w_s = m.graph().find_minimal_backdoor_set(x, y, Some(z_w), None)?;
 
             // Match on the backdoor adjustment set.
-            match z_s {
+            match z_w_s {
                 // If no backdoor adjustment set exists, return None.
                 None => Ok(None),
                 // If the backdoor adjustment set is empty ...
-                Some(z_s) if z_s.is_empty() => {
-                    // ... estimate P(Y | do(X)) as P(Y | X).
+                Some(z_w_s) if z_w_s.is_empty() => {
+                    // ... estimate P(Y | do(X), W = w) as P(Y | X, W = w).
                     Ok(Some(self.engine.par_estimate(y, x, w)?))
                 }
-                // If the backdoor adjustment set is equal to Z ...
-                Some(z_s) if z_s.eq(z) => {
-                    // ... estimate P(Y | do(X), Z) as P(Y | X, Z).
+                // If the backdoor adjustment set is equal to (Z \cup W) ...
+                Some(z_w_s) if z_w_s.eq(z_w) => {
+                    // ... estimate P(Y | do(X), Z, W = w) as P(Y | X, Z, W = w).
                     Ok(Some(self.engine.par_estimate(y, &(x | z), w)?))
                 }
-                // If the backdoor adjustment set is not equal to Z ...
-                Some(z_s) => {
+                // If the backdoor adjustment set is not equal to (Z \cup W) ...
+                Some(z_w_s) => {
                     // Get the S part.
-                    let s = &(&z_s - z);
-                    // Estimate P(Y | X, Z, S) and P(S).
-                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | &z_s), w)?;
-                    let p_s = self.engine.par_estimate(s, &set![], w)?;
+                    let s = &(&(&z_w_s - z) - w_);
+                    // Get the Z \cup S part.
+                    let z_s = &(&z_w_s - w_);
+                    // Estimate P(Y | X, Z, W = w, S) and P(S).
+                    let p_y_x_z_s = self.engine.par_estimate(y, &(x | z_s), w)?;
+                    let p_s = self.engine.par_estimate(s, &set![], None)?;
                     // Convert to potentials for aligned multiplication.
                     let p_y_x_z_s = p_y_x_z_s.into_phi()?;
                     let p_s = p_s.into_phi()?;
-                    // Compute P(Y | X, Z, S) * P(S) using potentials.
+                    // Compute P(Y | X, Z, W = w, S) * P(S) using potentials.
                     let p_y_s_do_x_z = &p_y_x_z_s * &p_s;
                     // Map BN indices to the potential indices.
                     let s = p_y_s_do_x_z.indices_from(s, m.labels())?;

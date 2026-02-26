@@ -626,11 +626,11 @@ def test_inference_with_evidence_dict() -> None:
     )
     assert est is not None
 
-    with pytest.raises(Exception, match="Evidence W = w"):
-        bn.do_estimate(
-            x=["Alarm"],
-            y=["MaryCalls"],
-            z=[],
-            w={"Earthquake": "True"},
-            seed=42,
-        )
+    est_do = bn.do_estimate(
+        x=["Alarm"],
+        y=["MaryCalls"],
+        z=[],
+        w={"Earthquake": "True"},
+        seed=42,
+    )
+    assert est_do is not None
