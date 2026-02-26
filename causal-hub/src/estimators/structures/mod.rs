@@ -1,3 +1,6 @@
+mod conditional_independence_test;
+pub use conditional_independence_test::*;
+
 mod continuous_time_hill_climbing;
 pub use continuous_time_hill_climbing::*;
 
