@@ -85,7 +85,7 @@ impl MLE<'_, CatTrj> {
             .map(|&i| {
                 let (k, v) = states
                     .get_index(i)
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -95,7 +95,7 @@ impl MLE<'_, CatTrj> {
             .map(|&i| {
                 let (k, v) = states
                     .get_index(i)
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))?;
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;

@@ -190,7 +190,7 @@ impl BN for GaussBN {
         // Check that the variables are in bounds.
         x.iter().try_for_each(|&i| {
             if i >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;

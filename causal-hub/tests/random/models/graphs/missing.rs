@@ -27,7 +27,7 @@ mod tests {
         assert!(matches!(
             mechanism,
             Err(Error {
-                kind: ErrorKind::VertexOutOfBounds(2),
+                kind: ErrorKind::IndexOutOfBounds(2),
                 ..
             })
         ));
@@ -41,7 +41,7 @@ mod tests {
         assert!(matches!(
             mechanism,
             Err(Error {
-                kind: ErrorKind::VertexOutOfBounds(2),
+                kind: ErrorKind::IndexOutOfBounds(2),
                 ..
             })
         ));

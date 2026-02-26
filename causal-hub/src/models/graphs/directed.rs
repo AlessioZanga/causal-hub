@@ -26,7 +26,7 @@ impl DiGraph {
     #[inline]
     fn check_vertex(&self, x: usize) -> Result<()> {
         if x >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(x));
+            return Err(Error::IndexOutOfBounds(x));
         }
         Ok(())
     }

@@ -28,11 +28,11 @@ impl MissingMechanism {
         let n = labels.len();
         for (&x, ys) in &pr {
             if x >= n {
-                return Err(Error::VertexOutOfBounds(x));
+                return Err(Error::IndexOutOfBounds(x));
             }
             for &y in ys {
                 if y >= n {
-                    return Err(Error::VertexOutOfBounds(y));
+                    return Err(Error::IndexOutOfBounds(y));
                 }
             }
         }

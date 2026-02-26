@@ -129,7 +129,7 @@ impl Dataset for GaussTable {
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
         if let Some(&i) = x.iter().find(|&&i| i >= self.values.ncols()) {
-            return Err(Error::VertexOutOfBounds(i));
+            return Err(Error::IndexOutOfBounds(i));
         }
 
         // Select the labels.
@@ -139,7 +139,7 @@ impl Dataset for GaussTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or(Error::VertexOutOfBounds(i))
+                    .ok_or(Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

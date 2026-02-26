@@ -113,7 +113,7 @@ impl CatIncTable {
         );
         max_values.into_iter().enumerate().try_for_each(|(i, x)| {
             if x >= states[i].len() as CatType {
-                return Err(Error::VertexOutOfBounds(x as usize));
+                return Err(Error::IndexOutOfBounds(x as usize));
             }
             Ok(())
         })?;
@@ -240,7 +240,7 @@ impl Dataset for CatIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -252,7 +252,7 @@ impl Dataset for CatIncTable {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -380,7 +380,7 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -420,7 +420,7 @@ impl IncDataset for CatIncTable {
                 self.states
                     .get_index(j)
                     .map(|(label, state)| (label.clone(), state.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(j))
+                    .ok_or_else(|| Error::IndexOutOfBounds(j))
             })
             .collect::<Result<_>>()?;
 
@@ -440,14 +440,14 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -506,14 +506,14 @@ impl IncDataset for CatIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;

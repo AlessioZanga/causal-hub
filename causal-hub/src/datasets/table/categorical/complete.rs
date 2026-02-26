@@ -119,7 +119,7 @@ impl CatTable {
             .into_iter()
             .enumerate()
             .try_for_each(|(i, x)| {
-                let (label, states) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                let (label, states) = states.get_index(i).ok_or(Error::IndexOutOfBounds(i))?;
 
                 if x >= states.len() as CatType {
                     return Err(Error::InvalidParameter(
@@ -279,7 +279,7 @@ impl Dataset for CatTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -291,7 +291,7 @@ impl Dataset for CatTable {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or(Error::VertexOutOfBounds(i))
+                    .ok_or(Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

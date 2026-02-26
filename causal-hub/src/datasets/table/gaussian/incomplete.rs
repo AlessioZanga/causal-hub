@@ -122,7 +122,7 @@ impl Dataset for GaussIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -134,7 +134,7 @@ impl Dataset for GaussIncTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -263,7 +263,7 @@ impl IncDataset for GaussIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -302,7 +302,7 @@ impl IncDataset for GaussIncTable {
                 self.labels
                     .get_index(j)
                     .cloned()
-                    .ok_or_else(|| Error::VertexOutOfBounds(j))
+                    .ok_or_else(|| Error::IndexOutOfBounds(j))
             })
             .collect::<Result<_>>()?;
 
@@ -322,14 +322,14 @@ impl IncDataset for GaussIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -388,14 +388,14 @@ impl IncDataset for GaussIncTable {
         // Check that the indices are valid.
         x.iter().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
         // Check that the missing mechanism indices are valid.
         pr.keys().try_for_each(|&i| {
             if i >= self.values.ncols() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;

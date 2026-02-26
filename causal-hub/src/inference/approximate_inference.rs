@@ -179,7 +179,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -254,7 +254,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -338,7 +338,7 @@ where
     ///
     /// * `EmptySet` if `x` is empty.
     /// * `SetsNotDisjoint` if `x` and `z` are not disjoint.
-    /// * `VertexOutOfBounds` if `x` or `z` are not in the model.
+    /// * `IndexOutOfBounds` if `x` or `z` are not in the model.
     ///
     /// # Returns
     ///
@@ -375,7 +375,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -450,7 +450,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;

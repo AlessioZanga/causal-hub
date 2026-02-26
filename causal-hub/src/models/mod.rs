@@ -66,7 +66,7 @@ pub trait Labelled {
         self.labels()
             .get_index(x)
             .map(|x| x.as_str())
-            .ok_or_else(|| Error::VertexOutOfBounds(x))
+            .ok_or_else(|| Error::IndexOutOfBounds(x))
     }
 
     /// Maps an index from this model to another model with the same label.
@@ -137,7 +137,7 @@ pub trait Labelled {
         // Get the label of the variable in the other model.
         let label = other
             .get_index(x)
-            .ok_or_else(|| Error::VertexOutOfBounds(x))?;
+            .ok_or_else(|| Error::IndexOutOfBounds(x))?;
         // Get the index of the variable in this model.
         self.labels()
             .get_index_of(label)

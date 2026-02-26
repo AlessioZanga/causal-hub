@@ -145,7 +145,7 @@ impl CatEv {
                 let event = e.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
-                    return Err(Error::VertexOutOfBounds(event));
+                    return Err(Error::IndexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
                 evidences[event] = Some(e);
@@ -170,7 +170,7 @@ impl CatEv {
                 // Get the event and states of the evidence.
                 let (event, states) = states
                     .get_index(e.event())
-                    .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
+                    .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
                 // Sort the event index.
                 let (event, _, new_states) = new_states
                     .get_full(event)
@@ -361,7 +361,7 @@ impl CatEv {
         // Check that the variables are in bounds.
         x.iter().try_for_each(|&i| {
             if i >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -377,7 +377,7 @@ impl CatEv {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

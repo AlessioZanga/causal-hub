@@ -258,7 +258,7 @@ impl Phi for CatPhi {
         // Check X is a subset of the variables.
         x.iter().try_for_each(|&x| {
             if x >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(x));
+                return Err(Error::IndexOutOfBounds(x));
             }
             Ok(())
         })?;
@@ -342,7 +342,7 @@ impl Phi for CatPhi {
                 self.states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
         let states_z: States = z
@@ -351,7 +351,7 @@ impl Phi for CatPhi {
                 self.states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

@@ -82,7 +82,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                let (k, v) = states.get_index(i).ok_or(Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -90,7 +90,7 @@ impl BE<'_, CatTrj, (usize, f64)> {
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                let (k, v) = states.get_index(i).ok_or(Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;

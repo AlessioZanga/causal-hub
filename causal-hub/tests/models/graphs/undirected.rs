@@ -52,7 +52,7 @@ mod tests {
     fn has_edge_out_of_bounds_x() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.has_edge(5, 1) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -63,7 +63,7 @@ mod tests {
     fn has_edge_out_of_bounds_y() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.has_edge(1, 5) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -74,7 +74,7 @@ mod tests {
     fn add_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.add_edge(5, 1) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -85,7 +85,7 @@ mod tests {
     fn add_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.add_edge(1, 5) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -96,7 +96,7 @@ mod tests {
     fn del_edge_out_of_bounds_x() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.del_edge(5, 1) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -107,7 +107,7 @@ mod tests {
     fn del_edge_out_of_bounds_y() -> Result<()> {
         let mut graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.del_edge(1, 5) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -131,7 +131,7 @@ mod tests {
     fn neighbors_out_of_bounds() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.neighbors(&set![5]) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `5` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `5` is out of bounds"),
             _ => panic!("Should be error"),
         };
 
@@ -320,7 +320,7 @@ mod tests {
     fn select_subgraph_out_of_bounds() -> Result<()> {
         let graph = UnGraph::empty(LABELS.to_vec())?;
         match graph.select(&set![0, 1, 10]) {
-            Err(err) => assert_eq!(err.kind.to_string(), "Vertex `10` is out of bounds"),
+            Err(err) => assert_eq!(err.kind.to_string(), "Index `10` is out of bounds"),
             _ => panic!("Should be error"),
         };
 

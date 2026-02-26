@@ -168,7 +168,7 @@ impl CatTrjEv {
             let event = e.event();
             // Check if the event index is valid.
             if event >= states.len() {
-                return Err(Error::VertexOutOfBounds(event));
+                return Err(Error::IndexOutOfBounds(event));
             }
             // Push the value into the events.
             evidences[event].push(e);
@@ -197,7 +197,7 @@ impl CatTrjEv {
                     // Get the event and states of the evidence.
                     let (event, states) = states
                         .get_index(e.event())
-                        .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
+                        .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
                     // Sort the event index.
                     let (event, _, new_states) = new_states
                         .get_full(event)

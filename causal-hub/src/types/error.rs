@@ -59,9 +59,9 @@ pub enum ErrorKind {
     /// An error related to lock poisoning.
     #[error("Lock poisoning error: {0}")]
     Poison(String),
-    /// Vertex is out of bounds.
-    #[error("Vertex `{0}` is out of bounds")]
-    VertexOutOfBounds(usize),
+    /// Index is out of bounds.
+    #[error("Index `{0}` is out of bounds")]
+    IndexOutOfBounds(usize),
     /// Labels must be unique.
     #[error("Labels must be unique.")]
     NonUniqueLabels,
@@ -299,11 +299,11 @@ impl Error {
         ErrorKind::Poison(s.to_string()).into()
     }
 
-    /// Vertex is out of bounds.
+    /// Index is out of bounds.
     #[allow(non_snake_case)]
     #[track_caller]
-    pub fn VertexOutOfBounds(u: usize) -> Self {
-        ErrorKind::VertexOutOfBounds(u).into()
+    pub fn IndexOutOfBounds(u: usize) -> Self {
+        ErrorKind::IndexOutOfBounds(u).into()
     }
 
     /// Labels must be unique.

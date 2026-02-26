@@ -18,7 +18,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     ///
@@ -40,7 +40,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
     /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     /// * `SubsetMismatch` if not `W` <= `Z` <= `V`.
@@ -67,7 +67,7 @@ pub trait GraphicalSeparation {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
     /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     /// * `SubsetMismatch` if not `W` <= `V`.
@@ -109,14 +109,14 @@ pub(crate) mod digraph {
         // Convert X to set, while checking for out of bounds.
         x.iter().try_for_each(|&x| {
             if !g.has_vertex(x) {
-                return Err(Error::VertexOutOfBounds(x));
+                return Err(Error::IndexOutOfBounds(x));
             }
             Ok(())
         })?;
         // Convert Y to set, while checking for out of bounds.
         y.iter().try_for_each(|&y| {
             if !g.has_vertex(y) {
-                return Err(Error::VertexOutOfBounds(y));
+                return Err(Error::IndexOutOfBounds(y));
             }
             Ok(())
         })?;
@@ -124,7 +124,7 @@ pub(crate) mod digraph {
         if let Some(z) = z {
             z.iter().try_for_each(|&z| {
                 if !g.has_vertex(z) {
-                    return Err(Error::VertexOutOfBounds(z));
+                    return Err(Error::IndexOutOfBounds(z));
                 }
                 Ok(())
             })?;

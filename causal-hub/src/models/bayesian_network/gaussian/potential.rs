@@ -427,7 +427,7 @@ impl Phi for GaussPhi {
         // Check X is a subset of the variables.
         x.iter().try_for_each(|&x| {
             if x >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(x));
+                return Err(Error::IndexOutOfBounds(x));
             }
             Ok(())
         })?;

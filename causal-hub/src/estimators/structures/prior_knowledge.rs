@@ -94,7 +94,7 @@ impl PK {
         forbidden.into_iter().try_for_each(|(i, j)| {
             // Check if the vertices are within bounds.
             if i >= n || j >= n {
-                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+                return Err(Error::IndexOutOfBounds(if i >= n { i } else { j }));
             }
             // Set the edge to `Forbidden`.
             adjacency_matrix[[i, j]] = PKS::Forbidden;
@@ -105,7 +105,7 @@ impl PK {
         required.into_iter().try_for_each(|(i, j)| {
             // Check if the vertices are within bounds.
             if i >= n || j >= n {
-                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+                return Err(Error::IndexOutOfBounds(if i >= n { i } else { j }));
             }
             // Check that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
@@ -129,7 +129,7 @@ impl PK {
                 // Check if the vertices are within bounds.
                 tier.iter().try_for_each(|&i| {
                     if i >= n {
-                        return Err(Error::VertexOutOfBounds(i));
+                        return Err(Error::IndexOutOfBounds(i));
                     }
                     Ok(())
                 })?;

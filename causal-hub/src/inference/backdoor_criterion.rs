@@ -16,7 +16,7 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     ///
@@ -38,7 +38,7 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, `Z`, `W`, or `V` are out of bounds.
     /// * `SetsNotDisjoint` if `X`, `Y` or `Z` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     /// * `SubsetMismatch` if not `W` <= `Z` <= `V`.
@@ -65,7 +65,7 @@ pub trait BackdoorCriterion {
     ///
     /// # Errors
     ///
-    /// * `VertexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
+    /// * `IndexOutOfBounds` if any of the vertex in `X`, `Y`, `W`, or `V` are out of bounds.
     /// * `SetsNotDisjoint` if `X` and `Y` are not disjoint sets.
     /// * `EmptySet` if `X` or `Y` are empty sets.
     /// * `SubsetMismatch` if not `W` <= `V`.
