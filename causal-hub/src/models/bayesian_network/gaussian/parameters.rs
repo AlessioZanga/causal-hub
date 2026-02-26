@@ -692,7 +692,7 @@ impl CPD for GaussCPD {
             // Compute deviation from mean.
             let x_mu = x[0] - mu;
             // Get the (regularized) variance.
-            let k = f64::max(s[[0, 0]], EPSILON);
+            let k = s[[0, 0]] + EPSILON;
             // Compute log probability density function.
             let ln_pf = -0.5 * (LN_2_PI + f64::ln(k) + f64::powi(x_mu, 2) / k);
             // Return probability density function.
@@ -757,8 +757,7 @@ impl CPD for GaussCPD {
             // Sample from standard normal.
             let e: f64 = StandardNormal.sample(rng);
             // Get the (regularized) variance.
-            // Pairwise/weighted estimation can yield tiny negative values due rounding.
-            let k = s[[0, 0]].max(EPSILON);
+            let k = s[[0, 0]] + EPSILON;
             // Compute the sample.
             let x = f64::mul_add(k.sqrt(), e, mu);
             // Return the sample.

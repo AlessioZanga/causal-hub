@@ -6,7 +6,7 @@ use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{Error, LN_2_PI, Labels, Result, Set},
+    types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
 
@@ -48,8 +48,9 @@ impl MLE<'_, GaussTable> {
             (a, b, s)
         };
 
-        // Symmetrize the covariance matrix to avoid numerical issues.
-        let s = (&s + &s.t()) / 2.;
+        // Symmetrize and stabilize covariance to avoid numerical issues.
+        let mut s = (&s + &s.t()) / 2.;
+        *s.diag_mut() += EPSILON;
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
