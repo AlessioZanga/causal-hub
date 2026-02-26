@@ -131,7 +131,8 @@ impl<R: Rng> BNSampler<CatBN> for ImportanceSampler<'_, R, CatBN, CatEv> {
 
         // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "evidence.states",
                 "The model and the evidences must have the same states.",
             ));
         }
@@ -674,19 +675,21 @@ impl<R: Rng> CTBNSampler<CatCTBN> for ImportanceSampler<'_, R, CatCTBN, CatTrjEv
 
         // Check the model and the evidences have the same states.
         if self.model.states() != self.evidence.states() {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "evidence.states",
                 "The model and the evidences must have the same states.",
             ));
         }
         // Check length is positive.
         if max_length == 0 {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "max_length",
                 "The maximum length of the trajectory must be strictly positive.",
             ));
         }
         // Check time is positive.
         if max_time <= 0. {
-            return Err(Error::IllegalArgument("The maximum time must be positive."));
+            return Err(Error::InvalidParameter("max_time", "must be positive"));
         }
 
         // Get a mutable reference to the RNG.

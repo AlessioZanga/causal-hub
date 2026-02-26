@@ -82,7 +82,7 @@ impl PK {
     {
         // Check if the labels are sorted.
         if !labels.iter().is_sorted() {
-            return Err(Error::IllegalArgument("Labels must be sorted"));
+            return Err(Error::InvalidParameter("labels", "must be sorted"));
         }
 
         // Get the number of labels.

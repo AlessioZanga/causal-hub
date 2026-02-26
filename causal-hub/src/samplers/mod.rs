@@ -79,7 +79,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_length` is zero.
+    /// Returns `InvalidParameter` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -95,7 +95,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_time` is zero or negative.
+    /// Returns `InvalidParameter` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -112,7 +112,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if:
+    /// Returns `InvalidParameter` if:
     ///
     /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
@@ -132,7 +132,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_length` is zero.
+    /// Returns `InvalidParameter` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -149,7 +149,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_time` is zero or negative.
+    /// Returns `InvalidParameter` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -167,7 +167,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if:
+    /// Returns `InvalidParameter` if:
     ///
     /// * `max_length` is zero.
     /// * `max_time` is zero or negative.
@@ -201,7 +201,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_length` is zero.
+    /// Returns `InvalidParameter` if `max_length` is zero.
     ///
     /// # Returns
     ///
@@ -218,7 +218,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if `max_time` is zero or negative.
+    /// Returns `InvalidParameter` if `max_time` is zero or negative.
     ///
     /// # Returns
     ///
@@ -236,7 +236,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns `IllegalArgument` if:
+    /// Returns `InvalidParameter` if:
     ///
     /// * `max_length` is zero.
     /// * `max_time` is zero or negative.

@@ -226,7 +226,8 @@ impl Graph for UnGraph {
         }
         // Check the adjacency matrix is symmetric.
         if adjacency_matrix != adjacency_matrix.t() {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "adjacency_matrix",
                 "Adjacency matrix must be symmetric.",
             ));
         }

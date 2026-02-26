@@ -13,7 +13,8 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "x,z",
                 "Variables and conditioning variables must be disjoint.",
             ));
         }
@@ -58,7 +59,8 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
         // Check variables and conditioning variables must be disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "x,z",
                 "Variables and conditioning variables must be disjoint.",
             ));
         }

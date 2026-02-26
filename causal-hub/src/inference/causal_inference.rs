@@ -300,9 +300,9 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    /// * `InvalidParameter` if `X` is empty.
+    /// * `InvalidParameter` if `Y` is empty.
+    /// * `InvalidParameter` if `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
@@ -330,11 +330,11 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
-    /// * `IllegalArgument` if `X` and `Z` are not disjoint.
-    /// * `IllegalArgument` if `Y` and `Z` are not disjoint.
+    /// * `InvalidParameter` if `X` is empty.
+    /// * `InvalidParameter` if `Y` is empty.
+    /// * `InvalidParameter` if `X` and `Y` are not disjoint.
+    /// * `InvalidParameter` if `X` and `Z` are not disjoint.
+    /// * `InvalidParameter` if `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///
@@ -359,9 +359,9 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
+    /// * `InvalidParameter` if `X` is empty.
+    /// * `InvalidParameter` if `Y` is empty.
+    /// * `InvalidParameter` if `X` and `Y` are not disjoint.
     ///
     /// # Returns
     ///
@@ -392,11 +392,11 @@ where
     ///
     /// # Errors
     ///
-    /// * `IllegalArgument` if `X` is empty.
-    /// * `IllegalArgument` if `Y` is empty.
-    /// * `IllegalArgument` if `X` and `Y` are not disjoint.
-    /// * `IllegalArgument` if `X` and `Z` are not disjoint.
-    /// * `IllegalArgument` if `Y` and `Z` are not disjoint.
+    /// * `InvalidParameter` if `X` is empty.
+    /// * `InvalidParameter` if `Y` is empty.
+    /// * `InvalidParameter` if `X` and `Y` are not disjoint.
+    /// * `InvalidParameter` if `X` and `Z` are not disjoint.
+    /// * `InvalidParameter` if `Y` and `Z` are not disjoint.
     ///
     /// # Returns
     ///

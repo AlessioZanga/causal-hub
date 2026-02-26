@@ -121,12 +121,15 @@ pub fn sem<'a>(
                     initial_graph
                 }
                 _ => {
-                    return Err(BackendError::IllegalArgument(&format!(
-                        "Failed to get the structure learning algorithm: \n\
-                        \t expected:   'ctpc' or 'cthc', \n\
-                        \t found:      '{}'",
-                        algorithm
-                    )));
+                    return Err(BackendError::InvalidParameter(
+                        "algorithm",
+                        &format!(
+                            "Failed to get the structure learning algorithm: \n\
+                        	\t expected:   'ctpc' or 'cthc', \n\
+                        	\t found:      '{}'",
+                            algorithm
+                        ),
+                    ));
                 }
             };
 
@@ -257,10 +260,10 @@ pub fn sem<'a>(
                             })?;
                         // Set prior knowledge.
                         let ctpc = ctpc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::IllegalArgument(&format!(
-                                "Failed to set prior knowledge: {}",
-                                e
-                            ))
+                            BackendError::InvalidParameter(
+                                "prior_knowledge",
+                                &format!("Failed to set prior knowledge: {}", e),
+                            )
                         })?;
                         // Fit the new structure using CTPC.
                         ctpc.par_fit().map_err(|e| {
@@ -281,10 +284,10 @@ pub fn sem<'a>(
                             .with_max_parents(max_parents);
                         // Set prior knowledge.
                         let cthc = cthc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::IllegalArgument(&format!(
-                                "Failed to set prior knowledge: {}",
-                                e
-                            ))
+                            BackendError::InvalidParameter(
+                                "prior_knowledge",
+                                &format!("Failed to set prior knowledge: {}", e),
+                            )
                         })?;
                         // Fit the new structure using CTHC.
                         cthc.par_fit().map_err(|e| {
@@ -295,12 +298,15 @@ pub fn sem<'a>(
                         })?
                     }
                     _ => {
-                        return Err(BackendError::IllegalArgument(&format!(
-                            "Failed to get the structure learning algorithm: \n\
+                        return Err(BackendError::InvalidParameter(
+                            "algorithm",
+                            &format!(
+                                "Failed to get the structure learning algorithm: \n\
                             \t expected:   'ctpc' or 'cthc', \n\
                             \t found:      '{}'",
-                            algorithm
-                        )));
+                                algorithm
+                            ),
+                        ));
                     }
                 };
                 // Fit the new model using the expectation.

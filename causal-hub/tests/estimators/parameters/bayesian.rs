@@ -65,7 +65,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .fitted_log_likelihood()
-                        .ok_or(Error::IllegalArgument("no ll"))?,
+                        .ok_or(Error::InvalidParameter("ll", "missing"))?,
                     -4.780356732903302
                 );
 
@@ -114,7 +114,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .fitted_log_likelihood()
-                        .ok_or(Error::IllegalArgument("no ll"))?,
+                        .ok_or(Error::InvalidParameter("ll", "missing"))?,
                     -8.501216236893097
                 );
 
@@ -194,7 +194,7 @@ mod tests {
                 match res {
                     Err(err) => assert_eq!(
                         err.kind.to_string(),
-                        "Illegal argument error: Variables and conditioning variables must be disjoint."
+                        "Invalid parameter x,z: Variables and conditioning variables must be disjoint."
                     ),
                     _ => panic!("Should be error"),
                 };

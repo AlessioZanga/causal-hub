@@ -48,7 +48,7 @@ mod tests {
             // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
+                pred_ace.ok_or(Error::InvalidParameter("pace", "missing"))?,
                 epsilon = 1e-8
             );
 
@@ -95,7 +95,7 @@ mod tests {
             // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
+                pred_ace.ok_or(Error::InvalidParameter("pace", "missing"))?,
                 epsilon = 1e-8
             );
 
@@ -133,7 +133,7 @@ mod tests {
             // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
+                pred_ace.ok_or(Error::InvalidParameter("pace", "missing"))?,
                 epsilon = 1e-8
             );
 
@@ -174,7 +174,7 @@ mod tests {
             // Check that the PACE is correct.
             assert_relative_eq!(
                 true_ace,
-                pred_ace.ok_or(Error::IllegalArgument("No PACE"))?,
+                pred_ace.ok_or(Error::InvalidParameter("pace", "missing"))?,
                 epsilon = 1e-8
             );
 

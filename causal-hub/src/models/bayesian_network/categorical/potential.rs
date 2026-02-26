@@ -324,13 +324,15 @@ impl Phi for CatPhi {
     fn into_cpd(self, x: &Set<usize>, z: &Set<usize>) -> Result<Self::CPD> {
         // Check that X and Z are disjoint.
         if !x.is_disjoint(z) {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "x,z",
                 "Variables and conditioning variables must be disjoint.",
             ));
         }
         // Check that X and Z cover all variables.
         if !(x | z).iter().sorted().cloned().eq(0..self.labels.len()) {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "x,z",
                 "Variables and conditioning variables must cover all potential variables.",
             ));
         }

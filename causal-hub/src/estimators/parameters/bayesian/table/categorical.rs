@@ -27,7 +27,7 @@ impl BE<'_, CatTable, usize> {
         let alpha = prior;
         // Check alpha is positive.
         if alpha == 0 {
-            return Err(Error::IllegalArgument("Alpha must be positive."));
+            return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
 
         // Cast alpha to floating point.

@@ -47,9 +47,6 @@ pub enum ErrorKind {
     /// An error related to random distributions.
     #[error("Random distribution error: {0}")]
     RandDistr(String),
-    /// An error related to illegal arguments.
-    #[error("Illegal argument error: {0}")]
-    IllegalArgument(String),
     /// An error related to shape.
     #[error("Shape error: {0}")]
     Shape(String),
@@ -269,13 +266,6 @@ impl Error {
     #[track_caller]
     pub fn RandDistr(s: &str) -> Self {
         ErrorKind::RandDistr(s.to_string()).into()
-    }
-
-    /// An error related to illegal arguments.
-    #[allow(non_snake_case)]
-    #[track_caller]
-    pub fn IllegalArgument(s: &str) -> Self {
-        ErrorKind::IllegalArgument(s.to_string()).into()
     }
 
     /// An error related to shape.

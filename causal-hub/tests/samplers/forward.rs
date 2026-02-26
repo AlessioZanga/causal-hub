@@ -152,7 +152,7 @@ mod tests {
                         .times()
                         .iter()
                         .last()
-                        .ok_or(Error::IllegalArgument("No times"))?
+                        .ok_or(Error::InvalidParameter("times", "missing"))?
                         < 100.
                 );
 

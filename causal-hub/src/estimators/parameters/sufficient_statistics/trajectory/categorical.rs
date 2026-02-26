@@ -15,7 +15,8 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
         // Check variables and conditioning variables must be disjoint..
         if !x.is_disjoint(z) {
-            return Err(Error::IllegalArgument(
+            return Err(Error::InvalidParameter(
+                "x,z",
                 "Variables and conditioning variables must be disjoint.",
             ));
         }
