@@ -584,6 +584,7 @@ impl CatCPD {
     ///
     /// # Arguments
     ///
+    /// * `phi` - The potential to convert.
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
@@ -597,10 +598,6 @@ impl CatCPD {
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
-    ///
-    /// # Arguments
-    ///
-    /// * `cpd` - The CPD to convert.
     ///
     /// # Returns
     ///

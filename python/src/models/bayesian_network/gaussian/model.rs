@@ -170,6 +170,10 @@ impl PyGaussBN {
     ///     The graph to fit the model to.
     /// estimator: EstimatorMethod | None
     ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None

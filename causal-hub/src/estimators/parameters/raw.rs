@@ -73,6 +73,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// # Arguments
     ///
+    /// * `rng` - A mutable reference to the random number generator.
     /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns
@@ -166,10 +167,6 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     }
 
     /// Fills the evidence with the raw estimator.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns
     ///
@@ -384,6 +381,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     ///
     /// # Arguments
     ///
+    /// * `rng` - A mutable reference to the random number generator.
     /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns

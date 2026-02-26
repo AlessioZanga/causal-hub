@@ -122,6 +122,10 @@ class CatBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -836,6 +840,10 @@ class CatCTBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.MLE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -1135,9 +1143,10 @@ class DiGraph:
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1173,9 +1182,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1209,9 +1219,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
         * `X` and `Y` are not disjoint sets.
@@ -1239,9 +1250,10 @@ class DiGraph:
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1277,9 +1289,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1313,9 +1326,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
         * `X` and `Y` are not disjoint sets.
@@ -1337,8 +1351,8 @@ class DiGraph:
 
         Parameters
         ----------
-        vertices: Iterable[str]
-            The vertices of the graph.
+        labels: Iterable[str]
+            The labels of the graph.
         p: float, default=0.1
             The probability of generating an edge.
         seed: int, default=31
@@ -1556,6 +1570,10 @@ class GaussBN:
             The graph to fit the model to.
         estimator: EstimatorMethod | None
             The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None

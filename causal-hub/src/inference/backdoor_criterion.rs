@@ -62,6 +62,8 @@ pub trait BackdoorCriterion {
     ///
     /// * `x` - A set vertices representing set `X`.
     /// * `y` - A set vertices representing set `Y`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Errors
     ///

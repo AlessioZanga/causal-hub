@@ -64,6 +64,8 @@ pub trait GraphicalSeparation {
     ///
     /// * `x` - A set of vertices representing set `X`.
     /// * `y` - A set of vertices representing set `Y`.
+    /// * `w` - An optional iterable collection of vertices representing set `W`.
+    /// * `v` - An optional iterable collection of vertices representing set `V`.
     ///
     /// # Errors
     ///

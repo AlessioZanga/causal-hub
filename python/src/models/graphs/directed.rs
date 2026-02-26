@@ -345,9 +345,10 @@ impl PyDiGraph {
     /// z: Iterable[str]
     ///     An iterable of vertices representing set `Z`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -389,9 +390,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -444,9 +446,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * `X` and `Y` are not disjoint sets.
@@ -513,9 +516,10 @@ impl PyDiGraph {
     /// z: Iterable[str]
     ///     An iterable of vertices representing set `Z`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -557,9 +561,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -612,9 +617,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * `X` and `Y` are not disjoint sets.
@@ -674,8 +680,8 @@ impl PyDiGraph {
     ///
     /// Parameters
     /// ----------
-    /// vertices: Iterable[str]
-    ///     The vertices of the graph.
+    /// labels: Iterable[str]
+    ///     The labels of the graph.
     /// p: float, default=0.1
     ///     The probability of generating an edge.
     /// seed: int, default=31

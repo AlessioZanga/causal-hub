@@ -305,6 +305,7 @@ impl CatCIM {
     /// # Arguments
     ///
     /// * `states` - The variables states.
+    /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The intensity matrices of the states.
     ///
     /// # Errors
@@ -632,6 +633,7 @@ impl CatCIM {
     /// # Arguments
     ///
     /// * `states` - The variables states.
+    /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The intensity matrices of the states.
     /// * `fitted_statistics` - The fitted statistics used to fit the distribution, if any.
     /// * `fitted_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
