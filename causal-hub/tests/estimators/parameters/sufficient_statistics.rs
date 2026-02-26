@@ -191,11 +191,11 @@ mod tests {
             let x_idx = d
                 .labels()
                 .get_index_of("X")
-                .ok_or(Error::InvalidParameter("x", "missing"))?;
+                .ok_or_else(|| Error::InvalidParameter("x", "missing"))?;
             let y_idx = d
                 .labels()
                 .get_index_of("Y")
-                .ok_or(Error::InvalidParameter("y", "missing"))?;
+                .ok_or_else(|| Error::InvalidParameter("y", "missing"))?;
 
             let x = set![x_idx];
             let z = set![y_idx];

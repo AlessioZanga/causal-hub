@@ -472,12 +472,12 @@ class CatCIM:
 
     def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the (in-sample) log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The (in-sample) log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
         """
 
     @classmethod
@@ -631,12 +631,12 @@ class CatCPD:
 
     def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the (in-sample) log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The (in-sample) log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
         """
 
     def __repr__(self) -> builtins.str:
@@ -1834,12 +1834,12 @@ class GaussCPD:
 
     def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the (in-sample) log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The (in-sample) log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
         """
 
     @classmethod

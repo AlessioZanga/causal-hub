@@ -148,14 +148,14 @@ mod tests {
                             event: model
                                 .labels()
                                 .get_index_of("lung")
-                                .ok_or(Error::InvalidParameter("lung", "missing"))?, // lung
+                                .ok_or_else(|| Error::InvalidParameter("lung", "missing"))?, // lung
                             state: 1, // yes
                         },
                         CatEvT::CertainPositive {
                             event: model
                                 .labels()
                                 .get_index_of("tub")
-                                .ok_or(Error::InvalidParameter("tub", "missing"))?, // tub
+                                .ok_or_else(|| Error::InvalidParameter("tub", "missing"))?, // tub
                             state: 0, // no
                         },
                     ],

@@ -119,7 +119,9 @@ impl CatTable {
             .into_iter()
             .enumerate()
             .try_for_each(|(i, x)| {
-                let (label, states) = states.get_index(i).ok_or(Error::IndexOutOfBounds(i))?;
+                let (label, states) = states
+                    .get_index(i)
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))?;
 
                 if x >= states.len() as CatType {
                     return Err(Error::InvalidParameter(
@@ -291,7 +293,7 @@ impl Dataset for CatTable {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or(Error::IndexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

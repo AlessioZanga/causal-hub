@@ -67,10 +67,7 @@ pub trait ParCSSEstimator<T> {
 }
 
 /// A trait for conditional probability distribution estimators.
-pub trait CPDEstimator<T>
-where
-    T: CPD,
-{
+pub trait CPDEstimator<T> {
     /// Fits the estimator to the dataset and returns a CPD.
     ///
     /// # Arguments
@@ -93,10 +90,7 @@ where
 }
 
 /// A trait for conditional probability distribution estimators in parallel.
-pub trait ParCPDEstimator<T>
-where
-    T: CPD,
-{
+pub trait ParCPDEstimator<T> {
     /// Fits the estimator to the dataset and returns a CPD in parallel.
     ///
     /// # Arguments
@@ -200,58 +194,6 @@ where
     }
 }
 
-/// A trait for conditional intensity matrix estimators.
-pub trait CIMEstimator<T>
-where
-    T: CIM,
-{
-    /// Fits the estimator to the dataset and returns a CIM.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit the estimator to.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Errors
-    ///
-    /// * If the set of variables to fit the estimator to is empty.
-    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
-    /// * If the set of variables to condition on is not a subset of the dataset variables.
-    /// * If the sets of variables are not disjoint.
-    ///
-    /// # Returns
-    ///
-    /// The estimated CIM.
-    ///
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
-}
-
-/// A trait for conditional intensity matrix estimators in parallel.
-pub trait ParCIMEstimator<T>
-where
-    T: CIM,
-{
-    /// Fits the estimator to the dataset and returns a CIM in parallel.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to fit the estimator to.
-    /// * `z` - The variables to condition on.
-    ///
-    /// # Errors
-    ///
-    /// * If the set of variables to fit the estimator to is empty.
-    /// * If the set of variables to fit the estimator to is not a subset of the dataset variables.
-    /// * If the set of variables to condition on is not a subset of the dataset variables.
-    /// * If the sets of variables are not disjoint.
-    ///
-    /// # Returns
-    ///
-    /// The estimated CIM.
-    ///
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T>;
-}
-
 /// A trait for CTBN estimators.
 pub trait CTBNEstimator<T> {
     /// Fits the estimator to the trajectory and returns a CTBN.
@@ -276,7 +218,7 @@ impl<T, E> CTBNEstimator<T> for E
 where
     T: CTBN,
     T::CIM: CIM,
-    E: CIMEstimator<T::CIM>,
+    E: CPDEstimator<T::CIM>,
 {
     fn fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.
@@ -317,7 +259,7 @@ impl<T, E> ParCTBNEstimator<T> for E
 where
     T: CTBN,
     T::CIM: CIM + Send,
-    E: ParCIMEstimator<T::CIM> + Sync,
+    E: ParCPDEstimator<T::CIM> + Sync,
 {
     fn par_fit(&self, graph: DiGraph) -> Result<T> {
         // Fit the parameters of the distribution using the estimator.

@@ -146,7 +146,7 @@ impl BN for GaussBN {
         })?;
 
         // Check the graph is acyclic.
-        let topological_order = graph.topological_order().ok_or(Error::NotADag())?;
+        let topological_order = graph.topological_order().ok_or_else(|| Error::NotADag())?;
 
         Ok(Self {
             name: None,

@@ -137,12 +137,12 @@ impl PyGaussCPD {
             .transpose()
     }
 
-    /// Returns the (in-sample) log-likelihood given the distribution, if any.
+    /// Returns the log-likelihood given the distribution, if any.
     ///
     /// Returns
     /// -------
     /// float | None
-    ///     The (in-sample) log-likelihood given the distribution, if any.
+    ///     The log-likelihood given the distribution, if any.
     ///
     pub fn fitted_log_likelihood(&self) -> PyResult<Option<f64>> {
         Ok(self.lock().fitted_log_likelihood())

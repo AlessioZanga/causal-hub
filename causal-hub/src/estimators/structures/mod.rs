@@ -6,3 +6,6 @@ pub use continuous_time_peter_clark::*;
 
 mod prior_knowledge;
 pub use prior_knowledge::*;
+
+mod scoring_criterion;
+pub use scoring_criterion::*;

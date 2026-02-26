@@ -61,7 +61,7 @@ mod tests {
             let trajectory = weighted_trajectory
                 .into_iter()
                 .next()
-                .ok_or(Error::InvalidParameter("trajectory", "missing"))?
+                .ok_or_else(|| Error::InvalidParameter("trajectory", "missing"))?
                 .trajectory();
 
             // Check labels.

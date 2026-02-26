@@ -65,7 +65,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .fitted_log_likelihood()
-                        .ok_or(Error::InvalidParameter("ll", "missing"))?,
+                        .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                     -4.780356732903302
                 );
 
@@ -114,7 +114,7 @@ mod tests {
                 assert_relative_eq!(
                     distribution
                         .fitted_log_likelihood()
-                        .ok_or(Error::InvalidParameter("ll", "missing"))?,
+                        .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                     -8.501216236893097
                 );
 

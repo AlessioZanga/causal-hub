@@ -121,7 +121,7 @@ mod tests {
                                     .partial_cmp(&b.weight())
                                     .unwrap_or(std::cmp::Ordering::Equal)
                             })
-                            .ok_or(Error::InvalidParameter("trajectories", "empty"))?
+                            .ok_or_else(|| Error::InvalidParameter("trajectories", "empty"))?
                             .clone())
                     })
                     // Reject trajectories with low weight.

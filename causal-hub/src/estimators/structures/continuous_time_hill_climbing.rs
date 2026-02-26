@@ -1,85 +1,12 @@
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 
 use crate::{
-    estimators::{CIMEstimator, PK},
-    models::{CIM, CatCIM, DiGraph, Graph, Labelled},
+    estimators::{PK, ScoringCriterion},
+    models::{DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Result, Set},
+    types::{Error, Result, Set},
 };
-
-/// A trait for scoring criteria used in score-based structure learning.
-pub trait ScoringCriterion {
-    /// Computes the score for a given variable and its conditioning set.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to score.
-    /// * `z` - The conditioning set.
-    ///
-    /// # Returns
-    ///
-    /// The computed score.
-    ///
-    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> Result<f64>;
-}
-
-/// The Bayesian Information Criterion (BIC).
-pub struct BIC<'a, E> {
-    estimator: &'a E,
-}
-
-impl<'a, E> BIC<'a, E> {
-    /// Creates a new BIC instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `estimator` - A reference to the estimator.
-    ///
-    /// # Returns
-    ///
-    /// A new `BIC` instance.
-    ///
-    #[inline]
-    pub const fn new(estimator: &'a E) -> Self {
-        Self { estimator }
-    }
-}
-
-impl<'a, E> Labelled for BIC<'a, E>
-where
-    E: Labelled,
-{
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.estimator.labels()
-    }
-}
-
-impl<E> ScoringCriterion for BIC<'_, E>
-where
-    E: CIMEstimator<CatCIM>,
-{
-    #[inline]
-    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> Result<f64> {
-        // Compute the intensity matrices for the sets.
-        let q_xz = self.estimator.fit(x, z)?;
-        // Get the sample size.
-        let n = q_xz
-            .fitted_statistics()
-            .map(|s| s.fitted_size())
-            .ok_or(Error::MissingSufficientStatistics())?;
-        // Get the log-likelihood.
-        let ll = q_xz
-            .fitted_log_likelihood()
-            .ok_or_else(|| Error::Probability("Failed to compute the log-likelihood."))?;
-        // Get the number of parameters.
-        let k = q_xz.parameters_size() as f64;
-
-        // Compute the BIC.
-        Ok(ll - 0.5 * k * f64::ln(n))
-    }
-}
 
 /// The hill climbing algorithm for structure learning in CTBNs.
 #[derive(Clone, Debug)]

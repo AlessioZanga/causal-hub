@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use statrs::distribution::{ChiSquared, ContinuousCDF, FisherSnedecor};
 
 use crate::{
-    estimators::{CIMEstimator, PK},
+    estimators::{CPDEstimator, PK},
     models::{CIM, CatCIM, DiGraph, Graph, Labelled},
     set,
     types::{Error, Labels, Result, Set},
@@ -69,7 +69,7 @@ where
 
 impl<E> CITest for ChiSquaredTest<'_, E>
 where
-    E: CIMEstimator<CatCIM>,
+    E: CPDEstimator<CatCIM>,
 {
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
         // Check Y contains exactly one label.
@@ -98,11 +98,11 @@ where
         let n_xz = q_xz
             .fitted_statistics()
             .map(|s| s.fitted_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics())?;
+            .ok_or_else(|| Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
             .fitted_statistics()
             .map(|s| s.fitted_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics())?;
+            .ok_or_else(|| Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();
@@ -190,7 +190,7 @@ where
 
 impl<E> CITest for FTest<'_, E>
 where
-    E: CIMEstimator<CatCIM>,
+    E: CPDEstimator<CatCIM>,
 {
     fn call(&self, x: &Set<usize>, y: &Set<usize>, z: &Set<usize>) -> Result<bool> {
         // Check Y contains exactly one label.
@@ -222,11 +222,11 @@ where
         let n_xz = q_xz
             .fitted_statistics()
             .map(|s| s.fitted_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics())?;
+            .ok_or_else(|| Error::MissingSufficientStatistics())?;
         let n_xs = q_xs
             .fitted_statistics()
             .map(|s| s.fitted_conditional_counts())
-            .ok_or(Error::MissingSufficientStatistics())?;
+            .ok_or_else(|| Error::MissingSufficientStatistics())?;
 
         // Get the shape of the extended separation set.
         let c_s = q_xs.conditioning_shape();

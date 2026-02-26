@@ -530,7 +530,7 @@ impl CatCPD {
     /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The probabilities of the states.
     /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
-    /// * `fitted_log_likelihood` - The (in-sample) log-likelihood given the distribution, if any.
+    /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
     /// # Panics
     ///

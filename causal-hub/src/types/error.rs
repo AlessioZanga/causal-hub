@@ -86,6 +86,9 @@ pub enum ErrorKind {
     /// An error indicating that sufficient statistics are missing.
     #[error("Missing sufficient statistics")]
     MissingSufficientStatistics,
+    /// An error indicating that the log-likelihood is missing.
+    #[error("Missing log-likelihood")]
+    MissingLogLikelihood,
     /// An error indicating that a CSV file is missing headers.
     #[error("CSV file must have headers")]
     MissingHeader,
@@ -357,6 +360,13 @@ impl Error {
     #[track_caller]
     pub fn MissingSufficientStatistics() -> Self {
         ErrorKind::MissingSufficientStatistics.into()
+    }
+
+    /// An error indicating that the log-likelihood is missing.
+    #[allow(non_snake_case)]
+    #[track_caller]
+    pub fn MissingLogLikelihood() -> Self {
+        ErrorKind::MissingLogLikelihood.into()
     }
 
     /// An error indicating that a CSV file is missing headers.

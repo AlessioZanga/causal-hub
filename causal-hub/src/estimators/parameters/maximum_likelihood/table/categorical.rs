@@ -40,7 +40,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or(Error::IndexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
         // Get the labels of the conditioned variables.
@@ -50,7 +50,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or(Error::IndexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
 

@@ -139,7 +139,7 @@ impl Dataset for GaussTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or(Error::IndexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

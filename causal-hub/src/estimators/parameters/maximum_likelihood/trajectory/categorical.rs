@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
-    estimators::{CIMEstimator, CSSEstimator, MLE, ParCIMEstimator, ParCSSEstimator, SSE},
+    estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{CatCIM, CatCIMS},
     types::{Error, Result, Set, States},
 };
@@ -119,7 +119,7 @@ impl MLE<'_, CatTrj> {
 // Implement the CatCIM estimator for the MLE struct.
 macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 
-    impl CIMEstimator<CatCIM> for MLE<'_, $type> {
+    impl CPDEstimator<CatCIM> for MLE<'_, $type> {
         fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get states.
             let states = self.dataset.states();
@@ -142,7 +142,7 @@ macro_for!($type in [CatTrj, CatWtdTrj, CatTrjs, CatWtdTrjs] {
 // Implement the parallel version of the CIM estimator for the MLE struct.
 macro_for!($type in [CatTrjs, CatWtdTrjs] {
 
-    impl ParCIMEstimator<CatCIM> for MLE<'_, $type> {
+    impl ParCPDEstimator<CatCIM> for MLE<'_, $type> {
         fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
             // Get states.
             let states = self.dataset.states();

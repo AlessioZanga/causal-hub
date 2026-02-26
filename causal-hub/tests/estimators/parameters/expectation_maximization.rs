@@ -6,7 +6,7 @@ mod tests {
     use causal_hub::{
         assets::load_eating,
         datasets::{CatTrjEv, CatTrjs, CatTrjsEv, CatWtdTrjs, Dataset},
-        estimators::{BE, CIMEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
+        estimators::{BE, CPDEstimator, EMBuilder, MLE, ParCTBNEstimator, RAWE},
         models::{CTBN, CatCTBN, Graph},
         random::{Random, RngCatTrjEv},
         samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
@@ -155,7 +155,7 @@ mod tests {
                     .into_iter()
                     .map(|i| {
                         let i = set![i];
-                        CIMEstimator::fit(&raw, &i, &model.graph().parents(&i)?)
+                        CPDEstimator::fit(&raw, &i, &model.graph().parents(&i)?)
                     })
                     .collect::<Result<_>>()?;
                 // Set the initial model.
@@ -199,7 +199,7 @@ mod tests {
                                         .partial_cmp(&b.weight())
                                         .unwrap_or(std::cmp::Ordering::Equal)
                                 })
-                                .ok_or(Error::InvalidParameter("trajectories", "empty"))?
+                                .ok_or_else(|| Error::InvalidParameter("trajectories", "empty"))?
                                 .clone())
                         })
                         .collect()
