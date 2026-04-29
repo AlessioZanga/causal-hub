@@ -4,19 +4,20 @@ mod tests {
         assets::load_eating,
         datasets::{CatTrj, CatTrjEv, CatTrjEvT, Dataset},
         estimators::RAWE,
+        types::Result,
     };
     use ndarray::prelude::*;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256PlusPlus;
 
     #[test]
-    fn raw_fill_1() {
+    fn raw_fill_1() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
             model.states().clone(),
@@ -40,14 +41,17 @@ mod tests {
                     end_time: 0.6,
                 },
             ],
-        );
+        )?;
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
+        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
-        assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
+        assert_eq!(
+            filled_evidence.dataset().times(),
+            array![0., 0.1, 0.3, 0.5, 0.6]
+        );
         // Check the filled evidence.
         assert_eq!(
-            filled_evidence.values(),
+            filled_evidence.dataset().values(),
             array![
                 [0, 0, 0], // 0.
                 [0, 0, 0], // 0.1
@@ -56,16 +60,18 @@ mod tests {
                 [0, 0, 0], // 0.6 (Ending time of the last event)
             ]
         );
+
+        Ok(())
     }
 
     #[test]
-    fn raw_fill_2() {
+    fn raw_fill_2() -> Result<()> {
         // Short the evidence name.
         use CatTrjEvT as E;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(42);
         // Load the model.
-        let model = load_eating();
+        let model = load_eating()?;
         // Initialize the evidence.
         let evidence = CatTrjEv::new(
             model.states().clone(),
@@ -95,14 +101,17 @@ mod tests {
                     end_time: 0.6,
                 },
             ],
-        );
+        )?;
         // Fill the evidence.
-        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence);
+        let filled_evidence = RAWE::<'_, _, CatTrjEv, CatTrj>::par_new(&mut rng, &evidence)?;
         // Check the filled evidence times.
-        assert_eq!(filled_evidence.times(), array![0., 0.1, 0.3, 0.5, 0.6]);
+        assert_eq!(
+            filled_evidence.dataset().times(),
+            array![0., 0.1, 0.3, 0.5, 0.6]
+        );
         // Check the filled evidence.
         assert_eq!(
-            filled_evidence.values(),
+            filled_evidence.dataset().values(),
             array![
                 [0, 0, 0], // 0.
                 [0, 0, 0], // 0.1
@@ -111,5 +120,7 @@ mod tests {
                 [1, 0, 0], // 0.6 (Ending time of the last event)
             ]
         );
+
+        Ok(())
     }
 }

@@ -18,7 +18,7 @@ use crate::{
     datasets::{CatSample, CatType},
     impl_json_io,
     models::{CPD, CatPhi, Labelled, Phi},
-    types::{EPSILON, Labels, Set, States},
+    types::{EPSILON, Error, Labels, Result, Set, States},
     utils::MI,
 };
 
@@ -44,39 +44,43 @@ impl CatCPDS {
     /// A new sample (sufficient) statistics instance.
     ///
     #[inline]
-    pub fn new(n_xz: Array2<f64>, n: f64) -> Self {
-        // Assert the counts are finite and non-negative.
-        assert!(
-            n_xz.iter().all(|&x| x.is_finite() && x >= 0.),
-            "Counts must be finite and non-negative."
-        );
-        assert!(
-            n.is_finite() && n >= 0.,
-            "Sample size must be finite and non-negative."
-        );
+    pub fn new(n_xz: Array2<f64>, n: f64) -> Result<Self> {
+        // Check the counts are finite and non-negative.
+        if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
+            return Err(Error::InvalidParameter(
+                "n_xz",
+                "Counts must be finite and non-negative.",
+            ));
+        }
+        if !n.is_finite() || n < 0. {
+            return Err(Error::InvalidParameter(
+                "n",
+                "Sample size must be finite and non-negative.",
+            ));
+        }
 
-        Self { n_xz, n }
+        Ok(Self { n_xz, n })
     }
 
-    /// Returns the sample conditional counts |Z| x |X|.
+    /// Returns the fitted conditional counts |Z| x |X|.
     ///
     /// # Returns
     ///
-    /// The sample conditional counts.
+    /// The fitted conditional counts.
     ///
     #[inline]
-    pub const fn sample_conditional_counts(&self) -> &Array2<f64> {
+    pub const fn fitted_conditional_counts(&self) -> &Array2<f64> {
         &self.n_xz
     }
 
-    /// Returns the sample size.
+    /// Returns the fitted size.
     ///
     /// # Returns
     ///
-    /// The sample size.
+    /// The fitted size.
     ///
     #[inline]
-    pub const fn sample_size(&self) -> f64 {
+    pub const fn fitted_size(&self) -> f64 {
         self.n
     }
 }
@@ -101,34 +105,34 @@ impl Add for CatCPDS {
 }
 
 impl Serialize for CatCPDS {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(2))?;
-        // Convert the sample conditional counts to a flat format.
-        let sample_conditional_counts: Vec<Vec<f64>> =
+        // Convert the fitted conditional counts to a flat format.
+        let fitted_conditional_counts: Vec<Vec<f64>> =
             self.n_xz.rows().into_iter().map(|x| x.to_vec()).collect();
-        // Serialize sample conditional counts.
-        map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
-        // Serialize sample size.
-        map.serialize_entry("sample_size", &self.n)?;
+        // Serialize fitted conditional counts.
+        map.serialize_entry("fitted_conditional_counts", &fitted_conditional_counts)?;
+        // Serialize fitted size.
+        map.serialize_entry("fitted_size", &self.n)?;
         // End the map.
         map.end()
     }
 }
 
 impl<'de> Deserialize<'de> for CatCPDS {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
-            SampleConditionalCounts,
-            SampleSize,
+            FittedConditionalCounts,
+            FittedSize,
         }
 
         struct CatCPDSVisitor;
@@ -140,53 +144,54 @@ impl<'de> Deserialize<'de> for CatCPDS {
                 formatter.write_str("struct CatCPDS")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatCPDS, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatCPDS, V::Error>
             where
                 V: MapAccess<'de>,
             {
                 use serde::de::Error as E;
 
                 // Allocate the fields.
-                let mut sample_conditional_counts = None;
-                let mut sample_size = None;
+                let mut fitted_conditional_counts = None;
+                let mut fitted_size = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
-                        Field::SampleConditionalCounts => {
-                            if sample_conditional_counts.is_some() {
-                                return Err(E::duplicate_field("sample_conditional_counts"));
+                        Field::FittedConditionalCounts => {
+                            if fitted_conditional_counts.is_some() {
+                                return Err(E::duplicate_field("fitted_conditional_counts"));
                             }
-                            sample_conditional_counts = Some(map.next_value()?);
+                            fitted_conditional_counts = Some(map.next_value()?);
                         }
-                        Field::SampleSize => {
-                            if sample_size.is_some() {
-                                return Err(E::duplicate_field("sample_size"));
+                        Field::FittedSize => {
+                            if fitted_size.is_some() {
+                                return Err(E::duplicate_field("fitted_size"));
                             }
-                            sample_size = Some(map.next_value()?);
+                            fitted_size = Some(map.next_value()?);
                         }
                     }
                 }
 
                 // Extract the fields.
-                let sample_conditional_counts = sample_conditional_counts
-                    .ok_or_else(|| E::missing_field("sample_conditional_counts"))?;
-                let sample_size = sample_size.ok_or_else(|| E::missing_field("sample_size"))?;
+                let fitted_conditional_counts = fitted_conditional_counts
+                    .ok_or_else(|| E::missing_field("fitted_conditional_counts"))?;
+                let fitted_size = fitted_size.ok_or_else(|| E::missing_field("fitted_size"))?;
 
-                // Convert sample conditional counts to ndarray.
-                let sample_conditional_counts = {
-                    let counts: Vec<Vec<f64>> = sample_conditional_counts;
+                // Convert fitted conditional counts to ndarray.
+                let fitted_conditional_counts = {
+                    let counts: Vec<Vec<f64>> = fitted_conditional_counts;
                     let shape = (counts.len(), counts[0].len());
                     Array::from_iter(counts.into_iter().flatten())
                         .into_shape_with_order(shape)
-                        .map_err(|_| E::custom("Invalid sample conditional counts shape"))?
+                        .map_err(|_| E::custom("Invalid fitted conditional counts shape"))?
                 };
 
-                Ok(CatCPDS::new(sample_conditional_counts, sample_size))
+                CatCPDS::new(fitted_conditional_counts, fitted_size)
+                    .map_err(|e| E::custom(e.to_string()))
             }
         }
 
-        const FIELDS: &[&str] = &["sample_conditional_counts", "sample_size"];
+        const FIELDS: &[&str] = &["fitted_conditional_counts", "fitted_size"];
 
         deserializer.deserialize_struct("CatCPDS", FIELDS, CatCPDSVisitor)
     }
@@ -208,9 +213,9 @@ pub struct CatCPD {
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
-    // Sample (sufficient) statistics, if any.
-    sample_statistics: Option<CatCPDS>,
-    sample_log_likelihood: Option<f64>,
+    // Fitted sufficient statistics, if any.
+    fitted_statistics: Option<CatCPDS>,
+    fitted_log_likelihood: Option<f64>,
 }
 
 impl CatCPD {
@@ -233,54 +238,57 @@ impl CatCPD {
     ///
     /// A new `CatCPD` instance.
     ///
-    pub fn new(states: States, conditioning_states: States, parameters: Array2<f64>) -> Self {
+    pub fn new(
+        states: States,
+        conditioning_states: States,
+        parameters: Array2<f64>,
+    ) -> Result<Self> {
         // Get the labels of the variables.
         let labels: Set<_> = states.keys().cloned().collect();
         // Get the labels of the variables.
         let conditioning_labels: Set<_> = conditioning_states.keys().cloned().collect();
 
-        // Assert labels and conditioning labels are disjoint.
-        assert!(
-            labels.is_disjoint(&conditioning_labels),
-            "Labels and conditioning labels must be disjoint."
-        );
+        // Check labels and conditioning labels are disjoint.
+        if !labels.is_disjoint(&conditioning_labels) {
+            return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
+        }
 
         // Get the states shape.
         let shape = Array::from_iter(states.values().map(Set::len));
 
         // Check that the product of the shape matches the number of columns.
-        assert!(
-            parameters.is_empty() || parameters.ncols() == shape.product(),
-            "Product of the number of states must match the number of columns: \n\
-            \t expected:    parameters.ncols() == {} , \n\
-            \t found:       parameters.ncols() == {} .",
-            shape.product(),
-            parameters.ncols(),
-        );
+        if !parameters.is_empty() && parameters.ncols() != shape.product() {
+            return Err(Error::IncompatibleShape(
+                &shape.product().to_string(),
+                &parameters.ncols().to_string(),
+            ));
+        }
 
         // Get the shape of the set of states.
         let conditioning_shape = Array::from_iter(conditioning_states.values().map(Set::len));
 
         // Check that the product of the conditioning shape matches the number of rows.
-        assert!(
-            parameters.is_empty() || parameters.nrows() == conditioning_shape.product(),
-            "Product of the number of conditioning states must match the number of rows: \n\
-            \t expected:    parameters.nrows() == {} , \n\
-            \t found:       parameters.nrows() == {} .",
-            conditioning_shape.product(),
-            parameters.nrows(),
-        );
+        if !parameters.is_empty() && parameters.nrows() != conditioning_shape.product() {
+            return Err(Error::IncompatibleShape(
+                &conditioning_shape.product().to_string(),
+                &parameters.nrows().to_string(),
+            ));
+        }
 
         // Check parameters validity.
         parameters
             .sum_axis(Axis(1))
             .iter()
             .enumerate()
-            .for_each(|(i, &x)| {
+            .try_for_each(|(i, &x)| {
                 if !relative_eq!(x, 1.0, epsilon = EPSILON) {
-                    panic!("Failed to sum probability to one: {}.", parameters.row(i));
+                    return Err(Error::Probability(&format!(
+                        "Failed to sum probability to one: {}.",
+                        parameters.row(i)
+                    )));
                 }
-            });
+                Ok(())
+            })?;
 
         // Make parameters mutable.
         let mut parameters = parameters;
@@ -396,7 +404,7 @@ impl CatCPD {
         // Compute the parameters size.
         let parameters_size = parameters.ncols().saturating_sub(1) * parameters.nrows();
 
-        Self {
+        Ok(Self {
             labels,
             states,
             shape,
@@ -407,9 +415,9 @@ impl CatCPD {
             conditioning_multi_index,
             parameters,
             parameters_size,
-            sample_statistics: None,
-            sample_log_likelihood: None,
-        }
+            fitted_statistics: None,
+            fitted_log_likelihood: None,
+        })
     }
 
     /// Returns the states of the conditioned variable.
@@ -489,10 +497,10 @@ impl CatCPD {
     ///
     /// A new instance with the marginalized variables.
     ///
-    pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Self {
+    pub fn marginalize(&self, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
         // Base case: if no variables to marginalize, return self clone.
         if x.is_empty() && z.is_empty() {
-            return self.clone();
+            return Ok(self.clone());
         }
         // Get labels.
         let labels_x = self.labels();
@@ -501,15 +509,15 @@ impl CatCPD {
         let not_x = (0..labels_x.len()).filter(|i| !x.contains(i)).collect();
         let not_z = (0..labels_z.len()).filter(|i| !z.contains(i)).collect();
         // Convert to potential.
-        let phi = self.clone().into_phi();
+        let phi = self.clone().into_phi()?;
         // Map CPD indices to potential indices.
-        let x = phi.indices_from(x, labels_x);
-        let z = phi.indices_from(z, labels_z);
+        let x = phi.indices_from(x, labels_x)?;
+        let z = phi.indices_from(z, labels_z)?;
         // Marginalize the potential.
-        let phi = phi.marginalize(&(&x | &z));
+        let phi = phi.marginalize(&(&x | &z))?;
         // Map CPD indices to potential indices.
-        let not_x = phi.indices_from(&not_x, labels_x);
-        let not_z = phi.indices_from(&not_z, labels_z);
+        let not_x = phi.indices_from(&not_x, labels_x)?;
+        let not_z = phi.indices_from(&not_z, labels_z)?;
         // Convert back to CPD.
         phi.into_cpd(&not_x, &not_z)
     }
@@ -519,8 +527,10 @@ impl CatCPD {
     /// # Arguments
     ///
     /// * `states` - The variables states.
+    /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The probabilities of the states.
-    /// * `statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
     /// # Panics
     ///
@@ -531,51 +541,50 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn with_optionals(
-        state: States,
+        states: States,
         conditioning_states: States,
         parameters: Array2<f64>,
-        sample_statistics: Option<CatCPDS>,
-        sample_log_likelihood: Option<f64>,
-    ) -> Self {
-        if let Some(sample_statistics) = &sample_statistics {
-            // Get the sample conditional counts.
-            let sample_conditional_counts = &sample_statistics.n_xz;
-            // Assert the sample conditional counts have the same shape as parameters.
-            assert!(
-                sample_conditional_counts.shape() == parameters.shape(),
-                "Sample conditional counts must have the same shape as parameters: \n\
-                \t expected:    sample_conditional_counts.shape() == {:?} , \n\
-                \t found:       sample_conditional_counts.shape() == {:?} .",
-                parameters.shape(),
-                sample_conditional_counts.shape(),
-            );
+        fitted_statistics: Option<CatCPDS>,
+        fitted_log_likelihood: Option<f64>,
+    ) -> Result<Self> {
+        // Check the fitted statistics, if any.
+        if let Some(fitted_statistics) = &fitted_statistics {
+            // Get the fitted conditional counts.
+            let fitted_conditional_counts = &fitted_statistics.n_xz;
+            // Check the fitted conditional counts have the same shape as parameters.
+            if fitted_conditional_counts.shape() != parameters.shape() {
+                return Err(Error::IncompatibleShape(
+                    &format!("{:?}", fitted_conditional_counts.shape()),
+                    &format!("{:?}", parameters.shape()),
+                ));
+            }
         }
-        // Assert the sample log-likelihood is finite and non-positive.
-        if let Some(sample_log_likelihood) = &sample_log_likelihood {
-            assert!(
-                sample_log_likelihood.is_finite() && *sample_log_likelihood <= 0.,
-                "Sample log-likelihood must be finite and non-positive: \n\
-                \t expected: sample_ll <= 0 , \n\
-                \t found:    sample_ll == {sample_log_likelihood} ."
-            );
+        // Check the fitted log-likelihood is finite and non-positive.
+        if let Some(fitted_log_likelihood) = &fitted_log_likelihood
+            && (!fitted_log_likelihood.is_finite() || *fitted_log_likelihood > 0.)
+        {
+            return Err(Error::Stats(&format!(
+                "Fitted log-likelihood must be finite and non-positive: \n\
+                \t expected: fitted_ll <= 0 , \n\
+                \t found:    fitted_ll == {fitted_log_likelihood} ."
+            )));
         }
 
         // Construct the categorical CPD.
-        let mut cpd = Self::new(state, conditioning_states, parameters);
-
-        // FIXME: Check labels alignment with optional fields.
+        let mut cpd = Self::new(states, conditioning_states, parameters)?;
 
         // Set the optionals.
-        cpd.sample_statistics = sample_statistics;
-        cpd.sample_log_likelihood = sample_log_likelihood;
+        cpd.fitted_statistics = fitted_statistics;
+        cpd.fitted_log_likelihood = fitted_log_likelihood;
 
-        cpd
+        Ok(cpd)
     }
 
     /// Converts a potential \phi(X \cup Z) to a CPD P(X | Z).
     ///
     /// # Arguments
     ///
+    /// * `phi` - The potential to convert.
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
@@ -584,22 +593,18 @@ impl CatCPD {
     /// The corresponding CPD.
     ///
     #[inline]
-    pub fn from_phi(phi: CatPhi, x: &Set<usize>, z: &Set<usize>) -> Self {
+    pub fn from_phi(phi: CatPhi, x: &Set<usize>, z: &Set<usize>) -> Result<Self> {
         phi.into_cpd(x, z)
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
-    ///
-    /// # Arguments
-    ///
-    /// * `cpd` - The CPD to convert.
     ///
     /// # Returns
     ///
     /// The corresponding potential.
     ///
     #[inline]
-    pub fn into_phi(self) -> CatPhi {
+    pub fn into_phi(self) -> Result<CatPhi> {
         CatPhi::from_cpd(self)
     }
 }
@@ -691,45 +696,39 @@ impl CPD for CatCPD {
     }
 
     #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
+        self.fitted_statistics.as_ref()
     }
 
     #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
+    fn fitted_log_likelihood(&self) -> Option<f64> {
+        self.fitted_log_likelihood
     }
 
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> f64 {
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert X matches number of variables.
-        assert_eq!(
-            x.len(),
-            n,
-            "Vector X must match number of variables: \n\
-            \t expected:    |X| == {} , \n\
-            \t found:       |X| == {} .",
-            n,
-            x.len(),
-        );
-        // Assert Z matches number of conditioning variables.
-        assert_eq!(
-            z.len(),
-            m,
-            "Vector Z must match number of conditioning variables: \n\
-            \t expected:    |Z| == {} , \n\
-            \t found:       |Z| == {} .",
-            m,
-            z.len(),
-        );
+        // Check X matches number of variables.
+        if x.len() != n {
+            return Err(Error::IncompatibleShape(
+                &n.to_string(),
+                &x.len().to_string(),
+            ));
+        }
+        // Check Z matches number of conditioning variables.
+        if z.len() != m {
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
+        }
 
         // No variables.
         if n == 0 {
-            return 1.;
+            return Ok(1.);
         }
 
         // Convert states to indices.
@@ -761,29 +760,26 @@ impl CPD for CatCPD {
         };
 
         // Get the probability.
-        self.parameters[[z, x]]
+        Ok(self.parameters[[z, x]])
     }
 
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Self::Support {
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
         let m = self.conditioning_labels.len();
 
-        // Assert Z matches number of conditioning variables.
-        assert_eq!(
-            z.len(),
-            m,
-            "Vector Z must match number of conditioning variables: \n\
-            \t expected:    |Z| == {} , \n\
-            \t found:       |Z| == {} .",
-            m,
-            z.len(),
-        );
+        // Check Z matches number of conditioning variables.
+        if z.len() != m {
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
+        }
 
         // No variables.
         if n == 0 {
-            return array![];
+            return Ok(array![]);
         }
 
         // Convert conditioning states to indices.
@@ -804,14 +800,15 @@ impl CPD for CatCPD {
         // Get the distribution of the vertex.
         let p = self.parameters.row(z);
         // Construct the sampler.
-        let s = WeightedIndex::new(&p).unwrap();
+        let s = WeightedIndex::new(&p)
+            .map_err(|e| Error::Probability(&format!("Failed to create WeightedIndex: {e}")))?;
         // Sample from the distribution.
         let x = s.sample(rng);
 
         // Convert indices to states.
         match n {
             // ... one variable.
-            1 => array![x as CatType],
+            1 => Ok(array![x as CatType]),
             // ... multiple variables.
             _ => {
                 // Unravel the sample.
@@ -819,7 +816,7 @@ impl CPD for CatCPD {
                 // Convert indices to states.
                 let x = x.iter().map(|&x| x as CatType);
                 // Return the sample.
-                x.collect()
+                Ok(x.collect())
             }
         }
     }
@@ -828,7 +825,9 @@ impl CPD for CatCPD {
 impl Display for CatCPD {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // FIXME: This assumes `x` has a single element.
-        assert_eq!(self.labels().len(), 1);
+        if self.labels().len() != 1 {
+            return Err(std::fmt::Error);
+        }
 
         // Determine the maximum width for formatting based on the labels and states.
         let n = std::iter::once(&self.labels()[0])
@@ -894,15 +893,15 @@ impl Display for CatCPD {
 }
 
 impl Serialize for CatCPD {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         // Count the elements to serialize.
         let mut size = 4;
         // Add optional fields, if any.
-        size += self.sample_statistics.is_some() as usize;
-        size += self.sample_log_likelihood.is_some() as usize;
+        size += self.fitted_statistics.is_some() as usize;
+        size += self.fitted_log_likelihood.is_some() as usize;
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
@@ -922,12 +921,12 @@ impl Serialize for CatCPD {
         map.serialize_entry("parameters", &parameters)?;
 
         // Serialize the sufficient statistics, if any.
-        if let Some(sample_statistics) = &self.sample_statistics {
-            map.serialize_entry("sample_statistics", sample_statistics)?;
+        if let Some(fitted_statistics) = &self.fitted_statistics {
+            map.serialize_entry("fitted_statistics", fitted_statistics)?;
         }
-        // Serialize the sample log-likelihood, if any.
-        if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
-            map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
+        // Serialize the fitted log-likelihood, if any.
+        if let Some(fitted_log_likelihood) = &self.fitted_log_likelihood {
+            map.serialize_entry("fitted_log_likelihood", fitted_log_likelihood)?;
         }
 
         // Serialize type.
@@ -939,7 +938,7 @@ impl Serialize for CatCPD {
 }
 
 impl<'de> Deserialize<'de> for CatCPD {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -949,8 +948,8 @@ impl<'de> Deserialize<'de> for CatCPD {
             States,
             ConditioningStates,
             Parameters,
-            SampleStatistics,
-            SampleLogLikelihood,
+            FittedStatistics,
+            FittedLogLikelihood,
             Type,
         }
 
@@ -963,7 +962,7 @@ impl<'de> Deserialize<'de> for CatCPD {
                 formatter.write_str("struct CatCPD")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<CatCPD, V::Error>
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<CatCPD, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -973,8 +972,8 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let mut states = None;
                 let mut conditioning_states = None;
                 let mut parameters = None;
-                let mut sample_statistics = None;
-                let mut sample_log_likelihood = None;
+                let mut fitted_statistics = None;
+                let mut fitted_log_likelihood = None;
                 let mut type_ = None;
 
                 // Parse the map.
@@ -998,17 +997,17 @@ impl<'de> Deserialize<'de> for CatCPD {
                             }
                             parameters = Some(map.next_value()?);
                         }
-                        Field::SampleStatistics => {
-                            if sample_statistics.is_some() {
-                                return Err(E::duplicate_field("sample_statistics"));
+                        Field::FittedStatistics => {
+                            if fitted_statistics.is_some() {
+                                return Err(E::duplicate_field("fitted_statistics"));
                             }
-                            sample_statistics = Some(map.next_value()?);
+                            fitted_statistics = Some(map.next_value()?);
                         }
-                        Field::SampleLogLikelihood => {
-                            if sample_log_likelihood.is_some() {
-                                return Err(E::duplicate_field("sample_log_likelihood"));
+                        Field::FittedLogLikelihood => {
+                            if fitted_log_likelihood.is_some() {
+                                return Err(E::duplicate_field("fitted_log_likelihood"));
                             }
-                            sample_log_likelihood = Some(map.next_value()?);
+                            fitted_log_likelihood = Some(map.next_value()?);
                         }
                         Field::Type => {
                             if type_.is_some() {
@@ -1025,9 +1024,13 @@ impl<'de> Deserialize<'de> for CatCPD {
                     conditioning_states.ok_or_else(|| E::missing_field("conditioning_states"))?;
                 let parameters = parameters.ok_or_else(|| E::missing_field("parameters"))?;
 
-                // Assert type is correct.
+                // Check type is correct.
                 let type_: String = type_.ok_or_else(|| E::missing_field("type"))?;
-                assert_eq!(type_, "catcpd", "Invalid type for CatCPD.");
+                if type_ != "catcpd" {
+                    return Err(E::custom(format!(
+                        "Invalid type for CatCPD: expected 'catcpd', found '{type_}'"
+                    )));
+                }
 
                 // Convert parameters to ndarray.
                 let parameters: Vec<Vec<f64>> = parameters;
@@ -1036,13 +1039,14 @@ impl<'de> Deserialize<'de> for CatCPD {
                     .into_shape_with_order(shape)
                     .map_err(|_| E::custom("Invalid parameters shape"))?;
 
-                Ok(CatCPD::with_optionals(
+                CatCPD::with_optionals(
                     states,
                     conditioning_states,
                     parameters,
-                    sample_statistics,
-                    sample_log_likelihood,
-                ))
+                    fitted_statistics,
+                    fitted_log_likelihood,
+                )
+                .map_err(E::custom)
             }
         }
 
@@ -1050,8 +1054,8 @@ impl<'de> Deserialize<'de> for CatCPD {
             "states",
             "conditioning_states",
             "parameters",
-            "sample_statistics",
-            "sample_log_likelihood",
+            "fitted_statistics",
+            "fitted_log_likelihood",
             "type",
         ];
 

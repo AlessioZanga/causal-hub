@@ -4,7 +4,10 @@ pub use categorical::*;
 mod gaussian;
 pub use gaussian::*;
 
-use crate::{models::graphs::DiGraph, types::Map};
+use crate::{
+    models::graphs::DiGraph,
+    types::{Map, Result, Set},
+};
 
 /// A trait for Bayesian networks.
 pub trait BN {
@@ -16,6 +19,10 @@ pub trait BN {
     type Sample;
     /// The type of the samples.
     type Samples;
+    /// The type of the incomplete samples.
+    type IncSamples;
+    /// The type of the weighted samples.
+    type WtdSamples;
 
     /// Constructs a new Bayesian network.
     ///
@@ -24,13 +31,20 @@ pub trait BN {
     /// * `graph` - The underlying graph.
     /// * `cpds` - The conditional probability distributions.
     ///
+    /// # Errors
+    ///
+    /// * If the number of CPDs does not match the number of vertices in the graph.
+    /// * If the labels of the CPDs do not match the labels of the graph.
+    /// * If the conditioning labels of the CPDs do not match the parents of the vertices in the graph.
+    ///
     /// # Returns
     ///
     /// A new Bayesian network instance.
     ///
-    fn new<I>(graph: DiGraph, cpds: I) -> Self
+    fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CPD>;
+        I: IntoIterator<Item = Self::CPD>,
+        Self: Sized;
 
     /// Returns the name of the model, if any.
     ///
@@ -56,7 +70,7 @@ pub trait BN {
     ///
     fn graph(&self) -> &DiGraph;
 
-    /// Returns the a map labels-distributions.
+    /// Returns a map labels-distributions.
     ///
     /// # Returns
     ///
@@ -71,6 +85,25 @@ pub trait BN {
     /// The parameters size.
     ///
     fn parameters_size(&self) -> usize;
+
+    /// Restrict the model to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// A model restricted to the specified variables.
+    ///
+    fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized;
 
     /// Returns the topological order of the graph.
     ///
@@ -89,10 +122,11 @@ pub trait BN {
     /// * `graph` - The underlying graph.
     /// * `cpds` - The conditional probability distributions.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * Panics if `name` is an empty string.
-    /// * Panics if `description` is an empty string.
+    /// * If the number of CPDs does not match the number of vertices in the graph.
+    /// * If the labels of the CPDs do not match the labels of the graph.
+    /// * If the conditioning labels of the CPDs do not match the parents of the vertices in the graph.
     ///
     /// # Returns
     ///
@@ -103,7 +137,8 @@ pub trait BN {
         description: Option<String>,
         graph: DiGraph,
         cpds: I,
-    ) -> Self
+    ) -> Result<Self>
     where
-        I: IntoIterator<Item = Self::CPD>;
+        I: IntoIterator<Item = Self::CPD>,
+        Self: Sized;
 }

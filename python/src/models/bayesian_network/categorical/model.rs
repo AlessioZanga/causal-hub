@@ -5,34 +5,37 @@ use std::{
 
 use backend::{
     datasets::{CatIncTable, CatTable},
-    estimators::{BE, MLE},
+    estimators::{BE, CPDEstimator, MLE, ParCPDEstimator},
     inference::{
         ApproximateInference, BNCausalInference, BNInference, CausalInference,
         ParBNCausalInference, ParBNInference,
     },
     io::{BifIO, JsonIO},
     models::{BN, CatBN, DiGraph, Labelled},
+    random::{Random, RngCatBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
+    types::States,
 };
 use pyo3::{
     exceptions::PyValueError,
     prelude::*,
-    types::{PyDict, PyDictMethods, PyType},
+    types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::{PyCatTable, PyDataset},
-    estimators::PyBNEstimator,
+    datasets::{PyCatEv, PyCatTable, PyDataset, PyMissingMechanism, PyMissingMethod},
+    error::to_pyerr,
+    estimators::{PyBNEstimator, PyEstimatorMethod},
     impl_from_into_lock, indices_from, kwarg,
     models::{PyCatCPD, PyDiGraph},
 };
 
 /// A categorical Bayesian network (BN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatBN", module = "causal_hub.models", eq)]
+#[pyclass(name = "CatBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatBN {
     inner: Arc<RwLock<CatBN>>,
@@ -76,7 +79,7 @@ impl PyCatBN {
         // Convert Vec<PyCatCPD> to Vec<CatCPD>.
         let cpds = cpds.into_iter().map(|x: PyCatCPD| x.into());
         // Create a new CatBN with the given parameters.
-        Ok(CatBN::new(graph, cpds).into())
+        CatBN::new(graph, cpds).map(Into::into).map_err(to_pyerr)
     }
 
     /// Returns the name of the model, if any.
@@ -165,14 +168,18 @@ impl PyCatBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// method: str
-    ///     The method to use for fitting (default is `mle`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for fitting (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
-    ///         - `alpha`: The prior of the Bayesian estimator (float64).
+    /// - `alpha`: The prior of the Bayesian estimator (float64).
     ///
     /// Returns
     /// -------
@@ -183,102 +190,81 @@ impl PyCatBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        method="mle",
-        parallel=true,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        parallel = true,
         **kwargs
     ))]
+    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: PyDataset,
         graph: &Bound<'_, PyDiGraph>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the graph.
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
 
+        // Macro to fit the model.
+        macro_rules! fit {
+            ($type:ty, $dataset:expr) => {{
+                // Get the dataset.
+                let dataset: $type = $dataset.into();
+                // Get the estimator method.
+                let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
+                // Initialize the estimator.
+                let estimator: Box<dyn PyBNEstimator<CatBN>> = match estimator {
+                    // Initialize the maximum likelihood estimator.
+                    PyEstimatorMethod::MLE => Box::new(
+                        MLE::new(&dataset)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )
+                            .map_err(to_pyerr)?,
+                    ),
+                    // Initialize the Bayesian estimator.
+                    PyEstimatorMethod::BE => {
+                        // Initialize the Bayesian estimator.
+                        let estimator = BE::new(&dataset)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )
+                            .map_err(to_pyerr)?;
+                        // Set the prior `alpha`, if any.
+                        match kwarg!(kwargs, "alpha", usize) {
+                            None => Box::new(estimator),
+                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
+                        }
+                    }
+                };
+                // Fit the model.
+                let model = if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || estimator.par_fit(graph))
+                } else {
+                    // Execute sequentially.
+                    estimator.fit(graph)
+                }
+                .map_err(to_pyerr)?;
+                // Return the fitted model.
+                Ok(model.into())
+            }};
+        }
+
         // Match the dataset type.
         match dataset {
-            PyDataset::Categorical(dataset) => {
-                // Get the dataset.
-                let dataset: CatTable = dataset.into();
-                // Initialize the estimator.
-                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
-                    // Initialize the maximum likelihood estimator.
-                    "mle" => Box::new(MLE::new(&dataset)),
-                    // Initialize the Bayesian estimator.
-                    "be" => {
-                        // Initialize the Bayesian estimator.
-                        let estimator = BE::new(&dataset);
-                        // Set the prior `alpha`, if any.
-                        match kwarg!(kwargs, "alpha", usize) {
-                            None => Box::new(estimator),
-                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
-                        }
-                    }
-                    // Raise an error if the method is unknown.
-                    method => {
-                        return Err(PyErr::new::<PyValueError, _>(format!(
-                            "Unknown method: '{}', choose one of the following: \n\
-                            \t- 'mle' - Maximum likelihood estimator, \n\
-                            \t- 'be' - Bayesian estimator.",
-                            method
-                        )));
-                    }
-                };
-                // Fit the model.
-                let model = if parallel {
-                    // Release the GIL to allow parallel execution.
-                    py.detach(move || estimator.par_fit(graph))
-                } else {
-                    // Execute sequentially.
-                    estimator.fit(graph)
-                };
-                // Return the fitted model.
-                Ok(model.into())
-            }
-            PyDataset::CategoricalIncomplete(dataset) => {
-                // Get the dataset.
-                let dataset: CatIncTable = dataset.into();
-                // Initialize the estimator.
-                let estimator: Box<dyn PyBNEstimator<CatBN>> = match method {
-                    // Initialize the maximum likelihood estimator.
-                    "mle" => Box::new(MLE::new(&dataset)),
-                    // Initialize the Bayesian estimator.
-                    "be" => {
-                        // Initialize the Bayesian estimator.
-                        let estimator = BE::new(&dataset);
-                        // Set the prior `alpha`, if any.
-                        match kwarg!(kwargs, "alpha", usize) {
-                            None => Box::new(estimator),
-                            Some(alpha) => Box::new(estimator.with_prior(alpha)),
-                        }
-                    }
-                    // Raise an error if the method is unknown.
-                    method => {
-                        return Err(PyErr::new::<PyValueError, _>(format!(
-                            "Unknown method: '{}', choose one of the following: \n\
-                            \t- 'mle' - Maximum likelihood estimator, \n\
-                            \t- 'be' - Bayesian estimator.",
-                            method
-                        )));
-                    }
-                };
-                // Fit the model.
-                let model = if parallel {
-                    // Release the GIL to allow parallel execution.
-                    py.detach(move || estimator.par_fit(graph))
-                } else {
-                    // Execute sequentially.
-                    estimator.fit(graph)
-                };
-                // Return the fitted model.
-                Ok(model.into())
-            }
-            PyDataset::Gaussian(_) => Err(PyErr::new::<PyValueError, _>(
-                "Expected a categorical dataset for a categorical Bayesian network, but found a Gaussian one.",
+            PyDataset::Categorical(dataset) => fit!(CatTable, dataset),
+            PyDataset::CategoricalIncomplete(dataset) => fit!(CatIncTable, dataset),
+            _ => Err(PyErr::new::<PyValueError, _>(
+                "Expected a Categorical dataset for a Categorical Bayesian network.",
             )),
         }
     }
@@ -299,7 +285,11 @@ impl PyCatBN {
     /// CatTable
     ///     A new dataset containing the samples.
     ///
-    #[pyo3(signature = (n, seed=31, parallel=true))]
+    #[pyo3(signature = (
+        n,
+        seed = 31,
+        parallel = true
+    ))]
     pub fn sample(
         &self,
         py: Python<'_>,
@@ -312,7 +302,7 @@ impl PyCatBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*lock);
+        let sampler = ForwardSampler::new(&mut rng, &*lock).map_err(to_pyerr)?;
         // Sample from the model.
         let dataset = if parallel {
             // Release the GIL to allow parallel execution.
@@ -320,7 +310,8 @@ impl PyCatBN {
         } else {
             // Execute sequentially.
             sampler.sample_n(n)
-        };
+        }
+        .map_err(to_pyerr)?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -333,6 +324,14 @@ impl PyCatBN {
     ///     A variable or an iterable of variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// w: CatEv | dict[str, str] | None
+    ///     Optional evidence to condition on during inference.
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -343,12 +342,26 @@ impl PyCatBN {
     /// CatCPD
     ///     A new conditional probability distribution.
     ///
-    #[pyo3(signature = (x, z, seed=31, parallel=true))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (
+        x,
+        z,
+        w = None,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        seed = 31,
+        parallel = true
+    ))]
     pub fn estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyCatCPD> {
@@ -357,23 +370,86 @@ impl PyCatBN {
         // Get the set of variables.
         let x = indices_from!(x, lock)?;
         let z = indices_from!(z, lock)?;
+        // Get the evidence.
+        let w = w
+            .map(|w| PyCatEv::from_any(w, lock.states()).map(Into::into))
+            .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || estimator.par_estimate(&x, &z))
-        } else {
-            // Execute sequentially.
-            estimator.estimate(&x, &z)
+        let estimate = match estimator {
+            // Initialize the maximum likelihood estimator.
+            PyEstimatorMethod::MLE => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| {
+                                MLE::new(d)
+                                    .with_missing_method(
+                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                    )?
+                                    .par_fit(x, z)
+                            })
+                            .par_estimate(&x, &z, w.as_ref())
+                    })
+                } else {
+                    // Execute sequentially.
+                    engine
+                        .with_estimator(|d, x, z| {
+                            MLE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .fit(x, z)
+                        })
+                        .estimate(&x, &z, w.as_ref())
+                }
+            }
+            // Initialize the Bayesian estimator.
+            PyEstimatorMethod::BE => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        engine
+                            .with_estimator(|d, x, z| {
+                                BE::new(d)
+                                    .with_missing_method(
+                                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                    )?
+                                    .par_fit(x, z)
+                            })
+                            .par_estimate(&x, &z, w.as_ref())
+                    })
+                } else {
+                    // Execute sequentially.
+                    engine
+                        .with_estimator(|d, x, z| {
+                            BE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .fit(x, z)
+                        })
+                        .estimate(&x, &z, w.as_ref())
+                }
+            }
         };
         // Return the dataset.
-        Ok(estimate.into())
+        estimate.map(Into::into).map_err(to_pyerr)
     }
 
-    /// Estimate a conditional causal effect (CACE).
+    /// Estimate a conditional population average causal effect (CPACE).
     ///
     /// Parameters
     /// ----------
@@ -383,6 +459,14 @@ impl PyCatBN {
     ///     An outcome variable or an iterable of outcome variables.
     /// z: str | Iterable[str]
     ///     A conditioning variable or an iterable of conditioning variables.
+    /// w: CatEv | dict[str, str] | None
+    ///     Optional evidence to condition on during inference.
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for estimation (default is `EstimatorMethod.BE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// seed: int
     ///     The seed of the random number generator (default is `31`).
     /// parallel: bool
@@ -391,15 +475,30 @@ impl PyCatBN {
     /// Returns
     /// -------
     /// CatCPD | None
-    ///     A new conditional causal effect (CACE) distribution, if identifiable.
+    ///     A new conditional population average causal effect (CPACE) distribution, if identifiable.
     ///
-    #[pyo3(signature = (x, y, z, seed=31, parallel=true))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        seed = 31,
+        parallel = true
+    ))]
     pub fn do_estimate(
         &self,
         py: Python<'_>,
         x: &Bound<'_, PyAny>,
         y: &Bound<'_, PyAny>,
         z: &Bound<'_, PyAny>,
+        w: Option<&Bound<'_, PyAny>>,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         seed: u64,
         parallel: bool,
     ) -> PyResult<Option<PyCatCPD>> {
@@ -409,20 +508,129 @@ impl PyCatBN {
         let x = indices_from!(x, lock)?;
         let y = indices_from!(y, lock)?;
         let z = indices_from!(z, lock)?;
+        // Get the evidence.
+        let w = w
+            .map(|w| PyCatEv::from_any(w, lock.states()).map(Into::into))
+            .transpose()?;
         // Initialize the random number generator.
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         // Initialize the inference engine.
-        let estimator = ApproximateInference::new(&mut rng, &*lock);
+        let engine = ApproximateInference::new(&mut rng, &*lock);
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::BE);
         // Estimate from the model.
-        let estimate = if parallel {
-            // Release the GIL to allow parallel execution.
-            py.detach(move || CausalInference::new(&estimator).par_cace_estimate(&x, &y, &z))
-        } else {
-            // Execute sequentially.
-            CausalInference::new(&estimator).cace_estimate(&x, &y, &z)
+        let estimate = match estimator {
+            // Initialize the maximum likelihood estimator.
+            PyEstimatorMethod::MLE => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| {
+                            MLE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .par_fit(x, z)
+                        });
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, w.as_ref())
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| {
+                        MLE::new(d)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )?
+                            .fit(x, z)
+                    });
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, w.as_ref())
+                }
+            }
+            // Initialize the Bayesian estimator.
+            PyEstimatorMethod::BE => {
+                // Estimate from the model.
+                if parallel {
+                    // Release the GIL to allow parallel execution.
+                    py.detach(move || {
+                        let engine = engine.with_estimator(|d, x, z| {
+                            BE::new(d)
+                                .with_missing_method(
+                                    Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                    missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                                )?
+                                .par_fit(x, z)
+                        });
+                        CausalInference::new(&engine).par_cpace_estimate(&x, &y, &z, w.as_ref())
+                    })
+                } else {
+                    // Execute sequentially.
+                    let engine = engine.with_estimator(|d, x, z| {
+                        BE::new(d)
+                            .with_missing_method(
+                                Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                                missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                            )?
+                            .fit(x, z)
+                    });
+                    CausalInference::new(&engine).cpace_estimate(&x, &y, &z, w.as_ref())
+                }
+            }
         };
         // Return the dataset.
-        Ok(estimate.map(|e| e.into()))
+        estimate.map(|e| e.map(Into::into)).map_err(to_pyerr)
+    }
+
+    /// Generates a random categorical Bayesian network.
+    ///
+    /// Parameters
+    /// ----------
+    /// states: dict[str, tuple[str, ...]]
+    ///     The states of the variables.
+    /// alpha: float, default=1.0
+    ///     The parameter of the Dirichlet distribution.
+    /// p: float, default=0.1
+    ///     The probability of generating an edge.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// CatBN
+    ///     A random categorical Bayesian network.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        states,
+        alpha = 1.0,
+        p = 0.1,
+        seed = 31
+    ))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        states: &Bound<'_, PyDict>,
+        alpha: f64,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyDict to a States.
+        let mut inner_states = States::default();
+        for (label, states) in states {
+            let label = label.extract::<String>()?;
+            let states = states.extract::<Vec<String>>()?;
+            inner_states.insert(label, states.into_iter().collect());
+        }
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngCatBN and generate a random BN.
+        RngCatBN::new(&mut rng, &inner_states, alpha, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read class from a BIF string.
@@ -439,9 +647,9 @@ impl PyCatBN {
     ///
     #[classmethod]
     pub fn from_bif_string(_cls: &Bound<'_, PyType>, bif: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif_string(bif))),
-        })
+        CatBN::from_bif_string(bif)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write class to a BIF string.
@@ -452,7 +660,7 @@ impl PyCatBN {
     ///     A BIF string representation of the model.
     ///
     pub fn to_bif_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_bif_string())
+        self.lock().to_bif_string().map_err(to_pyerr)
     }
 
     /// Read class from a BIF file.
@@ -469,9 +677,7 @@ impl PyCatBN {
     ///
     #[classmethod]
     pub fn from_bif_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_bif_file(path))),
-        })
+        CatBN::from_bif_file(path).map(Into::into).map_err(to_pyerr)
     }
 
     /// Write class to a BIF file.
@@ -482,8 +688,7 @@ impl PyCatBN {
     ///     The path to the BIF file to write to.
     ///
     pub fn to_bif_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_bif_file(path);
-        Ok(())
+        self.lock().to_bif_file(path).map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.
@@ -500,9 +705,9 @@ impl PyCatBN {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json_string(json))),
-        })
+        CatBN::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -513,7 +718,7 @@ impl PyCatBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -530,9 +735,9 @@ impl PyCatBN {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatBN::from_json_file(path))),
-        })
+        CatBN::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -543,7 +748,6 @@ impl PyCatBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

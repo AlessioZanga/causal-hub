@@ -15,7 +15,7 @@ use crate::{datasets::PyCatTrj, impl_from_into_lock};
 
 /// A categorical trajectory with a weight.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets")]
+#[pyclass(name = "CatWtdTrj", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrj {
     inner: Arc<RwLock<CatWtdTrj>>,
@@ -68,8 +68,7 @@ impl PyCatWtdTrj {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -77,11 +76,11 @@ impl PyCatWtdTrj {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// Returns the times of the trajectory.
@@ -98,7 +97,7 @@ impl PyCatWtdTrj {
 
 /// A collection of categorical trajectories with weights.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets")]
+#[pyclass(name = "CatWtdTrjs", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatWtdTrjs {
     inner: Arc<RwLock<CatWtdTrjs>>,
@@ -129,8 +128,7 @@ impl PyCatWtdTrjs {
     ///     A reference to the states of the categorical trajectory.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -138,11 +136,11 @@ impl PyCatWtdTrjs {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// Return the trajectories.

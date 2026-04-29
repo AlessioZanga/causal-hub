@@ -5,17 +5,19 @@ use crate::{
     datasets::{CatWtdTable, Dataset},
     estimators::{CSSEstimator, ParCSSEstimator, SSE},
     models::CatCPDS,
-    types::{AXIS_CHUNK_LENGTH, Set},
+    types::{AXIS_CHUNK_LENGTH, Error, Result, Set},
     utils::MI,
 };
 
 impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
-    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
-        // Assert variables and conditioning variables must be disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
+        // Check variables and conditioning variables must be disjoint.
+        if !x.is_disjoint(z) {
+            return Err(Error::InvalidParameter(
+                "x,z",
+                "Variables and conditioning variables must be disjoint.",
+            ));
+        }
 
         // Get the shape.
         let shape = self.dataset.shape();
@@ -54,12 +56,14 @@ impl CSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
 }
 
 impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
-    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> CatCPDS {
-        // Assert variables and conditioning variables must be disjoint.
-        assert!(
-            x.is_disjoint(z),
-            "Variables and conditioning variables must be disjoint."
-        );
+    fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCPDS> {
+        // Check variables and conditioning variables must be disjoint.
+        if !x.is_disjoint(z) {
+            return Err(Error::InvalidParameter(
+                "x,z",
+                "Variables and conditioning variables must be disjoint.",
+            ));
+        }
 
         // Get the shape.
         let shape = self.dataset.shape();
@@ -81,26 +85,26 @@ impl ParCSSEstimator<CatCPDS> for SSE<'_, CatWtdTable> {
             .axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH)
             .into_par_iter()
             .zip(weights.axis_chunks_iter(Axis(0), AXIS_CHUNK_LENGTH))
-            .map(|(values, weights)| {
-                // Clone the zeros joint counts.
-                let mut n_xz = n_xz.clone();
-                // Count the occurrences of the states.
-                values
-                    .rows()
-                    .into_iter()
-                    .zip(weights)
-                    .for_each(|(row, &weight)| {
-                        // Get the value of X and Z as index.
-                        let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
-                        let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
-                        // Increment the joint counts.
-                        n_xz[[idx_z, idx_x]] += weight;
-                    });
-                // Return the local joint counts.
-                n_xz
-            })
             // Aggregate the local joint counts.
-            .fold(|| n_xz.clone(), |a, b| a + b)
+            .fold(
+                || n_xz.clone(),
+                |mut n_xz, (values, weights)| {
+                    // Count the occurrences of the states.
+                    values
+                        .rows()
+                        .into_iter()
+                        .zip(weights)
+                        .for_each(|(row, &weight)| {
+                            // Get the value of X and Z as index.
+                            let idx_x = m_idx_x.ravel(x.iter().map(|&i| row[i] as usize));
+                            let idx_z = m_idx_z.ravel(z.iter().map(|&i| row[i] as usize));
+                            // Increment the joint counts.
+                            n_xz[[idx_z, idx_x]] += weight;
+                        });
+                    // Return the local joint counts.
+                    n_xz
+                },
+            )
             .reduce(|| n_xz.clone(), |a, b| a + b);
 
         // Compute the sample size.

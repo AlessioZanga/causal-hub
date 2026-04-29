@@ -1,4 +1,8 @@
-use crate::{datasets::GaussType, models::Labelled, types::Labels};
+use crate::{
+    datasets::GaussType,
+    models::Labelled,
+    types::{Error, Labels, Result, Set},
+};
 
 /// Gaussian evidence type.
 #[non_exhaustive]
@@ -23,6 +27,18 @@ impl GaussEvT {
     pub const fn event(&self) -> usize {
         match self {
             Self::CertainPositive { event, .. } => *event,
+        }
+    }
+
+    /// Set the observed event of the evidence.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The new observed event of the evidence.
+    ///
+    pub const fn set_event(&mut self, event: usize) {
+        match self {
+            Self::CertainPositive { event: e, .. } => *e = event,
         }
     }
 }
@@ -53,23 +69,29 @@ impl GaussEv {
     ///
     /// A new Gaussian evidence structure.
     ///
-    pub fn new<I>(mut labels: Labels, values: I) -> Self
+    pub fn new<I>(mut labels: Labels, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = GaussEvT>,
     {
         // Get shortened variable type.
         use GaussEvT as E;
 
-        // Allocate evidences.
-        let mut evidences = vec![None; labels.len()];
-
         // Fill the evidences.
-        values.into_iter().for_each(|e| {
-            // Get the event of the evidence.
-            let event = e.event();
-            // Push the value into the variable events.
-            evidences[event] = Some(e);
-        });
+        let mut evidences = values.into_iter().try_fold(
+            vec![None; labels.len()],
+            |mut evidences, e| -> Result<_> {
+                // Get the event of the evidence.
+                let event = e.event();
+                // Check if event is in bounds.
+                if event >= evidences.len() {
+                    return Err(Error::IndexOutOfBounds(event));
+                }
+                // Push the value into the variable events.
+                evidences[event] = Some(e);
+
+                Ok(evidences)
+            },
+        )?;
 
         // Sort labels, if necessary.
         if !labels.is_sorted() {
@@ -78,28 +100,30 @@ impl GaussEv {
             // Sort the labels.
             new_labels.sort();
 
-            // Create new evidences.
-            let mut new_evidences = vec![None; new_labels.len()];
-
             // Sort the evidences.
-            evidences.into_iter().flatten().for_each(|e| {
-                // Get the event of the evidence.
-                let event = labels
-                    .get_index(e.event())
-                    .expect("Failed to get label of evidence.");
-                // Sort the event index.
-                let event = new_labels
-                    .get_index_of(event)
-                    .expect("Failed to get index of evidence.");
+            let new_evidences = evidences.into_iter().flatten().try_fold(
+                vec![None; new_labels.len()],
+                |mut new_evidences, e| -> Result<_> {
+                    // Get the event of the evidence.
+                    let event_name = labels
+                        .get_index(e.event())
+                        .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
+                    // Sort the event index.
+                    let event = new_labels
+                        .get_index_of(event_name)
+                        .ok_or_else(|| Error::MissingLabel(event_name))?;
 
-                // Sort the variable events.
-                let e = match e {
-                    E::CertainPositive { value, .. } => E::CertainPositive { event, value },
-                };
+                    // Sort the variable events.
+                    let e = match e {
+                        E::CertainPositive { value, .. } => E::CertainPositive { event, value },
+                    };
 
-                // Push the value into the variable events.
-                new_evidences[event] = Some(e);
-            });
+                    // Push the value into the variable events.
+                    new_evidences[event] = Some(e);
+
+                    Ok(new_evidences)
+                },
+            )?;
 
             // Update the labels.
             labels = new_labels;
@@ -107,7 +131,7 @@ impl GaussEv {
             evidences = new_evidences;
         }
 
-        Self { labels, evidences }
+        Ok(Self { labels, evidences })
     }
 
     /// The evidences of the evidence.
@@ -119,5 +143,59 @@ impl GaussEv {
     #[inline]
     pub const fn evidences(&self) -> &Vec<Option<GaussEvT>> {
         &self.evidences
+    }
+
+    /// Restrict the evidence to the specified variables.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Set of variables to select.
+    ///
+    /// # Errors
+    ///
+    /// * If the set of variables is empty.
+    /// * If any variable in the set is out of bounds.
+    ///
+    /// # Returns
+    ///
+    /// The evidence restricted to the specified variables.
+    ///
+    pub fn select(&self, x: &Set<usize>) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Check that the variables are in bounds.
+        x.iter().try_for_each(|&i| {
+            if i >= self.labels.len() {
+                return Err(Error::IndexOutOfBounds(i));
+            }
+            Ok(())
+        })?;
+
+        // Sort the indices.
+        let mut x = x.clone();
+        x.sort();
+
+        // Get the new labels.
+        let labels: Labels = x
+            .iter()
+            .map(|&i| {
+                self.labels
+                    .get_index(i)
+                    .cloned()
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
+
+        // Get the new values.
+        let evidences = x.into_iter().enumerate().filter_map(|(i, x)| {
+            self.evidences[x].clone().map(|mut e| {
+                e.set_event(i);
+                e
+            })
+        });
+
+        // Create the new evidence.
+        Self::new(labels, evidences)
     }
 }

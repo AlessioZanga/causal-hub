@@ -32,6 +32,7 @@ jobs:
             ~/.local/share/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
+            .venv
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
@@ -40,7 +41,7 @@ jobs:
             ${{ matrix.platform.runner }}-
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -48,16 +49,16 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-static
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-static
             --out dist
-          manylinux: auto
+          manylinux: 2_28
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
             if command -v yum &> /dev/null; then
-                yum install -y pkgconfig openssl-devel
+                yum update -y && yum install -y pkgconfig openssl-devel
             elif command -v apt-get &> /dev/null; then
                 apt-get update && apt-get install -y pkg-config libssl-dev
             fi
@@ -68,16 +69,16 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-static
-            --out dist -i python3.13t
-          manylinux: auto
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-static
+            --out dist -i python3.14t
+          manylinux: 2_28
           before-script-linux: |
             # Enable dynamic arch for OpenBLAS
             export OPENBLAS_TARGET=GENERIC
             export DYNAMIC_ARCH=1
             # Install dependencies for building wheels
             if command -v yum &> /dev/null; then
-                yum install -y pkgconfig openssl-devel
+                yum update -y && yum install -y pkgconfig openssl-devel
             elif command -v apt-get &> /dev/null; then
                 apt-get update && apt-get install -y pkg-config libssl-dev
             fi
@@ -102,6 +103,10 @@ jobs:
         with:
           path: |
             C:\vcpkg
+            ~\.cargo\registry
+            ~\.cargo\git
+            .venv
+            target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
@@ -119,7 +124,7 @@ jobs:
           vcpkg install openblas --overlay-ports=.vcpkg/ports
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -128,11 +133,11 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-system
             --out dist
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13t"
+          python-version: "3.14t"
           architecture: ${{ ( matrix.platform.target == 'x86' ) && 'x86' || null }}
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
@@ -141,8 +146,8 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/openblas-system
-            --out dist -i python3.13t
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/openblas-system
+            --out dist -i python3.14t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -166,6 +171,7 @@ jobs:
             ~/Library/Application Support/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
+            .venv
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
@@ -174,7 +180,7 @@ jobs:
             ${{ matrix.platform.runner }}-
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -182,7 +188,7 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/accelerate-system
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/accelerate-system
             --out dist
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
@@ -191,8 +197,8 @@ jobs:
           args: |
             --release
             --no-default-features
-            --features=pyo3/extension-module,pyo3/abi3-py310,backend/accelerate-system
-            --out dist -i python3.13t
+            --features=pyo3/extension-module,pyo3/abi3-py312,backend/accelerate-system
+            --out dist -i python3.14t
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

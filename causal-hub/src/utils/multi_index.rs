@@ -25,12 +25,20 @@ impl MI {
     {
         // Collect the multi index.
         let shape: Array1<_> = shape.into_iter().collect();
-        // Allocate the strides of the parameters.
-        let mut strides = Array1::from_elem(shape.len(), 1);
-        // Compute cumulative product in reverse order (row-major strides).
-        for i in (0..shape.len().saturating_sub(1)).rev() {
-            strides[i] = strides[i + 1] * shape[i + 1];
-        }
+        // Compute cumulative product in reverse order (row-major strides) using scan.
+        let mut strides: Vec<_> = shape
+            .iter()
+            .rev()
+            .scan(1, |acc, &dim| {
+                let stride = *acc;
+                *acc *= dim;
+                Some(stride)
+            })
+            .collect();
+        // Reverse the strides to match the original order.
+        strides.reverse();
+        // Convert strides to array.
+        let strides = Array1::from(strides);
 
         Self { shape, strides }
     }
@@ -78,15 +86,15 @@ impl MI {
     /// A vector containing the multi-dimensional index.
     ///
     pub fn unravel(&self, index: usize) -> Vec<usize> {
-        let mut multi_index = Vec::with_capacity(self.shape.len());
         let mut remaining_index = index;
 
-        for &stride in &self.strides {
-            let value = remaining_index / stride;
-            multi_index.push(value);
-            remaining_index -= value * stride;
-        }
-
-        multi_index
+        self.strides
+            .iter()
+            .map(|&stride| {
+                let value = remaining_index / stride;
+                remaining_index %= stride;
+                value
+            })
+            .collect()
     }
 }

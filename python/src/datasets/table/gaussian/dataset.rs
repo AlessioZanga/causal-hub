@@ -12,11 +12,11 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::*;
 
-use crate::impl_from_into_lock;
+use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A Gaussian tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussTable", module = "causal_hub.datasets")]
+#[pyclass(name = "GaussTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyGaussTable {
     inner: Arc<RwLock<GaussTable>>,
@@ -83,7 +83,7 @@ impl PyGaussTable {
         // Import the pandas module.
         let pd = py.import("pandas")?;
 
-        // Assert that the object is a DataFrame.
+        // Check that the object is a DataFrame.
         assert!(
             df.is_instance(&pd.getattr("DataFrame")?)?,
             "Expected a Pandas DataFrame, but '{}' found.",
@@ -141,11 +141,76 @@ impl PyGaussTable {
             })?;
 
         // Create the Gaussian tabular dataset.
-        let inner = GaussTable::new(columns, values);
-        // Wrap the dataset in an Arc<RwLock>.
-        let inner = Arc::new(RwLock::new(inner));
+        GaussTable::new(columns, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
 
-        Ok(Self { inner })
+    /// Constructs a new Gaussian tabular dataset from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing only float64 columns.
+    ///
+    /// Returns
+    /// -------
+    /// GaussTable
+    ///     A new Gaussian tabular dataset instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        assert!(
+            df.is_instance(&pl.getattr("DataFrame")?)?,
+            "Expected a Polars DataFrame, but '{}' found.",
+            df.get_type().name()?
+        );
+
+        // Get the shape and columns of the data frame.
+        let shape = df.getattr("shape")?.extract::<(usize, usize)>()?;
+        let columns: Vec<String> = df.getattr("columns")?.extract()?;
+        let columns: Labels = columns.into_iter().collect();
+
+        // Check that the data frame is not empty.
+        assert!(!columns.is_empty(), "The data frame is empty.");
+
+        // Check that all columns are float64.
+        for name in &columns {
+            let column = df.call_method1("get_column", (name,))?;
+            let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
+            assert!(
+                dtype.contains("Float64"),
+                "Expected a Float64 column, but '{dtype}' found."
+            );
+        }
+
+        // Extract values.
+        let mut values = Array2::from_elem(shape, GaussType::default());
+        values
+            .columns_mut()
+            .into_iter()
+            .zip(&columns)
+            .try_for_each(|(mut value, name)| {
+                let column = df.call_method1("get_column", (name,))?;
+                let column: Bound<'_, PyArray1<f64>> =
+                    column.call_method0("to_numpy")?.extract()?;
+                let column = column.readonly().as_array().to_owned();
+                value.assign(&column);
+
+                Ok::<_, PyErr>(())
+            })?;
+
+        GaussTable::new(columns, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.
@@ -178,5 +243,33 @@ impl PyGaussTable {
 
         // Construct the DataFrame.
         pd.getattr("DataFrame")?.call1((df,))
+    }
+
+    /// Converts the dataset to a Polars DataFrame.
+    ///
+    /// Returns
+    /// -------
+    /// polars.DataFrame
+    ///     A Polars DataFrame.
+    ///
+    pub fn to_polars<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Create a dictionary to hold the data.
+        let df = PyDict::new(py);
+
+        // Get lock on the inner field.
+        let lock = self.lock();
+        let labels = lock.labels().iter();
+        let values = lock.values().columns();
+
+        for (label, values) in labels.zip(values) {
+            let values: Vec<f64> = values.iter().copied().collect();
+            let series = pl.getattr("Series")?.call1((label.clone(), values))?;
+            df.set_item(label, series)?;
+        }
+
+        pl.getattr("DataFrame")?.call1((df,))
     }
 }

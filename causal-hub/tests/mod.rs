@@ -1,8 +1,12 @@
+#![deny(clippy::expect_used)]
+#![deny(clippy::unwrap_used)]
+
 mod assets;
 mod datasets;
 mod estimators;
 mod inference;
 mod io;
 mod models;
+mod random;
 mod samplers;
 mod utils;

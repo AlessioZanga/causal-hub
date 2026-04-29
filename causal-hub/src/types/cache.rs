@@ -1,11 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use dry::macro_for;
-
 use crate::{
-    estimators::{CIMEstimator, CPDEstimator},
-    models::{CIM, CPD, Labelled},
-    types::{Labels, Map, Set},
+    estimators::CPDEstimator,
+    models::Labelled,
+    types::{Error, Labels, Map, Result, Set},
 };
 
 /// A cache for calling a function with a key and value.
@@ -48,34 +46,35 @@ where
     }
 }
 
-macro_for!($type in [CPD, CIM] {
-    paste::paste! {
-
-        impl<E, P> [<$type Estimator>]<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
-        where
-            E: [<$type Estimator>]<P>,
-            P: $type + Clone,
-            P::Statistics: Clone,
+impl<E, P> CPDEstimator<P> for Cache<'_, E, (Vec<usize>, Vec<usize>), P>
+where
+    E: CPDEstimator<P>,
+    P: Clone,
+{
+    fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<P> {
+        // Get the key.
+        let key: (Vec<_>, Vec<_>) = (
+            x.into_iter().cloned().collect(),
+            z.into_iter().cloned().collect(),
+        );
+        // Check if the key is in the cache.
+        if let Some(value) = self
+            .cache
+            .read()
+            .map_err(|e| Error::Poison(&e.to_string()))?
+            .get(&key)
         {
-            fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> P {
-                // Get the key.
-                let key: (Vec<_>, Vec<_>) = (
-                    x.into_iter().cloned().collect(),
-                    z.into_iter().cloned().collect(),
-                );
-                // Check if the key is in the cache.
-                if let Some(value) = self.cache.read().unwrap().get(&key) {
-                    // If it is, return the value.
-                    return value.clone();
-                }
-                // If it is not, call the function.
-                let value = self.call.fit(x, z);
-                // Insert the value into the cache.
-                self.cache.write().unwrap().insert(key, value.clone());
-                // Return the value.
-                value
-            }
+            // If it is, return the value.
+            return Ok(value.clone());
         }
-
+        // If it is not, call the function.
+        let value = self.call.fit(x, z)?;
+        // Insert the value into the cache.
+        self.cache
+            .write()
+            .map_err(|e| Error::Poison(&e.to_string()))?
+            .insert(key, value.clone());
+        // Return the value.
+        Ok(value)
     }
-});
+}

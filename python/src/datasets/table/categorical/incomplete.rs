@@ -6,6 +6,7 @@ use std::{
 use backend::{
     datasets::{CatIncTable, CatType, Dataset, IncDataset},
     models::Labelled,
+    random::{Random, RngCatIncTable},
     types::States,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
@@ -14,12 +15,18 @@ use pyo3::{
     types::{PyDict, PyTuple, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::{datasets::PyMissingTable, impl_from_into_lock};
+use crate::{
+    datasets::{PyCatTable, PyMissingMechanism, PyMissingTable},
+    error::to_pyerr,
+    impl_from_into_lock,
+};
 
 /// A categorical incomplete tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatIncTable", module = "causal_hub.datasets")]
+#[pyclass(name = "CatIncTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatIncTable {
     inner: Arc<RwLock<CatIncTable>>,
@@ -50,8 +57,7 @@ impl PyCatIncTable {
     ///     A dictionary mapping each label to a tuple of its possible states.
     ///
     pub fn states<'a>(&'a self, py: Python<'a>) -> PyResult<BTreeMap<String, Bound<'a, PyTuple>>> {
-        Ok(self
-            .lock()
+        self.lock()
             .states()
             .iter()
             .map(|(label, states)| {
@@ -59,11 +65,11 @@ impl PyCatIncTable {
                 let label = label.clone();
                 let states = states.iter().cloned();
                 // Convert the states to a PyTuple.
-                let states = PyTuple::new(py, states).unwrap();
+                let states = PyTuple::new(py, states)?;
                 // Return a tuple of the label and states.
-                (label, states)
+                Ok((label, states))
             })
-            .collect())
+            .collect::<PyResult<_>>()
     }
 
     /// The values of the dataset.
@@ -98,6 +104,59 @@ impl PyCatIncTable {
     ///
     pub fn missing(&self) -> PyResult<PyMissingTable> {
         Ok(self.lock().missing().clone().into())
+    }
+
+    /// Generates a random categorical incomplete tabular dataset.
+    ///
+    /// Parameters
+    /// ----------
+    /// dataset : CatTable
+    ///     A categorical tabular dataset instance.
+    /// missing_mechanism : MissingMechanism
+    ///     A missing mechanism instance.
+    /// p_min : float
+    ///     The minimum probability of missingness.
+    /// p_max : float
+    ///     The maximum probability of missingness.
+    /// seed : int, optional
+    ///     The seed for the random number generator. Default is 31.
+    ///
+    /// Returns
+    /// -------
+    /// CatIncTable
+    ///     A random categorical incomplete tabular dataset instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        dataset,
+        missing_mechanism,
+        p_min,
+        p_max,
+        seed = 31
+    ))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        dataset: &Bound<'_, PyCatTable>,
+        missing_mechanism: &Bound<'_, PyMissingMechanism>,
+        p_min: f64,
+        p_max: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Get the inner dataset.
+        let dataset = dataset.borrow();
+        let dataset = dataset.lock();
+        // Get the inner missing mechanism.
+        let missing_mechanism = missing_mechanism.borrow();
+        let missing_mechanism = missing_mechanism.lock();
+
+        // Create a new RngCatIncTable and generate a random categorical incomplete tabular dataset.
+        RngCatIncTable::new(&mut rng, &dataset, &missing_mechanism, p_min, p_max)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Constructs a new categorical incomplete tabular dataset from a Pandas DataFrame.
@@ -155,7 +214,90 @@ impl PyCatIncTable {
         }
 
         // Construct the categorical incomplete tabular dataset.
-        Ok(CatIncTable::new(states, values).into())
+        CatIncTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Constructs a new categorical incomplete tabular dataset from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    ///
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing categorical columns with missing values.
+    ///
+    /// Returns
+    /// -------
+    /// CatIncTable
+    ///     A new categorical incomplete tabular dataset instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        if !df.is_instance(&pl.getattr("DataFrame")?)? {
+            return Err(pyo3::exceptions::PyTypeError::new_err(
+                "Input must be a Polars DataFrame.",
+            ));
+        }
+
+        // Get labels.
+        let labels: Vec<String> = df.getattr("columns")?.extract()?;
+
+        // Get categories.
+        let mut states = States::default();
+        for label in &labels {
+            let column = df.call_method1("get_column", (label,))?;
+            let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
+            if !(dtype.contains("Categorical") || dtype.contains("Enum")) {
+                return Err(pyo3::exceptions::PyTypeError::new_err(format!(
+                    "Column '{label}' must be categorical, found '{dtype}'."
+                )));
+            }
+
+            let categories = column.getattr("cat")?.call_method0("get_categories")?;
+            let categories: Vec<String> = categories
+                .try_iter()?
+                .map(|x| x?.extract::<String>())
+                .collect::<PyResult<_>>()?;
+            states.insert(label.clone(), categories.into_iter().collect());
+        }
+
+        // Get values.
+        let n_rows: usize = df.getattr("shape")?.get_item(0)?.extract()?;
+        let mut values = Array2::zeros((n_rows, labels.len()));
+        for (i, label) in labels.iter().enumerate() {
+            let column = df.call_method1("get_column", (label,))?;
+            let items: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
+            let column_values: Result<Vec<CatType>, _> = items
+                .into_iter()
+                .map(|x| match x {
+                    Some(x) => states[label]
+                        .get_index_of(&x)
+                        .map(|idx| idx as CatType)
+                        .ok_or_else(|| {
+                            pyo3::exceptions::PyValueError::new_err(format!(
+                                "Unknown state '{x}' for column '{label}'."
+                            ))
+                        }),
+                    None => Ok(255),
+                })
+                .collect();
+            values
+                .column_mut(i)
+                .assign(&Array1::from_vec(column_values?));
+        }
+
+        CatIncTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts the dataset to a Pandas DataFrame.
@@ -197,6 +339,47 @@ impl PyCatIncTable {
         kwargs.set_item("columns", labels)?;
         let df = pd.call_method("DataFrame", (dict,), Some(&kwargs))?;
 
+        Ok(df.into())
+    }
+
+    /// Converts the dataset to a Polars DataFrame.
+    ///
+    /// Returns
+    /// -------
+    /// polars.DataFrame
+    ///     A Polars DataFrame.
+    ///
+    pub fn to_polars(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Build dictionary of polars.Series columns.
+        let data = PyDict::new(py);
+
+        let inner = self.lock();
+        let labels: Vec<String> = inner.labels().iter().cloned().collect();
+        let states = inner.states();
+        let values = inner.values();
+
+        for (i, label) in labels.iter().enumerate() {
+            let col: Vec<Option<String>> = values
+                .column(i)
+                .iter()
+                .map(|&x| {
+                    if x == 255 {
+                        None
+                    } else {
+                        Some(states[label][x as usize].clone())
+                    }
+                })
+                .collect();
+
+            let series = pl.getattr("Series")?.call1((label.clone(), col))?;
+            let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;
+            data.set_item(label, series)?;
+        }
+
+        let df = pl.getattr("DataFrame")?.call1((data,))?;
         Ok(df.into())
     }
 }

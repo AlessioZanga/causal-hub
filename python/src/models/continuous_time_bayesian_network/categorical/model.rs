@@ -20,15 +20,16 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{
-    datasets::PyCatTrjs,
-    estimators::PyCTBNEstimator,
+    datasets::{PyCatTrjs, PyMissingMechanism, PyMissingMethod},
+    error::to_pyerr,
+    estimators::{PyCTBNEstimator, PyEstimatorMethod},
     impl_from_into_lock, kwarg,
     models::{PyCatBN, PyCatCIM, PyDiGraph},
 };
 
 /// A continuous-time Bayesian network (CTBN).
 #[gen_stub_pyclass]
-#[pyclass(name = "CatCTBN", module = "causal_hub.models", eq)]
+#[pyclass(name = "CatCTBN", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatCTBN {
     inner: Arc<RwLock<CatCTBN>>,
@@ -72,7 +73,7 @@ impl PyCatCTBN {
         // Convert Vec<PyCatCPD> to Vec<CatCIM>.
         let cims = cims.into_iter().map(|x: PyCatCIM| x.into());
         // Create a new CatCTBN with the given parameters.
-        Ok(CatCTBN::new(graph, cims).into())
+        CatCTBN::new(graph, cims).map(Into::into).map_err(to_pyerr)
     }
 
     /// Returns the name of the model, if any.
@@ -172,14 +173,18 @@ impl PyCatCTBN {
     ///     The dataset to fit the model to.
     /// graph: DiGraph
     ///     The graph to fit the model to.
-    /// method: str
-    ///     The method to use for fitting (default is `mle`).
+    /// estimator: EstimatorMethod | None
+    ///     The estimator to use for fitting (default is `EstimatorMethod.MLE`).
+    /// missing_method: MissingMethod | None
+    ///     The method to use for handling missing data (default is `MissingMethod.PW`).
+    /// missing_mechanism: MissingMechanism | None
+    ///     The missing mechanism to use for handling missing data (default is `None`).
     /// parallel: bool
     ///     The flag to enable parallel fitting (default is `true`).
     /// **kwargs: dict | None
     ///     Optional keyword arguments:
     ///
-    ///         - `alpha`: The prior of the Bayesian estimator (int, float64).
+    /// - `alpha`: The prior of the Bayesian estimator (int, float64).
     ///
     /// Returns
     /// -------
@@ -190,44 +195,54 @@ impl PyCatCTBN {
     #[pyo3(signature = (
         dataset,
         graph,
-        method="mle",
-        parallel=true,
+        estimator = None,
+        missing_method = None,
+        missing_mechanism = None,
+        parallel = true,
         **kwargs
     ))]
+    #[allow(clippy::too_many_arguments)]
     pub fn fit(
         _cls: &Bound<'_, PyType>,
         py: Python<'_>,
         dataset: &Bound<'_, PyCatTrjs>,
         graph: &Bound<'_, PyDiGraph>,
-        method: &str,
+        estimator: Option<PyEstimatorMethod>,
+        missing_method: Option<PyMissingMethod>,
+        missing_mechanism: Option<PyMissingMechanism>,
         parallel: bool,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         // Get the dataset and the graph.
         let dataset: CatTrjs = dataset.extract::<PyCatTrjs>()?.into();
         let graph: DiGraph = graph.extract::<PyDiGraph>()?.into();
+        // Get the estimator method.
+        let estimator = estimator.unwrap_or(PyEstimatorMethod::MLE);
         // Initialize the estimator.
-        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match method {
+        let estimator: Box<dyn PyCTBNEstimator<CatCTBN>> = match estimator {
             // Initialize the maximum likelihood estimator.
-            "mle" => Box::new(MLE::new(&dataset)),
+            PyEstimatorMethod::MLE => Box::new(
+                MLE::new(&dataset)
+                    .with_missing_method(
+                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                    )
+                    .map_err(to_pyerr)?,
+            ),
             // Initialize the Bayesian estimator.
-            "be" => {
+            PyEstimatorMethod::BE => {
                 // Initialize the Bayesian estimator.
-                let estimator = BE::new(&dataset);
+                let estimator = BE::new(&dataset)
+                    .with_missing_method(
+                        Some(missing_method.unwrap_or(PyMissingMethod::PW).into()),
+                        missing_mechanism.as_ref().map(|m| (*m.lock()).clone()),
+                    )
+                    .map_err(to_pyerr)?;
                 // Set the prior `alpha`, if any.
                 match kwarg!(kwargs, "alpha", (usize, f64)) {
                     None => Box::new(estimator),
                     Some(alpha) => Box::new(estimator.with_prior(alpha)),
                 }
-            }
-            // Raise an error if the method is unknown.
-            method => {
-                return Err(PyErr::new::<PyValueError, _>(format!(
-                    "Unknown method: '{}', choose one of the following: \n\
-                    \t- 'mle' - Maximum likelihood estimator, \n\
-                    \t- 'be' - Bayesian estimator.",
-                    method
-                )));
             }
         };
         // Fit the model.
@@ -237,7 +252,8 @@ impl PyCatCTBN {
         } else {
             // Execute sequentially.
             estimator.fit(graph)
-        };
+        }
+        .map_err(to_pyerr)?;
         // Return the fitted model.
         Ok(model.into())
     }
@@ -266,10 +282,10 @@ impl PyCatCTBN {
     ///
     #[pyo3(signature = (
         n,
-        max_len=None,
-        max_time=None,
-        seed=31,
-        parallel=true,
+        max_len = None,
+        max_time = None,
+        seed = 31,
+        parallel = true,
     ))]
     pub fn sample(
         &self,
@@ -280,7 +296,7 @@ impl PyCatCTBN {
         seed: u64,
         parallel: bool,
     ) -> PyResult<PyCatTrjs> {
-        // Assert at least one of max_len or max_time is set.
+        // Check at least one of max_len or max_time is set.
         if max_len.is_none() && max_time.is_none() {
             return Err(PyErr::new::<PyValueError, _>(
                 "At least one of 'max_len' or 'max_time' must be set.",
@@ -291,7 +307,7 @@ impl PyCatCTBN {
         // Get a lock on the inner field.
         let lock = self.lock();
         // Initialize the sampler.
-        let sampler = ForwardSampler::new(&mut rng, &*lock);
+        let sampler = ForwardSampler::new(&mut rng, &*lock).map_err(to_pyerr)?;
         // Get the maximum length and time.
         let max_len = max_len.unwrap_or(usize::MAX);
         let max_time = max_time.unwrap_or(f64::INFINITY);
@@ -302,7 +318,8 @@ impl PyCatCTBN {
         } else {
             // Sample sequentially.
             sampler.sample_n_by_length_or_time(max_len, max_time, n)
-        };
+        }
+        .map_err(to_pyerr)?;
         // Return the dataset.
         Ok(dataset.into())
     }
@@ -321,9 +338,9 @@ impl PyCatCTBN {
     ///
     #[classmethod]
     pub fn from_json_string(_cls: &Bound<'_, PyType>, json: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatCTBN::from_json_string(json))),
-        })
+        CatCTBN::from_json_string(json)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON string.
@@ -334,7 +351,7 @@ impl PyCatCTBN {
     ///     A JSON string representation of the instance.
     ///
     pub fn to_json_string(&self) -> PyResult<String> {
-        Ok(self.lock().to_json_string())
+        self.lock().to_json_string().map_err(to_pyerr)
     }
 
     /// Read instance from a JSON file.
@@ -351,9 +368,9 @@ impl PyCatCTBN {
     ///
     #[classmethod]
     pub fn from_json_file(_cls: &Bound<'_, PyType>, path: &str) -> PyResult<Self> {
-        Ok(Self {
-            inner: Arc::new(RwLock::new(CatCTBN::from_json_file(path))),
-        })
+        CatCTBN::from_json_file(path)
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Write instance to a JSON file.
@@ -364,7 +381,6 @@ impl PyCatCTBN {
     ///     The path to the JSON file to write to.
     ///
     pub fn to_json_file(&self, path: &str) -> PyResult<()> {
-        self.lock().to_json_file(path);
-        Ok(())
+        self.lock().to_json_file(path).map_err(to_pyerr)
     }
 }

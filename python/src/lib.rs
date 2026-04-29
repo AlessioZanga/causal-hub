@@ -1,3 +1,5 @@
+#![deny(clippy::expect_used)]
+#![deny(clippy::unwrap_used)]
 #![warn(missing_docs)]
 //! # CausalHub
 //!
@@ -8,6 +10,8 @@
 pub mod assets;
 /// Dataset structures.
 pub mod datasets;
+/// Error types.
+pub mod error;
 /// Estimators for parameters and structures.
 pub mod estimators;
 /// Models.
@@ -91,8 +95,14 @@ mod causal_hub {
             m.add_class::<crate::datasets::PyDataset>()?;
             m.add_class::<crate::datasets::PyCatTable>()?;
             m.add_class::<crate::datasets::PyCatIncTable>()?;
+            m.add_class::<crate::datasets::PyCatEv>()?;
             m.add_class::<crate::datasets::PyGaussTable>()?;
+            m.add_class::<crate::datasets::PyGaussIncTable>()?;
+            m.add_class::<crate::datasets::PyGaussEv>()?;
+            m.add_class::<crate::datasets::PyMissingMechanism>()?;
             m.add_class::<crate::datasets::PyMissingTable>()?;
+            m.add_class::<crate::datasets::PyMissingType>()?;
+            m.add_class::<crate::datasets::PyMissingMethod>()?;
             m.add_class::<crate::datasets::PyCatTrj>()?;
             m.add_class::<crate::datasets::PyCatTrjs>()?;
             m.add_class::<crate::datasets::PyCatTrjEv>()?;
@@ -121,6 +131,7 @@ mod causal_hub {
             m.add_function(wrap_pyfunction!(crate::estimators::em, m)?)?;
             m.add_function(wrap_pyfunction!(crate::estimators::sem, m)?)?;
             m.add_class::<crate::estimators::PyPK>()?;
+            m.add_class::<crate::estimators::PyEstimatorMethod>()?;
 
             Ok(())
         }
@@ -153,9 +164,12 @@ mod causal_hub {
     }
 
     #[pymodule_init]
-    fn init(_m: &Bound<'_, PyModule>) -> PyResult<()> {
+    fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
         // Initialize the logger.
         pyo3_log::init();
+
+        // Register the exception.
+        m.add("Error", m.py().get_type::<crate::error::Error>())?;
 
         Ok(())
     }

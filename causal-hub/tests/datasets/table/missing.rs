@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use causal_hub::{datasets::MissingTable, labels, models::Labelled, set};
+    use causal_hub::{datasets::MissingTable, labels, models::Labelled, set, types::Result};
     use ndarray::prelude::*;
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Set the labels.
         let labels = labels!("A", "B", "C");
         // Set the missing mask.
@@ -16,7 +16,7 @@ mod tests {
             [false, false, true]
         ];
         // Create the missing table.
-        let missing_table = MissingTable::new(labels.clone(), missing_mask.clone());
+        let missing_table = MissingTable::new(labels.clone(), missing_mask.clone())?;
 
         // Check labels.
         assert_eq!(
@@ -119,10 +119,12 @@ mod tests {
             missing_table.complete_rows_count(), //
             1
         );
+
+        Ok(())
     }
 
     #[test]
-    fn new_unordered_labels() {
+    fn new_unordered_labels() -> Result<()> {
         // Set the labels.
         let labels = labels!("C", "A", "B");
         // Set the missing mask.
@@ -133,7 +135,7 @@ mod tests {
             [true, false, false]
         ];
         // Create the missing table.
-        let missing_table = MissingTable::new(labels.clone(), missing_mask.clone());
+        let missing_table = MissingTable::new(labels.clone(), missing_mask.clone())?;
 
         // Check labels.
         assert_eq!(
@@ -241,5 +243,7 @@ mod tests {
             missing_table.complete_rows_count(), //
             1
         );
+
+        Ok(())
     }
 }

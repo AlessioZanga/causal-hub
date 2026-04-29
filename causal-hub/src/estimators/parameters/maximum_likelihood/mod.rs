@@ -2,9 +2,9 @@ mod table;
 mod trajectory;
 
 use crate::{
-    datasets::MissingMethod,
+    datasets::{MissingMechanism, MissingMethod},
     models::Labelled,
-    types::{Labels, Map, Set},
+    types::{Error, Labels, Result},
 };
 
 /// A struct representing a maximum likelihood estimator.
@@ -12,7 +12,7 @@ use crate::{
 pub struct MLE<'a, D> {
     dataset: &'a D,
     missing_method: Option<MissingMethod>,
-    missing_mechanism: Option<Map<usize, Set<usize>>>,
+    missing_mechanism: Option<MissingMechanism>,
 }
 
 impl<'a, D> MLE<'a, D> {
@@ -50,11 +50,28 @@ impl<'a, D> MLE<'a, D> {
     pub fn with_missing_method(
         mut self,
         missing_method: Option<MissingMethod>,
-        missing_mechanism: Option<Map<usize, Set<usize>>>,
-    ) -> Self {
+        missing_mechanism: Option<MissingMechanism>,
+    ) -> Result<Self> {
+        // Validate missing method and mechanism.
+        match (missing_method, &missing_mechanism) {
+            (Some(MissingMethod::LW) | Some(MissingMethod::PW), Some(_)) => {
+                return Err(Error::InvalidParameter(
+                    "missing_mechanism",
+                    "must be None if missing_method is LW or PW",
+                ));
+            }
+            (Some(MissingMethod::IPW) | Some(MissingMethod::AIPW), None) => {
+                return Err(Error::InvalidParameter(
+                    "missing_mechanism",
+                    "must be provided if missing_method is IPW or AIPW",
+                ));
+            }
+            _ => {}
+        }
+
         self.missing_method = missing_method;
         self.missing_mechanism = missing_mechanism;
-        self
+        Ok(self)
     }
 }
 

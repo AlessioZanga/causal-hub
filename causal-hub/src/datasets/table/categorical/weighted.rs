@@ -1,9 +1,9 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatSample, CatTable, Dataset},
+    datasets::{CatEv, CatSample, CatTable, Dataset},
     models::Labelled,
-    types::{Labels, Set, States},
+    types::{Error, Labels, Result, Set, States},
 };
 
 /// A type alias for a categorical weighted sample.
@@ -31,27 +31,29 @@ impl CatWtdTable {
     /// * `dataset` - The categorical dataset.
     /// * `weights` - The weights of the samples.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// * Panics if the number of weights is not equal to the number of samples.
-    /// * Panics if any weight is not finite.
+    /// * If the number of weights is different from the number of samples.
+    /// * If any weight is not finite.
     ///
     /// # Returns
     ///
     /// A new categorical weighted dataset instance.
     ///
-    pub fn new(dataset: CatTable, weights: Array1<f64>) -> Self {
-        assert_eq!(
-            dataset.values().nrows(),
-            weights.len(),
-            "The number of weights must be equal to the number of samples."
-        );
-        assert!(
-            weights.iter().all(|&w| w.is_finite()),
-            "All weights must be finite."
-        );
+    pub fn new(dataset: CatTable, weights: Array1<f64>) -> Result<Self> {
+        // Check if the number of weights is equal to the number of samples.
+        if dataset.values().nrows() != weights.len() {
+            return Err(Error::InvalidParameter(
+                "weights",
+                "must have the same length as the dataset",
+            ));
+        }
+        // Check if any weight is finite.
+        if !weights.iter().all(|&w| w.is_finite()) {
+            return Err(Error::InvalidParameter("weights", "must be finite"));
+        }
 
-        Self { dataset, weights }
+        Ok(Self { dataset, weights })
     }
 
     /// Returns the states of the variables in the categorical distribution.
@@ -90,10 +92,16 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
+    type Evidence = CatEv;
+    type EvidenceIter<'a> = <CatTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]
@@ -101,12 +109,20 @@ impl Dataset for CatWtdTable {
         self.weights.sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let dataset = self.dataset.select(x);
+        let dataset = self.dataset.select(x)?;
         // Select the weights.
         let weights = self.weights.clone();
         // Return the new weighted dataset.
         Self::new(dataset, weights)
+    }
+}
+
+impl From<CatTable> for CatWtdTable {
+    #[inline]
+    fn from(dataset: CatTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
     }
 }

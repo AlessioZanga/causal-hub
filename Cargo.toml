@@ -4,10 +4,10 @@ default-members = ["causal-hub"]
 resolver = "2"
 
 [workspace.package]
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Alessio Zanga <alessio.zanga@outlook.it>"]
 edition = "2024"
-rust-version = "1.85.1"
+rust-version = "1.91.1"
 description = "A library for causal models, inference and discovery."
 documentation = "https://docs.rs/causal-hub"
 readme = "README.md"
@@ -19,13 +19,15 @@ categories = ["science", "mathematics", "algorithms", "data-structures"]
 
 [workspace.dependencies]
 approx = "^0.5"
-csv = "^1.3"
+csv = "^1.4"
 dry = "^0.1"
 fxhash = "^0.2"
-indexmap = { version = "^2.11", features = ["rayon", "serde"] }
+indexmap = { version = "^2.14", features = ["rayon", "serde"] }
 itertools = "^0.14"
 log = "^0.4"
 paste = "^1.0"
-rand = "^0.9"
-rayon = "^1.11"
+rand = "^0.10"
+rand_distr = "^0.6"
+rand_xoshiro = "^0.8"
+rayon = "^1.12"
 serde = { version = "^1.0", features = ["derive"] }

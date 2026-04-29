@@ -1,13 +1,16 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
 use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::Dataset,
+    datasets::{Dataset, GaussEv, GaussEvT},
     io::CsvIO,
     models::Labelled,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a gaussian variable.
@@ -20,6 +23,27 @@ pub type GaussSample = Array1<GaussType>;
 pub struct GaussTable {
     labels: Labels,
     values: Array2<GaussType>,
+}
+
+/// Concrete iterator over Gaussian table evidences.
+pub struct GaussTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, GaussType, Ix1>,
+    labels: &'a Labels,
+}
+
+impl<'a> Iterator for GaussTableEvidenceIter<'a> {
+    type Item = Result<GaussEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row
+            .iter()
+            .enumerate()
+            .map(|(event, &value)| GaussEvT::CertainPositive { event, value });
+
+        Some(GaussEv::new(self.labels.clone(), evidences))
+    }
 }
 
 impl Labelled for GaussTable {
@@ -45,13 +69,14 @@ impl GaussTable {
     ///
     /// A new gaussian dataset instance.
     ///
-    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Self {
-        // Assert that the number of labels matches the number of columns in values.
-        assert_eq!(
-            labels.len(),
-            values.ncols(),
-            "Number of labels must match number of columns in values."
-        );
+    pub fn new(mut labels: Labels, mut values: Array2<GaussType>) -> Result<Self> {
+        // Check if the number of labels matches the number of columns in values.
+        if labels.len() != values.ncols() {
+            return Err(Error::IncompatibleShape(
+                &labels.len().to_string(),
+                &values.ncols().to_string(),
+            ));
+        }
 
         // Sort labels and values accordingly.
         if !labels.is_sorted() {
@@ -70,22 +95,30 @@ impl GaussTable {
             // Update values.
             values = new_values;
         }
-        // Assert values are finite.
-        assert!(
-            values.iter().all(|&x| x.is_finite()),
-            "Values must have finite values."
-        );
+        // Check values are finite.
+        if !values.iter().all(|&x| x.is_finite()) {
+            return Err(Error::InvalidParameter("values", "must be finite"));
+        }
 
-        Self { labels, values }
+        Ok(Self { labels, values })
     }
 }
 
 impl Dataset for GaussTable {
     type Values = Array2<GaussType>;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = GaussTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        GaussTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            labels: &self.labels,
+        }
     }
 
     #[inline]
@@ -93,25 +126,22 @@ impl Dataset for GaussTable {
         self.values.nrows() as f64
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
-        // Assert that the indices are valid.
-        x.iter().for_each(|&i| {
-            assert!(
-                i < self.values.ncols(),
-                "Index out of bounds in variables selection: \n\
-                \t expected:    index < |columns| , \n\
-                \t found:       index == {} and |columns| == {} .",
-                i,
-                self.values.ncols()
-            );
-        });
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
+        // Check that the indices are valid.
+        if let Some(&i) = x.iter().find(|&&i| i >= self.values.ncols()) {
+            return Err(Error::IndexOutOfBounds(i));
+        }
 
         // Select the labels.
         let labels: Labels = x
             .iter()
-            .map(|&i| self.labels.get_index(i).unwrap())
-            .cloned()
-            .collect();
+            .map(|&i| {
+                self.labels
+                    .get_index(i)
+                    .cloned()
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
+            })
+            .collect::<Result<_>>()?;
 
         // Select the values.
         let mut new_values = Array2::zeros((self.values.nrows(), x.len()));
@@ -128,73 +158,80 @@ impl Dataset for GaussTable {
 }
 
 impl CsvIO for GaussTable {
-    fn from_csv_reader<R: Read>(reader: R) -> Self {
+    fn from_csv_reader<R: Read>(reader: R) -> Result<Self> {
         // Create a CSV reader from the string.
         let mut reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
-        // Assert that the reader has headers.
-        assert!(reader.has_headers(), "Reader must have headers.");
+        // Check if the reader has headers.
+        if !reader.has_headers() {
+            return Err(Error::MissingHeader());
+        }
 
         // Read the headers.
         let labels: Labels = reader
-            .headers()
-            .expect("Failed to read the headers.")
+            .headers()?
             .into_iter()
             .map(|x| x.to_owned())
             .collect();
 
         // Read the records.
-        let values: Array1<_> = reader
+        let values: Vec<GaussType> = reader
             .into_records()
             .enumerate()
-            .flat_map(|(i, row)| {
+            .map(|(i, row)| {
                 // Get the record row.
-                let row = row.unwrap_or_else(|_| panic!("Malformed record on line {}.", i + 1));
+                let row = row.map_err(|e| Error::Csv(Arc::new(e)))?;
                 // Get the record values and convert to indices.
-                let row: Vec<_> = row
-                    .into_iter()
+                row.into_iter()
                     .enumerate()
-                    .map(|(i, x)| {
-                        // Assert no missing values.
-                        assert!(!x.is_empty(), "Missing value on line {}.", i + 1);
+                    .map(|(j, x)| {
+                        // Check for missing values.
+                        if x.is_empty() {
+                            return Err(Error::MissingValue(i + 1, j + 1));
+                        }
                         // Cast the value.
-                        x.parse::<GaussType>().unwrap()
+                        Ok(x.parse::<GaussType>()?)
                     })
-                    .collect();
-                // Collect the values.
-                row
+                    .collect::<Result<Vec<_>>>()
             })
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .flatten()
             .collect();
+
+        // Convert the values to an array.
+        let values = Array1::from_vec(values);
 
         // Get the number of rows and columns.
         let ncols = labels.len();
         let nrows = values.len() / ncols;
         // Reshape the values to the correct shape.
-        let values = values
-            .into_shape_with_order((nrows, ncols))
-            .expect("Failed to rearrange values to the correct shape.");
+        let values = values.into_shape_with_order((nrows, ncols))?;
 
         // Construct the dataset.
         Self::new(labels, values)
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) {
+    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<()> {
         // Create the CSV writer.
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
         // Write the headers.
-        writer
-            .write_record(self.labels.iter())
-            .expect("Failed to write CSV headers.");
+        writer.write_record(self.labels.iter())?;
 
         // Write the records.
-        self.values.rows().into_iter().for_each(|row| {
-            // Map the row values to strings.
-            let record = row.iter().map(|x| x.to_string());
-            // Write the record.
-            writer
-                .write_record(record)
-                .expect("Failed to write CSV record.");
-        });
+        self.values
+            .rows()
+            .into_iter()
+            .try_for_each(|row| -> Result<_> {
+                // Map the row values to strings.
+                let record = row.iter().map(|x| x.to_string());
+                // Write the record.
+                writer.write_record(record)?;
+
+                Ok(())
+            })?;
+
+        Ok(())
     }
 }

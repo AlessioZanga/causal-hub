@@ -2,6 +2,7 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import enum
 import typing
 
 from causal_hub.datasets import CatTrjsEv
@@ -21,6 +22,21 @@ class PK:
         required: typing.Any,
         temporal_order: typing.Any,
     ) -> PK: ...
+
+@typing.final
+class EstimatorMethod(enum.Enum):
+    r"""
+    estimator methods.
+    """
+
+    MLE = ...
+    r"""
+    Maximum Likelihood Estimator.
+    """
+    BE = ...
+    r"""
+    Bayesian Estimator.
+    """
 
 def em(
     evidence: CatTrjsEv,

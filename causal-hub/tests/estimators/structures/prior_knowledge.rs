@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use causal_hub::{estimators::PK, labels};
+    use causal_hub::{estimators::PK, labels, types::Result};
 
     #[test]
-    fn new() {
+    fn new() -> Result<()> {
         // Initialize a list of labels.
         let labels = labels!["A", "B", "C"];
         // Set the forbidden edges.
@@ -13,7 +13,7 @@ mod tests {
         // Set the temporal order.
         let temporal_order = vec![vec![0], vec![1, 2]];
         // Create a new instance of prior knowledge.
-        let pk = PK::new(labels, forbidden, required, temporal_order);
+        let pk = PK::new(labels, forbidden, required, temporal_order)?;
 
         // Assert a single forbidden edge.
         assert!(pk.is_forbidden(0, 1));
@@ -23,5 +23,7 @@ mod tests {
         assert!(pk.is_required(0, 2));
         // Assert the required edges.
         assert_eq!(pk.required_edges(), &[(0, 2)]);
+
+        Ok(())
     }
 }

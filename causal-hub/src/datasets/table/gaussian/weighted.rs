@@ -1,9 +1,9 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{Dataset, GaussSample, GaussTable},
+    datasets::{Dataset, GaussEv, GaussSample, GaussTable},
     models::Labelled,
-    types::{Labels, Set},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a Gaussian weighted sample.
@@ -31,27 +31,24 @@ impl GaussWtdTable {
     /// * `dataset` - The Gaussian dataset.
     /// * `weights` - The weights of the samples.
     ///
-    /// # Panics
-    ///
-    /// * Panics if the number of weights is not equal to the number of samples.
-    /// * Panics if any weight is not in the range [0, 1].
-    ///
     /// # Returns
     ///
     /// A new Gaussian weighted dataset instance.
     ///
-    pub fn new(dataset: GaussTable, weights: Array1<f64>) -> Self {
-        assert_eq!(
-            dataset.values().nrows(),
-            weights.len(),
-            "The number of weights must be equal to the number of samples."
-        );
-        assert!(
-            weights.iter().all(|&w| (0.0..=1.0).contains(&w)),
-            "All weights must be in the range [0, 1]."
-        );
+    pub fn new(dataset: GaussTable, weights: Array1<f64>) -> Result<Self> {
+        // Check if the number of weights is equal to the number of samples.
+        if dataset.values().nrows() != weights.len() {
+            return Err(Error::IncompatibleShape(
+                &dataset.values().nrows().to_string(),
+                &weights.len().to_string(),
+            ));
+        }
+        // Check that all weights are non-negative.
+        if !weights.iter().all(|&w| w >= 0.0) {
+            return Err(Error::InvalidParameter("weights", "must be non-negative"));
+        }
 
-        Self { dataset, weights }
+        Ok(Self { dataset, weights })
     }
 
     /// Returns the weights of the samples in the Gaussian distribution.
@@ -68,10 +65,16 @@ impl GaussWtdTable {
 
 impl Dataset for GaussWtdTable {
     type Values = GaussTable;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = <GaussTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]
@@ -79,12 +82,20 @@ impl Dataset for GaussWtdTable {
         self.weights.sum()
     }
 
-    fn select(&self, x: &Set<usize>) -> Self {
+    fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Select the dataset.
-        let dataset = self.dataset.select(x);
+        let dataset = self.dataset.select(x)?;
         // Select the weights.
         let weights = self.weights.clone();
         // Return the new weighted dataset.
         Self::new(dataset, weights)
+    }
+}
+
+impl From<GaussTable> for GaussWtdTable {
+    #[inline]
+    fn from(dataset: GaussTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
     }
 }
