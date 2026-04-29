@@ -205,7 +205,7 @@ dependencies = [
 
 [[package]]
 name = "causal-hub"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "accelerate-src",
  "approx",
@@ -1840,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "python"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "approx",
  "causal-hub",

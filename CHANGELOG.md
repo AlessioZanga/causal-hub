@@ -19,6 +19,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## v0.0.5 - 2026-04-29
+
+### Added
+
+* Added `GaussIncTable` data structure.
+* Added `MLE` and `BE` estimators for `GaussIncTable`.
+* Added `IPW` and `aIPW` implementations for `GaussIncTable`.
+* Added `SATE` (Sample Average Treatment Effect) and `PACE` (Population Average Treatment Effect) estimation.
+* Added parallel implementation for `SATE` and gaussian statistics.
+* Added `RngCatBN`, `RngGaussBN`, `RngCatCPD`, and `RngGaussCPD` for random model generation.
+* Added `RngCatIncTable` and `RngGaussIncTable` for random incomplete dataset generation.
+* Added `MissingMechanism` struct and support for incomplete dataset generation in Python frontend.
+* Added `to_bif_string` implementation for Bayesian Networks.
+* Added `InvalidParameter` and `IndexOutOfBounds` errors to replace generic exceptions.
+* Added scoring criteria for model selection.
+* Added `AGENTS.md` to guide AI-assisted development.
+
+### Changed
+
+* Refactored error handling to remove `unwrap` and `expect` calls across the workspace, using custom `Error` types.
+* Updated `ApproximateInference` and `CausalInference` to support evidence and custom estimators.
+* Updated `BE` (Bayesian Estimator) as the default for inference tasks.
+* Updated `pyo3`, `rand`, and other core dependencies.
+* Renamed `ACE` to `PACE` and `sample_*` methods to `fitted_*`.
+
+### Fixed
+
+* Improved numerical stability for `GaussCPD` and variance regularization.
+* Fixed logical and log-likelihood checks.
+* Fixed `SIGILL` error and various linting issues.
+* Fixed Python documentation and test suite.
+
 ## v0.0.4 - 2026-01-14
 
 ### Added
