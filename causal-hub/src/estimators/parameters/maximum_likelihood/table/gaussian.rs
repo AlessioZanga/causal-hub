@@ -49,8 +49,11 @@ impl MLE<'_, GaussTable> {
         };
 
         // Symmetrize and stabilize covariance to avoid numerical issues.
-        let mut s = (&s + &s.t()) / 2.;
-        *s.diag_mut() += EPSILON;
+        let mut s = s;
+        s.diag_mut().mapv_inplace(|x| x.max(0.));
+        let t = s.diag().sum() / s.nrows() as f64;
+        *s.diag_mut() += f64::max(EPSILON, t * EPSILON);
+        s = (&s + &s.t()) / 2.;
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
