@@ -27,7 +27,7 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     // Compute the number of variables to usage.
     let n = std::cmp::max(3, model.labels().len() / 5);
     // Select the variables randomly.
-    let v: Vec<usize> = (0..model.labels().len()).choose_multiple(&mut rng, n);
+    let v: Vec<usize> = (0..model.labels().len()).sample(&mut rng, n);
     // Split the variables into X, Y, Z.
     let x: Set<usize> = set![v[0]];
     let y: Set<usize> = set![v[1]];
@@ -117,19 +117,19 @@ fn bench_catbn(c: &mut Criterion, model: CatBN) -> Result<()> {
     let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(100)?;
 
     group.bench_function("approximate_inference", |b| {
-        b.iter(|| -> Result<_> { engine.estimate(_b(&x), _b(&z)) })
+        b.iter(|| -> Result<_> { engine.estimate(_b(&x), _b(&z), None) })
     });
 
     // Causal Inference
     let engine = CausalInference::new(&engine);
-    // ACE(X -> Y).
-    group.bench_function("causal_inference (ace)", |b| {
-        b.iter(|| -> Result<_> { engine.ace_estimate(_b(&x), _b(&y)) })
+    // PACE(X -> Y).
+    group.bench_function("causal_inference (pace)", |b| {
+        b.iter(|| -> Result<_> { engine.pace_estimate(_b(&x), _b(&y), None) })
     });
 
-    // CACE(X -> Y | Z).
-    group.bench_function("causal_inference (cace)", |b| {
-        b.iter(|| -> Result<_> { engine.cace_estimate(_b(&x), _b(&y), _b(&z)) })
+    // CPACE(X -> Y | Z).
+    group.bench_function("causal_inference (cpace)", |b| {
+        b.iter(|| -> Result<_> { engine.cpace_estimate(_b(&x), _b(&y), _b(&z), None) })
     });
 
     group.finish();

@@ -48,39 +48,39 @@ impl CatCPDS {
         // Check the counts are finite and non-negative.
         if !n_xz.iter().all(|&x| x.is_finite() && x >= 0.) {
             return Err(Error::InvalidParameter(
-                "n_xz".into(),
-                "Counts must be finite and non-negative.".into(),
+                "n_xz",
+                "Counts must be finite and non-negative.",
             ));
         }
         if !n.is_finite() || n < 0. {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be finite and non-negative.".into(),
+                "n",
+                "Sample size must be finite and non-negative.",
             ));
         }
 
         Ok(Self { n_xz, n })
     }
 
-    /// Returns the sample conditional counts |Z| x |X|.
+    /// Returns the fitted conditional counts |Z| x |X|.
     ///
     /// # Returns
     ///
-    /// The sample conditional counts.
+    /// The fitted conditional counts.
     ///
     #[inline]
-    pub const fn sample_conditional_counts(&self) -> &Array2<f64> {
+    pub const fn fitted_conditional_counts(&self) -> &Array2<f64> {
         &self.n_xz
     }
 
-    /// Returns the sample size.
+    /// Returns the fitted size.
     ///
     /// # Returns
     ///
-    /// The sample size.
+    /// The fitted size.
     ///
     #[inline]
-    pub const fn sample_size(&self) -> f64 {
+    pub const fn fitted_size(&self) -> f64 {
         self.n
     }
 }
@@ -111,13 +111,13 @@ impl Serialize for CatCPDS {
     {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(2))?;
-        // Convert the sample conditional counts to a flat format.
-        let sample_conditional_counts: Vec<Vec<f64>> =
+        // Convert the fitted conditional counts to a flat format.
+        let fitted_conditional_counts: Vec<Vec<f64>> =
             self.n_xz.rows().into_iter().map(|x| x.to_vec()).collect();
-        // Serialize sample conditional counts.
-        map.serialize_entry("sample_conditional_counts", &sample_conditional_counts)?;
-        // Serialize sample size.
-        map.serialize_entry("sample_size", &self.n)?;
+        // Serialize fitted conditional counts.
+        map.serialize_entry("fitted_conditional_counts", &fitted_conditional_counts)?;
+        // Serialize fitted size.
+        map.serialize_entry("fitted_size", &self.n)?;
         // End the map.
         map.end()
     }
@@ -131,8 +131,8 @@ impl<'de> Deserialize<'de> for CatCPDS {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
-            SampleConditionalCounts,
-            SampleSize,
+            FittedConditionalCounts,
+            FittedSize,
         }
 
         struct CatCPDSVisitor;
@@ -151,47 +151,47 @@ impl<'de> Deserialize<'de> for CatCPDS {
                 use serde::de::Error as E;
 
                 // Allocate the fields.
-                let mut sample_conditional_counts = None;
-                let mut sample_size = None;
+                let mut fitted_conditional_counts = None;
+                let mut fitted_size = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
                     match key {
-                        Field::SampleConditionalCounts => {
-                            if sample_conditional_counts.is_some() {
-                                return Err(E::duplicate_field("sample_conditional_counts"));
+                        Field::FittedConditionalCounts => {
+                            if fitted_conditional_counts.is_some() {
+                                return Err(E::duplicate_field("fitted_conditional_counts"));
                             }
-                            sample_conditional_counts = Some(map.next_value()?);
+                            fitted_conditional_counts = Some(map.next_value()?);
                         }
-                        Field::SampleSize => {
-                            if sample_size.is_some() {
-                                return Err(E::duplicate_field("sample_size"));
+                        Field::FittedSize => {
+                            if fitted_size.is_some() {
+                                return Err(E::duplicate_field("fitted_size"));
                             }
-                            sample_size = Some(map.next_value()?);
+                            fitted_size = Some(map.next_value()?);
                         }
                     }
                 }
 
                 // Extract the fields.
-                let sample_conditional_counts = sample_conditional_counts
-                    .ok_or_else(|| E::missing_field("sample_conditional_counts"))?;
-                let sample_size = sample_size.ok_or_else(|| E::missing_field("sample_size"))?;
+                let fitted_conditional_counts = fitted_conditional_counts
+                    .ok_or_else(|| E::missing_field("fitted_conditional_counts"))?;
+                let fitted_size = fitted_size.ok_or_else(|| E::missing_field("fitted_size"))?;
 
-                // Convert sample conditional counts to ndarray.
-                let sample_conditional_counts = {
-                    let counts: Vec<Vec<f64>> = sample_conditional_counts;
+                // Convert fitted conditional counts to ndarray.
+                let fitted_conditional_counts = {
+                    let counts: Vec<Vec<f64>> = fitted_conditional_counts;
                     let shape = (counts.len(), counts[0].len());
                     Array::from_iter(counts.into_iter().flatten())
                         .into_shape_with_order(shape)
-                        .map_err(|_| E::custom("Invalid sample conditional counts shape"))?
+                        .map_err(|_| E::custom("Invalid fitted conditional counts shape"))?
                 };
 
-                CatCPDS::new(sample_conditional_counts, sample_size)
+                CatCPDS::new(fitted_conditional_counts, fitted_size)
                     .map_err(|e| E::custom(e.to_string()))
             }
         }
 
-        const FIELDS: &[&str] = &["sample_conditional_counts", "sample_size"];
+        const FIELDS: &[&str] = &["fitted_conditional_counts", "fitted_size"];
 
         deserializer.deserialize_struct("CatCPDS", FIELDS, CatCPDSVisitor)
     }
@@ -213,9 +213,9 @@ pub struct CatCPD {
     // Parameters.
     parameters: Array2<f64>,
     parameters_size: usize,
-    // Sample (sufficient) statistics, if any.
-    sample_statistics: Option<CatCPDS>,
-    sample_log_likelihood: Option<f64>,
+    // Fitted sufficient statistics, if any.
+    fitted_statistics: Option<CatCPDS>,
+    fitted_log_likelihood: Option<f64>,
 }
 
 impl CatCPD {
@@ -250,10 +250,7 @@ impl CatCPD {
 
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::SetsNotDisjoint(
-                "labels".to_string(),
-                "conditioning labels".to_string(),
-            ));
+            return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
         }
 
         // Get the states shape.
@@ -262,8 +259,8 @@ impl CatCPD {
         // Check that the product of the shape matches the number of columns.
         if !parameters.is_empty() && parameters.ncols() != shape.product() {
             return Err(Error::IncompatibleShape(
-                shape.product().to_string(),
-                parameters.ncols().to_string(),
+                &shape.product().to_string(),
+                &parameters.ncols().to_string(),
             ));
         }
 
@@ -273,8 +270,8 @@ impl CatCPD {
         // Check that the product of the conditioning shape matches the number of rows.
         if !parameters.is_empty() && parameters.nrows() != conditioning_shape.product() {
             return Err(Error::IncompatibleShape(
-                conditioning_shape.product().to_string(),
-                parameters.nrows().to_string(),
+                &conditioning_shape.product().to_string(),
+                &parameters.nrows().to_string(),
             ));
         }
 
@@ -285,7 +282,7 @@ impl CatCPD {
             .enumerate()
             .try_for_each(|(i, &x)| {
                 if !relative_eq!(x, 1.0, epsilon = EPSILON) {
-                    return Err(Error::Probability(format!(
+                    return Err(Error::Probability(&format!(
                         "Failed to sum probability to one: {}.",
                         parameters.row(i)
                     )));
@@ -418,8 +415,8 @@ impl CatCPD {
             conditioning_multi_index,
             parameters,
             parameters_size,
-            sample_statistics: None,
-            sample_log_likelihood: None,
+            fitted_statistics: None,
+            fitted_log_likelihood: None,
         })
     }
 
@@ -530,8 +527,10 @@ impl CatCPD {
     /// # Arguments
     ///
     /// * `states` - The variables states.
+    /// * `conditioning_states` - The conditioning variables labels and states.
     /// * `parameters` - The probabilities of the states.
-    /// * `statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
     /// # Panics
     ///
@@ -542,42 +541,41 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn with_optionals(
-        state: States,
+        states: States,
         conditioning_states: States,
         parameters: Array2<f64>,
-        sample_statistics: Option<CatCPDS>,
-        sample_log_likelihood: Option<f64>,
+        fitted_statistics: Option<CatCPDS>,
+        fitted_log_likelihood: Option<f64>,
     ) -> Result<Self> {
-        if let Some(sample_statistics) = &sample_statistics {
-            // Get the sample conditional counts.
-            let sample_conditional_counts = &sample_statistics.n_xz;
-            // Check the sample conditional counts have the same shape as parameters.
-            if sample_conditional_counts.shape() != parameters.shape() {
+        // Check the fitted statistics, if any.
+        if let Some(fitted_statistics) = &fitted_statistics {
+            // Get the fitted conditional counts.
+            let fitted_conditional_counts = &fitted_statistics.n_xz;
+            // Check the fitted conditional counts have the same shape as parameters.
+            if fitted_conditional_counts.shape() != parameters.shape() {
                 return Err(Error::IncompatibleShape(
-                    format!("{:?}", sample_conditional_counts.shape()),
-                    format!("{:?}", parameters.shape()),
+                    &format!("{:?}", fitted_conditional_counts.shape()),
+                    &format!("{:?}", parameters.shape()),
                 ));
             }
         }
-        // Check the sample log-likelihood is finite and non-positive.
-        if let Some(sample_log_likelihood) = &sample_log_likelihood
-            && (!sample_log_likelihood.is_finite() || *sample_log_likelihood > 0.)
+        // Check the fitted log-likelihood is finite and non-positive.
+        if let Some(fitted_log_likelihood) = &fitted_log_likelihood
+            && (!fitted_log_likelihood.is_finite() || *fitted_log_likelihood > 0.)
         {
-            return Err(Error::Stats(format!(
-                "Sample log-likelihood must be finite and non-positive: \n\
-                \t expected: sample_ll <= 0 , \n\
-                \t found:    sample_ll == {sample_log_likelihood} ."
+            return Err(Error::Stats(&format!(
+                "Fitted log-likelihood must be finite and non-positive: \n\
+                \t expected: fitted_ll <= 0 , \n\
+                \t found:    fitted_ll == {fitted_log_likelihood} ."
             )));
         }
 
         // Construct the categorical CPD.
-        let mut cpd = Self::new(state, conditioning_states, parameters)?;
-
-        // FIXME: Check labels alignment with optional fields.
+        let mut cpd = Self::new(states, conditioning_states, parameters)?;
 
         // Set the optionals.
-        cpd.sample_statistics = sample_statistics;
-        cpd.sample_log_likelihood = sample_log_likelihood;
+        cpd.fitted_statistics = fitted_statistics;
+        cpd.fitted_log_likelihood = fitted_log_likelihood;
 
         Ok(cpd)
     }
@@ -586,6 +584,7 @@ impl CatCPD {
     ///
     /// # Arguments
     ///
+    /// * `phi` - The potential to convert.
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
@@ -599,10 +598,6 @@ impl CatCPD {
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
-    ///
-    /// # Arguments
-    ///
-    /// * `cpd` - The CPD to convert.
     ///
     /// # Returns
     ///
@@ -701,13 +696,13 @@ impl CPD for CatCPD {
     }
 
     #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
+        self.fitted_statistics.as_ref()
     }
 
     #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
+    fn fitted_log_likelihood(&self) -> Option<f64> {
+        self.fitted_log_likelihood
     }
 
     fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
@@ -718,11 +713,17 @@ impl CPD for CatCPD {
 
         // Check X matches number of variables.
         if x.len() != n {
-            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &n.to_string(),
+                &x.len().to_string(),
+            ));
         }
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // No variables.
@@ -770,7 +771,10 @@ impl CPD for CatCPD {
 
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // No variables.
@@ -797,7 +801,7 @@ impl CPD for CatCPD {
         let p = self.parameters.row(z);
         // Construct the sampler.
         let s = WeightedIndex::new(&p)
-            .map_err(|e| Error::Probability(format!("Failed to create WeightedIndex: {e}")))?;
+            .map_err(|e| Error::Probability(&format!("Failed to create WeightedIndex: {e}")))?;
         // Sample from the distribution.
         let x = s.sample(rng);
 
@@ -896,8 +900,8 @@ impl Serialize for CatCPD {
         // Count the elements to serialize.
         let mut size = 4;
         // Add optional fields, if any.
-        size += self.sample_statistics.is_some() as usize;
-        size += self.sample_log_likelihood.is_some() as usize;
+        size += self.fitted_statistics.is_some() as usize;
+        size += self.fitted_log_likelihood.is_some() as usize;
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
@@ -917,12 +921,12 @@ impl Serialize for CatCPD {
         map.serialize_entry("parameters", &parameters)?;
 
         // Serialize the sufficient statistics, if any.
-        if let Some(sample_statistics) = &self.sample_statistics {
-            map.serialize_entry("sample_statistics", sample_statistics)?;
+        if let Some(fitted_statistics) = &self.fitted_statistics {
+            map.serialize_entry("fitted_statistics", fitted_statistics)?;
         }
-        // Serialize the sample log-likelihood, if any.
-        if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
-            map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
+        // Serialize the fitted log-likelihood, if any.
+        if let Some(fitted_log_likelihood) = &self.fitted_log_likelihood {
+            map.serialize_entry("fitted_log_likelihood", fitted_log_likelihood)?;
         }
 
         // Serialize type.
@@ -944,8 +948,8 @@ impl<'de> Deserialize<'de> for CatCPD {
             States,
             ConditioningStates,
             Parameters,
-            SampleStatistics,
-            SampleLogLikelihood,
+            FittedStatistics,
+            FittedLogLikelihood,
             Type,
         }
 
@@ -968,8 +972,8 @@ impl<'de> Deserialize<'de> for CatCPD {
                 let mut states = None;
                 let mut conditioning_states = None;
                 let mut parameters = None;
-                let mut sample_statistics = None;
-                let mut sample_log_likelihood = None;
+                let mut fitted_statistics = None;
+                let mut fitted_log_likelihood = None;
                 let mut type_ = None;
 
                 // Parse the map.
@@ -993,17 +997,17 @@ impl<'de> Deserialize<'de> for CatCPD {
                             }
                             parameters = Some(map.next_value()?);
                         }
-                        Field::SampleStatistics => {
-                            if sample_statistics.is_some() {
-                                return Err(E::duplicate_field("sample_statistics"));
+                        Field::FittedStatistics => {
+                            if fitted_statistics.is_some() {
+                                return Err(E::duplicate_field("fitted_statistics"));
                             }
-                            sample_statistics = Some(map.next_value()?);
+                            fitted_statistics = Some(map.next_value()?);
                         }
-                        Field::SampleLogLikelihood => {
-                            if sample_log_likelihood.is_some() {
-                                return Err(E::duplicate_field("sample_log_likelihood"));
+                        Field::FittedLogLikelihood => {
+                            if fitted_log_likelihood.is_some() {
+                                return Err(E::duplicate_field("fitted_log_likelihood"));
                             }
-                            sample_log_likelihood = Some(map.next_value()?);
+                            fitted_log_likelihood = Some(map.next_value()?);
                         }
                         Field::Type => {
                             if type_.is_some() {
@@ -1039,8 +1043,8 @@ impl<'de> Deserialize<'de> for CatCPD {
                     states,
                     conditioning_states,
                     parameters,
-                    sample_statistics,
-                    sample_log_likelihood,
+                    fitted_statistics,
+                    fitted_log_likelihood,
                 )
                 .map_err(E::custom)
             }
@@ -1050,8 +1054,8 @@ impl<'de> Deserialize<'de> for CatCPD {
             "states",
             "conditioning_states",
             "parameters",
-            "sample_statistics",
-            "sample_log_likelihood",
+            "fitted_statistics",
+            "fitted_log_likelihood",
             "type",
         ];
 

@@ -7,7 +7,7 @@ mod tests {
         io::CsvIO,
         labels,
         models::Labelled,
-        types::Result,
+        types::{Error, Result},
     };
     use ndarray::prelude::*;
     use tempfile::NamedTempFile;
@@ -258,7 +258,10 @@ mod tests {
             temp_file.write_all(csv_content.as_bytes())?;
 
             // Read from the file.
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = CatTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["A", "B", "C"]);
@@ -274,7 +277,10 @@ mod tests {
 
             // Create a temporary file path.
             let temp_file = NamedTempFile::new()?;
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -295,7 +301,10 @@ mod tests {
             temp_file.write_all(csv_content.as_bytes())?;
 
             // Read from the file.
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = GaussTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["X", "Y", "Z"]);
@@ -311,7 +320,10 @@ mod tests {
 
             // Create a temporary file path.
             let temp_file = NamedTempFile::new()?;
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -332,7 +344,10 @@ mod tests {
             temp_file.write_all(csv_content.as_bytes())?;
 
             // Read from the file.
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
             let dataset = CatIncTable::from_csv_file(path)?;
 
             assert_eq!(dataset.labels(), &labels!["A", "B"]);
@@ -348,7 +363,10 @@ mod tests {
 
             // Create a temporary file path.
             let temp_file = NamedTempFile::new()?;
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to the file.
             dataset.to_csv_file(path)?;
@@ -409,7 +427,10 @@ mod tests {
 
             // Create a temporary file path.
             let temp_file = NamedTempFile::new()?;
-            let path = temp_file.path().to_str().unwrap();
+            let path = temp_file
+                .path()
+                .to_str()
+                .ok_or_else(|| Error::ConstructionError("Invalid path"))?;
 
             // Write to file and read back.
             dataset.to_csv_file(path)?;

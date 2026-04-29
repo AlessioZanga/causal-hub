@@ -10,7 +10,7 @@ use serde::{
 };
 
 use crate::{
-    datasets::{CatEv, CatSample, CatTable, CatWtdTable},
+    datasets::{CatEv, CatIncTable, CatSample, CatTable, CatWtdTable},
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
@@ -136,7 +136,8 @@ impl BN for CatBN {
     type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
-    type WeightedSamples = CatWtdTable;
+    type IncSamples = CatIncTable;
+    type WtdSamples = CatWtdTable;
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
@@ -148,8 +149,8 @@ impl BN for CatBN {
             .map(|x| {
                 if x.labels().len() != 1 {
                     return Err(Error::InvalidParameter(
-                        "cpd".to_string(),
-                        "CPD must contain exactly one label.".to_string(),
+                        "cpd",
+                        "CPD must contain exactly one label.",
                     ));
                 }
                 Ok((x.labels()[0].to_owned(), x))
@@ -160,10 +161,7 @@ impl BN for CatBN {
 
         // Check same number of graph labels and CPDs.
         if !graph.labels().iter().eq(cpds.keys()) {
-            return Err(Error::LabelMismatch(
-                "graph labels".to_string(),
-                "distributions labels".to_string(),
-            ));
+            return Err(Error::LabelMismatch("graph labels", "distributions labels"));
         }
 
         // Allocate the states of the variables.
@@ -179,8 +177,8 @@ impl BN for CatBN {
                         // Check if the states are the same.
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
-                                "cpds".to_string(),
-                                format!("States of `{l}` must be the same across CPDs."),
+                                "cpds",
+                                &format!("States of `{l}` must be the same across CPDs."),
                             ));
                         }
                     } else {
@@ -208,15 +206,15 @@ impl BN for CatBN {
             // Check they are the same.
             if pa_i != pa_j {
                 return Err(Error::LabelMismatch(
-                    format!("{pa_i:?}"),
-                    format!("{pa_j:?}"),
+                    &format!("{pa_i:?}"),
+                    &format!("{pa_j:?}"),
                 ));
             }
             Ok(())
         })?;
 
         // Check the graph is acyclic.
-        let topological_order = graph.topological_order().ok_or(Error::NotADag)?;
+        let topological_order = graph.topological_order().ok_or_else(|| Error::NotADag())?;
 
         Ok(Self {
             name: None,
@@ -262,7 +260,7 @@ impl BN for CatBN {
         // Check that the variables are in bounds.
         x.iter().try_for_each(|&i| {
             if i >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -304,19 +302,13 @@ impl BN for CatBN {
         if let Some(name) = &name
             && name.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "name".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("name", "cannot be empty"));
         }
         // Check description is not empty string.
         if let Some(description) = &description
             && description.is_empty()
         {
-            return Err(Error::InvalidParameter(
-                "description".to_string(),
-                "cannot be empty".to_string(),
-            ));
+            return Err(Error::InvalidParameter("description", "cannot be empty"));
         }
 
         // Construct the BN.
@@ -483,17 +475,17 @@ impl BifIO for CatBN {
             "network {} {{",
             self.name.as_deref().unwrap_or("Network")
         )
-        .map_err(|e| Error::Parsing(e.to_string()))?;
+        .map_err(|e| Error::Parsing(&e.to_string()))?;
         // Write network description, if any.
         if let Some(description) = &self.description {
             writeln!(f, "  property description \"{}\";", description)
-                .map_err(|e| Error::Parsing(e.to_string()))?;
+                .map_err(|e| Error::Parsing(&e.to_string()))?;
         }
-        writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+        writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
 
         // Write variables.
         for label in self.labels() {
-            writeln!(f, "variable {} {{", label).map_err(|e| Error::Parsing(e.to_string()))?;
+            writeln!(f, "variable {} {{", label).map_err(|e| Error::Parsing(&e.to_string()))?;
             let states = &self.states()[label];
             let states_str = states.iter().map(|x| x.to_string()).join(", ");
             writeln!(
@@ -502,8 +494,8 @@ impl BifIO for CatBN {
                 states.len(),
                 states_str
             )
-            .map_err(|e| Error::Parsing(e.to_string()))?;
-            writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+            .map_err(|e| Error::Parsing(&e.to_string()))?;
+            writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
         }
 
         // Write probabilities.
@@ -511,17 +503,17 @@ impl BifIO for CatBN {
             let parents = cpd.conditioning_labels();
             if parents.is_empty() {
                 writeln!(f, "probability ( {} ) {{", label)
-                    .map_err(|e| Error::Parsing(e.to_string()))?;
+                    .map_err(|e| Error::Parsing(&e.to_string()))?;
             } else {
                 let parents_str = parents.iter().map(|x| x.to_string()).join(", ");
                 writeln!(f, "probability ( {} | {} ) {{", label, parents_str)
-                    .map_err(|e| Error::Parsing(e.to_string()))?;
+                    .map_err(|e| Error::Parsing(&e.to_string()))?;
             }
 
             if parents.is_empty() {
                 // Write flat table.
                 let values = cpd.parameters().iter().map(|x| x.to_string()).join(", ");
-                writeln!(f, "  table {};", values).map_err(|e| Error::Parsing(e.to_string()))?;
+                writeln!(f, "  table {};", values).map_err(|e| Error::Parsing(&e.to_string()))?;
             } else {
                 // Write conditional table.
                 let conditioning_states = cpd.conditioning_states();
@@ -539,10 +531,10 @@ impl BifIO for CatBN {
                         .map(|x| x.to_string())
                         .join(", ");
                     writeln!(f, "  ({}) {};", states_str, probs_str)
-                        .map_err(|e| Error::Parsing(e.to_string()))?;
+                        .map_err(|e| Error::Parsing(&e.to_string()))?;
                 }
             }
-            writeln!(f, "}}").map_err(|e| Error::Parsing(e.to_string()))?;
+            writeln!(f, "}}").map_err(|e| Error::Parsing(&e.to_string()))?;
         }
 
         Ok(f)

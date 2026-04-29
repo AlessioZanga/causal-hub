@@ -23,15 +23,15 @@ backend = { package = "causal-hub", path = "../causal-hub", default-features = f
 dry.workspace = true
 fxhash.workspace = true
 log.workspace = true
-numpy = "^0.27"
+numpy = "^0.28"
 paste.workspace = true
-pyo3 = "^0.27"
+pyo3 = "^0.28"
 pyo3-log = "^0.13"
 pyo3-stub-gen = { version = "^0.17", features = ["numpy"] }
 pyo3-stub-gen-derive = "^0.17"
 rand.workspace = true
-rand_xoshiro = "^0.7"
+rand_xoshiro.workspace = true
 rayon.workspace = true
 
 [features]
-default = ["pyo3/abi3-py310", "backend/openblas-static"]
+default = ["pyo3/abi3-py312", "backend/openblas-static"]

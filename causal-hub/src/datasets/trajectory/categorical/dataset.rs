@@ -3,7 +3,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTable, CatType, Dataset},
+    datasets::{CatTable, CatTrjEv, CatTrjEvT, CatType, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -13,6 +13,33 @@ use crate::{
 pub struct CatTrj {
     events: CatTable,
     times: Array1<f64>,
+}
+/// Concrete iterator over trajectory evidences.
+pub struct CatTrjEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
+    time_bounds: std::vec::IntoIter<(f64, f64)>,
+    states: &'a States,
+}
+
+impl<'a> Iterator for CatTrjEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+        let (start_time, end_time) = self.time_bounds.next().unwrap_or((0.0, 0.0));
+
+        let evidences =
+            row.iter()
+                .enumerate()
+                .map(|(event, &state)| CatTrjEvT::CertainPositiveInterval {
+                    event,
+                    state: state as usize,
+                    start_time,
+                    end_time,
+                });
+
+        Some(CatTrjEv::new(self.states.clone(), evidences))
+    }
 }
 
 impl CatTrj {
@@ -36,16 +63,16 @@ impl CatTrj {
         // Check the number of rows in values and times are equal.
         if events.nrows() != times.len() {
             return Err(Error::IncompatibleShape(
-                events.nrows().to_string(),
-                times.len().to_string(),
+                &events.nrows().to_string(),
+                &times.len().to_string(),
             ));
         }
         // Check times must be positive and finite.
         times.iter().try_for_each(|&t| {
             if !t.is_finite() || t < 0. {
                 return Err(Error::InvalidParameter(
-                    "times".to_string(),
-                    format!("value must be finite and positive, found {t}"),
+                    "times",
+                    &format!("value must be finite and positive, found {t}"),
                 ));
             }
             Ok(())
@@ -94,8 +121,8 @@ impl CatTrj {
             // Check the number of unique times is equal to the length of the times array.
             if count != length {
                 return Err(Error::InvalidParameter(
-                    "times".to_string(),
-                    format!("must be unique, found {} duplicates", length - count),
+                    "times",
+                    &format!("must be unique, found {} duplicates", length - count),
                 ));
             }
         }
@@ -107,8 +134,8 @@ impl CatTrj {
             // Check there is one and only one state change.
             if count > 1 {
                 return Err(Error::InvalidParameter(
-                    "events".to_string(),
-                    format!("must contain at max one change per transition, found {count}"),
+                    "events",
+                    &format!("must contain at max one change per transition, found {count}"),
                 ));
             }
         }
@@ -163,10 +190,24 @@ impl Labelled for CatTrj {
 
 impl Dataset for CatTrj {
     type Values = Array2<CatType>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatTrjEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.events.values()
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        let mut end_times: Vec<f64> = self.times.iter().copied().skip(1).collect();
+        end_times.push(*self.times.last().unwrap_or(&0.0));
+        let time_bounds: Vec<(f64, f64)> = self.times.iter().copied().zip(end_times).collect();
+
+        CatTrjEvidenceIter {
+            rows: self.values().rows().into_iter(),
+            time_bounds: time_bounds.into_iter(),
+            states: self.states(),
+        }
     }
 
     #[inline]
@@ -228,7 +269,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same labels.".to_string(),
+                "All trajectories must have the same labels.",
             ));
         }
         // Check if every trajectory has the same states.
@@ -237,7 +278,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same states.".to_string(),
+                "All trajectories must have the same states.",
             ));
         }
         // Check if every trajectory has the same shape.
@@ -246,7 +287,7 @@ impl CatTrjs {
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
             return Err(Error::ConstructionError(
-                "All trajectories must have the same shape.".to_string(),
+                "All trajectories must have the same shape.",
             ));
         }
 
@@ -349,12 +390,45 @@ impl Labelled for CatTrjs {
     }
 }
 
+/// Concrete iterator over trajectories evidences.
+pub struct CatTrjsEvidenceIter<'a> {
+    trajectories: std::slice::Iter<'a, CatTrj>,
+    current: Option<<CatTrj as Dataset>::EvidenceIter<'a>>,
+}
+
+impl<'a> Iterator for CatTrjsEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current.as_mut()
+                && let Some(item) = current.next()
+            {
+                return Some(item);
+            }
+
+            self.current = self.trajectories.next().map(Dataset::evidence_iter);
+
+            self.current.as_ref()?;
+        }
+    }
+}
+
 impl Dataset for CatTrjs {
     type Values = Vec<CatTrj>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatTrjsEvidenceIter {
+            trajectories: self.values.iter(),
+            current: None,
+        }
     }
 
     #[inline]

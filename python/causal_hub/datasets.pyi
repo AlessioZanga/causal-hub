@@ -7,6 +7,51 @@ import typing
 
 import numpy
 import numpy.typing
+from causal_hub.models import DiGraph
+
+@typing.final
+class CatEv:
+    r"""
+    A categorical evidence.
+    """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the categorical evidence.
+
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the categorical evidence.
+        """
+
+    def states(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        Returns the states of the categorical evidence.
+
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+            A reference to the states of the categorical evidence.
+        """
+
+    @classmethod
+    def from_dict(cls, evidence: dict, with_states: dict) -> CatEv:
+        r"""
+        Constructs a new categorical evidence from a dictionary.
+
+        Parameters
+        ----------
+        evidence: dict[str, str]
+            A dictionary mapping variable labels to observed states.
+        with_states: dict[str, Iterable[str]]
+            A dictionary mapping each variable to all its possible states.
+
+        Returns
+        -------
+        CatEv
+            A new categorical evidence instance.
+        """
 
 @typing.final
 class CatIncTable:
@@ -66,6 +111,37 @@ class CatIncTable:
         """
 
     @classmethod
+    def random(
+        cls,
+        dataset: CatTable,
+        missing_mechanism: MissingMechanism,
+        p_min: builtins.float,
+        p_max: builtins.float,
+        seed: builtins.int = 31,
+    ) -> CatIncTable:
+        r"""
+        Generates a random categorical incomplete tabular dataset.
+
+        Parameters
+        ----------
+        dataset : CatTable
+            A categorical tabular dataset instance.
+        missing_mechanism : MissingMechanism
+            A missing mechanism instance.
+        p_min : float
+            The minimum probability of missingness.
+        p_max : float
+            The maximum probability of missingness.
+        seed : int, optional
+            The seed for the random number generator. Default is 31.
+
+        Returns
+        -------
+        CatIncTable
+            A random categorical incomplete tabular dataset instance.
+        """
+
+    @classmethod
     def from_pandas(cls, df: typing.Any) -> CatIncTable:
         r"""
         Constructs a new categorical incomplete tabular dataset from a Pandas DataFrame.
@@ -82,6 +158,23 @@ class CatIncTable:
             A new categorical incomplete tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatIncTable:
+        r"""
+        Constructs a new categorical incomplete tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing categorical columns with missing values.
+
+        Returns
+        -------
+        CatIncTable
+            A new categorical incomplete tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -90,6 +183,16 @@ class CatIncTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -156,6 +259,23 @@ class CatTable:
             A new categorical tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatTable:
+        r"""
+        Constructs a new categorical tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing only categorical columns.
+
+        Returns
+        -------
+        CatTable
+            A new categorical tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -164,6 +284,16 @@ class CatTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -230,6 +360,24 @@ class CatTrj:
             A new categorical trajectory instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatTrj:
+        r"""
+        Constructs a new categorical trajectory from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing the trajectory data.
+            The data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+
+        Returns
+        -------
+        CatTrj
+            A new categorical trajectory instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the categorical trajectory to a Pandas DataFrame.
@@ -238,6 +386,16 @@ class CatTrj:
         -------
         pandas.DataFrame
             A Pandas DataFrame representation of the categorical trajectory.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the categorical trajectory to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame representation of the categorical trajectory.
         """
 
 @typing.final
@@ -294,6 +452,56 @@ class CatTrjEv:
             A new categorical trajectory evidence instance.
         """
 
+    @classmethod
+    def from_polars(
+        cls, df: typing.Any, with_states: typing.Optional[dict] = None
+    ) -> CatTrjEv:
+        r"""
+        Constructs a new categorical trajectory evidence from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing the trajectory evidence data.
+            The data frame must contain the following columns:
+
+        - `event`: The event type (str),
+        - `state`: The state of the event (str),
+        - `start_time`: The start time of the event (float64),
+        - `end_time`: The end time of the event (float64).
+
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+
+        Returns
+        -------
+        CatTrjEv
+            A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def random(
+        cls, trj: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> CatTrjEv:
+        r"""
+        Generates a random categorical trajectory evidence.
+
+        Parameters
+        ----------
+        trj: CatTrj
+            The categorical trajectory to generate evidence for.
+        p: float, default=0.1
+            The probability of generating an evidence for each state.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatTrjEv
+            A random categorical trajectory evidence.
+        """
+
 @typing.final
 class CatTrjs:
     r"""
@@ -348,6 +556,24 @@ class CatTrjs:
             A new categorical trajectories instance.
         """
 
+    @classmethod
+    def from_polars(cls, dfs: typing.Any) -> CatTrjs:
+        r"""
+        Constructs a new categorical trajectories from an iterable of Polars DataFrames.
+
+        Parameters
+        ----------
+        dfs: Iterable[polars.DataFrame]
+            An iterable of Polars DataFrames containing the trajectory data.
+            Each data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+
+        Returns
+        -------
+        CatTrjs
+            A new categorical trajectories instance.
+        """
+
     def to_pandas(self) -> builtins.list[typing.Any]:
         r"""
         Converts the categorical trajectories to a list of Pandas DataFrames.
@@ -356,6 +582,16 @@ class CatTrjs:
         -------
         list[pandas.DataFrame]
             A list of Pandas DataFrame representations of the categorical trajectories.
+        """
+
+    def to_polars(self) -> builtins.list[typing.Any]:
+        r"""
+        Converts the categorical trajectories to a list of Polars DataFrames.
+
+        Returns
+        -------
+        list[polars.DataFrame]
+            A list of Polars DataFrame representations of the categorical trajectories.
         """
 
 @typing.final
@@ -410,6 +646,56 @@ class CatTrjsEv:
         -------
         CatTrjsEv
             A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def from_polars(
+        cls, dfs: typing.Any, with_states: typing.Optional[dict] = None
+    ) -> CatTrjsEv:
+        r"""
+        Constructs a new categorical trajectory evidence from an iterable of Polars DataFrames.
+
+        Parameters
+        ----------
+        dfs: Iterable[polars.DataFrame]
+            An iterable of Polars DataFrames containing the trajectory evidence data.
+            The data frames must contain the following columns:
+
+        - `event`: The event type (str),
+        - `state`: The state of the event (str),
+        - `start_time`: The start time of the event (float64),
+        - `end_time`: The end time of the event (float64).
+
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+
+        Returns
+        -------
+        CatTrjsEv
+            A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def random(
+        cls, trjs: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> CatTrjsEv:
+        r"""
+        Generates a random categorical trajectory evidences.
+
+        Parameters
+        ----------
+        trjs: CatTrjs
+            The categorical trajectories to generate evidence for.
+        p: float, default=0.1
+            The probability of generating an evidence for each state.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatTrjsEv
+            A random categorical trajectory evidences.
         """
 
 @typing.final
@@ -505,6 +791,42 @@ class CatWtdTrjs:
         """
 
 @typing.final
+class GaussEv:
+    r"""
+    A Gaussian evidence.
+    """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the gaussian evidence.
+
+        Returns
+        -------
+        list[str]
+            A reference to the labels of the gaussian evidence.
+        """
+
+    @classmethod
+    def from_dict(
+        cls, evidence: dict, with_labels: typing.Optional[typing.Any] = None
+    ) -> GaussEv:
+        r"""
+        Constructs a new gaussian evidence from a dictionary.
+
+        Parameters
+        ----------
+        evidence: dict[str, float]
+            A dictionary mapping variable labels to observed values.
+        with_labels: Iterable[str] | None
+            Optional full labels ordering. If not provided, labels are inferred from `evidence` keys.
+
+        Returns
+        -------
+        GaussEv
+            A new gaussian evidence instance.
+        """
+
+@typing.final
 class GaussIncTable:
     r"""
     A Gaussian incomplete tabular dataset.
@@ -572,6 +894,37 @@ class GaussIncTable:
         """
 
     @classmethod
+    def random(
+        cls,
+        dataset: GaussTable,
+        missing_mechanism: MissingMechanism,
+        p_min: builtins.float,
+        p_max: builtins.float,
+        seed: builtins.int = 31,
+    ) -> GaussIncTable:
+        r"""
+        Generates a random gaussian incomplete tabular dataset.
+
+        Parameters
+        ----------
+        dataset : GaussTable
+            A gaussian tabular dataset instance.
+        missing_mechanism : MissingMechanism
+            A missing mechanism instance.
+        p_min : float
+            The minimum probability of missingness.
+        p_max : float
+            The maximum probability of missingness.
+        seed : int, optional
+            The seed for the random number generator. Default is 31.
+
+        Returns
+        -------
+        GaussIncTable
+            A random gaussian incomplete tabular dataset instance.
+        """
+
+    @classmethod
     def from_pandas(cls, df: typing.Any) -> GaussIncTable:
         r"""
         Constructs a new gaussian incomplete tabular dataset from a Pandas DataFrame.
@@ -588,6 +941,23 @@ class GaussIncTable:
             A new gaussian incomplete tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> GaussIncTable:
+        r"""
+        Constructs a new gaussian incomplete tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing gaussian columns with missing values.
+
+        Returns
+        -------
+        GaussIncTable
+            A new gaussian incomplete tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -596,6 +966,16 @@ class GaussIncTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -651,6 +1031,22 @@ class GaussTable:
             A new Gaussian tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> GaussTable:
+        r"""
+        Constructs a new Gaussian tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing only float64 columns.
+
+        Returns
+        -------
+        GaussTable
+            A new Gaussian tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -659,6 +1055,163 @@ class GaussTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
+        """
+
+@typing.final
+class MissingMechanism:
+    r"""
+    A struct representing the missing data indicators.
+    """
+
+    def __new__(
+        cls,
+        labels: typing.Sequence[builtins.str],
+        pr: typing.Mapping[builtins.int, builtins.set[builtins.int]],
+    ) -> MissingMechanism:
+        r"""
+        Create a new missing mechanism.
+
+        Parameters
+        ----------
+        labels: list[str]
+            A list of strings containing the labels of the variables.
+        pr: dict[int, set[int]]
+            A dictionary mapping missing variable indices to sets of indices that cause missingness.
+
+        Returns
+        -------
+        MissingMechanism
+            A new missing mechanism instance.
+        """
+
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        The labels of the variables.
+
+        Returns
+        -------
+        list[str]
+            A list of strings containing the labels of the variables.
+        """
+
+    def __len__(self) -> builtins.int:
+        r"""
+        Returns the number of missing variables.
+
+        Returns
+        -------
+        int
+            The number of missing variables.
+        """
+
+    def is_empty(self) -> builtins.bool:
+        r"""
+        Checks if the missing mechanism is empty.
+
+        Returns
+        -------
+        bool
+            True if the missing mechanism is empty, False otherwise.
+        """
+
+    def keys(self) -> builtins.list[builtins.int]:
+        r"""
+        Returns the missing variables.
+
+        Returns
+        -------
+        list[int]
+            A list of indices of the missing variables.
+        """
+
+    def values(self) -> builtins.list[builtins.set[builtins.int]]:
+        r"""
+        Returns the causes of missingness for each missing variable.
+
+        Returns
+        -------
+        list[set[int]]
+            A list of sets of indices that cause missingness for each missing variable.
+        """
+
+    def contains_key(self, x: builtins.int) -> builtins.bool:
+        r"""
+        Checks if a variable is missing.
+
+        Parameters
+        ----------
+        x: int
+            The index of the variable to check.
+
+        Returns
+        -------
+        bool
+            True if the variable is missing, False otherwise.
+        """
+
+    def get(self, x: builtins.int) -> typing.Optional[builtins.set[builtins.int]]:
+        r"""
+        Returns the causes of missingness for a given variable.
+
+        Parameters
+        ----------
+        x: int
+            The index of the variable to get the causes of missingness for.
+
+        Returns
+        -------
+        set[int] | None
+            A set of indices that cause missingness for the variable, or None if the variable is not missing.
+        """
+
+    def insert(self, x: builtins.int, y: builtins.set[builtins.int]) -> None:
+        r"""
+        Inserts a missing variable and its causes.
+
+        Parameters
+        ----------
+        x: int
+            The index of the missing variable.
+        y: set[int]
+            A set of indices that cause missingness for the variable.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        graph: DiGraph,
+        missing: MissingType,
+        p: builtins.float,
+        seed: builtins.int = 31,
+    ) -> MissingMechanism:
+        r"""
+        Generates a random missing mechanism.
+
+        Parameters
+        ----------
+        graph: DiGraph
+            The graph on which to generate the missingness mechanism.
+        missing: MissingType
+            The type of missingness mechanism to generate.
+        p: float
+            The ratio of missing variables.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        MissingMechanism
+            A random missing mechanism.
         """
 
 @typing.final
@@ -867,4 +1420,46 @@ class Dataset(enum.Enum):
     GaussianIncomplete = ...
     r"""
     A Gaussian incomplete tabular dataset.
+    """
+
+@typing.final
+class MissingMethod(enum.Enum):
+    r"""
+    Missing data handling method.
+    """
+
+    LW = ...
+    r"""
+    List-wise deletion.
+    """
+    PW = ...
+    r"""
+    Pair-wise deletion.
+    """
+    IPW = ...
+    r"""
+    Inverse probability weighting.
+    """
+    AIPW = ...
+    r"""
+    Augmented inverse probability weighting.
+    """
+
+@typing.final
+class MissingType(enum.Enum):
+    r"""
+    Missing mechanism types.
+    """
+
+    MCAR = ...
+    r"""
+    Missing Completely At Random.
+    """
+    MAR = ...
+    r"""
+    Missing At Random.
+    """
+    MNAR = ...
+    r"""
+    Missing Not At Random.
     """

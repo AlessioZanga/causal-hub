@@ -19,7 +19,7 @@ impl BE<'_, CatTable, usize> {
         prior: usize,
     ) -> Result<CatCPD> {
         // Get the conditional counts.
-        let n_xz = sample_statistics.sample_conditional_counts();
+        let n_xz = sample_statistics.fitted_conditional_counts();
         // Marginalize the counts.
         let n_z = n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
 
@@ -27,7 +27,7 @@ impl BE<'_, CatTable, usize> {
         let alpha = prior;
         // Check alpha is positive.
         if alpha == 0 {
-            return Err(Error::IllegalArgument("Alpha must be positive.".into()));
+            return Err(Error::InvalidParameter("alpha", "must be positive"));
         }
 
         // Cast alpha to floating point.
@@ -46,7 +46,9 @@ impl BE<'_, CatTable, usize> {
         let conditioning_states = z
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                let (k, v) = states
+                    .get_index(i)
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -54,7 +56,9 @@ impl BE<'_, CatTable, usize> {
         let states = x
             .iter()
             .map(|&i| {
-                let (k, v) = states.get_index(i).ok_or(Error::VertexOutOfBounds(i))?;
+                let (k, v) = states
+                    .get_index(i)
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))?;
                 Ok((k.clone(), v.clone()))
             })
             .collect::<Result<_>>()?;
@@ -95,7 +99,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
@@ -122,7 +126,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.

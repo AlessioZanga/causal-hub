@@ -29,7 +29,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.estimate(&set![], &set![]).is_err());
+                assert!(engine.estimate(&set![], &set![], None).is_err());
 
                 Ok(())
             }
@@ -44,7 +44,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.estimate(&set![0], &set![0]).is_err());
+                assert!(engine.estimate(&set![0], &set![0], None).is_err());
 
                 Ok(())
             }
@@ -59,7 +59,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.estimate(&set![10], &set![]).is_err());
+                assert!(engine.estimate(&set![10], &set![], None).is_err());
 
                 Ok(())
             }
@@ -90,7 +90,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000)?;
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![])?;
+                let pred_query = engine.estimate(&set![0], &set![], None)?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -117,7 +117,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![])?;
+                let pred_query = engine.estimate(&set![0], &set![], None)?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -148,23 +148,23 @@ mod tests {
                             event: model
                                 .labels()
                                 .get_index_of("lung")
-                                .ok_or(Error::IllegalArgument("missing".into()))?, // lung
+                                .ok_or_else(|| Error::InvalidParameter("lung", "missing"))?, // lung
                             state: 1, // yes
                         },
                         CatEvT::CertainPositive {
                             event: model
                                 .labels()
                                 .get_index_of("tub")
-                                .ok_or(Error::IllegalArgument("missing".into()))?, // tub
+                                .ok_or_else(|| Error::InvalidParameter("tub", "missing"))?, // tub
                             state: 0, // no
                         },
                     ],
                 )?;
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.estimate(&set![0], &set![])?;
+                let pred_query = engine.estimate(&set![0], &set![], Some(&evidence))?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -191,7 +191,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.par_estimate(&set![], &set![]).is_err());
+                assert!(engine.par_estimate(&set![], &set![], None).is_err());
 
                 Ok(())
             }
@@ -206,7 +206,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.estimate(&set![0], &set![0]).is_err());
+                assert!(engine.estimate(&set![0], &set![0], None).is_err());
 
                 Ok(())
             }
@@ -221,7 +221,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict P(asia) without evidence.
-                assert!(engine.par_estimate(&set![10], &set![]).is_err());
+                assert!(engine.par_estimate(&set![10], &set![], None).is_err());
 
                 Ok(())
             }
@@ -236,7 +236,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model).with_sample_size(1000)?;
 
                 // Predict P(asia) without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![])?;
+                let pred_query = engine.par_estimate(&set![0], &set![], None)?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -263,7 +263,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![])?;
+                let pred_query = engine.par_estimate(&set![0], &set![], None)?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -301,10 +301,10 @@ mod tests {
                     ],
                 )?;
                 // Initialize the inference engine.
-                let engine = ApproximateInference::new(&mut rng, &model).with_evidence(&evidence);
+                let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict without evidence.
-                let pred_query = engine.par_estimate(&set![0], &set![])?;
+                let pred_query = engine.par_estimate(&set![0], &set![], Some(&evidence))?;
                 // Set the expected results.
                 let true_query = CatCPD::new(
                     // X
@@ -345,7 +345,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict with empty X should fail.
-                assert!(engine.estimate(&set![], &set![]).is_err());
+                assert!(engine.estimate(&set![], &set![], None).is_err());
 
                 Ok(())
             }
@@ -360,7 +360,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict with overlapping X and Z should fail.
-                assert!(engine.estimate(&set![0], &set![0]).is_err());
+                assert!(engine.estimate(&set![0], &set![0], None).is_err());
 
                 Ok(())
             }
@@ -375,7 +375,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Predict with X index out of bounds should fail.
-                assert!(engine.estimate(&set![100], &set![]).is_err());
+                assert!(engine.estimate(&set![100], &set![], None).is_err());
 
                 Ok(())
             }
@@ -398,7 +398,7 @@ mod tests {
                 let x_idx = model.label_to_index("eutG")?;
 
                 // Predict P(eutG) without conditioning.
-                let pred_query = engine.estimate(&set![x_idx], &set![])?;
+                let pred_query = engine.estimate(&set![x_idx], &set![], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 1);
@@ -434,7 +434,7 @@ mod tests {
                 let z_idx = model.label_to_index("icdA")?;
 
                 // Predict P(aceB | icdA).
-                let pred_query = engine.estimate(&set![x_idx], &set![z_idx])?;
+                let pred_query = engine.estimate(&set![x_idx], &set![z_idx], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 1);
@@ -478,7 +478,7 @@ mod tests {
                 let z_idx = model.label_to_index("sucA")?;
 
                 // Predict P(gltA, flgD | sucA).
-                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![z_idx])?;
+                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![z_idx], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 2);
@@ -548,7 +548,7 @@ mod tests {
                 let x2_idx = model.label_to_index("lacZ")?;
 
                 // Predict P(lacA, lacZ) - joint distribution without conditioning.
-                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![])?;
+                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 2);
@@ -592,7 +592,7 @@ mod tests {
                 let z_idx = model.label_to_index("asnA")?;
 
                 // Predict P(lacA, lacZ | asnA).
-                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![z_idx])?;
+                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![z_idx], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 2);
@@ -631,7 +631,8 @@ mod tests {
                 let z2_idx = model.label_to_index("cspG")?;
 
                 // Predict P(lacA, lacZ | asnA, cspG).
-                let pred_query = engine.estimate(&set![x1_idx, x2_idx], &set![z1_idx, z2_idx])?;
+                let pred_query =
+                    engine.estimate(&set![x1_idx, x2_idx], &set![z1_idx, z2_idx], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 2);
@@ -673,7 +674,7 @@ mod tests {
                 let x3_idx = model.label_to_index("lacZ")?;
 
                 // Predict P(lacA, lacY, lacZ) - joint distribution.
-                let pred_query = engine.estimate(&set![x1_idx, x2_idx, x3_idx], &set![])?;
+                let pred_query = engine.estimate(&set![x1_idx, x2_idx, x3_idx], &set![], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 3);
@@ -726,8 +727,11 @@ mod tests {
                 let z3_idx = model.label_to_index("eutG")?;
 
                 // Predict P(lacA, lacY, lacZ | asnA, cspG, eutG).
-                let pred_query = engine
-                    .estimate(&set![x1_idx, x2_idx, x3_idx], &set![z1_idx, z2_idx, z3_idx])?;
+                let pred_query = engine.estimate(
+                    &set![x1_idx, x2_idx, x3_idx],
+                    &set![z1_idx, z2_idx, z3_idx],
+                    None,
+                )?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 3);
@@ -772,7 +776,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Parallel predict with empty X should fail.
-                assert!(engine.par_estimate(&set![], &set![]).is_err());
+                assert!(engine.par_estimate(&set![], &set![], None).is_err());
 
                 Ok(())
             }
@@ -787,7 +791,7 @@ mod tests {
                 let engine = ApproximateInference::new(&mut rng, &model);
 
                 // Parallel predict with overlapping X and Z should fail.
-                assert!(engine.par_estimate(&set![0], &set![0]).is_err());
+                assert!(engine.par_estimate(&set![0], &set![0], None).is_err());
 
                 Ok(())
             }
@@ -810,7 +814,7 @@ mod tests {
 
                 // Parallel predict P(lacA, lacZ | asnA, cspG).
                 let pred_query =
-                    engine.par_estimate(&set![x1_idx, x2_idx], &set![z1_idx, z2_idx])?;
+                    engine.par_estimate(&set![x1_idx, x2_idx], &set![z1_idx, z2_idx], None)?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 2);
@@ -855,8 +859,11 @@ mod tests {
                 let z3_idx = model.label_to_index("eutG")?;
 
                 // Parallel predict P(lacA, lacY, lacZ | asnA, cspG, eutG).
-                let pred_query = engine
-                    .par_estimate(&set![x1_idx, x2_idx, x3_idx], &set![z1_idx, z2_idx, z3_idx])?;
+                let pred_query = engine.par_estimate(
+                    &set![x1_idx, x2_idx, x3_idx],
+                    &set![z1_idx, z2_idx, z3_idx],
+                    None,
+                )?;
 
                 // Check the CPD structure.
                 assert_eq!(pred_query.labels().len(), 3);
@@ -908,12 +915,13 @@ mod tests {
                 // Sequential estimation.
                 let engine_seq =
                     ApproximateInference::new(&mut rng_seq, &model).with_sample_size(5_000)?;
-                let pred_seq = engine_seq.estimate(&set![x1_idx, x2_idx], &set![z_idx])?;
+                let pred_seq = engine_seq.estimate(&set![x1_idx, x2_idx], &set![z_idx], None)?;
 
                 // Parallel estimation.
                 let engine_par =
                     ApproximateInference::new(&mut rng_par, &model).with_sample_size(5_000)?;
-                let pred_par = engine_par.par_estimate(&set![x1_idx, x2_idx], &set![z_idx])?;
+                let pred_par =
+                    engine_par.par_estimate(&set![x1_idx, x2_idx], &set![z_idx], None)?;
 
                 // Both should have the same structure.
                 assert_eq!(pred_seq.labels(), pred_par.labels());

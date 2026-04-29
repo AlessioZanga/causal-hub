@@ -17,7 +17,7 @@ use pyo3::{
     types::{PyDict, PyList},
 };
 use pyo3_stub_gen::derive::*;
-use rand::{RngCore, SeedableRng, seq::SliceRandom};
+use rand::{Rng, SeedableRng, seq::SliceRandom};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 
@@ -121,12 +121,15 @@ pub fn sem<'a>(
                     initial_graph
                 }
                 _ => {
-                    return Err(BackendError::IllegalArgument(format!(
-                        "Failed to get the structure learning algorithm: \n\
-                        \t expected:   'ctpc' or 'cthc', \n\
-                        \t found:      '{}'",
-                        algorithm
-                    )));
+                    return Err(BackendError::InvalidParameter(
+                        "algorithm",
+                        &format!(
+                            "Failed to get the structure learning algorithm: \n\
+                        	\t expected:   'ctpc' or 'cthc', \n\
+                        	\t found:      '{}'",
+                            algorithm
+                        ),
+                    ));
                 }
             };
 
@@ -139,11 +142,11 @@ pub fn sem<'a>(
             // Set the initial model.
             let initial_model = raw
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to initialize raw estimator: {}", e))
+                    BackendError::Stats(&format!("Failed to initialize raw estimator: {}", e))
                 })?
                 .par_fit(initial_graph.clone())
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to fit the initial model: {}", e))
+                    BackendError::Stats(&format!("Failed to fit the initial model: {}", e))
                 })?;
 
             // Wrap the random number generator in a RefCell to allow mutable borrowing.
@@ -189,9 +192,7 @@ pub fn sem<'a>(
                                         .unwrap_or(std::cmp::Ordering::Equal)
                                 })
                                 .cloned()
-                                .ok_or_else(|| {
-                                    BackendError::MissingData("No trajectories sampled".into())
-                                })
+                                .ok_or_else(|| BackendError::MissingData("No trajectories sampled"))
                         })
                         .collect()
                 };
@@ -219,7 +220,7 @@ pub fn sem<'a>(
                     .with_stop(&stop)
                     .build()
                     .map_err(|e| {
-                        BackendError::Stats(format!("Failed to build EM algorithm: {}", e))
+                        BackendError::Stats(&format!("Failed to build EM algorithm: {}", e))
                     })?;
 
                 // Fit the model.
@@ -231,10 +232,11 @@ pub fn sem<'a>(
                            em: &EMOutput<CatCTBN, CatWtdTrjs>|
              -> Result<CatCTBN> {
                 // Initialize the parameter estimator.
-                let estimator = BE::new(em.expectations.last().ok_or_else(|| {
-                    BackendError::MissingData("No expectations in EM output".into())
-                })?)
-                .with_prior((1, 1.));
+                let estimator =
+                    BE::new(em.expectations.last().ok_or_else(|| {
+                        BackendError::MissingData("No expectations in EM output")
+                    })?)
+                    .with_prior((1, 1.));
                 // Cache the parameter estimator.
                 let cache = Cache::new(&estimator);
                 // Learn the graph.
@@ -242,11 +244,11 @@ pub fn sem<'a>(
                     "ctpc" => {
                         // Initialize the F test.
                         let f_test = FTest::new(&cache, f_test).map_err(|e| {
-                            BackendError::Stats(format!("Failed to initialize F-test: {}", e))
+                            BackendError::Stats(&format!("Failed to initialize F-test: {}", e))
                         })?;
                         // Initialize the chi-squared test.
                         let chi_sq_test = ChiSquaredTest::new(&cache, c_test).map_err(|e| {
-                            BackendError::Stats(format!(
+                            BackendError::Stats(&format!(
                                 "Failed to initialize Chi-squared test: {}",
                                 e
                             ))
@@ -254,18 +256,21 @@ pub fn sem<'a>(
                         // Initialize the CTPC algorithm.
                         let ctpc =
                             CTPC::new(&initial_graph, &f_test, &chi_sq_test).map_err(|e| {
-                                BackendError::Stats(format!("Failed to initialize CTPC: {}", e))
+                                BackendError::Stats(&format!("Failed to initialize CTPC: {}", e))
                             })?;
                         // Set prior knowledge.
                         let ctpc = ctpc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::IllegalArgument(format!(
-                                "Failed to set prior knowledge: {}",
-                                e
-                            ))
+                            BackendError::InvalidParameter(
+                                "prior_knowledge",
+                                &format!("Failed to set prior knowledge: {}", e),
+                            )
                         })?;
                         // Fit the new structure using CTPC.
                         ctpc.par_fit().map_err(|e| {
-                            BackendError::Stats(format!("Failed to fit structure with CTPC: {}", e))
+                            BackendError::Stats(&format!(
+                                "Failed to fit structure with CTPC: {}",
+                                e
+                            ))
                         })?
                     }
                     "cthc" => {
@@ -274,28 +279,34 @@ pub fn sem<'a>(
                         // Initialize the CTHC algorithm and set the maximum number of parents.
                         let cthc = CTHC::new(&initial_graph, &bic)
                             .map_err(|e| {
-                                BackendError::Stats(format!("Failed to initialize CTHC: {}", e))
+                                BackendError::Stats(&format!("Failed to initialize CTHC: {}", e))
                             })?
                             .with_max_parents(max_parents);
                         // Set prior knowledge.
                         let cthc = cthc.with_prior_knowledge(prior_knowledge).map_err(|e| {
-                            BackendError::IllegalArgument(format!(
-                                "Failed to set prior knowledge: {}",
-                                e
-                            ))
+                            BackendError::InvalidParameter(
+                                "prior_knowledge",
+                                &format!("Failed to set prior knowledge: {}", e),
+                            )
                         })?;
                         // Fit the new structure using CTHC.
                         cthc.par_fit().map_err(|e| {
-                            BackendError::Stats(format!("Failed to fit structure with CTHC: {}", e))
+                            BackendError::Stats(&format!(
+                                "Failed to fit structure with CTHC: {}",
+                                e
+                            ))
                         })?
                     }
                     _ => {
-                        return Err(BackendError::IllegalArgument(format!(
-                            "Failed to get the structure learning algorithm: \n\
+                        return Err(BackendError::InvalidParameter(
+                            "algorithm",
+                            &format!(
+                                "Failed to get the structure learning algorithm: \n\
                             \t expected:   'ctpc' or 'cthc', \n\
                             \t found:      '{}'",
-                            algorithm
-                        )));
+                                algorithm
+                            ),
+                        ));
                     }
                 };
                 // Fit the new model using the expectation.
@@ -316,12 +327,12 @@ pub fn sem<'a>(
                 .with_stop(&sem_stop)
                 .build()
                 .map_err(|e| {
-                    BackendError::Stats(format!("Failed to build the SEM algorithm: {}", e))
+                    BackendError::Stats(&format!("Failed to build the SEM algorithm: {}", e))
                 })?;
 
             // Fit the model.
             sem.fit().map_err(|e| {
-                BackendError::Stats(format!("Failed to fit the model using SEM: {}", e))
+                BackendError::Stats(&format!("Failed to fit the model using SEM: {}", e))
             })
         })
         .map_err(crate::error::to_pyerr)?;

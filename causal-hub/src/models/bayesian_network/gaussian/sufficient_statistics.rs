@@ -65,73 +65,69 @@ impl GaussCPDS {
         // Check the dimensions are correct.
         if mu_x.len() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
-                "mu_x".into(),
-                "Response mean vector length must match response covariance matrix size.".into(),
+                "mu_x",
+                "Response mean vector length must match response covariance matrix size.",
             ));
         }
         if mu_z.len() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
-                "mu_z".into(),
-                "Design mean vector length must match design covariance matrix size.".into(),
+                "mu_z",
+                "Design mean vector length must match design covariance matrix size.",
             ));
         }
         if !s_xx.is_square() {
-            return Err(Error::Shape(
-                "Response covariance matrix must be square.".into(),
-            ));
+            return Err(Error::Shape("Response covariance matrix must be square."));
         }
         if s_xz.nrows() != s_xx.nrows() {
             return Err(Error::IncompatibleShape(
-                "s_xz".into(),
-                "Cross-covariance matrix must have the same number of rows as the response covariance matrix.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have the same number of rows as the response covariance matrix.",
             ));
         }
         if s_xz.ncols() != s_zz.nrows() {
             return Err(Error::IncompatibleShape(
-                "s_xz".into(),
-                "Cross-covariance matrix must have the same number of columns as the design covariance matrix.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have the same number of columns as the design covariance matrix.",
             ));
         }
         if !s_zz.is_square() {
-            return Err(Error::Shape(
-                "Design covariance matrix must be square.".into(),
-            ));
+            return Err(Error::Shape("Design covariance matrix must be square."));
         }
         // Check values are finite.
         if !mu_x.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "mu_x".into(),
-                "Response mean vector must have finite values.".into(),
+                "mu_x",
+                "Response mean vector must have finite values.",
             ));
         }
         if !mu_z.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "mu_z".into(),
-                "Design mean vector must have finite values.".into(),
+                "mu_z",
+                "Design mean vector must have finite values.",
             ));
         }
         if !s_xx.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_xx".into(),
-                "Response covariance matrix must have finite values.".into(),
+                "s_xx",
+                "Response covariance matrix must have finite values.",
             ));
         }
         if !s_xz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_xz".into(),
-                "Cross-covariance matrix must have finite values.".into(),
+                "s_xz",
+                "Cross-covariance matrix must have finite values.",
             ));
         }
         if !s_zz.iter().all(|&x| x.is_finite()) {
             return Err(Error::InvalidParameter(
-                "s_zz".into(),
-                "Design covariance matrix must have finite values.".into(),
+                "s_zz",
+                "Design covariance matrix must have finite values.",
             ));
         }
         if !n.is_finite() || n < 0.0 {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be finite and non-negative.".into(),
+                "n",
+                "Sample size must be finite and non-negative.",
             ));
         }
 
@@ -152,7 +148,7 @@ impl GaussCPDS {
     /// A reference to the response mean vector.
     ///
     #[inline]
-    pub fn sample_response_mean(&self) -> &Array1<f64> {
+    pub fn fitted_response_mean(&self) -> &Array1<f64> {
         &self.mu_x
     }
 
@@ -163,7 +159,7 @@ impl GaussCPDS {
     /// A reference to the design mean vector.
     ///
     #[inline]
-    pub fn sample_design_mean(&self) -> &Array1<f64> {
+    pub fn fitted_design_mean(&self) -> &Array1<f64> {
         &self.mu_z
     }
 
@@ -174,7 +170,7 @@ impl GaussCPDS {
     /// The response scatter matrix.
     ///
     #[inline]
-    pub fn sample_response_covariance(&self) -> Array2<f64> {
+    pub fn fitted_response_covariance(&self) -> Array2<f64> {
         self.s_xx.clone()
     }
 
@@ -185,7 +181,7 @@ impl GaussCPDS {
     /// The cross-scatter matrix.
     ///
     #[inline]
-    pub fn sample_cross_covariance(&self) -> Array2<f64> {
+    pub fn fitted_cross_covariance(&self) -> Array2<f64> {
         self.s_xz.clone()
     }
 
@@ -196,18 +192,18 @@ impl GaussCPDS {
     /// The design scatter matrix.
     ///
     #[inline]
-    pub fn sample_design_covariance(&self) -> Array2<f64> {
+    pub fn fitted_design_covariance(&self) -> Array2<f64> {
         self.s_zz.clone()
     }
 
-    /// Returns the sample size.
+    /// Returns the fitted size.
     ///
     /// # Returns
     ///
-    /// The sample size.
+    /// The fitted size.
     ///
     #[inline]
-    pub fn sample_size(&self) -> f64 {
+    pub fn fitted_size(&self) -> f64 {
         self.n
     }
 }
@@ -286,36 +282,36 @@ impl Serialize for GaussCPDS {
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(6))?;
 
-        // Convert the sample response mean to a flat format.
-        let sample_response_mean = self.mu_x.to_vec();
-        // Serialize sample response mean.
-        map.serialize_entry("sample_response_mean", &sample_response_mean)?;
+        // Convert the fitted response mean to a flat format.
+        let fitted_response_mean = self.mu_x.to_vec();
+        // Serialize fitted response mean.
+        map.serialize_entry("fitted_response_mean", &fitted_response_mean)?;
 
-        // Convert the sample design mean to a flat format.
-        let sample_design_mean = self.mu_z.to_vec();
-        // Serialize sample design mean.
-        map.serialize_entry("sample_design_mean", &sample_design_mean)?;
+        // Convert the fitted design mean to a flat format.
+        let fitted_design_mean = self.mu_z.to_vec();
+        // Serialize fitted design mean.
+        map.serialize_entry("fitted_design_mean", &fitted_design_mean)?;
 
-        // Convert the sample response covariance to a flat format.
-        let sample_response_covariance: Vec<_> =
+        // Convert the fitted response covariance to a flat format.
+        let fitted_response_covariance: Vec<_> =
             self.s_xx.rows().into_iter().map(|x| x.to_vec()).collect();
-        // Serialize sample response covariance.
-        map.serialize_entry("sample_response_covariance", &sample_response_covariance)?;
+        // Serialize fitted response covariance.
+        map.serialize_entry("fitted_response_covariance", &fitted_response_covariance)?;
 
-        // Convert the sample cross covariance to a flat format.
-        let sample_cross_covariance: Vec<_> =
+        // Convert the fitted cross covariance to a flat format.
+        let fitted_cross_covariance: Vec<_> =
             self.s_xz.rows().into_iter().map(|x| x.to_vec()).collect();
-        // Serialize sample cross covariance.
-        map.serialize_entry("sample_cross_covariance", &sample_cross_covariance)?;
+        // Serialize fitted cross covariance.
+        map.serialize_entry("fitted_cross_covariance", &fitted_cross_covariance)?;
 
-        // Convert the sample design covariance to a flat format.
-        let sample_design_covariance: Vec<_> =
+        // Convert the fitted design covariance to a flat format.
+        let fitted_design_covariance: Vec<_> =
             self.s_zz.rows().into_iter().map(|x| x.to_vec()).collect();
-        // Serialize sample design covariance.
-        map.serialize_entry("sample_design_covariance", &sample_design_covariance)?;
+        // Serialize fitted design covariance.
+        map.serialize_entry("fitted_design_covariance", &fitted_design_covariance)?;
 
-        // Serialize sample size.
-        map.serialize_entry("sample_size", &self.n)?;
+        // Serialize fitted size.
+        map.serialize_entry("fitted_size", &self.n)?;
 
         // End the map.
         map.end()
@@ -331,12 +327,12 @@ impl<'de> Deserialize<'de> for GaussCPDS {
         #[serde(field_identifier, rename_all = "snake_case")]
         #[allow(clippy::enum_variant_names)]
         enum Field {
-            SampleResponseMean,
-            SampleDesignMean,
-            SampleResponseCovariance,
-            SampleCrossCovariance,
-            SampleDesignCovariance,
-            SampleSize,
+            FittedResponseMean,
+            FittedDesignMean,
+            FittedResponseCovariance,
+            FittedCrossCovariance,
+            FittedDesignCovariance,
+            FittedSize,
         }
 
         struct GaussCPDSVisitor;
@@ -355,115 +351,115 @@ impl<'de> Deserialize<'de> for GaussCPDS {
                 use serde::de::Error as E;
 
                 // Allocate the fields.
-                let mut sample_response_mean = None;
-                let mut sample_design_mean = None;
-                let mut sample_response_covariance = None;
-                let mut sample_cross_covariance = None;
-                let mut sample_design_covariance = None;
-                let mut sample_size = None;
+                let mut fitted_response_mean = None;
+                let mut fitted_design_mean = None;
+                let mut fitted_response_covariance = None;
+                let mut fitted_cross_covariance = None;
+                let mut fitted_design_covariance = None;
+                let mut fitted_size = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        Field::SampleResponseMean => {
-                            if sample_response_mean.is_some() {
-                                return Err(E::duplicate_field("sample_response_mean"));
+                        Field::FittedResponseMean => {
+                            if fitted_response_mean.is_some() {
+                                return Err(E::duplicate_field("fitted_response_mean"));
                             }
-                            sample_response_mean = Some(map.next_value()?);
+                            fitted_response_mean = Some(map.next_value()?);
                         }
-                        Field::SampleDesignMean => {
-                            if sample_design_mean.is_some() {
-                                return Err(E::duplicate_field("sample_design_mean"));
+                        Field::FittedDesignMean => {
+                            if fitted_design_mean.is_some() {
+                                return Err(E::duplicate_field("fitted_design_mean"));
                             }
-                            sample_design_mean = Some(map.next_value()?);
+                            fitted_design_mean = Some(map.next_value()?);
                         }
-                        Field::SampleResponseCovariance => {
-                            if sample_response_covariance.is_some() {
-                                return Err(E::duplicate_field("sample_response_covariance"));
+                        Field::FittedResponseCovariance => {
+                            if fitted_response_covariance.is_some() {
+                                return Err(E::duplicate_field("fitted_response_covariance"));
                             }
-                            sample_response_covariance = Some(map.next_value()?);
+                            fitted_response_covariance = Some(map.next_value()?);
                         }
-                        Field::SampleCrossCovariance => {
-                            if sample_cross_covariance.is_some() {
-                                return Err(E::duplicate_field("sample_cross_covariance"));
+                        Field::FittedCrossCovariance => {
+                            if fitted_cross_covariance.is_some() {
+                                return Err(E::duplicate_field("fitted_cross_covariance"));
                             }
-                            sample_cross_covariance = Some(map.next_value()?);
+                            fitted_cross_covariance = Some(map.next_value()?);
                         }
-                        Field::SampleDesignCovariance => {
-                            if sample_design_covariance.is_some() {
-                                return Err(E::duplicate_field("sample_design_covariance"));
+                        Field::FittedDesignCovariance => {
+                            if fitted_design_covariance.is_some() {
+                                return Err(E::duplicate_field("fitted_design_covariance"));
                             }
-                            sample_design_covariance = Some(map.next_value()?);
+                            fitted_design_covariance = Some(map.next_value()?);
                         }
-                        Field::SampleSize => {
-                            if sample_size.is_some() {
-                                return Err(E::duplicate_field("sample_size"));
+                        Field::FittedSize => {
+                            if fitted_size.is_some() {
+                                return Err(E::duplicate_field("fitted_size"));
                             }
-                            sample_size = Some(map.next_value()?);
+                            fitted_size = Some(map.next_value()?);
                         }
                     }
                 }
 
                 // Extract the fields.
-                let sample_response_mean =
-                    sample_response_mean.ok_or_else(|| E::missing_field("sample_response_mean"))?;
-                let sample_design_mean =
-                    sample_design_mean.ok_or_else(|| E::missing_field("sample_design_mean"))?;
-                let sample_response_covariance = sample_response_covariance
-                    .ok_or_else(|| E::missing_field("sample_response_covariance"))?;
-                let sample_cross_covariance = sample_cross_covariance
-                    .ok_or_else(|| E::missing_field("sample_cross_covariance"))?;
-                let sample_design_covariance = sample_design_covariance
-                    .ok_or_else(|| E::missing_field("sample_design_covariance"))?;
-                let sample_size = sample_size.ok_or_else(|| E::missing_field("sample_size"))?;
+                let fitted_response_mean =
+                    fitted_response_mean.ok_or_else(|| E::missing_field("fitted_response_mean"))?;
+                let fitted_design_mean =
+                    fitted_design_mean.ok_or_else(|| E::missing_field("fitted_design_mean"))?;
+                let fitted_response_covariance = fitted_response_covariance
+                    .ok_or_else(|| E::missing_field("fitted_response_covariance"))?;
+                let fitted_cross_covariance = fitted_cross_covariance
+                    .ok_or_else(|| E::missing_field("fitted_cross_covariance"))?;
+                let fitted_design_covariance = fitted_design_covariance
+                    .ok_or_else(|| E::missing_field("fitted_design_covariance"))?;
+                let fitted_size = fitted_size.ok_or_else(|| E::missing_field("fitted_size"))?;
 
-                // Convert sample response mean to array.
-                let sample_response_mean = Array1::from_vec(sample_response_mean);
-                // Convert sample design mean to array.
-                let sample_design_mean = Array1::from_vec(sample_design_mean);
-                // Convert sample response covariance to array.
-                let sample_response_covariance = {
-                    let values: Vec<Vec<f64>> = sample_response_covariance;
+                // Convert fitted response mean to array.
+                let fitted_response_mean = Array1::from_vec(fitted_response_mean);
+                // Convert fitted design mean to array.
+                let fitted_design_mean = Array1::from_vec(fitted_design_mean);
+                // Convert fitted response covariance to array.
+                let fitted_response_covariance = {
+                    let values: Vec<Vec<f64>> = fitted_response_covariance;
                     let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
-                        .map_err(|_| E::custom("Invalid sample response covariance shape"))?
+                        .map_err(|_| E::custom("Invalid fitted response covariance shape"))?
                 };
-                // Convert sample cross covariance to array.
-                let sample_cross_covariance = {
-                    let values: Vec<Vec<f64>> = sample_cross_covariance;
+                // Convert fitted cross covariance to array.
+                let fitted_cross_covariance = {
+                    let values: Vec<Vec<f64>> = fitted_cross_covariance;
                     let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
-                        .map_err(|_| E::custom("Invalid sample cross covariance shape"))?
+                        .map_err(|_| E::custom("Invalid fitted cross covariance shape"))?
                 };
-                // Convert sample design covariance to array.
-                let sample_design_covariance = {
-                    let values: Vec<Vec<f64>> = sample_design_covariance;
+                // Convert fitted design covariance to array.
+                let fitted_design_covariance = {
+                    let values: Vec<Vec<f64>> = fitted_design_covariance;
                     let shape = (values.len(), values.first().map_or(0, |v| v.len()));
                     Array::from_iter(values.into_iter().flatten())
                         .into_shape_with_order(shape)
-                        .map_err(|_| E::custom("Invalid sample design covariance shape"))?
+                        .map_err(|_| E::custom("Invalid fitted design covariance shape"))?
                 };
 
                 GaussCPDS::new(
-                    sample_response_mean,
-                    sample_design_mean,
-                    sample_response_covariance,
-                    sample_cross_covariance,
-                    sample_design_covariance,
-                    sample_size,
+                    fitted_response_mean,
+                    fitted_design_mean,
+                    fitted_response_covariance,
+                    fitted_cross_covariance,
+                    fitted_design_covariance,
+                    fitted_size,
                 )
                 .map_err(|e| E::custom(e.to_string()))
             }
         }
 
         const FIELDS: &[&str] = &[
-            "sample_response_mean",
-            "sample_design_mean",
-            "sample_response_covariance",
-            "sample_cross_covariance",
-            "sample_design_covariance",
-            "sample_size",
+            "fitted_response_mean",
+            "fitted_design_mean",
+            "fitted_response_covariance",
+            "fitted_cross_covariance",
+            "fitted_design_covariance",
+            "fitted_size",
         ];
 
         deserializer.deserialize_struct("GaussCPDS", FIELDS, GaussCPDSVisitor)

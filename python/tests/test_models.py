@@ -14,6 +14,7 @@ from causal_hub.assets import (
     load_survey,
 )
 from causal_hub.datasets import GaussIncTable
+from causal_hub.estimators import EstimatorMethod
 from causal_hub.models import CatBN, CatCTBN, DiGraph, GaussBN
 
 
@@ -116,7 +117,7 @@ def test_asia_fit() -> None:
     # Sample 1000 data points from the BN.
     sample = asia.sample(1000, seed=42)
     # Fit a new BN to the sample.
-    asia_fitted = CatBN.fit(sample, asia.graph(), method="be")
+    asia_fitted = CatBN.fit(sample, asia.graph(), estimator=EstimatorMethod.BE)
 
     # Check the labels of the fitted BN.
     assert asia_fitted.labels() == asia.labels(), "Wrong fitted BN labels."
@@ -353,7 +354,7 @@ def test_eating_fit() -> None:
     # Sample 1000 trajectories from the CTBN.
     sample = eating.sample(1000, max_time=10.0, seed=42)
     # Fit a new CTBN to the sample.
-    eating_fitted = CatCTBN.fit(sample, eating.graph(), method="be")
+    eating_fitted = CatCTBN.fit(sample, eating.graph(), estimator=EstimatorMethod.BE)
 
     # Check the labels of the fitted CTBN.
     assert eating_fitted.labels() == eating.labels(), "Wrong fitted CTBN labels."
@@ -406,7 +407,7 @@ def test_categorical_bayesian_network_fit_incomplete() -> None:
     graph = DiGraph.from_networkx(G)
 
     # Fit the model.
-    model = CatBN.fit(dataset, graph, method="mle")
+    model = CatBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     # Check the labels and graph.
     assert model.labels() == ["A", "B"]
@@ -445,7 +446,7 @@ def test_gaussian_bayesian_network_fit_numerical() -> None:
     graph = DiGraph.from_networkx(nx.DiGraph([("A", "B")]))
 
     # Fit the model.
-    model = GaussBN.fit(dataset, graph, method="mle")
+    model = GaussBN.fit(dataset, graph, estimator=EstimatorMethod.MLE)
 
     # Check the parameters.
     cpds = model.cpds()
@@ -545,7 +546,9 @@ def test_ecoli70_fit_incomplete() -> None:
         ),
     ],
 )
-def test_inference_accuracy(loader, x, z, target, expected, tol) -> None:
+def test_inference_accuracy(  # noqa: PLR0913
+    loader, x, z, target, expected, tol
+) -> None:
     """Test inference accuracy against precomputed values."""
     # Load the model.
     bn = loader()
@@ -609,3 +612,25 @@ def test_inference_accuracy(loader, x, z, target, expected, tol) -> None:
 
     print(f"Computed: {prob}, Expected: {expected}")
     assert abs(prob - expected) < tol
+
+
+def test_inference_with_evidence_dict() -> None:
+    """Test estimate/do_estimate with evidence dictionaries."""
+    bn = load_earthquake()
+
+    est = bn.estimate(
+        x=["MaryCalls"],
+        z=["Alarm"],
+        w={"Earthquake": "True"},
+        seed=42,
+    )
+    assert est is not None
+
+    est_do = bn.do_estimate(
+        x=["Alarm"],
+        y=["MaryCalls"],
+        z=[],
+        w={"Earthquake": "True"},
+        seed=42,
+    )
+    assert est_do is not None

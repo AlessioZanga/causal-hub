@@ -1,7 +1,7 @@
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use ndarray_linalg::{CholeskyInto, Determinant, UPLO};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Distribution, StandardNormal};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
@@ -45,37 +45,31 @@ impl GaussCPDP {
         // Check the dimensions are correct.
         if a.nrows() != b.len() {
             return Err(Error::IncompatibleShape(
-                a.nrows().to_string(),
-                b.len().to_string(),
+                &a.nrows().to_string(),
+                &b.len().to_string(),
             ));
         }
         if a.nrows() != s.nrows() {
             return Err(Error::IncompatibleShape(
-                a.nrows().to_string(),
-                s.nrows().to_string(),
+                &a.nrows().to_string(),
+                &s.nrows().to_string(),
             ));
         }
         if !s.is_square() {
-            return Err(Error::Shape("Covariance matrix must be square.".into()));
+            return Err(Error::Shape("Covariance matrix must be square."));
         }
         // Check values are finite.
         if !a.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Coefficient matrix must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Coefficient matrix must have finite values."));
         }
         if !b.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Intercept vector must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Intercept vector must have finite values."));
         }
         if !s.iter().all(|&x| x.is_finite()) {
-            return Err(Error::Linalg(
-                "Covariance matrix must have finite values.".into(),
-            ));
+            return Err(Error::Linalg("Covariance matrix must have finite values."));
         }
         if !s.abs_diff_eq(&s.t(), EPSILON) {
-            return Err(Error::Linalg("Covariance matrix must be symmetric.".into()));
+            return Err(Error::Linalg("Covariance matrix must be symmetric."));
         }
 
         Ok(Self { a, b, s })
@@ -280,10 +274,10 @@ pub struct GaussCPD {
     conditioning_labels: Labels,
     // Parameters.
     parameters: GaussCPDP,
-    // Sample (sufficient) statistics, if any.
-    sample_statistics: Option<GaussCPDS>,
-    // Sample log-likelihood, if any.
-    sample_log_likelihood: Option<f64>,
+    // Fitted sufficient statistics, if any.
+    fitted_statistics: Option<GaussCPDS>,
+    // Fitted log-likelihood, if any.
+    fitted_log_likelihood: Option<f64>,
 }
 
 impl GaussCPD {
@@ -311,40 +305,37 @@ impl GaussCPD {
     ) -> Result<Self> {
         // Check labels and conditioning labels are disjoint.
         if !labels.is_disjoint(&conditioning_labels) {
-            return Err(Error::SetsNotDisjoint(
-                "labels".to_string(),
-                "conditioning labels".to_string(),
-            ));
+            return Err(Error::SetsNotDisjoint("labels", "conditioning labels"));
         }
         // Check parameters dimensions match labels and conditioning labels lengths.
         if parameters.a.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.a.nrows().to_string(),
-                labels.len().to_string(),
+                &parameters.a.nrows().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.a.ncols() != conditioning_labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.a.ncols().to_string(),
-                conditioning_labels.len().to_string(),
+                &parameters.a.ncols().to_string(),
+                &conditioning_labels.len().to_string(),
             ));
         }
         if parameters.b.len() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.b.len().to_string(),
-                labels.len().to_string(),
+                &parameters.b.len().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.s.nrows() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.s.nrows().to_string(),
-                labels.len().to_string(),
+                &parameters.s.nrows().to_string(),
+                &labels.len().to_string(),
             ));
         }
         if parameters.s.ncols() != labels.len() {
             return Err(Error::IncompatibleShape(
-                parameters.s.ncols().to_string(),
-                labels.len().to_string(),
+                &parameters.s.ncols().to_string(),
+                &labels.len().to_string(),
             ));
         }
 
@@ -406,8 +397,8 @@ impl GaussCPD {
             labels,
             conditioning_labels,
             parameters,
-            sample_statistics: None,
-            sample_log_likelihood: None,
+            fitted_statistics: None,
+            fitted_log_likelihood: None,
         })
     }
 
@@ -454,8 +445,8 @@ impl GaussCPD {
     /// * `labels` - Labels of the variables.
     /// * `conditioning_labels` - Labels of the conditioning variables.
     /// * `parameters` - Parameters of the CPD.
-    /// * `sample_statistics` - Sample (sufficient) statistics, if any.
-    /// * `sample_log_likelihood` - Sample log-likelihood, if any.
+    /// * `fitted_statistics` - The sufficient statistics used to fit the distribution, if any.
+    /// * `fitted_log_likelihood` - The log-likelihood given the distribution, if any.
     ///
     /// # Returns
     ///
@@ -465,19 +456,78 @@ impl GaussCPD {
         labels: Labels,
         conditioning_labels: Labels,
         parameters: GaussCPDP,
-        sample_statistics: Option<GaussCPDS>,
-        sample_log_likelihood: Option<f64>,
+        fitted_statistics: Option<GaussCPDS>,
+        fitted_log_likelihood: Option<f64>,
     ) -> Result<Self> {
-        // FIXME: Check inputs.
+        // Check the fitted statistics, if any.
+        if let Some(fitted_statistics) = &fitted_statistics {
+            // Get number of variables.
+            let x = labels.len();
+            // Get number of conditioning variables.
+            let z = conditioning_labels.len();
+
+            // Get the fitted response mean.
+            let mu_x = fitted_statistics.fitted_response_mean();
+            // Check the length matches number of variables.
+            if mu_x.len() != x {
+                return Err(Error::IncompatibleShape(
+                    &mu_x.len().to_string(),
+                    &x.to_string(),
+                ));
+            }
+            // Get the fitted design mean.
+            let mu_z = fitted_statistics.fitted_design_mean();
+            // Check the length matches number of conditioning variables.
+            if mu_z.len() != z {
+                return Err(Error::IncompatibleShape(
+                    &mu_z.len().to_string(),
+                    &z.to_string(),
+                ));
+            }
+            // Get the fitted response covariance.
+            let s_xx = fitted_statistics.fitted_response_covariance();
+            // Check the shape matches number of variables.
+            if s_xx.nrows() != x || s_xx.ncols() != x {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_xx.nrows(), s_xx.ncols()),
+                    &format!("{}x{}", x, x),
+                ));
+            }
+            // Get the fitted cross-covariance.
+            let s_xz = fitted_statistics.fitted_cross_covariance();
+            // Check the shape matches number of variables and conditioning variables.
+            if s_xz.nrows() != x || s_xz.ncols() != z {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_xz.nrows(), s_xz.ncols()),
+                    &format!("{}x{}", x, z),
+                ));
+            }
+            // Get the fitted design covariance.
+            let s_zz = fitted_statistics.fitted_design_covariance();
+            // Check the shape matches number of conditioning variables.
+            if s_zz.nrows() != z || s_zz.ncols() != z {
+                return Err(Error::IncompatibleShape(
+                    &format!("{}x{}", s_zz.nrows(), s_zz.ncols()),
+                    &format!("{}x{}", z, z),
+                ));
+            }
+        }
+        // Check the fitted log-likelihood is finite.
+        if let Some(fitted_log_likelihood) = &fitted_log_likelihood
+            && !fitted_log_likelihood.is_finite()
+        {
+            return Err(Error::Stats(&format!(
+                "Fitted log-likelihood must be finite, found: {}.",
+                fitted_log_likelihood
+            )));
+        }
 
         // Create the CPD.
         let mut cpd = Self::new(labels, conditioning_labels, parameters)?;
 
-        // FIXME: Check labels alignment with optional fields.
-
         // Set the optional fields.
-        cpd.sample_statistics = sample_statistics;
-        cpd.sample_log_likelihood = sample_log_likelihood;
+        cpd.fitted_statistics = fitted_statistics;
+        cpd.fitted_log_likelihood = fitted_log_likelihood;
 
         Ok(cpd)
     }
@@ -486,6 +536,7 @@ impl GaussCPD {
     ///
     /// # Arguments
     ///
+    /// * `phi` - The potential to convert.
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
     ///
@@ -499,10 +550,6 @@ impl GaussCPD {
     }
 
     /// Converts a CPD P(X | Z) to a potential \phi(X \cup Z).
-    ///
-    /// # Arguments
-    ///
-    /// * `cpd` - The CPD to convert.
     ///
     /// # Returns
     ///
@@ -589,13 +636,13 @@ impl CPD for GaussCPD {
     }
 
     #[inline]
-    fn sample_statistics(&self) -> Option<&Self::Statistics> {
-        self.sample_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
+        self.fitted_statistics.as_ref()
     }
 
     #[inline]
-    fn sample_log_likelihood(&self) -> Option<f64> {
-        self.sample_log_likelihood
+    fn fitted_log_likelihood(&self) -> Option<f64> {
+        self.fitted_log_likelihood
     }
 
     fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
@@ -606,11 +653,17 @@ impl CPD for GaussCPD {
 
         // Check X matches number of variables.
         if x.len() != n {
-            return Err(Error::IncompatibleShape(n.to_string(), x.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &n.to_string(),
+                &x.len().to_string(),
+            ));
         }
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // Get parameters.
@@ -638,8 +691,8 @@ impl CPD for GaussCPD {
             };
             // Compute deviation from mean.
             let x_mu = x[0] - mu;
-            // Get the variance.
-            let k = s[[0, 0]];
+            // Get the (regularized) variance.
+            let k = s[[0, 0]] + EPSILON;
             // Compute log probability density function.
             let ln_pf = -0.5 * (LN_2_PI + f64::ln(k) + f64::powi(x_mu, 2) / k);
             // Return probability density function.
@@ -658,7 +711,7 @@ impl CPD for GaussCPD {
         let n_ln_2_pi = s.nrows() as f64 * LN_2_PI;
         let (_, ln_det) = s
             .sln_det()
-            .map_err(|e| Error::Linalg(format!("Failed to compute log-determinant: {}", e)))?;
+            .map_err(|e| Error::Linalg(&format!("Failed to compute log-determinant: {}", e)))?;
         let ln_pf = -0.5 * (n_ln_2_pi + ln_det + x_mu.dot(&k).dot(&x_mu));
         // Return probability density function.
         Ok(f64::exp(ln_pf))
@@ -672,7 +725,10 @@ impl CPD for GaussCPD {
 
         // Check Z matches number of conditioning variables.
         if z.len() != m {
-            return Err(Error::IncompatibleShape(m.to_string(), z.len().to_string()));
+            return Err(Error::IncompatibleShape(
+                &m.to_string(),
+                &z.len().to_string(),
+            ));
         }
 
         // Get parameters.
@@ -700,8 +756,10 @@ impl CPD for GaussCPD {
             };
             // Sample from standard normal.
             let e: f64 = StandardNormal.sample(rng);
+            // Get the (regularized) variance.
+            let k = s[[0, 0]] + EPSILON;
             // Compute the sample.
-            let x = f64::mul_add(s[[0, 0]].sqrt(), e, mu);
+            let x = f64::mul_add(k.sqrt(), e, mu);
             // Return the sample.
             return Ok(array![x]);
         }
@@ -714,13 +772,10 @@ impl CPD for GaussCPD {
         let l = (s + EPSILON * Array::eye(s.nrows()))
             .cholesky_into(UPLO::Lower)
             .map_err(|e| {
-                Error::Linalg(format!("Failed to compute Cholesky decomposition: {}", e))
+                Error::Linalg(&format!("Failed to compute Cholesky decomposition: {}", e))
             })?;
         // Sample from standard normal.
-        let e = StandardNormal
-            .sample_iter(rng)
-            .take(s.nrows())
-            .collect::<Array1<_>>();
+        let e = Array1::from_shape_fn(s.nrows(), |_| rng.sample(StandardNormal));
         // Compute the sample.
         Ok(l.dot(&e) + mu)
     }
@@ -734,8 +789,8 @@ impl Serialize for GaussCPD {
         // Count the elements to serialize.
         let mut size = 4;
         // Add optional fields, if any.
-        size += self.sample_statistics.is_some() as usize;
-        size += self.sample_log_likelihood.is_some() as usize;
+        size += self.fitted_statistics.is_some() as usize;
+        size += self.fitted_log_likelihood.is_some() as usize;
         // Allocate the map.
         let mut map = serializer.serialize_map(Some(size))?;
 
@@ -746,14 +801,14 @@ impl Serialize for GaussCPD {
         // Serialize parameters.
         map.serialize_entry("parameters", &self.parameters)?;
 
-        // Serialize sample statistics, if any.
-        if let Some(sample_statistics) = &self.sample_statistics {
-            map.serialize_entry("sample_statistics", sample_statistics)?;
+        // Serialize fitted statistics, if any.
+        if let Some(fitted_statistics) = &self.fitted_statistics {
+            map.serialize_entry("fitted_statistics", fitted_statistics)?;
         }
 
-        // Serialize sample log-likelihood, if any.
-        if let Some(sample_log_likelihood) = &self.sample_log_likelihood {
-            map.serialize_entry("sample_log_likelihood", sample_log_likelihood)?;
+        // Serialize fitted log-likelihood, if any.
+        if let Some(fitted_log_likelihood) = &self.fitted_log_likelihood {
+            map.serialize_entry("fitted_log_likelihood", fitted_log_likelihood)?;
         }
 
         // Serialize type.
@@ -775,8 +830,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
             Labels,
             ConditioningLabels,
             Parameters,
-            SampleStatistics,
-            SampleLogLikelihood,
+            FittedStatistics,
+            FittedLogLikelihood,
             Type,
         }
 
@@ -799,8 +854,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 let mut labels = None;
                 let mut conditioning_labels = None;
                 let mut parameters = None;
-                let mut sample_statistics = None;
-                let mut sample_log_likelihood = None;
+                let mut fitted_statistics = None;
+                let mut fitted_log_likelihood = None;
                 let mut type_ = None;
 
                 // Parse the map.
@@ -824,17 +879,17 @@ impl<'de> Deserialize<'de> for GaussCPD {
                             }
                             parameters = Some(map.next_value()?);
                         }
-                        Field::SampleStatistics => {
-                            if sample_statistics.is_some() {
-                                return Err(E::duplicate_field("sample_statistics"));
+                        Field::FittedStatistics => {
+                            if fitted_statistics.is_some() {
+                                return Err(E::duplicate_field("fitted_statistics"));
                             }
-                            sample_statistics = Some(map.next_value()?);
+                            fitted_statistics = Some(map.next_value()?);
                         }
-                        Field::SampleLogLikelihood => {
-                            if sample_log_likelihood.is_some() {
-                                return Err(E::duplicate_field("sample_log_likelihood"));
+                        Field::FittedLogLikelihood => {
+                            if fitted_log_likelihood.is_some() {
+                                return Err(E::duplicate_field("fitted_log_likelihood"));
                             }
-                            sample_log_likelihood = Some(map.next_value()?);
+                            fitted_log_likelihood = Some(map.next_value()?);
                         }
                         Field::Type => {
                             if type_.is_some() {
@@ -863,8 +918,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
                     labels,
                     conditioning_labels,
                     parameters,
-                    sample_statistics,
-                    sample_log_likelihood,
+                    fitted_statistics,
+                    fitted_log_likelihood,
                 )
                 .map_err(E::custom)
             }
@@ -874,8 +929,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
             "labels",
             "conditioning_labels",
             "parameters",
-            "sample_statistics",
-            "sample_log_likelihood",
+            "fitted_statistics",
+            "fitted_log_likelihood",
             "type",
         ];
 

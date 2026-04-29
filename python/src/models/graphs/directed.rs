@@ -4,6 +4,7 @@ use backend::{
     inference::{BackdoorCriterion, GraphicalSeparation},
     io::JsonIO,
     models::{DiGraph, Graph, Labelled},
+    random::{Random, RngDag, RngDiGraph},
     types::Labels,
 };
 use numpy::prelude::*;
@@ -12,12 +13,14 @@ use pyo3::{
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{error::to_pyerr, impl_from_into_lock, indices_from};
 
 /// A struct representing a directed graph using an adjacency matrix.
 #[gen_stub_pyclass]
-#[pyclass(name = "DiGraph", module = "causal_hub.models", eq)]
+#[pyclass(name = "DiGraph", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyDiGraph {
     inner: Arc<RwLock<DiGraph>>,
@@ -342,9 +345,10 @@ impl PyDiGraph {
     /// z: Iterable[str]
     ///     An iterable of vertices representing set `Z`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -386,9 +390,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -400,7 +405,13 @@ impl PyDiGraph {
     /// bool
     ///     `true` if `Z` is a minimal separator set for `X` and `Y`, `false` otherwise.
     ///
-    #[pyo3(signature = (x, y, z, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        v = None
+    ))]
     pub fn is_minimal_separator_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -435,9 +446,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * `X` and `Y` are not disjoint sets.
@@ -449,7 +461,12 @@ impl PyDiGraph {
     /// list[str] | None
     ///     A minimal separator set, or `None` if no separator set exists.
     ///
-    #[pyo3(signature = (x, y, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        w = None,
+        v = None
+    ))]
     pub fn find_minimal_separator_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -499,9 +516,10 @@ impl PyDiGraph {
     /// z: Iterable[str]
     ///     An iterable of vertices representing set `Z`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -543,9 +561,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
     /// * `X`, `Y` or `Z` are not disjoint sets.
@@ -557,7 +576,13 @@ impl PyDiGraph {
     /// bool
     ///     `true` if `Z` is a minimal backdoor set for `X` and `Y`, `false` otherwise.
     ///
-    #[pyo3(signature = (x, y, z, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        z,
+        w = None,
+        v = None
+    ))]
     pub fn is_minimal_backdoor_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -592,9 +617,10 @@ impl PyDiGraph {
     /// v: Iterable[str] | None
     ///     An optional iterable of vertices representing set `V`.
     ///
-    /// Notes
-    /// ----------
-    /// Raises an exception if:
+    /// Raises
+    /// ------
+    /// ValueError
+    ///     Raised if:
     ///
     /// * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
     /// * `X` and `Y` are not disjoint sets.
@@ -606,7 +632,12 @@ impl PyDiGraph {
     /// list[str] | None
     ///     A minimal backdoor set, or `None` if no backdoor set exists.
     ///
-    #[pyo3(signature = (x, y, w=None, v=None))]
+    #[pyo3(signature = (
+        x,
+        y,
+        w = None,
+        v = None
+    ))]
     pub fn find_minimal_backdoor_set(
         &self,
         x: &Bound<'_, PyAny>,
@@ -643,6 +674,95 @@ impl PyDiGraph {
 
         // Return the result.
         Ok(z)
+    }
+
+    /// Generates a random directed graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the graph.
+    /// p: float, default=0.1
+    ///     The probability of generating an edge.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A random directed graph.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        labels,
+        p = 0.1,
+        seed = 31
+    ))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyIterator to a Labels.
+        let labels: Labels = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngDiGraph and generate a random graph.
+        RngDiGraph::new(&mut rng, &labels, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
+    /// Generates a random directed acyclic graph.
+    ///
+    /// Parameters
+    /// ----------
+    /// vertices: Iterable[str]
+    ///     The vertices of the graph.
+    /// p: float, default=0.1
+    ///     The probability of generating an edge.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// DiGraph
+    ///     A random directed acyclic graph.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        vertices,
+        p = 0.1,
+        seed = 31
+    ))]
+    pub fn random_dag(
+        _cls: &Bound<'_, PyType>,
+        vertices: &Bound<'_, PyAny>,
+        p: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyIterator to a Labels.
+        let vertices: Vec<String> = vertices
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        let labels: Labels = vertices.into_iter().collect();
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngDag and generate a random graph.
+        RngDag::new(&mut rng, &labels, p)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Converts from a NetworkX DiGraph.

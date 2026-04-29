@@ -1,3 +1,6 @@
+#![deny(clippy::expect_used)]
+#![deny(clippy::unwrap_used)]
+
 mod assets;
 mod datasets;
 mod estimators;

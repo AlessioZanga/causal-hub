@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
-    datasets::{CatTrj, CatType, Dataset},
+    datasets::{CatTrj, CatTrjEv, CatType, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -48,8 +48,8 @@ impl CatWtdTrj {
         // Check that the weight is in the range [0, 1].
         if !(0.0..=1.0).contains(&weight) {
             return Err(Error::InvalidParameter(
-                "weight".to_string(),
-                format!("must be in the range [0, 1], but got {weight}"),
+                "weight",
+                &format!("must be in the range [0, 1], but got {weight}"),
             ));
         }
 
@@ -69,7 +69,6 @@ impl CatWtdTrj {
 
     /// Returns the weight of the trajectory.
     ///
-    /// # Returns
     ///
     /// The weight of the trajectory.
     ///
@@ -121,10 +120,16 @@ impl Labelled for CatWtdTrj {
 
 impl Dataset for CatWtdTrj {
     type Values = Array2<CatType>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = <CatTrj as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.trajectory.values()
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.trajectory.evidence_iter()
     }
 
     #[inline]
@@ -149,6 +154,30 @@ pub struct CatWtdTrjs {
     states: States,
     shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
+}
+
+/// Concrete iterator over weighted trajectories evidences.
+pub struct CatWtdTrjsEvidenceIter<'a> {
+    trajectories: std::slice::Iter<'a, CatWtdTrj>,
+    current: Option<<CatWtdTrj as Dataset>::EvidenceIter<'a>>,
+}
+
+impl<'a> Iterator for CatWtdTrjsEvidenceIter<'a> {
+    type Item = Result<CatTrjEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current.as_mut()
+                && let Some(item) = current.next()
+            {
+                return Some(item);
+            }
+
+            self.current = self.trajectories.next().map(Dataset::evidence_iter);
+
+            self.current.as_ref()?;
+        }
+    }
 }
 
 impl CatWtdTrjs {
@@ -183,36 +212,27 @@ impl CatWtdTrjs {
             .windows(2)
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
-            return Err(Error::IncompatibleShape(
-                "labels".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("labels", "all trajectories"));
         }
         // Check if every trajectory has the same states.
         if !values
             .windows(2)
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
-            return Err(Error::IncompatibleShape(
-                "states".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("states", "all trajectories"));
         }
         // Check if every trajectory has the same shape.
         if !values
             .windows(2)
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
-            return Err(Error::IncompatibleShape(
-                "shape".into(),
-                "all trajectories".into(),
-            ));
+            return Err(Error::IncompatibleShape("shape", "all trajectories"));
         }
 
         // Get the labels, states and shape from the first trajectory.
         let trj = values
             .first()
-            .ok_or_else(|| Error::EmptySet("trajectories".into()))?;
+            .ok_or_else(|| Error::EmptySet("trajectories"))?;
         let labels = trj.labels().clone();
         let states = trj.states().clone();
         let shape = trj.shape().clone();
@@ -312,10 +332,19 @@ impl Labelled for CatWtdTrjs {
 
 impl Dataset for CatWtdTrjs {
     type Values = Vec<CatWtdTrj>;
+    type Evidence = CatTrjEv;
+    type EvidenceIter<'a> = CatWtdTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        CatWtdTrjsEvidenceIter {
+            trajectories: self.values.iter(),
+            current: None,
+        }
     }
 
     #[inline]

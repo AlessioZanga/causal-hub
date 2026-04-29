@@ -168,7 +168,7 @@ impl CatTrjEv {
             let event = e.event();
             // Check if the event index is valid.
             if event >= states.len() {
-                return Err(Error::VertexOutOfBounds(event));
+                return Err(Error::IndexOutOfBounds(event));
             }
             // Push the value into the events.
             evidences[event].push(e);
@@ -197,11 +197,11 @@ impl CatTrjEv {
                     // Get the event and states of the evidence.
                     let (event, states) = states
                         .get_index(e.event())
-                        .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
+                        .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
                     // Sort the event index.
                     let (event, _, new_states) = new_states
                         .get_full(event)
-                        .ok_or_else(|| Error::MissingLabel(event.clone()))?;
+                        .ok_or_else(|| Error::MissingLabel(event))?;
 
                     // Sort the event states.
                     let e = match e {
@@ -209,7 +209,7 @@ impl CatTrjEv {
                             // Sort the variable states.
                             let state = new_states
                                 .get_index_of(&states[state])
-                                .ok_or_else(|| Error::MissingState(states[state].clone()))?;
+                                .ok_or_else(|| Error::MissingState(&states[state]))?;
                             // Construct the sorted evidence.
                             E::CertainPositiveInterval {
                                 event,
@@ -225,7 +225,7 @@ impl CatTrjEv {
                                 .map(|&state| {
                                     new_states
                                         .get_index_of(&states[state])
-                                        .ok_or_else(|| Error::MissingState(states[state].clone()))
+                                        .ok_or_else(|| Error::MissingState(&states[state]))
                                 })
                                 .collect::<Result<Set<_>>>()?;
                             // Construct the sorted evidence.
@@ -246,7 +246,7 @@ impl CatTrjEv {
                                     // Get sorted index.
                                     let state = new_states
                                         .get_index_of(&states[i])
-                                        .ok_or_else(|| Error::MissingState(states[i].clone()))?;
+                                        .ok_or_else(|| Error::MissingState(&states[i]))?;
                                     // Assign probability to sorted index.
                                     new_p_states[state] = p;
 
@@ -272,7 +272,7 @@ impl CatTrjEv {
                                     // Get sorted index.
                                     let state = new_states
                                         .get_index_of(&states[i])
-                                        .ok_or_else(|| Error::MissingState(states[i].clone()))?;
+                                        .ok_or_else(|| Error::MissingState(&states[i]))?;
                                     // Assign probability to sorted index.
                                     new_p_not_states[state] = p;
 
@@ -315,23 +315,17 @@ impl CatTrjEv {
                 e.iter().try_for_each(|e_i| -> Result<()> {
                     // Check starting time must be positive and finite.
                     if !e_i.start_time().is_finite() || e_i.start_time() < 0.0 {
-                        return Err(Error::InvalidParameter(
-                            "start_time".to_string(),
-                            "must be positive and finite".to_string(),
-                        ));
+                        return Err(Error::InvalidParameter("start_time", "must be positive and finite"));
                     }
                     // Check ending time must be positive and finite.
                     if !e_i.end_time().is_finite() || e_i.end_time() < 0.0 {
-                        return Err(Error::InvalidParameter(
-                            "end_time".to_string(),
-                            "must be positive and finite".to_string(),
-                        ));
+                        return Err(Error::InvalidParameter("end_time", "must be positive and finite"));
                     }
                     // Check starting time is less or equal than ending time.
                     if e_i.start_time() > e_i.end_time() {
                         return Err(Error::InvalidParameter(
-                            "start_time".to_string(),
-                            "must be less or equal than ending time".to_string(),
+                            "start_time",
+                            "must be less or equal than ending time",
                         ));
                     }
                     // Check states distributions have the correct size.
@@ -341,16 +335,16 @@ impl CatTrjEv {
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if p_states.len() != *shape {
                                 return Err(Error::IncompatibleShape(
-                                    p_states.len().to_string(),
-                                    shape.to_string(),
+                                    &p_states.len().to_string(),
+                                    &shape.to_string(),
                                 ));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if p_not_states.len() != *shape {
                                 return Err(Error::IncompatibleShape(
-                                    p_not_states.len().to_string(),
-                                    shape.to_string(),
+                                    &p_not_states.len().to_string(),
+                                    &shape.to_string(),
                                 ));
                             }
                         }
@@ -361,18 +355,12 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if !p_states.iter().all(|&x| x >= 0.) {
-                                return Err(Error::InvalidParameter(
-                                    "p_states".to_string(),
-                                    "must be non-negative".to_string(),
-                                ));
+                                return Err(Error::InvalidParameter("p_states", "must be non-negative"));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if !p_not_states.iter().all(|&x| x >= 0.) {
-                                return Err(Error::InvalidParameter(
-                                    "p_not_states".to_string(),
-                                    "must be non-negative".to_string(),
-                                ));
+                                return Err(Error::InvalidParameter("p_not_states", "must be non-negative"));
                             }
                         }
                     }
@@ -382,16 +370,12 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if !relative_eq!(p_states.sum(), 1., epsilon = EPSILON) {
-                                return Err(Error::Probability(
-                                    "States distributions must sum to one.".to_string(),
-                                ));
+                                return Err(Error::Probability("States distributions must sum to one."));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
-                            if !relative_eq!(p_not_states.sum(), 1., epsilon = EPSILON) {
-                                return Err(Error::Probability(
-                                    "States distributions must sum to one.".to_string(),
-                                ));
+                            if !relative_eq!(p_not_states.sum(), 1.0) {
+                                return Err(Error::Probability("States distributions must sum to one."));
                             }
                         }
                     }
@@ -419,13 +403,13 @@ impl CatTrjEv {
 
                 // Get the last evidence.
                 let e_i: &E = merged_e.last().ok_or_else(|| {
-                    Error::Unreachable("Merged evidence must not be empty.".to_string())
+                    Error::Unreachable("Merged evidence must not be empty.")
                 })?;
                 // Check intervals times are coherent.
                 if e_i.start_time() > e_j.start_time() {
                     return Err(Error::InvalidParameter(
-                        "evidence".to_string(),
-                        format!(
+                        "evidence",
+                        &format!(
                             "Two evidences for the same variable must have non-increasing starting time: \n\
                             \t expected: e(i).start_time <= e(i+1).start_time, \n\
                             \t found:    e(i).start_time >  e(i+1).start_time, \n\
@@ -458,8 +442,8 @@ impl CatTrjEv {
                             let end_time = e_i.end_time().max(e_j.end_time());
                             // Set the last evidence end time to the maximum of both.
                             *merged_e.last_mut().ok_or_else(|| {
-                            Error::Unreachable("Merged evidence must not be empty.".to_string())
-                        })? = E::CertainPositiveInterval {
+                                Error::Unreachable("Merged evidence must not be empty.")
+                            })? = E::CertainPositiveInterval {
                                 event,
                                 state,
                                 start_time,
@@ -480,7 +464,7 @@ impl CatTrjEv {
                             let end_time = e_i.end_time().max(e_j.end_time());
                             // Set the last evidence end time to the maximum of both.
                             *merged_e.last_mut().ok_or_else(|| {
-                                Error::Unreachable("Merged evidence must not be empty.".to_string())
+                                Error::Unreachable("Merged evidence must not be empty.")
                             })? = E::UncertainPositiveInterval {
                                 event,
                                 p_states,
@@ -500,8 +484,8 @@ impl CatTrjEv {
                         // Check if they are the same states.
                         if s_i != s_j {
                             return Err(Error::InvalidParameter(
-                                "evidence".to_string(),
-                                "Overlapping negative evidence must have the same states.".to_string(),
+                                "evidence",
+                                "Overlapping negative evidence must have the same states.",
                             ));
                         }
                         // Get evidence event, not states, start time and end time.
@@ -511,7 +495,7 @@ impl CatTrjEv {
                         let end_time = e_i.end_time().max(e_j.end_time());
                         // Set the last evidence end time to the maximum of both.
                         *merged_e.last_mut().ok_or_else(|| {
-                            Error::Unreachable("Merged evidence must not be empty.".to_string())
+                            Error::Unreachable("Merged evidence must not be empty.")
                         })? = E::CertainNegativeInterval {
                             event,
                             not_states,
@@ -526,9 +510,8 @@ impl CatTrjEv {
                         // Check if they are the same states.
                         if !relative_eq!(s_i, s_j) {
                             return Err(Error::InvalidParameter(
-                                "evidence".to_string(),
-                                "Overlapping uncertain evidence must have the same states."
-                                    .to_string(),
+                                "evidence",
+                                "Overlapping uncertain evidence must have the same states.",
                             ));
                         }
                         // Get evidence event, states, start time and end time.
@@ -538,7 +521,7 @@ impl CatTrjEv {
                         let end_time = e_i.end_time().max(e_j.end_time());
                         // Set the last evidence end time to the maximum of both.
                         *merged_e.last_mut().ok_or_else(|| {
-                            Error::Unreachable("Merged evidence must not be empty.".to_string())
+                            Error::Unreachable("Merged evidence must not be empty.")
                         })? = E::UncertainPositiveInterval {
                             event,
                             p_states,
@@ -557,9 +540,8 @@ impl CatTrjEv {
                         // Check if they are the same states.
                         if !relative_eq!(s_i, s_j) {
                             return Err(Error::InvalidParameter(
-                                "evidence".to_string(),
-                                "Overlapping uncertain evidence must have the same states."
-                                    .to_string(),
+                                "evidence",
+                                "Overlapping uncertain evidence must have the same states.",
                             ));
                         }
                         // Get evidence event, not states, start time and end time.
@@ -569,7 +551,7 @@ impl CatTrjEv {
                         let end_time = e_i.end_time().max(e_j.end_time());
                         // Set the last evidence end time to the maximum of both.
                         *merged_e.last_mut().ok_or_else(|| {
-                            Error::Unreachable("Merged evidence must not be empty.".to_string())
+                            Error::Unreachable("Merged evidence must not be empty.")
                         })? = E::UncertainNegativeInterval {
                             event,
                             p_not_states,
@@ -580,8 +562,8 @@ impl CatTrjEv {
                     // If they are not the same type of evidence ...
                     _ => {
                         return Err(Error::InvalidParameter(
-                            "evidence".to_string(),
-                            "Overlapping evidence must have the same type".to_string(),
+                            "evidence",
+                            "Overlapping evidence must have the same type",
                         ));
                     }
                 }
@@ -591,8 +573,8 @@ impl CatTrjEv {
             // Check current ending time is less or equal than next starting time.
             if !e.windows(2).all(|e| e[0].end_time() <= e[1].start_time()) {
                 return Err(Error::InvalidParameter(
-                    "evidence".to_string(),
-                    "Ending time must be less or equal than next starting time.".to_string(),
+                    "evidence",
+                    "Ending time must be less or equal than next starting time.",
                 ));
             }
 
@@ -713,8 +695,8 @@ impl CatTrjsEv {
             .all(|trjs| trjs[0].labels().eq(trjs[1].labels()))
         {
             return Err(Error::InvalidParameter(
-                "evidences".to_string(),
-                "All trajectories must have the same labels.".to_string(),
+                "evidences",
+                "All trajectories must have the same labels.",
             ));
         }
         // Check every trajectory has the same states.
@@ -723,8 +705,8 @@ impl CatTrjsEv {
             .all(|trjs| trjs[0].states().eq(trjs[1].states()))
         {
             return Err(Error::InvalidParameter(
-                "evidences".to_string(),
-                "All trajectories must have the same states.".to_string(),
+                "evidences",
+                "All trajectories must have the same states.",
             ));
         }
         // Check every trajectory has the same shape.
@@ -733,8 +715,8 @@ impl CatTrjsEv {
             .all(|trjs| trjs[0].shape().eq(trjs[1].shape()))
         {
             return Err(Error::IncompatibleShape(
-                "trajectories shape".to_string(),
-                "must be equal".to_string(),
+                "trajectories shape",
+                "must be equal",
             ));
         }
 

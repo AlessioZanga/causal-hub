@@ -6,7 +6,15 @@ import typing
 
 import numpy
 import numpy.typing
-from causal_hub.datasets import CatTable, CatTrjs, Dataset, GaussTable
+from causal_hub.datasets import (
+    CatTable,
+    CatTrjs,
+    Dataset,
+    GaussTable,
+    MissingMechanism,
+    MissingMethod,
+)
+from causal_hub.estimators import EstimatorMethod
 
 @typing.final
 class CatBN:
@@ -97,7 +105,9 @@ class CatBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatBN:
@@ -110,8 +120,12 @@ class CatBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -150,7 +164,10 @@ class CatBN:
         self,
         x: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        w: typing.Optional[typing.Any] = None,
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> CatCPD:
@@ -163,8 +180,14 @@ class CatBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        w: CatEv | dict[str, str] | None
+            Optional evidence to condition on during inference.
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -181,12 +204,15 @@ class CatBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        w: typing.Optional[typing.Any] = None,
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[CatCPD]:
         r"""
-        Estimate a conditional causal effect (CACE).
+        Estimate a conditional population average causal effect (CPACE).
 
         Parameters
         ----------
@@ -196,8 +222,14 @@ class CatBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        w: CatEv | dict[str, str] | None
+            Optional evidence to condition on during inference.
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -206,7 +238,35 @@ class CatBN:
         Returns
         -------
         CatCPD | None
-            A new conditional causal effect (CACE) distribution, if identifiable.
+            A new conditional population average causal effect (CPACE) distribution, if identifiable.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        states: dict,
+        alpha: builtins.float = 1.0,
+        p: builtins.float = 0.1,
+        seed: builtins.int = 31,
+    ) -> CatBN:
+        r"""
+        Generates a random categorical Bayesian network.
+
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            The states of the variables.
+        alpha: float, default=1.0
+            The parameter of the Dirichlet distribution.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatBN
+            A random categorical Bayesian network.
         """
 
     @classmethod
@@ -400,24 +460,24 @@ class CatCIM:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The sample log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
         """
 
     @classmethod
@@ -559,29 +619,57 @@ class CatCPD:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The sample log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
         """
 
     def __repr__(self) -> builtins.str:
         r"""
         Returns the string representation of the CatCPD.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        states: dict,
+        conditioning_states: dict,
+        alpha: builtins.float = 1.0,
+        seed: builtins.int = 31,
+    ) -> CatCPD:
+        r"""
+        Generates a random categorical conditional probability distribution.
+
+        Parameters
+        ----------
+        states: dict[str, tuple[str, ...]]
+            The states of the variable.
+        conditioning_states: dict[str, tuple[str, ...]]
+            The states of the conditioning variables.
+        alpha: float, default=1.0
+            The parameter of the Dirichlet distribution.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        CatCPD
+            A random categorical conditional probability distribution.
         """
 
     @classmethod
@@ -735,7 +823,9 @@ class CatCTBN:
         cls,
         dataset: CatTrjs,
         graph: DiGraph,
-        method: builtins.str = "mle",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> CatCTBN:
@@ -748,8 +838,12 @@ class CatCTBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `mle`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.MLE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -1049,9 +1143,10 @@ class DiGraph:
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1087,9 +1182,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1123,9 +1219,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
         * `X` and `Y` are not disjoint sets.
@@ -1153,9 +1250,10 @@ class DiGraph:
         z: Iterable[str]
             An iterable of vertices representing set `Z`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, or `Z` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1191,9 +1289,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `Z`, `W` or `V` are out of bounds.
         * `X`, `Y` or `Z` are not disjoint sets.
@@ -1227,9 +1326,10 @@ class DiGraph:
         v: Iterable[str] | None
             An optional iterable of vertices representing set `V`.
 
-        Notes
-        ----------
-        Raises an exception if:
+        Raises
+        ------
+        ValueError
+            Raised if:
 
         * Any of the vertex in `X`, `Y`, `W` or `V` are out of bounds.
         * `X` and `Y` are not disjoint sets.
@@ -1240,6 +1340,50 @@ class DiGraph:
         -------
         list[str] | None
             A minimal backdoor set, or `None` if no backdoor set exists.
+        """
+
+    @classmethod
+    def random(
+        cls, labels: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> DiGraph:
+        r"""
+        Generates a random directed graph.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the graph.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        DiGraph
+            A random directed graph.
+        """
+
+    @classmethod
+    def random_dag(
+        cls, vertices: typing.Any, p: builtins.float = 0.1, seed: builtins.int = 31
+    ) -> DiGraph:
+        r"""
+        Generates a random directed acyclic graph.
+
+        Parameters
+        ----------
+        vertices: Iterable[str]
+            The vertices of the graph.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        DiGraph
+            A random directed acyclic graph.
         """
 
     @classmethod
@@ -1409,7 +1553,9 @@ class GaussBN:
         cls,
         dataset: Dataset,
         graph: DiGraph,
-        method: builtins.str = "be",
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         parallel: builtins.bool = True,
         **kwargs: typing.Any,
     ) -> GaussBN:
@@ -1422,8 +1568,12 @@ class GaussBN:
             The dataset to fit the model to.
         graph: DiGraph
             The graph to fit the model to.
-        method: str
-            The method to use for fitting (default is `be`).
+        estimator: EstimatorMethod | None
+            The estimator to use for fitting (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         parallel: bool
             The flag to enable parallel fitting (default is `true`).
         **kwargs: dict | None
@@ -1462,7 +1612,10 @@ class GaussBN:
         self,
         x: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        w: typing.Optional[typing.Any] = None,
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> GaussCPD:
@@ -1475,8 +1628,14 @@ class GaussBN:
             A variable or an iterable of variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        w: GaussEv | dict[str, float] | None
+            Optional evidence to condition on during inference.
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -1493,12 +1652,15 @@ class GaussBN:
         x: typing.Any,
         y: typing.Any,
         z: typing.Any,
-        method: builtins.str = "be",
+        w: typing.Optional[typing.Any] = None,
+        estimator: typing.Optional[EstimatorMethod] = None,
+        missing_method: typing.Optional[MissingMethod] = None,
+        missing_mechanism: typing.Optional[MissingMechanism] = None,
         seed: builtins.int = 31,
         parallel: builtins.bool = True,
     ) -> typing.Optional[GaussCPD]:
         r"""
-        Estimate a conditional causal effect (CACE).
+        Estimate a conditional population average causal effect (CPACE).
 
         Parameters
         ----------
@@ -1508,8 +1670,14 @@ class GaussBN:
             An outcome variable or an iterable of outcome variables.
         z: str | Iterable[str]
             A conditioning variable or an iterable of conditioning variables.
-        method: str
-            The method to use for estimation (default is `be`).
+        w: GaussEv | dict[str, float] | None
+            Optional evidence to condition on during inference.
+        estimator: EstimatorMethod | None
+            The estimator to use for estimation (default is `EstimatorMethod.BE`).
+        missing_method: MissingMethod | None
+            The method to use for handling missing data (default is `MissingMethod.PW`).
+        missing_mechanism: MissingMechanism | None
+            The missing mechanism to use for handling missing data (default is `None`).
         seed: int
             The seed of the random number generator (default is `31`).
         parallel: bool
@@ -1518,7 +1686,41 @@ class GaussBN:
         Returns
         -------
         GaussCPD | None
-            A new conditional causal effect (CACE) distribution, if identifiable.
+            A new conditional population average causal effect (CPACE) distribution, if identifiable.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        labels: typing.Any,
+        s_a: builtins.float = 1.0,
+        s_b: builtins.float = 1.0,
+        e: builtins.float = 1e-06,
+        p: builtins.float = 0.1,
+        seed: builtins.int = 31,
+    ) -> GaussBN:
+        r"""
+        Generates a random Gaussian Bayesian network.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the variables.
+        s_a: float, default=1.0
+            The standard deviation of the regression coefficients.
+        s_b: float, default=1.0
+            The standard deviation of the intercept.
+        e: float, default=1e-6
+            A small positive constant for covariance regularization.
+        p: float, default=0.1
+            The probability of generating an edge.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        GaussBN
+            A random Gaussian Bayesian network.
         """
 
     @classmethod
@@ -1620,24 +1822,58 @@ class GaussCPD:
             The parameters size.
         """
 
-    def sample_statistics(self) -> typing.Optional[dict]:
+    def fitted_statistics(self) -> typing.Optional[dict]:
         r"""
-        Returns the sample statistics used to fit the distribution, if any.
+        Returns the fitted statistics used to fit the distribution, if any.
 
         Returns
         -------
         dict[str, ...] | None
-            A dictionary containing the sample statistics used to fit the distribution, if any.
+            A dictionary containing the fitted statistics used to fit the distribution, if any.
         """
 
-    def sample_log_likelihood(self) -> typing.Optional[builtins.float]:
+    def fitted_log_likelihood(self) -> typing.Optional[builtins.float]:
         r"""
-        Returns the sample log-likelihood given the distribution, if any.
+        Returns the log-likelihood given the distribution, if any.
 
         Returns
         -------
         float | None
-            The sample log-likelihood given the distribution, if any.
+            The log-likelihood given the distribution, if any.
+        """
+
+    @classmethod
+    def random(
+        cls,
+        labels: typing.Any,
+        conditioning_labels: typing.Any,
+        s_a: builtins.float = 1.0,
+        s_b: builtins.float = 1.0,
+        e: builtins.float = 1e-06,
+        seed: builtins.int = 31,
+    ) -> GaussCPD:
+        r"""
+        Generates a random Gaussian conditional probability distribution.
+
+        Parameters
+        ----------
+        labels: Iterable[str]
+            The labels of the target variables.
+        conditioning_labels: Iterable[str]
+            The labels of the conditioning variables.
+        s_a: float, default=1.0
+            The standard deviation of the regression coefficients.
+        s_b: float, default=1.0
+            The standard deviation of the intercept.
+        e: float, default=1e-6
+            A small positive constant for covariance regularization.
+        seed: int, default=31
+            The seed for the random number generator.
+
+        Returns
+        -------
+        GaussCPD
+            A random Gaussian conditional probability distribution.
         """
 
     @classmethod

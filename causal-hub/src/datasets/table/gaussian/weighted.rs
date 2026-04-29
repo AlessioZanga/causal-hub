@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{Dataset, GaussSample, GaussTable},
+    datasets::{Dataset, GaussEv, GaussSample, GaussTable},
     models::Labelled,
     types::{Error, Labels, Result, Set},
 };
@@ -39,16 +39,13 @@ impl GaussWtdTable {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
             return Err(Error::IncompatibleShape(
-                dataset.values().nrows().to_string(),
-                weights.len().to_string(),
+                &dataset.values().nrows().to_string(),
+                &weights.len().to_string(),
             ));
         }
-        // Check if any weight is in the range [0, 1].
-        if !weights.iter().all(|&w| (0.0..=1.0).contains(&w)) {
-            return Err(Error::InvalidParameter(
-                "weights".to_string(),
-                "must be in the range [0, 1]".to_string(),
-            ));
+        // Check that all weights are non-negative.
+        if !weights.iter().all(|&w| w >= 0.0) {
+            return Err(Error::InvalidParameter("weights", "must be non-negative"));
         }
 
         Ok(Self { dataset, weights })
@@ -68,10 +65,16 @@ impl GaussWtdTable {
 
 impl Dataset for GaussWtdTable {
     type Values = GaussTable;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = <GaussTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]
@@ -86,5 +89,13 @@ impl Dataset for GaussWtdTable {
         let weights = self.weights.clone();
         // Return the new weighted dataset.
         Self::new(dataset, weights)
+    }
+}
+
+impl From<GaussTable> for GaussWtdTable {
+    #[inline]
+    fn from(dataset: GaussTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
     }
 }

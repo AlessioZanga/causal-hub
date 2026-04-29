@@ -26,6 +26,7 @@ jobs:
             ~/.local/share/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
+            .venv
             target
           key: ubuntu-latest-x64-${{ hashFiles('Cargo.lock') }}
           restore-keys: |

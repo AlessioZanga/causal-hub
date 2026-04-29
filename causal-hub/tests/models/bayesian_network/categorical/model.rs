@@ -185,11 +185,13 @@ mod tests {
         ];
 
         let res = CatBN::new(graph, cpds);
-        assert!(res.is_err());
-        assert_eq!(
-            res.unwrap_err().to_string(),
-            "Labels mismatch: {\"A\"} != {\"A\", \"B\"}"
-        );
+        match res {
+            Err(err) => assert_eq!(
+                err.kind.to_string(),
+                "Labels mismatch: {\"A\"} != {\"A\", \"B\"}"
+            ),
+            _ => panic!("Should be error"),
+        };
 
         Ok(())
     }

@@ -1,12 +1,12 @@
 use itertools::Itertools;
 use ndarray::{Zip, prelude::*};
-use rand::{Rng, SeedableRng, seq::SliceRandom};
-use rand_distr::{Distribution, weighted::WeightedIndex};
+use rand::{Rng, RngExt, SeedableRng, seq::SliceRandom};
+use rand_distr::{Distribution, Uniform, weighted::WeightedIndex};
 use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, CatType},
-    estimators::{BE, CIMEstimator, ParCIMEstimator},
+    estimators::{BE, CPDEstimator, ParCPDEstimator},
     models::{CatCIM, Labelled},
     types::{Error, Labels, Result, Set},
 };
@@ -73,6 +73,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     ///
     /// # Arguments
     ///
+    /// * `rng` - A mutable reference to the random number generator.
     /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns
@@ -116,8 +117,8 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                         // Construct the sampler.
                         let state = WeightedIndex::new(p_states).map_err(|e| {
                             Error::InvalidParameter(
-                                "p_states".into(),
-                                format!("Invalid state distribution: {e}"),
+                                "p_states",
+                                &format!("Invalid state distribution: {e}"),
                             )
                         })?;
                         // Sample the state.
@@ -166,10 +167,6 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
     }
 
     /// Fills the evidence with the raw estimator.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns
     ///
@@ -254,15 +251,16 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
             })
             .collect();
         // If no evidence is present, fill it randomly.
-        no_evidence.into_iter().for_each(|i| {
+        no_evidence.into_iter().try_for_each(|i| -> Result<()> {
             // Sample a state uniformly at random.
-            let random_state = Array::from_iter({
-                let random_state = || self.rng.random_range(0..(states[i].len() as CatType));
-                std::iter::repeat_with(random_state).take(events.nrows())
-            });
+            let dist = Uniform::new(0, states[i].len() as CatType)
+                .map_err(|e| Error::RandDistr(&format!("Invalid uniform distribution: {}", e)))?;
+            let random_state = Array1::from_shape_fn(events.nrows(), |_| self.rng.sample(dist));
             // Fill the event with the sampled state.
             events.column_mut(i).assign(&random_state);
-        });
+
+            Ok(())
+        })?;
 
         // Fill the unknown states by propagating the known states.
         events
@@ -278,7 +276,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjEv, CatTrj> {
                     first_known = event
                         .iter()
                         .position(|e| *e != M)
-                        .ok_or(Error::MissingState("No known state found in event".into()))?;
+                        .ok_or_else(|| Error::MissingState("No known state found in event"))?;
                     // Get the event to fill with.
                     let e = event[first_known];
                     // Backward fill the unknown states.
@@ -383,6 +381,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     ///
     /// # Arguments
     ///
+    /// * `rng` - A mutable reference to the random number generator.
     /// * `evidence` - A reference to the evidence to fill.
     ///
     /// # Returns
@@ -405,7 +404,7 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
                     // Fill the evidence with the raw estimator.
                     RAWE::<'_, R, CatTrjEv, CatTrj>::par_new(&mut rng, e)?
                         .dataset
-                        .ok_or_else(|| Error::MissingData("Dataset not generated.".into()))
+                        .ok_or_else(|| Error::MissingData("Dataset not generated."))
                 })
                 .collect::<Result<_>>()?,
         );
@@ -418,39 +417,39 @@ impl<'a, R: Rng + SeedableRng> RAWE<'a, R, CatTrjsEv, CatTrjs> {
     }
 }
 
-impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjEv, CatTrj> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or_else(|| Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .fit(x, z)
     }
 }
 
-impl<R: Rng + SeedableRng> CIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
+impl<R: Rng + SeedableRng> CPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or_else(|| Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .fit(x, z)
     }
 }
 
-impl<R: Rng + SeedableRng> ParCIMEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
+impl<R: Rng + SeedableRng> ParCPDEstimator<CatCIM> for RAWE<'_, R, CatTrjsEv, CatTrjs> {
     fn par_fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIM> {
         // Estimate the CIM with a uniform prior.
         BE::new(
             self.dataset
                 .as_ref()
-                .ok_or(Error::MissingData("Dataset not generated.".into()))?,
+                .ok_or_else(|| Error::MissingData("Dataset not generated."))?,
         )
         .with_prior((1, 1.))
         .par_fit(x, z)

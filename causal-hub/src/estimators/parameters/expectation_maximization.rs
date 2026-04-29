@@ -148,7 +148,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the builder.
+    /// The modified builder.
     ///
     pub fn with_e_step(mut self, expectation: &'a EStep) -> Self {
         self.expectation = Some(expectation);
@@ -168,7 +168,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the builder.
+    /// The modified builder.
     ///
     pub fn with_m_step(mut self, maximization: &'a MStep) -> Self {
         self.maximization = Some(maximization);
@@ -188,7 +188,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the builder.
+    /// The modified builder.
     ///
     pub fn with_stop(mut self, stop: &'a Stop) -> Self {
         self.stop = Some(stop);
@@ -207,13 +207,13 @@ where
             evidence: self.evidence,
             expectation: self
                 .expectation
-                .ok_or_else(|| Error::ConstructionError("Expectation step not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Expectation step not set"))?,
             maximization: self
                 .maximization
-                .ok_or_else(|| Error::ConstructionError("Maximization step not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Maximization step not set"))?,
             stop: self
                 .stop
-                .ok_or_else(|| Error::ConstructionError("Stopping criteria not set".into()))?,
+                .ok_or_else(|| Error::ConstructionError("Stopping criteria not set"))?,
         })
     }
 }

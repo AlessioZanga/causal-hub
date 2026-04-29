@@ -6,7 +6,7 @@ use crate::{
     datasets::{GaussIncTable, GaussTable, GaussWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
     models::{GaussCPD, GaussCPDP, GaussCPDS, Labelled},
-    types::{Error, LN_2_PI, Labels, Result, Set},
+    types::{EPSILON, Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
 
@@ -20,20 +20,17 @@ impl BE<'_, GaussTable, f64> {
     ) -> Result<GaussCPD> {
         // Check likelihood of prior.
         if prior < 0.0 {
-            return Err(Error::InvalidParameter(
-                "prior".to_string(),
-                "must be non-negative".to_string(),
-            ));
+            return Err(Error::InvalidParameter("prior", "must be non-negative"));
         }
 
         // Get the sample scatter matrices and size.
         let (mu_x, mu_z, s_xx, s_xz, s_zz, n) = (
-            sample_statistics.sample_response_mean(),
-            sample_statistics.sample_design_mean(),
-            sample_statistics.sample_response_covariance(),
-            sample_statistics.sample_cross_covariance(),
-            sample_statistics.sample_design_covariance(),
-            sample_statistics.sample_size(),
+            sample_statistics.fitted_response_mean(),
+            sample_statistics.fitted_design_mean(),
+            sample_statistics.fitted_response_covariance(),
+            sample_statistics.fitted_cross_covariance(),
+            sample_statistics.fitted_design_covariance(),
+            sample_statistics.fitted_size(),
         );
 
         // Apply prior (Pseudo-counts style).
@@ -97,14 +94,18 @@ impl BE<'_, GaussTable, f64> {
             (a, b, s)
         };
 
-        // Symmetrize the covariance matrix to avoid numerical issues.
-        let s = (&s + &s.t()) / 2.;
+        // Symmetrize and stabilize covariance to avoid numerical issues.
+        let mut s = s;
+        s.diag_mut().mapv_inplace(|x| x.max(0.));
+        let t = s.diag().sum() / s.nrows() as f64;
+        *s.diag_mut() += f64::max(EPSILON, t * EPSILON);
+        s = (&s + &s.t()) / 2.;
 
         // Compute the sample log-likelihood.
         let p = x.len() as f64;
         let (_, ln_det) = s
             .sln_det()
-            .map_err(|e| Error::Linalg(format!("Failed to compute determinant of S: {e}")))?;
+            .map_err(|e| Error::Linalg(&format!("Failed to compute determinant of S: {e}")))?;
         // This is the likelihood of the posterior "samples".
         let sample_log_likelihood = -0.5 * n_post * (p * LN_2_PI + ln_det + p);
 
@@ -147,7 +148,7 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
@@ -167,7 +168,7 @@ macro_for!($type in [GaussTable, GaussIncTable, GaussWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.

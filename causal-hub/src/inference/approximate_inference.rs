@@ -14,25 +14,24 @@ use crate::{
 
 /// An approximate inference engine.
 #[derive(Debug)]
-pub struct ApproximateInference<'a, R, M, E, F> {
+pub struct ApproximateInference<'a, R, M, F> {
     rng: RefCell<&'a mut R>,
     model: &'a M,
-    evidence: Option<&'a E>,
     estimator: Option<F>,
     sample_size: Option<usize>,
 }
 
-impl<'a, R, M> ApproximateInference<'a, R, M, (), ()> {
+impl<'a, R, M> ApproximateInference<'a, R, M, ()> {
     /// Construct a new approximate inference instance.
     ///
     /// # Arguments
     ///
-    /// * `rng` - A random number generator.
+    /// * `rng` - A mutable reference to a random number generator.
     /// * `model` - A reference to the model to sample from.
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance.
+    /// A new approximate inference instance.
     ///
     #[inline]
     pub const fn new(rng: &'a mut R, model: &'a M) -> Self {
@@ -42,14 +41,13 @@ impl<'a, R, M> ApproximateInference<'a, R, M, (), ()> {
         Self {
             rng,
             model,
-            evidence: None,
             estimator: None,
             sample_size: None,
         }
     }
 }
 
-impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
+impl<'a, R, M, F> ApproximateInference<'a, R, M, F> {
     /// Add an estimator to the approximate inference instance.
     ///
     /// # Arguments
@@ -58,38 +56,16 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance with the estimator.
+    /// A new approximate inference instance with the estimator.
     ///
-    pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, E, T>
+    pub fn with_estimator<T, A, B>(self, estimator: T) -> ApproximateInference<'a, R, M, T>
     where
         T: Fn(&A, &Set<usize>, &Set<usize>) -> B,
     {
         ApproximateInference {
             rng: self.rng,
             model: self.model,
-            evidence: self.evidence,
             estimator: Some(estimator),
-            sample_size: self.sample_size,
-        }
-    }
-
-    /// Add evidence to the approximate inference instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `evidence` - A reference to the evidence.
-    ///
-    /// # Returns
-    ///
-    /// Return a new approximate inference instance with evidence.
-    ///
-    #[inline]
-    pub fn with_evidence<T>(self, evidence: &'a T) -> ApproximateInference<'a, R, M, T, F> {
-        ApproximateInference {
-            rng: self.rng,
-            model: self.model,
-            evidence: Some(evidence),
-            estimator: self.estimator,
             sample_size: self.sample_size,
         }
     }
@@ -102,15 +78,15 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     ///
     /// # Returns
     ///
-    /// Return a new approximate inference instance with the specified sample size.
+    /// A new approximate inference instance with the specified sample size.
     ///
     #[inline]
     pub fn with_sample_size(mut self, n: usize) -> Result<Self> {
         // Check the sample size is positive.
         if n == 0 {
             return Err(Error::InvalidParameter(
-                "n".into(),
-                "Sample size must be positive.".into(),
+                "n",
+                "Sample size must be positive.",
             ));
         }
         // Set the sample size.
@@ -119,7 +95,7 @@ impl<'a, R, M, E, F> ApproximateInference<'a, R, M, E, F> {
     }
 }
 
-impl<R, M, E, F> Modelled<M> for ApproximateInference<'_, R, M, E, F> {
+impl<R, M, F> Modelled<M> for ApproximateInference<'_, R, M, F> {
     #[inline]
     fn model(&self) -> &M {
         self.model
@@ -131,21 +107,22 @@ pub trait BNInference<T>
 where
     T: BN,
 {
-    /// Estimate the values of `x` conditioned on `z`.
+    /// Estimate the values of `x` conditioned on `z` and `w`.
     ///
     /// # Arguments
     ///
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
+    /// * `w` - The evidence, if any.
     ///
     /// # Returns
     ///
-    /// The estimated values of `x` conditioned on `z`.
+    /// The estimated values of `x` conditioned on `z` and `w`.
     ///
-    fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T::CPD>;
+    fn estimate(&self, x: &Set<usize>, z: &Set<usize>, w: Option<&T::Evidence>) -> Result<T::CPD>;
 }
 
-impl<'a, R, E, F> ApproximateInference<'a, R, CatBN, E, F> {
+impl<'a, R, F> ApproximateInference<'a, R, CatBN, F> {
     #[inline]
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
         // Get the sample size or compute it if not provided.
@@ -163,7 +140,7 @@ impl<'a, R, E, F> ApproximateInference<'a, R, CatBN, E, F> {
     }
 }
 
-impl<'a, R, E, F> ApproximateInference<'a, R, GaussBN, E, F> {
+impl<'a, R, F> ApproximateInference<'a, R, GaussBN, F> {
     #[inline]
     fn sample_size(&self, x: &Set<usize>, z: &Set<usize>) -> usize {
         // Get the sample size or compute it if not provided.
@@ -181,115 +158,28 @@ impl<'a, R, E, F> ApproximateInference<'a, R, GaussBN, E, F> {
 
 macro_for!($type in [CatBN, GaussBN] {
 
-    impl<R> BNInference<$type> for ApproximateInference<'_, R, $type, (), ()>
+    impl<R> BNInference<$type> for ApproximateInference<'_, R, $type, ()>
     where
         R: Rng,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
+        fn estimate(
+            &self,
+            x: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&<$type as BN>::Evidence>,
+        ) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
-                }
-                Ok(())
-            })?;
-
-            // Get the sample size.
-            let n = self.sample_size(x, z);
-            // Get the RNG.
-            let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let x_z = x | z;
-            let an_x_z = self.model.graph().ancestors(&x_z)?;
-            let an_x_z = &an_x_z | &x_z;
-            // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
-            // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
-            // Initialize the sampler.
-            let sampler = ForwardSampler::new(&mut rng, &an_x_z_model)?;
-            // Generate n samples from the model.
-            let dataset = sampler.sample_n(n)?;
-            // Fit the CPD.
-            BE::new(&dataset).fit(&an_x, &an_z)
-        }
-    }
-
-    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, (), F>
-    where
-        R: Rng,
-        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
-    {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
-            // Check X is not empty.
-            if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
-            }
-            // Check X and Z are disjoint.
-            if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
-            }
-            // Check X and Z are in the model.
-            x.union(z).try_for_each(|&i| {
-                if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
-                }
-                Ok(())
-            })?;
-
-            // Get the sample size.
-            let n = self.sample_size(x, z);
-            // Get the RNG.
-            let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let x_z = x | z;
-            let an_x_z = self.model.graph().ancestors(&x_z)?;
-            let an_x_z = &an_x_z | &x_z;
-            // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
-            // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
-            // Initialize the sampler.
-            let sampler = ForwardSampler::new(&mut rng, &an_x_z_model)?;
-            // Generate n samples from the model.
-            let dataset = sampler.sample_n(n)?;
-            // Fit the CPD.
-            match &self.estimator {
-                // Use the provided estimator.
-                Some(f) => f(&dataset, &an_x, &an_z),
-                // Otherwise, use the Bayesian estimator.
-                None => BE::new(&dataset).fit(&an_x, &an_z),
-            }
-        }
-    }
-
-    impl<R> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, ()>
-    where
-        R: Rng,
-    {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
-            // Check X is not empty.
-            if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
-            }
-            // Check X and Z are disjoint.
-            if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
-            }
-            // Check X and Z are in the model.
-            x.union(z).try_for_each(|&i| {
-                if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -299,7 +189,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = self.evidence.map_or_else(
+            let e = w.map_or_else(
                 || set![],
                 |e| e.evidences()
                     .iter()
@@ -314,7 +204,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -330,31 +220,41 @@ macro_for!($type in [CatBN, GaussBN] {
                     BE::new(&dataset).fit(&an_x, &an_z)
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
-                    .with_sample_size(n)?
-                    .estimate(&an_x, &an_z),
+                None => {
+                    // Initialize the sampler.
+                    let sampler = ForwardSampler::new(&mut rng, &an_x_z_e_model)?;
+                    // Generate n samples from the model.
+                    let dataset = sampler.sample_n(n)?;
+                    // Fit the CPD.
+                    BE::new(&dataset).fit(&an_x, &an_z)
+                }
             }
         }
     }
 
-    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    impl<R, F> BNInference<$type> for ApproximateInference<'_, R, $type, F>
     where
         R: Rng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
+        fn estimate(
+            &self,
+            x: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&<$type as BN>::Evidence>,
+        ) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -364,7 +264,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = self.evidence.map_or_else(
+            let e = w.map_or_else(
                 || set![],
                 |e| e.evidences()
                     .iter()
@@ -379,7 +279,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -400,9 +300,21 @@ macro_for!($type in [CatBN, GaussBN] {
                     }
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
-                    .with_sample_size(n)?
-                    .estimate(&an_x, &an_z),
+                None => {
+                    // Initialize the sampler.
+                    let sampler = ForwardSampler::new(&mut rng, &an_x_z_e_model)?;
+                    // Generate n samples from the model.
+                    let dataset = sampler.sample_n(n)?;
+                    // Convert to weighted samples to match the estimator signature.
+                    let dataset = dataset.into();
+                    // Fit the CPD.
+                    match &self.estimator {
+                        // Use the provided estimator.
+                        Some(f) => f(&dataset, &an_x, &an_z),
+                        // Otherwise, use the Bayesian estimator.
+                        None => BE::new(&dataset).fit(&an_x, &an_z),
+                    }
+                }
             }
         }
     }
@@ -414,137 +326,56 @@ pub trait ParBNInference<T>
 where
     T: BN,
 {
-    /// Estimate the values of `x` conditioned on `z`, in parallel.
+    /// Estimate the values of `x` conditioned on `z` and `w`, in parallel.
     ///
     /// # Arguments
     ///
     /// * `x` - The set of variables.
     /// * `z` - The set of conditioning variables.
+    /// * `w` - The evidence, if any.
     ///
     /// # Errors
     ///
     /// * `EmptySet` if `x` is empty.
     /// * `SetsNotDisjoint` if `x` and `z` are not disjoint.
-    /// * `VertexOutOfBounds` if `x` or `z` are not in the model.
+    /// * `IndexOutOfBounds` if `x` or `z` are not in the model.
     ///
     /// # Returns
     ///
-    /// The estimated values of `x` conditioned on `z`.
+    /// The estimated values of `x` conditioned on `z` and `w`.
     ///
-    fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<T::CPD>;
+    fn par_estimate(
+        &self,
+        x: &Set<usize>,
+        z: &Set<usize>,
+        w: Option<&T::Evidence>,
+    ) -> Result<T::CPD>;
 }
 
 macro_for!($type in [CatBN, GaussBN] {
 
-    impl<R> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), ()>
+    impl<R> ParBNInference<$type> for ApproximateInference<'_, R, $type, ()>
     where
         R: Rng + SeedableRng,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
+        fn par_estimate(
+            &self,
+            x: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&<$type as BN>::Evidence>,
+        ) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
-                }
-                Ok(())
-            })?;
-
-            // Get the sample size.
-            let n = self.sample_size(x, z);
-            // Get the RNG.
-            let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let x_z = x | z;
-            let an_x_z = self.model.graph().ancestors(&x_z)?;
-            let an_x_z = &an_x_z | &x_z;
-            // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
-            // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
-            // Initialize the sampler.
-            let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_model)?;
-            // Generate n samples from the model.
-            let dataset = sampler.par_sample_n(n)?;
-            // Fit the CPD.
-            BE::new(&dataset).par_fit(&an_x, &an_z)
-        }
-    }
-
-    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, (), F>
-    where
-        R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::Samples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
-    {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
-            // Check X is not empty.
-            if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
-            }
-            // Check X and Z are disjoint.
-            if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
-            }
-            // Check X and Z are in the model.
-            x.union(z).try_for_each(|&i| {
-                if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
-                }
-                Ok(())
-            })?;
-
-            // Get the sample size.
-            let n = self.sample_size(x, z);
-            // Get the RNG.
-            let mut rng = self.rng.borrow_mut();
-            // Get the ancestors of the X U Z set.
-            let x_z = x | z;
-            let an_x_z = self.model.graph().ancestors(&x_z)?;
-            let an_x_z = &an_x_z | &x_z;
-            // Restrict the model to the ancestors.
-            let an_x_z_model = self.model.select(&an_x_z)?;
-            // Map the indices of X and Z to the restricted model.
-            let an_x = an_x_z_model.indices_from(x, self.model.labels())?;
-            let an_z = an_x_z_model.indices_from(z, self.model.labels())?;
-            // Initialize the sampler.
-            let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_model)?;
-            // Generate n samples from the model.
-            let dataset = sampler.par_sample_n(n)?;
-            // Fit the CPD.
-            match &self.estimator {
-                // Use the provided estimator.
-                Some(f) => f(&dataset, &an_x, &an_z),
-                // Otherwise, use the Bayesian estimator.
-                None => BE::new(&dataset).par_fit(&an_x, &an_z),
-            }
-        }
-    }
-
-    impl<R> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, ()>
-    where
-        R: Rng + SeedableRng,
-    {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
-            // Check X is not empty.
-            if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
-            }
-            // Check X and Z are disjoint.
-            if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
-            }
-            // Check X and Z are in the model.
-            x.union(z).try_for_each(|&i| {
-                if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -554,7 +385,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = self.evidence.map_or_else(
+            let e = w.map_or_else(
                 || set![],
                 |e| e.evidences()
                     .iter()
@@ -569,7 +400,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -585,31 +416,41 @@ macro_for!($type in [CatBN, GaussBN] {
                     BE::new(&dataset).par_fit(&an_x, &an_z)
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
-                    .with_sample_size(n)?
-                    .estimate(&an_x, &an_z),
+                None => {
+                    // Initialize the sampler.
+                    let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_e_model)?;
+                    // Generate n samples from the model.
+                    let dataset = sampler.par_sample_n(n)?;
+                    // Fit the CPD.
+                    BE::new(&dataset).par_fit(&an_x, &an_z)
+                }
             }
         }
     }
 
-    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, <$type as BN>::Evidence, F>
+    impl<R, F> ParBNInference<$type> for ApproximateInference<'_, R, $type, F>
     where
         R: Rng + SeedableRng,
-        F: Fn(&<$type as BN>::WeightedSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
+        F: Fn(&<$type as BN>::WtdSamples, &Set<usize>, &Set<usize>) -> Result<<$type as BN>::CPD>,
     {
-        fn par_estimate(&self, x: &Set<usize>, z: &Set<usize>) -> Result<<$type as BN>::CPD> {
+        fn par_estimate(
+            &self,
+            x: &Set<usize>,
+            z: &Set<usize>,
+            w: Option<&<$type as BN>::Evidence>,
+        ) -> Result<<$type as BN>::CPD> {
             // Check X is not empty.
             if x.is_empty() {
-                return Err(Error::EmptySet("X".into()));
+                return Err(Error::EmptySet("X"));
             }
             // Check X and Z are disjoint.
             if !x.is_disjoint(z) {
-                return Err(Error::SetsNotDisjoint("X".into(), "Z".into()));
+                return Err(Error::SetsNotDisjoint("X", "Z"));
             }
             // Check X and Z are in the model.
             x.union(z).try_for_each(|&i| {
                 if i >= self.model.labels().len() {
-                    return Err(Error::VertexOutOfBounds(i));
+                    return Err(Error::IndexOutOfBounds(i));
                 }
                 Ok(())
             })?;
@@ -619,7 +460,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Get the RNG.
             let mut rng = self.rng.borrow_mut();
             // Get the evidence variables.
-            let e = self.evidence.map_or_else(
+            let e = w.map_or_else(
                 || set![],
                 |e| e.evidences()
                     .iter()
@@ -634,7 +475,7 @@ macro_for!($type in [CatBN, GaussBN] {
             // Restrict the model to the ancestors.
             let an_x_z_e_model = self.model.select(&an_x_z_e)?;
             // Restrict the evidence to the restricted model.
-            let evidence = self.evidence.map(|e| e.select(&an_x_z_e)).transpose()?;
+            let evidence = w.map(|e| e.select(&an_x_z_e)).transpose()?;
             // Map the indices of X and Z to the restricted model.
             let an_x = an_x_z_e_model.indices_from(x, self.model.labels())?;
             let an_z = an_x_z_e_model.indices_from(z, self.model.labels())?;
@@ -655,9 +496,21 @@ macro_for!($type in [CatBN, GaussBN] {
                     }
                 }
                 // Delegate to empty evidence case.
-                None => ApproximateInference::new(&mut rng, &an_x_z_e_model)
-                    .with_sample_size(n)?
-                    .estimate(&an_x, &an_z),
+                None => {
+                    // Initialize the sampler.
+                    let sampler = ForwardSampler::<R, _>::new(&mut rng, &an_x_z_e_model)?;
+                    // Generate n samples from the model.
+                    let dataset = sampler.par_sample_n(n)?;
+                    // Convert to weighted samples to match the estimator signature.
+                    let dataset = dataset.into();
+                    // Fit the CPD.
+                    match &self.estimator {
+                        // Use the provided estimator.
+                        Some(f) => f(&dataset, &an_x, &an_z),
+                        // Otherwise, use the Bayesian estimator.
+                        None => BE::new(&dataset).fit(&an_x, &an_z),
+                    }
+                }
             }
         }
     }

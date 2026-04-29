@@ -16,13 +16,13 @@ impl MLE<'_, CatTable> {
         sample_statistics: CatCPDS,
     ) -> Result<CatCPD> {
         // Get the conditional counts.
-        let n_xz = sample_statistics.sample_conditional_counts();
+        let n_xz = sample_statistics.fitted_conditional_counts();
         // Marginalize the counts.
         let n_z = &n_xz.sum_axis(Axis(1)).insert_axis(Axis(1));
 
         // Check the marginal counts are not zero.
         if !n_z.iter().all(|&x| x > 0.) {
-            return Err(Error::MissingSufficientStatistics);
+            return Err(Error::MissingSufficientStatistics());
         }
 
         // Compute the parameters by normalizing the counts.
@@ -40,7 +40,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or(Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
         // Get the labels of the conditioned variables.
@@ -50,7 +50,7 @@ impl MLE<'_, CatTable> {
                 states
                     .get_index(i)
                     .map(|(k, v)| (k.clone(), v.clone()))
-                    .ok_or(Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<States>>()?;
 
@@ -83,7 +83,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics.
             let sample_statistics = sample_statistics.fit(x, z)?;
             // Fit the CPD given the sufficient statistics.
@@ -101,7 +101,7 @@ macro_for!($type in [CatTable, CatIncTable, CatWtdTable] {
             let sample_statistics = sample_statistics.with_missing_method(
                 self.missing_method,
                 self.missing_mechanism.clone()
-            );
+            )?;
             // Compute sufficient statistics in parallel.
             let sample_statistics = sample_statistics.par_fit(x, z)?;
             // Fit the CPD given the sufficient statistics.

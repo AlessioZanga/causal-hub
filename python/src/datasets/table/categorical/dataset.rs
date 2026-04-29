@@ -22,7 +22,7 @@ use crate::{
 
 /// A categorical tabular dataset.
 #[gen_stub_pyclass]
-#[pyclass(name = "CatTable", module = "causal_hub.datasets")]
+#[pyclass(name = "CatTable", module = "causal_hub.datasets", from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyCatTable {
     inner: Arc<RwLock<CatTable>>,
@@ -207,6 +207,97 @@ impl PyCatTable {
             .map_err(to_pyerr)
     }
 
+    /// Constructs a new categorical tabular dataset from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    ///
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing only categorical columns.
+    ///
+    /// Returns
+    /// -------
+    /// CatTable
+    ///     A new categorical tabular dataset instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        assert!(
+            df.is_instance(&pl.getattr("DataFrame")?)?,
+            "Expected a Polars DataFrame, but '{}' found.",
+            df.get_type().name()?
+        );
+
+        // Get the shape of the data frame.
+        let shape = df.getattr("shape")?.extract::<(usize, usize)>()?;
+
+        // Get columns.
+        let columns: Vec<String> = df.getattr("columns")?.extract()?;
+
+        // Check that the data frame is not empty.
+        assert!(!columns.is_empty(), "The data frame is empty.");
+
+        // Check that all columns are categorical-like.
+        for name in &columns {
+            let column = df.call_method1("get_column", (name,))?;
+            let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
+            assert!(
+                dtype.contains("Categorical") || dtype.contains("Enum"),
+                "Expected a categorical column, but '{dtype}' found."
+            );
+        }
+
+        // Extract states.
+        let states: States = columns
+            .into_iter()
+            .map(|name| {
+                let column = df.call_method1("get_column", (&name,))?;
+                let categories = column.getattr("cat")?.call_method0("get_categories")?;
+                let categories: Set<String> = categories
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+                Ok((name, categories))
+            })
+            .collect::<PyResult<_>>()?;
+
+        // Extract values.
+        let mut values = Array2::from_elem(shape, CatType::default());
+        values.columns_mut().into_iter().zip(&states).try_for_each(
+            |(mut value, (name, states))| {
+                let column = df.call_method1("get_column", (name,))?;
+                let column: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
+                let column: Result<Vec<CatType>, _> = column
+                    .into_iter()
+                    .map(|x| {
+                        let x = x.ok_or_else(|| {
+                            Error::new_err(format!("Null value found in column '{name}'"))
+                        })?;
+                        states
+                            .get_index_of(&x)
+                            .ok_or_else(|| Error::new_err(format!("Unknown state: {}", x)))
+                            .map(|idx| idx as CatType)
+                    })
+                    .collect();
+                value.assign(&Array1::from_vec(column?));
+
+                Ok::<_, PyErr>(())
+            },
+        )?;
+
+        CatTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
     /// Converts the dataset to a Pandas DataFrame.
     ///
     /// Returns
@@ -245,5 +336,34 @@ impl PyCatTable {
 
         // Construct the DataFrame.
         pd.getattr("DataFrame")?.call1((df,))
+    }
+
+    /// Converts the dataset to a Polars DataFrame.
+    ///
+    /// Returns
+    /// -------
+    /// polars.DataFrame
+    ///     A Polars DataFrame.
+    ///
+    pub fn to_polars<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Create a dictionary to hold the data.
+        let df = PyDict::new(py);
+
+        // Get lock on the inner field.
+        let lock = self.lock();
+        let states = lock.states().iter();
+        let values = lock.values().columns();
+
+        for ((label, states), values) in states.zip(values) {
+            let values: Vec<String> = values.iter().map(|&x| states[x as usize].clone()).collect();
+            let series = pl.getattr("Series")?.call1((label.clone(), values))?;
+            let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;
+            df.set_item(label, series)?;
+        }
+
+        pl.getattr("DataFrame")?.call1((df,))
     }
 }

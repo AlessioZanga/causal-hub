@@ -15,8 +15,9 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatTrj> {
     fn fit(&self, x: &Set<usize>, z: &Set<usize>) -> Result<CatCIMS> {
         // Check variables and conditioning variables must be disjoint..
         if !x.is_disjoint(z) {
-            return Err(Error::IllegalArgument(
-                "Variables and conditioning variables must be disjoint.".into(),
+            return Err(Error::InvalidParameter(
+                "x,z",
+                "Variables and conditioning variables must be disjoint.",
             ));
         }
 
@@ -71,9 +72,9 @@ impl CSSEstimator<CatCIMS> for SSE<'_, CatWtdTrj> {
         // Compute the unweighted sufficient statistics.
         let s = SSE::new(self.dataset.trajectory()).fit(x, z)?;
         // Destructure the sufficient statistics.
-        let n_xz = s.sample_conditional_counts();
-        let t_xz = s.sample_conditional_times();
-        let n = s.sample_size();
+        let n_xz = s.fitted_conditional_counts();
+        let t_xz = s.fitted_conditional_times();
+        let n = s.fitted_size();
         // Apply the weight to the sufficient statistics.
         CatCIMS::new(n_xz * w, t_xz * w, n * w)
     }

@@ -7,7 +7,7 @@ use csv::{ReaderBuilder, WriterBuilder};
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::Dataset,
+    datasets::{Dataset, GaussEv, GaussEvT},
     io::CsvIO,
     models::Labelled,
     types::{Error, Labels, Result, Set},
@@ -23,6 +23,27 @@ pub type GaussSample = Array1<GaussType>;
 pub struct GaussTable {
     labels: Labels,
     values: Array2<GaussType>,
+}
+
+/// Concrete iterator over Gaussian table evidences.
+pub struct GaussTableEvidenceIter<'a> {
+    rows: ndarray::iter::LanesIter<'a, GaussType, Ix1>,
+    labels: &'a Labels,
+}
+
+impl<'a> Iterator for GaussTableEvidenceIter<'a> {
+    type Item = Result<GaussEv>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row = self.rows.next()?;
+
+        let evidences = row
+            .iter()
+            .enumerate()
+            .map(|(event, &value)| GaussEvT::CertainPositive { event, value });
+
+        Some(GaussEv::new(self.labels.clone(), evidences))
+    }
 }
 
 impl Labelled for GaussTable {
@@ -52,8 +73,8 @@ impl GaussTable {
         // Check if the number of labels matches the number of columns in values.
         if labels.len() != values.ncols() {
             return Err(Error::IncompatibleShape(
-                labels.len().to_string(),
-                values.ncols().to_string(),
+                &labels.len().to_string(),
+                &values.ncols().to_string(),
             ));
         }
 
@@ -76,10 +97,7 @@ impl GaussTable {
         }
         // Check values are finite.
         if !values.iter().all(|&x| x.is_finite()) {
-            return Err(Error::InvalidParameter(
-                "values".to_string(),
-                "must be finite".to_string(),
-            ));
+            return Err(Error::InvalidParameter("values", "must be finite"));
         }
 
         Ok(Self { labels, values })
@@ -88,10 +106,19 @@ impl GaussTable {
 
 impl Dataset for GaussTable {
     type Values = Array2<GaussType>;
+    type Evidence = GaussEv;
+    type EvidenceIter<'a> = GaussTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        GaussTableEvidenceIter {
+            rows: self.values.rows().into_iter(),
+            labels: &self.labels,
+        }
     }
 
     #[inline]
@@ -102,7 +129,7 @@ impl Dataset for GaussTable {
     fn select(&self, x: &Set<usize>) -> Result<Self> {
         // Check that the indices are valid.
         if let Some(&i) = x.iter().find(|&&i| i >= self.values.ncols()) {
-            return Err(Error::VertexOutOfBounds(i));
+            return Err(Error::IndexOutOfBounds(i));
         }
 
         // Select the labels.
@@ -112,7 +139,7 @@ impl Dataset for GaussTable {
                 self.labels
                     .get_index(i)
                     .cloned()
-                    .ok_or(Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 
@@ -137,7 +164,7 @@ impl CsvIO for GaussTable {
 
         // Check if the reader has headers.
         if !reader.has_headers() {
-            return Err(Error::MissingHeader);
+            return Err(Error::MissingHeader());
         }
 
         // Read the headers.

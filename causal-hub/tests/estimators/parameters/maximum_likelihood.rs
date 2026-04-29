@@ -65,13 +65,13 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        distribution.fitted_statistics().map(|s| s.fitted_size()),
                         Some(5.)
                     );
                     assert_relative_eq!(
                         distribution
-                            .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .fitted_log_likelihood()
+                            .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                         -3.365058335046282
                     );
 
@@ -115,13 +115,13 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 4);
                     assert_eq!(
-                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        distribution.fitted_statistics().map(|s| s.fitted_size()),
                         Some(5.)
                     );
                     assert_relative_eq!(
                         distribution
-                            .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .fitted_log_likelihood()
+                            .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                         -1.3862943611198906
                     );
 
@@ -272,13 +272,13 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        distribution.fitted_statistics().map(|s| s.fitted_size()),
                         Some(4.)
                     );
                     assert_relative_eq!(
                         distribution
-                            .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .fitted_log_likelihood()
+                            .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                         -2.772588722239781
                     );
 
@@ -341,13 +341,13 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        distribution.fitted_statistics().map(|s| s.fitted_size()),
                         Some(4.)
                     );
                     assert_relative_eq!(
                         distribution
-                            .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .fitted_log_likelihood()
+                            .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                         -2.772588722239781
                     );
 
@@ -649,13 +649,13 @@ mod tests {
 
                     assert_eq!(distribution.parameters_size(), 1);
                     assert_eq!(
-                        distribution.sample_statistics().map(|s| s.sample_size()),
+                        distribution.fitted_statistics().map(|s| s.fitted_size()),
                         Some(8.)
                     );
                     assert_relative_eq!(
                         distribution
-                            .sample_log_likelihood()
-                            .ok_or(Error::IllegalArgument("no ll".into()))?,
+                            .fitted_log_likelihood()
+                            .ok_or_else(|| Error::InvalidParameter("ll", "missing"))?,
                         -5.545177444479562
                     );
 

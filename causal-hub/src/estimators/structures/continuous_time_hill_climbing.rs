@@ -1,85 +1,12 @@
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 
 use crate::{
-    estimators::{CIMEstimator, PK},
-    models::{CIM, CatCIM, DiGraph, Graph, Labelled},
+    estimators::{PK, ScoringCriterion},
+    models::{DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Result, Set},
+    types::{Error, Result, Set},
 };
-
-/// A trait for scoring criteria used in score-based structure learning.
-pub trait ScoringCriterion {
-    /// Computes the score for a given variable and its conditioning set.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - The variable to score.
-    /// * `z` - The conditioning set.
-    ///
-    /// # Returns
-    ///
-    /// The computed score.
-    ///
-    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> Result<f64>;
-}
-
-/// The Bayesian Information Criterion (BIC).
-pub struct BIC<'a, E> {
-    estimator: &'a E,
-}
-
-impl<'a, E> BIC<'a, E> {
-    /// Creates a new BIC instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `estimator` - A reference to the estimator.
-    ///
-    /// # Returns
-    ///
-    /// A new `BIC` instance.
-    ///
-    #[inline]
-    pub const fn new(estimator: &'a E) -> Self {
-        Self { estimator }
-    }
-}
-
-impl<'a, E> Labelled for BIC<'a, E>
-where
-    E: Labelled,
-{
-    #[inline]
-    fn labels(&self) -> &Labels {
-        self.estimator.labels()
-    }
-}
-
-impl<E> ScoringCriterion for BIC<'_, E>
-where
-    E: CIMEstimator<CatCIM>,
-{
-    #[inline]
-    fn call(&self, x: &Set<usize>, z: &Set<usize>) -> Result<f64> {
-        // Compute the intensity matrices for the sets.
-        let q_xz = self.estimator.fit(x, z)?;
-        // Get the sample size.
-        let n = q_xz
-            .sample_statistics()
-            .map(|s| s.sample_size())
-            .ok_or(Error::MissingSufficientStatistics)?;
-        // Get the log-likelihood.
-        let ll = q_xz
-            .sample_log_likelihood()
-            .ok_or_else(|| Error::Probability("Failed to compute the log-likelihood.".into()))?;
-        // Get the number of parameters.
-        let k = q_xz.parameters_size() as f64;
-
-        // Compute the BIC.
-        Ok(ll - 0.5 * k * f64::ln(n))
-    }
-}
 
 /// The hill climbing algorithm for structure learning in CTBNs.
 #[derive(Clone, Debug)]
@@ -110,8 +37,8 @@ where
         // Check labels of the initial graph and the estimator are the same.
         if initial_graph.labels() != score.labels() {
             return Err(Error::LabelMismatch(
-                format!("{:?}", initial_graph.labels()),
-                format!("{:?}", score.labels()),
+                &format!("{:?}", initial_graph.labels()),
+                &format!("{:?}", score.labels()),
             ));
         }
 
@@ -131,7 +58,7 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the current instance.
+    /// The modified instance.
     ///
     #[inline]
     pub const fn with_max_parents(mut self, max_parents: usize) -> Self {
@@ -147,15 +74,15 @@ where
     ///
     /// # Returns
     ///
-    /// A mutable reference to the current instance.
+    /// The modified instance.
     ///
     #[inline]
     pub fn with_prior_knowledge(mut self, prior_knowledge: &'a PK) -> Result<Self> {
         // Check labels of prior knowledge and initial graph are the same.
         if self.initial_graph.labels() != prior_knowledge.labels() {
             return Err(Error::LabelMismatch(
-                format!("{:?}", self.initial_graph.labels()),
-                format!("{:?}", prior_knowledge.labels()),
+                &format!("{:?}", self.initial_graph.labels()),
+                &format!("{:?}", prior_knowledge.labels()),
             ));
         }
         // Check prior knowledge is consistent with initial graph.
@@ -165,13 +92,13 @@ where
             // Check edge must be either present and not forbidden ...
             if self.initial_graph.has_edge(i, j)? {
                 if prior_knowledge.is_forbidden(i, j) {
-                    return Err(Error::PriorKnowledgeConflict(format!(
+                    return Err(Error::PriorKnowledgeConflict(&format!(
                         "Initial graph contains forbidden edge ({i}, {j})."
                     )));
                 }
             // ... or absent and not required.
             } else if prior_knowledge.is_required(i, j) {
-                return Err(Error::PriorKnowledgeConflict(format!(
+                return Err(Error::PriorKnowledgeConflict(&format!(
                     "Initial graph does not contain required edge ({i}, {j})."
                 )));
             }
@@ -356,7 +283,7 @@ where
                         .collect::<Result<Vec<_>>>()?;
 
                     if scores.iter().any(|(s, _)| s.is_nan()) {
-                        return Err(Error::NanValue);
+                        return Err(Error::NanValue());
                     }
 
                     if let Some((next_score, next_pa)) = scores

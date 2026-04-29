@@ -2,18 +2,14 @@
 set -e
 set -o pipefail
 
-# Enable conda environment if not already active.
-# shellcheck source=/dev/null
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate causal-hub
 # Clean up previous coverage data files.
 rm -rf coverage_html ./*.profraw ./*.profdata ../*.profraw ../*.profdata
 # Enable coverage instrumentation for Rust code when building the Python extension.
 RUSTFLAGS="-Cinstrument-coverage" \
 LLVM_PROFILE_FILE="coverage-%p-%m.profraw" \
-maturin develop
+uv run maturin develop
 # Run test with coverage collection enabled.
-pytest
+uv run pytest
 # Merge the raw coverage data files into a single file.
 llvm-profdata merge -sparse ./*.profraw -o coverage.profdata
 # Generate a human-readable coverage report.

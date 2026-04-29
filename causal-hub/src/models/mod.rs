@@ -44,7 +44,7 @@ pub trait Labelled {
     fn label_to_index(&self, x: &str) -> Result<usize> {
         self.labels()
             .get_index_of(x)
-            .ok_or_else(|| Error::MissingLabel(x.to_string()))
+            .ok_or_else(|| Error::MissingLabel(x))
     }
 
     /// Return the label for a given variable index.
@@ -66,7 +66,7 @@ pub trait Labelled {
         self.labels()
             .get_index(x)
             .map(|x| x.as_str())
-            .ok_or_else(|| Error::VertexOutOfBounds(x))
+            .ok_or_else(|| Error::IndexOutOfBounds(x))
     }
 
     /// Maps an index from this model to another model with the same label.
@@ -92,7 +92,7 @@ pub trait Labelled {
         // Get the index of the variable in the other model.
         other
             .get_index_of(label)
-            .ok_or_else(|| Error::MissingLabel(label.to_string()))
+            .ok_or_else(|| Error::MissingLabel(label))
     }
 
     /// Maps a set of indices from this model to another model with the same labels.
@@ -137,11 +137,11 @@ pub trait Labelled {
         // Get the label of the variable in the other model.
         let label = other
             .get_index(x)
-            .ok_or_else(|| Error::VertexOutOfBounds(x))?;
+            .ok_or_else(|| Error::IndexOutOfBounds(x))?;
         // Get the index of the variable in this model.
         self.labels()
             .get_index_of(label)
-            .ok_or_else(|| Error::MissingLabel(label.clone()))
+            .ok_or_else(|| Error::MissingLabel(label))
     }
 
     /// Maps a set of indices from another model to this model with the same labels.
@@ -218,7 +218,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// An option containing a reference to the sufficient statistics.
     ///
-    fn sample_statistics(&self) -> Option<&Self::Statistics>;
+    fn fitted_statistics(&self) -> Option<&Self::Statistics>;
 
     /// Returns the log-likelihood of the fitted dataset, if any.
     ///
@@ -226,7 +226,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// An option containing the log-likelihood.
     ///
-    fn sample_log_likelihood(&self) -> Option<f64>;
+    fn fitted_log_likelihood(&self) -> Option<f64>;
 
     /// Returns the value of probability (mass or density) function for P(X = x | Z = z).
     ///
@@ -303,7 +303,7 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// An option containing a reference to the sufficient statistics.
     ///
-    fn sample_statistics(&self) -> Option<&Self::Statistics>;
+    fn fitted_statistics(&self) -> Option<&Self::Statistics>;
 
     /// Returns the log-likelihood of the fitted dataset, if any.
     ///
@@ -311,7 +311,7 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// An option containing the log-likelihood.
     ///
-    fn sample_log_likelihood(&self) -> Option<f64>;
+    fn fitted_log_likelihood(&self) -> Option<f64>;
 }
 
 /// A trait for potential functions.

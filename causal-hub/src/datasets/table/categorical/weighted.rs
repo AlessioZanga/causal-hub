@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 
 use crate::{
-    datasets::{CatSample, CatTable, Dataset},
+    datasets::{CatEv, CatSample, CatTable, Dataset},
     models::Labelled,
     types::{Error, Labels, Result, Set, States},
 };
@@ -44,16 +44,13 @@ impl CatWtdTable {
         // Check if the number of weights is equal to the number of samples.
         if dataset.values().nrows() != weights.len() {
             return Err(Error::InvalidParameter(
-                "weights".into(),
-                "must have the same length as the dataset".into(),
+                "weights",
+                "must have the same length as the dataset",
             ));
         }
         // Check if any weight is finite.
         if !weights.iter().all(|&w| w.is_finite()) {
-            return Err(Error::InvalidParameter(
-                "weights".into(),
-                "must be finite".into(),
-            ));
+            return Err(Error::InvalidParameter("weights", "must be finite"));
         }
 
         Ok(Self { dataset, weights })
@@ -95,10 +92,16 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
+    type Evidence = CatEv;
+    type EvidenceIter<'a> = <CatTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
+        self.dataset.evidence_iter()
     }
 
     #[inline]
@@ -113,5 +116,13 @@ impl Dataset for CatWtdTable {
         let weights = self.weights.clone();
         // Return the new weighted dataset.
         Self::new(dataset, weights)
+    }
+}
+
+impl From<CatTable> for CatWtdTable {
+    #[inline]
+    fn from(dataset: CatTable) -> Self {
+        let weights = Array::ones(dataset.values().nrows());
+        Self { dataset, weights }
     }
 }

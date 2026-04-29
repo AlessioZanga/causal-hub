@@ -84,6 +84,7 @@ pub trait CTBN {
     ///
     /// * `name` - The name of the model.
     /// * `description` - The description of the model.
+    /// * `initial_distribution` - The initial distribution of the model.
     /// * `graph` - The underlying graph.
     /// * `cims` - The conditional intensity matrices.
     ///

@@ -1,20 +1,21 @@
 use itertools::Itertools;
-use rand::{Rng, seq::index::sample};
+use rand::{Rng, RngExt, seq::index::sample};
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv, Dataset},
+    random::Random,
     types::{Error, Result},
 };
 
 /// A struct representing a random evidence generator.
-pub struct RngEv<'a, R, D> {
+pub struct RngCatTrjEv<'a, R, D> {
     rng: &'a mut R,
     dataset: &'a D,
     p: f64,
 }
 
-impl<'a, R, D> RngEv<'a, R, D> {
-    /// Creates a new `RngEv` instance.
+impl<'a, R, D> RngCatTrjEv<'a, R, D> {
+    /// Creates a new `RngCatTrjEv` instance.
     ///
     /// # Arguments
     ///
@@ -24,28 +25,21 @@ impl<'a, R, D> RngEv<'a, R, D> {
     ///
     /// # Returns
     ///
-    /// A new `RngEv` instance.
+    /// A new `RngCatTrjEv` instance.
     pub fn new(rng: &'a mut R, dataset: &'a D, p: f64) -> Result<Self> {
         // Check that the probability is in [0, 1].
         if !(0.0..=1.0).contains(&p) {
-            return Err(Error::InvalidParameter(
-                "p".to_string(),
-                "must be in [0, 1]".to_string(),
-            ));
+            return Err(Error::InvalidParameter("p", "must be in [0, 1]"));
         }
 
         Ok(Self { rng, dataset, p })
     }
 }
 
-impl<R: Rng> RngEv<'_, R, CatTrj> {
-    /// Generates random evidence from the trajectory.
-    ///
-    /// # Returns
-    ///
-    /// A `CatTrjEv` instance containing the random evidence.
-    ///
-    pub fn random(&mut self) -> Result<CatTrjEv> {
+impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrj> {
+    type Output = Result<CatTrjEv>;
+
+    fn random(&mut self) -> Self::Output {
         // Get shortened variable type.
         use CatTrjEvT as E;
 
@@ -89,21 +83,15 @@ impl<R: Rng> RngEv<'_, R, CatTrj> {
     }
 }
 
-impl<R: Rng> RngEv<'_, R, CatTrjs> {
-    /// Generates random evidence from the trajectories.
-    ///
-    /// # Returns
-    ///
-    /// A `CatTrjsEv` instance containing the random evidence.
-    ///
-    pub fn random(&mut self) -> Result<CatTrjsEv> {
+impl<R: Rng> Random for RngCatTrjEv<'_, R, CatTrjs> {
+    type Output = Result<CatTrjsEv>;
+
+    fn random(&mut self) -> Self::Output {
         let evidences = self
             .dataset
             .values()
             .iter()
-            .map(|trj| {
-                RngEv::new(&mut self.rng, trj, self.p).and_then(|mut rng_ev| rng_ev.random())
-            })
+            .map(|trj| RngCatTrjEv::<_, CatTrj>::new(self.rng, trj, self.p)?.random())
             .collect::<Result<Vec<_>>>()?;
 
         CatTrjsEv::new(evidences)

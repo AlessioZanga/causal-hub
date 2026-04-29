@@ -145,7 +145,7 @@ impl CatEv {
                 let event = e.event();
                 // Check if event is in bounds.
                 if event >= evidences.len() {
-                    return Err(Error::VertexOutOfBounds(event));
+                    return Err(Error::IndexOutOfBounds(event));
                 }
                 // Push the value into the variable events.
                 evidences[event] = Some(e);
@@ -170,11 +170,11 @@ impl CatEv {
                 // Get the event and states of the evidence.
                 let (event, states) = states
                     .get_index(e.event())
-                    .ok_or_else(|| Error::VertexOutOfBounds(e.event()))?;
+                    .ok_or_else(|| Error::IndexOutOfBounds(e.event()))?;
                 // Sort the event index.
                 let (event, _, new_states) = new_states
                     .get_full(event)
-                    .ok_or_else(|| Error::MissingLabel(event.clone()))?;
+                    .ok_or_else(|| Error::MissingLabel(event))?;
 
                 // Sort the variable states.
                 let e = match e {
@@ -182,7 +182,7 @@ impl CatEv {
                         // Sort the variable states.
                         let state = new_states
                             .get_index_of(&states[state])
-                            .ok_or_else(|| Error::MissingState(states[state].clone()))?;
+                            .ok_or_else(|| Error::MissingState(&states[state]))?;
                         // Construct the sorted evidence.
                         E::CertainPositive { event, state }
                     }
@@ -193,7 +193,7 @@ impl CatEv {
                             .map(|&state| {
                                 new_states
                                     .get_index_of(&states[state])
-                                    .ok_or_else(|| Error::MissingState(states[state].clone()))
+                                    .ok_or_else(|| Error::MissingState(&states[state]))
                             })
                             .collect::<Result<_>>()?;
                         // Construct the sorted evidence.
@@ -207,7 +207,7 @@ impl CatEv {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&states[i])
-                                .ok_or_else(|| Error::MissingState(states[i].clone()))?;
+                                .ok_or_else(|| Error::MissingState(&states[i]))?;
                             // Assign probability to sorted index.
                             new_p_states[state] = p;
                         }
@@ -224,7 +224,7 @@ impl CatEv {
                             // Get sorted index.
                             let state = new_states
                                 .get_index_of(&states[i])
-                                .ok_or_else(|| Error::MissingState(states[i].clone()))?;
+                                .ok_or_else(|| Error::MissingState(&states[i]))?;
                             // Assign probability to sorted index.
                             new_p_not_states[state] = p;
                         }
@@ -261,36 +261,36 @@ impl CatEv {
                     E::UncertainPositive { p_states, .. } => {
                         if p_states.len() != shape[i] {
                             return Err(Error::IncompatibleShape(
-                                p_states.len().to_string(),
-                                shape[i].to_string(),
+                                &p_states.len().to_string(),
+                                &shape[i].to_string(),
                             ));
                         }
                         if !p_states.iter().all(|&x| x >= 0.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must be non-negative.".to_string(),
+                                "Evidence states distributions must be non-negative.",
                             ));
                         }
                         if !relative_eq!(p_states.sum(), 1.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must sum to 1.".to_string(),
+                                "Evidence states distributions must sum to 1.",
                             ));
                         }
                     }
                     E::UncertainNegative { p_not_states, .. } => {
                         if p_not_states.len() != shape[i] {
                             return Err(Error::IncompatibleShape(
-                                p_not_states.len().to_string(),
-                                shape[i].to_string(),
+                                &p_not_states.len().to_string(),
+                                &shape[i].to_string(),
                             ));
                         }
                         if !p_not_states.iter().all(|&x| x >= 0.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must be non-negative.".to_string(),
+                                "Evidence states distributions must be non-negative.",
                             ));
                         }
                         if !relative_eq!(p_not_states.sum(), 1.) {
                             return Err(Error::Probability(
-                                "Evidence states distributions must sum to 1.".to_string(),
+                                "Evidence states distributions must sum to 1.",
                             ));
                         }
                     }
@@ -361,7 +361,7 @@ impl CatEv {
         // Check that the variables are in bounds.
         x.iter().try_for_each(|&i| {
             if i >= self.labels.len() {
-                return Err(Error::VertexOutOfBounds(i));
+                return Err(Error::IndexOutOfBounds(i));
             }
             Ok(())
         })?;
@@ -377,7 +377,7 @@ impl CatEv {
                 self.states
                     .get_index(i)
                     .map(|(label, states)| (label.clone(), states.clone()))
-                    .ok_or_else(|| Error::VertexOutOfBounds(i))
+                    .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
 

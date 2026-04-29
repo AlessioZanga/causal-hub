@@ -82,7 +82,7 @@ impl PK {
     {
         // Check if the labels are sorted.
         if !labels.iter().is_sorted() {
-            return Err(Error::IllegalArgument("Labels must be sorted".into()));
+            return Err(Error::InvalidParameter("labels", "must be sorted"));
         }
 
         // Get the number of labels.
@@ -94,7 +94,7 @@ impl PK {
         forbidden.into_iter().try_for_each(|(i, j)| {
             // Check if the vertices are within bounds.
             if i >= n || j >= n {
-                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+                return Err(Error::IndexOutOfBounds(if i >= n { i } else { j }));
             }
             // Set the edge to `Forbidden`.
             adjacency_matrix[[i, j]] = PKS::Forbidden;
@@ -105,11 +105,11 @@ impl PK {
         required.into_iter().try_for_each(|(i, j)| {
             // Check if the vertices are within bounds.
             if i >= n || j >= n {
-                return Err(Error::VertexOutOfBounds(if i >= n { i } else { j }));
+                return Err(Error::IndexOutOfBounds(if i >= n { i } else { j }));
             }
             // Check that the edge is set to unknown.
             if !adjacency_matrix[[i, j]].is_unknown() {
-                return Err(Error::PriorKnowledgeConflict(format!(
+                return Err(Error::PriorKnowledgeConflict(&format!(
                     "Edge ({i}, {j}) is already set to a non-unknown state: \n\
                     \t expected:    ({i}, {j}) set to 'Unknown', \n\
                     \t found:       ({i}, {j}) set to '{}'.",
@@ -129,7 +129,7 @@ impl PK {
                 // Check if the vertices are within bounds.
                 tier.iter().try_for_each(|&i| {
                     if i >= n {
-                        return Err(Error::VertexOutOfBounds(i));
+                        return Err(Error::IndexOutOfBounds(i));
                     }
                     Ok(())
                 })?;
@@ -149,7 +149,7 @@ impl PK {
                     .try_for_each(|(&i, &j)| {
                         // Check that the edge is not required.
                         if adjacency_matrix[[i, j]].is_required() {
-                            return Err(Error::PriorKnowledgeConflict(format!(
+                            return Err(Error::PriorKnowledgeConflict(&format!(
                                 "Edge ({i}, {j}) is already set to a 'Required' state: \n\
                             \t expected:    ({i}, {j}) set to 'Unknown' or 'Forbidden', \n\
                             \t found:       ({i}, {j}) set to '{}'.",

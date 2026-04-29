@@ -1,3 +1,6 @@
+mod conditional_independence_test;
+pub use conditional_independence_test::*;
+
 mod continuous_time_hill_climbing;
 pub use continuous_time_hill_climbing::*;
 
@@ -6,3 +9,6 @@ pub use continuous_time_peter_clark::*;
 
 mod prior_knowledge;
 pub use prior_knowledge::*;
+
+mod scoring_criterion;
+pub use scoring_criterion::*;

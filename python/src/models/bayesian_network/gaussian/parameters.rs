@@ -3,6 +3,8 @@ use std::sync::{Arc, RwLock};
 use backend::{
     io::JsonIO,
     models::{CPD, GaussCPD, Labelled},
+    random::{Random, RngGaussCPD},
+    types::Labels,
 };
 use numpy::prelude::*;
 use pyo3::{
@@ -10,12 +12,14 @@ use pyo3::{
     types::{PyDict, PyType},
 };
 use pyo3_stub_gen::derive::*;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::{error::to_pyerr, impl_from_into_lock};
 
 /// A struct representing a Gaussian conditional probability distribution.
 #[gen_stub_pyclass]
-#[pyclass(name = "GaussCPD", module = "causal_hub.models", eq)]
+#[pyclass(name = "GaussCPD", module = "causal_hub.models", eq, from_py_object)]
 #[derive(Clone, Debug)]
 pub struct PyGaussCPD {
     inner: Arc<RwLock<GaussCPD>>,
@@ -90,58 +94,119 @@ impl PyGaussCPD {
         Ok(self.lock().parameters_size())
     }
 
-    /// Returns the sample statistics used to fit the distribution, if any.
+    /// Returns the fitted statistics used to fit the distribution, if any.
     ///
     /// Returns
     /// -------
     /// dict[str, ...] | None
-    ///     A dictionary containing the sample statistics used to fit the distribution, if any.
+    ///     A dictionary containing the fitted statistics used to fit the distribution, if any.
     ///
-    pub fn sample_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
+    pub fn fitted_statistics<'a>(&self, py: Python<'a>) -> PyResult<Option<Bound<'a, PyDict>>> {
         self.lock()
-            .sample_statistics()
+            .fitted_statistics()
             .map(|s| {
                 // Allocate the dictionary.
                 let dict = PyDict::new(py);
                 // Add the response mean vector.
                 dict.set_item(
-                    "sample_response_mean",
-                    s.sample_response_mean().to_pyarray(py),
+                    "fitted_response_mean",
+                    s.fitted_response_mean().to_pyarray(py),
                 )?;
                 // Add the design mean vector.
-                dict.set_item("sample_design_mean", s.sample_design_mean().to_pyarray(py))?;
+                dict.set_item("fitted_design_mean", s.fitted_design_mean().to_pyarray(py))?;
                 // Add the response covariance matrix.
                 dict.set_item(
-                    "sample_response_covariance",
-                    s.sample_response_covariance().to_pyarray(py),
+                    "fitted_response_covariance",
+                    s.fitted_response_covariance().to_pyarray(py),
                 )?;
                 // Add the cross covariance matrix.
                 dict.set_item(
-                    "sample_cross_covariance",
-                    s.sample_cross_covariance().to_pyarray(py),
+                    "fitted_cross_covariance",
+                    s.fitted_cross_covariance().to_pyarray(py),
                 )?;
                 // Add the design covariance matrix.
                 dict.set_item(
-                    "sample_design_covariance",
-                    s.sample_design_covariance().to_pyarray(py),
+                    "fitted_design_covariance",
+                    s.fitted_design_covariance().to_pyarray(py),
                 )?;
                 // Add the sample size.
-                dict.set_item("sample_size", s.sample_size())?;
+                dict.set_item("fitted_size", s.fitted_size())?;
                 // Return the dictionary.
                 Ok(dict)
             })
             .transpose()
     }
 
-    /// Returns the sample log-likelihood given the distribution, if any.
+    /// Returns the log-likelihood given the distribution, if any.
     ///
     /// Returns
     /// -------
     /// float | None
-    ///     The sample log-likelihood given the distribution, if any.
+    ///     The log-likelihood given the distribution, if any.
     ///
-    pub fn sample_log_likelihood(&self) -> PyResult<Option<f64>> {
-        Ok(self.lock().sample_log_likelihood())
+    pub fn fitted_log_likelihood(&self) -> PyResult<Option<f64>> {
+        Ok(self.lock().fitted_log_likelihood())
+    }
+
+    /// Generates a random Gaussian conditional probability distribution.
+    ///
+    /// Parameters
+    /// ----------
+    /// labels: Iterable[str]
+    ///     The labels of the target variables.
+    /// conditioning_labels: Iterable[str]
+    ///     The labels of the conditioning variables.
+    /// s_a: float, default=1.0
+    ///     The standard deviation of the regression coefficients.
+    /// s_b: float, default=1.0
+    ///     The standard deviation of the intercept.
+    /// e: float, default=1e-6
+    ///     A small positive constant for covariance regularization.
+    /// seed: int, default=31
+    ///     The seed for the random number generator.
+    ///
+    /// Returns
+    /// -------
+    /// GaussCPD
+    ///     A random Gaussian conditional probability distribution.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        labels,
+        conditioning_labels,
+        s_a = 1.0,
+        s_b = 1.0,
+        e = 1e-6,
+        seed = 31
+    ))]
+    pub fn random(
+        _cls: &Bound<'_, PyType>,
+        labels: &Bound<'_, PyAny>,
+        conditioning_labels: &Bound<'_, PyAny>,
+        s_a: f64,
+        s_b: f64,
+        e: f64,
+        seed: u64,
+    ) -> PyResult<Self> {
+        // Convert the PyAny to a Labels.
+        let labels: Labels = labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+        // Convert the PyAny to a Labels.
+        let conditioning_labels: Labels = conditioning_labels
+            .try_iter()?
+            .map(|x| x?.extract::<String>())
+            .collect::<PyResult<_>>()?;
+
+        // Initialize the random number generator.
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+        // Create a new RngGaussCPD and generate a random CPD.
+        RngGaussCPD::new(&mut rng, &labels, &conditioning_labels, s_a, s_b, e)
+            .and_then(|mut x| x.random())
+            .map(Into::into)
+            .map_err(to_pyerr)
     }
 
     /// Read instance from a JSON string.

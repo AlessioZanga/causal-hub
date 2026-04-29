@@ -9,13 +9,13 @@ mod tests {
             datasets::{CatTrjsEv, CatWtdTrj, CatWtdTrjs, Dataset},
             estimators::{BE, CTPC, ChiSquaredTest, EMBuilder, FTest, ParCTBNEstimator},
             models::{CTBN, CatCIM, CatCTBN, DiGraph, Graph, Labelled},
-            random::RngEv,
+            random::{Random, RngCatTrjEv},
             samplers::{CTBNSampler, ForwardSampler, ImportanceSampler, ParCTBNSampler},
             states,
             types::{Cache, Error, Result},
         };
         use ndarray::prelude::*;
-        use rand::{RngCore, SeedableRng};
+        use rand::{Rng, SeedableRng};
         use rand_xoshiro::Xoshiro256PlusPlus;
         use rayon::prelude::*;
 
@@ -35,7 +35,7 @@ mod tests {
             // Set the probability of the evidence.
             let p = 0.5;
             // Initialize the evidence generator.
-            let mut generator = RngEv::new(&mut rng, &trajectories, p)?;
+            let mut generator = RngCatTrjEv::new(&mut rng, &trajectories, p)?;
             // Sample the evidence from the fully-observed trajectories.
             let evidence = generator.random()?;
 
@@ -121,7 +121,7 @@ mod tests {
                                     .partial_cmp(&b.weight())
                                     .unwrap_or(std::cmp::Ordering::Equal)
                             })
-                            .ok_or(Error::IllegalArgument("Empty trajectories".into()))?
+                            .ok_or_else(|| Error::InvalidParameter("trajectories", "empty"))?
                             .clone())
                     })
                     // Reject trajectories with low weight.

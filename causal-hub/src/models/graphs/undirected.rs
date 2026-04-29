@@ -23,20 +23,20 @@ impl UnGraph {
     #[inline]
     fn check_vertex(&self, x: usize) -> Result<()> {
         if x >= self.labels.len() {
-            return Err(Error::VertexOutOfBounds(x));
+            return Err(Error::IndexOutOfBounds(x));
         }
         Ok(())
     }
 
-    /// Returns the neighbors of a vertex.
+    /// Returns the neighbors of a set of vertices.
     ///
     /// # Arguments
     ///
-    /// * `x` - The vertex for which to find the neighbors.
+    /// * `x` - The set of vertices for which to find the neighbors.
     ///
     /// # Errors
     ///
-    /// * If the vertex is out of bounds.
+    /// * If any vertex is out of bounds.
     ///
     /// # Returns
     ///
@@ -89,7 +89,7 @@ impl Graph for UnGraph {
 
         // Check for duplicate labels.
         if labels.len() != n {
-            return Err(Error::NonUniqueLabels);
+            return Err(Error::NonUniqueLabels());
         }
 
         // Sort the labels.
@@ -213,21 +213,22 @@ impl Graph for UnGraph {
         // Check labels and adjacency matrix dimensions match.
         if labels.len() != adjacency_matrix.nrows() {
             return Err(Error::IncompatibleShape(
-                labels.len().to_string(),
-                adjacency_matrix.nrows().to_string(),
+                &labels.len().to_string(),
+                &adjacency_matrix.nrows().to_string(),
             ));
         }
         // Check adjacency matrix must be square.
         if adjacency_matrix.nrows() != adjacency_matrix.ncols() {
             return Err(Error::IncompatibleShape(
-                adjacency_matrix.nrows().to_string(),
-                adjacency_matrix.ncols().to_string(),
+                &adjacency_matrix.nrows().to_string(),
+                &adjacency_matrix.ncols().to_string(),
             ));
         }
         // Check the adjacency matrix is symmetric.
         if adjacency_matrix != adjacency_matrix.t() {
-            return Err(Error::IllegalArgument(
-                "Adjacency matrix must be symmetric.".into(),
+            return Err(Error::InvalidParameter(
+                "adjacency_matrix",
+                "Adjacency matrix must be symmetric.",
             ));
         }
 
