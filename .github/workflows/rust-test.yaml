@@ -32,6 +32,7 @@ jobs:
             ~/.local/share/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
+            .venv
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
@@ -64,6 +65,7 @@ jobs:
             C:\vcpkg
             ~\.cargo\registry
             ~\.cargo\git
+            .venv
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
@@ -102,6 +104,7 @@ jobs:
             ~/Library/Application Support/openblas_build
             ~/.cargo/registry
             ~/.cargo/git
+            .venv
             target
           key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |

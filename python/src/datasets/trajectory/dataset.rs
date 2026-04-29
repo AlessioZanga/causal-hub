@@ -234,6 +234,120 @@ impl PyCatTrj {
             .map_err(to_pyerr)
     }
 
+    /// Constructs a new categorical trajectory from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing the trajectory data.
+    ///     The data frame must contain a column named "time" that represents the time of each event.
+    ///     Every other column in the data frame must represent a categorical variable.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrj
+    ///     A new categorical trajectory instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        assert!(
+            df.is_instance(&pl.getattr("DataFrame")?)?,
+            "Expected a Polars DataFrame, but '{}' found.",
+            df.get_type().name()?
+        );
+
+        // Get the shape of the data frame.
+        let mut shape = df.getattr("shape")?.extract::<(usize, usize)>()?;
+
+        // Get columns.
+        let mut columns: Vec<String> = df.getattr("columns")?.extract()?;
+
+        // Check that the data frame is not empty.
+        assert!(!columns.is_empty(), "The data frame is empty.");
+
+        // Extract and validate time column.
+        let time_col = df.call_method1("get_column", ("time",))?;
+        let time_dtype = time_col.getattr("dtype")?.str()?.extract::<String>()?;
+        assert!(
+            time_dtype.contains("Float64"),
+            "Expected a Float64 column, but '{time_dtype}' found."
+        );
+        let time: Vec<Option<f64>> = time_col.call_method0("to_list")?.extract()?;
+        let time: Vec<f64> = time
+            .into_iter()
+            .map(|x| x.ok_or_else(|| Error::new_err("Null found in 'time' column".to_string())))
+            .collect::<PyResult<_>>()?;
+        let time = Array1::from_vec(time);
+
+        // Remove the time column from columns and shape.
+        let time_idx = columns
+            .iter()
+            .position(|x| x == "time")
+            .ok_or_else(|| Error::new_err("'time' column not found in DataFrame".to_string()))?;
+        columns.remove(time_idx);
+        shape.1 -= 1;
+
+        // Check categorical dtypes.
+        for name in &columns {
+            let column = df.call_method1("get_column", (name,))?;
+            let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
+            assert!(
+                dtype.contains("Categorical") || dtype.contains("Enum"),
+                "Expected a categorical column, but '{dtype}' found."
+            );
+        }
+
+        // Extract states.
+        let states: States = columns
+            .into_iter()
+            .map(|name| {
+                let column = df.call_method1("get_column", (&name,))?;
+                let categories = column.getattr("cat")?.call_method0("get_categories")?;
+                let categories: Set<String> = categories
+                    .try_iter()?
+                    .map(|x| x?.extract::<String>())
+                    .collect::<PyResult<_>>()?;
+                Ok((name, categories))
+            })
+            .collect::<PyResult<_>>()?;
+
+        // Extract values.
+        let mut values = Array2::from_elem(shape, CatType::default());
+        values.columns_mut().into_iter().zip(&states).try_for_each(
+            |(mut value, (name, states))| {
+                let column = df.call_method1("get_column", (name,))?;
+                let column: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
+                let column: Result<Vec<CatType>, PyErr> = column
+                    .into_iter()
+                    .map(|x| {
+                        let x = x.ok_or_else(|| {
+                            Error::new_err(format!("Null value found in column '{name}'"))
+                        })?;
+                        let idx = states.get_index_of(&x).ok_or_else(|| {
+                            Error::new_err(format!("State '{}' not found in states", x))
+                        })?;
+                        Ok(idx as CatType)
+                    })
+                    .collect();
+                value.assign(&Array1::from_vec(column?));
+
+                Ok::<_, PyErr>(())
+            },
+        )?;
+
+        CatTrj::new(states, values, time)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
     /// Converts the categorical trajectory to a Pandas DataFrame.
     ///
     /// Returns
@@ -277,6 +391,41 @@ impl PyCatTrj {
 
         // Construct the DataFrame.
         pd.getattr("DataFrame")?.call1((df,))
+    }
+
+    /// Converts the categorical trajectory to a Polars DataFrame.
+    ///
+    /// Returns
+    /// -------
+    /// polars.DataFrame
+    ///     A Polars DataFrame representation of the categorical trajectory.
+    ///
+    pub fn to_polars<'a>(&self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Create a dictionary to hold the data.
+        let df = PyDict::new(py);
+
+        // Get lock on the inner field.
+        let lock = self.lock();
+
+        // Add the time column.
+        let time: Vec<f64> = lock.times().iter().copied().collect();
+        let time = pl.getattr("Series")?.call1(("time", time))?;
+        df.set_item("time", time)?;
+
+        // Add categorical columns.
+        let states = lock.states().iter();
+        let values = lock.values().columns();
+        for ((label, states), values) in states.zip(values) {
+            let values: Vec<String> = values.iter().map(|&x| states[x as usize].clone()).collect();
+            let series = pl.getattr("Series")?.call1((label.clone(), values))?;
+            let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;
+            df.set_item(label, series)?;
+        }
+
+        pl.getattr("DataFrame")?.call1((df,))
     }
 }
 
@@ -378,6 +527,38 @@ impl PyCatTrjs {
         CatTrjs::new(dfs).map(Into::into).map_err(to_pyerr)
     }
 
+    /// Constructs a new categorical trajectories from an iterable of Polars DataFrames.
+    ///
+    /// Parameters
+    /// ----------
+    /// dfs: Iterable[polars.DataFrame]
+    ///     An iterable of Polars DataFrames containing the trajectory data.
+    ///     Each data frame must contain a column named "time" that represents the time of each event.
+    ///     Every other column in the data frame must represent a categorical variable.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjs
+    ///     A new categorical trajectories instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dfs: &Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Convert the iterable to a Vec<PyAny>.
+        let dfs: Vec<PyCatTrj> = dfs
+            .try_iter()?
+            .map(|df| PyCatTrj::from_polars(_cls, py, &df?))
+            .collect::<PyResult<_>>()?;
+        // Convert the Vec<PyCatTrj> to Vec<CatTrj>.
+        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+
+        // Create a new CatTrjs with the given parameters.
+        CatTrjs::new(dfs).map(Into::into).map_err(to_pyerr)
+    }
+
     /// Converts the categorical trajectories to a list of Pandas DataFrames.
     ///
     /// Returns
@@ -393,6 +574,24 @@ impl PyCatTrjs {
             .cloned()
             .map(PyCatTrj::from)
             .map(|trj| trj.to_pandas(py))
+            .collect::<PyResult<_>>()
+    }
+
+    /// Converts the categorical trajectories to a list of Polars DataFrames.
+    ///
+    /// Returns
+    /// -------
+    /// list[polars.DataFrame]
+    ///     A list of Polars DataFrame representations of the categorical trajectories.
+    ///
+    pub fn to_polars<'a>(&self, py: Python<'a>) -> PyResult<Vec<Bound<'a, PyAny>>> {
+        // Convert each trajectory to a Polars DataFrame.
+        self.lock()
+            .values()
+            .iter()
+            .cloned()
+            .map(PyCatTrj::from)
+            .map(|trj| trj.to_polars(py))
             .collect::<PyResult<_>>()
     }
 }

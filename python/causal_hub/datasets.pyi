@@ -158,6 +158,23 @@ class CatIncTable:
             A new categorical incomplete tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatIncTable:
+        r"""
+        Constructs a new categorical incomplete tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing categorical columns with missing values.
+
+        Returns
+        -------
+        CatIncTable
+            A new categorical incomplete tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -166,6 +183,16 @@ class CatIncTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -232,6 +259,23 @@ class CatTable:
             A new categorical tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatTable:
+        r"""
+        Constructs a new categorical tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing only categorical columns.
+
+        Returns
+        -------
+        CatTable
+            A new categorical tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -240,6 +284,16 @@ class CatTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -306,6 +360,24 @@ class CatTrj:
             A new categorical trajectory instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> CatTrj:
+        r"""
+        Constructs a new categorical trajectory from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing the trajectory data.
+            The data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+
+        Returns
+        -------
+        CatTrj
+            A new categorical trajectory instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the categorical trajectory to a Pandas DataFrame.
@@ -314,6 +386,16 @@ class CatTrj:
         -------
         pandas.DataFrame
             A Pandas DataFrame representation of the categorical trajectory.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the categorical trajectory to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame representation of the categorical trajectory.
         """
 
 @typing.final
@@ -353,6 +435,34 @@ class CatTrjEv:
         ----------
         df: pandas.DataFrame
             A Pandas DataFrame containing the trajectory evidence data.
+            The data frame must contain the following columns:
+
+        - `event`: The event type (str),
+        - `state`: The state of the event (str),
+        - `start_time`: The start time of the event (float64),
+        - `end_time`: The end time of the event (float64).
+
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+
+        Returns
+        -------
+        CatTrjEv
+            A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def from_polars(
+        cls, df: typing.Any, with_states: typing.Optional[dict] = None
+    ) -> CatTrjEv:
+        r"""
+        Constructs a new categorical trajectory evidence from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing the trajectory evidence data.
             The data frame must contain the following columns:
 
         - `event`: The event type (str),
@@ -446,6 +556,24 @@ class CatTrjs:
             A new categorical trajectories instance.
         """
 
+    @classmethod
+    def from_polars(cls, dfs: typing.Any) -> CatTrjs:
+        r"""
+        Constructs a new categorical trajectories from an iterable of Polars DataFrames.
+
+        Parameters
+        ----------
+        dfs: Iterable[polars.DataFrame]
+            An iterable of Polars DataFrames containing the trajectory data.
+            Each data frame must contain a column named "time" that represents the time of each event.
+            Every other column in the data frame must represent a categorical variable.
+
+        Returns
+        -------
+        CatTrjs
+            A new categorical trajectories instance.
+        """
+
     def to_pandas(self) -> builtins.list[typing.Any]:
         r"""
         Converts the categorical trajectories to a list of Pandas DataFrames.
@@ -454,6 +582,16 @@ class CatTrjs:
         -------
         list[pandas.DataFrame]
             A list of Pandas DataFrame representations of the categorical trajectories.
+        """
+
+    def to_polars(self) -> builtins.list[typing.Any]:
+        r"""
+        Converts the categorical trajectories to a list of Polars DataFrames.
+
+        Returns
+        -------
+        list[polars.DataFrame]
+            A list of Polars DataFrame representations of the categorical trajectories.
         """
 
 @typing.final
@@ -493,6 +631,34 @@ class CatTrjsEv:
         ----------
         dfs: Iterable[pandas.DataFrame]
             An iterable of Pandas DataFrames containing the trajectory evidence data.
+            The data frames must contain the following columns:
+
+        - `event`: The event type (str),
+        - `state`: The state of the event (str),
+        - `start_time`: The start time of the event (float64),
+        - `end_time`: The end time of the event (float64).
+
+        with_states: dict[str, Iterable[str]] | None
+            An optional dictionary mapping event labels to their possible states.
+            If not provided, the states will be inferred from the data frame.
+
+        Returns
+        -------
+        CatTrjsEv
+            A new categorical trajectory evidence instance.
+        """
+
+    @classmethod
+    def from_polars(
+        cls, dfs: typing.Any, with_states: typing.Optional[dict] = None
+    ) -> CatTrjsEv:
+        r"""
+        Constructs a new categorical trajectory evidence from an iterable of Polars DataFrames.
+
+        Parameters
+        ----------
+        dfs: Iterable[polars.DataFrame]
+            An iterable of Polars DataFrames containing the trajectory evidence data.
             The data frames must contain the following columns:
 
         - `event`: The event type (str),
@@ -775,6 +941,23 @@ class GaussIncTable:
             A new gaussian incomplete tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> GaussIncTable:
+        r"""
+        Constructs a new gaussian incomplete tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+
+        df: polars.DataFrame
+            A Polars DataFrame containing gaussian columns with missing values.
+
+        Returns
+        -------
+        GaussIncTable
+            A new gaussian incomplete tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -783,6 +966,16 @@ class GaussIncTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final
@@ -838,6 +1031,22 @@ class GaussTable:
             A new Gaussian tabular dataset instance.
         """
 
+    @classmethod
+    def from_polars(cls, df: typing.Any) -> GaussTable:
+        r"""
+        Constructs a new Gaussian tabular dataset from a Polars DataFrame.
+
+        Parameters
+        ----------
+        df: polars.DataFrame
+            A Polars DataFrame containing only float64 columns.
+
+        Returns
+        -------
+        GaussTable
+            A new Gaussian tabular dataset instance.
+        """
+
     def to_pandas(self) -> typing.Any:
         r"""
         Converts the dataset to a Pandas DataFrame.
@@ -846,6 +1055,16 @@ class GaussTable:
         -------
         pandas.DataFrame
             A Pandas DataFrame.
+        """
+
+    def to_polars(self) -> typing.Any:
+        r"""
+        Converts the dataset to a Polars DataFrame.
+
+        Returns
+        -------
+        polars.DataFrame
+            A Polars DataFrame.
         """
 
 @typing.final

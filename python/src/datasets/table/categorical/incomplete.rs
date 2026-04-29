@@ -219,6 +219,87 @@ impl PyCatIncTable {
             .map_err(to_pyerr)
     }
 
+    /// Constructs a new categorical incomplete tabular dataset from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    ///
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing categorical columns with missing values.
+    ///
+    /// Returns
+    /// -------
+    /// CatIncTable
+    ///     A new categorical incomplete tabular dataset instance.
+    ///
+    #[classmethod]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: Bound<'_, PyAny>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        if !df.is_instance(&pl.getattr("DataFrame")?)? {
+            return Err(pyo3::exceptions::PyTypeError::new_err(
+                "Input must be a Polars DataFrame.",
+            ));
+        }
+
+        // Get labels.
+        let labels: Vec<String> = df.getattr("columns")?.extract()?;
+
+        // Get categories.
+        let mut states = States::default();
+        for label in &labels {
+            let column = df.call_method1("get_column", (label,))?;
+            let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;
+            if !(dtype.contains("Categorical") || dtype.contains("Enum")) {
+                return Err(pyo3::exceptions::PyTypeError::new_err(format!(
+                    "Column '{label}' must be categorical, found '{dtype}'."
+                )));
+            }
+
+            let categories = column.getattr("cat")?.call_method0("get_categories")?;
+            let categories: Vec<String> = categories
+                .try_iter()?
+                .map(|x| x?.extract::<String>())
+                .collect::<PyResult<_>>()?;
+            states.insert(label.clone(), categories.into_iter().collect());
+        }
+
+        // Get values.
+        let n_rows: usize = df.getattr("shape")?.get_item(0)?.extract()?;
+        let mut values = Array2::zeros((n_rows, labels.len()));
+        for (i, label) in labels.iter().enumerate() {
+            let column = df.call_method1("get_column", (label,))?;
+            let items: Vec<Option<String>> = column.call_method0("to_list")?.extract()?;
+            let column_values: Result<Vec<CatType>, _> = items
+                .into_iter()
+                .map(|x| match x {
+                    Some(x) => states[label]
+                        .get_index_of(&x)
+                        .map(|idx| idx as CatType)
+                        .ok_or_else(|| {
+                            pyo3::exceptions::PyValueError::new_err(format!(
+                                "Unknown state '{x}' for column '{label}'."
+                            ))
+                        }),
+                    None => Ok(255),
+                })
+                .collect();
+            values
+                .column_mut(i)
+                .assign(&Array1::from_vec(column_values?));
+        }
+
+        CatIncTable::new(states, values)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
     /// Converts the dataset to a Pandas DataFrame.
     ///
     /// Returns
@@ -258,6 +339,47 @@ impl PyCatIncTable {
         kwargs.set_item("columns", labels)?;
         let df = pd.call_method("DataFrame", (dict,), Some(&kwargs))?;
 
+        Ok(df.into())
+    }
+
+    /// Converts the dataset to a Polars DataFrame.
+    ///
+    /// Returns
+    /// -------
+    /// polars.DataFrame
+    ///     A Polars DataFrame.
+    ///
+    pub fn to_polars(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Build dictionary of polars.Series columns.
+        let data = PyDict::new(py);
+
+        let inner = self.lock();
+        let labels: Vec<String> = inner.labels().iter().cloned().collect();
+        let states = inner.states();
+        let values = inner.values();
+
+        for (i, label) in labels.iter().enumerate() {
+            let col: Vec<Option<String>> = values
+                .column(i)
+                .iter()
+                .map(|&x| {
+                    if x == 255 {
+                        None
+                    } else {
+                        Some(states[label][x as usize].clone())
+                    }
+                })
+                .collect();
+
+            let series = pl.getattr("Series")?.call1((label.clone(), col))?;
+            let series = series.call_method1("cast", (pl.getattr("Categorical")?,))?;
+            data.set_item(label, series)?;
+        }
+
+        let df = pl.getattr("DataFrame")?.call1((data,))?;
         Ok(df.into())
     }
 }

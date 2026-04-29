@@ -5,7 +5,6 @@
     ],
     "rust-analyzer.cargo.noDefaultFeatures": true,
     "chat.tools.terminal.autoApprove": {
-        "conda": true,
         "maturin": true,
         "pytest": true,
         "cargo check": true,
@@ -17,7 +16,5 @@
         "git rev-parse": true,
         "cargo bench": true
     },
-    "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda",
     "python-envs.pythonProjects": []
 }

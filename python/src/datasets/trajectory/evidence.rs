@@ -257,6 +257,174 @@ impl PyCatTrjEv {
             .map_err(to_pyerr)
     }
 
+    /// Constructs a new categorical trajectory evidence from a Polars DataFrame.
+    ///
+    /// Parameters
+    /// ----------
+    /// df: polars.DataFrame
+    ///     A Polars DataFrame containing the trajectory evidence data.
+    ///     The data frame must contain the following columns:
+    ///
+    /// - `event`: The event type (str),
+    /// - `state`: The state of the event (str),
+    /// - `start_time`: The start time of the event (float64),
+    /// - `end_time`: The end time of the event (float64).
+    ///
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjEv
+    ///     A new categorical trajectory evidence instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        df,
+        with_states = None
+    ))]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        df: &Bound<'_, PyAny>,
+        with_states: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Import the polars module.
+        let pl = py.import("polars")?;
+
+        // Check that the object is a DataFrame.
+        assert!(
+            df.is_instance(&pl.getattr("DataFrame")?)?,
+            "Expected a Polars DataFrame, but '{}' found.",
+            df.get_type().name()?
+        );
+
+        // Get required columns.
+        let event_col = df.call_method1("get_column", ("event",))?;
+        let state_col = df.call_method1("get_column", ("state",))?;
+        let start_time_col = df.call_method1("get_column", ("start_time",))?;
+        let end_time_col = df.call_method1("get_column", ("end_time",))?;
+
+        // Check dtypes.
+        let event_dtype = event_col.getattr("dtype")?.str()?.extract::<String>()?;
+        assert!(
+            event_dtype.contains("String")
+                || event_dtype.contains("Categorical")
+                || event_dtype.contains("Enum"),
+            "Expected a string-like column, but '{event_dtype}' found."
+        );
+        let state_dtype = state_col.getattr("dtype")?.str()?.extract::<String>()?;
+        assert!(
+            state_dtype.contains("String")
+                || state_dtype.contains("Categorical")
+                || state_dtype.contains("Enum"),
+            "Expected a string-like column, but '{state_dtype}' found."
+        );
+        let start_time_dtype = start_time_col
+            .getattr("dtype")?
+            .str()?
+            .extract::<String>()?;
+        assert!(
+            start_time_dtype.contains("Float64"),
+            "Expected a Float64 column, but '{start_time_dtype}' found."
+        );
+        let end_time_dtype = end_time_col.getattr("dtype")?.str()?.extract::<String>()?;
+        assert!(
+            end_time_dtype.contains("Float64"),
+            "Expected a Float64 column, but '{end_time_dtype}' found."
+        );
+
+        // Collect columns.
+        let event: Vec<String> = event_col
+            .call_method0("to_list")?
+            .extract::<Vec<Option<String>>>()?
+            .into_iter()
+            .map(|x| x.ok_or_else(|| Error::new_err("Null found in 'event' column".to_string())))
+            .collect::<PyResult<_>>()?;
+        let state: Vec<String> = state_col
+            .call_method0("to_list")?
+            .extract::<Vec<Option<String>>>()?
+            .into_iter()
+            .map(|x| x.ok_or_else(|| Error::new_err("Null found in 'state' column".to_string())))
+            .collect::<PyResult<_>>()?;
+        let start_time: Vec<f64> = start_time_col
+            .call_method0("to_list")?
+            .extract::<Vec<Option<f64>>>()?
+            .into_iter()
+            .map(|x| {
+                x.ok_or_else(|| Error::new_err("Null found in 'start_time' column".to_string()))
+            })
+            .collect::<PyResult<_>>()?;
+        let end_time: Vec<f64> = end_time_col
+            .call_method0("to_list")?
+            .extract::<Vec<Option<f64>>>()?
+            .into_iter()
+            .map(|x| x.ok_or_else(|| Error::new_err("Null found in 'end_time' column".to_string())))
+            .collect::<PyResult<_>>()?;
+
+        // Construct the states.
+        let mut states = with_states
+            .and_then(|states| {
+                states
+                    .items()
+                    .into_iter()
+                    .map(|key_value| {
+                        let (key, value) =
+                            key_value.extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()?;
+                        let key = key.extract::<String>()?;
+                        let value: Set<_> = value
+                            .try_iter()?
+                            .map(|x| x?.extract::<String>())
+                            .collect::<PyResult<_>>()?;
+                        Ok((key, value))
+                    })
+                    .collect::<PyResult<_>>()
+                    .ok()
+            })
+            .unwrap_or_else(|| {
+                event
+                    .iter()
+                    .zip(&state)
+                    .fold(States::default(), |mut acc, (event, state)| {
+                        let entry = acc.entry(event.clone()).or_default();
+                        entry.insert(state.clone());
+                        acc
+                    })
+            });
+
+        // Sort the states.
+        states.sort_keys();
+        states.values_mut().for_each(Set::sort);
+
+        // Build evidence.
+        use CatTrjEvT as E;
+        let evidence: Vec<_> = event
+            .into_iter()
+            .zip(state)
+            .zip(start_time)
+            .zip(end_time)
+            .map(|(((event, state), start_time), end_time)| {
+                let event = states.get_index_of(&event).ok_or_else(|| {
+                    Error::new_err(format!("Event '{}' not found in states", event))
+                })?;
+                let state = states[event].get_index_of(&state).ok_or_else(|| {
+                    Error::new_err(format!("State '{}' not found for event '{}'", state, event))
+                })?;
+                Ok(E::CertainPositiveInterval {
+                    event,
+                    state,
+                    start_time,
+                    end_time,
+                })
+            })
+            .collect::<PyResult<_>>()?;
+
+        CatTrjEv::new(states, evidence)
+            .map(Into::into)
+            .map_err(to_pyerr)
+    }
+
     /// Generates a random categorical trajectory evidence.
     ///
     /// Parameters
@@ -385,6 +553,51 @@ impl PyCatTrjsEv {
         let dfs: Vec<PyCatTrjEv> = dfs
             .try_iter()?
             .map(|df| PyCatTrjEv::from_pandas(_cls, py, &df?, with_states))
+            .collect::<PyResult<_>>()?;
+        // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
+        let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();
+
+        // Create a new CatTrjsEv with the given parameters.
+        CatTrjsEv::new(dfs).map(Into::into).map_err(to_pyerr)
+    }
+
+    /// Constructs a new categorical trajectory evidence from an iterable of Polars DataFrames.
+    ///
+    /// Parameters
+    /// ----------
+    /// dfs: Iterable[polars.DataFrame]
+    ///     An iterable of Polars DataFrames containing the trajectory evidence data.
+    ///     The data frames must contain the following columns:
+    ///
+    /// - `event`: The event type (str),
+    /// - `state`: The state of the event (str),
+    /// - `start_time`: The start time of the event (float64),
+    /// - `end_time`: The end time of the event (float64).
+    ///
+    /// with_states: dict[str, Iterable[str]] | None
+    ///     An optional dictionary mapping event labels to their possible states.
+    ///     If not provided, the states will be inferred from the data frame.
+    ///
+    /// Returns
+    /// -------
+    /// CatTrjsEv
+    ///     A new categorical trajectory evidence instance.
+    ///
+    #[classmethod]
+    #[pyo3(signature = (
+        dfs,
+        with_states = None
+    ))]
+    pub fn from_polars(
+        _cls: &Bound<'_, PyType>,
+        py: Python<'_>,
+        dfs: &Bound<'_, PyAny>,
+        with_states: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        // Convert the iterable to a Vec<PyAny>.
+        let dfs: Vec<PyCatTrjEv> = dfs
+            .try_iter()?
+            .map(|df| PyCatTrjEv::from_polars(_cls, py, &df?, with_states))
             .collect::<PyResult<_>>()?;
         // Convert the Vec<PyCatTrjEv> to Vec<CatTrjEv>.
         let dfs: Vec<_> = dfs.into_iter().map(Into::into).collect();

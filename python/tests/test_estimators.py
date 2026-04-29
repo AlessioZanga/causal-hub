@@ -6,6 +6,7 @@ from causal_hub.datasets import (
     CatTable,
     CatTrjs,
     CatTrjsEv,
+    CatWtdTrjs,
     GaussIncTable,
     GaussTable,
     MissingMechanism,
@@ -170,6 +171,24 @@ def test_parameter_learning_em() -> None:
     assert len(result["models"]) > 0
     assert len(result["expectations"]) > 0
 
+    # Exercise weighted trajectory wrappers.
+    exp0 = result["expectations"][0]
+    assert isinstance(exp0, CatWtdTrjs)
+    assert exp0.labels() == ["A", "B"]
+    assert set(exp0.states().keys()) == {"A", "B"}
+
+    weighted_trjs = exp0.values()
+    assert len(weighted_trjs) > 0
+    w0 = weighted_trjs[0]
+    assert w0.labels() == ["A", "B"]
+    assert set(w0.states().keys()) == {"A", "B"}
+    assert w0.weight() > 0.0
+
+    trj0 = w0.trajectory()
+    assert trj0.labels() == ["A", "B"]
+    assert trj0.values().shape[1] == 2
+    np.testing.assert_array_equal(trj0.times(), w0.times())
+
 
 def test_structure_learning_sem() -> None:
     """Test structure learning using Structural Expectation-Maximization (SEM)."""
@@ -210,6 +229,24 @@ def test_structure_learning_sem() -> None:
     assert "models" in result
     assert "expectations" in result
     assert len(result["models"]) > 0
+    assert len(result["expectations"]) > 0
+
+    # Exercise weighted trajectory wrappers.
+    sem_step0 = result["expectations"][0]
+    assert isinstance(sem_step0, dict)
+    assert "expectations" in sem_step0
+    assert len(sem_step0["expectations"]) > 0
+
+    exp0 = sem_step0["expectations"][0]
+    assert isinstance(exp0, CatWtdTrjs)
+    assert exp0.labels() == ["A", "B"]
+    assert set(exp0.states().keys()) == {"A", "B"}
+
+    weighted_trjs = exp0.values()
+    assert len(weighted_trjs) > 0
+    w0 = weighted_trjs[0]
+    assert w0.labels() == ["A", "B"]
+    assert w0.weight() > 0.0
 
 
 def test_prior_knowledge() -> None:
