@@ -3,7 +3,7 @@ mod tests {
     use approx::assert_relative_eq;
     use causal_hub::{
         labels,
-        models::{CPD, CatCPD, GaussCPD, GaussCPDP, Labelled, MixedCPD, MixedSample},
+        models::{CPD, CatCPD, GaussCPD, GaussCPDP, Labelled, MixedCPD, MixedSample, MixedSupport},
         support,
         types::Result,
     };
@@ -188,6 +188,72 @@ mod tests {
         match gauss_sample {
             MixedSample::Gaussian(s) => assert_eq!(s, array![1.5, 2.5]),
             _ => panic!("Expected gaussian"),
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn support_categorical() -> Result<()> {
+        let mixed = MixedCPD::from(CatCPD::new(
+            support![("A", ["no", "yes"])],
+            support![("B", ["no", "yes"]), ("C", ["no", "yes"])],
+            array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6],],
+        )?);
+
+        let s = CPD::support(&mixed);
+        match &*s {
+            MixedSupport::Categorical(s) => {
+                assert_eq!(s.len(), 1);
+                for (_, states) in s {
+                    assert_eq!(states.len(), 2);
+                    assert!(states.contains("no"));
+                    assert!(states.contains("yes"));
+                }
+            }
+            _ => panic!("Expected categorical support"),
+        }
+
+        let cs = CPD::conditioning_support(&mixed);
+        match &*cs {
+            MixedSupport::Categorical(cs) => {
+                assert_eq!(cs.len(), 2);
+                assert!(cs.values().all(|v| v.len() == 2));
+            }
+            _ => panic!("Expected categorical conditioning support"),
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn support_gaussian() -> Result<()> {
+        let mixed = MixedCPD::from(GaussCPD::new(
+            labels!("A"),
+            labels!("B"),
+            GaussCPDP::new(array![[3.]], array![2.], array![[4.]])?,
+        )?);
+
+        let s = CPD::support(&mixed);
+        match &*s {
+            MixedSupport::Gaussian(s) => {
+                for (_, &(lo, hi)) in s {
+                    assert!(lo.is_infinite() && lo.is_sign_negative());
+                    assert!(hi.is_infinite() && hi.is_sign_positive());
+                }
+            }
+            _ => panic!("Expected gaussian support"),
+        }
+
+        let cs = CPD::conditioning_support(&mixed);
+        match &*cs {
+            MixedSupport::Gaussian(cs) => {
+                for (_, &(lo, hi)) in cs {
+                    assert!(lo.is_infinite() && lo.is_sign_negative());
+                    assert!(hi.is_infinite() && hi.is_sign_positive());
+                }
+            }
+            _ => panic!("Expected gaussian conditioning support"),
         }
 
         Ok(())

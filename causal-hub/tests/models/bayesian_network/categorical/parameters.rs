@@ -432,4 +432,24 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn support() -> Result<()> {
+        let x = support![("A", ["no", "yes"])];
+        let z = support![("B", ["no", "yes"]), ("C", ["no", "yes"])];
+        let p = array![[0.1, 0.9], [0.2, 0.8], [0.3, 0.7], [0.4, 0.6]];
+        let cpd = CatCPD::new(x, z, p)?;
+
+        let s = CPD::support(&cpd);
+        assert_eq!(*s, support![("A", ["no", "yes"])]);
+        let cs = CPD::conditioning_support(&cpd);
+        assert_eq!(
+            cs.values()
+                .map(|v| v.iter().collect::<Vec<_>>())
+                .collect::<Vec<_>>(),
+            vec![vec!["no", "yes"], vec!["no", "yes"]]
+        );
+
+        Ok(())
+    }
 }

@@ -942,6 +942,89 @@ class CatCTBN:
         """
 
 @typing.final
+class CatPhi:
+    r"""
+    A struct representing a categorical potential.
+    """
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the potential.
+        """
+
+    def support(self) -> builtins.dict[builtins.str, tuple]:
+        r"""
+        Returns the support of the potential.
+        """
+
+    def shape(self) -> builtins.list[builtins.int]:
+        r"""
+        Returns the shape of the potential.
+        """
+
+    def parameters(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        Returns the parameters.
+        """
+
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        """
+
+    def condition(self, evidence: typing.Any) -> CatPhi:
+        r"""
+        Conditions the potential on observed evidence.
+        """
+
+    def marginalize(self, x: typing.Any) -> CatPhi:
+        r"""
+        Marginalizes the potential over a set of variables.
+        """
+
+    def normalize(self) -> CatPhi:
+        r"""
+        Normalizes the potential so its entries sum to one.
+        """
+
+    @classmethod
+    def from_cpd(cls, cpd: CatCPD) -> CatPhi:
+        r"""
+        Converts a CatCPD to a CatPhi.
+        """
+
+    def into_cpd(self, x: typing.Any, z: typing.Any) -> CatCPD:
+        r"""
+        Converts the potential to a CatCPD.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the CatPhi.
+        """
+
+    def __mul__(self, other: CatPhi) -> CatPhi:
+        r"""
+        Multiplies two potentials.
+        """
+
+    def __imul__(self, other: CatPhi) -> None:
+        r"""
+        In-place multiplication of two potentials.
+        """
+
+    def __truediv__(self, other: CatPhi) -> CatPhi:
+        r"""
+        Divides two potentials.
+        """
+
+    def __idiv__(self, other: CatPhi) -> None:
+        r"""
+        In-place division of two potentials.
+        """
+
+@typing.final
 class DiGraph:
     r"""
     A struct representing a directed graph using an adjacency matrix.
@@ -1802,6 +1885,30 @@ class GaussCPD:
             A reference to the conditioning labels.
         """
 
+    def support(
+        self,
+    ) -> builtins.dict[builtins.str, tuple[builtins.float, builtins.float]]:
+        r"""
+        Returns the support of each variable.
+
+        Returns
+        -------
+        dict[str, tuple[float, float]]
+            A map from variable names to (min, max) ranges.
+        """
+
+    def conditioning_support(
+        self,
+    ) -> builtins.dict[builtins.str, tuple[builtins.float, builtins.float]]:
+        r"""
+        Returns the support of the conditioning variables.
+
+        Returns
+        -------
+        dict[str, tuple[float, float]]
+            A map from conditioning variable names to (min, max) ranges.
+        """
+
     def parameters(self) -> dict:
         r"""
         Returns the parameters.
@@ -1926,4 +2033,87 @@ class GaussCPD:
         ----------
         path: str
             The path to the JSON file to write to.
+        """
+
+@typing.final
+class GaussPhi:
+    r"""
+    A struct representing a Gaussian potential (information form).
+    """
+
+    def __eq__(self, other: builtins.object) -> builtins.bool: ...
+    def labels(self) -> builtins.list[builtins.str]:
+        r"""
+        Returns the labels of the potential.
+        """
+
+    def parameters_size(self) -> builtins.int:
+        r"""
+        Returns the parameters size.
+        """
+
+    def condition(self, evidence: typing.Any) -> GaussPhi:
+        r"""
+        Conditions the potential on observed evidence.
+        """
+
+    def marginalize(self, x: typing.Any) -> GaussPhi:
+        r"""
+        Marginalizes the potential over a set of variables.
+        """
+
+    def normalize(self) -> GaussPhi:
+        r"""
+        Normalizes the potential.
+        """
+
+    def precision_matrix(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        Returns the precision matrix of the potential.
+        """
+
+    def information_vector(self) -> numpy.typing.NDArray[numpy.float64]:
+        r"""
+        Returns the information vector of the potential.
+        """
+
+    def log_normalization_constant(self) -> builtins.float:
+        r"""
+        Returns the log normalization constant of the potential.
+        """
+
+    @classmethod
+    def from_cpd(cls, cpd: GaussCPD) -> GaussPhi:
+        r"""
+        Converts a GaussCPD to a GaussPhi.
+        """
+
+    def into_cpd(self, x: typing.Any, z: typing.Any) -> GaussCPD:
+        r"""
+        Converts the potential to a GaussCPD.
+        """
+
+    def __repr__(self) -> builtins.str:
+        r"""
+        Returns the string representation of the GaussPhi.
+        """
+
+    def __mul__(self, other: GaussPhi) -> GaussPhi:
+        r"""
+        Multiplies two potentials.
+        """
+
+    def __imul__(self, other: GaussPhi) -> None:
+        r"""
+        In-place multiplication of two potentials.
+        """
+
+    def __truediv__(self, other: GaussPhi) -> GaussPhi:
+        r"""
+        Divides two potentials.
+        """
+
+    def __idiv__(self, other: GaussPhi) -> None:
+        r"""
+        In-place division of two potentials.
         """

@@ -478,6 +478,8 @@ impl GaussCPD {
         parameters: GaussCPDP,
         fitted_statistics: Option<GaussCPDS>,
         fitted_log_likelihood: Option<f64>,
+        support: Option<GaussSupport>,
+        conditioning_support: Option<GaussSupport>,
     ) -> Result<Self> {
         // Check the fitted statistics, if any.
         if let Some(fitted_statistics) = &fitted_statistics {
@@ -532,6 +534,7 @@ impl GaussCPD {
                 ));
             }
         }
+
         // Check the fitted log-likelihood is finite.
         if let Some(fitted_log_likelihood) = &fitted_log_likelihood
             && !fitted_log_likelihood.is_finite()
@@ -544,6 +547,14 @@ impl GaussCPD {
 
         // Create the CPD.
         let mut cpd = Self::new(labels, conditioning_labels, parameters)?;
+
+        // Override support and conditioning support, if provided.
+        if let Some(support) = support {
+            cpd.support = support;
+        }
+        if let Some(conditioning_support) = conditioning_support {
+            cpd.conditioning_support = conditioning_support;
+        }
 
         // Set the optional fields.
         cpd.fitted_statistics = fitted_statistics;
@@ -665,8 +676,8 @@ impl CPD for GaussCPD {
     }
 
     #[inline]
-    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
-        self.fitted_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>> {
+        self.fitted_statistics.as_ref().map(Cow::Borrowed)
     }
 
     #[inline]
@@ -858,6 +869,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
         enum Field {
             Labels,
             ConditioningLabels,
+            Support,
+            ConditioningSupport,
             Parameters,
             FittedStatistics,
             FittedLogLikelihood,
@@ -880,12 +893,14 @@ impl<'de> Deserialize<'de> for GaussCPD {
                 use serde::de::Error as E;
 
                 // Allocate the fields.
-                let mut labels = None;
-                let mut conditioning_labels = None;
-                let mut parameters = None;
-                let mut fitted_statistics = None;
-                let mut fitted_log_likelihood = None;
-                let mut type_ = None;
+                let mut labels: Option<Labels> = None;
+                let mut conditioning_labels: Option<Labels> = None;
+                let mut support: Option<GaussSupport> = None;
+                let mut conditioning_support: Option<GaussSupport> = None;
+                let mut parameters: Option<GaussCPDP> = None;
+                let mut fitted_statistics: Option<GaussCPDS> = None;
+                let mut fitted_log_likelihood: Option<f64> = None;
+                let mut type_: Option<String> = None;
 
                 // Parse the map.
                 while let Some(key) = map.next_key()? {
@@ -901,6 +916,18 @@ impl<'de> Deserialize<'de> for GaussCPD {
                                 return Err(E::duplicate_field("conditioning_labels"));
                             }
                             conditioning_labels = Some(map.next_value()?);
+                        }
+                        Field::Support => {
+                            if support.is_some() {
+                                return Err(E::duplicate_field("support"));
+                            }
+                            support = Some(map.next_value()?);
+                        }
+                        Field::ConditioningSupport => {
+                            if conditioning_support.is_some() {
+                                return Err(E::duplicate_field("conditioning_support"));
+                            }
+                            conditioning_support = Some(map.next_value()?);
                         }
                         Field::Parameters => {
                             if parameters.is_some() {
@@ -943,12 +970,24 @@ impl<'de> Deserialize<'de> for GaussCPD {
                     )));
                 }
 
+                // Build defaults for support and conditioning support from labels.
+                let default_support: GaussSupport = labels
+                    .iter()
+                    .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                    .collect();
+                let default_conditioning_support: GaussSupport = conditioning_labels
+                    .iter()
+                    .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                    .collect();
+
                 GaussCPD::with_optionals(
                     labels,
                     conditioning_labels,
                     parameters,
                     fitted_statistics,
                     fitted_log_likelihood,
+                    support.or(Some(default_support)),
+                    conditioning_support.or(Some(default_conditioning_support)),
                 )
                 .map_err(E::custom)
             }
@@ -957,6 +996,8 @@ impl<'de> Deserialize<'de> for GaussCPD {
         const FIELDS: &[&str] = &[
             "labels",
             "conditioning_labels",
+            "support",
+            "conditioning_support",
             "parameters",
             "fitted_statistics",
             "fitted_log_likelihood",

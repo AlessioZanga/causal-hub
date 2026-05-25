@@ -149,7 +149,7 @@ impl CPD for MixedCPD {
     type Sample = MixedSample;
     type Support = MixedSupport;
     type Parameters = MixedCPD;
-    type Statistics = MixedCPD;
+    type Statistics = MixedCPDS;
 
     fn conditioning_labels(&self) -> &Labels {
         match self {
@@ -187,12 +187,15 @@ impl CPD for MixedCPD {
         }
     }
 
-    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
-        let has_stats = match self {
-            Self::Categorical(cpd) => cpd.fitted_statistics().is_some(),
-            Self::Gaussian(cpd) => cpd.fitted_statistics().is_some(),
-        };
-        has_stats.then_some(self)
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>> {
+        match self {
+            Self::Categorical(cpd) => cpd
+                .fitted_statistics()
+                .map(|s| Cow::Owned(MixedCPDS::Categorical(s.into_owned()))),
+            Self::Gaussian(cpd) => cpd
+                .fitted_statistics()
+                .map(|s| Cow::Owned(MixedCPDS::Gaussian(Box::new(s.into_owned())))),
+        }
     }
 
     fn fitted_log_likelihood(&self) -> Option<f64> {

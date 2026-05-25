@@ -22,6 +22,88 @@ pub struct CatPhi {
     parameters: ArrayD<f64>,
 }
 
+impl CatPhi {
+    /// Creates a new categorical potential.
+    ///
+    /// # Arguments
+    ///
+    /// * `support` - A map from variable names to their possible support.
+    /// * `parameters` - A multi-dimensional array of parameters.
+    ///
+    /// # Returns
+    ///
+    /// A new categorical potential instance.
+    ///
+    pub fn new(mut support: CatSupport, mut parameters: ArrayD<f64>) -> Result<Self> {
+        // Get labels.
+        let mut labels: Labels = support.keys().cloned().collect();
+        // Get shape.
+        let mut shape = Array::from_iter(support.values().map(Set::len));
+        // Validate parameters shape matches support shape.
+        let shape_slice = shape.as_slice().ok_or_else(|| {
+            Error::Shape("Failed to convert shape array to slice: shape is not contiguous")
+        })?;
+        if parameters.shape() != shape_slice {
+            return Err(Error::Shape(&format!(
+                "Parameters shape does not match support shape: \n\
+                \t expected:    {:?} , \n\
+                \t found:       {:?} .",
+                shape_slice,
+                parameters.shape(),
+            )));
+        }
+
+        // Sort support if not sorted and permute parameters accordingly.
+        if !support.keys().is_sorted() {
+            // Get the new axes order w.r.t. sorted labels.
+            let mut axes: Vec<_> = (0..support.len()).collect();
+            axes.sort_by(|&i, &j| {
+                support
+                    .get_index(i)
+                    .map(|(l, _)| l)
+                    .cmp(&support.get_index(j).map(|(l, _)| l))
+            });
+            // Sort the support by labels.
+            support.sort_keys();
+            // Permute the parameters to match the new order.
+            parameters = parameters.permuted_axes(axes);
+            // Update the labels.
+            labels = support.keys().cloned().collect();
+            // Update the shape.
+            shape = support.values().map(Set::len).collect();
+        }
+
+        Ok(Self {
+            labels,
+            support,
+            shape,
+            parameters,
+        })
+    }
+
+    /// CatSupport of the potential.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support.
+    ///
+    #[inline]
+    pub const fn support(&self) -> &CatSupport {
+        &self.support
+    }
+
+    /// Shape of the potential.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the shape.
+    ///
+    #[inline]
+    pub const fn shape(&self) -> &Array1<usize> {
+        &self.shape
+    }
+}
+
 impl Labelled for CatPhi {
     #[inline]
     fn labels(&self) -> &Labels {
@@ -385,87 +467,5 @@ impl Phi for CatPhi {
 
         // Create the new CPD.
         CatCPD::new(states_x, states_z, parameters)
-    }
-}
-
-impl CatPhi {
-    /// Creates a new categorical potential.
-    ///
-    /// # Arguments
-    ///
-    /// * `support` - A map from variable names to their possible support.
-    /// * `parameters` - A multi-dimensional array of parameters.
-    ///
-    /// # Returns
-    ///
-    /// A new categorical potential instance.
-    ///
-    pub fn new(mut support: CatSupport, mut parameters: ArrayD<f64>) -> Result<Self> {
-        // Get labels.
-        let mut labels: Labels = support.keys().cloned().collect();
-        // Get shape.
-        let mut shape = Array::from_iter(support.values().map(Set::len));
-        // Validate parameters shape matches support shape.
-        let shape_slice = shape.as_slice().ok_or_else(|| {
-            Error::Shape("Failed to convert shape array to slice: shape is not contiguous")
-        })?;
-        if parameters.shape() != shape_slice {
-            return Err(Error::Shape(&format!(
-                "Parameters shape does not match support shape: \n\
-                \t expected:    {:?} , \n\
-                \t found:       {:?} .",
-                shape_slice,
-                parameters.shape(),
-            )));
-        }
-
-        // Sort support if not sorted and permute parameters accordingly.
-        if !support.keys().is_sorted() {
-            // Get the new axes order w.r.t. sorted labels.
-            let mut axes: Vec<_> = (0..support.len()).collect();
-            axes.sort_by(|&i, &j| {
-                support
-                    .get_index(i)
-                    .map(|(l, _)| l)
-                    .cmp(&support.get_index(j).map(|(l, _)| l))
-            });
-            // Sort the support by labels.
-            support.sort_keys();
-            // Permute the parameters to match the new order.
-            parameters = parameters.permuted_axes(axes);
-            // Update the labels.
-            labels = support.keys().cloned().collect();
-            // Update the shape.
-            shape = support.values().map(Set::len).collect();
-        }
-
-        Ok(Self {
-            labels,
-            support,
-            shape,
-            parameters,
-        })
-    }
-
-    /// CatSupport of the potential.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the support.
-    ///
-    #[inline]
-    pub const fn support(&self) -> &CatSupport {
-        &self.support
-    }
-
-    /// Shape of the potential.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the shape.
-    ///
-    #[inline]
-    pub const fn shape(&self) -> &Array1<usize> {
-        &self.shape
     }
 }

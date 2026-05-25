@@ -1,2 +1,1 @@
 mod parameters;
-mod potential;

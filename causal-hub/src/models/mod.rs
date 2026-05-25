@@ -191,7 +191,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
-    type Statistics;
+    type Statistics: Clone;
 
     /// Returns the labels of the conditioned variables.
     ///
@@ -243,9 +243,9 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// # Returns
     ///
-    /// An option containing a reference to the sufficient statistics.
+    /// An option containing the sufficient statistics, either borrowed or owned.
     ///
-    fn fitted_statistics(&self) -> Option<&Self::Statistics>;
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>>;
 
     /// Returns the log-likelihood of the fitted dataset, if any.
     ///
@@ -300,7 +300,7 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
-    type Statistics;
+    type Statistics: Clone;
 
     /// Returns the labels of the conditioned variables.
     ///
@@ -346,9 +346,9 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// # Returns
     ///
-    /// An option containing a reference to the sufficient statistics.
+    /// An option containing the sufficient statistics, either borrowed or owned.
     ///
-    fn fitted_statistics(&self) -> Option<&Self::Statistics>;
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>>;
 
     /// Returns the log-likelihood of the fitted dataset, if any.
     ///

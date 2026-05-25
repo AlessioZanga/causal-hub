@@ -286,4 +286,24 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn support() -> Result<()> {
+        let s = support![
+            ("A", ["a1", "a2", "a3"]),
+            ("B", ["b1", "b2"]),
+            ("C", ["c1", "c2"]),
+        ];
+        let p = array![
+            0.25, 0.35, 0.08, 0.16, 0.05, 0.07, 0., 0., 0.15, 0.21, 0.09, 0.18
+        ]
+        .into_shape_with_order((3, 2, 2))?
+        .into_dyn();
+        let phi = CatPhi::new(s.clone(), p)?;
+
+        let support = Phi::support(&phi);
+        assert_eq!(*support, s);
+
+        Ok(())
+    }
 }

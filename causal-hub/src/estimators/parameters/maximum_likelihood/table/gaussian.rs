@@ -82,6 +82,8 @@ impl MLE<'_, GaussTable> {
             parameters,
             sample_statistics,
             sample_log_likelihood,
+            None,
+            None,
         )
     }
 }

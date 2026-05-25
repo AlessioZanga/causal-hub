@@ -712,8 +712,8 @@ impl CPD for CatCPD {
     }
 
     #[inline]
-    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
-        self.fitted_statistics.as_ref()
+    fn fitted_statistics(&self) -> Option<Cow<'_, Self::Statistics>> {
+        self.fitted_statistics.as_ref().map(Cow::Borrowed)
     }
 
     #[inline]

@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use backend::{
     io::JsonIO,
@@ -57,6 +60,36 @@ impl PyGaussCPD {
     ///
     pub fn conditioning_labels(&self) -> PyResult<Vec<String>> {
         Ok(self.lock().conditioning_labels().iter().cloned().collect())
+    }
+
+    /// Returns the support of each variable.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[float, float]]
+    ///     A map from variable names to (min, max) ranges.
+    ///
+    pub fn support(&self) -> PyResult<BTreeMap<String, (f64, f64)>> {
+        let lock = self.lock();
+        Ok(CPD::support(&*lock)
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect())
+    }
+
+    /// Returns the support of the conditioning variables.
+    ///
+    /// Returns
+    /// -------
+    /// dict[str, tuple[float, float]]
+    ///     A map from conditioning variable names to (min, max) ranges.
+    ///
+    pub fn conditioning_support(&self) -> PyResult<BTreeMap<String, (f64, f64)>> {
+        let lock = self.lock();
+        Ok(CPD::conditioning_support(&*lock)
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect())
     }
 
     /// Returns the parameters.

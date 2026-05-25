@@ -157,6 +157,8 @@ mod causal_hub {
             m.add_class::<crate::models::PyCatCPD>()?;
             m.add_class::<crate::models::PyGaussCPD>()?;
             m.add_class::<crate::models::PyCatCIM>()?;
+            m.add_class::<crate::models::PyCatPhi>()?;
+            m.add_class::<crate::models::PyGaussPhi>()?;
             m.add_class::<crate::models::PyDiGraph>()?;
 
             Ok(())

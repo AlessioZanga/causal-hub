@@ -160,8 +160,80 @@ impl RelativeEq for GaussPhiK {
 pub struct GaussPhi {
     // Labels of the variables.
     labels: Labels,
+    // Support (always (-inf, +inf) by default).
+    support: GaussSupport,
     // Parameters.
     parameters: GaussPhiK,
+}
+
+impl GaussPhi {
+    /// Creates a new Gaussian potential with the given labels and parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `labels` - Labels of the variables.
+    /// * `parameters` - Parameters of the potential.
+    ///
+    /// # Results
+    ///
+    /// A new Gaussian potential instance.
+    ///
+    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Result<Self> {
+        // Check parameters shape matches labels length.
+        if parameters.precision_matrix().nrows() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "precision_matrix",
+                "Precision matrix rows must match labels length.",
+            ));
+        }
+        if parameters.information_vector().len() != labels.len() {
+            return Err(Error::IncompatibleShape(
+                "information_vector",
+                "Information vector length must match labels length.",
+            ));
+        }
+
+        // Sort labels if not sorted and permute parameters accordingly.
+        if !labels.is_sorted() {
+            // Get the new indices order w.r.t. sorted labels.
+            let mut indices: Vec<_> = (0..labels.len()).collect();
+            indices.sort_by(|&i, &j| labels.get_index(i).cmp(&labels.get_index(j)));
+            // Sort the labels.
+            labels.sort();
+
+            // Clone the precision matrix.
+            let mut k = parameters.k.clone();
+            // Permute the precision matrix rows.
+            indices.iter().enumerate().for_each(|(i, &j)| {
+                k.row_mut(i).assign(&parameters.k.row(j));
+            });
+            parameters.k = k.clone();
+            // Permute the precision matrix columns.
+            indices.iter().enumerate().for_each(|(i, &j)| {
+                k.column_mut(i).assign(&parameters.k.column(j));
+            });
+            parameters.k = k;
+
+            // Clone the information vector.
+            let mut h = parameters.h.clone();
+            // Permute the information vector.
+            indices.iter().enumerate().for_each(|(i, &j)| {
+                h[i] = parameters.h[j];
+            });
+            parameters.h = h;
+        }
+
+        let support = labels
+            .iter()
+            .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+            .collect();
+
+        Ok(Self {
+            labels,
+            support,
+            parameters,
+        })
+    }
 }
 
 impl Labelled for GaussPhi {
@@ -173,7 +245,9 @@ impl Labelled for GaussPhi {
 
 impl PartialEq for GaussPhi {
     fn eq(&self, other: &Self) -> bool {
-        self.labels.eq(&other.labels) && self.parameters.eq(&other.parameters)
+        self.labels.eq(&other.labels)
+            && self.support.eq(&other.support)
+            && self.parameters.eq(&other.parameters)
     }
 }
 
@@ -185,7 +259,9 @@ impl AbsDiffEq for GaussPhi {
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        self.labels.eq(&other.labels) && self.parameters.abs_diff_eq(&other.parameters, epsilon)
+        self.labels.eq(&other.labels)
+            && self.support.eq(&other.support)
+            && self.parameters.abs_diff_eq(&other.parameters, epsilon)
     }
 }
 
@@ -201,6 +277,7 @@ impl RelativeEq for GaussPhi {
         max_relative: Self::Epsilon,
     ) -> bool {
         self.labels.eq(&other.labels)
+            && self.support.eq(&other.support)
             && self
                 .parameters
                 .relative_eq(&other.parameters, epsilon, max_relative)
@@ -255,6 +332,12 @@ impl MulAssign<&GaussPhi> for GaussPhi {
         self.labels = labels;
         // Update the parameters.
         self.parameters = parameters;
+        // Update the support.
+        self.support = self
+            .labels
+            .iter()
+            .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+            .collect();
     }
 }
 
@@ -317,6 +400,12 @@ impl DivAssign<&GaussPhi> for GaussPhi {
         self.labels = labels;
         // Update the parameters.
         self.parameters = parameters;
+        // Update the support.
+        self.support = self
+            .labels
+            .iter()
+            .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+            .collect();
     }
 }
 
@@ -339,12 +428,7 @@ impl Phi for GaussPhi {
 
     #[inline]
     fn support(&self) -> Cow<'_, Self::Support> {
-        Cow::Owned(
-            self.labels
-                .iter()
-                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
-                .collect(),
-        )
+        Cow::Borrowed(&self.support)
     }
 
     #[inline]
@@ -630,66 +714,5 @@ impl Phi for GaussPhi {
 
         // Create the new CPD.
         GaussCPD::new(labels_x, labels_z, parameters)
-    }
-}
-
-impl GaussPhi {
-    /// Creates a new Gaussian potential with the given labels and parameters.
-    ///
-    /// # Arguments
-    ///
-    /// * `labels` - Labels of the variables.
-    /// * `parameters` - Parameters of the potential.
-    ///
-    /// # Results
-    ///
-    /// A new Gaussian potential instance.
-    ///
-    pub fn new(mut labels: Labels, mut parameters: GaussPhiK) -> Result<Self> {
-        // Check parameters shape matches labels length.
-        if parameters.precision_matrix().nrows() != labels.len() {
-            return Err(Error::IncompatibleShape(
-                "precision_matrix",
-                "Precision matrix rows must match labels length.",
-            ));
-        }
-        if parameters.information_vector().len() != labels.len() {
-            return Err(Error::IncompatibleShape(
-                "information_vector",
-                "Information vector length must match labels length.",
-            ));
-        }
-
-        // Sort labels if not sorted and permute parameters accordingly.
-        if !labels.is_sorted() {
-            // Get the new indices order w.r.t. sorted labels.
-            let mut indices: Vec<_> = (0..labels.len()).collect();
-            indices.sort_by(|&i, &j| labels.get_index(i).cmp(&labels.get_index(j)));
-            // Sort the labels.
-            labels.sort();
-
-            // Clone the precision matrix.
-            let mut k = parameters.k.clone();
-            // Permute the precision matrix rows.
-            indices.iter().enumerate().for_each(|(i, &j)| {
-                k.row_mut(i).assign(&parameters.k.row(j));
-            });
-            parameters.k = k.clone();
-            // Permute the precision matrix columns.
-            indices.iter().enumerate().for_each(|(i, &j)| {
-                k.column_mut(i).assign(&parameters.k.column(j));
-            });
-            parameters.k = k;
-
-            // Clone the information vector.
-            let mut h = parameters.h.clone();
-            // Permute the information vector.
-            indices.iter().enumerate().for_each(|(i, &j)| {
-                h[i] = parameters.h[j];
-            });
-            parameters.h = h;
-        }
-
-        Ok(Self { labels, parameters })
     }
 }

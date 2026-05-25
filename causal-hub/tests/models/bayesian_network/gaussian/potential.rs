@@ -280,4 +280,22 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn support() -> Result<()> {
+        let l = labels!("A", "B", "C");
+        let k = array![[1.0, -0.5, 0.0], [-0.5, 2.0, -0.3], [0.0, -0.3, 1.5]];
+        let h = array![0.2, -0.1, 0.3];
+        let g = 0.0;
+        let parameters = GaussPhiK::new(k, h, g)?;
+        let phi = GaussPhi::new(l.clone(), parameters)?;
+
+        let support = Phi::support(&phi);
+        for (_, &(lo, hi)) in &*support {
+            assert!(lo.is_infinite() && lo.is_sign_negative());
+            assert!(hi.is_infinite() && hi.is_sign_positive());
+        }
+
+        Ok(())
+    }
 }

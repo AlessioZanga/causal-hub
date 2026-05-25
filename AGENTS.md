@@ -409,8 +409,7 @@ Follow this workflow when making changes. Steps are guidelines—use judgment on
    This enforces `clippy`, `ruff`, formatting, and other checks defined in `.pre-commit-config.yaml`.
 5. **Run tests:**
    - Rust integration tests: `cargo test --test mod --features openblas-system`
-   - All Rust tests: `cargo test --workspace --features openblas-system`
-   - Python tests: `pytest python/tests -v`
+   - Python tests: `uv run maturin develop && uv run pytest` (run from project root)
 6. **Regenerate `.pyi` type stubs** if Python API changed:
 
    ```bash
