@@ -1,0 +1,205 @@
+use approx::{AbsDiffEq, RelativeEq};
+use rand::Rng;
+
+use crate::{
+    datasets::{CatSample, GaussSample},
+    models::{CPD, CatCPD, CatCPDS, GaussCPD, GaussCPDS, Labelled},
+    types::{Error, Labels, Result},
+};
+
+/// The parameters of a mixed CPD.
+#[non_exhaustive]
+#[derive(Clone, Debug)]
+pub enum MixedCPD {
+    /// Categorical CPD.
+    Categorical(CatCPD),
+    /// Gaussian CPD.
+    Gaussian(GaussCPD),
+}
+
+/// The sufficient statistics of a mixed CPD.
+#[non_exhaustive]
+#[derive(Clone, Debug)]
+pub enum MixedCPDS {
+    /// Categorical sufficient statistics.
+    Categorical(CatCPDS),
+    /// Gaussian sufficient statistics.
+    Gaussian(Box<GaussCPDS>),
+}
+
+/// A unified sample type for mixed Bayesian networks.
+#[non_exhaustive]
+#[derive(Clone, Debug)]
+pub enum MixedSample {
+    /// Categorical sample.
+    Categorical(CatSample),
+    /// Gaussian sample.
+    Gaussian(GaussSample),
+}
+
+impl From<CatCPD> for MixedCPD {
+    #[inline]
+    fn from(cpd: CatCPD) -> Self {
+        Self::Categorical(cpd)
+    }
+}
+
+impl From<GaussCPD> for MixedCPD {
+    #[inline]
+    fn from(cpd: GaussCPD) -> Self {
+        Self::Gaussian(cpd)
+    }
+}
+
+impl From<CatCPDS> for MixedCPDS {
+    #[inline]
+    fn from(stats: CatCPDS) -> Self {
+        Self::Categorical(stats)
+    }
+}
+
+impl From<GaussCPDS> for MixedCPDS {
+    #[inline]
+    fn from(stats: GaussCPDS) -> Self {
+        Self::Gaussian(Box::new(stats))
+    }
+}
+
+impl From<CatSample> for MixedSample {
+    #[inline]
+    fn from(sample: CatSample) -> Self {
+        Self::Categorical(sample)
+    }
+}
+
+impl From<GaussSample> for MixedSample {
+    #[inline]
+    fn from(sample: GaussSample) -> Self {
+        Self::Gaussian(sample)
+    }
+}
+
+impl Labelled for MixedCPD {
+    fn labels(&self) -> &Labels {
+        match self {
+            Self::Categorical(cpd) => cpd.labels(),
+            Self::Gaussian(cpd) => cpd.labels(),
+        }
+    }
+}
+
+impl PartialEq for MixedCPD {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Categorical(a), Self::Categorical(b)) => a.eq(b),
+            (Self::Gaussian(a), Self::Gaussian(b)) => a.eq(b),
+            _ => false,
+        }
+    }
+}
+
+impl AbsDiffEq for MixedCPD {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        Self::Epsilon::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        match (self, other) {
+            (Self::Categorical(a), Self::Categorical(b)) => a.abs_diff_eq(b, epsilon),
+            (Self::Gaussian(a), Self::Gaussian(b)) => a.abs_diff_eq(b, epsilon),
+            _ => false,
+        }
+    }
+}
+
+impl RelativeEq for MixedCPD {
+    fn default_max_relative() -> Self::Epsilon {
+        Self::Epsilon::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        match (self, other) {
+            (Self::Categorical(a), Self::Categorical(b)) => a.relative_eq(b, epsilon, max_relative),
+            (Self::Gaussian(a), Self::Gaussian(b)) => a.relative_eq(b, epsilon, max_relative),
+            _ => false,
+        }
+    }
+}
+
+impl CPD for MixedCPD {
+    type Support = MixedSample;
+    type Parameters = MixedCPD;
+    type Statistics = MixedCPD;
+
+    fn conditioning_labels(&self) -> &Labels {
+        match self {
+            Self::Categorical(cpd) => cpd.conditioning_labels(),
+            Self::Gaussian(cpd) => cpd.conditioning_labels(),
+        }
+    }
+
+    fn parameters(&self) -> &Self::Parameters {
+        self
+    }
+
+    fn parameters_size(&self) -> usize {
+        match self {
+            Self::Categorical(cpd) => cpd.parameters_size(),
+            Self::Gaussian(cpd) => cpd.parameters_size(),
+        }
+    }
+
+    fn fitted_statistics(&self) -> Option<&Self::Statistics> {
+        let has_stats = match self {
+            Self::Categorical(cpd) => cpd.fitted_statistics().is_some(),
+            Self::Gaussian(cpd) => cpd.fitted_statistics().is_some(),
+        };
+        has_stats.then_some(self)
+    }
+
+    fn fitted_log_likelihood(&self) -> Option<f64> {
+        match self {
+            Self::Categorical(cpd) => cpd.fitted_log_likelihood(),
+            Self::Gaussian(cpd) => cpd.fitted_log_likelihood(),
+        }
+    }
+
+    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
+        match (self, x, z) {
+            (Self::Categorical(cpd), MixedSample::Categorical(x), MixedSample::Categorical(z)) => {
+                cpd.pf(x, z)
+            }
+            (Self::Gaussian(cpd), MixedSample::Gaussian(x), MixedSample::Gaussian(z)) => {
+                cpd.pf(x, z)
+            }
+            _ => Err(Error::InvalidParameter(
+                "x/z",
+                "sample type must match the CPD parameter type",
+            )),
+        }
+    }
+
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support> {
+        match (self, z) {
+            (Self::Categorical(cpd), MixedSample::Categorical(z)) => {
+                let sample = cpd.sample(rng, z)?;
+                Ok(MixedSample::Categorical(sample))
+            }
+            (Self::Gaussian(cpd), MixedSample::Gaussian(z)) => {
+                let sample = cpd.sample(rng, z)?;
+                Ok(MixedSample::Gaussian(sample))
+            }
+            _ => Err(Error::InvalidParameter(
+                "z",
+                "sample type must match the CPD parameter type",
+            )),
+        }
+    }
+}
