@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     fmt::Display,
     ops::{Add, AddAssign},
 };
@@ -18,9 +19,13 @@ use crate::{
     datasets::{CatSample, CatType},
     impl_json_io,
     models::{CPD, CatPhi, Labelled, Phi},
-    types::{EPSILON, Error, Labels, Result, Set, Support},
+    types::{EPSILON, Error, Labels, Map, Result, Set},
     utils::MI,
 };
+
+/// A type alias for the support of categorical distributions. Represented as a map from variable
+/// names to their possible discrete states.
+pub type CatSupport = Map<String, Set<String>>;
 
 /// Sample (sufficient) statistics for the categorical CPD.
 #[derive(Clone, Debug)]
@@ -202,12 +207,12 @@ impl<'de> Deserialize<'de> for CatCPDS {
 pub struct CatCPD {
     // Labels of the conditioned variable.
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
-    conditioning_support: Support,
+    conditioning_support: CatSupport,
     conditioning_shape: Array1<usize>,
     conditioning_multi_index: MI,
     // Parameters.
@@ -239,8 +244,8 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn new(
-        support: Support,
-        conditioning_support: Support,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array2<f64>,
     ) -> Result<Self> {
         // Get the labels of the variables.
@@ -428,7 +433,7 @@ impl CatCPD {
     /// The support of the conditioned variable.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -461,7 +466,7 @@ impl CatCPD {
     /// The support of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_support(&self) -> &Support {
+    pub const fn conditioning_support(&self) -> &CatSupport {
         &self.conditioning_support
     }
 
@@ -542,8 +547,8 @@ impl CatCPD {
     /// A new `CatCPD` instance.
     ///
     pub fn with_optionals(
-        support: Support,
-        conditioning_support: Support,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array2<f64>,
         fitted_statistics: Option<CatCPDS>,
         fitted_log_likelihood: Option<f64>,
@@ -677,7 +682,8 @@ impl RelativeEq for CatCPD {
 }
 
 impl CPD for CatCPD {
-    type Support = CatSample;
+    type Sample = CatSample;
+    type Support = CatSupport;
     type Parameters = Array2<f64>;
     type Statistics = CatCPDS;
 
@@ -687,13 +693,12 @@ impl CPD for CatCPD {
     }
 
     #[inline]
-    fn support(&self) -> &Support {
-        &self.support
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
-    #[inline]
-    fn conditioning_support(&self) -> &Support {
-        &self.conditioning_support
+    fn conditioning_support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.conditioning_support)
     }
 
     #[inline]
@@ -716,7 +721,7 @@ impl CPD for CatCPD {
         self.fitted_log_likelihood
     }
 
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
+    fn pf(&self, x: &Self::Sample, z: &Self::Sample) -> Result<f64> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
@@ -774,7 +779,7 @@ impl CPD for CatCPD {
         Ok(self.parameters[[z, x]])
     }
 
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support> {
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Sample) -> Result<Self::Sample> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.

@@ -1,11 +1,13 @@
+use std::borrow::Cow;
+
 use itertools::Itertools;
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTable, CatTrjEv, CatTrjEvT, CatType, Dataset},
-    models::Labelled,
-    types::{Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A multivariate trajectory.
@@ -18,7 +20,7 @@ pub struct CatTrj {
 pub struct CatTrjEvidenceIter<'a> {
     rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
     time_bounds: std::vec::IntoIter<(f64, f64)>,
-    support: &'a Support,
+    support: &'a CatSupport,
 }
 
 impl<'a> Iterator for CatTrjEvidenceIter<'a> {
@@ -56,7 +58,7 @@ impl CatTrj {
     /// A new instance of `CatTrj`.
     ///
     pub fn new(
-        support: Support,
+        support: CatSupport,
         mut events: Array2<CatType>,
         mut times: Array1<f64>,
     ) -> Result<Self> {
@@ -154,7 +156,7 @@ impl CatTrj {
     /// A reference to the support of the trajectory.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         self.events.support()
     }
 
@@ -190,12 +192,18 @@ impl Labelled for CatTrj {
 
 impl Dataset for CatTrj {
     type Values = Array2<CatType>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = CatTrjEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.events.values()
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(self.events.support())
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -232,7 +240,7 @@ impl Dataset for CatTrj {
 #[derive(Clone, Debug)]
 pub struct CatTrjs {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     values: Vec<CatTrj>,
 }
@@ -293,7 +301,11 @@ impl CatTrjs {
 
         // Get the labels, support and shape from the first trajectory.
         let (labels, support, shape) = match values.first() {
-            None => (Labels::default(), Support::default(), Array1::default((0,))),
+            None => (
+                Labels::default(),
+                CatSupport::default(),
+                Array1::default((0,)),
+            ),
             Some(x) => (x.labels().clone(), x.support().clone(), x.shape().clone()),
         };
 
@@ -312,7 +324,7 @@ impl CatTrjs {
     /// A reference to the support of the trajectories.
     ///
     #[inline]
-    pub fn support(&self) -> &Support {
+    pub fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -416,12 +428,18 @@ impl<'a> Iterator for CatTrjsEvidenceIter<'a> {
 
 impl Dataset for CatTrjs {
     type Values = Vec<CatTrj>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = CatTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

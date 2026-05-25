@@ -1,11 +1,23 @@
+use std::borrow::Cow;
+
 use approx::{AbsDiffEq, RelativeEq};
 use rand::Rng;
 
 use crate::{
     datasets::{CatSample, GaussSample},
-    models::{CPD, CatCPD, CatCPDS, GaussCPD, GaussCPDS, Labelled},
-    types::{Error, Labels, Result, Support},
+    models::{CPD, CatCPD, CatCPDS, CatSupport, GaussCPD, GaussCPDS, GaussSupport, Labelled},
+    types::{Error, Labels, Result},
 };
+
+/// Unified support metadata for mixed CPDs.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq)]
+pub enum MixedSupport {
+    /// Categorical support (discrete states).
+    Categorical(CatSupport),
+    /// Gaussian support (continuous ranges).
+    Gaussian(GaussSupport),
+}
 
 /// The parameters of a mixed CPD.
 #[non_exhaustive]
@@ -134,7 +146,8 @@ impl RelativeEq for MixedCPD {
 }
 
 impl CPD for MixedCPD {
-    type Support = MixedSample;
+    type Sample = MixedSample;
+    type Support = MixedSupport;
     type Parameters = MixedCPD;
     type Statistics = MixedCPD;
 
@@ -145,17 +158,21 @@ impl CPD for MixedCPD {
         }
     }
 
-    fn support(&self) -> &Support {
+    fn support(&self) -> Cow<'_, Self::Support> {
         match self {
-            Self::Categorical(cpd) => cpd.support(),
-            Self::Gaussian(cpd) => cpd.support(),
+            Self::Categorical(cpd) => Cow::Owned(MixedSupport::Categorical(cpd.support().clone())),
+            Self::Gaussian(cpd) => Cow::Owned(MixedSupport::Gaussian(cpd.support().into_owned())),
         }
     }
 
-    fn conditioning_support(&self) -> &Support {
+    fn conditioning_support(&self) -> Cow<'_, Self::Support> {
         match self {
-            Self::Categorical(cpd) => cpd.conditioning_support(),
-            Self::Gaussian(cpd) => cpd.conditioning_support(),
+            Self::Categorical(cpd) => Cow::Owned(MixedSupport::Categorical(
+                cpd.conditioning_support().clone(),
+            )),
+            Self::Gaussian(cpd) => Cow::Owned(MixedSupport::Gaussian(
+                cpd.conditioning_support().into_owned(),
+            )),
         }
     }
 
@@ -185,7 +202,7 @@ impl CPD for MixedCPD {
         }
     }
 
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
+    fn pf(&self, x: &Self::Sample, z: &Self::Sample) -> Result<f64> {
         match (self, x, z) {
             (Self::Categorical(cpd), MixedSample::Categorical(x), MixedSample::Categorical(z)) => {
                 cpd.pf(x, z)
@@ -200,7 +217,7 @@ impl CPD for MixedCPD {
         }
     }
 
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support> {
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Sample) -> Result<Self::Sample> {
         match (self, z) {
             (Self::Categorical(cpd), MixedSample::Categorical(z)) => {
                 let sample = cpd.sample(rng, z)?;

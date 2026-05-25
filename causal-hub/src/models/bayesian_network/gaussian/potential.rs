@@ -1,4 +1,7 @@
-use std::ops::{Div, DivAssign, Mul, MulAssign};
+use std::{
+    borrow::Cow,
+    ops::{Div, DivAssign, Mul, MulAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
@@ -7,7 +10,7 @@ use ndarray_linalg::Determinant;
 
 use crate::{
     datasets::{GaussEv, GaussEvT},
-    models::{CPD, GaussCPD, GaussCPDP, Labelled, Phi},
+    models::{CPD, GaussCPD, GaussCPDP, GaussSupport, Labelled, Phi},
     types::{Error, LN_2_PI, Labels, Result, Set},
     utils::PseudoInverse,
 };
@@ -330,8 +333,19 @@ impl Div<&GaussPhi> for &GaussPhi {
 
 impl Phi for GaussPhi {
     type CPD = GaussCPD;
+    type Support = GaussSupport;
     type Parameters = GaussPhiK;
     type Evidence = GaussEv;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.labels
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
+    }
 
     #[inline]
     fn parameters(&self) -> &Self::Parameters {

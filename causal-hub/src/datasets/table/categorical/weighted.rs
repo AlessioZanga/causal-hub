@@ -1,9 +1,11 @@
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatEv, CatSample, CatTable, Dataset},
-    models::Labelled,
-    types::{Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a categorical weighted sample.
@@ -63,7 +65,7 @@ impl CatWtdTable {
     /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         self.dataset.support()
     }
 
@@ -92,12 +94,18 @@ impl CatWtdTable {
 
 impl Dataset for CatWtdTable {
     type Values = CatTable;
+    type Support = CatSupport;
     type Evidence = CatEv;
     type EvidenceIter<'a> = <CatTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(self.dataset.support())
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use serde::{
@@ -9,9 +11,9 @@ use serde::{
 use crate::{
     datasets::{CatSample, CatTrj, CatTrjs},
     impl_json_io,
-    models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, DiGraph, Graph, Labelled},
+    models::{BN, CIM, CTBN, CatBN, CatCIM, CatCPD, CatSupport, DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Map, Result, Set, Support},
+    types::{Error, Labels, Map, Result, Set},
 };
 
 /// A categorical continuous time Bayesian network.
@@ -24,7 +26,7 @@ pub struct CatCTBN {
     /// The labels of the variables.
     labels: Labels,
     /// The support of the variables.
-    support: Support,
+    support: CatSupport,
     /// The shape of the variables.
     shape: Array1<usize>,
     /// The initial distribution.
@@ -65,7 +67,7 @@ impl CatCTBN {
     /// A reference to the support of the variables.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         self.initial_distribution.support()
     }
 }
@@ -139,10 +141,16 @@ impl Labelled for CatCTBN {
 
 impl CTBN for CatCTBN {
     type CIM = CatCIM;
+    type Support = CatSupport;
     type InitialDistribution = CatBN;
     type Event = (f64, CatSample);
     type Trajectory = CatTrj;
     type Trajectories = CatTrjs;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
 
     fn new<I>(graph: DiGraph, cims: I) -> Result<Self>
     where
@@ -165,7 +173,7 @@ impl CTBN for CatCTBN {
         cims.sort_keys();
 
         // Allocate the support of the variables.
-        let mut support: Support = Default::default();
+        let mut support: CatSupport = Default::default();
         // Insert the support of the variables into the map to check if they are the same.
         cims.values().try_for_each(|cim| {
             cim.support()
@@ -178,7 +186,7 @@ impl CTBN for CatCTBN {
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
                                 "cims",
-                                &format!("Support of `{l}` must be the same across CIMs."),
+                                &format!("CatSupport of `{l}` must be the same across CIMs."),
                             ));
                         }
                     } else {
@@ -227,7 +235,7 @@ impl CTBN for CatCTBN {
                 // Get label and support of the CIM.
                 let support = cim.support().clone();
                 // Set empty conditioning support.
-                let conditioning_support = Support::default();
+                let conditioning_support = CatSupport::default();
                 // Set uniform parameters.
                 let alpha = cim.shape().product();
                 let parameters = Array::from_vec(vec![1. / alpha as f64; alpha]);

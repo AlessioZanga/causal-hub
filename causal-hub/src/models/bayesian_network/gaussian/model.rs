@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use approx::{AbsDiffEq, RelativeEq};
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
@@ -9,7 +11,7 @@ use crate::{
     datasets::{GaussEv, GaussIncTable, GaussSample, GaussTable, GaussWtdTable},
     impl_json_io,
     inference::TopologicalOrder,
-    models::{BN, CPD, DiGraph, GaussCPD, Graph, Labelled},
+    models::{BN, CPD, DiGraph, GaussCPD, GaussSupport, Graph, Labelled},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -94,11 +96,22 @@ impl Labelled for GaussBN {
 
 impl BN for GaussBN {
     type CPD = GaussCPD;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type Sample = GaussSample;
     type Samples = GaussTable;
     type IncSamples = GaussIncTable;
     type WtdSamples = GaussWtdTable;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.labels
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
+    }
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where

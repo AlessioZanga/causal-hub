@@ -1,10 +1,12 @@
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
 use rayon::prelude::*;
 
 use crate::{
     datasets::{CatTrj, CatTrjEv, CatType, Dataset},
-    models::Labelled,
-    types::{Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A multivariate weighted trajectory.
@@ -84,7 +86,7 @@ impl CatWtdTrj {
     /// A reference to the support of the trajectory.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         self.trajectory.support()
     }
 
@@ -120,12 +122,18 @@ impl Labelled for CatWtdTrj {
 
 impl Dataset for CatWtdTrj {
     type Values = Array2<CatType>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = <CatTrj as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         self.trajectory.values()
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(self.trajectory.support())
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -151,7 +159,7 @@ impl Dataset for CatWtdTrj {
 #[derive(Clone, Debug)]
 pub struct CatWtdTrjs {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     values: Vec<CatWtdTrj>,
 }
@@ -252,7 +260,7 @@ impl CatWtdTrjs {
     /// A reference to the support of the trajectories.
     ///
     #[inline]
-    pub fn support(&self) -> &Support {
+    pub fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -332,12 +340,18 @@ impl Labelled for CatWtdTrjs {
 
 impl Dataset for CatWtdTrjs {
     type Values = Vec<CatWtdTrj>;
+    type Support = CatSupport;
     type Evidence = CatTrjEv;
     type EvidenceIter<'a> = CatWtdTrjsEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

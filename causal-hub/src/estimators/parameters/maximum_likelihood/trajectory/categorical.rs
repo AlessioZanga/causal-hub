@@ -4,14 +4,14 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCIMS},
-    types::{Error, Result, Set, Support},
+    models::{CatCIM, CatCIMS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl MLE<'_, CatTrj> {
     // Fit a CIM given sufficient statistics.
     fn fit(
-        support: &Support,
+        support: &CatSupport,
         x: &Set<usize>,
         z: &Set<usize>,
         fitted_statistics: CatCIMS,

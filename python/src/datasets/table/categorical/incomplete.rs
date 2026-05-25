@@ -5,9 +5,8 @@ use std::{
 
 use backend::{
     datasets::{CatIncTable, CatType, Dataset, IncDataset},
-    models::Labelled,
+    models::{CatSupport, Labelled},
     random::{Random, RngCatIncTable},
-    types::Support,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
 use pyo3::{
@@ -187,7 +186,7 @@ impl PyCatIncTable {
         // Get labels.
         let labels: Vec<String> = df.getattr("columns")?.call_method0("to_list")?.extract()?;
         // Get categories.
-        let mut support = Support::default();
+        let mut support = CatSupport::default();
         for label in &labels {
             // Get the categories of the column.
             let categories = df.get_item(label)?.getattr("cat")?.getattr("categories")?;
@@ -252,7 +251,7 @@ impl PyCatIncTable {
         let labels: Vec<String> = df.getattr("columns")?.extract()?;
 
         // Get categories.
-        let mut support = Support::default();
+        let mut support = CatSupport::default();
         for label in &labels {
             let column = df.call_method1("get_column", (label,))?;
             let dtype = column.getattr("dtype")?.str()?.extract::<String>()?;

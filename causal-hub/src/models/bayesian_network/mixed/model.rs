@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use approx::{AbsDiffEq, RelativeEq};
 
 use crate::{
@@ -6,7 +8,7 @@ use crate::{
         GaussWtdTable,
     },
     inference::TopologicalOrder,
-    models::{BN, CPD, DiGraph, Graph, Labelled, MixedCPD, MixedSample},
+    models::{BN, CPD, DiGraph, Graph, Labelled, MixedCPD, MixedSample, MixedSupport},
     set,
     types::{Error, Labels, Map, Result, Set},
 };
@@ -187,11 +189,22 @@ impl Labelled for MixedBN {
 
 impl BN for MixedBN {
     type CPD = MixedCPD;
+    type Support = Map<String, MixedSupport>;
     type Evidence = MixedEv;
     type Sample = MixedSample;
     type Samples = MixedTable;
     type IncSamples = MixedIncTable;
     type WtdSamples = MixedWtdTable;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.cpds
+                .iter()
+                .map(|(label, cpd)| (label.clone(), cpd.support().into_owned()))
+                .collect(),
+        )
+    }
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where

@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     io::{Read, Write},
     sync::Arc,
 };
@@ -14,7 +15,7 @@ use crate::{
     estimators::{BE, CPDEstimator},
     io::CsvIO,
     labels,
-    models::{CPD, Labelled},
+    models::{CPD, GaussSupport, Labelled},
     set,
     types::{Error, Labels, Result, Set},
 };
@@ -98,12 +99,22 @@ impl GaussIncTable {
 
 impl Dataset for GaussIncTable {
     type Values = Array2<GaussType>;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type EvidenceIter<'a> = GaussIncTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.labels
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

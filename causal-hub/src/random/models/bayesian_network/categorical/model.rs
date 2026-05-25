@@ -1,10 +1,10 @@
 use rand::prelude::*;
 
 use crate::{
-    models::{BN, CatBN},
+    models::{BN, CatBN, CatSupport},
     random::{Random, RngCatCPD, RngDag},
     set,
-    types::{Error, Labels, Result, Support},
+    types::{Error, Labels, Result},
 };
 
 /// A struct for random categorical Bayesian network generation.
@@ -13,7 +13,7 @@ where
     R: Rng,
 {
     rng: &'a mut R,
-    support: &'a Support,
+    support: &'a CatSupport,
     alpha: f64,
     p: f64,
 }
@@ -40,7 +40,7 @@ where
     ///
     /// A new `RngCatBN` instance.
     ///
-    pub fn new(rng: &'a mut R, support: &'a Support, alpha: f64, p: f64) -> Result<Self> {
+    pub fn new(rng: &'a mut R, support: &'a CatSupport, alpha: f64, p: f64) -> Result<Self> {
         // Check if alpha is positive.
         if alpha <= 0.0 {
             return Err(Error::InvalidParameter("alpha", "must be positive"));
@@ -80,7 +80,7 @@ where
                 // Get the parents of the variable.
                 let pa_i = graph.parents(&set![i])?;
                 // Get the support of the variable.
-                let mut support = Support::default();
+                let mut support = CatSupport::default();
                 support.insert(x.clone(), self.support[x].clone());
                 // Get the support of the conditioning variables.
                 let conditioning_support = pa_i

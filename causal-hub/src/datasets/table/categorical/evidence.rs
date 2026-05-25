@@ -3,8 +3,8 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::CatTrjEvT,
-    models::Labelled,
-    types::{Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{Error, Labels, Result, Set},
 };
 
 /// Categorical evidence type.
@@ -103,7 +103,7 @@ impl CatEvT {
 #[derive(Clone, Debug)]
 pub struct CatEv {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     evidences: Vec<Option<CatEvT>>,
 }
@@ -126,7 +126,7 @@ impl CatEv {
     ///
     /// A new categorical evidence structure.
     ///
-    pub fn new<I>(mut support: Support, values: I) -> Result<Self>
+    pub fn new<I>(mut support: CatSupport, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatEvT>,
     {
@@ -313,7 +313,7 @@ impl CatEv {
     /// A reference to the support of the evidence.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -371,7 +371,7 @@ impl CatEv {
         x.sort();
 
         // Get the new support.
-        let support: Support = x
+        let support: CatSupport = x
             .iter()
             .map(|&i| {
                 self.support

@@ -5,9 +5,9 @@ use std::{
 
 use backend::{
     datasets::{CatTrj, CatTrjEv, CatTrjEvT, CatTrjs, CatTrjsEv},
-    models::Labelled,
+    models::{CatSupport, Labelled},
     random::{Random, RngCatTrjEv},
-    types::{Set, Support},
+    types::Set,
 };
 use numpy::{PyArray1, prelude::*};
 use pyo3::{
@@ -186,7 +186,7 @@ impl PyCatTrjEv {
         // Construct the support.
         let mut support = with_states
             .and_then(|states| {
-                // Convert the PyDict to Support.
+                // Convert the PyDict to CatSupport.
                 states
                     .items()
                     .into_iter()
@@ -212,7 +212,7 @@ impl PyCatTrjEv {
                 event
                     .iter()
                     .zip(&state)
-                    .fold(Support::default(), |mut acc, (event, state)| {
+                    .fold(CatSupport::default(), |mut acc, (event, state)| {
                         // Get the entry in the support map.
                         let entry = acc.entry(event.clone()).or_default();
                         // Insert the state in the support map.
@@ -386,7 +386,7 @@ impl PyCatTrjEv {
                 event
                     .iter()
                     .zip(&state)
-                    .fold(Support::default(), |mut acc, (event, state)| {
+                    .fold(CatSupport::default(), |mut acc, (event, state)| {
                         let entry = acc.entry(event.clone()).or_default();
                         entry.insert(state.clone());
                         acc

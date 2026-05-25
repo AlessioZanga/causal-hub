@@ -4,14 +4,14 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCPD, CatCPDS},
-    types::{Error, Result, Set, Support},
+    models::{CatCPD, CatCPDS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl BE<'_, CatTable, usize> {
     // Fit a CPD given sufficient statistics.
     fn fit(
-        support: &Support,
+        support: &CatSupport,
         shape: &Array1<usize>,
         x: &Set<usize>,
         z: &Set<usize>,

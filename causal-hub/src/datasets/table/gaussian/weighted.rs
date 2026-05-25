@@ -1,8 +1,10 @@
+use std::borrow::Cow;
+
 use ndarray::prelude::*;
 
 use crate::{
     datasets::{Dataset, GaussEv, GaussSample, GaussTable},
-    models::Labelled,
+    models::{GaussSupport, Labelled},
     types::{Error, Labels, Result, Set},
 };
 
@@ -65,12 +67,23 @@ impl GaussWtdTable {
 
 impl Dataset for GaussWtdTable {
     type Values = GaussTable;
+    type Support = GaussSupport;
     type Evidence = GaussEv;
     type EvidenceIter<'a> = <GaussTable as Dataset>::EvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.dataset
+    }
+
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Owned(
+            self.dataset
+                .labels()
+                .iter()
+                .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+                .collect(),
+        )
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {

@@ -4,8 +4,8 @@ use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{
-    models::{BN, CPD, CatBN, CatCPD, DiGraph, Graph, Labelled},
-    types::{Error, Map, Result, Support},
+    models::{BN, CPD, CatBN, CatCPD, CatSupport, DiGraph, Graph, Labelled},
+    types::{Error, Map, Result},
 };
 
 #[derive(Debug)]
@@ -65,7 +65,7 @@ impl BifParser {
         let description = properties.get("description").cloned();
 
         // Construct support.
-        let support: Support = network
+        let support: CatSupport = network
             .variables
             .into_iter()
             .map(|v| (v.label, v.support.into_iter().collect()))
@@ -77,7 +77,7 @@ impl BifParser {
             .into_iter()
             .map(|p| {
                 // Get the variable of the CPD.
-                let variable = Support::from_iter([(
+                let variable = CatSupport::from_iter([(
                     p.label.clone(),
                     support
                         .get(&p.label)
@@ -85,7 +85,7 @@ impl BifParser {
                         .clone(),
                 )]);
                 // Get the conditioning variables of the CPD.
-                let conditioning_variables: Support = p
+                let conditioning_variables: CatSupport = p
                     .parents
                     .iter()
                     .map(|x| {

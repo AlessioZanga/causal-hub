@@ -4,8 +4,8 @@ use rayon::prelude::*;
 
 use crate::{
     datasets::CatEv,
-    models::Labelled,
-    types::{EPSILON, Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{EPSILON, Error, Labels, Result, Set},
 };
 
 /// A type representing the evidence type for categorical trajectories.
@@ -123,7 +123,7 @@ impl CatTrjEvT {
 #[derive(Clone, Debug)]
 pub struct CatTrjEv {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     evidences: Vec<Vec<CatTrjEvT>>,
 }
@@ -148,7 +148,7 @@ impl CatTrjEv {
     ///
     /// A new `CategoricalTrajectoryEvidence` instance.
     ///
-    pub fn new<I>(mut support: Support, values: I) -> Result<Self>
+    pub fn new<I>(mut support: CatSupport, values: I) -> Result<Self>
     where
         I: IntoIterator<Item = CatTrjEvT>,
     {
@@ -370,12 +370,12 @@ impl CatTrjEv {
                         E::CertainNegativeInterval { .. } => {}
                         E::UncertainPositiveInterval { p_states, .. } => {
                             if !relative_eq!(p_states.sum(), 1., epsilon = EPSILON) {
-                                return Err(Error::Probability("Support distributions must sum to one."));
+                                return Err(Error::Probability("CatSupport distributions must sum to one."));
                             }
                         }
                         E::UncertainNegativeInterval { p_not_states, .. } => {
                             if !relative_eq!(p_not_states.sum(), 1.0) {
-                                return Err(Error::Probability("Support distributions must sum to one."));
+                                return Err(Error::Probability("CatSupport distributions must sum to one."));
                             }
                         }
                     }
@@ -596,7 +596,7 @@ impl CatTrjEv {
     /// A reference to the support of the trajectory evidence.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -651,7 +651,7 @@ impl CatTrjEv {
 #[derive(Clone, Debug)]
 pub struct CatTrjsEv {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     evidences: Vec<CatTrjEv>,
 }
@@ -722,7 +722,11 @@ impl CatTrjsEv {
 
         // Get the labels, support and shape from the first trajectory.
         let (labels, support, shape) = match evidences.first() {
-            None => (Labels::default(), Support::default(), Array1::default((0,))),
+            None => (
+                Labels::default(),
+                CatSupport::default(),
+                Array1::default((0,)),
+            ),
             Some(x) => (x.labels().clone(), x.support().clone(), x.shape().clone()),
         };
 
@@ -741,7 +745,7 @@ impl CatTrjsEv {
     /// A reference to the support of the trajectories evidence.
     ///
     #[inline]
-    pub fn support(&self) -> &Support {
+    pub fn support(&self) -> &CatSupport {
         &self.support
     }
 

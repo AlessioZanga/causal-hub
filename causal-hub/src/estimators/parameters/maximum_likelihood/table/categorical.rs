@@ -4,13 +4,13 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatIncTable, CatTable, CatWtdTable},
     estimators::{CPDEstimator, CSSEstimator, MLE, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCPD, CatCPDS},
-    types::{Error, Result, Set, Support},
+    models::{CatCPD, CatCPDS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl MLE<'_, CatTable> {
     fn fit(
-        support: &Support,
+        support: &CatSupport,
         x: &Set<usize>,
         z: &Set<usize>,
         sample_statistics: CatCPDS,
@@ -42,7 +42,7 @@ impl MLE<'_, CatTable> {
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
-            .collect::<Result<Support>>()?;
+            .collect::<Result<CatSupport>>()?;
         // Get the labels of the conditioned variables.
         let support = x
             .iter()
@@ -52,7 +52,7 @@ impl MLE<'_, CatTable> {
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
-            .collect::<Result<Support>>()?;
+            .collect::<Result<CatSupport>>()?;
 
         // Wrap the sample statistics in an option.
         let sample_statistics = Some(sample_statistics);

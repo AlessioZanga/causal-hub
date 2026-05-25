@@ -3,9 +3,9 @@ use rand::{Rng, RngExt};
 use rand_distr::Gamma;
 
 use crate::{
-    models::CatCPD,
+    models::{CatCPD, CatSupport},
     random::Random,
-    types::{Error, Result, Support},
+    types::{Error, Result},
 };
 
 /// A struct for random categorical CPD generation.
@@ -14,8 +14,8 @@ where
     R: Rng,
 {
     rng: &'a mut R,
-    support: &'a Support,
-    conditioning_support: &'a Support,
+    support: &'a CatSupport,
+    conditioning_support: &'a CatSupport,
     alpha: f64,
 }
 
@@ -42,8 +42,8 @@ where
     ///
     pub fn new(
         rng: &'a mut R,
-        support: &'a Support,
-        conditioning_support: &'a Support,
+        support: &'a CatSupport,
+        conditioning_support: &'a CatSupport,
         alpha: f64,
     ) -> Result<Self> {
         // Check if alpha is positive.

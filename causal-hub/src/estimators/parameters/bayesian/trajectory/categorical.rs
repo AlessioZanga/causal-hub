@@ -5,14 +5,14 @@ use statrs::function::gamma::ln_gamma;
 use crate::{
     datasets::{CatTrj, CatTrjs, CatWtdTrj, CatWtdTrjs},
     estimators::{BE, CPDEstimator, CSSEstimator, ParCPDEstimator, ParCSSEstimator, SSE},
-    models::{CatCIM, CatCIMS},
-    types::{Error, Result, Set, Support},
+    models::{CatCIM, CatCIMS, CatSupport},
+    types::{Error, Result, Set},
 };
 
 impl BE<'_, CatTrj, (usize, f64)> {
     // Fit a CIM given sufficient statistics.
     fn fit(
-        support: &Support,
+        support: &CatSupport,
         x: &Set<usize>,
         z: &Set<usize>,
         sample_statistics: CatCIMS,

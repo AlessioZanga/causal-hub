@@ -1,13 +1,14 @@
 use approx::assert_relative_eq;
 use causal_hub::{
     datasets::{CatEv, CatEvT},
-    types::{Result, Support},
+    models::CatSupport,
+    types::Result,
 };
 use ndarray::prelude::*;
 
 #[test]
 fn test_new_sorted() -> Result<()> {
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
@@ -37,7 +38,7 @@ fn test_new_sorted() -> Result<()> {
 #[test]
 fn test_new_unsorted_keys_and_values() -> Result<()> {
     // Construct support manually to be unsorted
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     // Insert "B" before "A" -> Keys unsorted
     // Support for B are ["2", "1"] -> Values unsorted
     support.insert(
@@ -106,7 +107,7 @@ fn test_new_unsorted_keys_and_values() -> Result<()> {
 
 #[test]
 fn test_new_unsorted_uncertain() -> Result<()> {
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     // B: ["2", "1"]
     support.insert(
         "B".to_string(),
@@ -181,7 +182,7 @@ fn test_new_unsorted_uncertain() -> Result<()> {
 
 #[test]
 fn test_invalid_size_uncertain_positive() -> Result<()> {
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
@@ -199,7 +200,7 @@ fn test_invalid_size_uncertain_positive() -> Result<()> {
 
 #[test]
 fn test_negative_probability() -> Result<()> {
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),
@@ -217,7 +218,7 @@ fn test_negative_probability() -> Result<()> {
 
 #[test]
 fn test_sum_probability() -> Result<()> {
-    let mut support = Support::default();
+    let mut support = CatSupport::default();
     support.insert(
         "X".to_string(),
         ["0", "1"].into_iter().map(String::from).collect(),

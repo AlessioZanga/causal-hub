@@ -1,4 +1,3 @@
-use fxhash::FxBuildHasher;
 use indexmap::{IndexMap, IndexSet};
 
 /// A type alias for a hash map with a fast hash function.
@@ -7,9 +6,8 @@ pub type Map<K, V> = IndexMap<K, V, FxBuildHasher>;
 pub type Set<T> = IndexSet<T, FxBuildHasher>;
 /// A type alias for a set of labels, which are strings.
 pub type Labels = Set<String>;
-/// A type alias for a hash map of support values, where keys are variable names and values are
-/// sets of possible values.
-pub type Support = Map<String, Set<String>>;
+
+pub use fxhash::FxBuildHasher;
 
 /// Create a `Set` from a list of values.
 #[macro_export]
@@ -70,17 +68,17 @@ macro_rules! map {
     };
 }
 
-/// Create a `Support` map from a list of variable-value pairs.
+/// Create a `CatSupport` map from a list of variable-value pairs.
 #[macro_export]
 macro_rules! support {
-    [] => { $crate::types::Support::default() };
+    [] => { $crate::models::CatSupport::default() };
     [$(($label:expr, [$($value:expr),* $(,)?]),)+] => { $crate::support!($(($label, [$($value),*])),+) };
     [$(($label:expr, [$($value:expr),* $(,)?])),*] => {
         {
             const CAPACITY: usize = <[()]>::len(&[$({ stringify!($label); $( stringify!($value); )* }),*]);
-            let mut support = $crate::types::Support::with_capacity_and_hasher(
+            let mut support: $crate::models::CatSupport = $crate::types::Map::with_capacity_and_hasher(
                 CAPACITY,
-                fxhash::FxBuildHasher::default(),
+                $crate::types::FxBuildHasher::default(),
             );
             $(
                 // Convert the label to a string.

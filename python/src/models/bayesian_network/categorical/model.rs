@@ -11,10 +11,9 @@ use backend::{
         ParBNCausalInference, ParBNInference,
     },
     io::{BifIO, JsonIO},
-    models::{BN, CatBN, DiGraph, Labelled},
+    models::{BN, CatBN, CatSupport, DiGraph, Labelled},
     random::{Random, RngCatBN},
     samplers::{BNSampler, ForwardSampler, ParBNSampler},
-    types::Support,
 };
 use pyo3::{
     exceptions::PyValueError,
@@ -615,8 +614,8 @@ impl PyCatBN {
         p: f64,
         seed: u64,
     ) -> PyResult<Self> {
-        // Convert the PyDict to a Support.
-        let mut inner_states = Support::default();
+        // Convert the PyDict to a CatSupport.
+        let mut inner_states = CatSupport::default();
         for (label, states) in states {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;

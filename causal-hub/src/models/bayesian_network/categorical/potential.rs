@@ -1,4 +1,7 @@
-use std::ops::{Div, DivAssign, Mul, MulAssign};
+use std::{
+    borrow::Cow,
+    ops::{Div, DivAssign, Mul, MulAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
@@ -6,15 +9,15 @@ use ndarray::prelude::*;
 
 use crate::{
     datasets::{CatEv, CatEvT},
-    models::{CPD, CatCPD, Labelled, Phi},
-    types::{Error, Labels, Result, Set, Support},
+    models::{CPD, CatCPD, CatSupport, Labelled, Phi},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A categorical potential.
 #[derive(Clone, Debug)]
 pub struct CatPhi {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     parameters: ArrayD<f64>,
 }
@@ -191,8 +194,14 @@ impl Div<&CatPhi> for &CatPhi {
 
 impl Phi for CatPhi {
     type CPD = CatCPD;
+    type Support = CatSupport;
     type Parameters = ArrayD<f64>;
     type Evidence = CatEv;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
 
     #[inline]
     fn parameters(&self) -> &Self::Parameters {
@@ -338,7 +347,7 @@ impl Phi for CatPhi {
         }
 
         // Split support into support and conditioning support.
-        let states_x: Support = x
+        let states_x: CatSupport = x
             .iter()
             .map(|&i| {
                 self.support
@@ -347,7 +356,7 @@ impl Phi for CatPhi {
                     .ok_or_else(|| Error::IndexOutOfBounds(i))
             })
             .collect::<Result<_>>()?;
-        let states_z: Support = z
+        let states_z: CatSupport = z
             .iter()
             .map(|&i| {
                 self.support
@@ -391,7 +400,7 @@ impl CatPhi {
     ///
     /// A new categorical potential instance.
     ///
-    pub fn new(mut support: Support, mut parameters: ArrayD<f64>) -> Result<Self> {
+    pub fn new(mut support: CatSupport, mut parameters: ArrayD<f64>) -> Result<Self> {
         // Get labels.
         let mut labels: Labels = support.keys().cloned().collect();
         // Get shape.
@@ -438,14 +447,14 @@ impl CatPhi {
         })
     }
 
-    /// Support of the potential.
+    /// CatSupport of the potential.
     ///
     /// # Returns
     ///
     /// A reference to the support.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 

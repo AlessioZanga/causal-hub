@@ -5,9 +5,8 @@ use std::{
 
 use backend::{
     io::JsonIO,
-    models::{CPD, CatCPD, Labelled},
+    models::{CPD, CatCPD, CatSupport, Labelled},
     random::{Random, RngCatCPD},
-    types::Support,
 };
 use numpy::{PyArray2, prelude::*};
 use pyo3::{
@@ -230,16 +229,16 @@ impl PyCatCPD {
         alpha: f64,
         seed: u64,
     ) -> PyResult<Self> {
-        // Convert the PyDict to a Support.
-        let mut inner_states = Support::default();
+        // Convert the PyDict to a CatSupport.
+        let mut inner_states = CatSupport::default();
         for (label, states) in states {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;
             inner_states.insert(label, states.into_iter().collect());
         }
 
-        // Convert the PyDict to a Support.
-        let mut inner_conditioning_support = Support::default();
+        // Convert the PyDict to a CatSupport.
+        let mut inner_conditioning_support = CatSupport::default();
         for (label, states) in conditioning_support {
             let label = label.extract::<String>()?;
             let states = states.extract::<Vec<String>>()?;

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use approx::{AbsDiffEq, RelativeEq};
 use ndarray::prelude::*;
 use ndarray_linalg::{CholeskyInto, Determinant, UPLO};
@@ -13,15 +15,13 @@ use crate::{
     datasets::GaussSample,
     impl_json_io,
     models::{CPD, GaussCPDS, GaussPhi, Labelled, Phi},
-    types::{EPSILON, Error, LN_2_PI, Labels, Result, Set, Support},
+    types::{EPSILON, Error, LN_2_PI, Labels, Map, Result, Set},
     utils::PseudoInverse,
 };
 
-fn empty_support() -> &'static Support {
-    use std::sync::OnceLock;
-    static EMPTY: OnceLock<Support> = OnceLock::new();
-    EMPTY.get_or_init(Support::default)
-}
+/// A type alias for the support of Gaussian distributions. Represented as a map from variable
+/// names to (min, max) ranges, defaulting to (-inf, +inf).
+pub type GaussSupport = Map<String, (f64, f64)>;
 
 /// Parameters of a Gaussian CPD.
 #[derive(Clone, Debug)]
@@ -278,6 +278,10 @@ pub struct GaussCPD {
     labels: Labels,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
+    // Support (always (-inf, +inf) by default).
+    support: GaussSupport,
+    // Conditioning support (always (-inf, +inf) by default).
+    conditioning_support: GaussSupport,
     // Parameters.
     parameters: GaussCPDP,
     // Fitted sufficient statistics, if any.
@@ -399,9 +403,19 @@ impl GaussCPD {
             parameters.a = new_a;
         }
 
+        let support = labels
+            .iter()
+            .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+            .collect();
+        let conditioning_support = conditioning_labels
+            .iter()
+            .map(|l| (l.clone(), (f64::NEG_INFINITY, f64::INFINITY)))
+            .collect();
         Ok(Self {
             labels,
             conditioning_labels,
+            support,
+            conditioning_support,
             parameters,
             fitted_statistics: None,
             fitted_log_likelihood: None,
@@ -616,7 +630,8 @@ impl RelativeEq for GaussCPD {
 }
 
 impl CPD for GaussCPD {
-    type Support = GaussSample;
+    type Sample = GaussSample;
+    type Support = GaussSupport;
     type Parameters = GaussCPDP;
     type Statistics = GaussCPDS;
 
@@ -625,12 +640,12 @@ impl CPD for GaussCPD {
         &self.conditioning_labels
     }
 
-    fn support(&self) -> &Support {
-        empty_support()
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
-    fn conditioning_support(&self) -> &Support {
-        empty_support()
+    fn conditioning_support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.conditioning_support)
     }
 
     #[inline]
@@ -659,7 +674,7 @@ impl CPD for GaussCPD {
         self.fitted_log_likelihood
     }
 
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64> {
+    fn pf(&self, x: &Self::Sample, z: &Self::Sample) -> Result<f64> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.
@@ -731,7 +746,7 @@ impl CPD for GaussCPD {
         Ok(f64::exp(ln_pf))
     }
 
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support> {
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Sample) -> Result<Self::Sample> {
         // Get number of variables.
         let n = self.labels.len();
         // Get number of conditioning variables.

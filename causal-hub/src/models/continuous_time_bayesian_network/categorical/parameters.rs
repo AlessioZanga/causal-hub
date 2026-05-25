@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign};
+use std::{
+    borrow::Cow,
+    ops::{Add, AddAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq, relative_eq};
 use itertools::Itertools;
@@ -12,8 +15,8 @@ use serde::{
 use crate::{
     datasets::CatSample,
     impl_json_io,
-    models::{CIM, Labelled},
-    types::{EPSILON, Error, Labels, Result, Set, Support},
+    models::{CIM, CatSupport, Labelled},
+    types::{EPSILON, Error, Labels, Result, Set},
     utils::MI,
 };
 
@@ -283,12 +286,12 @@ impl<'de> Deserialize<'de> for CatCIMS {
 pub struct CatCIM {
     // Labels of the conditioned variable.
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     multi_index: MI,
     // Labels of the conditioning variables.
     conditioning_labels: Labels,
-    conditioning_support: Support,
+    conditioning_support: CatSupport,
     conditioning_shape: Array1<usize>,
     conditioning_multi_index: MI,
     // Parameters.
@@ -320,8 +323,8 @@ impl CatCIM {
     /// A new `CatCIM` instance.
     ///
     pub fn new(
-        support: Support,
-        conditioning_support: Support,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array3<f64>,
     ) -> Result<Self> {
         // Get the labels of the variables.
@@ -570,7 +573,7 @@ impl CatCIM {
     /// The support of the conditioned variable.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -603,7 +606,7 @@ impl CatCIM {
     /// The support of the conditioning variables.
     ///
     #[inline]
-    pub const fn conditioning_support(&self) -> &Support {
+    pub const fn conditioning_support(&self) -> &CatSupport {
         &self.conditioning_support
     }
 
@@ -648,8 +651,8 @@ impl CatCIM {
     /// A new `CatCIM` instance.
     ///
     pub fn with_optionals(
-        support: Support,
-        conditioning_support: Support,
+        support: CatSupport,
+        conditioning_support: CatSupport,
         parameters: Array3<f64>,
         fitted_statistics: Option<CatCIMS>,
         fitted_log_likelihood: Option<f64>,
@@ -761,9 +764,20 @@ impl Labelled for CatCIM {
 }
 
 impl CIM for CatCIM {
-    type Support = CatSample;
+    type Sample = CatSample;
+    type Support = CatSupport;
     type Parameters = Array3<f64>;
     type Statistics = CatCIMS;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
+
+    #[inline]
+    fn conditioning_support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.conditioning_support)
+    }
 
     #[inline]
     fn conditioning_labels(&self) -> &Labels {

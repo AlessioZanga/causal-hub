@@ -5,8 +5,8 @@ use std::{
 
 use backend::{
     datasets::{CatEv, CatEvT},
-    models::Labelled,
-    types::{Set, Support},
+    models::{CatSupport, Labelled},
+    types::Set,
 };
 use pyo3::{
     exceptions::PyTypeError,
@@ -37,7 +37,7 @@ impl PyCatEv {
     /// Accepted inputs are:
     /// - `CatEv`
     /// - `dict[str, str]`
-    pub fn from_any(evidence: &Bound<'_, PyAny>, with_states: &Support) -> PyResult<Self> {
+    pub fn from_any(evidence: &Bound<'_, PyAny>, with_states: &CatSupport) -> PyResult<Self> {
         if let Ok(evidence) = evidence.extract::<PyCatEv>() {
             Ok(evidence)
         } else if let Ok(evidence) = evidence.cast::<PyDict>() {
@@ -134,7 +134,7 @@ impl PyCatEv {
         with_states: &Bound<'_, PyDict>,
     ) -> PyResult<Self> {
         // Convert the support dictionary.
-        let mut support: Support = with_states
+        let mut support: CatSupport = with_states
             .items()
             .into_iter()
             .map(|key_value| {

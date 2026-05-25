@@ -5,8 +5,8 @@ use std::{
 
 use backend::{
     datasets::{CatTable, CatType, Dataset},
-    models::Labelled,
-    types::{Set, Support},
+    models::{CatSupport, Labelled},
+    types::Set,
 };
 use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray, ndarray::prelude::*};
 use pyo3::{
@@ -151,7 +151,7 @@ impl PyCatTable {
         }
 
         // Convert the columns categories to support.
-        let support: Support = columns
+        let support: CatSupport = columns
             .into_iter()
             // Return the column name and the set of unique values.
             .map(|name| {
@@ -258,7 +258,7 @@ impl PyCatTable {
         }
 
         // Extract support.
-        let support: Support = columns
+        let support: CatSupport = columns
             .into_iter()
             .map(|name| {
                 let column = df.call_method1("get_column", (&name,))?;

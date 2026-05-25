@@ -1,5 +1,8 @@
 mod bayesian_network;
-use std::ops::{DivAssign, MulAssign};
+use std::{
+    borrow::Cow,
+    ops::{DivAssign, MulAssign},
+};
 
 use approx::{AbsDiffEq, RelativeEq};
 pub use bayesian_network::*;
@@ -14,7 +17,7 @@ use std::fmt::Debug;
 
 pub use graphs::*;
 
-use crate::types::{Error, Labels, Result, Set, Support};
+use crate::types::{Error, Labels, Result, Set};
 
 /// A trait for models with labelled variables.
 pub trait Labelled {
@@ -181,8 +184,10 @@ where
 
 /// A trait for conditional probability distributions.
 pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
-    /// The type of the support samples.
-    type Support;
+    /// The type of the samples.
+    type Sample;
+    /// The type of the support metadata (variable ranges / state sets).
+    type Support: Clone;
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
@@ -196,27 +201,27 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     fn conditioning_labels(&self) -> &Labels;
 
-    /// Returns the support of the CPD (the set of possible values for each variable).
+    /// Returns the support metadata of the CPD.
     ///
-    /// For categorical CPDs this returns the discrete support. For Gaussian CPDs it returns
-    /// an empty map since the support is continuous.
+    /// For categorical CPDs this returns the discrete support (possible states per variable).
+    /// For Gaussian CPDs this returns the range of each variable (defaults to (-inf, +inf)).
     ///
     /// # Returns
     ///
-    /// A reference to the support.
+    /// A reference to the support metadata.
     ///
-    fn support(&self) -> &Support;
+    fn support(&self) -> Cow<'_, Self::Support>;
 
-    /// Returns the conditioning support of the CPD.
+    /// Returns the conditioning support metadata of the CPD.
     ///
     /// For categorical CPDs this returns the discrete support of the conditioning variables.
-    /// For Gaussian CPDs it returns an empty map since the support is continuous.
+    /// For Gaussian CPDs this returns the range of each conditioning variable.
     ///
     /// # Returns
     ///
-    /// A reference to the conditioning support.
+    /// A reference to the conditioning support metadata.
     ///
-    fn conditioning_support(&self) -> &Support;
+    fn conditioning_support(&self) -> Cow<'_, Self::Support>;
 
     /// Returns the parameters.
     ///
@@ -266,7 +271,7 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// The probability P(X = x | Z = z).
     ///
-    fn pf(&self, x: &Self::Support, z: &Self::Support) -> Result<f64>;
+    fn pf(&self, x: &Self::Sample, z: &Self::Sample) -> Result<f64>;
 
     /// Samples from the conditional distribution P(X | Z = z).
     ///
@@ -283,13 +288,15 @@ pub trait CPD: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     ///
     /// A sample from P(X | Z = z).
     ///
-    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Support) -> Result<Self::Support>;
+    fn sample<R: Rng>(&self, rng: &mut R, z: &Self::Sample) -> Result<Self::Sample>;
 }
 
 /// A trait for conditional intensity matrices.
 pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
-    /// The type of the support.
-    type Support;
+    /// The type of the samples.
+    type Sample;
+    /// The type of the support metadata (variable ranges / state sets).
+    type Support: Clone;
     /// The type of the parameters.
     type Parameters;
     /// The type of the sufficient statistics.
@@ -302,6 +309,22 @@ pub trait CIM: Clone + Debug + Labelled + PartialEq + AbsDiffEq + RelativeEq {
     /// A reference to the conditioning labels.
     ///
     fn conditioning_labels(&self) -> &Labels;
+
+    /// Returns the support metadata of the CIM.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support metadata.
+    ///
+    fn support(&self) -> Cow<'_, Self::Support>;
+
+    /// Returns the conditioning support metadata of the CIM.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the conditioning support metadata.
+    ///
+    fn conditioning_support(&self) -> Cow<'_, Self::Support>;
 
     /// Returns the parameters.
     ///
@@ -349,10 +372,20 @@ pub trait Phi:
 {
     /// The type of the CPD.
     type CPD;
+    /// The type of the support metadata (variable ranges / state sets).
+    type Support: Clone;
     /// The type of the parameters.
     type Parameters;
     /// The type of the evidence.
     type Evidence;
+
+    /// Returns the support metadata of the potential.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the support metadata.
+    ///
+    fn support(&self) -> Cow<'_, Self::Support>;
 
     /// Returns the parameters.
     ///

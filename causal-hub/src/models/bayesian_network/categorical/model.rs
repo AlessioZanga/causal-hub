@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::{borrow::Cow, fmt::Write};
 
 use approx::{AbsDiffEq, RelativeEq};
 use itertools::Itertools;
@@ -14,9 +14,9 @@ use crate::{
     impl_json_io,
     inference::TopologicalOrder,
     io::{BifIO, BifParser},
-    models::{BN, CPD, CatCPD, DiGraph, Graph, Labelled},
+    models::{BN, CPD, CatCPD, CatSupport, DiGraph, Graph, Labelled},
     set,
-    types::{Error, Labels, Map, Result, Set, Support},
+    types::{Error, Labels, Map, Result, Set},
 };
 
 /// A categorical Bayesian network.
@@ -29,7 +29,7 @@ pub struct CatBN {
     /// The labels of the variables.
     labels: Labels,
     /// The support of the variables.
-    support: Support,
+    support: CatSupport,
     /// The shape of the variables.
     shape: Array1<usize>,
     /// The graph of the model.
@@ -48,7 +48,7 @@ impl CatBN {
     /// A reference to the support of the variables.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -133,11 +133,17 @@ impl Labelled for CatBN {
 
 impl BN for CatBN {
     type CPD = CatCPD;
+    type Support = CatSupport;
     type Evidence = CatEv;
     type Sample = CatSample;
     type Samples = CatTable;
     type IncSamples = CatIncTable;
     type WtdSamples = CatWtdTable;
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
+    }
 
     fn new<I>(graph: DiGraph, cpds: I) -> Result<Self>
     where
@@ -165,7 +171,7 @@ impl BN for CatBN {
         }
 
         // Allocate the support of the variables.
-        let mut support: Support = Default::default();
+        let mut support: CatSupport = Default::default();
         // Insert the support of the variables into the map to check if they are the same.
         cpds.values().try_for_each(|cpd| {
             cpd.support()
@@ -178,7 +184,7 @@ impl BN for CatBN {
                         if existing_states != s {
                             return Err(Error::InvalidParameter(
                                 "cpds",
-                                &format!("Support of `{l}` must be the same across CPDs."),
+                                &format!("CatSupport of `{l}` must be the same across CPDs."),
                             ));
                         }
                     } else {

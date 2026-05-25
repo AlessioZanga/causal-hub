@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     fmt::Display,
     io::{Read, Write},
     sync::Arc,
@@ -12,8 +13,8 @@ use ndarray::prelude::*;
 use crate::{
     datasets::{CatEv, CatEvT, Dataset},
     io::CsvIO,
-    models::Labelled,
-    types::{Error, Labels, Result, Set, Support},
+    models::{CatSupport, Labelled},
+    types::{Error, Labels, Result, Set},
 };
 
 /// A type alias for a categorical variable.
@@ -25,7 +26,7 @@ pub type CatSample = Array1<CatType>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CatTable {
     labels: Labels,
-    support: Support,
+    support: CatSupport,
     shape: Array1<usize>,
     values: Array2<CatType>,
 }
@@ -33,7 +34,7 @@ pub struct CatTable {
 /// Concrete iterator over categorical table evidences.
 pub struct CatTableEvidenceIter<'a> {
     rows: ndarray::iter::LanesIter<'a, CatType, Ix1>,
-    support: &'a Support,
+    support: &'a CatSupport,
 }
 
 impl<'a> Iterator for CatTableEvidenceIter<'a> {
@@ -88,7 +89,7 @@ impl CatTable {
     ///
     /// A new categorical dataset instance.
     ///
-    pub fn new(mut support: Support, mut values: Array2<CatType>) -> Result<Self> {
+    pub fn new(mut support: CatSupport, mut values: Array2<CatType>) -> Result<Self> {
         // Log the creation of the categorical dataset.
         debug!(
             "Creating a new categorical dataset with {} variables and {} samples.",
@@ -203,7 +204,7 @@ impl CatTable {
     /// A reference to the vector of support.
     ///
     #[inline]
-    pub const fn support(&self) -> &Support {
+    pub const fn support(&self) -> &CatSupport {
         &self.support
     }
 
@@ -257,12 +258,18 @@ impl Display for CatTable {
 
 impl Dataset for CatTable {
     type Values = Array2<CatType>;
+    type Support = CatSupport;
     type Evidence = CatEv;
     type EvidenceIter<'a> = CatTableEvidenceIter<'a>;
 
     #[inline]
     fn values(&self) -> &Self::Values {
         &self.values
+    }
+
+    #[inline]
+    fn support(&self) -> Cow<'_, Self::Support> {
+        Cow::Borrowed(&self.support)
     }
 
     fn evidence_iter(&self) -> Self::EvidenceIter<'_> {
@@ -287,7 +294,7 @@ impl Dataset for CatTable {
         })?;
 
         // Select the support.
-        let support: Support = x
+        let support: CatSupport = x
             .iter()
             .map(|&i| {
                 self.support
@@ -329,7 +336,7 @@ impl CsvIO for CatTable {
             .collect();
 
         // Get the support of the variables.
-        let mut support: Support = labels
+        let mut support: CatSupport = labels
             .iter()
             .map(|x| (x.clone(), Default::default()))
             .collect();
